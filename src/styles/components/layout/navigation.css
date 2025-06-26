@@ -1,0 +1,45 @@
+/* =============================================================================
+   NAVIGATION COMPONENT STYLES
+   ============================================================================= */
+
+/* Navigation */
+.landing-nav {
+  position: fixed;
+  width: 100vw;
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+}
+
+.logo span,
+.menu-btn span {
+  font-size: 0.8rem;
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.logo span {
+  background-color: var(--dark);
+  color: var(--light);
+}
+
+.menu-btn {
+  text-decoration: none;
+}
+
+.menu-btn span {
+  background-color: var(--light2);
+  color: var(--dark);
+  transition: all 0.3s ease;
+}
+
+.menu-btn:hover span {
+  background-color: var(--dark);
+  color: var(--light);
+}

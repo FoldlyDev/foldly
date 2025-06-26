@@ -1,0 +1,89 @@
+/* =============================================================================
+   PRELOADER COMPONENT STYLES
+   ============================================================================= */
+
+/* Preloader Styles */
+.preloader,
+.split-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--dark);
+  color: var(--light);
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+}
+
+.split-overlay {
+  background-color: var(--light);
+  color: var(--dark);
+  z-index: 999;
+  transform-origin: top;
+}
+
+.intro-title {
+  font-size: 4rem;
+  font-weight: 500;
+}
+
+.outro-title {
+  font-size: 4rem;
+  font-weight: 300;
+  opacity: 0.7;
+}
+
+.tags-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  display: flex;
+  gap: 2rem;
+}
+
+.tag {
+  padding: 1rem 2rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+  transform: translateY(100px);
+  opacity: 0;
+}
+
+.tag-1 {
+  background-color: var(--accent-1);
+}
+
+.tag-2 {
+  background-color: var(--accent-2);
+}
+
+.tag-3 {
+  background-color: var(--accent-3);
+}
+
+/* Animation utilities */
+.char {
+  display: inline-block;
+  transform: translateY(100px);
+  opacity: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+  .intro-title,
+  .outro-title {
+    font-size: 2.5rem;
+  }
+
+  .tags-overlay {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}

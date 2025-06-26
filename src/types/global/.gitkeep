@@ -1,0 +1,3 @@
+# Global TypeScript Types
+# This folder contains global type definitions that are used across the entire application
+# Examples: utility types, global interfaces, ambient module declarations 
