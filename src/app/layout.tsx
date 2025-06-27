@@ -26,6 +26,17 @@ export const metadata: Metadata = {
   authors: [{ name: "Foldly Team" }],
   creator: "Foldly",
   publisher: "Foldly",
+  icons: {
+    icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "Foldly - File Collection Made Simple",
     description:
