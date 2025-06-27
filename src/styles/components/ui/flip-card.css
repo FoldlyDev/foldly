@@ -92,7 +92,7 @@
   flex-direction: column;
   justify-content: space-between;
   gap: 2rem;
-  background-color: #fff;
+  background-color: var(--neutral-200);
   transform: rotateY(180deg);
 }
 

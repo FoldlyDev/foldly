@@ -7,6 +7,10 @@
   background-color: var(--light);
   color: var(--dark);
   overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Hero Cards */
@@ -19,6 +23,7 @@
   display: flex;
   justify-content: center;
   gap: 1rem;
+  z-index: 1;
 }
 
 .hero-cards .card {
@@ -64,8 +69,46 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .hero-cards {
+    width: 45%;
+  }
+}
+
 @media (max-width: 1000px) {
   .hero-cards {
-    display: none;
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: 400px;
+    gap: 0.75rem;
+  }
+
+  .hero-cards .card {
+    aspect-ratio: 4/5;
+    padding: 0.5rem;
+  }
+
+  .hero-cards .card span {
+    font-size: 0.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    padding: 3rem 1rem;
+  }
+
+  .hero-cards {
+    flex-direction: column;
+    max-width: 200px;
+    gap: 0.5rem;
+  }
+
+  .hero-cards .card {
+    aspect-ratio: 3/2;
+    padding: 0.5rem;
   }
 }

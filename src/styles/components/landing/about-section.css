@@ -1,0 +1,12 @@
+/* =============================================================================
+   ABOUT SECTION COMPONENT STYLES
+   ============================================================================= */
+
+/* About Section */
+.about {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--dark);
+  color: var(--light);
+}

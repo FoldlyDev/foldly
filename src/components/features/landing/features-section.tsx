@@ -51,8 +51,8 @@ const cardData = [
 interface FeaturesSectionProps {}
 
 interface FeaturesSectionRefs {
-  servicesRef: React.RefObject<HTMLElement | null>;
-  servicesHeaderRef: React.RefObject<HTMLDivElement | null>;
+  featuresRef: React.RefObject<HTMLElement | null>;
+  featuresHeaderRef: React.RefObject<HTMLDivElement | null>;
   card1Ref: React.RefObject<HTMLDivElement | null>;
   card2Ref: React.RefObject<HTMLDivElement | null>;
   card3Ref: React.RefObject<HTMLDivElement | null>;
@@ -66,11 +66,14 @@ export const FeaturesSection = forwardRef<
   FeaturesSectionProps
 >((props, ref) => {
   // Extract refs from the forwarded ref object
-  const refs = ref as React.MutableRefObject<FeaturesSectionRefs>;
+  const refs = ref as { current: FeaturesSectionRefs };
 
   return (
-    <section className="services" ref={refs?.current?.servicesRef}>
-      <div className="services-header" ref={refs?.current?.servicesHeaderRef}>
+    <section
+      className="features-section w-full overflow-hidden"
+      ref={refs?.current?.featuresRef}
+    >
+      <div className="features-header" ref={refs?.current?.featuresHeaderRef}>
         <h1>File collection made ridiculously simple</h1>
       </div>
 

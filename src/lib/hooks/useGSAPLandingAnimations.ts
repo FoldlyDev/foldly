@@ -12,8 +12,8 @@ interface AnimationRefs {
   heroCard1Ref: React.RefObject<HTMLDivElement | null>;
   heroCard2Ref: React.RefObject<HTMLDivElement | null>;
   heroCard3Ref: React.RefObject<HTMLDivElement | null>;
-  servicesRef: React.RefObject<HTMLElement | null>;
-  servicesHeaderRef: React.RefObject<HTMLDivElement | null>;
+  featuresRef: React.RefObject<HTMLElement | null>;
+  featuresHeaderRef: React.RefObject<HTMLDivElement | null>;
   card1Ref: React.RefObject<HTMLDivElement | null>;
   card2Ref: React.RefObject<HTMLDivElement | null>;
   card3Ref: React.RefObject<HTMLDivElement | null>;
@@ -137,20 +137,20 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
 
       scrollTriggersRef.current.push(heroScrollTrigger);
 
-      // Services section pinning
-      const servicesPinTrigger = ScrollTrigger.create({
-        trigger: refs.servicesRef.current,
+      // Features section pinning
+      const featuresPinTrigger = ScrollTrigger.create({
+        trigger: refs.featuresRef.current,
         start: "top top",
         end: `+=${window.innerHeight * 4}px`,
-        pin: refs.servicesRef.current,
+        pin: refs.featuresRef.current,
         pinSpacing: true,
       });
 
-      scrollTriggersRef.current.push(servicesPinTrigger);
+      scrollTriggersRef.current.push(featuresPinTrigger);
 
       // Cards animation
       const cardsScrollTrigger = ScrollTrigger.create({
-        trigger: refs.servicesRef.current,
+        trigger: refs.featuresRef.current,
         start: "top bottom",
         end: `+=${window.innerHeight * 4}`,
         scrub: 1,
@@ -164,8 +164,8 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
             smoothStep(headerProgress)
           );
 
-          if (refs.servicesHeaderRef.current) {
-            gsap.set(refs.servicesHeaderRef.current, {
+          if (refs.featuresHeaderRef.current) {
+            gsap.set(refs.featuresHeaderRef.current, {
               y: headerY,
             });
           }

@@ -21,8 +21,8 @@ export function LandingPageContainer() {
   const heroCard3Ref = useRef<HTMLDivElement>(null);
 
   // Features section refs
-  const servicesRef = useRef<HTMLElement>(null);
-  const servicesHeaderRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLElement>(null);
+  const featuresHeaderRef = useRef<HTMLDivElement>(null);
   const card1Ref = useRef<HTMLDivElement>(null);
   const card2Ref = useRef<HTMLDivElement>(null);
   const card3Ref = useRef<HTMLDivElement>(null);
@@ -40,8 +40,8 @@ export function LandingPageContainer() {
   });
 
   const featuresSectionRefs = useRef({
-    servicesRef,
-    servicesHeaderRef,
+    featuresRef,
+    featuresHeaderRef,
     card1Ref,
     card2Ref,
     card3Ref,
@@ -57,8 +57,8 @@ export function LandingPageContainer() {
     heroCard1Ref,
     heroCard2Ref,
     heroCard3Ref,
-    servicesRef,
-    servicesHeaderRef,
+    featuresRef,
+    featuresHeaderRef,
     card1Ref,
     card2Ref,
     card3Ref,

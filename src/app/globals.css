@@ -1,11 +1,72 @@
 @import "tailwindcss";
 
 /* =============================================================================
+   TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
+   ============================================================================= */
+
+@theme {
+  /* Font Families */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+
+  /* Custom Colors - Foldly Brand System (Pastel Version) */
+  --color-primary-blue: #7bb3f0;
+  --color-primary-blue-dark: #5a9de8;
+  --color-primary-blue-light: #a1c9f5;
+  --color-primary-blue-subtle: #e8f2fe;
+
+  --color-secondary-teal: #7dd3d0;
+  --color-secondary-teal-dark: #5ac5c1;
+  --color-secondary-teal-light: #a0e1de;
+  --color-secondary-teal-subtle: #e8fbfa;
+
+  --color-accent-purple: #a5a8f5;
+  --color-accent-purple-dark: #8b8ff0;
+  --color-accent-purple-light: #c0c3f9;
+  --color-accent-purple-subtle: #f0f1fe;
+
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3385ff;
+
+  /* Extended Neutral Palette */
+  --color-neutral-50: #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+
+  /* Custom Spacing */
+  --spacing-18: 4.5rem;
+  --spacing-112: 28rem;
+  --spacing-128: 32rem;
+
+  /* Custom Border Radius */
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.5rem;
+
+  /* Custom Shadows */
+  --shadow-brand: 0 25px 50px -12px rgb(123 179 240 / 0.25);
+  --shadow-brand-lg: 0 35px 60px -12px rgb(123 179 240 / 0.4);
+}
+
+/* =============================================================================
    COMPONENT STYLES IMPORTS
    ============================================================================= */
 
 @import "../styles/components/layout/navigation.css";
-@import "../styles/components/landing/hero.css";
+@import "../styles/components/landing/hero-section.css";
+@import "../styles/components/landing/about-section.css";
+@import "../styles/components/landing/features-section.css";
+@import "../styles/components/landing/outro-section.css";
 @import "../styles/components/landing/cards.css";
 @import "../styles/components/landing/sections.css";
 @import "../styles/components/ui/flip-card.css";
@@ -15,67 +76,142 @@
    ============================================================================= */
 
 :root {
-  /* Colors */
-  --light: #f8f9fa;
-  --light2: #e9ecef;
-  --dark: #212529;
-  --accent-1: #ff6b6b;
-  --accent-2: #4ecdc4;
-  --accent-3: #45b7d1;
+  /* FOLDLY BRAND COLORS - Inspired by Calendly but uniquely ours */
 
-  /* Shadcn/ui variables */
+  /* Primary Brand Colors - Pastel Version */
+  --primary-blue: #7bb3f0; /* Soft trust blue - main CTA */
+  --primary-blue-dark: #5a9de8; /* Hover states */
+  --primary-blue-light: #a1c9f5; /* Light interactions */
+  --primary-blue-subtle: #e8f2fe; /* Backgrounds, subtle highlights */
+
+  /* Secondary Brand Colors - Pastel Version */
+  --secondary-teal: #7dd3d0; /* Soft, modern accent */
+  --secondary-teal-dark: #5ac5c1; /* Hover states */
+  --secondary-teal-light: #a0e1de; /* Light interactions */
+  --secondary-teal-subtle: #e8fbfa; /* Backgrounds */
+
+  /* Supporting Colors - Pastel Version */
+  --accent-purple: #a5a8f5; /* Soft premium touch */
+  --accent-purple-dark: #8b8ff0; /* Hover states */
+  --accent-purple-light: #c0c3f9; /* Light interactions */
+  --accent-purple-subtle: #f0f1fe; /* Backgrounds */
+
+  /* Success & Status Colors - Softer Pastel Version */
+  --success-green: #6bcf94; /* Soft success states */
+  --warning-amber: #f7b955; /* Soft warning states */
+  --error-red: #f49090; /* Soft error states */
+  --info-blue: var(--primary-blue-light);
+
+  /* Neutral Colors */
+  --neutral-50: #fafafa; /* Lightest background */
+  --neutral-100: #f5f5f5; /* Light background */
+  --neutral-200: #e5e5e5; /* Borders, dividers */
+  --neutral-300: #d4d4d4; /* Disabled states */
+  --neutral-400: #a3a3a3; /* Placeholder text */
+  --neutral-500: #737373; /* Secondary text */
+  --neutral-600: #525252; /* Primary text */
+  --neutral-700: #404040; /* Headings */
+  --neutral-800: #262626; /* High contrast text */
+  --neutral-900: #171717; /* Maximum contrast */
+
+  /* Legacy Colors - Updated to new system */
+  --light: var(--neutral-50);
+  --light2: var(--neutral-100);
+  --dark: var(--neutral-800);
+  --accent-1: var(--primary-blue);
+  --accent-2: var(--secondary-teal);
+  --accent-3: var(--accent-purple);
+
+  /* Shadcn/ui variables - Updated for new color system */
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 0 0% 9%; /* neutral-900 equivalent */
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 0 0% 9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 84% 4.9%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 84% 4.9%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
-  --chart-1: 12 76% 61%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  --popover-foreground: 0 0% 9%;
+  --primary: 216 100% 50%; /* primary-blue */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 180 100% 39%; /* secondary-teal */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 96%; /* neutral-100 */
+  --muted-foreground: 0 0% 45%; /* neutral-500 */
+  --accent: 243 75% 59%; /* accent-purple */
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%; /* error-red */
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 90%; /* neutral-200 */
+  --input: 0 0% 90%;
+  --ring: 216 100% 50%; /* primary-blue */
+  --chart-1: var(--primary-blue);
+  --chart-2: var(--secondary-teal);
+  --chart-3: var(--accent-purple);
+  --chart-4: var(--success-green);
+  --chart-5: var(--warning-amber);
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
+  /* Dark Mode Brand Colors - Pastel Version */
+  --primary-blue: #a1c9f5; /* Brighter pastel blue for dark backgrounds */
+  --primary-blue-dark: #7bb3f0; /* Darker hover */
+  --primary-blue-light: #c2ddf8; /* Lighter interactions */
+  --primary-blue-subtle: #1a2332; /* Dark blue background */
+
+  --secondary-teal: #a0e1de; /* Brighter pastel teal */
+  --secondary-teal-dark: #7dd3d0; /* Darker hover */
+  --secondary-teal-light: #c2ebe9; /* Light interactions */
+  --secondary-teal-subtle: #1a2524; /* Dark teal background */
+
+  --accent-purple: #c0c3f9; /* Brighter pastel purple */
+  --accent-purple-dark: #a5a8f5; /* Darker hover */
+  --accent-purple-light: #d6d8fc; /* Light interactions */
+  --accent-purple-subtle: #201f2a; /* Dark purple background */
+
+  /* Dark Neutrals */
+  --neutral-50: #0a0a0a; /* Darkest background */
+  --neutral-100: #171717; /* Dark background */
+  --neutral-200: #262626; /* Borders, dividers */
+  --neutral-300: #404040; /* Disabled states */
+  --neutral-400: #525252; /* Placeholder text */
+  --neutral-500: #737373; /* Secondary text */
+  --neutral-600: #a3a3a3; /* Primary text */
+  --neutral-700: #d4d4d4; /* Headings */
+  --neutral-800: #e5e5e5; /* High contrast text */
+  --neutral-900: #fafafa; /* Maximum contrast */
+
+  /* Legacy Colors - Updated for dark mode */
+  --light: var(--neutral-100);
+  --light2: var(--neutral-200);
+  --dark: var(--neutral-900);
+  --accent-1: var(--primary-blue);
+  --accent-2: var(--secondary-teal);
+  --accent-3: var(--accent-purple);
+
+  /* Shadcn/ui dark mode variables */
+  --background: 0 0% 9%; /* neutral-100 equivalent */
+  --foreground: 0 0% 98%; /* neutral-900 equivalent */
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 216 100% 70%; /* brighter primary-blue */
+  --primary-foreground: 0 0% 9%;
+  --secondary: 180 100% 60%; /* brighter secondary-teal */
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 15%; /* neutral-200 equivalent */
+  --muted-foreground: 0 0% 45%; /* neutral-500 */
+  --accent: 243 75% 70%; /* brighter accent-purple */
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 15%; /* neutral-200 equivalent */
+  --input: 0 0% 15%;
+  --ring: 216 100% 70%; /* brighter primary-blue */
+  --chart-1: var(--primary-blue);
+  --chart-2: var(--secondary-teal);
+  --chart-3: var(--accent-purple);
+  --chart-4: var(--success-green);
+  --chart-5: var(--warning-amber);
 }
 
 /* =============================================================================
@@ -158,28 +294,65 @@ span {
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: var(--neutral-300);
   border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.4);
+  background-color: var(--neutral-500);
 }
+
+/* =============================================================================
+   GRADIENT UTILITIES - Using New Color System
+   ============================================================================= */
 
 .bg-gradient-brand {
   background: linear-gradient(
     135deg,
-    var(--accent-1) 0%,
-    var(--accent-2) 50%,
-    var(--accent-3) 100%
+    var(--primary-blue) 0%,
+    var(--secondary-teal) 50%,
+    var(--accent-purple) 100%
+  );
+}
+
+.bg-gradient-brand-subtle {
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue-subtle) 0%,
+    var(--secondary-teal-subtle) 50%,
+    var(--accent-purple-subtle) 100%
   );
 }
 
 .bg-gradient-subtle {
   background: linear-gradient(
     to bottom,
-    rgba(248, 249, 250, 0.8) 0%,
-    rgba(248, 249, 250, 0.4) 100%
+    var(--neutral-50) 0%,
+    color-mix(in srgb, var(--neutral-50) 40%, transparent) 100%
+  );
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(
+    135deg,
+    var(--primary-blue) 0%,
+    var(--primary-blue-light) 100%
+  );
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(
+    135deg,
+    var(--secondary-teal) 0%,
+    var(--secondary-teal-light) 100%
+  );
+}
+
+.bg-gradient-accent {
+  background: linear-gradient(
+    135deg,
+    var(--accent-purple) 0%,
+    var(--accent-purple-light) 100%
   );
 }
 

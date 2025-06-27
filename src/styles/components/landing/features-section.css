@@ -1,0 +1,41 @@
+/* =============================================================================
+   FEATURES SECTION COMPONENT STYLES
+   ============================================================================= */
+
+/* Features Section */
+.features-section {
+  padding: 8rem 2rem;
+  overflow: hidden;
+}
+
+.features-header {
+  position: relative;
+  width: 100%;
+  text-align: center;
+  transform: translateY(400%);
+  will-change: transform;
+}
+
+.features-header h1 {
+  font-size: 2rem;
+  font-weight: 500;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+  .features-section {
+    min-height: 100vh;
+    height: 100%;
+    padding: 4rem 1rem;
+  }
+
+  .features-header {
+    transform: translateY(0%);
+  }
+
+  .features-header h1 {
+    font-size: 1.5rem;
+  }
+}
