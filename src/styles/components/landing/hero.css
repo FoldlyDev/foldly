@@ -6,6 +6,7 @@
 .hero {
   background-color: var(--light);
   color: var(--dark);
+  overflow: hidden;
 }
 
 /* Hero Cards */
@@ -15,11 +16,9 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 35%;
-  max-width: calc(100% - 4rem);
   display: flex;
   justify-content: center;
-  gap: clamp(0.5rem, 2vw, 1rem);
-  overflow-x: hidden;
+  gap: 1rem;
 }
 
 .hero-cards .card {
