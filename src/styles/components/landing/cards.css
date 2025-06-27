@@ -2,27 +2,7 @@
    ANIMATED CARDS COMPONENT STYLES
    ============================================================================= */
 
-/* Services Section */
-.services {
-  padding: 8rem 2rem;
-}
-
-.services-header {
-  position: relative;
-  width: 100%;
-  text-align: center;
-  transform: translateY(400%);
-  will-change: transform;
-}
-
-.services-header h1 {
-  font-size: 2rem;
-  font-weight: 500;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-/* Cards Section */
+/* Desktop Animated Cards Section */
 .cards {
   position: fixed;
   top: 0;
@@ -46,116 +26,7 @@
   gap: 4rem;
 }
 
-.cards-container .card {
-  flex: 1;
-  position: relative;
-  aspect-ratio: 5/7;
-  perspective: 1000px;
-}
-
-.cards-container .card .card-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  animation: floating 2s infinite ease-in-out;
-}
-
-@keyframes floating {
-  0% {
-    transform: translate(-50%, -50%);
-  }
-  50% {
-    transform: translate(-50%, -55%);
-  }
-  100% {
-    transform: translate(-50%, -50%);
-  }
-}
-
-#card-1 .card-wrapper {
-  animation-delay: 0;
-}
-
-#card-2 .card-wrapper {
-  animation-delay: 0.25s;
-}
-
-#card-3 .card-wrapper {
-  animation-delay: 0.5s;
-}
-
-.flip-card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  transform-style: preserve-3d;
-}
-
-.flip-card-front,
-.flip-card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
-  backface-visibility: hidden;
-  overflow: hidden;
-}
-
-.flip-card-front {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-}
-
-#card-1 .flip-card-front,
-#mobile-card-1 .flip-card-front {
-  background-color: var(--accent-1);
-}
-
-#card-2 .flip-card-front,
-#mobile-card-2 .flip-card-front {
-  background-color: var(--accent-2);
-}
-
-#card-3 .flip-card-front,
-#mobile-card-3 .flip-card-front {
-  background-color: var(--accent-3);
-}
-
-.flip-card-back {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 2rem;
-  background-color: #fff;
-  transform: rotateY(180deg);
-}
-
-.card-copy {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.card-copy p {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1rem;
-  background-color: var(--light2);
-  border-radius: 0.25rem;
-  font-weight: 500;
-}
-
+/* Animation transforms for desktop cards */
 .cards #card-1 {
   transform: translateX(100%) translateY(-100%) rotate(-5deg) scale(0.25);
   z-index: 2;
@@ -182,20 +53,6 @@
 
 /* Responsive Design */
 @media (max-width: 1000px) {
-  .services {
-    min-height: 100vh;
-    height: 100%;
-    padding: 4rem 1rem;
-  }
-
-  .services-header {
-    transform: translateY(0%);
-  }
-
-  .services-header h1 {
-    font-size: 1.5rem;
-  }
-
   .mobile-cards {
     display: block;
     height: 100%;
@@ -215,10 +72,7 @@
     margin-bottom: 2rem;
   }
 
-  .mobile-cards .cards-container .card-wrapper {
-    animation: none;
-  }
-
+  /* Mobile-specific card styling */
   .mobile-cards .card .flip-card-front {
     transform: rotateY(180deg);
   }

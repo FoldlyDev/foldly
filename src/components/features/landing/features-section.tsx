@@ -1,120 +1,124 @@
 "use client";
 
-export function FeaturesSection() {
+import { forwardRef } from "react";
+import { FlipCard } from "@/components/ui/flip-card";
+
+const cardData = [
+  {
+    id: "card-1",
+    mobileId: "mobile-card-1",
+    title: "Create",
+    number: "01",
+    features: [
+      "Custom Links",
+      "Brand Your Page",
+      "Set Expiration",
+      "Add Instructions",
+      "Control Access",
+      "Track Progress",
+    ],
+  },
+  {
+    id: "card-2",
+    mobileId: "mobile-card-2",
+    title: "Collect",
+    number: "02",
+    features: [
+      "Drag & Drop",
+      "No Login Required",
+      "Large File Support",
+      "Progress Tracking",
+      "Auto Notifications",
+      "Secure Storage",
+    ],
+  },
+  {
+    id: "card-3",
+    mobileId: "mobile-card-3",
+    title: "Organize",
+    number: "03",
+    features: [
+      "Auto Folders",
+      "Smart Tagging",
+      "Search & Filter",
+      "Bulk Operations",
+      "Export Options",
+      "Cloud Sync",
+    ],
+  },
+];
+
+interface FeaturesSectionProps {}
+
+interface FeaturesSectionRefs {
+  servicesRef: React.RefObject<HTMLElement | null>;
+  servicesHeaderRef: React.RefObject<HTMLDivElement | null>;
+  card1Ref: React.RefObject<HTMLDivElement | null>;
+  card2Ref: React.RefObject<HTMLDivElement | null>;
+  card3Ref: React.RefObject<HTMLDivElement | null>;
+  flipCard1InnerRef: React.RefObject<HTMLDivElement | null>;
+  flipCard2InnerRef: React.RefObject<HTMLDivElement | null>;
+  flipCard3InnerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+export const FeaturesSection = forwardRef<
+  FeaturesSectionRefs,
+  FeaturesSectionProps
+>((props, ref) => {
+  // Extract refs from the forwarded ref object
+  const refs = ref as React.MutableRefObject<FeaturesSectionRefs>;
+
   return (
-    <section className="services">
-      <div className="services-header">
+    <section className="services" ref={refs?.current?.servicesRef}>
+      <div className="services-header" ref={refs?.current?.servicesHeaderRef}>
         <h1>File collection made ridiculously simple</h1>
       </div>
 
+      {/* Desktop Animated Cards */}
+      <section className="cards">
+        <div className="cards-container">
+          {cardData.map((card, index) => (
+            <FlipCard
+              key={card.id}
+              id={card.id}
+              title={card.title}
+              number={card.number}
+              features={card.features}
+              ref={
+                index === 0
+                  ? refs?.current?.card1Ref
+                  : index === 1
+                  ? refs?.current?.card2Ref
+                  : refs?.current?.card3Ref
+              }
+              flipCardInnerRef={
+                index === 0
+                  ? refs?.current?.flipCard1InnerRef
+                  : index === 1
+                  ? refs?.current?.flipCard2InnerRef
+                  : refs?.current?.flipCard3InnerRef
+              }
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Mobile Cards */}
       <div className="mobile-cards">
         <div className="cards-container">
-          <div className="card" id="mobile-card-1">
-            <div className="card-wrapper">
-              <div className="flip-card-inner">
-                <div className="flip-card-front">
-                  <div className="card-title">
-                    <span>Create</span>
-                    <span>01</span>
-                  </div>
-                  <div className="card-title">
-                    <span>01</span>
-                    <span>Create</span>
-                  </div>
-                </div>
-                <div className="flip-card-back">
-                  <div className="card-title">
-                    <span>Create</span>
-                    <span>01</span>
-                  </div>
-                  <div className="card-copy">
-                    <p>Custom Links</p>
-                    <p>Brand Your Page</p>
-                    <p>Set Expiration</p>
-                    <p>Add Instructions</p>
-                    <p>Control Access</p>
-                    <p>Track Progress</p>
-                  </div>
-                  <div className="card-title">
-                    <span>01</span>
-                    <span>Create</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" id="mobile-card-2">
-            <div className="card-wrapper">
-              <div className="flip-card-inner">
-                <div className="flip-card-front">
-                  <div className="card-title">
-                    <span>Collect</span>
-                    <span>02</span>
-                  </div>
-                  <div className="card-title">
-                    <span>02</span>
-                    <span>Collect</span>
-                  </div>
-                </div>
-                <div className="flip-card-back">
-                  <div className="card-title">
-                    <span>Collect</span>
-                    <span>02</span>
-                  </div>
-                  <div className="card-copy">
-                    <p>Drag & Drop</p>
-                    <p>No Login Required</p>
-                    <p>Large File Support</p>
-                    <p>Progress Tracking</p>
-                    <p>Auto Notifications</p>
-                    <p>Secure Storage</p>
-                  </div>
-                  <div className="card-title">
-                    <span>02</span>
-                    <span>Collect</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" id="mobile-card-3">
-            <div className="card-wrapper">
-              <div className="flip-card-inner">
-                <div className="flip-card-front">
-                  <div className="card-title">
-                    <span>Organize</span>
-                    <span>03</span>
-                  </div>
-                  <div className="card-title">
-                    <span>03</span>
-                    <span>Organize</span>
-                  </div>
-                </div>
-                <div className="flip-card-back">
-                  <div className="card-title">
-                    <span>Organize</span>
-                    <span>03</span>
-                  </div>
-                  <div className="card-copy">
-                    <p>Auto Folders</p>
-                    <p>Smart Tagging</p>
-                    <p>Search & Filter</p>
-                    <p>Bulk Operations</p>
-                    <p>Export Options</p>
-                    <p>Cloud Sync</p>
-                  </div>
-                  <div className="card-title">
-                    <span>03</span>
-                    <span>Organize</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {cardData.map((card) => (
+            <FlipCard
+              key={card.mobileId}
+              id={card.mobileId}
+              title={card.title}
+              number={card.number}
+              features={card.features}
+            />
+          ))}
         </div>
       </div>
     </section>
   );
-}
+});
+
+FeaturesSection.displayName = "FeaturesSection";

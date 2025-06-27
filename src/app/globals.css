@@ -8,6 +8,7 @@
 @import "../styles/components/landing/hero.css";
 @import "../styles/components/landing/cards.css";
 @import "../styles/components/landing/sections.css";
+@import "../styles/components/ui/flip-card.css";
 
 /* =============================================================================
    CSS VARIABLES
