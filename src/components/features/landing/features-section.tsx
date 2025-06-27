@@ -2,6 +2,7 @@
 
 import { forwardRef } from "react";
 import { FlipCard } from "@/components/ui/flip-card";
+import { BubbleBackground } from "@/components/ui/bubble";
 
 const cardData = [
   {
@@ -9,6 +10,7 @@ const cardData = [
     mobileId: "mobile-card-1",
     title: "Create",
     number: "01",
+    iconType: "settings" as const,
     features: [
       "Custom Links",
       "Brand Your Page",
@@ -23,6 +25,7 @@ const cardData = [
     mobileId: "mobile-card-2",
     title: "Collect",
     number: "02",
+    iconType: "archive" as const,
     features: [
       "Drag & Drop",
       "No Login Required",
@@ -37,6 +40,7 @@ const cardData = [
     mobileId: "mobile-card-3",
     title: "Organize",
     number: "03",
+    iconType: "heart" as const,
     features: [
       "Auto Folders",
       "Smart Tagging",
@@ -73,12 +77,16 @@ export const FeaturesSection = forwardRef<
       className="features-section w-full overflow-hidden"
       ref={refs?.current?.featuresRef}
     >
+      <BubbleBackground
+        interactive
+        className="absolute inset-0 flex items-center justify-center rounded-xl -z-1"
+      />
       <div className="features-header" ref={refs?.current?.featuresHeaderRef}>
-        <h1>File collection made ridiculously simple</h1>
+        <h1>FROM SCATTERED TO SORTED</h1>
       </div>
 
       {/* Desktop Animated Cards */}
-      <section className="cards">
+      <section className="cards mt-20">
         <div className="cards-container">
           {cardData.map((card, index) => (
             <FlipCard
@@ -87,6 +95,7 @@ export const FeaturesSection = forwardRef<
               title={card.title}
               number={card.number}
               features={card.features}
+              iconType={card.iconType}
               ref={
                 index === 0
                   ? refs?.current?.card1Ref
@@ -116,6 +125,7 @@ export const FeaturesSection = forwardRef<
               title={card.title}
               number={card.number}
               features={card.features}
+              iconType={card.iconType}
             />
           ))}
         </div>

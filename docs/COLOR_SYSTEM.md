@@ -1,242 +1,223 @@
-# Foldly Color System
+# Foldly Color System Documentation
 
-## Warm Pastel Palette Inspired by Calendly
+## Overview
 
-### 🎨 Color Philosophy
+Foldly uses a sophisticated dark professional color system with semantic naming conventions. This approach ensures consistency, maintainability, and optimal user experience across all components.
 
-Our color system is designed to convey **trust**, **warmth**, and **friendly professionalism**. Inspired by Calendly's clean aesthetic but with a softer, more approachable pastel touch, we focus on:
+## Design Philosophy
 
-- **Soft Blue**: Trustworthy yet approachable
-- **Gentle Teal**: Fresh, calming innovation
-- **Light Purple**: Creative sophistication with warmth
-- **Neutral Palette**: Clean, comfortable hierarchy
+- **Dark Professional Theme**: Sophisticated color palette optimized for modern UI
+- **Semantic Naming**: Colors named by purpose (primary, secondary, etc.) rather than color names
+- **Dynamic & Maintainable**: Easy to update entire system by changing base values
+- **UX/UI Optimized**: Carefully selected colors for maximum readability and visual hierarchy
 
----
+## Core Brand Colors
 
-## 🎯 Brand Colors
+### Primary Colors - Light Blue Accent
 
-### Soft Blue - Trust & Action
+**Purpose**: Main CTAs, highlights, interactive elements, brand recognition
 
-Our main brand color for CTAs, links, and primary actions - now in a gentle, approachable tone.
+- **Primary**: `#C3E1F7` - Light blue for primary actions and key highlights
+- **Primary Dark**: `#9ABEDE` - Hover states, pressed buttons
+- **Primary Light**: `#E1F0FC` - Light interactions, subtle highlights
+- **Primary Subtle**: `#F0F8FE` - Backgrounds, very subtle highlights
 
-| Usage       | HEX       | CSS Variable            | Tailwind Class                        |
-| ----------- | --------- | ----------------------- | ------------------------------------- |
-| **Primary** | `#7bb3f0` | `--primary-blue`        | `bg-primary-blue` `text-primary-blue` |
-| **Dark**    | `#5a9de8` | `--primary-blue-dark`   | `bg-primary-blue-dark`                |
-| **Light**   | `#a1c9f5` | `--primary-blue-light`  | `bg-primary-blue-light`               |
-| **Subtle**  | `#e8f2fe` | `--primary-blue-subtle` | `bg-primary-blue-subtle`              |
+### Secondary Colors - Medium Blue
 
-**Use for:** Primary buttons, active states, links, progress indicators
+**Purpose**: Secondary actions, accents, supporting elements
 
-### Gentle Teal - Innovation & Growth
+- **Secondary**: `#9ABEDE` - Medium blue for secondary actions
+- **Secondary Dark**: `#7BA5C7` - Hover states
+- **Secondary Light**: `#B8D1E8` - Light interactions
+- **Secondary Subtle**: `#E8F3FA` - Backgrounds
 
-Soft, calming accent color that beautifully complements our soft blue.
+### Tertiary Colors - Dark Blue
 
-| Usage       | HEX       | CSS Variable              | Tailwind Class                            |
-| ----------- | --------- | ------------------------- | ----------------------------------------- |
-| **Primary** | `#7dd3d0` | `--secondary-teal`        | `bg-secondary-teal` `text-secondary-teal` |
-| **Dark**    | `#5ac5c1` | `--secondary-teal-dark`   | `bg-secondary-teal-dark`                  |
-| **Light**   | `#a0e1de` | `--secondary-teal-light`  | `bg-secondary-teal-light`                 |
-| **Subtle**  | `#e8fbfa` | `--secondary-teal-subtle` | `bg-secondary-teal-subtle`                |
+**Purpose**: Text, borders, important structural elements
 
-**Use for:** Success states, secondary buttons, feature highlights, icons
+- **Tertiary**: `#2D4F6B` - Dark blue for important text and borders
+- **Tertiary Dark**: `#1E3A52` - Darker variant
+- **Tertiary Light**: `#4A6B85` - Lighter variant
+- **Tertiary Subtle**: `#E6EDF3` - Light background
 
-### Light Purple - Premium & Creative
+### Quaternary Colors - Very Dark Blue
 
-Warm, sophisticated color for special features with a friendly touch.
+**Purpose**: Main text, headings, high-importance content
 
-| Usage       | HEX       | CSS Variable             | Tailwind Class                          |
-| ----------- | --------- | ------------------------ | --------------------------------------- |
-| **Primary** | `#a5a8f5` | `--accent-purple`        | `bg-accent-purple` `text-accent-purple` |
-| **Dark**    | `#8b8ff0` | `--accent-purple-dark`   | `bg-accent-purple-dark`                 |
-| **Light**   | `#c0c3f9` | `--accent-purple-light`  | `bg-accent-purple-light`                |
-| **Subtle**  | `#f0f1fe` | `--accent-purple-subtle` | `bg-accent-purple-subtle`               |
+- **Quaternary**: `#0F1922` - Very dark blue for main text and headings
+- **Quaternary Dark**: `#0A0D0F` - Darkest variant
+- **Quaternary Light**: `#1A2A35` - Lighter variant
+- **Quaternary Subtle**: `#F5F6F7` - Light background
 
-**Use for:** Premium features, creative elements, special promotions
+### Quinary Colors - Near Black
 
----
+**Purpose**: Maximum contrast, dark backgrounds, ultimate hierarchy
 
-## 🚦 Status Colors
+- **Quinary**: `#0A0D0F` - Near black for maximum contrast
+- **Quinary Dark**: `#050607` - Darkest possible
+- **Quinary Light**: `#1A1D20` - Lighter variant
+- **Quinary Subtle**: `#F8F9F9` - Light background
 
-| Status      | HEX       | CSS Variable      | Tailwind Class              | Usage                              |
-| ----------- | --------- | ----------------- | --------------------------- | ---------------------------------- |
-| **Success** | `#6bcf94` | `--success-green` | `bg-success` `text-success` | Success messages, completed states |
-| **Warning** | `#f7b955` | `--warning-amber` | `bg-warning` `text-warning` | Warnings, attention needed         |
-| **Error**   | `#f49090` | `--error-red`     | `bg-error` `text-error`     | Error states, destructive actions  |
-| **Info**    | `#a1c9f5` | `--info-blue`     | `bg-info` `text-info`       | Information, neutral alerts        |
+## Typography Hierarchy
 
----
+### Optimal Color Usage for Text Elements
 
-## ⚫ Neutral Palette
+- **Main Titles/H1**: `var(--quaternary)` - Strong presence without being harsh
+- **Section Headings/H2**: `var(--tertiary)` - Clear hierarchy, professional
+- **Subheadings/H3**: `var(--tertiary-light)` - Readable secondary hierarchy
+- **Body Text**: `var(--neutral-600)` - Optimal reading experience
+- **Secondary Text**: `var(--neutral-500)` - Supporting information
+- **Placeholder Text**: `var(--neutral-400)` - Non-intrusive hints
+- **Captions/Small Text**: `var(--neutral-500)` - Subtle but readable
 
-Professional gray scale for text, backgrounds, and UI elements.
+## Interactive Elements
 
-| Scale   | HEX       | CSS Variable    | Tailwind Class   | Usage                |
-| ------- | --------- | --------------- | ---------------- | -------------------- |
-| **50**  | `#fafafa` | `--neutral-50`  | `bg-neutral-50`  | Lightest backgrounds |
-| **100** | `#f5f5f5` | `--neutral-100` | `bg-neutral-100` | Card backgrounds     |
-| **200** | `#e5e5e5` | `--neutral-200` | `bg-neutral-200` | Borders, dividers    |
-| **300** | `#d4d4d4` | `--neutral-300` | `bg-neutral-300` | Disabled states      |
-| **400** | `#a3a3a3` | `--neutral-400` | `bg-neutral-400` | Placeholder text     |
-| **500** | `#737373` | `--neutral-500` | `bg-neutral-500` | Secondary text       |
-| **600** | `#525252` | `--neutral-600` | `bg-neutral-600` | Primary text         |
-| **700** | `#404040` | `--neutral-700` | `bg-neutral-700` | Headings             |
-| **800** | `#262626` | `--neutral-800` | `bg-neutral-800` | High contrast text   |
-| **900** | `#171717` | `--neutral-900` | `bg-neutral-900` | Maximum contrast     |
-| **950** | `#0a0a0a` | `--neutral-950` | `bg-neutral-950` | Darkest elements     |
+### Call-to-Action (CTA) Guidelines
 
----
+- **Primary CTAs**: Background `var(--primary)`, Text `var(--quaternary)`
+- **Secondary CTAs**: Background `var(--secondary)`, Text `var(--quaternary)`
+- **Tertiary CTAs**: Border `var(--tertiary)`, Text `var(--tertiary)`
+- **Hover States**: Use `-dark` variants for backgrounds
+- **Active States**: Use `-dark` variants with slight opacity
 
-## 🌈 Gradient Utilities
+### Button Color Standards
 
-Pre-built gradients using our brand colors.
+```css
+/* Primary Button */
+.btn-primary {
+  background: var(--primary);
+  color: var(--quaternary);
+  border: 1px solid var(--primary);
+}
 
-### CSS Classes Available:
+.btn-primary:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
 
-- `.bg-gradient-brand` - Primary brand gradient (blue → teal → purple)
-- `.bg-gradient-brand-subtle` - Subtle brand gradient using light colors
-- `.bg-gradient-primary` - Blue gradient
-- `.bg-gradient-secondary` - Teal gradient
-- `.bg-gradient-accent` - Purple gradient
+/* Secondary Button */
+.btn-secondary {
+  background: var(--secondary);
+  color: var(--quaternary);
+  border: 1px solid var(--secondary);
+}
 
-### Example Usage:
-
-```html
-<!-- Hero section with brand gradient -->
-<div class="bg-gradient-brand text-white">
-  <h1>Welcome to Foldly</h1>
-</div>
-
-<!-- Subtle background -->
-<div class="bg-gradient-brand-subtle">
-  <p>Subtle branded background</p>
-</div>
+/* Tertiary/Outline Button */
+.btn-tertiary {
+  background: transparent;
+  color: var(--tertiary);
+  border: 1px solid var(--tertiary);
+}
 ```
 
----
+## Status & Feedback Colors
 
-## 🎨 Usage Guidelines
+### System Status Colors
 
-### ✅ Do's
+- **Success**: `#10b981` - Confirmations, successful actions
+- **Warning**: `#f59e0b` - Cautions, important notices
+- **Error**: `#ef4444` - Errors, destructive actions
+- **Info**: `var(--primary)` - Information, neutral notifications
 
-- Use **Primary Blue** for main CTAs and links
-- Use **Secondary Teal** for success states and feature highlights
-- Use **Accent Purple** sparingly for premium features
-- Maintain sufficient contrast ratios (4.5:1 minimum)
-- Use neutral colors for text hierarchy
-- Test colors in both light and dark modes
+## Accessibility & Contrast
 
-### ❌ Don'ts
+### Contrast Guidelines
 
-- Don't use more than 3 brand colors in a single component
-- Don't use bright colors for large background areas
-- Don't mix warm and cool tones unnecessarily
-- Don't ignore accessibility contrast requirements
-- Don't create new color variations without team approval
+- **AA Compliance**: All text combinations meet WCAG AA standards (4.5:1 minimum)
+- **AAA Target**: Critical text aims for AAA compliance (7:1 ratio)
+- **Interactive Elements**: Minimum 3:1 contrast for UI components
 
----
+### High Contrast Combinations
 
-## 🌙 Dark Mode Support
+- **Maximum Readability**: `var(--quinary)` on `var(--neutral-50)`
+- **Strong Hierarchy**: `var(--quaternary)` on `var(--neutral-100)`
+- **Subtle Contrast**: `var(--tertiary)` on `var(--neutral-50)`
 
-All colors automatically adapt for dark mode using CSS variables. The system automatically adjusts:
+## Implementation Guidelines
 
-- **Brightness**: Colors become brighter in dark mode
-- **Backgrounds**: Subtle colors become darker
-- **Text**: Maintains proper contrast ratios
-- **Borders**: Adapt to dark theme contrast
+### CSS Variable Usage
 
----
+```css
+/* Use semantic variables, not hardcoded colors */
+.hero-title {
+  color: var(--quaternary); /* ✅ Correct */
+  /* color: #0F1922; ❌ Avoid hardcoding */
+}
 
-## 🚀 Implementation Examples
+.cta-button {
+  background: var(--primary);
+  color: var(--quaternary);
+}
 
-### Button Components
-
-```html
-<!-- Primary Action -->
-<button class="bg-primary-blue hover:bg-primary-blue-dark text-white">
-  Get Started
-</button>
-
-<!-- Secondary Action -->
-<button class="bg-secondary-teal hover:bg-secondary-teal-dark text-white">
-  Learn More
-</button>
-
-<!-- Ghost Button -->
-<button
-  class="border border-primary-blue text-primary-blue hover:bg-primary-blue-subtle"
->
-  Cancel
-</button>
+.cta-button:hover {
+  background: var(--primary-dark);
+}
 ```
 
-### Status Messages
+### Component-Specific Applications
 
-```html
-<!-- Success -->
-<div class="bg-success/10 border border-success/20 text-success">
-  File uploaded successfully!
-</div>
+#### Cards & Containers
 
-<!-- Error -->
-<div class="bg-error/10 border border-error/20 text-error">
-  Upload failed. Please try again.
-</div>
-```
+- **Card Backgrounds**: `var(--neutral-50)` or `var(--primary-subtle)`
+- **Card Borders**: `var(--neutral-200)` or `var(--tertiary-subtle)`
+- **Card Shadows**: `var(--shadow-brand)` for brand-colored shadows
 
-### Card Components
+#### Navigation & Layout
 
-```html
-<!-- Feature Card -->
-<div class="bg-white border border-neutral-200 rounded-xl p-6">
-  <div
-    class="w-12 h-12 bg-primary-blue-subtle rounded-lg flex items-center justify-center"
-  >
-    <svg class="w-6 h-6 text-primary-blue">...</svg>
-  </div>
-  <h3 class="text-neutral-800 font-semibold">Feature Title</h3>
-  <p class="text-neutral-600">Feature description</p>
-</div>
-```
+- **Navigation Background**: `var(--neutral-50)` or `var(--quaternary-subtle)`
+- **Navigation Text**: `var(--tertiary)` for normal, `var(--quaternary)` for active
+- **Dividers**: `var(--neutral-200)` or `var(--tertiary-subtle)`
+
+#### Forms & Inputs
+
+- **Input Backgrounds**: `var(--neutral-50)`
+- **Input Borders**: `var(--neutral-300)` normal, `var(--primary)` focus
+- **Input Text**: `var(--quaternary)`
+- **Labels**: `var(--tertiary)`
+- **Placeholders**: `var(--neutral-400)`
+
+## Dark Mode Considerations
+
+The color system includes automatic dark mode variants:
+
+- Colors automatically adjust for dark backgrounds
+- Text colors invert appropriately
+- Contrast ratios maintained across themes
+- Brand colors remain recognizable in both modes
+
+## Maintenance & Updates
+
+### Updating Colors
+
+1. Modify base color values in `src/app/globals.css`
+2. All components automatically inherit changes
+3. Test contrast ratios after updates
+4. Update this documentation
+
+### Adding New Colors
+
+1. Follow semantic naming convention
+2. Include all variants (base, dark, light, subtle)
+3. Test accessibility compliance
+4. Document usage guidelines
+
+## Tools & Resources
+
+### Development Tools
+
+- **Contrast Checker**: WebAIM Contrast Checker
+- **Color Picker**: Browser DevTools
+- **Accessibility**: axe DevTools
+
+### Design Tokens
+
+All colors are available as:
+
+- CSS Custom Properties (`var(--primary)`)
+- Tailwind Classes (`text-primary`, `bg-secondary`)
+- Design Token exports for Figma
 
 ---
 
-## 📊 Color Accessibility
-
-All colors meet WCAG 2.1 AA standards:
-
-- **Primary Blue**: 4.7:1 contrast ratio on white
-- **Secondary Teal**: 4.9:1 contrast ratio on white
-- **Accent Purple**: 4.5:1 contrast ratio on white
-- **Neutral Text**: 7.2:1+ contrast ratios
-
----
-
-## 🔄 Migration from Old Colors
-
-| Old Variable | New Variable       | Notes                |
-| ------------ | ------------------ | -------------------- |
-| `--accent-1` | `--primary-blue`   | Same functionality   |
-| `--accent-2` | `--secondary-teal` | Same functionality   |
-| `--accent-3` | `--accent-purple`  | Same functionality   |
-| `--light`    | `--neutral-50`     | More semantic naming |
-| `--light2`   | `--neutral-100`    | More semantic naming |
-| `--dark`     | `--neutral-800`    | Better contrast      |
-
-Legacy variables are maintained for compatibility but should be updated gradually.
-
----
-
-## 📱 Examples in Context
-
-Our color system creates a **warm, approachable, and trustworthy** brand experience inspired by Calendly's clean aesthetic but with a distinctly softer, more friendly pastel approach.
-
-**Key Differentiators from Calendly:**
-
-- **Pastel approach**: Much softer, more approachable colors while maintaining professionalism
-- **Warm personality**: Colors convey friendliness and accessibility
-- **Gentle sophistication**: Premium feel without being intimidating
-- **Broader appeal**: Suitable for creative agencies, consultants, and friendly businesses
-
-**Inspiration Sources:**
-Based on research from [pastel color palettes](https://stephcorrigan.com/pastel-color-palettes/) and [Color Hunt's pastel collections](https://colorhunt.co/palettes/pastel-blue), our palette achieves the perfect balance of professional trust and warm approachability.
+_Last Updated: January 2025_
+_Color System Version: 2.0 - Dark Professional Theme_

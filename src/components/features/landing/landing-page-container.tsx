@@ -69,7 +69,7 @@ export function LandingPageContainer() {
 
   return (
     <div className="landing-page">
-      <Navigation />
+      {/* <Navigation />  */}
       <HeroSection ref={heroSectionRefs} />
       <AboutSection />
       <FeaturesSection ref={featuresSectionRefs} />

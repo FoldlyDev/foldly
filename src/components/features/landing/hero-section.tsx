@@ -1,6 +1,9 @@
 "use client";
 
 import { forwardRef } from "react";
+import { Diamond } from "@/components/ui/diamond";
+import { FlipCard } from "@/components/ui/flip-card";
+import { BubbleBackground } from "@/components/ui/bubble";
 
 interface HeroSectionProps {}
 
@@ -12,60 +15,166 @@ interface HeroSectionRefs {
   heroCard3Ref: React.RefObject<HTMLDivElement | null>;
 }
 
+const heroCardData = [
+  {
+    id: "hero-card-1",
+    title: "Create",
+    number: "01",
+    features: ["Custom Links", "Brand Your Page", "Set Expiration"],
+    iconType: "settings" as const,
+  },
+  {
+    id: "hero-card-2",
+    title: "Collect",
+    number: "02",
+    features: ["Drag & Drop", "No Login Required", "Large File Support"],
+    iconType: "heart" as const,
+  },
+  {
+    id: "hero-card-3",
+    title: "Organize",
+    number: "03",
+    features: ["Auto Folders", "Smart Tagging", "Search & Filter"],
+    iconType: "archive" as const,
+  },
+];
+
 export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
   (props, ref) => {
     // Extract refs from the forwarded ref object
-    const refs = ref as React.MutableRefObject<HeroSectionRefs>;
+    const refs = ref as React.RefObject<HeroSectionRefs>;
 
     return (
-      <section className="hero" ref={refs?.current?.heroRef}>
-        <div className="hero-cards" ref={refs?.current?.heroCardsRef}>
-          <div
-            className="card"
-            id="hero-card-1"
-            ref={refs?.current?.heroCard1Ref}
-          >
-            <div className="card-title">
-              <span>Create</span>
-              <span>01</span>
+      <>
+        <BubbleBackground
+          interactive
+          className="absolute inset-0 flex items-center justify-center rounded-xl z-1"
+        />
+        <section className="hero" ref={refs?.current?.heroRef}>
+          {/* Hero Header - Groups title with its decorations */}
+          <div className="hero-header">
+            {/* Top Diamonds Row */}
+            <div className="hero-diamonds-top">
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="primary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="secondary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="tertiary"
+              />
+              <span className="hero-diamonds-text">With foldly</span>
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="tertiary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="secondary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="primary"
+              />
             </div>
-            <div className="card-title">
-              <span>01</span>
-              <span>Create</span>
+
+            {/* Main Title */}
+            <h1 className="hero-main-title">FILE COLLECTION</h1>
+
+            {/* Bottom Diamonds Row */}
+            <div className="hero-diamonds-bottom">
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="secondary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="tertiary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="primary"
+              />
+              <span className="hero-diamonds-text">MADE SIMPLE</span>
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="primary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="tertiary"
+              />
+              <Diamond
+                size={16}
+                className="text-neutral-600"
+                filled
+                variant="secondary"
+              />
             </div>
           </div>
 
-          <div
-            className="card"
-            id="hero-card-2"
-            ref={refs?.current?.heroCard2Ref}
-          >
-            <div className="card-title">
-              <span>Collect</span>
-              <span>02</span>
-            </div>
-            <div className="card-title">
-              <span>02</span>
-              <span>Collect</span>
-            </div>
+          {/* Hero Cards */}
+          <div className="hero-cards" ref={refs?.current?.heroCardsRef}>
+            {heroCardData.map((card, index) => (
+              <FlipCard
+                key={card.id}
+                id={card.id}
+                title={card.title}
+                number={card.number}
+                features={card.features}
+                iconType={card.iconType}
+                className="hero-flip-card"
+                ref={
+                  index === 0
+                    ? refs?.current?.heroCard1Ref
+                    : index === 1
+                    ? refs?.current?.heroCard2Ref
+                    : refs?.current?.heroCard3Ref
+                }
+              />
+            ))}
           </div>
 
-          <div
-            className="card"
-            id="hero-card-3"
-            ref={refs?.current?.heroCard3Ref}
-          >
-            <div className="card-title">
-              <span>Organize</span>
-              <span>03</span>
-            </div>
-            <div className="card-title">
-              <span>03</span>
-              <span>Organize</span>
-            </div>
+          {/* Hero Description */}
+          <div className="hero-description">
+            <p className="text-neutral-400 text-base font-medium leading-relaxed">
+              Create custom branded upload links for clients.
+              <br />
+              Collect files without friction - no logins required.
+              <br />
+              Organize everything automatically with smart
+              <br />
+              folders and real-time notifications.
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
+      </>
     );
   }
 );

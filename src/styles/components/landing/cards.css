@@ -12,7 +12,7 @@
   display: flex;
   justify-content: center;
   z-index: -1;
-  background-color: var(--light);
+  /* Removed background-color to allow features-section gradient to show through */
 }
 
 .cards-container {
@@ -23,6 +23,7 @@
   justify-content: center;
   align-items: center;
   gap: 4rem;
+  z-index: 50;
 }
 
 /* Animation transforms for desktop cards */
@@ -52,23 +53,34 @@
 
 /* Responsive Design */
 @media (max-width: 1000px) {
+  /* Hide desktop cards on mobile */
+  .cards {
+    display: none;
+  }
+
   .mobile-cards {
     display: block;
     height: 100%;
+    padding: 0 1rem;
   }
 
   .mobile-cards .cards-container {
     flex-direction: column;
     gap: 2rem;
-    margin: 4rem auto;
+    margin: 2rem auto;
     width: 90%;
     max-width: 400px;
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 100%;
+    z-index: 100;
   }
 
   .mobile-cards .cards-container .card {
     margin-bottom: 2rem;
+    max-width: 350px;
+    width: 100%;
   }
 
   /* Mobile-specific card styling */
@@ -78,5 +90,27 @@
 
   .mobile-cards .flip-card-back {
     transform: rotateY(0deg);
+  }
+
+  .mobile-cards .card .card-wrapper {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-cards {
+    padding: 0 0.5rem;
+  }
+
+  .mobile-cards .cards-container {
+    width: 100%;
+    max-width: 300px;
+    margin: 1rem auto;
+  }
+
+  .mobile-cards .cards-container .card {
+    max-width: 280px;
+    margin-bottom: 1.5rem;
+    width: 100%;
   }
 }

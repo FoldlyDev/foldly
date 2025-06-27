@@ -9,40 +9,50 @@
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
 
-  /* Custom Colors - Foldly Brand System (Pastel Version) */
-  --color-primary-blue: #7bb3f0;
-  --color-primary-blue-dark: #5a9de8;
-  --color-primary-blue-light: #a1c9f5;
-  --color-primary-blue-subtle: #e8f2fe;
+  /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
+  --color-primary: #c3e1f7;
+  --color-primary-dark: #9abede;
+  --color-primary-light: #e1f0fc;
+  --color-primary-subtle: #f0f8fe;
 
-  --color-secondary-teal: #7dd3d0;
-  --color-secondary-teal-dark: #5ac5c1;
-  --color-secondary-teal-light: #a0e1de;
-  --color-secondary-teal-subtle: #e8fbfa;
+  --color-secondary: #9abede;
+  --color-secondary-dark: #7ba5c7;
+  --color-secondary-light: #b8d1e8;
+  --color-secondary-subtle: #e8f3fa;
 
-  --color-accent-purple: #a5a8f5;
-  --color-accent-purple-dark: #8b8ff0;
-  --color-accent-purple-light: #c0c3f9;
-  --color-accent-purple-subtle: #f0f1fe;
+  --color-tertiary: #2d4f6b;
+  --color-tertiary-dark: #1e3a52;
+  --color-tertiary-light: #4a6b85;
+  --color-tertiary-subtle: #e6edf3;
+
+  --color-quaternary: #0f1922;
+  --color-quaternary-dark: #0a0d0f;
+  --color-quaternary-light: #1a2a35;
+  --color-quaternary-subtle: #f5f6f7;
+
+  --color-quinary: #0a0d0f;
+  --color-quinary-dark: #050607;
+  --color-quinary-light: #1a1d20;
+  --color-quinary-subtle: #f8f9f9;
 
   /* Status Colors */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-  --color-info: #3385ff;
+  --color-info: #c3e1f7;
 
-  /* Extended Neutral Palette */
+  /* Extended Neutral Palette - Professional Dark Theme */
   --color-neutral-50: #fafafa;
-  --color-neutral-100: #f5f5f5;
-  --color-neutral-200: #e5e5e5;
-  --color-neutral-300: #d4d4d4;
-  --color-neutral-400: #a3a3a3;
-  --color-neutral-500: #737373;
-  --color-neutral-600: #525252;
-  --color-neutral-700: #404040;
-  --color-neutral-800: #262626;
-  --color-neutral-900: #171717;
-  --color-neutral-950: #0a0a0a;
+  --color-neutral-100: #f4f4f5;
+  --color-neutral-200: #e4e4e7;
+  --color-neutral-300: #d4d4d8;
+  --color-neutral-400: #a1a1aa;
+  --color-neutral-500: #71717a;
+  --color-neutral-600: #52525b;
+  --color-neutral-700: #3f3f46;
+  --color-neutral-800: #27272a;
+  --color-neutral-900: #18181b;
+  --color-neutral-950: #09090b;
 
   /* Custom Spacing */
   --spacing-18: 4.5rem;
@@ -54,8 +64,8 @@
   --radius-5xl: 2.5rem;
 
   /* Custom Shadows */
-  --shadow-brand: 0 25px 50px -12px rgb(123 179 240 / 0.25);
-  --shadow-brand-lg: 0 35px 60px -12px rgb(123 179 240 / 0.4);
+  --shadow-brand: 0 25px 50px -12px rgb(195 225 247 / 0.25);
+  --shadow-brand-lg: 0 35px 60px -12px rgb(195 225 247 / 0.4);
 }
 
 /* =============================================================================
@@ -76,142 +86,150 @@
    ============================================================================= */
 
 :root {
-  /* FOLDLY BRAND COLORS - Inspired by Calendly but uniquely ours */
+  /* FOLDLY BRAND COLORS - Dark Professional Theme */
 
-  /* Primary Brand Colors - Pastel Version */
-  --primary-blue: #7bb3f0; /* Soft trust blue - main CTA */
-  --primary-blue-dark: #5a9de8; /* Hover states */
-  --primary-blue-light: #a1c9f5; /* Light interactions */
-  --primary-blue-subtle: #e8f2fe; /* Backgrounds, subtle highlights */
+  /* Primary Brand Colors - Light Blue Accent */
+  --primary: #c3e1f7; /* Light blue - CTAs, highlights, interactive elements */
+  --primary-dark: #9abede; /* Hover states, pressed buttons */
+  --primary-light: #e1f0fc; /* Light interactions, subtle highlights */
+  --primary-subtle: #f0f8fe; /* Backgrounds, very subtle highlights */
 
-  /* Secondary Brand Colors - Pastel Version */
-  --secondary-teal: #7dd3d0; /* Soft, modern accent */
-  --secondary-teal-dark: #5ac5c1; /* Hover states */
-  --secondary-teal-light: #a0e1de; /* Light interactions */
-  --secondary-teal-subtle: #e8fbfa; /* Backgrounds */
+  /* Secondary Brand Colors - Medium Blue */
+  --secondary: #9abede; /* Medium blue - secondary actions, accents */
+  --secondary-dark: #7ba5c7; /* Hover states */
+  --secondary-light: #b8d1e8; /* Light interactions */
+  --secondary-subtle: #e8f3fa; /* Backgrounds */
 
-  /* Supporting Colors - Pastel Version */
-  --accent-purple: #a5a8f5; /* Soft premium touch */
-  --accent-purple-dark: #8b8ff0; /* Hover states */
-  --accent-purple-light: #c0c3f9; /* Light interactions */
-  --accent-purple-subtle: #f0f1fe; /* Backgrounds */
+  /* Tertiary Brand Colors - Dark Blue */
+  --tertiary: #2d4f6b; /* Dark blue - text, borders, important elements */
+  --tertiary-dark: #1e3a52; /* Darker variant */
+  --tertiary-light: #4a6b85; /* Lighter variant */
+  --tertiary-subtle: #e6edf3; /* Light background */
 
-  /* Success & Status Colors - Softer Pastel Version */
-  --success-green: #6bcf94; /* Soft success states */
-  --warning-amber: #f7b955; /* Soft warning states */
-  --error-red: #f49090; /* Soft error states */
-  --info-blue: var(--primary-blue-light);
+  /* Quaternary Brand Colors - Very Dark Blue */
+  --quaternary: #0f1922; /* Very dark blue - main text, headings */
+  --quaternary-dark: #0a0d0f; /* Darkest variant */
+  --quaternary-light: #1a2a35; /* Lighter variant */
+  --quaternary-subtle: #f5f6f7; /* Light background */
 
-  /* Neutral Colors */
+  /* Quinary Brand Colors - Near Black */
+  --quinary: #0a0d0f; /* Near black - maximum contrast, backgrounds */
+  --quinary-dark: #050607; /* Darkest possible */
+  --quinary-light: #1a1d20; /* Lighter variant */
+  --quinary-subtle: #f8f9f9; /* Light background */
+
+  /* Success & Status Colors - Professional */
+  --success-green: #10b981; /* Professional success */
+  --warning-amber: #f59e0b; /* Professional warning */
+  --error-red: #ef4444; /* Professional error */
+  --info-blue: var(--primary);
+
+  /* Neutral Colors - Professional Grays */
   --neutral-50: #fafafa; /* Lightest background */
-  --neutral-100: #f5f5f5; /* Light background */
-  --neutral-200: #e5e5e5; /* Borders, dividers */
-  --neutral-300: #d4d4d4; /* Disabled states */
-  --neutral-400: #a3a3a3; /* Placeholder text */
-  --neutral-500: #737373; /* Secondary text */
-  --neutral-600: #525252; /* Primary text */
-  --neutral-700: #404040; /* Headings */
-  --neutral-800: #262626; /* High contrast text */
-  --neutral-900: #171717; /* Maximum contrast */
+  --neutral-100: #f4f4f5; /* Light background */
+  --neutral-200: #e4e4e7; /* Borders, dividers */
+  --neutral-300: #d4d4d8; /* Disabled states */
+  --neutral-400: #a1a1aa; /* Placeholder text */
+  --neutral-500: #71717a; /* Secondary text */
+  --neutral-600: #52525b; /* Body text */
+  --neutral-700: #3f3f46; /* Subheadings */
+  --neutral-800: #27272a; /* Headings */
+  --neutral-900: #18181b; /* High contrast text */
 
-  /* Legacy Colors - Updated to new system */
+  /* Legacy Colors - Updated to new semantic system */
   --light: var(--neutral-50);
   --light2: var(--neutral-100);
-  --dark: var(--neutral-800);
-  --accent-1: var(--primary-blue);
-  --accent-2: var(--secondary-teal);
-  --accent-3: var(--accent-purple);
+  --dark: var(--quaternary); /* Main dark color */
+  --accent-1: var(--primary);
+  --accent-2: var(--secondary);
+  --accent-3: var(--tertiary);
 
-  /* Shadcn/ui variables - Updated for new color system */
+  /* Shadcn/ui variables - Updated for dark professional color system */
   --background: 0 0% 100%;
-  --foreground: 0 0% 9%; /* neutral-900 equivalent */
+  --foreground: 210 29% 9%; /* quaternary equivalent */
   --card: 0 0% 100%;
-  --card-foreground: 0 0% 9%;
+  --card-foreground: 210 29% 9%;
   --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 9%;
-  --primary: 216 100% 50%; /* primary-blue */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 180 100% 39%; /* secondary-teal */
-  --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 96%; /* neutral-100 */
-  --muted-foreground: 0 0% 45%; /* neutral-500 */
-  --accent: 243 75% 59%; /* accent-purple */
+  --popover-foreground: 210 29% 9%;
+  --primary-hsl: 205 87% 87%; /* primary */
+  --primary-foreground: 210 29% 9%;
+  --secondary-hsl: 205 44% 75%; /* secondary */
+  --secondary-foreground: 210 29% 9%;
+  --muted: 220 14% 96%; /* neutral-100 */
+  --muted-foreground: 220 9% 46%; /* neutral-500 */
+  --accent-hsl: 205 29% 42%; /* tertiary */
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%; /* error-red */
   --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 90%; /* neutral-200 */
-  --input: 0 0% 90%;
-  --ring: 216 100% 50%; /* primary-blue */
-  --chart-1: var(--primary-blue);
-  --chart-2: var(--secondary-teal);
-  --chart-3: var(--accent-purple);
+  --border: 220 13% 91%; /* neutral-200 */
+  --input: 220 13% 91%;
+  --ring: 205 87% 87%; /* primary */
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--tertiary);
   --chart-4: var(--success-green);
   --chart-5: var(--warning-amber);
   --radius: 0.5rem;
 }
 
 .dark {
-  /* Dark Mode Brand Colors - Pastel Version */
-  --primary-blue: #a1c9f5; /* Brighter pastel blue for dark backgrounds */
-  --primary-blue-dark: #7bb3f0; /* Darker hover */
-  --primary-blue-light: #c2ddf8; /* Lighter interactions */
-  --primary-blue-subtle: #1a2332; /* Dark blue background */
+  /* Dark Mode Brand Colors - Inverted for dark backgrounds */
+  --primary: #9abede; /* Slightly dimmed for dark backgrounds */
+  --primary-dark: #7ba5c7; /* Darker hover */
+  --primary-light: #b8d1e8; /* Lighter interactions */
+  --primary-subtle: #1a2a35; /* Dark background */
 
-  --secondary-teal: #a0e1de; /* Brighter pastel teal */
-  --secondary-teal-dark: #7dd3d0; /* Darker hover */
-  --secondary-teal-light: #c2ebe9; /* Light interactions */
-  --secondary-teal-subtle: #1a2524; /* Dark teal background */
+  --secondary: #7ba5c7; /* Dimmed secondary */
+  --secondary-dark: #5a8caf; /* Darker hover */
+  --secondary-light: #9abede; /* Light interactions */
+  --secondary-subtle: #1e3a52; /* Dark background */
 
-  --accent-purple: #c0c3f9; /* Brighter pastel purple */
-  --accent-purple-dark: #a5a8f5; /* Darker hover */
-  --accent-purple-light: #d6d8fc; /* Light interactions */
-  --accent-purple-subtle: #201f2a; /* Dark purple background */
+  --tertiary: #4a6b85; /* Lighter tertiary for dark mode */
+  --tertiary-dark: #2d4f6b; /* Darker hover */
+  --tertiary-light: #6b8ba5; /* Light interactions */
+  --tertiary-subtle: #0f1922; /* Dark background */
+
+  --quaternary: #c3e1f7; /* Light text on dark backgrounds */
+  --quaternary-dark: #9abede; /* Darker variant */
+  --quaternary-light: #e1f0fc; /* Lighter variant */
+  --quaternary-subtle: #0a0d0f; /* Dark background */
+
+  --quinary: #e1f0fc; /* Very light text on dark backgrounds */
+  --quinary-dark: #c3e1f7; /* Darker variant */
+  --quinary-light: #f0f8fe; /* Lighter variant */
+  --quinary-subtle: #050607; /* Darkest background */
 
   /* Dark Neutrals */
-  --neutral-50: #0a0a0a; /* Darkest background */
-  --neutral-100: #171717; /* Dark background */
-  --neutral-200: #262626; /* Borders, dividers */
-  --neutral-300: #404040; /* Disabled states */
-  --neutral-400: #525252; /* Placeholder text */
-  --neutral-500: #737373; /* Secondary text */
-  --neutral-600: #a3a3a3; /* Primary text */
-  --neutral-700: #d4d4d4; /* Headings */
-  --neutral-800: #e5e5e5; /* High contrast text */
+  --neutral-50: #09090b; /* Darkest background */
+  --neutral-100: #18181b; /* Dark background */
+  --neutral-200: #27272a; /* Borders, dividers */
+  --neutral-300: #3f3f46; /* Disabled states */
+  --neutral-400: #52525b; /* Placeholder text */
+  --neutral-500: #71717a; /* Secondary text */
+  --neutral-600: #a1a1aa; /* Body text */
+  --neutral-700: #d4d4d8; /* Subheadings */
+  --neutral-800: #e4e4e7; /* Headings */
   --neutral-900: #fafafa; /* Maximum contrast */
 
   /* Legacy Colors - Updated for dark mode */
   --light: var(--neutral-100);
   --light2: var(--neutral-200);
-  --dark: var(--neutral-900);
-  --accent-1: var(--primary-blue);
-  --accent-2: var(--secondary-teal);
-  --accent-3: var(--accent-purple);
+  --dark: var(--neutral-800);
+  --accent-1: var(--primary);
+  --accent-2: var(--secondary);
+  --accent-3: var(--tertiary);
 
   /* Shadcn/ui dark mode variables */
-  --background: 0 0% 9%; /* neutral-100 equivalent */
-  --foreground: 0 0% 98%; /* neutral-900 equivalent */
-  --card: 0 0% 9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 216 100% 70%; /* brighter primary-blue */
-  --primary-foreground: 0 0% 9%;
-  --secondary: 180 100% 60%; /* brighter secondary-teal */
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 15%; /* neutral-200 equivalent */
-  --muted-foreground: 0 0% 45%; /* neutral-500 */
-  --accent: 243 75% 70%; /* brighter accent-purple */
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 15%; /* neutral-200 equivalent */
-  --input: 0 0% 15%;
-  --ring: 216 100% 70%; /* brighter primary-blue */
-  --chart-1: var(--primary-blue);
-  --chart-2: var(--secondary-teal);
-  --chart-3: var(--accent-purple);
-  --chart-4: var(--success-green);
-  --chart-5: var(--warning-amber);
+  --background: 210 29% 9%; /* quaternary equivalent */
+  --foreground: 205 87% 87%; /* primary equivalent */
+  --card: 210 29% 9%;
+  --card-foreground: 205 87% 87%;
+  --popover: 210 29% 9%;
+  --popover-foreground: 205 87% 87%;
+  --primary-hsl: 205 44% 75%; /* secondary for dark mode */
+  --primary-foreground: 210 29% 9%;
+  --secondary-hsl: 205 29% 42%; /* tertiary for dark mode */
+  --secondary-foreground: 205 87% 87%;
 }
 
 /* =============================================================================
@@ -309,18 +327,18 @@ span {
 .bg-gradient-brand {
   background: linear-gradient(
     135deg,
-    var(--primary-blue) 0%,
-    var(--secondary-teal) 50%,
-    var(--accent-purple) 100%
+    var(--primary) 0%,
+    var(--secondary) 50%,
+    var(--tertiary) 100%
   );
 }
 
 .bg-gradient-brand-subtle {
   background: linear-gradient(
     135deg,
-    var(--primary-blue-subtle) 0%,
-    var(--secondary-teal-subtle) 50%,
-    var(--accent-purple-subtle) 100%
+    var(--primary-subtle) 0%,
+    var(--secondary-subtle) 50%,
+    var(--tertiary-subtle) 100%
   );
 }
 
@@ -335,24 +353,24 @@ span {
 .bg-gradient-primary {
   background: linear-gradient(
     135deg,
-    var(--primary-blue) 0%,
-    var(--primary-blue-light) 100%
+    var(--primary) 0%,
+    var(--primary-light) 100%
   );
 }
 
 .bg-gradient-secondary {
   background: linear-gradient(
     135deg,
-    var(--secondary-teal) 0%,
-    var(--secondary-teal-light) 100%
+    var(--secondary) 0%,
+    var(--secondary-light) 100%
   );
 }
 
 .bg-gradient-accent {
   background: linear-gradient(
     135deg,
-    var(--accent-purple) 0%,
-    var(--accent-purple-light) 100%
+    var(--tertiary) 0%,
+    var(--tertiary-light) 100%
   );
 }
 
