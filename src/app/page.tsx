@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { PreloaderIntro } from "@/components/features/landing/preloader-intro";
 import { HeroSection } from "@/components/features/landing/hero-section";
 import { AboutSection } from "@/components/features/landing/about-section";
 import { FeaturesSection } from "@/components/features/landing/features-section";
@@ -18,16 +17,12 @@ export default function HomePage() {
 
   return (
     <div className="landing-page">
-      <PreloaderIntro />
-
-      <div className="main-content">
-        <Navigation />
-        <HeroSection />
-        <AboutSection />
-        <FeaturesSection />
-        <AnimatedCards />
-        <OutroSection />
-      </div>
+      <Navigation />
+      <HeroSection />
+      <AboutSection />
+      <FeaturesSection />
+      <AnimatedCards />
+      <OutroSection />
     </div>
   );
 }

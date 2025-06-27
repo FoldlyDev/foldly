@@ -15,9 +15,11 @@
   left: 50%;
   transform: translate(-50%, -50%);
   width: 35%;
+  max-width: calc(100% - 4rem);
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  overflow-x: hidden;
 }
 
 .hero-cards .card {
@@ -65,6 +67,6 @@
 /* Responsive Design */
 @media (max-width: 1000px) {
   .hero-cards {
-    width: calc(100% - 4rem);
+    display: none;
   }
 }

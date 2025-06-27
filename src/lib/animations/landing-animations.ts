@@ -2,6 +2,7 @@
 
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { CustomEase } from "gsap/CustomEase";
 import Lenis from "lenis";
 
 let isInitialized = false;
@@ -11,90 +12,18 @@ export function initLandingAnimations() {
 
   if (typeof window === "undefined") return;
 
-  gsap.registerPlugin(ScrollTrigger);
+  gsap.registerPlugin(ScrollTrigger, CustomEase);
 
+  // Custom ease
+  CustomEase.create("hop", ".8, 0, .3, 1");
+
+  // Initialize smooth scrolling
   const lenis = new Lenis();
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((time) => {
     lenis.raf(time * 1000);
   });
   gsap.ticker.lagSmoothing(0);
-
-  const tl = gsap.timeline();
-
-  const splitTextElements = (selector: string) => {
-    const elements = document.querySelectorAll(selector);
-    elements.forEach((element) => {
-      const text = element.textContent || "";
-      const chars = text.split("");
-      element.innerHTML = chars
-        .map(
-          (char, i) =>
-            `<span class="char" style="display: inline-block;">${char}</span>`
-        )
-        .join("");
-    });
-  };
-
-  splitTextElements(".intro-title h1");
-  splitTextElements(".outro-title h1");
-
-  tl.to(".preloader .intro-title .char", {
-    y: 0,
-    opacity: 1,
-    duration: 0.8,
-    stagger: 0.1,
-    ease: "power2.out",
-  })
-    .to(
-      ".preloader .outro-title .char",
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        stagger: 0.1,
-        ease: "power2.out",
-      },
-      "-=0.4"
-    )
-    .to(
-      ".tags-overlay .tag",
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.6,
-        stagger: 0.2,
-        ease: "power2.out",
-      },
-      "-=0.4"
-    )
-    .to(
-      ".preloader",
-      {
-        y: "-100%",
-        duration: 1.2,
-        ease: "power2.inOut",
-      },
-      "+=1"
-    )
-    .to(
-      ".split-overlay",
-      {
-        scaleY: 0,
-        duration: 1,
-        ease: "power2.inOut",
-      },
-      "-=0.8"
-    )
-    .to(
-      ".tags-overlay",
-      {
-        opacity: 0,
-        duration: 0.6,
-        ease: "power2.out",
-      },
-      "-=0.6"
-    );
 
   const smoothStep = (p: number) => p * p * (3 - 2 * p);
 
