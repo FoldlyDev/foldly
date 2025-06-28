@@ -19,7 +19,7 @@
     /* Secondary with 40% opacity */ rgba(45, 79, 107, 0.5) 100%
       /* Tertiary with 50% opacity */
   );
-  z-index: 1;
+  z-index: 5;
   overflow: hidden;
 }
 
@@ -74,16 +74,35 @@
 
 /* Hero Description */
 .hero-description {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
   align-self: flex-start;
-  max-width: 400px;
   margin-left: 2rem;
+  width: 100%;
 }
 
-.hero-description p {
-  color: var(--neutral-600); /* Optimal body text color */
-  font-size: 1.125rem; /* Slightly bigger - from 1rem to 1.125rem */
+.hero-description-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: flex-start;
+  max-width: 500px;
+}
+
+.hero-description-text {
+  color: var(--neutral-600);
+  font-size: 1.125rem;
   line-height: 1.6;
-  font-weight: 500; /* More bold - from 400 to 500 */
+  font-weight: 500;
+  text-align: left;
+  max-width: 400px;
+}
+
+.hero-cta-button {
+  cursor: pointer;
+  font-weight: 600;
+  align-self: flex-start;
 }
 
 /* Flip Cards in Hero */
@@ -197,9 +216,9 @@
 /* Responsive Design */
 @media (max-width: 1000px) {
   .hero {
-    padding: 1rem;
+    padding: 1.5rem 1rem;
     justify-content: space-evenly;
-    gap: 0;
+    gap: 1.5rem;
     min-height: 100vh;
     height: auto;
     margin: auto 0;
@@ -208,6 +227,7 @@
   .hero-header {
     gap: 1rem;
     margin-top: 0;
+    margin-bottom: 0.5rem;
   }
 
   .hero-main-title {
@@ -219,7 +239,7 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 1rem;
-    margin: 0;
+    margin: 1rem 0 1.5rem 0;
     width: 100%;
     max-width: 100%;
   }
@@ -248,10 +268,26 @@
 
   .hero-description {
     align-self: center;
+    justify-content: center;
     margin-left: 0;
+    padding: 0 1rem;
+    margin-top: 1rem;
+  }
+
+  .hero-description-content {
+    align-items: center;
     text-align: center;
     max-width: 100%;
-    padding: 0 1rem;
+  }
+
+  .hero-description-text {
+    text-align: center;
+    max-width: 100%;
+    font-size: 1rem;
+  }
+
+  .hero-cta-button {
+    align-self: center;
   }
 
   .hero-diamonds-text {
@@ -259,21 +295,64 @@
   }
 }
 
+/* Tablet Portrait */
+@media (max-width: 768px) {
+  .hero {
+    gap: 2rem;
+    justify-content: space-evenly;
+  }
+
+  .hero-header {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .hero-cards {
+    margin: 1.5rem 0;
+  }
+
+  .hero-description {
+    align-self: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-top: 1rem;
+  }
+
+  .hero-description-content {
+    align-items: center;
+    text-align: center;
+    max-width: 100%;
+    gap: 1.5rem;
+  }
+
+  .hero-description-text {
+    text-align: center;
+    max-width: 100%;
+    font-size: 1.05rem;
+  }
+
+  .hero-cta-button {
+    align-self: center;
+  }
+}
+
 @media (max-width: 480px) {
   .hero {
-    padding: 0.5rem;
-    gap: 0;
+    padding: 1rem 0.5rem;
+    gap: 1.5rem;
     margin: auto 0;
     justify-content: space-evenly;
   }
 
   .hero-header {
-    margin-top: 0;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
     gap: 0.75rem;
   }
 
   .hero-main-title {
     font-size: clamp(1.75rem, 12vw, 3rem);
+    margin: 0.5rem 0;
   }
 
   .hero-diamonds-top,
@@ -289,7 +368,7 @@
 
   .hero-cards {
     gap: 0.75rem;
-    margin: 0;
+    margin: 1.5rem 0 2rem 0;
   }
 
   .hero-flip-card {
@@ -315,10 +394,26 @@
 
   .hero-description {
     padding: 0 0.5rem;
+    margin-top: 1.5rem;
   }
 
-  .hero-description p {
-    font-size: 1rem;
+  .hero-description-content {
+    gap: 1.5rem;
+    align-items: center;
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .hero-description-text {
+    font-size: 0.95rem;
     line-height: 1.5;
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .hero-cta-button {
+    align-self: center;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
   }
 }

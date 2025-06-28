@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* =============================================================================
    TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
@@ -6,8 +6,8 @@
 
 @theme {
   /* Font Families */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
   --color-primary: #c3e1f7;
@@ -72,14 +72,14 @@
    COMPONENT STYLES IMPORTS
    ============================================================================= */
 
-@import "../styles/components/layout/navigation.css";
-@import "../styles/components/landing/hero-section.css";
-@import "../styles/components/landing/about-section.css";
-@import "../styles/components/landing/features-section.css";
-@import "../styles/components/landing/outro-section.css";
-@import "../styles/components/landing/cards.css";
-@import "../styles/components/landing/sections.css";
-@import "../styles/components/ui/flip-card.css";
+@import '../styles/components/layout/navigation.css';
+@import '../styles/components/landing/hero-section.css';
+@import '../styles/components/landing/about-section.css';
+@import '../styles/components/landing/features-section.css';
+@import '../styles/components/landing/outro-section.css';
+@import '../styles/components/landing/cards.css';
+@import '../styles/components/landing/sections.css';
+@import '../styles/components/ui/flip-card.css';
 
 /* =============================================================================
    CSS VARIABLES
@@ -247,8 +247,14 @@
   body {
     background: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
       sans-serif;
     overflow-x: hidden;
     max-width: 100%;
