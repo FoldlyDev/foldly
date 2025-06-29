@@ -5,6 +5,7 @@ import { Diamond } from '@/components/ui/diamond';
 import { FlipCard } from '@/components/ui/flip-card';
 import { BubbleBackground } from '@/components/ui/bubble';
 import { GradientButton } from '@/components/ui/gradient-button';
+import { SignUpButton } from '@clerk/nextjs';
 
 interface HeroSectionProps {}
 
@@ -16,6 +17,42 @@ interface HeroSectionRefs {
   heroCard3Ref: React.RefObject<HTMLDivElement | null>;
 }
 
+// Diamond row configuration
+interface DiamondRowConfig {
+  variants: Array<'primary' | 'secondary' | 'tertiary'>;
+  text: string;
+  className: string;
+}
+
+// Diamond row data configuration
+const diamondRowsConfig: DiamondRowConfig[] = [
+  {
+    variants: [
+      'primary',
+      'secondary',
+      'tertiary',
+      'tertiary',
+      'secondary',
+      'primary',
+    ],
+    text: 'With foldly',
+    className: 'hero-diamonds-top',
+  },
+  {
+    variants: [
+      'secondary',
+      'tertiary',
+      'primary',
+      'primary',
+      'tertiary',
+      'secondary',
+    ],
+    text: 'MADE SIMPLE',
+    className: 'hero-diamonds-bottom',
+  },
+];
+
+// Hero cards configuration
 const heroCardData = [
   {
     id: 'hero-card-1',
@@ -40,6 +77,48 @@ const heroCardData = [
   },
 ];
 
+// Reusable DiamondRow component
+interface DiamondRowProps {
+  variants: Array<'primary' | 'secondary' | 'tertiary'>;
+  text: string;
+  className: string;
+}
+
+const DiamondRow: React.FC<DiamondRowProps> = ({
+  variants,
+  text,
+  className,
+}) => {
+  // Split variants array to place text in the middle
+  const midpoint = Math.floor(variants.length / 2);
+  const leftVariants = variants.slice(0, midpoint);
+  const rightVariants = variants.slice(midpoint);
+
+  return (
+    <div className={className}>
+      {leftVariants.map((variant, index) => (
+        <Diamond
+          key={`left-${index}`}
+          size={16}
+          className='text-neutral-600'
+          filled
+          variant={variant}
+        />
+      ))}
+      <span className='hero-diamonds-text'>{text}</span>
+      {rightVariants.map((variant, index) => (
+        <Diamond
+          key={`right-${index}`}
+          size={16}
+          className='text-neutral-600'
+          filled
+          variant={variant}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
   (props, ref) => {
     // Extract refs from the forwarded ref object
@@ -54,90 +133,13 @@ export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
         <section className='hero' ref={refs?.current?.heroRef}>
           {/* Hero Header - Groups title with its decorations */}
           <div className='hero-header'>
-            {/* Top Diamonds Row */}
-            <div className='hero-diamonds-top'>
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='primary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='secondary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='tertiary'
-              />
-              <span className='hero-diamonds-text'>With foldly</span>
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='tertiary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='secondary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='primary'
-              />
-            </div>
+            {/* Dynamic Diamond Rows */}
+            <DiamondRow {...diamondRowsConfig[0]} />
 
             {/* Main Title */}
             <h1 className='hero-main-title'>FILE COLLECTION</h1>
 
-            {/* Bottom Diamonds Row */}
-            <div className='hero-diamonds-bottom'>
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='secondary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='tertiary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='primary'
-              />
-              <span className='hero-diamonds-text'>MADE SIMPLE</span>
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='primary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='tertiary'
-              />
-              <Diamond
-                size={16}
-                className='text-neutral-600'
-                filled
-                variant='secondary'
-              />
-            </div>
+            <DiamondRow {...diamondRowsConfig[1]} />
           </div>
 
           {/* Hero Cards */}
@@ -170,13 +172,15 @@ export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
                 without friction - no logins required. Organize everything
                 automatically with smart folders and real-time notifications.
               </p>
-              <GradientButton
-                className='hero-cta-button'
-                variant='primary'
-                size='lg'
-              >
-                Get Started Now
-              </GradientButton>
+              <SignUpButton>
+                <GradientButton
+                  className='hero-cta-button'
+                  variant='primary'
+                  size='lg'
+                >
+                  Get Started Now
+                </GradientButton>
+              </SignUpButton>
             </div>
           </div>
         </section>

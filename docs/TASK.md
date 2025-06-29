@@ -149,20 +149,40 @@
   - ✅ Environment variable configuration (publishable key, secret key, webhook secret)
   - ✅ TypeScript integration with proper type safety
 
-### **Task 10: Advanced Database Setup**
+### **Task 10: Supabase Database & Storage Setup**
 
 - **Status**: NOT STARTED
-- **Priority**: MEDIUM
-- **Estimated Time**: 2-3 days
-- **Description**: Extend database with application-specific schemas
+- **Priority**: HIGH
+- **Estimated Time**: 3-4 days
+- **Description**: Set up Supabase with Clerk integration and Row Level Security
 - **Deliverables**:
-  - [ ] Upload links schema (custom URLs, expiration, settings)
-  - [ ] Files metadata schema (upload tracking, organization)
+  - [ ] Supabase project creation and configuration
+  - [ ] Clerk JWT authentication integration with Supabase
+  - [ ] Row Level Security (RLS) policies for all tables
+  - [ ] Upload links schema with RLS (custom URLs, expiration, settings)
+  - [ ] Files metadata schema with RLS (upload tracking, organization)
   - [ ] User preferences and settings schema
-  - [ ] Database migrations for production deployment
-  - [ ] Database seeding for development and testing
+  - [ ] Supabase Storage bucket configuration for file uploads
+  - [ ] Database migrations and seeding for development
+  - [ ] Real-time subscriptions setup for live updates
 
-### **Task 11: Testing Infrastructure Enhancement**
+### **Task 11: File Upload System with Supabase Storage**
+
+- **Status**: NOT STARTED
+- **Priority**: HIGH
+- **Estimated Time**: 4-5 days
+- **Description**: Implement secure file upload system with Supabase Storage
+- **Deliverables**:
+  - [ ] Supabase Storage integration for file uploads
+  - [ ] File upload component with progress tracking
+  - [ ] File type validation and security scanning
+  - [ ] Presigned URL generation for secure file access
+  - [ ] File metadata extraction and database storage
+  - [ ] Real-time upload progress with Supabase subscriptions
+  - [ ] File organization and folder structure automation
+  - [ ] CDN optimization for global file delivery
+
+### **Task 12: Testing Infrastructure Enhancement**
 
 - **Status**: NOT STARTED
 - **Priority**: MEDIUM
@@ -170,27 +190,15 @@
 - **Description**: Enhance testing framework with E2E and integration tests
 - **Deliverables**:
   - [ ] Playwright E2E testing configuration
-  - [ ] Integration tests for API routes
+  - [ ] Integration tests for API routes and Supabase operations
   - [ ] Component integration tests
   - [ ] Test utilities and helpers for database operations
   - [ ] CI/CD integration with testing pipelines
+  - [ ] Authentication testing with Clerk + Supabase
 
 ---
 
 ## 📋 Upcoming Tasks - Core Features
-
-### **Task 12: File Upload System**
-
-- **Status**: NOT STARTED
-- **Priority**: HIGH
-- **Estimated Time**: 4-5 days
-- **Description**: Implement secure file upload with UploadThing
-- **Deliverables**:
-  - [ ] UploadThing configuration and setup
-  - [ ] File upload component with progress tracking
-  - [ ] File type validation and security scanning
-  - [ ] AWS S3 integration for storage
-  - [ ] File metadata extraction and storage
 
 ### **Task 13: Custom Upload Links**
 

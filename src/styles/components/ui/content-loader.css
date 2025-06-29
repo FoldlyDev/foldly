@@ -1,0 +1,177 @@
+/* =============================================================================
+   CONTENT LOADER COMPONENT STYLES
+   ============================================================================= */
+
+/* Loader Container */
+.content-loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+/* Base Loader Styles */
+.content-loader {
+  margin: auto;
+  position: relative;
+}
+
+/* Loader Sizes */
+.content-loader-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.content-loader-md {
+  width: 48px;
+  height: 48px;
+}
+
+.content-loader-lg {
+  width: 64px;
+  height: 64px;
+}
+
+/* Shadow Animation - Using Brand Colors */
+.content-loader:before {
+  content: '';
+  position: absolute;
+  left: 0;
+  border-radius: 50%;
+  background: rgba(195, 225, 247, 0.3); /* Primary color with opacity */
+  animation: shadow324 0.5s linear infinite;
+}
+
+/* Small size shadow */
+.content-loader-sm:before {
+  width: 32px;
+  height: 4px;
+  top: 40px;
+}
+
+/* Medium size shadow */
+.content-loader-md:before {
+  width: 48px;
+  height: 5px;
+  top: 60px;
+}
+
+/* Large size shadow */
+.content-loader-lg:before {
+  width: 64px;
+  height: 6px;
+  top: 80px;
+}
+
+/* Bouncing Cube - Using Brand Colors */
+.content-loader:after {
+  content: '';
+  width: 100%;
+  height: 100%;
+  background: var(--primary); /* Using brand primary color */
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 4px;
+  animation: jump7456 0.5s linear infinite;
+}
+
+/* Jump Animation */
+@keyframes jump7456 {
+  15% {
+    border-bottom-right-radius: 3px;
+  }
+
+  25% {
+    transform: translateY(9px) rotate(22.5deg);
+  }
+
+  50% {
+    transform: translateY(18px) scale(1, 0.9) rotate(45deg);
+    border-bottom-right-radius: 40px;
+  }
+
+  75% {
+    transform: translateY(9px) rotate(67.5deg);
+  }
+
+  100% {
+    transform: translateY(0) rotate(90deg);
+  }
+}
+
+/* Shadow Animation */
+@keyframes shadow324 {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+
+  50% {
+    transform: scale(1.2, 1);
+  }
+}
+
+/* Variants for Different Brand Colors */
+.content-loader.primary:after {
+  background: var(--primary);
+}
+
+.content-loader.secondary:after {
+  background: var(--secondary);
+}
+
+.content-loader.tertiary:after {
+  background: var(--tertiary);
+}
+
+/* Loading Text Variants */
+.content-loader-with-text {
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.content-loader-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--neutral-600);
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .content-loader-lg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .content-loader-lg:before {
+    width: 48px;
+    height: 5px;
+    top: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-loader-md {
+    width: 40px;
+    height: 40px;
+  }
+
+  .content-loader-md:before {
+    width: 40px;
+    height: 4px;
+    top: 50px;
+  }
+
+  .content-loader-lg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .content-loader-lg:before {
+    width: 40px;
+    height: 4px;
+    top: 50px;
+  }
+}

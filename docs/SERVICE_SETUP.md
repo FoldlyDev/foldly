@@ -9,13 +9,13 @@
 Essential services needed to start development:
 
 1. **Vercel** (Hosting & Deployment)
-2. **Neon** (PostgreSQL Database)
+2. **Supabase** (PostgreSQL Database + File Storage)
 3. **Clerk** (Authentication)
 4. **GitHub** (Code Repository - if not already available)
 
 ### **Phase 2: Pre-Launch Setup (Week 2-3)**
 
-Services needed before going live: 5. **AWS** (File Storage) 6. **Stripe** (Payment Processing) 7. **Resend** (Email Service)
+Services needed before going live: 5. **Stripe** (Payment Processing) 6. **Resend** (Email Service)
 
 ### **Phase 3: Production Setup (Week 4-6)**
 
@@ -49,27 +49,31 @@ Services for production optimization: 8. **Cloudflare** (DNS & Security) 9. **Se
 
 ---
 
-### **2. Neon - PostgreSQL Database**
+### **2. Supabase - Database & Storage Platform**
 
-**Purpose**: Serverless PostgreSQL database with auto-scaling
+**Purpose**: PostgreSQL database with integrated file storage, real-time capabilities, and Row Level Security
 
 #### **Setup Steps:**
 
-1. Go to [neon.tech](https://neon.tech)
+1. Go to [supabase.com](https://supabase.com)
 2. Sign up with GitHub account
-3. **Plan**: Start with **Free tier**, upgrade to **Scale ($20/month)** when needed
-4. Create initial database project named "foldly-prod"
+3. **Plan**: Start with **Free tier**, upgrade to **Pro ($25/month)** when needed
+4. Create new project named "foldly-prod"
+5. Enable Row Level Security (RLS) on all tables
+6. Configure Clerk integration for JWT verification
 
 #### **What Developer Needs:**
 
+- Supabase project URL
+- Anonymous (public) API key
+- Service role (private) API key
 - Database connection string
-- Access to Neon dashboard
-- Ability to create database branches for development
+- Access to Supabase dashboard
 
 #### **Monthly Cost:**
 
-- **Development**: $0 (Free tier - 512MB storage)
-- **Production**: $20/month (Scale plan - 10GB storage)
+- **Development**: $0 (Free tier - 500MB database, 1GB storage)
+- **Production**: $25/month (Pro plan - 8GB database, 100GB storage)
 
 ---
 
@@ -98,36 +102,7 @@ Services for production optimization: 8. **Cloudflare** (DNS & Security) 9. **Se
 
 ---
 
-### **4. AWS - File Storage & CDN**
-
-**Purpose**: S3 for file storage, CloudFront for global file delivery
-
-#### **Setup Steps:**
-
-1. Go to [aws.amazon.com](https://aws.amazon.com)
-2. Create AWS account (requires credit card)
-3. **Services to enable**:
-   - **S3** (Simple Storage Service)
-   - **CloudFront** (Content Delivery Network)
-   - **IAM** (Identity and Access Management)
-4. Create S3 bucket named "foldly-uploads-prod"
-5. Set up CloudFront distribution for the S3 bucket
-
-#### **What Developer Needs:**
-
-- AWS Access Key ID
-- AWS Secret Access Key
-- S3 bucket name
-- CloudFront distribution URL
-
-#### **Monthly Cost:**
-
-- **Development**: $5-10/month (minimal usage)
-- **Production**: $20-50/month (100GB-1TB storage + bandwidth)
-
----
-
-### **5. Stripe - Payment Processing**
+### **4. Stripe - Payment Processing**
 
 **Purpose**: Handle subscription payments and billing
 
@@ -153,7 +128,7 @@ Services for production optimization: 8. **Cloudflare** (DNS & Security) 9. **Se
 
 ---
 
-### **6. Resend - Email Service**
+### **5. Resend - Email Service**
 
 **Purpose**: Transactional emails (notifications, confirmations, etc.)
 
@@ -177,7 +152,7 @@ Services for production optimization: 8. **Cloudflare** (DNS & Security) 9. **Se
 
 ---
 
-### **7. Cloudflare - DNS & Security (Optional but Recommended)**
+### **6. Cloudflare - DNS & Security (Optional but Recommended)**
 
 **Purpose**: DNS management, DDoS protection, performance optimization
 

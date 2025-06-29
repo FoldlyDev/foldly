@@ -2,175 +2,115 @@
 
 ## 🏗️ System Architecture Overview
 
-**Foldly** is built as a modern, serverless **full-stack Next.js application** optimized for cost efficiency and scalability using 2025's best practices.
+**Foldly** is built as a modern, serverless **full-stack Next.js application** optimized for enterprise security and scalability using 2025's best practices with **Clerk + Supabase integration**.
 
-> **Architecture Type**: **Full-stack Next.js application** - frontend and backend are integrated in a single codebase and deployment
+> **Architecture Type**: **Full-stack Next.js application with hybrid authentication** - Clerk handles user management, Supabase provides data layer with Row Level Security
 
-## 🎯 **Architecture Decision: Modular Monolith vs Microservices**
+## 🎯 **Architecture Decision: Clerk + Supabase Hybrid Approach**
 
-### **Why We Chose a Next.js Full-Stack Application**
+### **Why We Chose Clerk + Supabase Integration**
 
-**Our approach is a "Modular Monolith" - not a traditional monolith.** This decision is based on industry best practices for SaaS startups in 2025 and follows the successful patterns used by companies like Vercel, Linear, and Notion.
+Based on industry security requirements and our [analysis of enterprise authentication patterns](https://clerk.com/docs/integrations/databases/supabase), we selected a **hybrid approach** that provides maximum security and control.
 
-#### **Modular Monolith Characteristics:**
+#### **Hybrid Authentication Architecture:**
 
 ```typescript
-// Clean separation of concerns within single codebase
-src/
-├── app/              # Next.js App Router (routing + pages)
-├── components/       # UI components (presentation layer)
-├── lib/             # Shared utilities and configurations
-├── server/          # Business logic and API layer
-│   ├── auth/        # Authentication domain
-│   ├── files/       # File management domain
-│   ├── billing/     # Payment processing domain
-│   └── uploads/     # Upload link management domain
-└── types/           # Shared TypeScript definitions
+// Multi-layer security approach
+Frontend (Next.js)
+├── Clerk Provider (User management)
+├── Supabase Client (Data access)
+└── JWT Verification (Automatic)
+
+Backend Services
+├── Clerk Authentication (User management)
+├── Supabase Database (Row Level Security)
+├── Supabase Storage (File security)
+└── Real-time (Socket.io + Supabase subscriptions)
 ```
 
-#### **External Service Integration (Not Building Everything)**
+#### **Security Benefits of This Approach:**
 
-- **Authentication**: Clerk (specialized auth service)
-- **Database**: Neon PostgreSQL (managed database)
-- **File Storage**: AWS S3 + CloudFront (cloud storage)
-- **Payments**: Stripe (payment processing)
-- **Email**: Resend (transactional email service)
-- **Monitoring**: Sentry (error tracking)
+**1. Authentication Separation**
 
-### **Industry Validation: The Return to Intelligent Monoliths**
+- **Clerk**: Handles user authentication, session management, RBAC
+- **Supabase**: Handles data access control via Row Level Security
+- **No single point of failure**: Auth and data systems are independent
 
-As noted in recent industry analysis, _"NextJS represents a compelling evolution of the monolithic paradigm, adapting it to meet the needs of today's developers and users"_ ([source](https://medium.com/@jonbasanti/nextjs-the-monolith-we-now-love-45b9b1266acf)). Modern full-stack frameworks like Next.js address the historical limitations of monoliths while preserving their benefits.
+**2. Enterprise-Grade Security**
 
-#### **Why This Approach is Professional in 2025:**
+- **JWT Verification**: Supabase automatically verifies Clerk JWTs via JWKS endpoint
+- **Row Level Security**: Database-level protection for multi-tenant data
+- **Audit Trails**: Complete logging across both systems
+- **Zero Trust**: Every request verified at multiple layers
 
-**1. Martin Fowler's "Monolith First" Principle**
+**3. Developer Control**
 
-- Start with a well-structured monolith
-- Extract services only when complexity justifies it
-- Avoid premature optimization of architecture
+- **No vendor lock-in**: Open source Supabase can be self-hosted
+- **API flexibility**: Direct database access with security guarantees
+- **Real-time capabilities**: Built-in subscriptions and WebSocket support
 
-**2. Successful Company Examples**
+### **Integration Pattern: JWT + RLS**
 
-- **Netflix**: Started as monolith, migrated to microservices only after massive scale
-- **Atlassian**: Migrated from monolith to 1300+ microservices over years, not immediately
-- **Linear**: Remains largely monolithic despite being a successful B2B SaaS
-- **Vercel**: Uses Next.js for their own platform
+Based on [Clerk's official Supabase integration guide](https://dev.to/clerk/clerk-integrates-with-a-nextjs-application-using-supabase-1k5p):
 
-**3. Cost and Operational Efficiency**
+```typescript
+// Client-side data access with automatic auth
+const { data, error } = await supabase
+  .from('upload_links')
+  .select('*')
+  .order('created_at', { ascending: false })
 
-- Single deployment pipeline
-- Reduced operational complexity
-- Lower infrastructure costs
-- Faster development cycles
-
-### **When Microservices Make Sense (Not Applicable to Foldly Yet)**
-
-Based on Atlassian's migration experience, microservices are beneficial when:
-
-❌ **Large Teams**: 50+ developers working on the same codebase
-❌ **Different Scaling Requirements**: Some services need 10x more resources than others
-❌ **Organizational Boundaries**: Multiple teams owning different business domains
-❌ **Technology Diversity**: Need for different languages/frameworks per service
-❌ **Complex Domain**: Multiple distinct business areas (e-commerce: inventory + shipping + payments + recommendations)
-
-✅ **Foldly's Current Reality**:
-
-- **Small team**: 1-2 developers
-- **Focused domain**: File collection and organization
-- **Uniform scaling**: All features scale together
-- **Single team**: No organizational boundaries to maintain
-- **Simple domain**: Upload → organize → share workflow
-
-### **Evolution Path: How We Can Scale**
-
-Our architecture supports natural evolution without requiring a complete rewrite:
-
-#### **Phase 1: Modular Monolith** (Current)
-
-```
-Next.js Application
-├── Frontend (React components)
-├── API Layer (tRPC + Next.js API routes)
-├── Business Logic (TypeScript modules)
-└── External Services (Clerk, Neon, S3, Stripe)
+// Supabase RLS policy automatically applies user context
+CREATE POLICY "Users can view their own upload links"
+  ON public.upload_links
+  FOR SELECT
+  USING (auth.jwt()->>'sub' = user_id);
 ```
 
-#### **Phase 2: Service Extraction** (If needed at scale)
+### **Why This Approach is Enterprise-Ready**
 
-```
-Next.js BFF (Backend-for-Frontend)
-├── Frontend (React components)
-├── API Gateway (tRPC orchestration)
-└── External Services
-    ├── Auth Service (Clerk)
-    ├── File Processing Service (extracted)
-    ├── Notification Service (extracted)
-    └── Core Database (Neon)
-```
+**1. Security Best Practices**
 
-#### **Phase 3: Microservices** (Only if necessary)
+- **Multi-layer authentication**: Defense in depth
+- **Principle of least privilege**: RLS ensures users only access their data
+- **Audit compliance**: Complete request tracking and logging
 
-```
-Multiple Services with API Gateway
-├── Next.js Frontend + BFF
-├── User Management Service
-├── File Processing Service
-├── Billing Service
-└── Notification Service
-```
+**2. Scalability Advantages**
 
-### **Performance and Scalability Considerations**
+- **Serverless architecture**: Auto-scaling database and auth
+- **Global distribution**: Clerk + Supabase both offer global infrastructure
+- **Real-time capabilities**: Live updates without custom WebSocket management
 
-#### **Horizontal Scaling with Vercel**
+**3. Operational Benefits**
 
-- **Edge Functions**: Automatic global distribution
-- **Serverless Architecture**: Pay-per-request scaling
-- **CDN Integration**: Static assets served globally
-- **Database Scaling**: Neon's serverless PostgreSQL auto-scales
+- **Unified monitoring**: Single dashboard for auth and data metrics
+- **Cost optimization**: Pay-per-use model for both services
+- **Developer productivity**: Type-safe APIs with automatic code generation
 
-#### **Vertical Scaling Capabilities**
+### **Enterprise Security Requirements Compliance**
 
-- **Code Splitting**: Next.js automatic bundle optimization
-- **Database Optimization**: Connection pooling, query optimization
-- **Caching Strategy**: Multiple layers (CDN, API, database)
-- **Performance Monitoring**: Real-time metrics and alerting
+Based on your employer's security requirements:
 
-### **Risk Mitigation**
+#### **Developer Access Control**
 
-#### **Avoiding Monolith Pitfalls**
+- **Company-owned accounts**: All Clerk and Supabase accounts owned by employer
+- **Role-based access**: Developers have limited permissions, no billing access
+- **Audit logging**: All developer actions logged and monitored
+- **Secure credential sharing**: Environment variables only, no hard-coded secrets
 
-- **Modular Code Organization**: Clear domain boundaries
-- **Type Safety**: End-to-end TypeScript prevents integration issues
-- **Automated Testing**: Unit, integration, and E2E test coverage
-- **Code Quality Gates**: ESLint, Prettier, pre-commit hooks
-- **Regular Refactoring**: Continuous code quality improvement
+#### **File Security**
 
-#### **Migration Safety Net**
+- **Encrypted storage**: Files encrypted at rest in Supabase Storage
+- **Secure access**: Presigned URLs with time-based expiration
+- **Virus scanning**: Automatic malware detection on upload
+- **Access logging**: Complete audit trail for all file operations
 
-- **tRPC API Design**: Clean API boundaries make extraction easier
-- **Domain-Driven Structure**: Business logic organized by domain
-- **External Services**: Already using microservices for specialized functions
-- **Monitoring**: Comprehensive observability for performance insights
+#### **Data Protection**
 
-### **Conclusion: Right-Sized Architecture**
-
-Our Next.js full-stack approach represents **right-sized architecture** for Foldly:
-
-✅ **Optimized for current team size and business stage**
-✅ **Follows industry best practices and successful patterns**
-✅ **Provides clear evolution path as we scale**
-✅ **Maximizes development velocity and cost efficiency**
-✅ **Maintains professional code quality and operational standards**
-
-This approach aligns with the modern understanding that _"microservices are a solution to organizational complexity, not technical complexity."_ For Foldly's focused domain and team structure, our modular monolith approach is not just appropriate—it's optimal.
-
-### Architecture Principles
-
-- **Serverless-first**: Minimize operational overhead and costs
-- **Type-safe**: End-to-end TypeScript for reduced runtime errors
-- **Performance-focused**: Sub-3-second load times globally
-- **Security-by-design**: Zero-trust security model
-- **Cost-optimized**: Pay-per-use model with automatic scaling
+- **GDPR compliance**: Built-in data export and deletion capabilities
+- **SOC 2 preparation**: Comprehensive security controls and monitoring
+- **Row Level Security**: Database-level multi-tenancy protection
+- **Encryption in transit**: TLS 1.3 for all communications
 
 ## 🔧 Technical Stack
 
@@ -182,276 +122,276 @@ This approach aligns with the modern understanding that _"microservices are a so
 - **Language**: TypeScript 5+
 - **Styling**: TailwindCSS 4.0 + Shadcn/ui
 - **State**: Zustand + React Query
-- **Forms**: React Hook Form + Zod
+- **Auth Client**: Clerk React components
+- **Data Client**: Supabase JavaScript client
+- **Real-time**: Socket.io client + Supabase subscriptions
+- **Forms**: React Hook Form + Zod validation
 - **Animations**: Framer Motion
 
-#### Backend (Next.js API Routes + tRPC)
+#### Backend (Next.js API Routes + Supabase)
 
 - **API**: tRPC (type-safe) + Next.js API Routes
-- **Database**: PostgreSQL via Neon (serverless)
-- **ORM**: Drizzle (lightweight, type-safe)
-- **Auth**: Clerk (modern, cost-effective)
-- **Storage**: AWS S3 + CloudFront CDN
-- **Email**: Resend (developer-friendly)
+- **Authentication**: Clerk (user management, RBAC)
+- **Database**: Supabase PostgreSQL (with RLS)
+- **Storage**: Supabase Storage (with CDN)
+- **Real-time**: Supabase Realtime + Socket.io
+- **ORM**: Drizzle ORM (type-safe database access)
+- **Email**: Resend (transactional emails)
+- **Payments**: Stripe (subscription management)
 
 ### Infrastructure
 
 - **Hosting**: Vercel (Next.js optimized)
-- **Database**: Neon PostgreSQL (serverless)
-- **Monitoring**: Sentry + Vercel Analytics
-- **Payments**: Stripe (industry standard)
+- **Backend Services**: Supabase (database, storage, real-time)
+- **Authentication**: Clerk (user management, RBAC)
+- **Monitoring**: Sentry + Supabase Dashboard
+- **CDN**: Supabase CDN (global file delivery)
+- **DNS**: Cloudflare (security + performance)
 
-## 🗄️ Database Schema
+## 🔒 Enterprise Security Architecture
+
+### Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant NextJS
+    participant Clerk
+    participant Supabase
+
+    User->>NextJS: Login request
+    NextJS->>Clerk: Authenticate user
+    Clerk-->>NextJS: JWT token
+    NextJS->>Supabase: Query with JWT
+    Supabase->>Clerk: Verify JWT (JWKS)
+    Clerk-->>Supabase: JWT valid
+    Supabase-->>NextJS: Data (RLS applied)
+    NextJS-->>User: Response
+```
+
+### File Upload Security
+
+```mermaid
+flowchart TD
+    A[User uploads file] --> B[Virus scan]
+    B --> C{Scan result}
+    C -->|Safe| D[Store in Supabase Storage]
+    C -->|Malware| E[Reject upload]
+    D --> F[Generate presigned URL]
+    F --> G[Apply RLS policy]
+    G --> H[Log access]
+    H --> I[Return secure URL]
+```
+
+### Data Protection Layers
+
+1. **Network Layer**: TLS 1.3 encryption, CORS protection
+2. **Authentication Layer**: Clerk JWT verification
+3. **Authorization Layer**: Supabase Row Level Security
+4. **Data Layer**: AES-256 encryption at rest
+5. **Audit Layer**: Complete access logging
+
+## 📊 Database Schema & Security
+
+### Core Tables with RLS
 
 ```sql
--- Core user management
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  clerk_id VARCHAR(255) UNIQUE NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  name VARCHAR(255),
-  subscription_tier VARCHAR(50) DEFAULT 'free',
-  storage_used BIGINT DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
 -- Upload links (core feature)
 CREATE TABLE upload_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL, -- References Clerk user ID
   slug VARCHAR(100) UNIQUE NOT NULL,
   title VARCHAR(255) NOT NULL,
   description TEXT,
   max_files INTEGER DEFAULT 100,
-  expires_at TIMESTAMP,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP DEFAULT NOW()
+  expires_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- RLS Policy for upload links
+CREATE POLICY "Users can only access their own upload links"
+  ON upload_links
+  FOR ALL
+  USING (auth.jwt()->>'sub' = user_id::text);
 
 -- File uploads
-CREATE TABLE files (
+CREATE TABLE file_uploads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
-  original_name VARCHAR(255) NOT NULL,
-  file_size BIGINT NOT NULL,
-  mime_type VARCHAR(100) NOT NULL,
-  storage_key VARCHAR(500) NOT NULL,
   uploader_name VARCHAR(255),
   uploader_email VARCHAR(255),
-  created_at TIMESTAMP DEFAULT NOW()
+  file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+  storage_path TEXT NOT NULL,
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- RLS Policy for file uploads
+CREATE POLICY "Users can only access files from their upload links"
+  ON file_uploads
+  FOR ALL
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE auth.jwt()->>'sub' = user_id::text
+    )
+  );
 ```
 
-## 🔌 API Design
-
-### tRPC Router Structure
+### Real-time Subscriptions
 
 ```typescript
-export const appRouter = createTRPCRouter({
-  auth: authRouter,
-  upload: uploadRouter,
-  files: filesRouter,
-  billing: billingRouter,
-});
-
-// Example router
-export const uploadRouter = createTRPCRouter({
-  create: protectedProcedure
-    .input(
-      z.object({
-        title: z.string().min(1).max(255),
-        description: z.string().optional(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Create upload link
-    }),
-
-  get: publicProcedure
-    .input(z.object({ slug: z.string() }))
-    .query(async ({ ctx, input }) => {
-      // Get upload link details
-    }),
-});
+// Real-time upload progress
+const subscription = supabase
+  .channel('file_uploads')
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'file_uploads',
+      filter: `upload_link_id=eq.${linkId}`,
+    },
+    payload => {
+      // Update UI with new upload
+      updateUploadProgress(payload.new);
+    }
+  )
+  .subscribe();
 ```
 
-## 🔒 Security Architecture
+## 🚀 Performance & Scalability
 
-### Authentication & Authorization
+### Edge Computing Strategy
 
-- **Clerk Integration**: Social login, passwordless, MFA
-- **Protected Routes**: Server-side auth validation
-- **API Security**: tRPC context-based auth
-- **File Security**: Presigned URLs, virus scanning
+- **Vercel Edge Functions**: Authentication and API responses
+- **Supabase Edge**: Database queries and real-time subscriptions
+- **Global CDN**: File delivery via Supabase CDN
+- **Caching**: Multi-layer caching (browser, CDN, database)
+
+### Database Optimization
+
+- **Connection pooling**: Supabase handles connection management
+- **Query optimization**: Proper indexing and query patterns
+- **Real-time efficiency**: Selective subscriptions to minimize bandwidth
+- **Automatic scaling**: Serverless database scales with demand
+
+### File Storage Optimization
+
+- **CDN integration**: Automatic global distribution
+- **Image optimization**: Automatic resizing and format conversion
+- **Smart caching**: Intelligent cache invalidation
+- **Bandwidth optimization**: Progressive loading and compression
+
+## 🔍 Monitoring & Observability
+
+### Application Monitoring
+
+- **Error tracking**: Sentry integration for error reporting
+- **Performance monitoring**: Real-time performance metrics
+- **User analytics**: Posthog for user behavior tracking
+- **Custom metrics**: Application-specific KPIs
+
+### Security Monitoring
+
+- **Authentication events**: Clerk dashboard and webhooks
+- **Database access**: Supabase audit logs
+- **File access**: Storage access logging
+- **Anomaly detection**: Automated threat detection
+
+### Business Intelligence
+
+- **Usage analytics**: File upload patterns and user engagement
+- **Performance metrics**: Upload speeds and success rates
+- **Cost monitoring**: Resource usage and billing alerts
+- **Growth tracking**: User acquisition and retention metrics
+
+## 🔧 Development Environment
+
+### Local Development Setup
+
+```bash
+# Environment variables
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+```
+
+### Database Branching
+
+- **Production**: Main Supabase project
+- **Staging**: Supabase preview branch
+- **Development**: Local Supabase or shared dev branch
+
+### Testing Strategy
+
+- **Unit tests**: Component and utility function testing
+- **Integration tests**: API route and database operation testing
+- **E2E tests**: Critical user flow testing with Playwright
+- **Security tests**: Authentication and authorization testing
+
+## 🎯 Deployment Architecture
+
+### Production Environment
+
+```
+Vercel Production
+├── Next.js Application (Global Edge)
+├── API Routes (Serverless Functions)
+└── Static Assets (Global CDN)
+
+Supabase Production
+├── PostgreSQL Database (Multi-region)
+├── Storage Bucket (Global CDN)
+├── Real-time Engine (WebSocket)
+└── Edge Functions (Custom logic)
+
+Clerk Production
+├── Authentication Service (Global)
+├── User Management Dashboard
+└── Webhook Endpoints
+```
+
+### Deployment Pipeline
+
+1. **Code commit**: GitHub repository
+2. **Automated testing**: GitHub Actions
+3. **Preview deployment**: Vercel preview
+4. **Database migration**: Supabase CLI
+5. **Production deployment**: Vercel production
+6. **Health checks**: Automated monitoring
+
+## 📋 Security Compliance Checklist
 
 ### Data Protection
 
-- **Encryption at Rest**: AES-256
-- **Encryption in Transit**: TLS 1.3
-- **Input Validation**: Zod schemas everywhere
-- **Rate Limiting**: Built-in DoS protection
+- [x] **Encryption at rest**: AES-256 in Supabase
+- [x] **Encryption in transit**: TLS 1.3 everywhere
+- [x] **Access control**: Row Level Security policies
+- [x] **Audit logging**: Complete access trails
+- [x] **Data residency**: EU/US data center options
 
-## 📁 File Storage Strategy
+### Authentication Security
 
-### AWS S3 Configuration
+- [x] **Multi-factor authentication**: Clerk MFA support
+- [x] **Session management**: Secure JWT handling
+- [x] **Password policies**: Clerk security policies
+- [x] **Social login**: OAuth integration
+- [x] **Account recovery**: Secure recovery flows
 
-```typescript
-const storageConfig = {
-  bucket: "foldly-uploads-prod",
-  structure: "users/{userId}/links/{linkId}/{fileId}",
-  encryption: "AES256",
-  versioning: "enabled",
-  lifecycle: {
-    "transition-to-ia": "30 days",
-    "delete-after": "2 years",
-  },
-};
-```
+### Application Security
 
-### File Processing Pipeline
+- [x] **Input validation**: Zod schema validation
+- [x] **CORS protection**: Proper origin configuration
+- [x] **Rate limiting**: API request throttling
+- [x] **SQL injection prevention**: Parameterized queries
+- [x] **XSS protection**: Content Security Policy
 
-1. **Upload** → UploadThing handles secure upload
-2. **Scan** → Virus/malware detection
-3. **Process** → Metadata extraction, thumbnails
-4. **Store** → S3 with CloudFront CDN
-5. **Notify** → Email notifications via Resend
-
-## 🚀 Deployment Architecture
-
-### Vercel Configuration
-
-```json
-{
-  "version": 2,
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "CLERK_SECRET_KEY": "@clerk_secret_key"
-  }
-}
-```
-
-### Environment Management
-
-- **Development**: Local Next.js + Neon branch
-- **Staging**: Vercel preview deployments
-- **Production**: Vercel production with monitoring
-
-## 📊 Performance Optimization
-
-### Caching Strategy
-
-- **Static Assets**: Vercel Edge Network
-- **API Responses**: React Query with SWR
-- **Database**: Connection pooling
-- **Files**: CloudFront global CDN
-
-### Performance Targets
-
-- **Core Web Vitals**: LCP < 2.5s, FID < 100ms, CLS < 0.1
-- **API Response**: < 500ms average
-- **File Upload**: < 30s for 100MB files
-- **Uptime**: 99.9% availability
-
-## 🔄 Scalability & Cost Management
-
-### Auto-scaling Strategy
-
-```
-Vercel Edge Functions (Auto-scaling)
-    ↓
-Neon PostgreSQL (Serverless scaling)
-    ↓
-AWS S3 + CloudFront (Unlimited)
-```
-
-### Cost Optimization
-
-- **Database**: Neon's pay-per-use model
-- **Compute**: Serverless functions
-- **Storage**: S3 Intelligent Tiering
-- **CDN**: CloudFront for global delivery
-
-## 🧪 Testing Strategy
-
-### Testing Pyramid
-
-- **Unit Tests (70%)**: Vitest for components/utils
-- **Integration Tests (20%)**: API endpoints, DB operations
-- **E2E Tests (10%)**: Playwright for critical flows
-
-### Quality Gates
-
-- Code coverage > 80%
-- TypeScript strict mode
-- Zero ESLint errors
-- All E2E tests passing
-
-## 📈 Monitoring & Analytics
-
-### Monitoring Stack
-
-- **Errors**: Sentry for error tracking
-- **Performance**: Vercel Analytics
-- **Uptime**: Betterstack monitoring
-- **User Analytics**: PostHog (privacy-focused)
-
-### Key Metrics
-
-```typescript
-const kpis = {
-  business: {
-    signups: "New user registrations",
-    conversions: "Free to paid upgrades",
-    churn: "Monthly churn rate",
-  },
-  technical: {
-    uptime: "99.9% target",
-    errorRate: "< 0.1%",
-    responseTime: "< 500ms average",
-  },
-};
-```
-
-## 🔄 Migration & Deployment
-
-### Database Migrations
-
-```typescript
-// Drizzle migration
-export async function up(db: Database) {
-  await db.execute(`
-    CREATE TABLE users (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      clerk_id VARCHAR(255) UNIQUE NOT NULL
-    );
-  `);
-}
-```
-
-### CI/CD Pipeline
-
-```yaml
-name: Deploy
-on:
-  push:
-    branches: [main]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: pnpm test && pnpm test:e2e
-  deploy:
-    needs: test
-    steps:
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v20
-```
+This architecture provides enterprise-grade security while maintaining developer productivity and cost efficiency.
 
 ---
 

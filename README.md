@@ -28,10 +28,10 @@
 
 ### Backend & Infrastructure (Integrated with Next.js)
 
-- **PostgreSQL** via **Neon** (serverless database)
-- **Drizzle ORM** (type-safe queries)
-- **Clerk** (authentication) + **tRPC** (type-safe APIs)
-- **AWS S3 + CloudFront** (file storage & CDN)
+- **Supabase** (PostgreSQL database + file storage + real-time)
+- **Clerk + Supabase** (JWT-based authentication with RLS)
+- **Next.js App Router** (full-stack framework with tRPC)
+- **Supabase Storage** (file storage with global CDN)
 - **Vercel** (hosting) + **Stripe** (payments)
 
 ## 📚 Documentation
@@ -49,7 +49,7 @@ This project follows documentation-first development with comprehensive planning
 
 - **Node.js 18+** and **pnpm** (package manager)
 - **Git** for version control
-- **PostgreSQL** database (Neon account recommended)
+- **Supabase** account (database + storage + real-time)
 
 ### Development Environment ✅ Complete
 
@@ -58,7 +58,7 @@ This project follows documentation-first development with comprehensive planning
 - ✅ **Dependencies**: Modern 2025 stack (Next.js 15, React 19, TypeScript 5)
 - ✅ **Code Quality**: Prettier, Husky pre-commit hooks, lint-staged
 - ✅ **UI System**: Shadcn/ui components with manual setup (preserving existing styles)
-- ✅ **Database**: Drizzle ORM + Neon PostgreSQL with schemas and queries
+- ✅ **Database**: Supabase PostgreSQL with Row Level Security and real-time capabilities
 - ✅ **Testing**: Vitest + React Testing Library infrastructure
 - ✅ **Authentication**: Clerk integration with 2025 middleware, protected routes, webhooks
 
@@ -75,15 +75,15 @@ This project follows documentation-first development with comprehensive planning
 
 **Monthly Operating Costs (Projected)**:
 
-- **MVP Stage**: ~$40/month (Vercel + Neon + basic services)
-- **Growth Stage**: ~$150/month (scaled services)
+- **MVP Stage**: ~$45/month (Vercel + Supabase + basic services)
+- **Growth Stage**: ~$176/month (scaled services with enterprise security)
 - **Target Revenue**: $2,450/month by month 6
 
 **Key Cost Optimizations**:
 
 - Serverless-first architecture (pay-per-use)
-- Neon PostgreSQL (database auto-scaling)
-- S3 Intelligent Tiering (automatic storage optimization)
+- Supabase unified platform (database + storage + real-time)
+- Automatic file CDN optimization via Supabase Storage
 - Vercel Edge Network (global CDN included)
 
 ## 🎯 Development Phases

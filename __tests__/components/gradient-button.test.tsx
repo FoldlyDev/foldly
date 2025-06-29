@@ -176,17 +176,20 @@ describe('GradientButton Component', () => {
     });
 
     it('maintains text contrast with different variants', () => {
-      // Primary and secondary should have dark text
-      render(<GradientButton variant='primary'>Primary</GradientButton>);
+      // Test primary variant
+      const { rerender } = render(
+        <GradientButton variant='primary'>Primary</GradientButton>
+      );
       let button = screen.getByRole('button');
       expect(button).toHaveClass('text-[var(--quaternary)]');
 
-      render(<GradientButton variant='secondary'>Secondary</GradientButton>);
+      // Test secondary variant
+      rerender(<GradientButton variant='secondary'>Secondary</GradientButton>);
       button = screen.getByRole('button');
       expect(button).toHaveClass('text-[var(--quaternary)]');
 
-      // Tertiary should have light text
-      render(<GradientButton variant='tertiary'>Tertiary</GradientButton>);
+      // Test tertiary variant (should have light text)
+      rerender(<GradientButton variant='tertiary'>Tertiary</GradientButton>);
       button = screen.getByRole('button');
       expect(button).toHaveClass('text-[var(--primary-subtle)]');
     });

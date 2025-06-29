@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { CustomEase } from "gsap/CustomEase";
-import Lenis from "lenis";
+import { useEffect, useRef } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { CustomEase } from 'gsap/CustomEase';
+import Lenis from 'lenis';
 
 interface AnimationRefs {
   heroRef: React.RefObject<HTMLElement | null>;
@@ -29,25 +29,25 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
 
   useEffect(() => {
     if (isInitialized.current) return;
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     // Check if all required refs are available
     const requiredRefs = Object.values(refs);
-    const allRefsReady = requiredRefs.every((ref) => ref.current !== null);
+    const allRefsReady = requiredRefs.every(ref => ref.current !== null);
 
     if (!allRefsReady) return;
 
     gsap.registerPlugin(ScrollTrigger, CustomEase);
 
     // Custom ease
-    CustomEase.create("hop", ".8, 0, .3, 1");
+    CustomEase.create('hop', '.8, 0, .3, 1');
 
     // Initialize smooth scrolling
     const lenis = new Lenis();
     lenisRef.current = lenis;
 
-    lenis.on("scroll", ScrollTrigger.update);
-    gsap.ticker.add((time) => {
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add(time => {
       lenis.raf(time * 1000);
     });
     gsap.ticker.lagSmoothing(0);
@@ -58,10 +58,10 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
       // Hero cards animation
       const heroScrollTrigger = ScrollTrigger.create({
         trigger: refs.heroRef.current,
-        start: "top top",
-        end: "75% top",
+        start: 'top top',
+        end: '75% top',
         scrub: 1,
-        onUpdate: (self) => {
+        onUpdate: self => {
           const progress = self.progress;
 
           const heroCardsContainerOpacity = gsap.utils.interpolate(
@@ -93,8 +93,8 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
             );
 
             const y = gsap.utils.interpolate(
-              "0%",
-              "350%",
+              '0%',
+              '350%',
               smoothStep(cardProgress)
             );
             const scale = gsap.utils.interpolate(
@@ -103,10 +103,10 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
               smoothStep(cardProgress)
             );
 
-            let x = "0%";
+            let x = '0%';
             let rotation = 0;
             if (index === 0) {
-              x = gsap.utils.interpolate("0%", "90%", smoothStep(cardProgress));
+              x = gsap.utils.interpolate('0%', '90%', smoothStep(cardProgress));
               rotation = gsap.utils.interpolate(
                 0,
                 -15,
@@ -114,8 +114,8 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
               );
             } else if (index === 2) {
               x = gsap.utils.interpolate(
-                "0%",
-                "-90%",
+                '0%',
+                '-90%',
                 smoothStep(cardProgress)
               );
               rotation = gsap.utils.interpolate(
@@ -140,7 +140,7 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
       // Features section pinning
       const featuresPinTrigger = ScrollTrigger.create({
         trigger: refs.featuresRef.current,
-        start: "top top",
+        start: 'top top',
         end: `+=${window.innerHeight * 4}px`,
         pin: refs.featuresRef.current,
         pinSpacing: true,
@@ -151,16 +151,16 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
       // Cards animation
       const cardsScrollTrigger = ScrollTrigger.create({
         trigger: refs.featuresRef.current,
-        start: "top bottom",
+        start: 'top bottom',
         end: `+=${window.innerHeight * 4}`,
         scrub: 1,
-        onUpdate: (self) => {
+        onUpdate: self => {
           const progress = self.progress;
 
           const headerProgress = gsap.utils.clamp(0, 1, progress / 0.9);
           const headerY = gsap.utils.interpolate(
-            "400%",
-            "0%",
+            '400%',
+            '0%',
             smoothStep(headerProgress)
           );
 
@@ -193,19 +193,19 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
             if (cardProgress < 0.4) {
               const normalizedProgress = cardProgress / 0.4;
               y = gsap.utils.interpolate(
-                "-100%",
-                "50%",
+                '-100%',
+                '50%',
                 smoothStep(normalizedProgress)
               );
             } else if (cardProgress < 0.6) {
               const normalizedProgress = (cardProgress - 0.4) / 0.2;
               y = gsap.utils.interpolate(
-                "50%",
-                "0%",
+                '50%',
+                '0%',
                 smoothStep(normalizedProgress)
               );
             } else {
-              y = "0%";
+              y = '0%';
             }
 
             let scale: number;
@@ -237,14 +237,14 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
 
             let x: string, rotate: number, rotationY: number;
             if (cardProgress < 0.6) {
-              x = index === 0 ? "100%" : index === 1 ? "0%" : "-100%";
+              x = index === 0 ? '100%' : index === 1 ? '0%' : '-100%';
               rotate = index === 0 ? -5 : index === 1 ? 0 : 5;
               rotationY = 0;
             } else if (cardProgress < 1) {
               const normalizedProgress = (cardProgress - 0.6) / 0.4;
               x = gsap.utils.interpolate(
-                index === 0 ? "100%" : index === 1 ? "0%" : "-100%",
-                "0%",
+                index === 0 ? '100%' : index === 1 ? '0%' : '-100%',
+                '0%',
                 smoothStep(normalizedProgress)
               );
               rotate = gsap.utils.interpolate(
@@ -254,7 +254,7 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
               );
               rotationY = smoothStep(normalizedProgress) * 180;
             } else {
-              x = "0%";
+              x = '0%';
               rotate = 0;
               rotationY = 180;
             }
@@ -283,7 +283,7 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
 
     // Cleanup function
     return () => {
-      scrollTriggersRef.current.forEach((trigger) => trigger.kill());
+      scrollTriggersRef.current.forEach(trigger => trigger.kill());
       scrollTriggersRef.current = [];
 
       if (lenisRef.current) {
@@ -291,7 +291,7 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
         lenisRef.current = null;
       }
 
-      gsap.ticker.remove((time) => {
+      gsap.ticker.remove(time => {
         if (lenisRef.current) {
           lenisRef.current.raf(time * 1000);
         }
@@ -304,7 +304,7 @@ export function useGSAPLandingAnimations(refs: AnimationRefs) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      scrollTriggersRef.current.forEach((trigger) => trigger.kill());
+      scrollTriggersRef.current.forEach(trigger => trigger.kill());
       if (lenisRef.current) {
         lenisRef.current.destroy();
       }

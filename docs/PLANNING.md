@@ -18,9 +18,9 @@
 - **Target Market**: Creative agencies, consultants, small businesses, freelancers
 - **Revenue Streams**: Subscription tiers, custom branding, storage upgrades
 
-## 🏗️ Modern 2025 Tech Stack (Cost-Optimized)
+## 🏗️ Modern 2025 Tech Stack (Enterprise-Grade Security)
 
-> **Architecture**: Full-stack Next.js application with integrated frontend and backend
+> **Architecture**: Full-stack Next.js application with Clerk authentication and Supabase backend
 
 ### Frontend Stack
 
@@ -31,23 +31,28 @@
 - **Animations**: Framer Motion 11+
 - **State Management**: Zustand (lightweight, no Redux complexity)
 - **Form Handling**: React Hook Form + Zod validation
-- **File Uploads**: UploadThing (Next.js optimized)
+- **Real-time Features**: Socket.io (for live upload progress and notifications)
 
-### Backend & Database (Integrated with Next.js)
+### Backend & Database (Supabase + Clerk Integration)
 
-- **Database**: PostgreSQL (via Neon or Supabase)
-  - _Why_: ACID compliance, complex queries, JSON support, cost-effective at scale
-  - _Cost_: Free tier → $20/month for substantial usage
+- **Authentication**: Clerk (enterprise-grade auth with RBAC)
+  - _Why_: Enterprise security, GDPR compliance, advanced user management
+  - _Cost_: Free tier → $25/month for production features
+- **Database**: Supabase PostgreSQL (with Row Level Security)
+  - _Why_: Real-time capabilities, built-in security, no vendor lock-in
+  - _Cost_: Free tier → $25/month for production
+- **File Storage**: Supabase Storage (with CDN)
+  - _Why_: Integrated with database, automatic optimization, secure access
+  - _Integration_: Works seamlessly with Clerk JWT authentication
 - **ORM**: Drizzle ORM (lightweight, type-safe)
-- **Authentication**: Clerk (freemium, $25/month for 10K MAU)
-- **File Storage**: AWS S3 + CloudFront
 - **Email**: Resend (modern, developer-friendly)
 - **Payments**: Stripe (industry standard)
+- **Real-time**: Socket.io + Supabase Realtime subscriptions
 
 ### Infrastructure & DevOps
 
 - **Hosting**: Vercel (seamless Next.js integration)
-- **Database**: Neon PostgreSQL (serverless, cost-effective)
+- **Database & Storage**: Supabase (unified backend platform)
 - **Monitoring**: Sentry (error tracking)
 - **Analytics**: Posthog (open-source alternative to Mixpanel)
 - **CI/CD**: GitHub Actions + Vercel deployment
@@ -59,37 +64,40 @@
 - **Code Quality**: ESLint + Prettier + Husky
 - **Testing**: Vitest + React Testing Library + Playwright
 - **Type Safety**: TypeScript strict mode
-- **API**: tRPC (end-to-end type safety)
+- **API**: tRPC (end-to-end type safety) + Supabase client
 
 ## 📊 Architecture Decisions & Rationale
 
-### PostgreSQL vs MongoDB
+### Supabase vs Neon vs Firebase
 
-**Choice: PostgreSQL**
+**Choice: Supabase**
 
-- **Structured data**: User accounts, subscriptions, file metadata
-- **ACID compliance**: Critical for payment processing
-- **Cost efficiency**: Better pricing at scale vs MongoDB Atlas
-- **JSON support**: Handles flexible metadata without NoSQL complexity
-- **Mature ecosystem**: Extensive tooling and community support
+- **Open Source**: No vendor lock-in, can self-host if needed
+- **Real-time capabilities**: Built-in subscriptions for live updates
+- **Integrated storage**: File uploads with automatic CDN distribution
+- **Row Level Security**: Enterprise-grade data protection
+- **PostgreSQL**: Full SQL capabilities with JSON support
+- **Cost efficiency**: Unified platform reduces complexity and costs
 
-### Authentication: Clerk vs Auth0 vs Supabase
+### Authentication: Clerk + Supabase Integration
 
-**Choice: Clerk**
+**Choice: Clerk for Auth + Supabase for Data**
 
+- **Security separation**: Authentication separate from data layer
+- **Enterprise features**: Advanced RBAC, audit logs, compliance
 - **Developer experience**: React-first design, excellent Next.js integration
-- **Cost optimization**: Free up to 10K MAU, then $25/month
-- **Modern features**: Passwordless, social login, organizations out-of-the-box
-- **White-label ready**: Custom domains and branding for SaaS
+- **Scalability**: Handles enterprise user management requirements
+- **Integration**: [Official Clerk-Supabase integration](https://clerk.com/docs/integrations/databases/supabase) with JWT verification
 
 ### File Storage Strategy
 
-**Choice: AWS S3 + CloudFront**
+**Choice: Supabase Storage + CDN**
 
-- **Cost efficiency**: S3 Intelligent Tiering for automatic cost optimization
-- **Global CDN**: CloudFront for fast file delivery worldwide
-- **Security**: Presigned URLs for secure direct uploads
-- **Scalability**: Virtually unlimited storage capacity
+- **Unified platform**: Storage integrated with database and auth
+- **Automatic optimization**: Built-in image processing and CDN
+- **Security**: Row Level Security for file access control
+- **Cost efficiency**: No separate S3 + CloudFront setup needed
+- **Real-time**: Instant upload progress and file processing updates
 
 ### State Management: Zustand vs Redux
 
@@ -99,6 +107,29 @@
 - **Simplicity**: No boilerplate, direct state mutations
 - **TypeScript**: Excellent TypeScript support out-of-the-box
 - **Performance**: Minimal re-renders, subscription-based updates
+
+## 🔒 Enterprise Security Architecture
+
+### Authentication & Authorization
+
+- **Multi-layer auth**: Clerk handles user auth, Supabase RLS protects data
+- **JWT verification**: Supabase automatically verifies Clerk JWTs via JWKS
+- **Role-based access**: Granular permissions for different user types
+- **Session management**: Secure, httpOnly cookies with automatic refresh
+
+### Data Protection
+
+- **Encryption**: AES-256 at rest (Supabase), TLS 1.3 in transit
+- **File security**: Virus scanning, secure presigned URLs, access logging
+- **Row Level Security**: Database-level protection for multi-tenant data
+- **Audit trails**: Complete logging of all data access and modifications
+
+### Infrastructure Security
+
+- **Network isolation**: Private subnets, security groups
+- **API security**: Rate limiting, CORS protection, input validation
+- **Monitoring**: Real-time threat detection and alerting
+- **Compliance**: SOC 2, GDPR, HIPAA preparation
 
 ## 🎨 Design System & UI Architecture
 
@@ -122,35 +153,21 @@
 - **Component variants**: CVA (Class Variance Authority) for component styling
 - **Responsive design**: Mobile-first approach with Tailwind breakpoints
 
-## 🔒 Security & Compliance
-
-### Data Protection
-
-- **Encryption**: AES-256 at rest, TLS 1.3 in transit
-- **File scanning**: Virus scanning for uploaded files
-- **Access control**: Role-based permissions with Clerk
-- **Audit logs**: Track all file access and user actions
-
-### Privacy Compliance
-
-- **GDPR ready**: Data deletion, export capabilities
-- **SOC 2 preparation**: Security controls and monitoring
-- **Privacy by design**: Minimal data collection, clear consent flows
-
 ## 📈 Scalability Strategy
 
 ### Performance Optimization
 
 - **Edge computing**: Vercel Edge Functions for global latency
 - **Database optimization**: Connection pooling, query optimization
-- **CDN strategy**: Static assets and file delivery via CloudFront
-- **Caching**: Redis for session management and temporary data
+- **CDN strategy**: Supabase Storage CDN for global file delivery
+- **Caching**: Multi-layer caching (CDN, API, database)
+- **Real-time optimization**: Efficient WebSocket connections
 
 ### Cost Management
 
 - **Serverless-first**: Pay-per-execution model
 - **Auto-scaling**: Vercel handles traffic spikes automatically
-- **Storage tiering**: Automatic archival of old files
+- **Storage optimization**: Supabase automatic optimization and tiering
 - **Resource monitoring**: Cost alerts and usage analytics
 
 ## 🚀 Development Methodology
@@ -191,7 +208,8 @@ foldly/
 
 - **Single deployment**: Frontend and backend deploy together on Vercel
 - **Type safety**: Shared types between frontend and backend
-- **Simplified development**: Hot reload works across full stack
+- **Unified auth**: Clerk integration works across full stack
+- **Real-time features**: Socket.io + Supabase subscriptions
 - **Cost efficiency**: No separate backend hosting needed
 
 ## 💰 Cost Projection (Monthly)
@@ -199,9 +217,9 @@ foldly/
 ### Development (MVP → Scale)
 
 - **Vercel Pro**: $20/month (production deployment)
-- **Neon PostgreSQL**: $0 → $20/month (1GB → 10GB)
+- **Supabase PostgreSQL**: $0 → $25/month (1GB → 10GB)
 - **Clerk Authentication**: $0 → $25/month (10K MAU)
-- **AWS S3 + CloudFront**: $5 → $50/month (100GB → 1TB)
+- **Supabase Storage**: $0 → $25/month (100GB → 1TB)
 - **Resend Email**: $0 → $20/month (3K → 50K emails)
 - **Domain + DNS**: $15/month (Cloudflare Pro)
 
@@ -247,7 +265,7 @@ foldly/
 
 ### Environment Setup
 
-1. **Development**: Local Next.js with Neon DB branch
+1. **Development**: Local Next.js with Supabase DB branch
 2. **Staging**: Vercel preview deployments
 3. **Production**: Vercel production with monitoring
 
