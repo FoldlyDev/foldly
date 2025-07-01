@@ -1,7 +1,8 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
-import { syncUserWithClerk } from '@/lib/db/queries';
+// TODO: Implement database layer
+// import { syncUserWithClerk } from '@/lib/db/queries';
 
 export async function POST(req: NextRequest) {
   // Get the headers
@@ -62,18 +63,23 @@ export async function POST(req: NextRequest) {
     switch (eventType) {
       case 'user.created':
       case 'user.updated':
-        await syncUserWithClerk(evt.data.id, {
-          email: evt.data.email_addresses[0]?.email_address || '',
-          firstName: evt.data.first_name,
-          lastName: evt.data.last_name,
-          imageUrl: evt.data.image_url,
-        });
-        console.log(`User ${evt.data.id} synced successfully`);
+        // TODO: Implement user sync with database
+        // await syncUserWithClerk(evt.data.id, {
+        //   email: evt.data.email_addresses[0]?.email_address || '',
+        //   firstName: evt.data.first_name,
+        //   lastName: evt.data.last_name,
+        //   imageUrl: evt.data.image_url,
+        // });
+        console.log(
+          `User ${evt.data.id} webhook received - database sync pending implementation`
+        );
         break;
 
       case 'user.deleted':
-        // In a production app, you might want to soft delete or archive user data
-        console.log(`User ${evt.data.id} deleted from Clerk`);
+        // TODO: Implement user deletion from database
+        console.log(
+          `User ${evt.data.id} deleted from Clerk - database cleanup pending implementation`
+        );
         break;
 
       default:
