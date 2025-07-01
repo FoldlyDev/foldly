@@ -24,27 +24,13 @@ import {
   DialogTitle,
 } from '@/components/ui/shadcn/dialog';
 
+// Use centralized types instead of inline interface
+import type { LinkData } from '@/lib/hooks/use-dashboard-links';
+
 interface LinkDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  link: {
-    id: string;
-    name: string;
-    slug: string;
-    url: string;
-    status: 'active' | 'paused' | 'expired';
-    uploads: number;
-    views: number;
-    lastActivity: string;
-    expiresAt: string;
-    createdAt: string;
-    settings: {
-      requireEmail: boolean;
-      allowMultiple: boolean;
-      maxFileSize: string;
-      customMessage: string;
-    };
-  };
+  link: LinkData;
 }
 
 export function LinkDetailsModal({
@@ -55,7 +41,7 @@ export function LinkDetailsModal({
   const [copied, setCopied] = useState(false);
 
   const handleCopyUrl = async () => {
-    await navigator.clipboard.writeText(link.url);
+    await navigator.clipboard.writeText(link.url || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -89,7 +75,7 @@ export function LinkDetailsModal({
     }
   };
 
-  const statusConfig = getStatusConfig(link.status);
+  const statusConfig = getStatusConfig(link.status || 'active');
 
   // Mock recent uploads data
   const recentUploads = [
@@ -195,7 +181,7 @@ export function LinkDetailsModal({
                     </span>
                   </div>
                   <span className='font-bold text-[var(--quaternary)]'>
-                    {link.views}
+                    {link.views || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-between'>
@@ -206,7 +192,7 @@ export function LinkDetailsModal({
                     </span>
                   </div>
                   <span className='font-bold text-[var(--quaternary)]'>
-                    {link.uploads}
+                    {link.uploads || 0}
                   </span>
                 </div>
                 <div className='flex items-center justify-between'>
@@ -217,7 +203,7 @@ export function LinkDetailsModal({
                     </span>
                   </div>
                   <span className='font-bold text-green-600'>
-                    {((link.uploads / link.views) * 100).toFixed(1)}%
+                    {((link.uploads || 0 / link.views || 0) * 100).toFixed(1)}%
                   </span>
                 </div>
                 <div className='flex items-center justify-between'>
@@ -228,7 +214,7 @@ export function LinkDetailsModal({
                     </span>
                   </div>
                   <span className='font-bold text-[var(--quaternary)]'>
-                    {Math.floor(link.views * 0.7)}
+                    {Math.floor((link.views || 0) * 0.7)}
                   </span>
                 </div>
               </div>
@@ -278,27 +264,31 @@ export function LinkDetailsModal({
                     Require Email
                   </span>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${link.settings.requireEmail ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                    className={`text-xs px-2 py-1 rounded-full ${link.requireEmail ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
                   >
-                    {link.settings.requireEmail ? 'Yes' : 'No'}
+                    {link.requireEmail ? 'Yes' : 'No'}
                   </span>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span className='text-sm text-[var(--neutral-600)]'>
-                    Multiple Files
-                  </span>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-[var(--neutral-600)]'>
+                      Multiple Files
+                    </span>
+                  </div>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${link.settings.allowMultiple ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
+                    className={`text-xs px-2 py-1 rounded-full ${link.settings?.allowMultiple ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
                   >
-                    {link.settings.allowMultiple ? 'Allowed' : 'Single Only'}
+                    {link.settings?.allowMultiple ? 'Allowed' : 'Single Only'}
                   </span>
                 </div>
                 <div className='flex items-center justify-between'>
-                  <span className='text-sm text-[var(--neutral-600)]'>
-                    Max File Size
-                  </span>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-sm text-[var(--neutral-600)]'>
+                      Max File Size
+                    </span>
+                  </div>
                   <span className='text-xs px-2 py-1 rounded-full bg-[var(--neutral-100)] text-[var(--neutral-700)]'>
-                    {link.settings.maxFileSize}
+                    {link.settings?.maxFileSize || '50MB'}
                   </span>
                 </div>
               </div>
@@ -378,7 +368,7 @@ export function LinkDetailsModal({
             </div>
 
             {/* Custom Message Preview */}
-            {link.settings.customMessage && (
+            {link.settings?.customMessage && (
               <div className='bg-[var(--primary-subtle)] border border-[var(--primary)] rounded-xl p-6'>
                 <h3 className='font-bold text-[var(--primary)] mb-3'>
                   Upload Page Message

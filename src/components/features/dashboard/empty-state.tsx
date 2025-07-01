@@ -2,7 +2,15 @@
 
 import { motion } from 'framer-motion';
 import { GradientButton } from '@/components/ui';
-import { Upload, FileText, Link2, Sparkles, ArrowRight } from 'lucide-react';
+import {
+  Upload,
+  FileText,
+  Link2,
+  Sparkles,
+  ArrowRight,
+  Zap,
+  Target,
+} from 'lucide-react';
 
 interface EmptyStateProps {
   type: 'links' | 'files' | 'dashboard';
@@ -10,22 +18,64 @@ interface EmptyStateProps {
   onLearnMore?: () => void;
 }
 
+interface FeatureItem {
+  icon: React.ComponentType<any>;
+  title: string;
+  description: string;
+}
+
+interface BaseContentType {
+  icon: React.ComponentType<any>;
+  title: string;
+  subtitle: string;
+  description: string;
+  primaryAction: string;
+  secondaryAction: string;
+  illustration: string;
+}
+
+interface DashboardContentType extends BaseContentType {
+  features: FeatureItem[];
+}
+
+type ContentType = BaseContentType | DashboardContentType;
+
 export function EmptyState({
   type,
   onCreateLink = () => {},
   onLearnMore = () => {},
 }: EmptyStateProps) {
-  const content = {
+  const content: Record<'dashboard' | 'links' | 'files', ContentType> = {
     dashboard: {
-      icon: Upload,
-      title: 'Ready to Start Collecting?',
-      subtitle: 'Your workspace is ready for action',
+      icon: Link2,
+      title: 'Welcome to Foldly',
+      subtitle: 'Zero-friction file collection made simple',
       description:
-        'Create your first upload link to start collecting files from clients and collaborators. Once you do, all your file collections will appear in your dashboard.',
-      primaryAction: 'Create Upload Link',
-      secondaryAction: 'View Tutorial',
+        'Create your personalized upload link (foldly.com/yourname) and start collecting files from clients, colleagues, and collaborators—no signups required for uploaders.',
+      primaryAction: 'Create Your Base Link',
+      secondaryAction: 'View Setup Guide',
       illustration: '🚀',
-    },
+      features: [
+        {
+          icon: Link2,
+          title: 'Base Link: /yourname',
+          description:
+            'Your main collection endpoint—perfect for general file requests',
+        },
+        {
+          icon: Target,
+          title: 'Custom Topic Links',
+          description:
+            'Project-specific links like /yourname/project for organized collections',
+        },
+        {
+          icon: Zap,
+          title: 'Zero-Friction Uploads',
+          description:
+            'Uploaders only need to provide their name—no accounts or logins',
+        },
+      ],
+    } as DashboardContentType,
     links: {
       icon: Link2,
       title: 'No upload links yet',
@@ -35,7 +85,7 @@ export function EmptyState({
       primaryAction: 'Create Upload Link',
       secondaryAction: 'Learn More',
       illustration: '📎',
-    },
+    } as BaseContentType,
     files: {
       icon: FileText,
       title: 'No files collected yet',
@@ -45,7 +95,7 @@ export function EmptyState({
       primaryAction: 'Create Upload Link',
       secondaryAction: 'View Links',
       illustration: '📁',
-    },
+    } as BaseContentType,
   };
 
   const currentContent = content[type];
@@ -116,7 +166,7 @@ export function EmptyState({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className='max-w-md mx-auto mb-8'
+        className='max-w-2xl mx-auto mb-8'
       >
         <h2 className='text-3xl font-bold text-[var(--quaternary)] mb-3'>
           {currentContent.title}
@@ -126,7 +176,7 @@ export function EmptyState({
           {currentContent.subtitle}
         </p>
 
-        <p className='text-[var(--neutral-500)] leading-relaxed'>
+        <p className='text-[var(--neutral-500)] leading-relaxed max-w-lg mx-auto'>
           {currentContent.description}
         </p>
       </motion.div>
@@ -136,7 +186,7 @@ export function EmptyState({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.6 }}
-        className='flex flex-col sm:flex-row gap-4 items-center'
+        className='flex flex-col sm:flex-row gap-4 items-center mb-12'
       >
         <GradientButton
           variant='primary'
@@ -160,58 +210,68 @@ export function EmptyState({
         </motion.button>
       </motion.div>
 
-      {/* Feature Highlights (only for dashboard) */}
-      {type === 'dashboard' && (
+      {/* Feature Highlights (enhanced for dashboard) */}
+      {type === 'dashboard' && 'features' in currentContent && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6 }}
-          className='mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto'
+          className='grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto'
         >
-          {[
-            {
-              icon: Link2,
-              title: 'Upload Links',
-              description: 'Create and manage your file collection links',
-            },
-            {
-              icon: FileText,
-              title: 'File Management',
-              description: 'View, organize, and download collected files',
-            },
-            {
-              icon: Upload,
-              title: 'Real-time Updates',
-              description: 'Get notified instantly when files are uploaded',
-            },
-          ].map((feature, index) => {
-            const FeatureIcon = feature.icon;
+          {currentContent.features.map(
+            (feature: FeatureItem, index: number) => {
+              const FeatureIcon = feature.icon;
 
-            return (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 + index * 0.1, duration: 0.6 }}
-                className='text-center'
-              >
-                <div
-                  className='inline-flex items-center justify-center w-12 h-12 rounded-xl 
-                              bg-[var(--neutral-100)] text-[var(--neutral-600)] mb-4'
+              return (
+                <motion.div
+                  key={feature.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9 + index * 0.1, duration: 0.6 }}
+                  className='text-center group'
                 >
-                  <FeatureIcon className='w-6 h-6' />
-                </div>
+                  <div
+                    className='inline-flex items-center justify-center w-14 h-14 rounded-2xl 
+                              bg-gradient-to-br from-[var(--neutral-100)] to-[var(--neutral-50)]
+                              text-[var(--neutral-600)] mb-4 group-hover:scale-110 transition-transform duration-300'
+                  >
+                    <FeatureIcon className='w-7 h-7' />
+                  </div>
 
-                <h3 className='font-semibold text-[var(--quaternary)] mb-2'>
-                  {feature.title}
-                </h3>
+                  <h3 className='font-semibold text-[var(--quaternary)] mb-2 text-sm'>
+                    {feature.title}
+                  </h3>
 
-                <p className='text-sm text-[var(--neutral-500)] leading-relaxed'>
-                  {feature.description}
-                </p>
-              </motion.div>
-            );
-          })}
+                  <p className='text-[var(--neutral-500)] text-xs leading-relaxed max-w-xs mx-auto'>
+                    {feature.description}
+                  </p>
+                </motion.div>
+              );
+            }
+          )}
+        </motion.div>
+      )}
+
+      {/* Value Proposition Banner */}
+      {type === 'dashboard' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.1, duration: 0.6 }}
+          className='mt-12 p-6 bg-gradient-to-r from-[var(--primary-subtle)] to-[var(--secondary-subtle)]
+                     rounded-2xl border border-[var(--neutral-200)] max-w-2xl mx-auto'
+        >
+          <div className='flex items-center justify-center gap-3 mb-3'>
+            <Zap className='w-5 h-5 text-[var(--primary)]' />
+            <span className='font-semibold text-[var(--quaternary)] text-sm'>
+              Why Foldly Works
+            </span>
+          </div>
+          <p className='text-[var(--neutral-600)] text-sm leading-relaxed'>
+            Unlike traditional file sharing that requires uploaders to create
+            accounts, Foldly eliminates friction with personalized links that
+            anyone can use instantly.
+          </p>
         </motion.div>
       )}
     </motion.div>

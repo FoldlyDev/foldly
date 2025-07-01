@@ -46,7 +46,7 @@ export function ViewToggle({
   return (
     <div
       className={cn(
-        'flex items-center bg-[var(--neutral-100)] rounded-lg relative',
+        'flex items-center bg-[var(--neutral-100)] rounded-lg relative border border-[var(--neutral-200)]',
         sizeClasses[size],
         className
       )}
@@ -60,28 +60,42 @@ export function ViewToggle({
             key={view.key}
             onClick={() => onChange(view.key)}
             className={cn(
-              'relative rounded-md transition-all duration-200 font-medium flex items-center gap-2 cursor-pointer',
+              'relative rounded-md transition-all duration-300 font-medium flex items-center gap-2 cursor-pointer border-0 bg-transparent',
               buttonSizeClasses[size],
               isActive
                 ? 'text-[var(--quaternary)] z-10'
                 : 'text-[var(--neutral-500)] hover:text-[var(--quaternary)] z-20'
             )}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
             {/* Background for active state */}
             {isActive && (
               <motion.div
                 layoutId='activeBackground'
-                className='absolute inset-0 bg-white shadow-sm rounded-md'
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className='absolute inset-0 bg-white shadow-sm rounded-md border border-[var(--neutral-200)]'
+                transition={{
+                  type: 'spring',
+                  stiffness: 500,
+                  damping: 30,
+                  duration: 0.2,
+                }}
               />
             )}
 
             {/* Content */}
             <div className='relative flex items-center gap-1.5'>
-              <IconComponent className={iconSizeClasses[size]} />
-              <span className='hidden sm:inline'>{view.label}</span>
+              <IconComponent
+                className={cn(
+                  iconSizeClasses[size],
+                  'transition-transform duration-200',
+                  isActive && 'scale-110'
+                )}
+              />
+              <span className='hidden sm:inline transition-opacity duration-200'>
+                {view.label}
+              </span>
             </div>
           </motion.button>
         );

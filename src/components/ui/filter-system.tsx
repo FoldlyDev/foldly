@@ -4,7 +4,6 @@ import * as React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Settings, X } from 'lucide-react';
 import { ActionButton } from './action-button';
-import { Button } from '@/components/ui/shadcn/button';
 import { Label } from '@/components/ui/shadcn/label';
 import { cn } from '@/lib/utils/utils';
 
@@ -146,9 +145,9 @@ export function FilterSystem({
   const expanded = onToggle ? isExpanded : localExpanded;
   const toggleExpanded = onToggle || setLocalExpanded;
 
-  const hasActiveFilters = Object.values(values).some(
-    value => value && value !== 'all'
-  );
+  const hasActiveFilters = values
+    ? Object.values(values).some(value => value && value !== 'all')
+    : false;
 
   const handleClear = () => {
     filters.forEach(filter => {
@@ -203,7 +202,7 @@ export function FilterSystem({
                       {filter.label}
                     </Label>
                     <AnimatedSelect
-                      value={values[filter.key] || 'all'}
+                      value={(values && values[filter.key]) || 'all'}
                       onChange={(value: string) => onChange(filter.key, value)}
                       options={filter.options}
                       placeholder={
@@ -217,23 +216,23 @@ export function FilterSystem({
 
               {/* Action Buttons */}
               <div className='mt-6 flex items-center justify-between'>
-                <Button
+                <ActionButton
                   variant='ghost'
                   size='sm'
                   onClick={handleClear}
                   className='text-[var(--neutral-500)] hover:text-[var(--quaternary)] hover:bg-[var(--neutral-50)]'
                 >
                   Clear Filters
-                </Button>
+                </ActionButton>
 
                 <div className='flex items-center gap-2'>
-                  <Button
+                  <ActionButton
                     variant='outline'
                     size='sm'
                     className='border-[var(--neutral-200)] hover:bg-[var(--neutral-50)]'
                   >
                     Export Results
-                  </Button>
+                  </ActionButton>
                   <ActionButton
                     variant='default'
                     size='sm'
@@ -247,14 +246,14 @@ export function FilterSystem({
 
               {/* Close Button (Mobile) */}
               {showToggle && (
-                <Button
+                <ActionButton
                   variant='ghost'
                   size='icon'
                   onClick={() => toggleExpanded(false)}
                   className='absolute top-4 right-4 md:hidden'
                 >
                   <X className='w-4 h-4' />
-                </Button>
+                </ActionButton>
               )}
             </div>
           </motion.div>

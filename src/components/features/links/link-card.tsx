@@ -21,43 +21,10 @@ import {
   defaultActions,
   type ActionItem,
 } from '@/components/ui';
+import type { LinkData } from '@/lib/hooks/use-dashboard-links';
 
 interface LinkCardProps {
-  link: {
-    id: string;
-    name: string;
-    slug: string;
-    url: string;
-    status: 'active' | 'paused' | 'expired';
-    uploads: number;
-    views: number;
-    lastActivity: string;
-    expiresAt: string;
-    createdAt: string;
-    linkType?: 'base' | 'custom';
-    topic?: string;
-
-    // Visibility and Security Controls
-    isPublic: boolean;
-    requireEmail: boolean;
-    requirePassword: boolean;
-    passwordHash?: string;
-
-    // File and Upload Limits
-    maxFiles: number;
-    maxFileSize: number; // in bytes
-    allowedFileTypes: string[];
-
-    // Organization Settings
-    autoCreateFolders: boolean;
-
-    settings: {
-      requireEmail: boolean;
-      allowMultiple: boolean;
-      maxFileSize: string;
-      customMessage: string;
-    };
-  };
+  link: LinkData;
   view: 'grid' | 'list';
   index: number;
   onSelect: (id: string) => void;

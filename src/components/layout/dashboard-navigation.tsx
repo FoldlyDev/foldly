@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
 
 interface NavItem {
@@ -39,9 +40,9 @@ const navigationData: NavSection[] = [
     title: 'Overview',
     items: [
       {
-        id: 'dashboard',
-        label: 'Dashboard',
-        href: '/dashboard',
+        id: 'home',
+        label: 'Home',
+        href: '/dashboard/home',
         icon: LayoutDashboard,
         color: 'primary',
       },
@@ -105,7 +106,7 @@ const navigationData: NavSection[] = [
 export function DashboardNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const { isExpanded, setIsExpanded } = useNavigationContext();
-  const [isHovering, setIsHovering] = useState(false);
+  const [isDesktopExpanded, setIsDesktopExpanded] = useState(false);
   const pathname = usePathname();
 
   // Close mobile menu on route change
@@ -125,10 +126,10 @@ export function DashboardNavigation() {
     };
   }, [isOpen]);
 
-  // Update context when hover state changes
+  // Update context when desktop expansion state changes
   useEffect(() => {
-    setIsExpanded(isHovering);
-  }, [isHovering, setIsExpanded]);
+    setIsExpanded(isDesktopExpanded);
+  }, [isDesktopExpanded, setIsExpanded]);
 
   const colorClasses = {
     primary: {
@@ -162,15 +163,15 @@ export function DashboardNavigation() {
   };
 
   const isActiveRoute = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+    if (href === '/dashboard/home') {
+      return pathname === '/dashboard/home' || pathname === '/dashboard';
     }
     return pathname.startsWith(href);
   };
 
   const NavigationContent = ({ isMobile = false }: { isMobile?: boolean }) => {
-    // Always expanded on mobile, hover-based on desktop
-    const shouldExpand = isMobile || isHovering;
+    // Always expanded on mobile, toggle-based on desktop
+    const shouldExpand = isMobile || isDesktopExpanded;
 
     return (
       <>
@@ -427,12 +428,48 @@ export function DashboardNavigation() {
         )}
       </AnimatePresence>
 
+      {/* Desktop Toggle Button - Top Right Corner */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
+        style={{
+          left: isDesktopExpanded ? '240px' : '64px',
+        }}
+        className='hidden lg:flex fixed top-4 z-50 transition-all duration-300
+                   w-8 h-8 bg-white border border-[var(--neutral-200)] rounded-full
+                   items-center justify-center shadow-lg hover:shadow-xl
+                   hover:bg-[var(--primary-subtle)] hover:border-[var(--primary)]'
+      >
+        <AnimatePresence mode='wait'>
+          {isDesktopExpanded ? (
+            <motion.div
+              key='collapse'
+              initial={{ rotate: 180, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 180, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronLeft className='w-4 h-4 text-[var(--neutral-600)]' />
+            </motion.div>
+          ) : (
+            <motion.div
+              key='expand'
+              initial={{ rotate: -180, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: -180, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronRight className='w-4 h-4 text-[var(--neutral-600)]' />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.button>
+
       {/* Desktop Navigation */}
       <motion.nav
-        animate={{ width: isHovering ? 256 : 80 }}
+        animate={{ width: isDesktopExpanded ? 256 : 80 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
         className='hidden lg:flex fixed left-0 top-0 bottom-0 bg-white border-r border-[var(--neutral-200)] 
                    shadow-sm z-40 flex-col overflow-hidden'
       >

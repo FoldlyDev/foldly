@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Link2, Eye, FileText, TrendingUp } from 'lucide-react';
 
 interface LinksOverviewCardsProps {
-  data: {
+  data?: {
     totalLinks: number;
     activeLinks: number;
     totalUploads: number;
@@ -15,10 +15,17 @@ interface LinksOverviewCardsProps {
 type ColorType = 'primary' | 'secondary' | 'tertiary' | 'success';
 
 export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
+  // Provide default values when data is undefined - minimal fix for crash
+  const safeData = data || {
+    totalLinks: 0,
+    activeLinks: 0,
+    totalUploads: 0,
+    totalViews: 0,
+  };
   const cards = [
     {
       title: 'Total Links',
-      value: data.totalLinks,
+      value: safeData.totalLinks,
       subtitle: 'Upload links created',
       icon: Link2,
       color: 'primary' as ColorType,
@@ -26,7 +33,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
     },
     {
       title: 'Active Links',
-      value: data.activeLinks,
+      value: safeData.activeLinks,
       subtitle: 'Currently accepting files',
       icon: TrendingUp,
       color: 'success' as ColorType,
@@ -34,7 +41,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
     },
     {
       title: 'Total Uploads',
-      value: data.totalUploads,
+      value: safeData.totalUploads,
       subtitle: 'Files collected',
       icon: FileText,
       color: 'secondary' as ColorType,
@@ -42,7 +49,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
     },
     {
       title: 'Total Views',
-      value: data.totalViews,
+      value: safeData.totalViews,
       subtitle: 'Link page visits',
       icon: Eye,
       color: 'tertiary' as ColorType,

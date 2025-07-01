@@ -60,27 +60,14 @@
 
   .mobile-cards {
     display: block;
-    height: 100%;
-    padding: 0 1rem;
+    padding: 2rem 0;
+    /* Remove conflicting positioning - let Tailwind handle centering */
   }
 
+  /* Remove conflicting styles - Tailwind classes will handle centering */
   .mobile-cards .cards-container {
-    flex-direction: column;
-    gap: 2rem;
-    margin: 2rem auto;
-    width: 90%;
-    max-width: 400px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+    /* Let Tailwind handle the layout with: flex flex-col items-center justify-center */
     z-index: 100;
-  }
-
-  .mobile-cards .cards-container .card {
-    margin-bottom: 2rem;
-    max-width: 350px;
-    width: 100%;
   }
 
   /* Mobile-specific card styling */
@@ -99,18 +86,6 @@
 
 @media (max-width: 480px) {
   .mobile-cards {
-    padding: 0 0.5rem;
-  }
-
-  .mobile-cards .cards-container {
-    width: 100%;
-    max-width: 300px;
-    margin: 1rem auto;
-  }
-
-  .mobile-cards .cards-container .card {
-    max-width: 280px;
-    margin-bottom: 1.5rem;
-    width: 100%;
+    padding: 1rem 0;
   }
 }

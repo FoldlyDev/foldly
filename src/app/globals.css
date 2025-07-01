@@ -5,6 +5,15 @@
    ============================================================================= */
 
 @theme {
+  /* Custom Breakpoints - Mobile-First Responsive Design */
+  --breakpoint-xs: 30rem; /* 480px - Extra small devices */
+  --breakpoint-sm: 40rem; /* 640px - Small devices */
+  --breakpoint-md: 48rem; /* 768px - Medium devices */
+  --breakpoint-lg: 64rem; /* 1024px - Large devices */
+  --breakpoint-xl: 80rem; /* 1280px - Extra large devices */
+  --breakpoint-2xl: 96rem; /* 1536px - 2X Extra large devices */
+  --breakpoint-3xl: 120rem; /* 1920px - Ultra wide screens */
+
   /* Font Families */
   --font-sans:
     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -121,7 +130,6 @@
    COMPONENT STYLES IMPORTS
    ============================================================================= */
 
-@import '../styles/components/layout/navigation.css';
 @import '../styles/components/landing/hero-section.css';
 @import '../styles/components/landing/about-section.css';
 @import '../styles/components/landing/features-section.css';
@@ -133,6 +141,7 @@
 @import '../styles/components/layout/dashboard-navigation.css';
 @import '../styles/components/auth/auth-pages.css';
 @import '../styles/components/links/links-page.css';
+@import '../styles/components/analytics/home-container.css';
 
 @custom-variant dark (&:is(.dark *));
 

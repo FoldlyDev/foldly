@@ -49,6 +49,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/shadcn/popover';
 
+// Import centralized types instead of defining our own
+import type { LinkData } from '@/lib/hooks/use-dashboard-links';
+
 // Helper Components
 interface HelpPopoverProps {
   title: string;
@@ -188,38 +191,6 @@ function AnimatedSelect({
       )}
     </div>
   );
-}
-
-// Types
-interface LinkData {
-  name: string;
-  url: string;
-  status: 'active' | 'paused' | 'expired';
-  views: number;
-  uploads: number;
-  linkType?: 'base' | 'custom';
-  topic?: string;
-
-  // Visibility and Security Controls
-  isPublic: boolean;
-  requireEmail: boolean;
-  requirePassword: boolean;
-  passwordHash?: string;
-
-  // File and Upload Limits
-  maxFiles: number;
-  maxFileSize: number; // in bytes
-  allowedFileTypes: string[];
-
-  // Organization Settings
-  autoCreateFolders: boolean;
-
-  settings?: {
-    requireEmail?: boolean;
-    allowMultiple?: boolean;
-    maxFileSize?: string;
-    customMessage?: string;
-  };
 }
 
 // Link Details Modal

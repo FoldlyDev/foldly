@@ -1,50 +1,141 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import type {
+  UploadLink,
+  LinkType,
+  BatchStatus,
+  FileProcessingStatus,
+} from '@/types';
 
+// Re-export commonly used types for convenience
 export type LinkStatus = 'active' | 'paused' | 'expired';
 export type ViewType = 'grid' | 'list';
 export type SortOption = 'recent' | 'created' | 'uploads' | 'views' | 'name';
 
+// Dashboard-specific adapter type that extends the database schema
+// for UI-friendly field names and computed properties
 export interface LinkData {
-  id: string;
-  name: string;
-  slug: string;
-  url: string;
-  status: LinkStatus;
-  uploads: number;
-  views: number;
-  lastActivity: string;
-  expiresAt: string;
-  createdAt: string;
-  linkType: 'base' | 'custom';
-  topic?: string;
+  // Core identification (adapted from UploadLink)
+  readonly id: string;
+  readonly name: string; // Mapped from UploadLink.title
+  readonly slug: string;
+  readonly url: string; // Computed field: constructed from slug/topic
+  readonly topic?: string;
+  readonly linkType: 'base' | 'custom';
 
-  // Visibility and Security Controls (from ARCHITECTURE.md)
-  isPublic: boolean;
-  requireEmail: boolean;
-  requirePassword: boolean;
-  passwordHash?: string;
+  // Status and activity (computed fields)
+  readonly status: LinkStatus; // Computed from expiresAt and other factors
+  readonly uploads: number; // Mapped from UploadLink.totalUploads
+  readonly views: number; // Computed from access logs
+  readonly lastActivity: string; // Computed from lastUploadAt
 
-  // File and Upload Limits
-  maxFiles: number;
-  maxFileSize: number; // in bytes
-  allowedFileTypes: string[]; // MIME types
+  // Dates (from UploadLink)
+  readonly createdAt: string; // ISO string format for UI
+  readonly expiresAt: string; // ISO string format, "Never" if null
 
-  // Organization Settings
-  autoCreateFolders: boolean;
-  defaultFolderId?: string;
+  // Security controls (from UploadLink)
+  readonly isPublic: boolean;
+  readonly requireEmail: boolean;
+  readonly requirePassword: boolean;
+  readonly passwordHash?: string;
 
-  // Legacy settings (maintaining backward compatibility)
-  settings: {
+  // File and upload limits (from UploadLink)
+  readonly maxFiles: number;
+  readonly maxFileSize: number; // in bytes
+  readonly allowedFileTypes: string[];
+
+  // Organization settings (from UploadLink)
+  readonly autoCreateFolders: boolean;
+
+  // Legacy UI settings for backward compatibility
+  readonly settings?: {
     requireEmail: boolean;
     allowMultiple: boolean;
-    maxFileSize: string;
+    maxFileSize: string; // Human-readable format like "50MB"
     customMessage: string;
   };
 }
 
-export interface FilterValues {
+// Utility function to convert UploadLink to LinkData for UI consumption
+export function adaptUploadLinkForUI(uploadLink: UploadLink): LinkData {
+  const baseUrl = 'foldly.com'; // This should come from config
+  const url = uploadLink.topic
+    ? `${baseUrl}/${uploadLink.slug}/${uploadLink.topic}`
+    : `${baseUrl}/${uploadLink.slug}`;
+
+  // Determine status based on expiration and other factors
+  const now = new Date();
+  const expiresAt = uploadLink.expiresAt
+    ? new Date(uploadLink.expiresAt)
+    : null;
+  const status: LinkStatus =
+    expiresAt && expiresAt < now ? 'expired' : 'active'; // TODO: Add paused logic
+
+  return {
+    id: uploadLink.id,
+    name: uploadLink.title,
+    slug: uploadLink.slug,
+    url,
+    ...(uploadLink.topic && { topic: uploadLink.topic }),
+    linkType: uploadLink.topic ? 'custom' : 'base',
+    status,
+    uploads: uploadLink.totalUploads,
+    views: 0, // TODO: Compute from access logs
+    lastActivity: uploadLink.lastUploadAt
+      ? formatRelativeTime(uploadLink.lastUploadAt)
+      : 'No activity',
+    createdAt: uploadLink.createdAt.toISOString(),
+    expiresAt: expiresAt ? expiresAt.toISOString() : 'Never',
+    isPublic: uploadLink.isPublic,
+    requireEmail: uploadLink.requireEmail,
+    requirePassword: uploadLink.requirePassword,
+    ...(uploadLink.passwordHash && { passwordHash: uploadLink.passwordHash }),
+    maxFiles: uploadLink.maxFiles,
+    maxFileSize: uploadLink.maxFileSize,
+    allowedFileTypes: [...(uploadLink.allowedFileTypes || [])],
+    autoCreateFolders: uploadLink.autoCreateFolders,
+    settings: {
+      requireEmail: uploadLink.requireEmail,
+      allowMultiple: uploadLink.maxFiles > 1,
+      maxFileSize: formatFileSize(uploadLink.maxFileSize),
+      customMessage: uploadLink.instructions || '',
+    },
+  };
+}
+
+// Helper function to format file size
+function formatFileSize(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex++;
+  }
+
+  return `${Math.round(size)}${units[unitIndex]}`;
+}
+
+// Helper function to format relative time
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 60) {
+    return `${diffMins} minutes ago`;
+  } else if (diffHours < 24) {
+    return `${diffHours} hours ago`;
+  } else {
+    return `${diffDays} days ago`;
+  }
+}
+
+export interface FilterValues extends Record<string, string> {
   status: string;
   sortBy: string;
   dateRange: string;

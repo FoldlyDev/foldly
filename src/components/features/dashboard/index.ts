@@ -1,4 +1,4 @@
-export { DashboardContainer } from './dashboard-container';
+export { DashboardContainer, HomeContainer } from './dashboard-container';
 export { DashboardHeader } from './dashboard-header';
 export { AnalyticsCards } from './analytics-cards';
 export { QuickActions } from './quick-actions';
