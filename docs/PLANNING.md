@@ -1,26 +1,41 @@
-# Foldly - 2025 SaaS Development Plan & Architecture
+# Foldly - 2025 Advanced SaaS Development Plan & Multi-Link Architecture
 
 ## 🎯 Project Overview
 
-**Foldly** is a next-generation file collection SaaS platform that eliminates friction in requesting and organizing files from clients, collaborators, and prospects.
+**Foldly** is a next-generation file collection SaaS platform with **multiple link types**, **advanced organization**, and **flexible security controls** for professional file management workflows.
 
 ### Core Value Proposition
 
-- **Dead-simple file collection**: Custom branded upload links (foldly.com/yourname)
-- **Zero-friction UX**: No logins, no setup, no clutter for uploaders
-- **Auto-organization**: Smart folder structure with metadata tracking
-- **Professional branding**: White-label solution with custom domains
-- **Intelligent notifications**: Real-time progress tracking and automated reminders
+#### **Multi-Link Architecture**
+
+- **Base Links**: `foldly.com/username` - General data dump area for any uploads
+- **Custom Topic Links**: `foldly.com/username/topic_or_folder` - Project-specific with auto-organization
+- **Smart Generation**: Right-click any folder to create targeted upload links
+
+#### **Advanced Organization System**
+
+- **Pre-Upload**: Uploaders can create folder structures before submission
+- **Post-Upload**: Recipients have full reorganization capabilities
+- **Organization Workflow**: Recipients must first drag received files into their personal workspace/repo area before they can organize/reorganize them
+- **Batch Management**: Smart grouping with `[Uploader Name] (Batch Name) [Date]` format
+- **Auto-Sorting**: Custom links automatically route to designated folders
+
+#### **Flexible Security & UX**
+
+- **Zero-Friction Core**: Only name required, no forced logins
+- **Recipient-Controlled**: Optional email requirements, password protection
+- **Visibility Controls**: Public/private settings per link or folder
+- **Smart Warnings**: Alerts for potentially risky file types
 
 ### Business Model
 
 - **Freemium SaaS**: $0 → $8 → $25 → $40/month tiers
-- **Target Market**: Creative agencies, consultants, small businesses, freelancers
-- **Revenue Streams**: Subscription tiers, custom branding, storage upgrades
+- **Target Market**: Creative agencies, consultants, project managers, legal/HR teams
+- **Revenue Streams**: Multi-link plans, advanced organization tools, white-label branding
 
 ## 🏗️ Modern 2025 Tech Stack (Enterprise-Grade Security)
 
-> **Architecture**: Full-stack Next.js application with Clerk authentication and Supabase backend
+> **Architecture**: Full-stack Next.js application with Clerk authentication and Supabase backend optimized for multi-link handling
 
 ### Frontend Stack
 
@@ -66,238 +81,357 @@
 - **Type Safety**: TypeScript strict mode
 - **API**: tRPC (end-to-end type safety) + Supabase client
 
-## 📊 Architecture Decisions & Rationale
+## 📊 Advanced Architecture Decisions & Rationale
 
-### Supabase vs Neon vs Firebase
+### Multi-Link System Design
 
-**Choice: Supabase**
+**Choice: Dynamic URL Routing with Database Resolution**
 
-- **Open Source**: No vendor lock-in, can self-host if needed
-- **Real-time capabilities**: Built-in subscriptions for live updates
-- **Integrated storage**: File uploads with automatic CDN distribution
-- **Row Level Security**: Enterprise-grade data protection
-- **PostgreSQL**: Full SQL capabilities with JSON support
-- **Cost efficiency**: Unified platform reduces complexity and costs
+- **Base Links**: Simple user slug resolution (`/[username]`)
+- **Topic Links**: Nested path resolution (`/[username]/[topic]`)
+- **Database Integration**: Real-time link validation and permission checking
+- **Security Layer**: Row Level Security for all link access patterns
 
-### Authentication: Clerk + Supabase Integration
+**Benefits:**
 
-**Choice: Clerk for Auth + Supabase for Data**
+- **SEO-Friendly**: Clean, memorable URLs for all link types
+- **Scalable**: Database-driven routing handles infinite custom links
+- **Secure**: Per-link permission controls with RLS
+- **Fast**: Cached link resolution with Vercel Edge
 
-- **Security separation**: Authentication separate from data layer
-- **Enterprise features**: Advanced RBAC, audit logs, compliance
-- **Developer experience**: React-first design, excellent Next.js integration
-- **Scalability**: Handles enterprise user management requirements
-- **Integration**: [Official Clerk-Supabase integration](https://clerk.com/docs/integrations/databases/supabase) with JWT verification
+### Advanced Organization Architecture
 
-### File Storage Strategy
+**Choice: Hierarchical Folder System with Metadata**
 
-**Choice: Supabase Storage + CDN**
+- **Pre-Upload Organization**: Frontend folder creation interface
+- **Database Schema**: Nested folder structures with parent/child relationships
+- **Real-time Sync**: Live updates during folder creation and file uploads
+- **Batch Grouping**: Automatic batch metadata with uploader information
 
-- **Unified platform**: Storage integrated with database and auth
-- **Automatic optimization**: Built-in image processing and CDN
-- **Security**: Row Level Security for file access control
-- **Cost efficiency**: No separate S3 + CloudFront setup needed
-- **Real-time**: Instant upload progress and file processing updates
+### Permission & Security System
 
-### State Management: Zustand vs Redux
+**Choice: Granular Controls with Sensible Defaults**
 
-**Choice: Zustand**
+- **Default Behavior**: Minimal friction (name only)
+- **Progressive Security**: Recipient can add email requirements, passwords
+- **Visibility Layers**: Public/private per link with database enforcement
+- **Access Logging**: Complete audit trail for security compliance
 
-- **Bundle size**: 4KB vs 40KB+ for Redux Toolkit
-- **Simplicity**: No boilerplate, direct state mutations
-- **TypeScript**: Excellent TypeScript support out-of-the-box
-- **Performance**: Minimal re-renders, subscription-based updates
+## 🔧 Advanced Database Schema Design
 
-## 🔒 Enterprise Security Architecture
+### Core Tables with Multi-Link Support
 
-### Authentication & Authorization
+```sql
+-- Enhanced upload links with multi-type support
+CREATE TABLE upload_links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL, -- References Clerk user ID
+  slug VARCHAR(100) UNIQUE NOT NULL, -- username part
+  topic VARCHAR(100), -- NULL for base links, topic for custom links
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  link_type VARCHAR(20) DEFAULT 'base' CHECK (link_type IN ('base', 'custom')),
 
-- **Multi-layer auth**: Clerk handles user auth, Supabase RLS protects data
-- **JWT verification**: Supabase automatically verifies Clerk JWTs via JWKS
-- **Role-based access**: Granular permissions for different user types
-- **Session management**: Secure, httpOnly cookies with automatic refresh
+  -- Advanced organization settings
+  auto_create_folders BOOLEAN DEFAULT TRUE,
+  default_folder_id UUID REFERENCES folders(id),
 
-### Data Protection
+  -- Security controls
+  require_email BOOLEAN DEFAULT FALSE,
+  require_password BOOLEAN DEFAULT FALSE,
+  password_hash TEXT, -- bcrypt hash if password required
+  is_public BOOLEAN DEFAULT TRUE, -- visibility control
 
-- **Encryption**: AES-256 at rest (Supabase), TLS 1.3 in transit
-- **File security**: Virus scanning, secure presigned URLs, access logging
-- **Row Level Security**: Database-level protection for multi-tenant data
-- **Audit trails**: Complete logging of all data access and modifications
+  -- Limits and expiration
+  max_files INTEGER DEFAULT 100,
+  max_file_size BIGINT DEFAULT 104857600, -- 100MB default
+  expires_at TIMESTAMP WITH TIME ZONE,
 
-### Infrastructure Security
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-- **Network isolation**: Private subnets, security groups
-- **API security**: Rate limiting, CORS protection, input validation
-- **Monitoring**: Real-time threat detection and alerting
-- **Compliance**: SOC 2, GDPR, HIPAA preparation
+-- Hierarchical folder system
+CREATE TABLE folders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL, -- References Clerk user ID
+  parent_folder_id UUID REFERENCES folders(id), -- NULL for root folders
+  name VARCHAR(255) NOT NULL,
+  path TEXT GENERATED ALWAYS AS (
+    CASE
+      WHEN parent_folder_id IS NULL THEN name
+      ELSE (SELECT path FROM folders WHERE id = parent_folder_id) || '/' || name
+    END
+  ) STORED,
+  upload_link_id UUID REFERENCES upload_links(id), -- Associated upload link
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-## 🎨 Design System & UI Architecture
+-- Enhanced file uploads with batch support
+CREATE TABLE file_uploads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
+  folder_id UUID REFERENCES folders(id), -- Organization destination
+  batch_id UUID NOT NULL, -- Groups files uploaded together
+
+  -- Uploader information
+  uploader_name VARCHAR(255) NOT NULL, -- Mandatory field
+  uploader_email VARCHAR(255), -- Optional, required if link requires it
+  batch_name VARCHAR(255), -- Optional batch naming
+
+  -- File metadata
+  file_name VARCHAR(255) NOT NULL,
+  original_file_name VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  storage_path TEXT NOT NULL,
+
+  -- Security and processing
+  is_processed BOOLEAN DEFAULT FALSE,
+  is_safe BOOLEAN DEFAULT TRUE, -- Virus scan result
+  security_warnings JSONB, -- File type warnings
+
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Batch metadata for organization
+CREATE TABLE upload_batches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  upload_link_id UUID REFERENCES upload_links(id),
+  uploader_name VARCHAR(255) NOT NULL,
+  uploader_email VARCHAR(255),
+  batch_name VARCHAR(255),
+  total_files INTEGER DEFAULT 0,
+  total_size BIGINT DEFAULT 0,
+  upload_completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### Row Level Security Policies
+
+```sql
+-- Upload links RLS
+CREATE POLICY "Users can manage their own upload links"
+  ON upload_links
+  FOR ALL
+  USING (auth.jwt()->>'sub' = user_id::text);
+
+-- Public links are viewable for uploads
+CREATE POLICY "Public upload links are accessible"
+  ON upload_links
+  FOR SELECT
+  USING (is_public = TRUE);
+
+-- Folders RLS
+CREATE POLICY "Users can manage their own folders"
+  ON folders
+  FOR ALL
+  USING (auth.jwt()->>'sub' = user_id::text);
+
+-- File uploads RLS with batch support
+CREATE POLICY "Users can access files from their links"
+  ON file_uploads
+  FOR ALL
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE auth.jwt()->>'sub' = user_id::text
+    )
+  );
+```
+
+## 🎨 Advanced UI/UX Architecture
+
+### Multi-Link Upload Interface Design
+
+```
+Upload Flow Variations:
+├── Base Link Upload (`/username`)
+│   ├── Minimal form (name only)
+│   ├── Optional folder creation
+│   └── Batch naming prompt
+├── Custom Topic Upload (`/username/topic`)
+│   ├── Pre-configured destination
+│   ├── Topic-specific instructions
+│   └── Automatic organization
+└── Security Enhanced Links
+    ├── Email requirement
+    ├── Password prompt
+    └── Access verification
+```
+
+### Organization Interface Components
+
+```
+Recipient Dashboard:
+├── /components/features/organization/
+│   ├── multi-link-manager.tsx     # Manage all link types
+│   ├── folder-tree.tsx            # Hierarchical folder view
+│   ├── batch-viewer.tsx           # Batch organization interface
+│   ├── drag-drop-organizer.tsx    # Post-upload reorganization
+│   └── custom-link-generator.tsx  # Right-click link creation
+├── /components/features/uploads/
+│   ├── upload-form.tsx            # Dynamic form based on link settings
+│   ├── folder-creator.tsx         # Pre-upload organization
+│   ├── batch-namer.tsx            # Batch naming interface
+│   └── security-handler.tsx       # Password/email verification
+```
+
+### Permission Control Interface
+
+```
+Security Settings:
+├── Link-Level Controls
+│   ├── Email requirement toggle
+│   ├── Password protection setup
+│   ├── Public/private visibility
+│   └── File type restrictions
+├── Folder-Level Controls
+│   ├── Auto-organization rules
+│   ├── Access logging options
+│   └── Custom link generation
+```
+
+## 🔒 Advanced Security Architecture
+
+### Multi-Layer Security System
+
+#### **Link-Level Security**
+
+- **URL Validation**: Secure slug generation and validation
+- **Access Controls**: Per-link permission enforcement
+- **Rate Limiting**: Upload frequency and size limits
+- **Expiration**: Time-based link deactivation
+
+#### **Upload Security**
+
+- **File Type Validation**: Comprehensive MIME type checking
+- **Virus Scanning**: Real-time malware detection
+- **Size Limits**: Configurable per-link file size controls
+- **Security Warnings**: User alerts for compressed files
+
+#### **Data Protection**
+
+- **Encryption**: AES-256 at rest, TLS 1.3 in transit
+- **Access Logging**: Complete audit trail
+- **Privacy Controls**: GDPR-compliant data handling
+- **Row Level Security**: Database-level protection
+
+## 🚀 Advanced Development Methodology
+
+### Multi-Link Testing Strategy
+
+```typescript
+// Link type testing patterns
+describe('Multi-Link System', () => {
+  describe('Base Links', () => {
+    test('accepts uploads with minimal requirements');
+    test('handles folder creation during upload');
+    test('enforces security settings when enabled');
+  });
+
+  describe('Custom Topic Links', () => {
+    test('auto-routes to correct folders');
+    test('maintains topic-specific settings');
+    test('handles public/private visibility');
+  });
+
+  describe('Permission Controls', () => {
+    test('email requirements enforcement');
+    test('password protection validation');
+    test('access logging functionality');
+  });
+});
+```
 
 ### Component Architecture
 
 ```
-/components
-  /ui            # Shadcn/ui primitives (Button, Input, etc.)
-  /layout        # Header, Sidebar, Footer
-  /features      # Business logic components
-    /upload      # File upload components
-    /dashboard   # Dashboard-specific components
-    /billing     # Subscription management
-  /shared        # Reusable business components
+/src/components/features/
+├── multi-links/
+│   ├── base-link-handler/
+│   ├── custom-link-handler/
+│   ├── link-generator/
+│   └── permission-controls/
+├── organization/
+│   ├── folder-management/
+│   ├── batch-processing/
+│   ├── drag-drop-system/
+│   └── auto-sorting/
+├── security/
+│   ├── access-controls/
+│   ├── file-validation/
+│   ├── security-warnings/
+│   └── audit-logging/
 ```
 
-### Styling Strategy
+## 💰 Enhanced Cost Projection (Monthly)
 
-- **Utility-first**: TailwindCSS for rapid development
-- **Design tokens**: CSS custom properties for theming
-- **Component variants**: CVA (Class Variance Authority) for component styling
-- **Responsive design**: Mobile-first approach with Tailwind breakpoints
-
-## 📈 Scalability Strategy
-
-### Performance Optimization
-
-- **Edge computing**: Vercel Edge Functions for global latency
-- **Database optimization**: Connection pooling, query optimization
-- **CDN strategy**: Supabase Storage CDN for global file delivery
-- **Caching**: Multi-layer caching (CDN, API, database)
-- **Real-time optimization**: Efficient WebSocket connections
-
-### Cost Management
-
-- **Serverless-first**: Pay-per-execution model
-- **Auto-scaling**: Vercel handles traffic spikes automatically
-- **Storage optimization**: Supabase automatic optimization and tiering
-- **Resource monitoring**: Cost alerts and usage analytics
-
-## 🚀 Development Methodology
-
-### Code Quality Standards
-
-- **TypeScript strict mode**: Maximum type safety
-- **ESLint + Prettier**: Consistent code formatting
-- **Husky pre-commit hooks**: Automated quality checks
-- **Unit testing**: 80%+ code coverage requirement
-- **E2E testing**: Critical user journeys with Playwright
-
-### Git Workflow
-
-- **Branch strategy**: Feature branches + main
-- **Code reviews**: Required for all PRs
-- **Conventional commits**: Semantic versioning
-- **Automated deployment**: CI/CD with GitHub Actions
-
-### Project Structure
-
-> **Note**: This is a **full-stack Next.js application** - frontend and backend are integrated in the same codebase
-
-```
-foldly/
-├── src/
-│   ├── app/                 # Next.js 15 App Router (frontend pages + API routes)
-│   ├── components/          # React components (frontend)
-│   ├── lib/                 # Utilities and configurations (shared)
-│   ├── server/              # tRPC server code (backend logic)
-│   └── styles/              # Global styles (frontend)
-├── docs/                    # Project documentation
-├── tests/                   # Test files
-└── public/                  # Static assets
-```
-
-**Architecture Benefits:**
-
-- **Single deployment**: Frontend and backend deploy together on Vercel
-- **Type safety**: Shared types between frontend and backend
-- **Unified auth**: Clerk integration works across full stack
-- **Real-time features**: Socket.io + Supabase subscriptions
-- **Cost efficiency**: No separate backend hosting needed
-
-## 💰 Cost Projection (Monthly)
-
-### Development (MVP → Scale)
+### Advanced Feature Costs
 
 - **Vercel Pro**: $20/month (production deployment)
 - **Supabase PostgreSQL**: $0 → $25/month (1GB → 10GB)
 - **Clerk Authentication**: $0 → $25/month (10K MAU)
-- **Supabase Storage**: $0 → $25/month (100GB → 1TB)
+- **Supabase Storage**: $0 → $50/month (100GB → 2TB for multi-link usage)
 - **Resend Email**: $0 → $20/month (3K → 50K emails)
+- **Security Services**: $15/month (virus scanning, monitoring)
 - **Domain + DNS**: $15/month (Cloudflare Pro)
 
-**Total Monthly Cost**: $40 → $150/month (MVP → Growth stage)
+**Total Monthly Cost**: $45 → $170/month (MVP → Growth stage)
 
-### Revenue Targets
+### Revenue Targets (Enhanced)
 
-- **100 users @ $8/month**: $800/month
-- **50 users @ $25/month**: $1,250/month
-- **10 users @ $40/month**: $400/month
-- **Total Revenue**: $2,450/month (target by month 6)
+- **150 users @ $8/month** (basic multi-links): $1,200/month
+- **75 users @ $25/month** (advanced organization): $1,875/month
+- **25 users @ $40/month** (enterprise security): $1,000/month
+- **Total Revenue**: $4,075/month (target by month 6)
 
-## 🎯 Feature Prioritization
+## 🎯 Enhanced Feature Prioritization
 
-### Phase 1: MVP (Months 1-2)
+### Phase 1: Advanced MVP (Months 1-2)
 
-- [ ] User authentication and onboarding
-- [ ] Custom upload link generation
-- [ ] Basic file upload and organization
-- [ ] Email notifications
-- [ ] Payment integration (Stripe)
-- [ ] Basic dashboard
+- [ ] Multi-link system (base + custom topic links)
+- [ ] Advanced upload requirements (name mandatory, email optional)
+- [ ] Hierarchical folder system with pre-upload creation
+- [ ] Batch organization with smart naming
+- [ ] Basic permission controls (public/private, email requirements)
+- [ ] Security warnings for file types
 
-### Phase 2: Growth (Months 3-4)
+### Phase 2: Professional Features (Months 3-4)
 
-- [ ] Advanced file management
-- [ ] Custom branding options
-- [ ] Team collaboration features
-- [ ] Advanced analytics
-- [ ] Mobile-responsive design
-- [ ] API documentation
+- [ ] Password protection for upload links
+- [ ] Advanced file organization tools (drag-drop, bulk operations)
+- [ ] Right-click custom link generation
+- [ ] Real-time notifications and progress tracking
+- [ ] Advanced analytics with batch insights
+- [ ] Audit logging and access controls
 
-### Phase 3: Scale (Months 5-6)
+### Phase 3: Enterprise Scale (Months 5-6)
 
-- [ ] White-label solutions
-- [ ] Advanced integrations (Zapier, etc.)
-- [ ] Enterprise features
-- [ ] Advanced security controls
-- [ ] Multi-language support
-- [ ] Advanced reporting
+- [ ] White-label solutions with custom branding
+- [ ] Advanced security controls and compliance features
+- [ ] API for integrations and automation
+- [ ] Multi-language support and accessibility
+- [ ] Advanced reporting and analytics dashboard
+- [ ] Enterprise user management and team features
 
-## 🔄 Migration & Deployment Strategy
+## 🔄 Advanced Migration & Deployment Strategy
 
-### Environment Setup
+### Multi-Environment Setup
 
-1. **Development**: Local Next.js with Supabase DB branch
-2. **Staging**: Vercel preview deployments
-3. **Production**: Vercel production with monitoring
+1. **Development**: Local Next.js with Supabase branch + test data
+2. **Staging**: Vercel preview with staging database + security testing
+3. **Production**: Vercel production with monitoring + audit logging
 
-### Database Migrations
+### Database Migration Strategy
 
-- **Drizzle migrations**: Version-controlled schema changes
-- **Backup strategy**: Automated daily backups
-- **Rollback procedures**: Quick revert capabilities
-
-### Monitoring & Alerting
-
-- **Application monitoring**: Sentry for error tracking
-- **Performance monitoring**: Vercel Analytics
-- **Uptime monitoring**: Betterstack or similar
-- **Cost monitoring**: AWS Cost Explorer alerts
-
-## 📚 Documentation Standards
-
-### Code Documentation
-
-- **TSDoc comments**: For all exported functions
-- **README files**: For each major component/feature
-- **API documentation**: Auto-generated from tRPC schemas
-- **Deployment guides**: Step-by-step setup instructions
-
-### User Documentation
-
-- **Knowledge base**: Built with Mintlify or similar
-- **Video tutorials**: For complex features
-- **API documentation**: For developer integrations
-- **Changelog**: Regular feature updates
+- **Schema Versioning**: Drizzle migrations for multi-link system
+- **Data Migration**: Safe transition from single to multi-link architecture
+- **Rollback Procedures**: Quick revert capabilities for all schema changes
+- **Testing**: Comprehensive migration testing with data integrity validation
 
 ---
 
-_This planning document serves as the single source of truth for Foldly's development strategy. All technical decisions should align with these architectural choices and cost optimization goals._
+_This planning document serves as the single source of truth for Foldly's advanced multi-link development strategy. All technical decisions should align with these architectural choices and security requirements._

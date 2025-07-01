@@ -29,6 +29,7 @@ const GradientButton = forwardRef<HTMLButtonElement, GradientButtonProps>(
       'font-medium text-sm leading-none',
       'border-0 outline-none',
       'rounded-xl',
+      'cursor-pointer',
       'transition-all duration-300 ease-out',
       'transform hover:scale-[1.02] active:scale-[0.98]',
       'focus-visible:ring-4 focus-visible:ring-offset-2',

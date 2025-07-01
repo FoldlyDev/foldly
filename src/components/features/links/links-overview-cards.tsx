@@ -108,7 +108,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
             className={`
               group relative bg-white rounded-2xl p-6 
               border border-[var(--neutral-200)] shadow-sm hover:shadow-lg
-              transition-all duration-300 cursor-pointer
+              transition-all duration-300
               border-l-4 ${colors.accent}
             `}
           >

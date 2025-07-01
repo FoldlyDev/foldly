@@ -1,21 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import {
   Link2,
   Eye,
+  EyeOff,
   FileText,
-  Copy,
-  Settings,
-  MoreHorizontal,
   ExternalLink,
   Clock,
-  CheckCircle,
-  AlertCircle,
-  Pause,
   Share2,
+  Globe,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Checkbox } from '@/components/animate-ui';
+import {
+  StatusBadge,
+  CopyButton,
+  ActionButton,
+  CardActionsMenu,
+  defaultActions,
+  type ActionItem,
+} from '@/components/ui';
 
 interface LinkCardProps {
   link: {
@@ -29,6 +34,23 @@ interface LinkCardProps {
     lastActivity: string;
     expiresAt: string;
     createdAt: string;
+    linkType?: 'base' | 'custom';
+    topic?: string;
+
+    // Visibility and Security Controls
+    isPublic: boolean;
+    requireEmail: boolean;
+    requirePassword: boolean;
+    passwordHash?: string;
+
+    // File and Upload Limits
+    maxFiles: number;
+    maxFileSize: number; // in bytes
+    allowedFileTypes: string[];
+
+    // Organization Settings
+    autoCreateFolders: boolean;
+
     settings: {
       requireEmail: boolean;
       allowMultiple: boolean;
@@ -44,6 +66,7 @@ interface LinkCardProps {
   isMultiSelected?: boolean;
   onShare?: (linkId: string) => void;
   onSettings?: (linkId: string) => void;
+  onDelete?: (linkId: string) => void;
 }
 
 export function LinkCard({
@@ -56,55 +79,50 @@ export function LinkCard({
   isMultiSelected,
   onShare,
   onSettings,
+  onDelete,
 }: LinkCardProps) {
-  const [showActions, setShowActions] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const linkUrl = `https://${link.url}`;
+  const isBaseLink = link.linkType === 'base' || !link.topic;
 
-  const handleCopyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(`https://${link.url}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy URL:', err);
-    }
+  const handleViewFiles = () => {
+    router.push(`/dashboard/files?link=${link.id}`);
   };
 
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'active':
-        return {
-          icon: CheckCircle,
-          color: 'text-green-600 bg-green-50',
-          text: 'Active',
-          dotColor: 'bg-green-500',
-        };
-      case 'paused':
-        return {
-          icon: Pause,
-          color: 'text-yellow-600 bg-yellow-50',
-          text: 'Paused',
-          dotColor: 'bg-yellow-500',
-        };
-      case 'expired':
-        return {
-          icon: AlertCircle,
-          color: 'text-red-600 bg-red-50',
-          text: 'Expired',
-          dotColor: 'bg-red-500',
-        };
-      default:
-        return {
-          icon: CheckCircle,
-          color: 'text-gray-600 bg-gray-50',
-          text: 'Unknown',
-          dotColor: 'bg-gray-500',
-        };
-    }
-  };
+  // Create actions for the dropdown menu (no duplicates from card body)
+  const actions: ActionItem[] = [
+    defaultActions.viewFiles(handleViewFiles),
+    defaultActions.settings(() => onSettings?.(link.id)),
+    defaultActions.details(() => onSelect(link.id)),
+    defaultActions.delete(() => onDelete?.(link.id)),
+  ];
 
-  const statusConfig = getStatusConfig(link.status);
-  const StatusIcon = statusConfig.icon;
+  // Visibility indicator component
+  const VisibilityIndicator = () => {
+    return (
+      <div
+        className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+          link.isPublic
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-orange-100 text-orange-700'
+        }`}
+        title={
+          link.isPublic
+            ? 'Public - Anyone can access'
+            : 'Private - Restricted access'
+        }
+      >
+        {link.isPublic ? (
+          <Globe className='w-3 h-3' />
+        ) : (
+          <EyeOff className='w-3 h-3' />
+        )}
+        <span className='font-semibold'>
+          {link.isPublic ? 'Public' : 'Private'}
+        </span>
+      </div>
+    );
+  };
 
   if (view === 'list') {
     return (
@@ -117,43 +135,51 @@ export function LinkCard({
           hover:shadow-md transition-all duration-300
           ${isMultiSelected ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''}
         `}
-        onClick={() => onSelect(link.id)}
       >
         <div className='flex items-center justify-between'>
           {/* Left Section */}
-          <div className='flex items-center gap-4 flex-1'>
-            <div className='w-12 h-12 bg-[var(--primary-subtle)] rounded-xl flex items-center justify-center'>
-              <Link2 className='w-6 h-6 text-[var(--primary)]' />
+          <div className='flex items-center gap-4 flex-1 min-w-0'>
+            <div
+              className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                isBaseLink
+                  ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] shadow-lg group-hover:shadow-xl group-hover:scale-105'
+                  : 'bg-[var(--secondary-subtle)] group-hover:bg-[var(--secondary-subtle-hover)]'
+              }`}
+            >
+              <Link2
+                className={`w-6 h-6 transition-transform duration-300 ${
+                  isBaseLink
+                    ? 'text-white group-hover:scale-110'
+                    : 'text-[var(--secondary)] group-hover:text-[var(--secondary-dark)]'
+                }`}
+              />
             </div>
 
             <div className='flex-1 min-w-0'>
-              <div className='flex items-center gap-2 mb-1'>
-                {/* Multi-select checkbox beside title in list view */}
-                {onMultiSelect && (
-                  <input
-                    type='checkbox'
-                    checked={isMultiSelected}
-                    onChange={e => {
-                      e.stopPropagation();
-                      onMultiSelect(link.id);
-                    }}
-                    className='w-4 h-4 text-[var(--primary)] bg-white border-[var(--neutral-300)] rounded focus:ring-[var(--primary)] focus:ring-2 shadow-sm'
-                  />
+              <div className='flex items-center gap-2 mb-1 flex-wrap'>
+                {/* Multi-select checkbox - Only show for custom links (base links cannot be deleted) */}
+                {onMultiSelect && !isBaseLink && (
+                  <div
+                    onClick={e => e.stopPropagation()}
+                    className='flex items-center'
+                  >
+                    <Checkbox
+                      checked={isMultiSelected}
+                      onCheckedChange={() => onMultiSelect(link.id)}
+                      className='data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]'
+                    />
+                  </div>
                 )}
-                <h3 className='font-semibold text-[var(--quaternary)] truncate'>
+                <h3 className='font-semibold text-[var(--quaternary)] truncate flex-1 min-w-0'>
                   {link.name}
                 </h3>
-                <div
-                  className={`
-                  inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-                  ${statusConfig.color}
-                `}
-                >
-                  <div
-                    className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotColor}`}
-                  />
-                  {statusConfig.text}
-                </div>
+                <StatusBadge
+                  status={link.status as 'active' | 'paused' | 'expired'}
+                  size='sm'
+                  variant='dot'
+                  className='flex-shrink-0'
+                />
+                <VisibilityIndicator />
               </div>
               <p className='text-[var(--neutral-500)] text-sm truncate'>
                 {link.url}
@@ -161,8 +187,8 @@ export function LinkCard({
             </div>
           </div>
 
-          {/* Stats */}
-          <div className='flex items-center gap-6 mr-4'>
+          {/* Stats - Hidden on mobile, shown on tablet+ */}
+          <div className='hidden md:flex items-center gap-6 mr-4'>
             <div className='text-center'>
               <div className='text-lg font-bold text-[var(--quaternary)]'>
                 {link.uploads}
@@ -186,102 +212,33 @@ export function LinkCard({
           </div>
 
           {/* Actions */}
-          <div className='flex items-center gap-2'>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={e => {
-                e.stopPropagation();
-                handleCopyUrl();
-              }}
-              className='p-2 rounded-lg hover:bg-[var(--neutral-100)] transition-colors'
-            >
-              {copied ? (
-                <CheckCircle className='w-4 h-4 text-green-600' />
-              ) : (
-                <Copy className='w-4 h-4 text-[var(--neutral-500)]' />
-              )}
-            </motion.button>
+          <div className='flex items-center gap-1'>
+            <CopyButton
+              value={linkUrl}
+              size='icon'
+              className='h-8 w-8 text-[var(--neutral-500)] hover:text-[var(--quaternary)] cursor-pointer'
+            />
 
-            <div className='relative'>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+            {/* Mobile: Show individual buttons, Desktop: Show dropdown */}
+            <div className='hidden sm:block'>
+              <CardActionsMenu actions={actions} />
+            </div>
+
+            {/* Mobile actions - individual buttons */}
+            <div className='flex sm:hidden gap-1'>
+              <ActionButton
+                variant='ghost'
+                size='icon'
+                motionType='subtle'
                 onClick={e => {
                   e.stopPropagation();
-                  setShowActions(!showActions);
+                  onShare?.(link.id);
                 }}
-                className='p-2 rounded-lg hover:bg-[var(--neutral-100)] transition-colors'
+                className='h-8 w-8 text-[var(--neutral-500)] hover:text-[var(--quaternary)] cursor-pointer'
               >
-                <MoreHorizontal className='w-4 h-4 text-[var(--neutral-500)]' />
-              </motion.button>
-
-              {/* Dropdown Menu */}
-              {showActions && (
-                <>
-                  <div
-                    className='fixed inset-0 z-10'
-                    onClick={() => setShowActions(false)}
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className='absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[var(--neutral-200)] z-20'
-                  >
-                    <div className='py-2'>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          onShare?.(link.id);
-                          setShowActions(false);
-                        }}
-                        className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3'
-                      >
-                        <Share2 className='w-4 h-4 text-[var(--neutral-500)]' />
-                        <span className='text-sm text-[var(--neutral-700)]'>
-                          Share Link
-                        </span>
-                      </button>
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          onSettings?.(link.id);
-                          setShowActions(false);
-                        }}
-                        className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3'
-                      >
-                        <Settings className='w-4 h-4 text-[var(--neutral-500)]' />
-                        <span className='text-sm text-[var(--neutral-700)]'>
-                          Settings
-                        </span>
-                      </button>
-                      <div className='h-px bg-[var(--neutral-200)] my-2' />
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          setShowActions(false);
-                        }}
-                        className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3 text-red-600'
-                      >
-                        <svg
-                          className='w-4 h-4'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                          />
-                        </svg>
-                        <span className='text-sm'>Delete Link</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                </>
-              )}
+                <Share2 className='w-4 h-4' />
+              </ActionButton>
+              <CardActionsMenu actions={actions} />
             </div>
           </div>
         </div>
@@ -301,7 +258,6 @@ export function LinkCard({
         shadow-sm hover:shadow-lg transition-all duration-300
         ${isMultiSelected ? 'ring-2 ring-[var(--primary)] border-[var(--primary)]' : ''}
       `}
-      onClick={() => onSelect(link.id)}
     >
       {/* Background Gradient */}
       <div
@@ -314,36 +270,44 @@ export function LinkCard({
         <div className='flex items-start justify-between mb-4'>
           <div className='flex-1 min-w-0'>
             <div className='flex items-center gap-2 mb-2'>
-              <div className='w-10 h-10 bg-[var(--primary-subtle)] rounded-lg flex items-center justify-center'>
-                <Link2 className='w-5 h-5 text-[var(--primary)]' />
-              </div>
               <div
-                className={`
-                inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-                ${statusConfig.color}
-              `}
+                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                  isBaseLink
+                    ? 'bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] shadow-lg group-hover:shadow-xl group-hover:scale-105'
+                    : 'bg-[var(--secondary-subtle)] group-hover:bg-[var(--secondary-subtle-hover)]'
+                }`}
               >
-                <div
-                  className={`w-1.5 h-1.5 rounded-full ${statusConfig.dotColor}`}
+                <Link2
+                  className={`w-5 h-5 transition-transform duration-300 ${
+                    isBaseLink
+                      ? 'text-white group-hover:scale-110'
+                      : 'text-[var(--secondary)] group-hover:text-[var(--secondary-dark)]'
+                  }`}
                 />
-                {statusConfig.text}
               </div>
+              <StatusBadge
+                status={link.status as 'active' | 'paused' | 'expired'}
+                size='sm'
+                variant='dot'
+              />
+              <VisibilityIndicator />
             </div>
 
             <div className='flex items-center gap-3 mb-1'>
-              {/* Multi-select checkbox beside title */}
-              {onMultiSelect && (
-                <input
-                  type='checkbox'
-                  checked={isMultiSelected}
-                  onChange={e => {
-                    e.stopPropagation();
-                    onMultiSelect(link.id);
-                  }}
-                  className='w-4 h-4 text-[var(--primary)] bg-white border-[var(--neutral-300)] rounded focus:ring-[var(--primary)] focus:ring-2 shadow-sm'
-                />
+              {/* Multi-select checkbox - Only show for custom links (base links cannot be deleted) */}
+              {onMultiSelect && !isBaseLink && (
+                <div
+                  onClick={e => e.stopPropagation()}
+                  className='flex items-center'
+                >
+                  <Checkbox
+                    checked={isMultiSelected}
+                    onCheckedChange={() => onMultiSelect(link.id)}
+                    className='data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)]'
+                  />
+                </div>
               )}
-              <h3 className='font-bold text-[var(--quaternary)] text-lg truncate'>
+              <h3 className='font-bold text-[var(--quaternary)] text-lg truncate flex-1 min-w-0'>
                 {link.name}
               </h3>
             </div>
@@ -354,112 +318,7 @@ export function LinkCard({
             </div>
           </div>
 
-          <div className='relative'>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={e => {
-                e.stopPropagation();
-                setShowActions(!showActions);
-              }}
-              className='p-2 rounded-lg hover:bg-[var(--neutral-100)] transition-colors'
-            >
-              <MoreHorizontal className='w-4 h-4 text-[var(--neutral-500)]' />
-            </motion.button>
-
-            {/* Dropdown Menu for Grid View */}
-            {showActions && (
-              <>
-                <div
-                  className='fixed inset-0 z-10'
-                  onClick={() => setShowActions(false)}
-                />
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  className='absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-[var(--neutral-200)] z-20'
-                >
-                  <div className='py-2'>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        onShare?.(link.id);
-                        setShowActions(false);
-                      }}
-                      className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3'
-                    >
-                      <Share2 className='w-4 h-4 text-[var(--neutral-500)]' />
-                      <span className='text-sm text-[var(--neutral-700)]'>
-                        Share Link
-                      </span>
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        onSettings?.(link.id);
-                        setShowActions(false);
-                      }}
-                      className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3'
-                    >
-                      <Settings className='w-4 h-4 text-[var(--neutral-500)]' />
-                      <span className='text-sm text-[var(--neutral-700)]'>
-                        Settings
-                      </span>
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        onSelect(link.id);
-                        setShowActions(false);
-                      }}
-                      className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3'
-                    >
-                      <svg
-                        className='w-4 h-4 text-[var(--neutral-500)]'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-                        />
-                      </svg>
-                      <span className='text-sm text-[var(--neutral-700)]'>
-                        View Details
-                      </span>
-                    </button>
-                    <div className='h-px bg-[var(--neutral-200)] my-2' />
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        // Add delete functionality here
-                        setShowActions(false);
-                      }}
-                      className='w-full text-left px-4 py-2 hover:bg-[var(--neutral-50)] transition-colors flex items-center gap-3 text-red-600'
-                    >
-                      <svg
-                        className='w-4 h-4'
-                        fill='none'
-                        stroke='currentColor'
-                        viewBox='0 0 24 24'
-                      >
-                        <path
-                          strokeLinecap='round'
-                          strokeLinejoin='round'
-                          strokeWidth={2}
-                          d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
-                        />
-                      </svg>
-                      <span className='text-sm'>Delete Link</span>
-                    </button>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </div>
+          <CardActionsMenu actions={actions} />
         </div>
 
         {/* Stats Grid */}
@@ -493,51 +352,72 @@ export function LinkCard({
           </div>
 
           <div className='flex items-center gap-1'>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={e => {
-                e.stopPropagation();
-                handleCopyUrl();
-              }}
-              className='p-1.5 rounded-md hover:bg-[var(--neutral-100)] transition-colors'
-              title='Copy link'
-            >
-              {copied ? (
-                <CheckCircle className='w-4 h-4 text-green-600' />
-              ) : (
-                <Copy className='w-4 h-4 text-[var(--neutral-500)]' />
-              )}
-            </motion.button>
+            <CopyButton
+              value={linkUrl}
+              size='icon'
+              className='h-7 w-7 text-[var(--neutral-500)] hover:text-[var(--quaternary)] cursor-pointer'
+            />
 
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <ActionButton
+              variant='ghost'
+              size='icon'
+              motionType='subtle'
               onClick={e => {
                 e.stopPropagation();
                 onShare?.(link.id);
               }}
-              className='p-1.5 rounded-md hover:bg-[var(--neutral-100)] transition-colors'
+              className='h-7 w-7 text-[var(--neutral-500)] hover:text-[var(--quaternary)] cursor-pointer'
               title='Share'
             >
-              <Share2 className='w-4 h-4 text-[var(--neutral-500)]' />
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={e => {
-                e.stopPropagation();
-                onSettings?.(link.id);
-              }}
-              className='p-1.5 rounded-md hover:bg-[var(--neutral-100)] transition-colors'
-              title='Settings'
-            >
-              <Settings className='w-4 h-4 text-[var(--neutral-500)]' />
-            </motion.button>
+              <Share2 className='w-4 h-4' />
+            </ActionButton>
           </div>
         </div>
       </div>
     </motion.div>
   );
 }
+
+// Example Base Dump Link for demonstration
+export const exampleBaseDumpLink = {
+  id: 'base-dump-001',
+  name: 'My Base Dump Area',
+  slug: 'yourname',
+  url: 'foldly.com/yourname',
+  status: 'active' as const,
+  uploads: 247,
+  views: 1205,
+  lastActivity: '2 hours ago',
+  expiresAt: '',
+  createdAt: '2025-01-15T10:30:00Z',
+  linkType: 'base' as const,
+  topic: undefined,
+  settings: {
+    requireEmail: false,
+    allowMultiple: true,
+    maxFileSize: '100MB',
+    customMessage: "Drop any files here - I'll organize them later!",
+  },
+};
+
+// Example Custom Topic Link for demonstration
+export const exampleTopicLink = {
+  id: 'topic-headshots-001',
+  name: 'Team Headshots Collection',
+  slug: 'yourname',
+  url: 'foldly.com/yourname/team-headshots',
+  status: 'active' as const,
+  uploads: 8,
+  views: 24,
+  lastActivity: '1 day ago',
+  expiresAt: '2025-02-15T23:59:59Z',
+  createdAt: '2025-01-10T14:20:00Z',
+  linkType: 'custom' as const,
+  topic: 'team-headshots',
+  settings: {
+    requireEmail: true,
+    allowMultiple: false,
+    maxFileSize: '50MB',
+    customMessage: 'Please upload high-res headshots (minimum 1200x1200px)',
+  },
+};

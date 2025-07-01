@@ -49,6 +49,38 @@ export { UserPresenceAvatar } from './ui-elements/user-presence-avatar';
 // 🔧 Radix Components
 export { Accordion } from './radix/accordion';
 export { Checkbox } from './radix/checkbox';
+export {
+  Dialog,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+  useDialog,
+  type DialogProps,
+  type DialogContentProps,
+} from './radix/dialog';
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuGroup,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuRadioGroup,
+} from './radix/dropdown-menu';
 
 // 🎨 Icon Components
 export { ArrowLeftIcon } from './icons/arrow-left';

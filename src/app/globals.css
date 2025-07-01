@@ -358,6 +358,58 @@ span {
   outline-offset: 2px;
 }
 
+/* Remove focus outlines for modal triggers and interactive elements to prevent unwanted outlines */
+[data-state='open'] *:focus,
+[data-state='open'] *:focus-visible,
+[aria-expanded='true'] *:focus,
+[aria-expanded='true'] *:focus-visible,
+.modal-open *:focus,
+.modal-open *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove unwanted focus outlines on bulk selection checkboxes */
+[data-bulk-select] input[type='checkbox']:focus,
+[data-bulk-select] input[type='checkbox']:focus-visible,
+.bulk-select-mode input[type='checkbox']:focus,
+.bulk-select-mode input[type='checkbox']:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure buttons and interactive elements still have focus when they should */
+button:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+[role='button']:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+
+/* Ensure all checkboxes have cursor pointer and are visible */
+[role='checkbox'],
+input[type='checkbox'],
+[data-state] {
+  cursor: pointer !important;
+}
+
+/* Make sure checkboxes are always visible with proper borders */
+[role='checkbox'] {
+  border: 2px solid #52525b !important;
+  background-color: white !important;
+}
+
+[role='checkbox'][data-state='checked'] {
+  background-color: #2d4f6b !important;
+  border-color: #2d4f6b !important;
+}
+
 ::selection {
   background-color: var(--accent-1);
   color: var(--light);

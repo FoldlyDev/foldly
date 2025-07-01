@@ -5,7 +5,8 @@ import { Diamond } from '@/components/ui/diamond';
 import { FlipCard } from '@/components/ui/flip-card';
 import { BubbleBackground } from '@/components/ui/bubble';
 import { GradientButton } from '@/components/ui/gradient-button';
-import { SignUpButton } from '@clerk/nextjs';
+import { SignUpButton, useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 
 interface HeroSectionProps {}
 
@@ -119,6 +120,28 @@ const DiamondRow: React.FC<DiamondRowProps> = ({
   );
 };
 
+const HeroCTA: React.FC = () => {
+  const { user } = useUser();
+
+  if (user) {
+    return (
+      <Link href='/dashboard'>
+        <GradientButton className='hero-cta-button' variant='primary' size='lg'>
+          Go to Dashboard
+        </GradientButton>
+      </Link>
+    );
+  } else {
+    return (
+      <SignUpButton>
+        <GradientButton className='hero-cta-button' variant='primary' size='lg'>
+          Get Started Now
+        </GradientButton>
+      </SignUpButton>
+    );
+  }
+};
+
 export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
   (props, ref) => {
     // Extract refs from the forwarded ref object
@@ -172,15 +195,7 @@ export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
                 without friction - no logins required. Organize everything
                 automatically with smart folders and real-time notifications.
               </p>
-              <SignUpButton>
-                <GradientButton
-                  className='hero-cta-button'
-                  variant='primary'
-                  size='lg'
-                >
-                  Get Started Now
-                </GradientButton>
-              </SignUpButton>
+              <HeroCTA />
             </div>
           </div>
         </section>

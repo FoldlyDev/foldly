@@ -1,237 +1,451 @@
-# Foldly - Technical Architecture Specification
+# Foldly - Advanced Multi-Link Technical Architecture Specification
 
 ## 🏗️ System Architecture Overview
 
-**Foldly** is built as a modern, serverless **full-stack Next.js application** optimized for enterprise security and scalability using 2025's best practices with **Clerk + Supabase integration**.
+**Foldly** is built as a modern, serverless **full-stack Next.js application** with **advanced multi-link capabilities**, **hierarchical organization**, and **granular security controls** using 2025's best practices with **Clerk + Supabase integration**.
 
-> **Architecture Type**: **Full-stack Next.js application with hybrid authentication** - Clerk handles user management, Supabase provides data layer with Row Level Security
+> **Architecture Type**: **Full-stack Next.js application with hybrid authentication and multi-link routing** - Clerk handles user management, Supabase provides data layer with Row Level Security for complex permission systems
 
-## 🎯 **Architecture Decision: Clerk + Supabase Hybrid Approach**
+## 🎯 **Advanced Architecture: Multi-Link File Collection System**
 
-### **Why We Chose Clerk + Supabase Integration**
+### **Multi-Link Architecture Decision**
 
-Based on industry security requirements and our [analysis of enterprise authentication patterns](https://clerk.com/docs/integrations/databases/supabase), we selected a **hybrid approach** that provides maximum security and control.
+Based on the employer's requirements for **flexible link types**, **advanced organization**, and **granular security controls**, we've designed a sophisticated multi-link system.
 
-#### **Hybrid Authentication Architecture:**
+#### **Link Type Architecture:**
 
 ```typescript
-// Multi-layer security approach
-Frontend (Next.js)
-├── Clerk Provider (User management)
-├── Supabase Client (Data access)
-└── JWT Verification (Automatic)
-
-Backend Services
-├── Clerk Authentication (User management)
-├── Supabase Database (Row Level Security)
-├── Supabase Storage (File security)
-└── Real-time (Socket.io + Supabase subscriptions)
+// Multi-link URL patterns and routing
+Link Types:
+├── Base Links: /[username]
+│   ├── Purpose: General data dump area
+│   ├── Security: User-configurable (email, password)
+│   └── Organization: Auto-batch creation
+├── Custom Topic Links: /[username]/[topic]
+│   ├── Purpose: Project-specific uploads
+│   ├── Security: Per-link permission controls
+│   └── Organization: Auto-route to designated folders
+└── Generated Links: Right-click folder creation
+    ├── Purpose: Targeted folder uploads
+    ├── Security: Inherits folder permissions
+    └── Organization: Direct folder assignment
 ```
 
-#### **Security Benefits of This Approach:**
+#### **Advanced Security & Organization Benefits:**
 
-**1. Authentication Separation**
+**1. Multi-Type Link System**
 
-- **Clerk**: Handles user authentication, session management, RBAC
-- **Supabase**: Handles data access control via Row Level Security
-- **No single point of failure**: Auth and data systems are independent
+- **Base Links**: Flexible, general-purpose upload endpoints
+- **Topic Links**: Project-specific with automatic organization
+- **Generated Links**: Dynamic creation for any folder structure
+- **Permission Inheritance**: Smart security propagation
 
-**2. Enterprise-Grade Security**
+**2. Hierarchical Organization**
 
-- **JWT Verification**: Supabase automatically verifies Clerk JWTs via JWKS endpoint
-- **Row Level Security**: Database-level protection for multi-tenant data
-- **Audit Trails**: Complete logging across both systems
-- **Zero Trust**: Every request verified at multiple layers
+- **Pre-Upload**: Uploaders can create folder structures
+- **Batch Management**: Smart grouping with metadata
+- **Post-Upload**: Full reorganization capabilities
+- **Organization Workflow**: Recipients must drag received files into their personal workspace/repo area before organizing/reorganizing
+- **Auto-Sorting**: Custom links route to designated locations
 
-**3. Developer Control**
+**3. Granular Security Controls**
 
-- **No vendor lock-in**: Open source Supabase can be self-hosted
-- **API flexibility**: Direct database access with security guarantees
-- **Real-time capabilities**: Built-in subscriptions and WebSocket support
+- **Per-Link Settings**: Email requirements, password protection
+- **Visibility Controls**: Public/private per link or folder
+- **Access Logging**: Complete audit trail
+- **Progressive Security**: Minimal friction by default, enhanced on demand
 
-### **Integration Pattern: JWT + RLS**
+### **Integration Pattern: Multi-Link JWT + RLS**
 
-Based on [Clerk's official Supabase integration guide](https://dev.to/clerk/clerk-integrates-with-a-nextjs-application-using-supabase-1k5p):
+Based on [Clerk's official Supabase integration guide](https://dev.to/clerk/clerk-integrates-with-a-nextjs-application-using-supabase-1k5p) with extensions for multi-link handling:
 
 ```typescript
-// Client-side data access with automatic auth
+// Multi-link data access with automatic auth and link resolution
 const { data, error } = await supabase
   .from('upload_links')
-  .select('*')
-  .order('created_at', { ascending: false })
+  .select(`
+    *,
+    folders(*),
+    file_uploads(
+      *,
+      upload_batches(*)
+    )
+  `)
+  .eq('slug', username)
+  .single()
 
-// Supabase RLS policy automatically applies user context
-CREATE POLICY "Users can view their own upload links"
+// Supabase RLS policy automatically applies user context and link permissions
+CREATE POLICY "Multi-link access control"
   ON public.upload_links
   FOR SELECT
-  USING (auth.jwt()->>'sub' = user_id);
+  USING (
+    CASE
+      WHEN is_public = TRUE THEN TRUE
+      WHEN auth.jwt()->>'sub' = user_id::text THEN TRUE
+      ELSE FALSE
+    END
+  );
 ```
 
-### **Why This Approach is Enterprise-Ready**
+## 🔧 Advanced Technical Stack
 
-**1. Security Best Practices**
+### Enhanced Frontend Components
 
-- **Multi-layer authentication**: Defense in depth
-- **Principle of least privilege**: RLS ensures users only access their data
-- **Audit compliance**: Complete request tracking and logging
+#### **Multi-Link Upload Interface**
 
-**2. Scalability Advantages**
-
-- **Serverless architecture**: Auto-scaling database and auth
-- **Global distribution**: Clerk + Supabase both offer global infrastructure
-- **Real-time capabilities**: Live updates without custom WebSocket management
-
-**3. Operational Benefits**
-
-- **Unified monitoring**: Single dashboard for auth and data metrics
-- **Cost optimization**: Pay-per-use model for both services
-- **Developer productivity**: Type-safe APIs with automatic code generation
-
-### **Enterprise Security Requirements Compliance**
-
-Based on your employer's security requirements:
-
-#### **Developer Access Control**
-
-- **Company-owned accounts**: All Clerk and Supabase accounts owned by employer
-- **Role-based access**: Developers have limited permissions, no billing access
-- **Audit logging**: All developer actions logged and monitored
-- **Secure credential sharing**: Environment variables only, no hard-coded secrets
-
-#### **File Security**
-
-- **Encrypted storage**: Files encrypted at rest in Supabase Storage
-- **Secure access**: Presigned URLs with time-based expiration
-- **Virus scanning**: Automatic malware detection on upload
-- **Access logging**: Complete audit trail for all file operations
-
-#### **Data Protection**
-
-- **GDPR compliance**: Built-in data export and deletion capabilities
-- **SOC 2 preparation**: Comprehensive security controls and monitoring
-- **Row Level Security**: Database-level multi-tenancy protection
-- **Encryption in transit**: TLS 1.3 for all communications
-
-## 🔧 Technical Stack
-
-### Full-Stack Application Components
-
-#### Frontend (React/Next.js)
-
-- **Framework**: Next.js 15+ (App Router) - handles both frontend and backend
-- **Language**: TypeScript 5+
+- **Framework**: Next.js 15+ (App Router) with dynamic routing
+- **Language**: TypeScript 5+ with strict mode
 - **Styling**: TailwindCSS 4.0 + Shadcn/ui
-- **State**: Zustand + React Query
-- **Auth Client**: Clerk React components
-- **Data Client**: Supabase JavaScript client
+- **State**: Zustand + React Query + Real-time subscriptions
+- **Auth Client**: Clerk React components with multi-context support
+- **Data Client**: Supabase JavaScript client with advanced queries
 - **Real-time**: Socket.io client + Supabase subscriptions
-- **Forms**: React Hook Form + Zod validation
-- **Animations**: Framer Motion
+- **Forms**: React Hook Form + Zod validation with dynamic schemas
+- **Organization**: Drag-and-drop with react-beautiful-dnd
+- **File Handling**: Advanced upload with progress tracking
 
-#### Backend (Next.js API Routes + Supabase)
+#### **Advanced Backend Integration**
 
-- **API**: tRPC (type-safe) + Next.js API Routes
-- **Authentication**: Clerk (user management, RBAC)
-- **Database**: Supabase PostgreSQL (with RLS)
-- **Storage**: Supabase Storage (with CDN)
-- **Real-time**: Supabase Realtime + Socket.io
-- **ORM**: Drizzle ORM (type-safe database access)
-- **Email**: Resend (transactional emails)
-- **Payments**: Stripe (subscription management)
+- **API**: tRPC (type-safe) + Next.js API Routes with multi-link routing
+- **Authentication**: Clerk (user management, RBAC) with link-specific permissions
+- **Database**: Supabase PostgreSQL with advanced RLS policies
+- **Storage**: Supabase Storage with hierarchical organization
+- **Real-time**: Supabase Realtime + Socket.io for live collaboration
+- **ORM**: Drizzle ORM with complex relationship mapping
+- **Security**: Advanced file validation and virus scanning
+- **Email**: Resend with template system for notifications
+- **Payments**: Stripe with usage-based billing for advanced features
 
-### Infrastructure
+## 🔒 Advanced Multi-Link Security Architecture
 
-- **Hosting**: Vercel (Next.js optimized)
-- **Backend Services**: Supabase (database, storage, real-time)
-- **Authentication**: Clerk (user management, RBAC)
-- **Monitoring**: Sentry + Supabase Dashboard
-- **CDN**: Supabase CDN (global file delivery)
-- **DNS**: Cloudflare (security + performance)
-
-## 🔒 Enterprise Security Architecture
-
-### Authentication Flow
+### **Link-Level Authentication Flow**
 
 ```mermaid
 sequenceDiagram
     participant User
     participant NextJS
+    participant LinkResolver
     participant Clerk
     participant Supabase
 
-    User->>NextJS: Login request
-    NextJS->>Clerk: Authenticate user
-    Clerk-->>NextJS: JWT token
-    NextJS->>Supabase: Query with JWT
-    Supabase->>Clerk: Verify JWT (JWKS)
-    Clerk-->>Supabase: JWT valid
-    Supabase-->>NextJS: Data (RLS applied)
-    NextJS-->>User: Response
+    User->>NextJS: Access upload link (/username/topic)
+    NextJS->>LinkResolver: Parse URL and validate link
+    LinkResolver->>Supabase: Check link existence and permissions
+
+    alt Link requires password
+        Supabase-->>NextJS: Request password
+        NextJS-->>User: Password prompt
+        User->>NextJS: Enter password
+        NextJS->>Supabase: Verify password hash
+    end
+
+    alt Link requires email
+        NextJS-->>User: Request email field
+    end
+
+    Supabase-->>NextJS: Link validated, return settings
+    NextJS-->>User: Upload interface with dynamic requirements
+    User->>NextJS: Upload files with metadata
+    NextJS->>Supabase: Store files with batch organization
+    Supabase->>Clerk: Log access for audit trail
 ```
 
-### File Upload Security
+### **Advanced File Upload Security**
 
 ```mermaid
 flowchart TD
-    A[User uploads file] --> B[Virus scan]
-    B --> C{Scan result}
-    C -->|Safe| D[Store in Supabase Storage]
-    C -->|Malware| E[Reject upload]
-    D --> F[Generate presigned URL]
-    F --> G[Apply RLS policy]
-    G --> H[Log access]
-    H --> I[Return secure URL]
+    A[User uploads files] --> B[Link validation]
+    B --> C{Link permissions}
+    C -->|Public| D[Basic validation]
+    C -->|Password| E[Password verification]
+    C -->|Email required| F[Email validation]
+    D --> G[File type checking]
+    E --> G
+    F --> G
+    G --> H[Virus scanning]
+    H --> I{Scan result}
+    I -->|Safe| J[Store in Supabase Storage]
+    I -->|Threat| K[Reject with warning]
+    J --> L[Create batch metadata]
+    L --> M[Apply folder organization]
+    M --> N[Generate secure URLs]
+    N --> O[Log access and notify]
 ```
 
-### Data Protection Layers
+### **Hierarchical Security Model**
 
-1. **Network Layer**: TLS 1.3 encryption, CORS protection
-2. **Authentication Layer**: Clerk JWT verification
-3. **Authorization Layer**: Supabase Row Level Security
-4. **Data Layer**: AES-256 encryption at rest
-5. **Audit Layer**: Complete access logging
+1. **Link Level**: Base security settings (public/private, password, email)
+2. **Folder Level**: Inherited permissions with override capabilities
+3. **File Level**: Individual file access controls and warnings
+4. **Batch Level**: Group permissions and organization rules
+5. **User Level**: Overall access patterns and audit logging
 
-## 📊 Database Schema & Security
+## 📊 Advanced Database Schema & Multi-Link Architecture
 
-### Core Tables with RLS
+### **Core Multi-Link Tables**
 
 ```sql
--- Upload links (core feature)
+-- Enhanced upload links with multi-type support
 CREATE TABLE upload_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL, -- References Clerk user ID
-  slug VARCHAR(100) UNIQUE NOT NULL,
+  slug VARCHAR(100) NOT NULL, -- username part (base for both link types)
+  topic VARCHAR(100), -- NULL for base links, topic name for custom links
   title VARCHAR(255) NOT NULL,
   description TEXT,
+  instructions TEXT, -- Custom instructions for uploaders
+
+  -- Link type and behavior
+  link_type VARCHAR(20) DEFAULT 'base' CHECK (link_type IN ('base', 'custom', 'generated')),
+  auto_create_folders BOOLEAN DEFAULT TRUE,
+  default_folder_id UUID REFERENCES folders(id),
+
+  -- Security controls (recipient-managed)
+  require_email BOOLEAN DEFAULT FALSE,
+  require_password BOOLEAN DEFAULT FALSE,
+  password_hash TEXT, -- bcrypt hash if password required
+  is_public BOOLEAN DEFAULT TRUE, -- visibility control
+  allow_folder_creation BOOLEAN DEFAULT TRUE, -- uploader can create folders
+
+  -- File and upload limits
   max_files INTEGER DEFAULT 100,
+  max_file_size BIGINT DEFAULT 104857600, -- 100MB default
+  allowed_file_types TEXT[], -- MIME type restrictions
   expires_at TIMESTAMP WITH TIME ZONE,
+
+  -- Usage tracking
+  total_uploads INTEGER DEFAULT 0,
+  total_files INTEGER DEFAULT 0,
+  total_size BIGINT DEFAULT 0,
+  last_upload_at TIMESTAMP WITH TIME ZONE,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- Ensure unique combinations
+  UNIQUE(user_id, slug, topic)
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_upload_links_slug ON upload_links(slug);
+CREATE INDEX idx_upload_links_user_id ON upload_links(user_id);
+CREATE INDEX idx_upload_links_public ON upload_links(is_public) WHERE is_public = TRUE;
+
+-- Hierarchical folder system with advanced features
+CREATE TABLE folders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL, -- References Clerk user ID
+  parent_folder_id UUID REFERENCES folders(id) ON DELETE CASCADE,
+  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
+
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  color VARCHAR(7), -- Hex color for organization
+
+  -- Auto-generated path for easy navigation
+  path TEXT GENERATED ALWAYS AS (
+    CASE
+      WHEN parent_folder_id IS NULL THEN name
+      ELSE (
+        WITH RECURSIVE folder_path AS (
+          SELECT name, parent_folder_id, 1 as level
+          FROM folders
+          WHERE id = folders.parent_folder_id
+          UNION ALL
+          SELECT f.name, f.parent_folder_id, fp.level + 1
+          FROM folders f
+          JOIN folder_path fp ON f.id = fp.parent_folder_id
+        )
+        SELECT string_agg(name, '/' ORDER BY level DESC) || '/' || folders.name
+        FROM folder_path
+      )
+    END
+  ) STORED,
+
+  -- Folder settings
+  auto_organize BOOLEAN DEFAULT TRUE,
+  sort_order INTEGER DEFAULT 0,
+
+  -- Security inheritance
+  inherit_permissions BOOLEAN DEFAULT TRUE,
+  custom_permissions JSONB,
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- RLS Policy for upload links
-CREATE POLICY "Users can only access their own upload links"
+-- Enhanced file uploads with comprehensive metadata
+CREATE TABLE file_uploads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
+  folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
+  batch_id UUID NOT NULL, -- Groups files uploaded together
+
+  -- Uploader information (minimal required, more optional)
+  uploader_name VARCHAR(255) NOT NULL, -- Mandatory field
+  uploader_email VARCHAR(255), -- Optional, required if link demands it
+  uploader_ip INET, -- For security logging
+  user_agent TEXT, -- Browser/client information
+
+  -- File metadata
+  file_name VARCHAR(255) NOT NULL, -- Display name
+  original_file_name VARCHAR(255) NOT NULL, -- Original upload name
+  file_size BIGINT NOT NULL,
+  file_type VARCHAR(100) NOT NULL,
+  mime_type VARCHAR(100) NOT NULL,
+  file_extension VARCHAR(10),
+
+  -- Storage and processing
+  storage_path TEXT NOT NULL,
+  storage_bucket VARCHAR(100) DEFAULT 'uploads',
+  thumbnail_path TEXT, -- For image/video previews
+
+  -- Security and validation
+  is_processed BOOLEAN DEFAULT FALSE,
+  is_safe BOOLEAN DEFAULT TRUE, -- Virus scan result
+  security_warnings JSONB, -- Warnings about file type, etc.
+  checksum_md5 VARCHAR(32), -- File integrity
+  checksum_sha256 VARCHAR(64),
+
+  -- Organization metadata
+  tags TEXT[], -- User-defined tags
+  notes TEXT, -- Uploader notes
+  priority INTEGER DEFAULT 0, -- Processing priority
+
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  processed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Advanced batch system for upload organization
+CREATE TABLE upload_batches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
+
+  -- Batch metadata
+  uploader_name VARCHAR(255) NOT NULL,
+  uploader_email VARCHAR(255),
+  batch_name VARCHAR(255), -- User-provided batch name
+  notes TEXT, -- Additional context from uploader
+
+  -- Batch statistics
+  total_files INTEGER DEFAULT 0,
+  processed_files INTEGER DEFAULT 0,
+  failed_files INTEGER DEFAULT 0,
+  total_size BIGINT DEFAULT 0,
+
+  -- Processing status
+  status VARCHAR(20) DEFAULT 'uploading' CHECK (status IN ('uploading', 'processing', 'completed', 'failed')),
+  processing_started_at TIMESTAMP WITH TIME ZONE,
+  processing_completed_at TIMESTAMP WITH TIME ZONE,
+
+  -- Display format: [Uploader Name] (Batch Name) [Date]
+  display_name TEXT GENERATED ALWAYS AS (
+    uploader_name ||
+    CASE
+      WHEN batch_name IS NOT NULL THEN ' (' || batch_name || ')'
+      ELSE ''
+    END ||
+    ' [' || to_char(created_at, 'YYYY-MM-DD') || ']'
+  ) STORED,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Link access logging for security and analytics
+CREATE TABLE link_access_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
+
+  -- Access information
+  ip_address INET NOT NULL,
+  user_agent TEXT,
+  referer TEXT,
+
+  -- Access type and result
+  access_type VARCHAR(20) NOT NULL CHECK (access_type IN ('view', 'upload', 'download')),
+  access_result VARCHAR(20) NOT NULL CHECK (access_result IN ('success', 'denied', 'error')),
+  denial_reason VARCHAR(100), -- If access denied
+
+  -- Context
+  uploader_name VARCHAR(255), -- If provided during access
+  uploader_email VARCHAR(255),
+  files_uploaded INTEGER DEFAULT 0,
+  bytes_uploaded BIGINT DEFAULT 0,
+
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+### **Advanced Row Level Security Policies**
+
+```sql
+-- Multi-link upload access control
+CREATE POLICY "Multi-link public access"
+  ON upload_links
+  FOR SELECT
+  USING (
+    is_public = TRUE AND
+    (expires_at IS NULL OR expires_at > NOW())
+  );
+
+CREATE POLICY "Users manage their own upload links"
   ON upload_links
   FOR ALL
   USING (auth.jwt()->>'sub' = user_id::text);
 
--- File uploads
-CREATE TABLE file_uploads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
-  uploader_name VARCHAR(255),
-  uploader_email VARCHAR(255),
-  file_name VARCHAR(255) NOT NULL,
-  file_size BIGINT NOT NULL,
-  file_type VARCHAR(100) NOT NULL,
-  storage_path TEXT NOT NULL,
-  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Hierarchical folder access
+CREATE POLICY "Folders follow link permissions"
+  ON folders
+  FOR SELECT
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE is_public = TRUE OR auth.jwt()->>'sub' = user_id::text
+    )
+  );
 
--- RLS Policy for file uploads
-CREATE POLICY "Users can only access files from their upload links"
+CREATE POLICY "Users manage their own folders"
+  ON folders
+  FOR INSERT, UPDATE, DELETE
+  USING (auth.jwt()->>'sub' = user_id::text);
+
+-- File upload security with batch support
+CREATE POLICY "Files accessible via link permissions"
   ON file_uploads
+  FOR SELECT
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE is_public = TRUE OR auth.jwt()->>'sub' = user_id::text
+    )
+  );
+
+CREATE POLICY "Users manage files from their links"
+  ON file_uploads
+  FOR INSERT, UPDATE, DELETE
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE auth.jwt()->>'sub' = user_id::text
+    )
+  );
+
+-- Batch access control
+CREATE POLICY "Batches follow link permissions"
+  ON upload_batches
   FOR ALL
+  USING (
+    upload_link_id IN (
+      SELECT id FROM upload_links
+      WHERE is_public = TRUE OR auth.jwt()->>'sub' = user_id::text
+    )
+  );
+
+-- Access logging (owner only)
+CREATE POLICY "Users can view their own access logs"
+  ON link_access_logs
+  FOR SELECT
   USING (
     upload_link_id IN (
       SELECT id FROM upload_links
@@ -240,12 +454,12 @@ CREATE POLICY "Users can only access files from their upload links"
   );
 ```
 
-### Real-time Subscriptions
+### **Real-time Subscriptions for Multi-Link System**
 
 ```typescript
-// Real-time upload progress
+// Real-time upload progress with batch support
 const subscription = supabase
-  .channel('file_uploads')
+  .channel(`upload_link_${linkId}`)
   .on(
     'postgres_changes',
     {
@@ -256,143 +470,95 @@ const subscription = supabase
     },
     payload => {
       // Update UI with new upload
-      updateUploadProgress(payload.new);
+      updateFileList(payload.new);
+      updateBatchProgress(payload.new.batch_id);
+    }
+  )
+  .on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'upload_batches',
+      filter: `upload_link_id=eq.${linkId}`,
+    },
+    payload => {
+      // Update batch completion status
+      updateBatchStatus(payload.new);
+    }
+  )
+  .subscribe();
+
+// Real-time folder organization
+const folderSubscription = supabase
+  .channel(`folders_${userId}`)
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'folders',
+      filter: `user_id=eq.${userId}`,
+    },
+    payload => {
+      // Update folder tree in real-time
+      updateFolderTree(payload);
     }
   )
   .subscribe();
 ```
 
-## 🚀 Performance & Scalability
+## 🚀 Advanced Performance & Scalability
 
-### Edge Computing Strategy
+### **Multi-Link Edge Computing Strategy**
 
-- **Vercel Edge Functions**: Authentication and API responses
-- **Supabase Edge**: Database queries and real-time subscriptions
-- **Global CDN**: File delivery via Supabase CDN
-- **Caching**: Multi-layer caching (browser, CDN, database)
+- **Dynamic Route Handling**: Vercel Edge Functions for link resolution
+- **Caching Strategy**: Multi-layer caching for link metadata and permissions
+- **Global Distribution**: Supabase Edge for database queries worldwide
+- **File Delivery**: Supabase Storage CDN with regional optimization
+- **Real-time Optimization**: Selective subscriptions to minimize bandwidth
 
-### Database Optimization
+### **Advanced Database Optimization**
 
-- **Connection pooling**: Supabase handles connection management
-- **Query optimization**: Proper indexing and query patterns
-- **Real-time efficiency**: Selective subscriptions to minimize bandwidth
-- **Automatic scaling**: Serverless database scales with demand
+- **Connection Pooling**: Supabase handles connection management with RLS
+- **Query Optimization**: Proper indexing for multi-link queries
+- **Hierarchical Queries**: Optimized recursive folder path generation
+- **Batch Processing**: Efficient bulk operations for file uploads
+- **Real-time Efficiency**: Targeted subscriptions per link and user
 
-### File Storage Optimization
+### **Multi-Link File Storage Optimization**
 
-- **CDN integration**: Automatic global distribution
-- **Image optimization**: Automatic resizing and format conversion
-- **Smart caching**: Intelligent cache invalidation
-- **Bandwidth optimization**: Progressive loading and compression
+- **Hierarchical Storage**: Automatic organization by link and folder structure
+- **CDN Integration**: Global distribution with Supabase Storage
+- **Smart Caching**: Intelligent cache invalidation for security changes
+- **Compression**: Automatic file optimization and progressive loading
+- **Security Scanning**: Real-time virus detection with quarantine
 
-## 🔍 Monitoring & Observability
+## 🔍 Advanced Monitoring & Observability
 
-### Application Monitoring
+### **Multi-Link Application Monitoring**
 
-- **Error tracking**: Sentry integration for error reporting
-- **Performance monitoring**: Real-time performance metrics
-- **User analytics**: Posthog for user behavior tracking
-- **Custom metrics**: Application-specific KPIs
+- **Error Tracking**: Sentry integration with link-specific error grouping
+- **Performance Monitoring**: Real-time metrics per link type and usage
+- **User Analytics**: Posthog for upload behavior and link effectiveness
+- **Custom Metrics**: Link usage, batch completion rates, security incidents
 
-### Security Monitoring
+### **Advanced Security Monitoring**
 
-- **Authentication events**: Clerk dashboard and webhooks
-- **Database access**: Supabase audit logs
-- **File access**: Storage access logging
-- **Anomaly detection**: Automated threat detection
+- **Access Monitoring**: Complete audit trail for all link access
+- **Anomaly Detection**: Automated threat detection for unusual patterns
+- **File Security**: Comprehensive virus scanning and type validation
+- **Permission Monitoring**: Real-time alerts for security setting changes
 
-### Business Intelligence
+### **Business Intelligence Dashboard**
 
-- **Usage analytics**: File upload patterns and user engagement
-- **Performance metrics**: Upload speeds and success rates
-- **Cost monitoring**: Resource usage and billing alerts
-- **Growth tracking**: User acquisition and retention metrics
+- **Link Analytics**: Usage patterns for base vs custom links
+- **Organization Metrics**: Folder creation and batch completion rates
+- **Security Insights**: Access patterns and security feature adoption
+- **Performance Tracking**: Upload speeds and success rates per link type
 
-## 🔧 Development Environment
-
-### Local Development Setup
-
-```bash
-# Environment variables
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
-
-### Database Branching
-
-- **Production**: Main Supabase project
-- **Staging**: Supabase preview branch
-- **Development**: Local Supabase or shared dev branch
-
-### Testing Strategy
-
-- **Unit tests**: Component and utility function testing
-- **Integration tests**: API route and database operation testing
-- **E2E tests**: Critical user flow testing with Playwright
-- **Security tests**: Authentication and authorization testing
-
-## 🎯 Deployment Architecture
-
-### Production Environment
-
-```
-Vercel Production
-├── Next.js Application (Global Edge)
-├── API Routes (Serverless Functions)
-└── Static Assets (Global CDN)
-
-Supabase Production
-├── PostgreSQL Database (Multi-region)
-├── Storage Bucket (Global CDN)
-├── Real-time Engine (WebSocket)
-└── Edge Functions (Custom logic)
-
-Clerk Production
-├── Authentication Service (Global)
-├── User Management Dashboard
-└── Webhook Endpoints
-```
-
-### Deployment Pipeline
-
-1. **Code commit**: GitHub repository
-2. **Automated testing**: GitHub Actions
-3. **Preview deployment**: Vercel preview
-4. **Database migration**: Supabase CLI
-5. **Production deployment**: Vercel production
-6. **Health checks**: Automated monitoring
-
-## 📋 Security Compliance Checklist
-
-### Data Protection
-
-- [x] **Encryption at rest**: AES-256 in Supabase
-- [x] **Encryption in transit**: TLS 1.3 everywhere
-- [x] **Access control**: Row Level Security policies
-- [x] **Audit logging**: Complete access trails
-- [x] **Data residency**: EU/US data center options
-
-### Authentication Security
-
-- [x] **Multi-factor authentication**: Clerk MFA support
-- [x] **Session management**: Secure JWT handling
-- [x] **Password policies**: Clerk security policies
-- [x] **Social login**: OAuth integration
-- [x] **Account recovery**: Secure recovery flows
-
-### Application Security
-
-- [x] **Input validation**: Zod schema validation
-- [x] **CORS protection**: Proper origin configuration
-- [x] **Rate limiting**: API request throttling
-- [x] **SQL injection prevention**: Parameterized queries
-- [x] **XSS protection**: Content Security Policy
-
-This architecture provides enterprise-grade security while maintaining developer productivity and cost efficiency.
+This advanced architecture provides enterprise-grade security while maintaining the zero-friction upload experience through sophisticated multi-link handling and intelligent organization systems.
 
 ---
 
-_This architecture specification serves as the technical blueprint for Foldly's modern, cost-optimized SaaS platform._
+_This architecture specification serves as the technical blueprint for Foldly's advanced multi-link file collection platform with comprehensive security and organization capabilities._

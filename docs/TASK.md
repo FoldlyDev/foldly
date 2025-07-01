@@ -1,16 +1,16 @@
-# Foldly - Task Management & Development Roadmap
+# Foldly - Advanced Multi-Link Task Management & Development Roadmap
 
 > **Project Status**: 🚀 **Foundation Complete** - Landing Page Live, Development Environment Ready
-> **Current Focus**: Backend Infrastructure (Authentication, Database, File Upload)
-> **Last Updated**: June 27 2025
+> **Current Focus**: Advanced Multi-Link System Implementation (Base + Custom Topic Links)
+> **Last Updated**: January 2025
 
 ## 📊 Overall Progress: 85% Complete
 
 ### **Sprint Summary**
 
 - **Completed**: Documentation, Project Structure, Color System, Landing Page, UI Components, Development Environment, Authentication System
-- **Next Priority**: Core Features Development (File Upload, Link Management)
-- **Current Focus**: Advanced Database Setup, File Upload Infrastructure
+- **Next Priority**: Advanced Multi-Link Database Architecture & Implementation
+- **Current Focus**: Multi-Link Database Setup, Permission Controls, Hierarchical Organization
 
 ---
 
@@ -21,15 +21,15 @@
 - **Status**: ✅ **COMPLETED**
 - **Priority**: HIGH
 - **Completion Date**: January 2025
-- **Description**: Comprehensive documentation suite for 2025 development standards
+- **Description**: Comprehensive documentation suite for 2025 development standards with multi-link architecture
 - **Deliverables**: ✅ All completed
-  - ✅ PLANNING.md - Complete 2025 tech stack and architecture plan
-  - ✅ TASK.md - Detailed task management and sprint roadmap
-  - ✅ ARCHITECTURE.md - Technical specifications and system design
+  - ✅ PLANNING.md - Complete 2025 tech stack and multi-link architecture plan
+  - ✅ TASK.md - Detailed task management and advanced feature roadmap
+  - ✅ ARCHITECTURE.md - Technical specifications and multi-link system design
   - ✅ SERVICE_SETUP.md - Service setup guide for deployment
   - ✅ COLOR_SYSTEM.md - Professional dark color system documentation
-  - ✅ PROJECT_OVERVIEW.md - Business requirements and feature specs
-  - ✅ EXECUTIVE_SUMMARY.md - High-level project overview
+  - ✅ PROJECT_OVERVIEW.md - Business requirements and advanced feature specs
+  - ✅ EXECUTIVE_SUMMARY.md - High-level project overview with multi-link capabilities
 
 ### **Task 2: Development Environment Setup** ⭐ **COMPLETED**
 
@@ -130,10 +130,6 @@
   - ✅ Responsive animation behavior
   - ✅ Performance-optimized animations
 
----
-
-## 🚧 Current Sprint - Backend Infrastructure
-
 ### **Task 9: Authentication System** ⭐ **COMPLETED**
 
 - **Status**: ✅ **COMPLETED**
@@ -149,219 +145,295 @@
   - ✅ Environment variable configuration (publishable key, secret key, webhook secret)
   - ✅ TypeScript integration with proper type safety
 
-### **Task 10: Supabase Database & Storage Setup**
+---
+
+## 🚧 Current Sprint - Advanced Multi-Link System Implementation
+
+### **Task 10: Advanced Multi-Link Database Architecture** ⭐ **CURRENT PRIORITY**
+
+- **Status**: 🚧 **IN PROGRESS**
+- **Priority**: HIGH
+- **Estimated Time**: 4-5 days
+- **Description**: Implement comprehensive multi-link system with Supabase and advanced security
+- **Deliverables**:
+  - [ ] **Multi-Link Schema Implementation**
+    - [ ] Enhanced upload_links table with link_type support (base, custom, generated)
+    - [ ] Unique constraint on (user_id, slug, topic) for multi-link support
+    - [ ] Security controls (require_email, require_password, is_public flags)
+    - [ ] File and upload limits per link
+  - [ ] **Hierarchical Folder System**
+    - [ ] folders table with parent/child relationships
+    - [ ] Auto-generated path column for navigation
+    - [ ] Folder color coding and organization features
+    - [ ] Permission inheritance system
+  - [ ] **Advanced File Upload Schema**
+    - [ ] file_uploads table with batch_id grouping
+    - [ ] Comprehensive metadata (uploader info, security warnings)
+    - [ ] File integrity checking (MD5, SHA256 checksums)
+    - [ ] Storage path organization by link and folder
+  - [ ] **Batch Organization System**
+    - [ ] upload_batches table with display_name generation
+    - [ ] Batch statistics and processing status
+    - [ ] Auto-generated format: `[Uploader Name] (Batch Name) [Date]`
+  - [ ] **Security & Access Logging**
+    - [ ] link_access_logs table for audit trail
+    - [ ] IP tracking and user agent logging
+    - [ ] Access type categorization (view, upload, download)
+  - [ ] **Advanced Row Level Security**
+    - [ ] Multi-link public access policies
+    - [ ] Hierarchical folder permission policies
+    - [ ] Batch and file access control policies
+    - [ ] Security logging access policies
+
+### **Task 11: Multi-Link Upload Interface System**
 
 - **Status**: NOT STARTED
 - **Priority**: HIGH
-- **Estimated Time**: 3-4 days
-- **Description**: Set up Supabase with Clerk integration and Row Level Security
+- **Estimated Time**: 5-6 days
+- **Description**: Implement dynamic upload interfaces for different link types
 - **Deliverables**:
-  - [ ] Supabase project creation and configuration
-  - [ ] Clerk JWT authentication integration with Supabase
-  - [ ] Row Level Security (RLS) policies for all tables
-  - [ ] Upload links schema with RLS (custom URLs, expiration, settings)
-  - [ ] Files metadata schema with RLS (upload tracking, organization)
-  - [ ] User preferences and settings schema
-  - [ ] Supabase Storage bucket configuration for file uploads
-  - [ ] Database migrations and seeding for development
-  - [ ] Real-time subscriptions setup for live updates
+  - [ ] **Dynamic Link Resolution**
+    - [ ] URL pattern matching for `/[username]` and `/[username]/[topic]`
+    - [ ] Link validation and permission checking
+    - [ ] Password verification system for protected links
+    - [ ] Email requirement enforcement
+  - [ ] **Base Link Upload Interface** (`/[username]`)
+    - [ ] Minimal form with name field (mandatory)
+    - [ ] Optional email field (if required by recipient)
+    - [ ] Pre-upload folder creation capability
+    - [ ] Batch naming prompt on submission
+  - [ ] **Custom Topic Link Interface** (`/[username]/[topic]`)
+    - [ ] Topic-specific upload form
+    - [ ] Auto-routing to designated folders
+    - [ ] Custom instructions display
+    - [ ] Topic-specific file type restrictions
+  - [ ] **Advanced Upload Features**
+    - [ ] Drag-and-drop file upload with progress tracking
+    - [ ] Real-time upload progress with WebSocket updates
+    - [ ] File type validation and security warnings
+    - [ ] Batch organization during upload
+  - [ ] **Security Integration**
+    - [ ] File type warning system for compressed files
+    - [ ] Virus scanning integration
+    - [ ] Access logging for all upload attempts
+    - [ ] IP and user agent tracking
 
-### **Task 11: File Upload System with Supabase Storage**
+### **Task 12: Advanced File Organization System**
 
 - **Status**: NOT STARTED
 - **Priority**: HIGH
 - **Estimated Time**: 4-5 days
-- **Description**: Implement secure file upload system with Supabase Storage
+- **Description**: Implement comprehensive file organization and management tools
 - **Deliverables**:
-  - [ ] Supabase Storage integration for file uploads
-  - [ ] File upload component with progress tracking
-  - [ ] File type validation and security scanning
-  - [ ] Presigned URL generation for secure file access
-  - [ ] File metadata extraction and database storage
-  - [ ] Real-time upload progress with Supabase subscriptions
-  - [ ] File organization and folder structure automation
-  - [ ] CDN optimization for global file delivery
+  - [ ] **Pre-Upload Organization**
+    - [ ] Folder creation interface for uploaders
+    - [ ] Nested folder structure support
+    - [ ] Drag-and-drop folder organization
+    - [ ] Folder preview before upload submission
+  - [ ] **Batch Management System**
+    - [ ] Auto-generated batch metadata
+    - [ ] Batch naming interface with validation
+    - [ ] Batch progress tracking and completion status
+    - [ ] Batch history and organization
+  - [ ] **Post-Upload Organization (Recipient)**
+    - [ ] Personal workspace/repo area for file management
+    - [ ] Drag files to workspace before organization capability
+    - [ ] Hierarchical folder tree interface
+    - [ ] Drag-and-drop reorganization system (within workspace)
+    - [ ] Bulk file operations (move, rename, delete)
+    - [ ] Folder color coding and tagging
+  - [ ] **Custom Link Generation**
+    - [ ] Right-click context menu for folder actions
+    - [ ] Dynamic custom link creation for any folder
+    - [ ] Link settings configuration per folder
+    - [ ] Auto-routing setup for generated links
 
-### **Task 12: Testing Infrastructure Enhancement**
+### **Task 13: Permission & Security Control System**
 
 - **Status**: NOT STARTED
-- **Priority**: MEDIUM
-- **Estimated Time**: 2-3 days
-- **Description**: Enhance testing framework with E2E and integration tests
+- **Priority**: HIGH
+- **Estimated Time**: 3-4 days
+- **Description**: Implement granular security controls and permission management
 - **Deliverables**:
-  - [ ] Playwright E2E testing configuration
-  - [ ] Integration tests for API routes and Supabase operations
-  - [ ] Component integration tests
-  - [ ] Test utilities and helpers for database operations
-  - [ ] CI/CD integration with testing pipelines
-  - [ ] Authentication testing with Clerk + Supabase
+  - [ ] **Link-Level Security Controls**
+    - [ ] Email requirement toggle with validation
+    - [ ] Password protection setup and verification
+    - [ ] Public/private visibility controls
+    - [ ] File type restrictions per link
+  - [ ] **Advanced Access Control**
+    - [ ] Per-folder permission inheritance
+    - [ ] Custom permission override system
+    - [ ] Link expiration management
+    - [ ] Usage limits enforcement (file count, size)
+  - [ ] **Security Monitoring**
+    - [ ] Real-time access logging
+    - [ ] Suspicious activity detection
+    - [ ] Failed access attempt tracking
+    - [ ] Security alerts and notifications
+  - [ ] **Compliance Features**
+    - [ ] Audit trail generation
+    - [ ] Data export capabilities
+    - [ ] GDPR compliance tools
+    - [ ] Access pattern analytics
 
 ---
 
-## 📋 Upcoming Tasks - Core Features
+## 🎯 Future Development Phases
 
-### **Task 13: Custom Upload Links**
-
-- **Status**: NOT STARTED
-- **Priority**: HIGH
-- **Estimated Time**: 3-4 days
-- **Description**: Core feature for creating branded upload links
-- **Deliverables**:
-  - [ ] Upload link creation interface
-  - [ ] Slug generation and validation
-  - [ ] Link customization options (expiration, file limits)
-  - [ ] Public upload pages
-  - [ ] Link management dashboard
-
-### **Task 14: File Organization System**
+### **Task 14: Real-Time Collaboration Features**
 
 - **Status**: NOT STARTED
 - **Priority**: MEDIUM
 - **Estimated Time**: 3-4 days
-- **Description**: Smart file organization and management
+- **Description**: Implement real-time features for enhanced collaboration
 - **Deliverables**:
-  - [ ] Automatic folder organization
-  - [ ] File metadata tagging
-  - [ ] Search and filter functionality
-  - [ ] Bulk file operations
-  - [ ] File download and export
+  - [ ] Real-time upload progress sharing
+  - [ ] Live folder organization updates
+  - [ ] Collaborative batch management
+  - [ ] Instant notification system
+  - [ ] WebSocket optimization for performance
 
-### **Task 15: Dashboard & Analytics**
+### **Task 15: Advanced Analytics & Insights**
 
 - **Status**: NOT STARTED
 - **Priority**: MEDIUM
 - **Estimated Time**: 4-5 days
-- **Description**: User dashboard with analytics and management
+- **Description**: Comprehensive analytics system for usage insights
 - **Deliverables**:
-  - [ ] Dashboard layout and navigation
-  - [ ] Upload link management interface
-  - [ ] File analytics and statistics
-  - [ ] Real-time upload tracking
-  - [ ] User settings and preferences
+  - [ ] Upload pattern analytics
+  - [ ] Link performance metrics
+  - [ ] User behavior insights
+  - [ ] Security incident reporting
+  - [ ] Custom dashboard creation
 
-### **Task 16: Payment Integration**
+### **Task 16: E2E Testing for Multi-Link System**
 
 - **Status**: NOT STARTED
 - **Priority**: MEDIUM
 - **Estimated Time**: 3-4 days
-- **Description**: Stripe payment processing for subscriptions
+- **Description**: Comprehensive testing for all link types and security features
 - **Deliverables**:
-  - [ ] Stripe configuration and webhooks
-  - [ ] Subscription tiers and pricing
-  - [ ] Payment flow integration
-  - [ ] Billing dashboard
-  - [ ] Usage tracking and limits
+  - [ ] Base link upload flow testing
+  - [ ] Custom topic link testing
+  - [ ] Permission control testing
+  - [ ] Security feature validation
+  - [ ] Multi-user collaboration testing
 
-### **Task 17: Email System**
+### **Task 17: API Development & Integration**
 
 - **Status**: NOT STARTED
 - **Priority**: LOW
-- **Estimated Time**: 2-3 days
-- **Description**: Email notifications with Resend
+- **Estimated Time**: 4-5 days
+- **Description**: External API for integrations and automation
 - **Deliverables**:
-  - [ ] Resend configuration and templates
-  - [ ] Upload notification emails
-  - [ ] User onboarding emails
-  - [ ] Payment confirmation emails
-  - [ ] Email preferences management
+  - [ ] RESTful API for link management
+  - [ ] Webhook system for external integrations
+  - [ ] API documentation and SDK
+  - [ ] Rate limiting and authentication
+  - [ ] Third-party integration examples
 
 ---
 
-## 🎯 Success Metrics
+## 🔄 Task Dependencies & Critical Path
 
-### **Technical KPIs**
+### **Critical Path Analysis**
 
-- ✅ Project structure completed and organized
-- ✅ Modern 2025 tech stack implemented
-- ✅ Professional color system with WCAG compliance
-- ✅ Responsive landing page with animations
-- ✅ Development environment fully setup
-- ✅ Authentication system complete (Clerk integration with 2025 middleware)
-- ❌ Advanced database schemas (upload links, files metadata)
-- ❌ Core features implementation (file upload, link management)
+```
+Authentication System (✅ Complete)
+    ↓
+Advanced Database Architecture (🚧 Current)
+    ↓
+Multi-Link Upload Interface ← Permission Controls
+    ↓
+File Organization System
+    ↓
+Real-Time Features ← Analytics System
+    ↓
+E2E Testing → API Development
+```
 
-### **Development Quality Standards**
+### **Parallel Development Opportunities**
 
-- ✅ TypeScript strict mode enabled
-- ✅ Professional-grade color system
-- ✅ Component architecture with variants
-- ✅ Responsive design implementation
-- ✅ Code formatting and quality tools (Prettier, Husky)
-- ✅ Testing infrastructure ready (Vitest, React Testing Library)
-- ❌ All E2E tests passing (Playwright setup pending)
-- ❌ Performance budget compliance (< 3s load time)
+- **Task 11 & Task 13** can be developed in parallel after Task 10 completion
+- **Task 14 & Task 15** can be developed simultaneously
+- **Task 16** should validate Tasks 10-13 before API development
 
-### **Business KPIs (Post-Launch)**
+## 📊 Sprint Planning & Milestones
 
-- [ ] 100 signups within first month
-- [ ] 10% conversion to paid plans
-- [ ] < 2% churn rate
-- [ ] Average session duration > 5 minutes
-- [ ] Net Promoter Score > 50
+### **Sprint 1: Core Multi-Link Foundation (Week 1-2)**
 
----
+- Task 10: Advanced Multi-Link Database Architecture
+- Task 11: Multi-Link Upload Interface System
 
-## 🚀 Release Planning
+### **Sprint 2: Organization & Security (Week 3)**
 
-### **MVP Release (Target: 4-6 weeks)**
+- Task 12: Advanced File Organization System
+- Task 13: Permission & Security Control System
 
-- **Core Features**: Auth, File upload, Custom links, Basic dashboard
-- **Current Progress**: Foundation complete, backend infrastructure needed
-- **Success Criteria**: 50 active users, 5 paying customers
+### **Sprint 3: Enhanced Features (Week 4)**
 
-### **v1.1 Release (Target: 8-10 weeks)**
+- Task 14: Real-Time Collaboration Features
+- Task 15: Advanced Analytics & Insights
 
-- **Enhanced Features**: Advanced analytics, Team features, API access
-- **Growth Strategy**: Content marketing, SEO optimization, partnerships
+### **Sprint 4: Quality & Integration (Week 5)**
 
-### **v1.2 Release (Target: 12-14 weeks)**
+- Task 16: E2E Testing for Multi-Link System
+- Task 17: API Development & Integration
 
-- **Enterprise Features**: White-label, Advanced security, Enterprise billing
-- **Scale Strategy**: Enterprise sales, affiliate program, integrations
+## 🎯 Success Criteria
 
----
+### **Technical Validation**
 
-## 📝 Notes & Decisions
+- [ ] All link types (base, custom, generated) function correctly
+- [ ] Permission controls enforce security properly
+- [ ] File organization works seamlessly pre and post-upload
+- [ ] Real-time features perform without lag
+- [ ] Security logging captures all required events
 
-### **Key Architectural Decisions Made**
+### **User Experience Validation**
 
-- ✅ Next.js 15 full-stack architecture confirmed
-- ✅ TailwindCSS 4.0 CSS-first approach implemented
-- ✅ Professional dark color system with semantic naming
-- ✅ Component-based architecture with proper separation
+- [ ] Zero-friction upload experience maintained (name only required)
+- [ ] Intuitive folder creation and organization
+- [ ] Clear batch naming and organization
+- [ ] Responsive design across all devices
+- [ ] Professional security controls without complexity
 
-### **Development Standards Established**
+### **Business Requirements Validation**
 
-- ✅ Documentation-first development approach
-- ✅ TypeScript strict mode for maximum type safety
-- ✅ Responsive-first design with mobile optimization
-- ✅ Performance-focused animations with GSAP
-- ✅ Accessibility compliance (WCAG AA)
-
-### **Major Accomplishments**
-
-- 🎉 **Complete landing page** with professional design and animations
-- 🎉 **Sophisticated color system** with variant support
-- 🎉 **Modern component architecture** ready for scaling
-- 🎉 **Comprehensive documentation** for development and deployment
-
-### **Next Immediate Actions**
-
-1. **Extend database schemas** (upload links, files metadata, user preferences)
-2. **Implement file upload system** (UploadThing integration with authentication)
-3. **Create link management features** (custom upload links with expiration)
-4. **Set up E2E testing** (Playwright integration for complete user workflows)
+- [ ] Support for all employer-specified use cases
+- [ ] Flexible link types meet varied project needs
+- [ ] Security features satisfy enterprise requirements
+- [ ] Organization tools reduce manual work by 90%
+- [ ] System scales to handle projected user growth
 
 ---
 
-**Next Priority**: Task 10 (Advanced Database Setup) to enable file and link management  
-**Current Sprint Goal**: Core Feature Development with Complete User Authentication
+## 📝 Development Notes
 
-## Future Enhancement Opportunities
+### **Key Technical Decisions**
 
-### Potential Improvements
+- Multi-link routing through dynamic Next.js pages
+- Hierarchical folder system with recursive path generation
+- Comprehensive RLS policies for multi-tenant security
+- Real-time updates via Supabase subscriptions
+- Progressive security enhancement (minimal friction by default)
 
-1. **Dark Mode Toggle**: Implement user-selectable dark/light mode
-2. **Color Customization**: Admin panel for brand color adjustments
-3. **A/B Testing**: Test color variations for conversion optimization
-4. **Animation Enhancements**: Subtle color transitions and micro-interactions
+### **Critical Implementation Details**
+
+- Unique constraint on (user_id, slug, topic) for link management
+- Generated display_name for consistent batch formatting
+- Permission inheritance system for folder hierarchies
+- Security warnings for file types (especially compressed files)
+- Complete audit trail for compliance requirements
+
+### **Testing Priorities**
+
+- Multi-link URL resolution and routing
+- Permission enforcement across all link types
+- File organization and batch management
+- Security controls and access logging
+- Real-time features and performance
+
+---
+
+_This task management document serves as the development roadmap for Foldly's advanced multi-link file collection system. All development should follow this prioritized sequence to ensure proper foundation and feature integration._
