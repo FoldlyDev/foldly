@@ -83,10 +83,14 @@ export const BATCH_STATUS = {
   PROCESSING: 'processing',
   COMPLETED: 'completed',
   FAILED: 'failed',
-  PARTIAL: 'partial',
 } as const satisfies Record<string, string>;
 
 export type BatchStatus = (typeof BATCH_STATUS)[keyof typeof BATCH_STATUS];
+
+// Enhanced branded type for runtime validation
+export type ValidatedBatchStatus = BatchStatus & {
+  readonly __brand: 'ValidatedBatchStatus';
+};
 
 /**
  * @deprecated Use BATCH_STATUS const object instead
@@ -96,7 +100,6 @@ export enum BatchStatusEnum {
   PROCESSING = 'processing',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  PARTIAL = 'partial',
 }
 
 /**
@@ -193,7 +196,15 @@ export type AbsoluteUrl = (`https://${string}` | `http://${string}`) & {
   readonly __brand: 'AbsoluteUrl';
 };
 export type RelativeUrl = `/${string}` & { readonly __brand: 'RelativeUrl' };
-export type UploadUrl = (`/${string}` | `/${string}/${string}`) & {
+
+// More specific upload URL types for Foldly patterns
+export type BaseUploadUrl = `/foldly.io/${string}` & {
+  readonly __brand: 'BaseUploadUrl';
+};
+export type CustomUploadUrl = `/foldly.io/${string}/${string}` & {
+  readonly __brand: 'CustomUploadUrl';
+};
+export type UploadUrl = (BaseUploadUrl | CustomUploadUrl) & {
   readonly __brand: 'UploadUrl';
 };
 
@@ -563,6 +574,16 @@ export const isValidErrorCode = (code: unknown): code is ErrorCode => {
   return (
     typeof code === 'string' &&
     Object.values(ERROR_CODE).includes(code as ErrorCode)
+  );
+};
+
+// Enhanced type guard for batch status validation
+export const isValidBatchStatus = (
+  status: unknown
+): status is ValidatedBatchStatus => {
+  return (
+    typeof status === 'string' &&
+    Object.values(BATCH_STATUS).includes(status as BatchStatus)
   );
 };
 

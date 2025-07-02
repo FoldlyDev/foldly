@@ -130,6 +130,14 @@ export interface UploadLink extends BaseEntity {
   readonly allowedFileTypes?: readonly string[]; // MIME type restrictions
   readonly expiresAt?: Date;
 
+  // Branding and customization (primarily for base links)
+  readonly brandingEnabled: boolean;
+  readonly brandColor?: HexColor; // Primary brand color
+  readonly accentColor?: HexColor; // Secondary/accent brand color
+  readonly logoUrl?: string; // Custom logo URL
+  readonly customCss?: string; // Custom CSS for advanced styling
+  readonly welcomeMessage?: string; // Custom welcome message for uploaders
+
   // Usage tracking
   readonly totalUploads: number;
   readonly totalFiles: number;
@@ -166,6 +174,12 @@ export interface UploadLinkRow {
   readonly max_file_size: number;
   readonly allowed_file_types: string[] | null;
   readonly expires_at: string | null;
+  readonly branding_enabled: boolean;
+  readonly brand_color: string | null;
+  readonly accent_color: string | null;
+  readonly logo_url: string | null;
+  readonly custom_css: string | null;
+  readonly welcome_message: string | null;
   readonly total_uploads: number;
   readonly total_files: number;
   readonly total_size: number;
@@ -197,6 +211,12 @@ export interface UploadLinkInsert {
   readonly max_file_size?: number;
   readonly allowed_file_types?: string[] | null;
   readonly expires_at?: string | null;
+  readonly branding_enabled?: boolean;
+  readonly brand_color?: string | null;
+  readonly accent_color?: string | null;
+  readonly logo_url?: string | null;
+  readonly custom_css?: string | null;
+  readonly welcome_message?: string | null;
   readonly total_uploads?: number;
   readonly total_files?: number;
   readonly total_size?: number;
@@ -228,6 +248,12 @@ export interface UploadLinkUpdate {
   readonly max_file_size?: number;
   readonly allowed_file_types?: string[] | null;
   readonly expires_at?: string | null;
+  readonly branding_enabled?: boolean;
+  readonly brand_color?: string | null;
+  readonly accent_color?: string | null;
+  readonly logo_url?: string | null;
+  readonly custom_css?: string | null;
+  readonly welcome_message?: string | null;
   readonly total_uploads?: number;
   readonly total_files?: number;
   readonly total_size?: number;
@@ -257,6 +283,12 @@ export interface CreateUploadLinkInput {
   readonly maxFileSize?: number;
   readonly allowedFileTypes?: readonly string[];
   readonly expiresAt?: Date;
+  readonly brandingEnabled?: boolean;
+  readonly brandColor?: HexColor;
+  readonly accentColor?: HexColor;
+  readonly logoUrl?: string;
+  readonly customCss?: string;
+  readonly welcomeMessage?: string;
 }
 
 /**
@@ -264,6 +296,22 @@ export interface CreateUploadLinkInput {
  */
 export interface UpdateUploadLinkInput extends Partial<CreateUploadLinkInput> {
   readonly id: LinkId;
+}
+
+/**
+ * Input type for creating base links (Application Layer)
+ */
+export interface CreateBaseLinkInput {
+  readonly username: string; // From Clerk, will be used as slug
+  readonly title: string;
+  readonly description?: string; // Combined description/welcome message field
+  readonly requireEmail: boolean;
+  readonly maxFiles: number;
+  readonly brandingEnabled?: boolean;
+  readonly brandColor?: HexColor;
+  readonly accentColor?: HexColor;
+  readonly logoUrl?: string;
+  readonly customCss?: string; // Custom CSS for advanced styling
 }
 
 // =============================================================================

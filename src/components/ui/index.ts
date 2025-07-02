@@ -26,3 +26,5 @@ export { FilterSystem } from './filter-system';
 export { BulkActionsBar } from './bulk-actions-bar';
 export { ViewToggle } from './view-toggle';
 export { TemplatesModal } from './templates-modal';
+export { FileUpload } from './file-upload';
+export { ConfigurableModal } from './configurable-modal';
