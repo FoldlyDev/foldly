@@ -154,7 +154,7 @@ export function CardActionsMenu({
       scale: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 350,
         damping: 35,
         duration: 0.2,
@@ -166,7 +166,7 @@ export function CardActionsMenu({
       y: -10,
       transition: { duration: 0.15 },
     },
-  };
+  } as const;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
