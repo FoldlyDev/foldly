@@ -278,6 +278,7 @@ export const useLinksListStore = () => {
     () => ({
       // Data
       links: processedLinks,
+      originalLinks: links,
       isLoading,
       error,
       stats,
@@ -312,6 +313,7 @@ export const useLinksListStore = () => {
     }),
     [
       processedLinks,
+      links,
       isLoading,
       error,
       stats,

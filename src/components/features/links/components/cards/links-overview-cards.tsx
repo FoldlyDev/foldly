@@ -144,7 +144,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
                   transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
                   className='text-3xl font-bold text-[var(--quaternary)] leading-none'
                 >
-                  {card.value.toLocaleString()}
+                  {(isNaN(card.value) ? 0 : card.value).toLocaleString()}
                 </motion.div>
               </div>
 

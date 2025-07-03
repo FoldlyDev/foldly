@@ -16,6 +16,7 @@ import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons'
 /**
  * Information step for create link modal
  * Uses the existing LinkInformationSection component with form store integration
+ * Identical layout and design for both base and topic links - only field behavior differs
  */
 export const CreateLinkInformationStep = () => {
   const { user } = useUser();
@@ -40,10 +41,12 @@ export const CreateLinkInformationStep = () => {
   );
   const nextStep = useCreateLinkFormStore(state => state.nextStep);
 
-  // Convert form data to LinkInformationSection format
+  // Convert form data to LinkInformationSection format - identical structure for both link types
   const linkInformationData = useMemo(
     (): LinkInformationFormData => ({
-      name: linkType === 'base' ? formData.title : formData.topic || '',
+      // For base links: use "Personal Collection" as hardcoded name
+      // For topic links: use the custom topic name
+      name: linkType === 'base' ? 'Personal Collection' : formData.topic || '',
       description: formData.description,
       requireEmail: formData.requireEmail,
       maxFiles: formData.maxFiles,
@@ -54,17 +57,33 @@ export const CreateLinkInformationStep = () => {
       ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
     }),
     [formData, linkType]
-  ); // Handle form changes
+  );
+
+  // Handle form changes
   const handleFormChange = useCallback(
     (updates: Partial<LinkInformationFormData>) => {
+      console.log('📝 INFORMATION STEP: handleFormChange called');
+      console.log('📝 INFORMATION STEP: updates =', updates);
+      console.log('📝 INFORMATION STEP: linkType =', linkType);
+
       // Convert LinkInformationFormData updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
 
       if ('name' in updates) {
         if (linkType === 'base') {
           convertedUpdates.title = updates.name;
+          console.log(
+            '📝 INFORMATION STEP: Base link - setting title =',
+            updates.name
+          );
         } else {
+          // For topic links, set both topic and title fields
           convertedUpdates.topic = updates.name;
+          convertedUpdates.title = updates.name; // Ensure title is also set for consistency
+          console.log(
+            '📝 INFORMATION STEP: Topic link - setting topic and title =',
+            updates.name
+          );
         }
       }
 
@@ -96,6 +115,7 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.expiresAt = updates.expiresAt.toISOString();
       }
 
+      console.log('📝 INFORMATION STEP: convertedUpdates =', convertedUpdates);
       updateMultipleFields(convertedUpdates);
     },
     [updateMultipleFields, linkType]
@@ -103,10 +123,18 @@ export const CreateLinkInformationStep = () => {
 
   // Handle next step
   const handleNext = useCallback(() => {
+    console.log('📝 INFORMATION STEP: handleNext called');
+    console.log('📝 INFORMATION STEP: canGoNext =', canGoNext);
+    console.log('📝 INFORMATION STEP: linkType =', linkType);
+    console.log('📝 INFORMATION STEP: formData =', formData);
+
     if (canGoNext) {
+      console.log('📝 INFORMATION STEP: Calling nextStep()');
       nextStep();
+    } else {
+      console.log('📝 INFORMATION STEP: Cannot go next - validation failed');
     }
-  }, [canGoNext, nextStep]);
+  }, [canGoNext, nextStep, linkType, formData]);
 
   return (
     <motion.div

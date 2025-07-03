@@ -2,13 +2,14 @@
 
 import { useLinksModalsStore } from '../../hooks/use-links-composite';
 import { LinkDetailsModal, ShareModal, SettingsModal } from './link-modals';
-import { CreateLinkModal } from './create-link-modal';
+import { CreateLinkModalContainer } from './CreateLinkModalContainer';
 import { DeleteConfirmationModal } from './delete-confirmation-modal';
 
 /**
  * LinksModalManager - Centralized modal management using store architecture
  * Eliminates prop drilling by managing all modal state through stores
  * Follows 2025 React + Zustand best practices
+ * Uses proper two-step modal (information + branding) for both base and topic links
  */
 export function LinksModalManager() {
   const { activeModal, modalData, closeModal } = useLinksModalsStore();
@@ -28,21 +29,10 @@ export function LinksModalManager() {
   // Render the appropriate modal based on active modal type
   switch (activeModal) {
     case 'create-link':
-      console.log('🎭 MODAL MANAGER: Rendering CreateLinkModal');
-      return (
-        <CreateLinkModal
-          isOpen={true}
-          onClose={() => {
-            console.log('🎭 MODAL MANAGER: CreateLinkModal onClose called');
-            closeModal();
-          }}
-          onSuccess={() => {
-            console.log('🎭 MODAL MANAGER: CreateLinkModal onSuccess called');
-            closeModal();
-            console.log('Link created successfully!');
-          }}
-        />
+      console.log(
+        '🎭 MODAL MANAGER: Rendering CreateLinkModalContainer with two-step structure'
       );
+      return <CreateLinkModalContainer />;
 
     case 'link-details':
       if (!modalData.linkData) {

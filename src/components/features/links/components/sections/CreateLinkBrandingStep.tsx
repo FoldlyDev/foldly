@@ -16,10 +16,12 @@ import {
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import type { CreateUploadLinkInput } from '../../types/database';
 import type { HexColor } from '@/types';
+import type { LinkData } from '../../types';
 
 /**
  * Branding step for create link modal
  * Uses the existing LinkBrandingSection component with form store integration
+ * Identical layout and design for both base and topic links - only content differs
  */
 export const CreateLinkBrandingStep = () => {
   const { user } = useUser();
@@ -48,7 +50,7 @@ export const CreateLinkBrandingStep = () => {
   // Data store actions
   const addLink = useLinksDataStore(state => state.addLink);
 
-  // Convert form data to LinkBrandingSection format
+  // Convert form data to LinkBrandingSection format - identical structure for both link types
   const linkBrandingData = useMemo(
     (): LinkBrandingFormData => ({
       brandingEnabled: formData.brandingEnabled,
@@ -57,7 +59,9 @@ export const CreateLinkBrandingStep = () => {
       logoFile: null, // File upload handled separately
     }),
     [formData]
-  ); // Handle form changes
+  );
+
+  // Handle form changes
   const handleFormChange = useCallback(
     (updates: Partial<LinkBrandingFormData>) => {
       updateMultipleFields(updates);
@@ -67,17 +71,31 @@ export const CreateLinkBrandingStep = () => {
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
-    if (!user?.username) {
+    console.log('🚀 BRANDING STEP: handleSubmit called');
+    console.log('🚀 BRANDING STEP: user?.fullName =', user?.fullName);
+    console.log('🚀 BRANDING STEP: user?.firstName =', user?.firstName);
+    console.log('🚀 BRANDING STEP: user?.id =', user?.id);
+    console.log('🚀 BRANDING STEP: linkType =', linkType);
+    console.log('🚀 BRANDING STEP: formData =', formData);
+
+    // Use user.id as fallback if no name is available
+    if (!user?.id) {
+      console.log('🚀 BRANDING STEP: No user available, setting error');
       setGeneralError('User information not available');
       return;
     }
 
+    const userSlug = (user.firstName?.toLowerCase().replace(/\s+/g, '-') ||
+      user.id ||
+      'user') as string;
+
+    console.log('🚀 BRANDING STEP: Setting submitting to true');
     setSubmitting(true);
 
     try {
       // Prepare link data for creation
       const linkInput: CreateUploadLinkInput = {
-        slug: user.username,
+        slug: userSlug,
         ...(linkType === 'custom' &&
           formData.topic && { topic: formData.topic }),
         title:
@@ -110,35 +128,87 @@ export const CreateLinkBrandingStep = () => {
         }),
       };
 
-      // Simulate API call (replace with actual API integration)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      console.log('🚀 BRANDING STEP: Prepared linkInput:', linkInput);
 
-      const mockLinkId = `link_${Date.now()}`;
+      // Create real link using Zustand as temporary testing database
+      console.log('🚀 BRANDING STEP: Creating real link...');
+
+      const linkId = `link_${Date.now()}`;
       const generatedUrl =
         linkType === 'base'
-          ? `foldly.io/${user.username?.toLowerCase()}`
-          : `foldly.io/${user.username?.toLowerCase()}/${formData.topic?.toLowerCase()}`;
+          ? `foldly.io/${userSlug}`
+          : `foldly.io/${userSlug}/${formData.topic?.toLowerCase()}`;
 
-      // Update stores
-      setSuccess(mockLinkId, generatedUrl);
+      console.log('🚀 BRANDING STEP: Generated linkId:', linkId);
+      console.log('🚀 BRANDING STEP: Generated URL:', generatedUrl);
 
-      // Add to data store (mock link data)
-      // In real implementation, this would come from the API response
-      // addLink(mockLinkData);
+      // Create real link data using the linkInput and store it in Zustand
+      const linkData: LinkData = {
+        id: linkId,
+        name:
+          linkType === 'base'
+            ? 'Personal Collection'
+            : formData.title || formData.topic || 'Untitled',
+        title:
+          linkType === 'base'
+            ? 'Personal Collection'
+            : formData.title || formData.topic || 'Untitled',
+        slug: userSlug,
+        ...(linkType === 'custom' &&
+          formData.topic && { topic: formData.topic }),
+        linkType,
+        isPublic: formData.isPublic,
+        status: 'active' as const, // Set proper status for LinkStatusIndicator
+        url: generatedUrl,
+        uploads: 0, // Use correct field name for LinkCard
+        views: 0, // Use correct field name for analytics
+        lastActivity: new Date().toISOString(),
+        ...(formData.expiresAt && {
+          expiresAt: new Date(formData.expiresAt).toLocaleDateString(),
+        }),
+        createdAt: new Date().toLocaleDateString(),
+        requireEmail: formData.requireEmail,
+        requirePassword: formData.requirePassword,
+        maxFiles: formData.maxFiles,
+        maxFileSize: formData.maxFileSize * 1024 * 1024, // Convert MB to bytes
+        allowedFileTypes: formData.allowedFileTypes,
+        autoCreateFolders: formData.autoCreateFolders,
+        settings: {
+          allowMultiple: true,
+          maxFileSize: `${formData.maxFileSize}MB`,
+          ...(formData.description && { customMessage: formData.description }),
+        },
+        ...(formData.brandColor && { brandColor: formData.brandColor }),
+      };
 
+      // Update form success state
+      console.log('🚀 BRANDING STEP: Setting success state...');
+      setSuccess(linkId, generatedUrl);
+
+      // Store in Zustand (acting as temporary testing database)
+      console.log(
+        '🚀 BRANDING STEP: Storing link in Zustand database:',
+        linkData
+      );
+      addLink(linkData);
+
+      console.log('🚀 BRANDING STEP: Real link created successfully!');
       toast.success('Link created successfully!');
     } catch (error) {
-      console.error('Failed to create link:', error);
+      console.error('🚀 BRANDING STEP: Failed to create link:', error);
       setGeneralError('Failed to create link. Please try again.');
       toast.error('Failed to create link');
     }
   }, [
-    user?.username,
+    user?.id,
+    user?.fullName,
+    user?.firstName,
     linkType,
     formData,
     setSubmitting,
     setSuccess,
     setGeneralError,
+    addLink,
   ]);
   return (
     <motion.div
@@ -154,7 +224,7 @@ export const CreateLinkBrandingStep = () => {
         }
         formData={linkBrandingData}
         onDataChange={handleFormChange}
-        username={user?.username || ''}
+        username={user?.firstName || user?.id || 'User'}
         linkName={
           linkType === 'base'
             ? 'Personal Collection'

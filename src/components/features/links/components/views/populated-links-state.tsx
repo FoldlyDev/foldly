@@ -118,7 +118,13 @@ export function PopulatedLinksState() {
           <ActionButton
             variant='default'
             size='sm'
-            onClick={openCreateLinkModal}
+            onClick={() => {
+              console.log('🔥 POPULATED STATE: Create Link button clicked');
+              openCreateLinkModal('topic');
+              console.log(
+                '🔥 POPULATED STATE: openCreateLinkModal("topic") called'
+              );
+            }}
             className='bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-[var(--quaternary)]'
           >
             <Plus className='w-4 h-4' />
@@ -199,7 +205,33 @@ export function PopulatedLinksState() {
           <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
         </div>
       ) : links.length === 0 ? (
-        <EmptyLinksState />
+        // Show "No results" message instead of EmptyLinksState when search/filter is active
+        <div className='flex flex-col items-center justify-center py-12 text-center'>
+          <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4'>
+            <Filter className='w-8 h-8 text-gray-400' />
+          </div>
+          <h3 className='text-lg font-semibold text-gray-900 mb-2'>
+            No links found
+          </h3>
+          <p className='text-gray-500 mb-4 max-w-sm'>
+            {searchQuery.trim()
+              ? `No links match "${searchQuery}". Try adjusting your search.`
+              : filters.status !== 'all'
+                ? `No ${filters.status} links found. Try changing your filters.`
+                : 'No links match your current filters.'}
+          </p>
+          <ActionButton
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('all');
+            }}
+            className='text-gray-600 border-gray-200'
+          >
+            Clear filters
+          </ActionButton>
+        </div>
       ) : (
         <motion.div
           className={

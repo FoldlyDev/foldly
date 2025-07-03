@@ -275,13 +275,18 @@ export const createLinkFormSelectors = {
   // Computed selectors
   canGoNext: (state: CreateLinkFormState) => {
     if (state.currentStep === 'information') {
-      return state.linkType === 'base'
-        ? true // Base links only need basic validation
-        : state.formData.title.trim() !== '' &&
-            state.formData.topic.trim() !== '';
+      // Base links: always valid (uses hardcoded "Personal Collection" name)
+      if (state.linkType === 'base') {
+        return true;
+      }
+      // Topic/custom links: only require topic field to be filled
+      return (
+        (state.linkType === 'custom' || state.linkType === 'generated') &&
+        state.formData.topic.trim() !== ''
+      );
     }
     if (state.currentStep === 'branding') {
-      return true; // Branding is optional
+      return true; // Branding is optional, always can proceed
     }
     return false;
   },
@@ -293,9 +298,14 @@ export const createLinkFormSelectors = {
   },
 
   isInformationStepValid: (state: CreateLinkFormState) => {
+    // Base links: always valid
+    if (state.linkType === 'base') {
+      return true;
+    }
+    // Topic/custom links: require topic field only
     return (
-      state.linkType === 'base' ||
-      (state.formData.title.trim() !== '' && state.formData.topic.trim() !== '')
+      (state.linkType === 'custom' || state.linkType === 'generated') &&
+      state.formData.topic.trim() !== ''
     );
   },
 };

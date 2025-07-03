@@ -31,6 +31,7 @@ export function LinksContainer({
   // Get state from stores
   const {
     links,
+    originalLinks,
     isLoading: storeLoading,
     error: storeError,
     setLinks,
@@ -38,16 +39,16 @@ export function LinksContainer({
 
   // Initialize store data on mount if we have initial data
   useEffect(() => {
-    if (initialData?.linkStats && links.length === 0) {
+    if (initialData?.linkStats && originalLinks.length === 0) {
       // If we have initial data but no links in store, we could initialize here
       // For now, we'll let the components handle their own data fetching
     }
-  }, [initialData, links.length, setLinks]);
+  }, [initialData, originalLinks.length, setLinks]);
 
   // Use prop loading/error state if provided, otherwise use store state
   const isLoading = propLoading || storeLoading;
   const error = propError || storeError;
-  const isEmpty = links.length === 0;
+  const isEmpty = originalLinks.length === 0;
 
   if (isLoading) {
     return (

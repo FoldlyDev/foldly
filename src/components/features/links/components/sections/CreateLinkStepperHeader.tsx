@@ -62,61 +62,83 @@ export const CreateLinkStepperHeader = ({
 
   return (
     <DialogHeader>
-      <div className='space-y-4'>
+      <div className='space-y-4 pt-6'>
         {/* Progress Steps */}
-        <div className='flex items-center justify-between'>
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            const isCompleted = index < currentStepIndex;
-            const isCurrent = index === currentStepIndex;
-            const isUpcoming = index > currentStepIndex;
+        <div className='flex flex-col items-center'>
+          {/* Icons and connecting lines */}
+          <div className='flex items-center justify-center'>
+            {steps.map((step, index) => {
+              const Icon = step.icon;
+              const isCompleted = index < currentStepIndex;
+              const isCurrent = index === currentStepIndex;
+              const isUpcoming = index > currentStepIndex;
 
-            return (
-              <div key={step.key} className='flex items-center'>
-                <div className='flex flex-col items-center'>
-                  <motion.div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      isCompleted
-                        ? 'bg-green-500 text-white'
-                        : isCurrent
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-200 text-gray-400'
-                    }`}
-                    initial={false}
-                    animate={{
-                      scale: isCurrent ? 1.1 : 1,
-                      backgroundColor: isCompleted
-                        ? '#10b981'
-                        : isCurrent
-                          ? '#3b82f6'
-                          : '#e5e7eb',
-                    }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    {isCompleted ? (
-                      <CheckCircle className='w-5 h-5' />
-                    ) : (
-                      <Icon className='w-5 h-5' />
-                    )}
-                  </motion.div>
-                  <span
-                    className={`text-xs mt-2 ${
-                      isCurrent ? 'text-blue-600 font-medium' : 'text-gray-500'
-                    }`}
-                  >
-                    {step.label}
-                  </span>
+              return (
+                <div key={step.key} className='flex items-center'>
+                  {/* Icon container with fixed width for alignment */}
+                  <div className='flex justify-center w-10'>
+                    <motion.div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        isCompleted
+                          ? 'bg-green-500 text-white'
+                          : isCurrent
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-200 text-gray-400'
+                      }`}
+                      initial={false}
+                      animate={{
+                        scale: isCurrent ? 1.1 : 1,
+                        backgroundColor: isCompleted
+                          ? '#10b981'
+                          : isCurrent
+                            ? '#3b82f6'
+                            : '#e5e7eb',
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle className='w-5 h-5' />
+                      ) : (
+                        <Icon className='w-5 h-5' />
+                      )}
+                    </motion.div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`w-20 h-0.5 mx-6 ${
+                        isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                      }`}
+                    />
+                  )}
                 </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={`w-16 h-0.5 mx-4 ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-200'
-                    }`}
-                  />
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Labels below icons */}
+          <div className='flex justify-center mt-2'>
+            {steps.map((step, index) => {
+              const isCurrent = index === currentStepIndex;
+
+              return (
+                <div key={`${step.key}-label`} className='flex items-center'>
+                  {/* Label container with matching width for perfect alignment */}
+                  <div className='flex justify-center w-10'>
+                    <span
+                      className={`text-xs whitespace-nowrap ${
+                        isCurrent
+                          ? 'text-blue-600 font-medium'
+                          : 'text-gray-500'
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                  {index < steps.length - 1 && <div className='w-20 mx-6' />}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Title and Description */}

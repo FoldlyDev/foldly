@@ -1,9 +1,8 @@
 // ===== 2025 FEATURE-BASED COMPONENT ARCHITECTURE =====
 
 // 📋 Modal Components - User Interactions
-export { LinkCreationModal } from './components/modals/link-creation-modal';
-export { CreateLinkModal } from './components/modals/create-link-modal';
 export { LinksModalManager } from './components/modals/links-modal-manager';
+export { CreateLinkModalContainer } from './components/modals/CreateLinkModalContainer';
 export {
   LinkDetailsModal,
   ShareModal,

@@ -30,10 +30,11 @@ export const LinkStatusIndicator = memo(
             text: 'Expired',
           };
         default:
+          // Default to active for any undefined/null/unknown status
           return {
-            color: 'bg-gray-100 text-gray-800 border-gray-200',
-            dotColor: 'bg-gray-600',
-            text: 'Unknown',
+            color: 'bg-green-100 text-green-800 border-green-200',
+            dotColor: 'bg-green-600',
+            text: 'Active',
           };
       }
     };

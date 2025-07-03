@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle, ExternalLink, Copy, Plus } from 'lucide-react';
+import { CheckCircle, ExternalLink } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 import {
@@ -25,9 +25,6 @@ export const CreateLinkSuccessStep = () => {
 
   // Modal store actions
   const closeModal = useLinksModalStore(state => state.closeModal);
-  const openCreateLinkModal = useLinksModalStore(
-    state => state.openCreateLinkModal
-  );
   const resetForm = useCreateLinkFormStore(state => state.resetForm);
 
   // Handle opening external link
@@ -44,20 +41,21 @@ export const CreateLinkSuccessStep = () => {
     }
   }, [generatedUrl]);
 
-  // Handle creating another link
-  const handleCreateAnother = useCallback(() => {
-    if (resetForm) {
-      resetForm();
-    }
-    openCreateLinkModal('topic'); // Default to topic for creating another
-  }, [resetForm, openCreateLinkModal]);
-
   // Handle done action
   const handleDone = useCallback(() => {
+    console.log('🎉 SUCCESS STEP: Done button clicked');
+    console.log('🎉 SUCCESS STEP: resetForm available:', !!resetForm);
+    console.log('🎉 SUCCESS STEP: closeModal available:', !!closeModal);
+
     if (resetForm) {
+      console.log('🎉 SUCCESS STEP: Calling resetForm...');
       resetForm();
     }
+
+    console.log('🎉 SUCCESS STEP: Calling closeModal...');
     closeModal();
+
+    console.log('🎉 SUCCESS STEP: Done action completed');
   }, [resetForm, closeModal]);
   return (
     <motion.div
@@ -125,15 +123,6 @@ export const CreateLinkSuccessStep = () => {
         >
           <ExternalLink className='w-4 h-4' />
           Open Link
-        </GradientButton>
-
-        <GradientButton
-          onClick={handleCreateAnother}
-          variant='secondary'
-          className='flex items-center gap-2'
-        >
-          <Plus className='w-4 h-4' />
-          Create Another
         </GradientButton>
 
         <GradientButton

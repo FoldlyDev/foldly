@@ -17,11 +17,13 @@ interface AnalyticsCardData {
   value: string | number;
   subtitle: string;
   icon: React.ComponentType<any>;
-  trend?: {
-    value: number;
-    isPositive: boolean;
-    label: string;
-  };
+  trend?:
+    | {
+        value: number;
+        isPositive: boolean;
+        label: string;
+      }
+    | undefined;
   color: 'primary' | 'secondary' | 'tertiary' | 'success';
   highlight?: boolean;
 }
@@ -213,7 +215,7 @@ export function AnalyticsCards({ data }: AnalyticsCardsProps) {
                   className='text-3xl font-bold text-[var(--quaternary)] leading-none'
                 >
                   {typeof card.value === 'number'
-                    ? card.value.toLocaleString()
+                    ? (isNaN(card.value) ? 0 : card.value).toLocaleString()
                     : card.value}
                 </motion.div>
               </div>

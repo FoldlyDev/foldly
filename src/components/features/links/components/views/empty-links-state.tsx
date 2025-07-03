@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui';
-import { LinkCreationModal } from '../modals/link-creation-modal';
+import { useLinksModalStore } from '../../store/links-modal-store';
 import {
   Link2,
   Plus,
@@ -23,7 +22,9 @@ interface EmptyLinksStateProps {
 
 export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
   const { user } = useUser();
-  const [isBaseLinkModalOpen, setIsBaseLinkModalOpen] = useState(false);
+  const openCreateLinkModal = useLinksModalStore(
+    state => state.openCreateLinkModal
+  );
 
   // Get username from Clerk user data
   const username =
@@ -191,7 +192,11 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         <GradientButton
           variant='primary'
           size='lg'
-          onClick={() => setIsBaseLinkModalOpen(true)}
+          onClick={() => {
+            console.log('🔥 EMPTY STATE: Set Up Base Link button clicked');
+            openCreateLinkModal('base');
+            console.log('🔥 EMPTY STATE: openCreateLinkModal("base") called');
+          }}
           className='group shadow-brand text-lg px-8 py-4'
         >
           <Crown className='w-6 h-6' />
@@ -211,14 +216,6 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           {baseUrl}/project-name
         </code>
       </motion.p>
-
-      {/* Base Link Creation Modal */}
-      <LinkCreationModal
-        isOpen={isBaseLinkModalOpen}
-        onClose={() => setIsBaseLinkModalOpen(false)}
-        linkType='base'
-        username={username}
-      />
     </motion.div>
   );
 }
