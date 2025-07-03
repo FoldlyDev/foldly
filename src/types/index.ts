@@ -1,148 +1,33 @@
-// Foldly Types - Barrel File for Easy Imports
-// Following 2025 best practices for type organization
-// Import from here instead of individual type files
+// Foldly Types - Infrastructure-Only Barrel File
+// Following 2025 feature-based architecture principles
+// This file ONLY exports global infrastructure types, not feature-specific types
 
 // =============================================================================
-// CORE TYPES EXPORTS
+// GLOBAL INFRASTRUCTURE TYPES ONLY
 // =============================================================================
 
-// Global types and utilities
-export * from './global';
+// Core infrastructure - used across all features
+export * from './ids';
+export * from './errors';
+export * from './database-infrastructure';
+export * from './api-infrastructure';
+export * from './forms';
+export * from './queries';
+export * from './utils';
 
-// Database schema types
-export * from './database';
+// =============================================================================
+// FEATURE-SPECIFIC TYPES
+// =============================================================================
+// These have been moved to their proper feature locations:
+// - Analytics types: @/components/features/analytics/types
+// - Links types: @/components/features/links/types
+// - Files types: @/components/features/files/types
+// - Upload types: @/components/features/upload/types
+// - Notifications types: @/components/features/notifications/types
+// - Auth types: @/components/features/auth/types
+// - UI component types: @/components/ui/types
 
-// API request/response types (excluding conflicts)
-export type {
-  // Upload Link API
-  ListUploadLinksRequest,
-  ListUploadLinksResponse,
-  GetUploadLinkRequest,
-  GetUploadLinkResponse,
-  CreateUploadLinkRequest,
-  CreateUploadLinkResponse,
-  UpdateUploadLinkRequest,
-  UpdateUploadLinkResponse,
-  DeleteUploadLinkRequest,
-  DeleteUploadLinkResponse,
-  DuplicateUploadLinkRequest,
-  DuplicateUploadLinkResponse,
-
-  // Public Upload API
-  ResolveUploadLinkRequest,
-  ResolveUploadLinkResponse,
-  ValidatePasswordRequest,
-  ValidatePasswordResponse,
-  StartUploadBatchRequest,
-  StartUploadBatchResponse,
-  UploadFileRequest,
-  UploadFileResponse,
-  GetUploadProgressRequest,
-  GetUploadProgressResponse,
-  CompleteUploadBatchRequest,
-  CompleteUploadBatchResponse,
-
-  // Folder Management API
-  ListFoldersRequest,
-  ListFoldersResponse,
-  CreateFolderResponse,
-  UpdateFolderRequest,
-  UpdateFolderResponse,
-  DeleteFolderRequest,
-  DeleteFolderResponse,
-  MoveFolderRequest,
-  MoveFolderResponse,
-  GenerateFolderLinkRequest,
-  GenerateFolderLinkResponse,
-
-  // File Operations API
-  ListFilesRequest,
-  ListFilesResponse,
-  GetFileRequest,
-  GetFileResponse,
-  MoveFileRequest,
-  MoveFileResponse,
-  BulkMoveFilesRequest,
-  BulkMoveFilesResponse,
-  DeleteFileRequest,
-  DeleteFileResponse,
-  GenerateDownloadUrlRequest,
-  GenerateDownloadUrlResponse,
-
-  // Analytics API
-  GetDashboardAnalyticsRequest,
-  GetDashboardAnalyticsResponse,
-  GetLinkAnalyticsRequest,
-  GetLinkAnalyticsResponse,
-  GetUsageAnalyticsRequest,
-  GetUsageAnalyticsResponse,
-
-  // Access Logs API
-  ListAccessLogsRequest,
-  ListAccessLogsResponse,
-  CreateAccessLogRequest,
-  CreateAccessLogResponse,
-
-  // Batch Operations API
-  ListBatchesRequest,
-  ListBatchesResponse,
-  GetBatchStatisticsResponse,
-  ReprocessBatchRequest,
-  ReprocessBatchResponse,
-
-  // User Management API
-  GetUserProfileResponse,
-  UpdateUserProfileRequest,
-  UpdateUserProfileResponse,
-  GetSubscriptionResponse,
-
-  // Webhooks - API version
-  UploadWebhookPayload,
-} from './api';
-
-// Authentication and user types (excluding conflicts)
-export type {
-  // Core auth types
-  UserId,
-  SessionId,
-  OrganizationId,
-  PlatformRole,
-  AuthContext,
-  FoldlyUser,
-
-  // User preferences and settings
-  UserPreferences,
-  ThemePreference,
-  DashboardLayoutPreference,
-  EmailNotificationSettings,
-  PrivacySettings,
-  ProfileVisibility,
-  LinkSharingDefault,
-
-  // Subscription types
-  UserSubscription,
-  SubscriptionStatus,
-
-  // Auth state and session
-  AuthState,
-  SessionData,
-  OrganizationData,
-  ServerAuthContext,
-
-  // Clerk integration
-  ClerkWebhookEvent,
-  ClerkWebhookEventType,
-  ClerkUser,
-  LegacySessionData,
-
-  // Auth utilities
-  AuthRedirect,
-  AuthError,
-  UserProfile,
-} from './auth';
-
-// Upload and file processing types
-export * from './upload';
-
-// UI component and feature types
-export * from './features';
+// Use individual feature exports:
+// import { LinkType } from '@/components/features/links/types';
+// import { FileProcessingStatus } from '@/components/features/files/types';
+// import { UploadFlowStep } from '@/components/features/upload/types';

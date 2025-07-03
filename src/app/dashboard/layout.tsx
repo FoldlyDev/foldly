@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { DashboardLayoutWrapper } from '@/components/features/dashboard/dashboard-layout-wrapper';
+import { DashboardLayoutWrapper } from '@/components/features/dashboard';
 
 export default async function DashboardLayout({
   children,

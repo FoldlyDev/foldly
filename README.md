@@ -206,7 +206,7 @@ This project follows documentation-first development with comprehensive planning
 4. **Organization Features**: Pre/post-upload folder management, batch naming (Task 14)
 5. **Security Integration**: File type warnings, access controls, audit logging (Task 15)
 
-> **Ready to continue?** Check [TASK.md](docs/TASK.md) for Task 10 (Advanced Multi-Link Database Setup) and current sprint goals.
+> **Ready to continue?** Check [TASK.md](docs/development/TASK.md) for Task 10 (Advanced Multi-Link Database Setup) and current sprint goals.
 
 ---
 

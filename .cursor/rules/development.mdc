@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-1. Always verify the following documentation files before starting new implementations: [TASK.md](mdc:docs/TASK.md), [PLANNING.md](mdc:docs/PLANNING.md), [project_overview.md](mdc:docs/project_overview.md), [TYPE_ARCHITECTURE.md](mdc:docs/TYPE_ARCHITECTURE.md), and [ARCHITECTURE.md](mdc:docs/ARCHITECTURE.md). If your implementation adds new functionality not yet covered, update the relevant documents immediately.
+1. Always verify the following documentation files before starting new implementations: [TASK.md](mdc:docs/development/TASK.md), [PLANNING.md](mdc:docs/business/PLANNING.md), [project_overview.md](mdc:docs/business/project_overview.md), [TYPE_ARCHITECTURE.md](mdc:docs/architecture/TYPE_ARCHITECTURE.md), and [ARCHITECTURE.md](mdc:docs/architecture/ARCHITECTURE.md). If your implementation adds new functionality not yet covered, update the relevant documents immediately.
 
 2. Decompose components into modular, reusable elements. Adhere to DRY (Don’t Repeat Yourself) and SOLID design principles—each component should have a single responsibility, be open for extension, loosely coupled, and easily testable
 

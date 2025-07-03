@@ -1,21 +1,43 @@
-// ===== 2025 UNIFIED LINK CREATION ARCHITECTURE =====
+// ===== 2025 FEATURE-BASED COMPONENT ARCHITECTURE =====
 
-// Unified Link Creation System - Works for Both Base & Topic Links
-export { LinkCreationModal } from './link-creation-modal';
+// 📋 Modal Components - User Interactions
+export { LinkCreationModal } from './components/modals/link-creation-modal';
+export { CreateLinkModal } from './components/modals/create-link-modal';
+export {
+  LinkDetailsModal,
+  ShareModal,
+  SettingsModal,
+} from './components/modals/link-modals';
 
-// Reusable Section Components - Modular & DRY
-export { LinkInformationSection } from './link-information-section';
-export { LinkBrandingSection } from './link-branding-section';
+// 🔧 Section Components - Modular & Reusable
+export { LinkInformationSection } from './components/sections/link-information-section';
+export { LinkBrandingSection } from './components/sections/link-branding-section';
+export { LinkStatsGrid } from './components/sections/link-stats-grid';
 
-// Existing Components
-export { EmptyLinksState } from './empty-links-state';
-export { PopulatedLinksState } from './populated-links-state';
-export { LinksContainer } from './links-container';
-export { LinkCard } from './link-card';
-export { LinkStatsGrid } from './link-stats-grid';
-export { LinksOverviewCards } from './links-overview-cards';
-export { CreateLinkModal } from './create-link-modal';
-export { LinkDetailsModal, ShareModal, SettingsModal } from './link-modals';
+// 🎴 Card Components - Data Display
+export { LinkCard } from './components/cards/link-card';
+export { LinksOverviewCards } from './components/cards/links-overview-cards';
 
-// Hooks
-export { useLinksState } from './use-links-state';
+// 🏷️ Indicator Components - Reusable Status & Type Displays
+export {
+  LinkTypeIcon,
+  LinkStatusIndicator,
+  LinkVisibilityIndicator,
+} from './components/indicators';
+
+// 👁️ View Components - Layout & Container Logic
+export { LinksContainer } from './components/views/links-container';
+export { EmptyLinksState } from './components/views/empty-links-state';
+export { PopulatedLinksState } from './components/views/populated-links-state';
+
+// 🪝 Hooks - State Management
+export { useLinksState } from './hooks/use-links-state';
+
+// 🏪 Store - Zustand State Management
+export { useLinksStore } from './store/links-store';
+
+// 🔧 Services - Business Logic & API
+export * from './services';
+
+// 📝 Types - TypeScript Interfaces
+export * from './types';
