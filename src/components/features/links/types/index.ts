@@ -91,6 +91,9 @@ export interface LinkData {
   readonly expiresAt?: string; // Human-readable expiry
   readonly createdAt: string; // Human-readable creation date
   readonly requireEmail?: boolean; // For settings display
+  readonly requirePassword?: boolean; // For password protection
+  readonly maxFiles?: number; // Maximum files allowed
+  readonly maxFileSize: number; // Maximum file size in bytes
   readonly allowedFileTypes: readonly string[]; // File types allowed for upload
   readonly autoCreateFolders: boolean; // Auto-create folders setting
   readonly settings?: {
@@ -160,6 +163,9 @@ export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
     ...(uploadLink.requireEmail !== undefined && {
       requireEmail: uploadLink.requireEmail,
     }),
+    requirePassword: false, // Default to false
+    maxFiles: 100, // Default max files
+    maxFileSize: uploadLink.maxFileSize,
     allowedFileTypes: uploadLink.allowedFileTypes || [],
     autoCreateFolders: uploadLink.autoCreateFolders || false,
     settings: {

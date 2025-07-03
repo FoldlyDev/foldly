@@ -6,6 +6,7 @@
 // =============================================================================
 
 export { ActionButton } from './action-button';
+export { AnimatedCopyButton } from './animated-copy-button';
 export { StatusBadge } from './status-badge';
 export { CopyButton } from './copy-button';
 export { CardActionsMenu, defaultActions } from './card-actions-menu';
@@ -26,6 +27,7 @@ export { SearchInput } from './search-input';
 export { TemplatesModal } from './templates-modal';
 export { ViewToggle } from './view-toggle';
 export { FileUpload } from './file-upload';
+export { SearchHighlight } from './search-highlight';
 
 // =============================================================================
 // SHADCN UI COMPONENTS (Barrel re-export following ADR004)

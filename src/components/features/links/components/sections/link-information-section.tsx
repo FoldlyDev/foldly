@@ -11,16 +11,27 @@ import {
   Eye,
   EyeOff,
   Power,
+  Calendar,
+  CalendarIcon,
 } from 'lucide-react';
 import { Input } from '@/components/ui/shadcn/input';
 import { Textarea } from '@/components/ui/shadcn/textarea';
 import { Switch } from '@/components/ui/shadcn/switch';
+import { Button } from '@/components/ui/shadcn/button';
+import { Calendar as CalendarComponent } from '@/components/ui/shadcn/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/shadcn/popover';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/animate-ui/radix/dropdown-menu';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils/utils';
 
 // Import types from the correct locations
 import type { ValidationError } from '@/components/ui/types';
@@ -57,6 +68,8 @@ const FILE_SIZE_OPTIONS = [
   { value: 500, label: '500 files' },
 ] as const;
 
+const fileOptions = [5, 10, 25, 50, 100];
+
 export function LinkInformationSection({
   linkType,
   username,
@@ -69,8 +82,6 @@ export function LinkInformationSection({
     linkType === 'base'
       ? `foldly.io/${username}`
       : `foldly.io/${username}/${formData.name || '[topic-name]'}`;
-
-  const fileOptions = [5, 10, 25, 50, 100];
 
   return (
     <div className='space-y-6'>
@@ -193,6 +204,62 @@ export function LinkInformationSection({
           <h3 className='text-sm font-medium text-foreground'>Settings</h3>
 
           <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
+            {/* Expiry Date Field - Only for topic links */}
+            {linkType === 'topic' && (
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-foreground flex items-center gap-2'>
+                  <Calendar className='h-4 w-4 text-amber-600' />
+                  Expiry Date (Optional)
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      disabled={isLoading}
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !formData.expiresAt && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className='w-4 h-4 mr-2' />
+                      {formData.expiresAt ? (
+                        format(formData.expiresAt, 'MMM d, yyyy')
+                      ) : (
+                        <span>Pick expiry date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className='w-auto p-0'>
+                    <CalendarComponent
+                      mode='single'
+                      selected={formData.expiresAt}
+                      onSelect={date => {
+                        if (date) {
+                          onDataChange({ expiresAt: date });
+                        } else {
+                          // Handle clearing the date by omitting the property
+                          const { expiresAt: _, ...rest } = formData;
+                          onDataChange(rest);
+                        }
+                      }}
+                      disabled={date => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0); // Reset time to start of day
+                        return date < today;
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors?.expiresAt && (
+                  <p className='text-sm text-destructive'>{errors.expiresAt}</p>
+                )}
+                <p className='text-xs text-muted-foreground'>
+                  Link will stop accepting uploads after this date
+                </p>
+              </div>
+            )}
+
             {/* Link Status Toggle */}
             <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
               <div className='space-y-1'>

@@ -1,43 +1,40 @@
 'use client';
 
 import { memo } from 'react';
+import { Copy, Share2, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/lib/hooks/use-mobile';
-import { useLinkCard } from '../../hooks/use-link-card';
+import { useLinkCardStore } from '../../hooks/use-links-composite';
 import { LinkCardMobile } from './link-card-mobile';
 import { LinkCardDesktop } from './link-card-desktop';
 import { LinkCardGrid } from './link-card-grid';
-import type { LinkData } from '../../types';
+import type { LinkId } from '@/types';
 
 interface LinkCardProps {
-  link: LinkData;
+  linkId: LinkId;
   view: 'grid' | 'list';
   index: number;
-  onSelect: (id: string) => void;
-  isSelected: boolean;
-  onMultiSelect?: (linkId: string) => void;
-  isMultiSelected?: boolean;
-  onShare?: (linkId: string) => void;
-  onSettings?: (linkId: string) => void;
-  onDelete?: (linkId: string) => void;
-  onViewDetails?: (linkId: string) => void;
-  onOpenDetails?: (link: LinkData) => void;
-  onSelectionChange?: (linkId: string, checked: boolean) => void;
-  isMultiSelectMode?: boolean;
+  searchQuery?: string;
 }
 
-const LinkCardComponent = (props: LinkCardProps) => {
-  const {
-    link,
-    view,
-    index,
-    isMultiSelected,
-    onMultiSelect,
-    onSelectionChange,
-    isMultiSelectMode,
-  } = props;
-
+const LinkCardComponent = ({
+  linkId,
+  view,
+  index,
+  searchQuery = '',
+}: LinkCardProps) => {
   const isMobile = useIsMobile();
-  const linkCardData = useLinkCard(props);
+  const { link, isLoading, isSelected, isMultiSelectMode, computed } =
+    useLinkCardStore(linkId);
+
+  // Handle loading state
+  if (isLoading || !link || !computed) {
+    return (
+      <div className='p-4 bg-gray-100 rounded-lg animate-pulse'>
+        <div className='h-4 bg-gray-300 rounded mb-2'></div>
+        <div className='h-4 bg-gray-300 rounded w-2/3'></div>
+      </div>
+    );
+  }
 
   // Grid view - same for mobile and desktop
   if (view === 'grid') {
@@ -45,12 +42,14 @@ const LinkCardComponent = (props: LinkCardProps) => {
       <LinkCardGrid
         link={link}
         index={index}
-        isBaseLink={linkCardData.isBaseLink}
-        formattedDate={linkCardData.formattedDate}
-        isMultiSelected={isMultiSelected}
-        onOpenDetails={linkCardData.handleOpenDetails}
-        onMultiSelect={onMultiSelect}
-        actions={linkCardData.actions}
+        isBaseLink={computed.isBaseLink}
+        formattedDate={computed.formattedDate}
+        isMultiSelected={isSelected}
+        onOpenDetails={computed.handleViewDetails}
+        onMultiSelect={computed.handleToggleSelection}
+        searchQuery={searchQuery}
+        actions={computed.dropdownActions}
+        quickActions={computed.quickActions}
       />
     );
   }
@@ -61,16 +60,13 @@ const LinkCardComponent = (props: LinkCardProps) => {
       <LinkCardMobile
         link={link}
         index={index}
-        isBaseLink={linkCardData.isBaseLink}
-        formattedDate={linkCardData.formattedDate}
-        isMultiSelected={isMultiSelected}
-        onOpenDetails={linkCardData.handleOpenDetails}
-        onCopyLink={linkCardData.handleCopyLink}
-        onShare={linkCardData.handleShare}
-        onViewDetails={linkCardData.handleViewDetails}
-        onDelete={linkCardData.handleDelete}
-        isMobileActionMenuOpen={linkCardData.isMobileActionMenuOpen}
-        setIsMobileActionMenuOpen={linkCardData.setIsMobileActionMenuOpen}
+        isBaseLink={computed.isBaseLink}
+        formattedDate={computed.formattedDate}
+        isMultiSelected={isSelected}
+        onOpenDetails={computed.handleViewDetails}
+        actions={computed.dropdownActions}
+        quickActions={computed.quickActions}
+        searchQuery={searchQuery}
       />
     );
   }
@@ -79,19 +75,25 @@ const LinkCardComponent = (props: LinkCardProps) => {
     <LinkCardDesktop
       link={link}
       index={index}
-      isBaseLink={linkCardData.isBaseLink}
-      formattedDate={linkCardData.formattedDate}
+      isBaseLink={computed.isBaseLink}
+      formattedDate={computed.formattedDate}
       isMultiSelectMode={isMultiSelectMode}
-      isMultiSelected={isMultiSelected}
-      onOpenDetails={linkCardData.handleOpenDetails}
-      onCopyLink={linkCardData.handleCopyLink}
-      onShare={linkCardData.handleShare}
-      onSelectionChange={onSelectionChange}
-      actions={linkCardData.actions}
+      isMultiSelected={isSelected}
+      onOpenDetails={computed.handleViewDetails}
+      onCopyLink={computed.handleCopyLink}
+      onShare={computed.handleShare}
+      onSelectionChange={(linkId: string, checked: boolean) => {
+        if (checked) {
+          computed.handleToggleSelection();
+        }
+      }}
+      searchQuery={searchQuery}
+      actions={computed.dropdownActions}
+      quickActions={computed.quickActions}
     />
   );
 };
 
 // ✅ Memoized component to prevent unnecessary re-renders
-// Only re-renders when props actually change
+// Only re-renders when linkId, view, or index change
 export const LinkCard = memo(LinkCardComponent);

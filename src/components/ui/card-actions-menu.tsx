@@ -7,8 +7,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/shadcn/dropdown-menu';
 import { ActionButton } from '@/components/ui/action-button';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   MoreHorizontal,
   Share2,
@@ -113,28 +114,62 @@ export function CardActionsMenu({
   const handleItemClick = (action: ActionItem, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    action.onClick();
-    setOpen(false);
+
+    try {
+      action.onClick();
+    } catch (error) {
+      console.error('Error calling action.onClick():', error);
+    }
+
+    // Close dropdown with small delay to ensure modal has time to open
+    setTimeout(() => {
+      setOpen(false);
+    }, 50);
   };
 
   const defaultTrigger = (
-    <ActionButton
-      variant='ghost'
-      size='icon'
-      motionType='subtle'
-      className={`${size === 'sm' ? 'h-7 w-7' : 'h-8 w-8'} text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer`}
-      aria-label='More actions'
+    <motion.div
+      whileHover={{ scale: 1.05, rotate: 90 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      animate={open ? { rotate: 90 } : { rotate: 0 }}
     >
-      <MoreHorizontal className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
-    </ActionButton>
+      <ActionButton
+        variant='ghost'
+        size='icon'
+        motionType='subtle'
+        className={`${size === 'sm' ? 'h-7 w-7' : 'h-8 w-8'} text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer`}
+        aria-label='More actions'
+      >
+        <MoreHorizontal className={size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} />
+      </ActionButton>
+    </motion.div>
   );
 
+  // Animation variants for dropdown content
+  const dropdownVariants = {
+    hidden: { opacity: 0, scale: 0.95, y: -10 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        type: 'spring',
+        stiffness: 350,
+        damping: 35,
+        duration: 0.2,
+      },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.95,
+      y: -10,
+      transition: { duration: 0.15 },
+    },
+  };
+
   return (
-    <DropdownMenu
-      open={open}
-      onOpenChange={setOpen}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-    >
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         asChild
         onClick={e => {
@@ -144,59 +179,75 @@ export function CardActionsMenu({
       >
         {trigger || defaultTrigger}
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align={align}
-        side={side}
-        className={`min-w-[180px] bg-white border border-slate-200 shadow-lg rounded-lg p-1 z-50 ${className}`}
-        onClick={e => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        transition={{ duration: 0.15, ease: 'easeOut' }}
-      >
-        {actions.map((action, index) => {
-          const IconComponent = action.icon;
-          const isDestructive = action.variant === 'destructive';
-          const isLastBeforeDestructive =
-            !isDestructive &&
-            index < actions.length - 1 &&
-            actions[index + 1]?.variant === 'destructive';
+      <AnimatePresence>
+        {open && (
+          <DropdownMenuContent
+            align={align}
+            side={side}
+            className={`min-w-[180px] ${className}`}
+            asChild
+          >
+            <motion.div
+              variants={dropdownVariants}
+              initial='hidden'
+              animate='visible'
+              exit='exit'
+            >
+              {actions.map((action, index) => {
+                const IconComponent = action.icon;
+                const isDestructive = action.variant === 'destructive';
+                const isLastBeforeDestructive =
+                  !isDestructive &&
+                  index < actions.length - 1 &&
+                  actions[index + 1]?.variant === 'destructive';
 
-          return (
-            <React.Fragment key={action.id}>
-              <DropdownMenuItem
-                onClick={e => handleItemClick(action, e)}
-                disabled={action.disabled || false}
-                variant={isDestructive ? 'destructive' : 'default'}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer rounded-md
-                  transition-colors duration-150 outline-none
-                  ${
-                    action.disabled
-                      ? 'opacity-50 cursor-not-allowed'
-                      : isDestructive
-                        ? 'hover:bg-red-50 hover:text-red-700 text-red-600 focus:bg-red-50 focus:text-red-700'
-                        : 'hover:bg-slate-50 text-slate-900 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900'
-                  }
-                `}
-              >
-                <IconComponent
-                  className={`w-4 h-4 flex-shrink-0 ${
-                    isDestructive ? 'text-red-500' : 'text-slate-600'
-                  }`}
-                />
-                <span className='font-medium'>{action.label}</span>
-              </DropdownMenuItem>
-              {isLastBeforeDestructive && (
-                <DropdownMenuSeparator className='my-1 bg-slate-200' />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </DropdownMenuContent>
+                return (
+                  <motion.div
+                    key={action.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      delay: index * 0.05,
+                      duration: 0.2,
+                      ease: 'easeOut',
+                    }}
+                  >
+                    <DropdownMenuItem
+                      onClick={e => {
+                        handleItemClick(action, e);
+                      }}
+                      disabled={action.disabled || false}
+                      className={`flex items-center gap-3 px-3 py-2.5 text-sm cursor-pointer ${
+                        isDestructive
+                          ? 'text-red-600 hover:text-red-700 hover:bg-red-50 focus:bg-red-50 focus:text-red-700'
+                          : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 focus:bg-gray-100 focus:text-gray-900'
+                      }`}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 400,
+                          damping: 25,
+                        }}
+                      >
+                        <IconComponent className='w-4 h-4 flex-shrink-0' />
+                      </motion.div>
+                      <span className='font-medium'>{action.label}</span>
+                    </DropdownMenuItem>
+                    {isLastBeforeDestructive && (
+                      <DropdownMenuSeparator className='my-1' />
+                    )}
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </DropdownMenuContent>
+        )}
+      </AnimatePresence>
     </DropdownMenu>
   );
 }
-
 export { defaultActions };
 export type { ActionItem, CardActionsMenuProps };

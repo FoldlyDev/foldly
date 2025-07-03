@@ -11,6 +11,8 @@ import {
   Image,
   Copy,
   ExternalLink,
+  ChevronRight,
+  CalendarIcon,
 } from 'lucide-react';
 import {
   Dialog,
@@ -19,8 +21,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/animate-ui/radix/dialog';
-import { useLinksStore } from '../../store/links-store';
-import type { CreateUploadLinkInput } from '../../types';
+import {
+  useLinksListStore,
+  useLinksModalsStore,
+} from '../../hooks/use-links-composite';
+import type { CreateUploadLinkInput, LinkData } from '../../types';
+import { Button } from '@/components/ui/shadcn/button';
+import { Calendar } from '@/components/ui/shadcn/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/shadcn/popover';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils/utils';
 
 interface CreateLinkModalProps {
   isOpen: boolean;
@@ -44,7 +58,7 @@ interface CreateLinkFormState {
   // File restrictions (UI format)
   readonly allowedFileTypes: string[];
   readonly maxFileSize: string; // UI format like "50MB", will convert to bytes
-  readonly expiresAt?: string; // ISO string or empty, will convert to Date
+  readonly expiresAt?: Date; // Date object instead of string
 
   // Organization
   readonly autoCreateFolders: boolean;
@@ -56,7 +70,9 @@ export function CreateLinkModal({
   onClose,
   onSuccess,
 }: CreateLinkModalProps) {
-  const { createLink, links } = useLinksStore();
+  // Use new store architecture
+  const { links, addLink } = useLinksListStore();
+  const { closeModal } = useLinksModalsStore();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<CreateLinkFormState>({
     title: '',
@@ -174,30 +190,57 @@ export function CreateLinkModal({
         (createInput as any).allowedFileTypes = formData.allowedFileTypes;
       }
       if (formData.expiresAt) {
-        (createInput as any).expiresAt = new Date(formData.expiresAt);
+        (createInput as any).expiresAt = formData.expiresAt;
       }
       if (linkTopic) {
         (createInput as any).topic = linkTopic;
       }
 
-      // Call the store action
-      const result = await createLink(createInput);
-
-      if (result.success) {
-        // Generate the URL for display
-        const url =
+      // Create a mock LinkData object and add to store
+      const newLink: LinkData = {
+        id: `link_${Date.now()}`, // Mock ID generation
+        name:
+          formData.linkType === 'base' ? 'Personal Collection' : formData.title,
+        title: formData.title,
+        slug: linkSlug,
+        ...(linkTopic && { topic: linkTopic }),
+        linkType: formData.linkType,
+        isPublic: formData.isPublic,
+        status: 'active',
+        url:
           formData.linkType === 'base'
-            ? `foldly.io/${result.data.slug}`
-            : `foldly.io/${result.data.slug}/${result.data.topic || formData.slug}`;
+            ? `foldly.io/${linkSlug}`
+            : `foldly.io/${linkSlug}/${linkTopic}`,
+        uploads: 0,
+        views: 0,
+        lastActivity: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        ...(formData.expiresAt && {
+          expiresAt: formData.expiresAt.toLocaleDateString(),
+        }),
+        requireEmail: formData.requireEmail,
+        requirePassword: false, // Default to false for UI modal
+        maxFiles: 100, // Default max files
+        maxFileSize: parseInt(formData.maxFileSize) * 1024 * 1024, // Convert MB to bytes
+        allowedFileTypes: formData.allowedFileTypes,
+        autoCreateFolders: formData.autoCreateFolders,
+        settings: {
+          allowMultiple: true,
+          maxFileSize: `${formData.maxFileSize}MB`,
+          ...(formData.description && { customMessage: formData.description }),
+        },
+      };
 
-        setGeneratedUrl(url);
-        setStep(3);
+      // Add to store
+      addLink(newLink);
 
-        // Call onSuccess to notify parent component
-        onSuccess();
-      } else {
-        setError(result.error);
-      }
+      // Generate the URL for display
+      const url = newLink.url;
+      setGeneratedUrl(url);
+      setStep(3);
+
+      // Call onSuccess to notify parent component
+      onSuccess();
     } catch (err) {
       setError('An unexpected error occurred');
       console.error('Create link error:', err);
@@ -446,15 +489,39 @@ export function CreateLinkModal({
                   <label className='block text-sm font-medium text-[var(--quaternary)] mb-2'>
                     Expires (Optional)
                   </label>
-                  <input
-                    type='date'
-                    value={formData.expiresAt}
-                    onChange={e =>
-                      handleInputChange('expiresAt', e.target.value)
-                    }
-                    className='w-full px-4 py-3 border border-[var(--neutral-200)] rounded-lg 
-                             focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent'
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant='outline'
+                        className={cn(
+                          'w-full justify-start text-left font-normal px-4 py-3 h-auto',
+                          !formData.expiresAt && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className='w-4 h-4 mr-2' />
+                        {formData.expiresAt ? (
+                          format(formData.expiresAt, 'MMM d, yyyy')
+                        ) : (
+                          <span>Pick expiry date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className='w-auto p-0'>
+                      <Calendar
+                        mode='single'
+                        selected={formData.expiresAt}
+                        onSelect={date => {
+                          handleInputChange('expiresAt', date);
+                        }}
+                        disabled={date => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          return date < today;
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 

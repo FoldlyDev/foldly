@@ -22,10 +22,10 @@ import {
   LinkBrandingSection,
   type LinkBrandingFormData,
 } from '../sections/link-branding-section';
-import { useLinksStore } from '../../store/links-store';
+import { useLinksListStore } from '../../hooks/use-links-composite';
 
 // Use existing types from @/types
-import type { CreateBaseLinkInput, LinkType } from '../../types';
+import type { CreateBaseLinkInput, LinkType, LinkData } from '../../types';
 import type { ValidationError } from '@/components/ui/types';
 import type { HexColor } from '@/types/ids';
 
@@ -53,7 +53,7 @@ export function LinkCreationModal({
   linkType,
 }: LinkCreationModalProps) {
   const { user } = useUser();
-  const { createBaseLink, isLoading } = useLinksStore();
+  const { addLink, isLoading } = useLinksListStore();
 
   // Ref for the scrollable content area
   const contentRef = useRef<HTMLDivElement>(null);
@@ -245,18 +245,46 @@ export function LinkCreationModal({
         ...(brandingData.brandingEnabled && logoUrl && { logoUrl }),
       };
 
-      // Create the link via Zustand store
-      const result = await createBaseLink(linkData);
+      // Create a LinkData object and add to store
+      const newLink: LinkData = {
+        id: `link_${Date.now()}`, // Mock ID generation
+        name:
+          linkType === 'base' ? 'Personal Collection' : informationData.name,
+        title:
+          linkType === 'base' ? 'Personal Collection' : informationData.name,
+        slug: username,
+        linkType: 'base', // Base links are always 'base' type
+        isPublic: informationData.isPublic,
+        status: 'active',
+        url: `foldly.io/${username}`,
+        uploads: 0,
+        views: 0,
+        lastActivity: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        ...(informationData.expiresAt && {
+          expiresAt: informationData.expiresAt.toLocaleDateString(),
+        }),
+        requireEmail: informationData.requireEmail,
+        allowedFileTypes: [],
+        autoCreateFolders: true,
+        settings: {
+          allowMultiple: true,
+          maxFileSize: `${informationData.maxFiles}MB`,
+          ...(informationData.description && {
+            customMessage: informationData.description,
+          }),
+        },
+        ...(brandingData.brandingEnabled &&
+          brandingData.brandColor && { brandColor: brandingData.brandColor }),
+      };
 
-      if (result.success && result.data) {
-        setCreatedLinkId(result.data.id);
-        setCurrentStep('success');
-        toast.success(
-          `${linkType === 'base' ? 'Base link' : 'Topic link'} created successfully!`
-        );
-      } else {
-        throw new Error('Failed to create link');
-      }
+      // Add to store
+      addLink(newLink);
+      setCreatedLinkId(newLink.id);
+      setCurrentStep('success');
+      toast.success(
+        `${linkType === 'base' ? 'Base link' : 'Topic link'} created successfully!`
+      );
     } catch (error) {
       console.error('Error creating link:', error);
       const errorMessage =

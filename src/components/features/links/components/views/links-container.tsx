@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import {
   EmptyLinksState,
   PopulatedLinksState,
-  CreateLinkModal,
 } from '@/components/features/links';
 import { ContentLoader } from '@/components/ui';
-import { useLinksState } from '../../hooks/use-links-state';
+import { useLinksListStore } from '../../hooks/use-links-composite';
+import { LinksModalManager } from '../modals/links-modal-manager';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -28,43 +28,26 @@ export function LinksContainer({
   isLoading: propLoading = false,
   error: propError = null,
 }: LinksContainerProps) {
-  // Use the custom links state hook
+  // Get state from stores
   const {
     links,
     isLoading: storeLoading,
     error: storeError,
-    searchQuery,
-    filter,
-    viewMode,
-    isCreateModalOpen,
-    filteredLinks,
-    hasBaseLink,
-    isEmpty,
-    linkStats,
-    selectedLinkIds,
-    // Actions
-    fetchLinks,
-    publishCreatedLinks,
-    setSearchQuery,
-    setFilter,
-    setViewMode,
-    openCreateModal,
-    closeCreateModal,
-    toggleLinkSelection,
-    clearSelection,
-    removeLink,
-  } = useLinksState();
+    setLinks,
+  } = useLinksListStore();
 
-  // Initialize store data on mount
+  // Initialize store data on mount if we have initial data
   useEffect(() => {
-    fetchLinks();
-  }, [fetchLinks]);
+    if (initialData?.linkStats && links.length === 0) {
+      // If we have initial data but no links in store, we could initialize here
+      // For now, we'll let the components handle their own data fetching
+    }
+  }, [initialData, links.length, setLinks]);
 
   // Use prop loading/error state if provided, otherwise use store state
   const isLoading = propLoading || storeLoading;
   const error = propError || storeError;
-
-  // No additional computed values needed - PopulatedLinksView handles everything
+  const isEmpty = links.length === 0;
 
   if (isLoading) {
     return (
@@ -116,45 +99,17 @@ export function LinksContainer({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.6 }}
             >
-              <EmptyLinksState onRefreshDashboard={publishCreatedLinks} />
+              <EmptyLinksState
+                onRefreshDashboard={() => window.location.reload()}
+              />
             </motion.div>
           ) : (
-            <PopulatedLinksState
-              links={links}
-              filteredLinks={filteredLinks}
-              hasBaseLink={hasBaseLink}
-              baseLink={
-                hasBaseLink ? links.find(link => !link.topic) : undefined
-              }
-              topicLinks={links.filter(link => link.topic)}
-              linkStats={linkStats}
-              searchQuery={searchQuery}
-              filter={filter}
-              viewMode={viewMode}
-              onSearchChange={setSearchQuery}
-              onFilterChange={setFilter}
-              onViewModeChange={setViewMode}
-              onCreateLink={openCreateModal}
-              onTemplatesClick={() => console.log('Templates clicked')}
-              onLinkClick={linkId => console.log('Link clicked:', linkId)}
-              onDeleteLink={linkId => removeLink(linkId as any)}
-              isMultiSelectMode={selectedLinkIds.length > 0}
-              selectedLinks={(selectedLinkIds || []).map(id => String(id))}
-              onMultiSelect={linkId => toggleLinkSelection(linkId as any)}
-              onMultiSelectModeToggle={clearSelection}
-            />
+            <PopulatedLinksState />
           )}
         </div>
 
-        {/* Create Link Modal */}
-        <CreateLinkModal
-          isOpen={isCreateModalOpen}
-          onClose={closeCreateModal}
-          onSuccess={() => {
-            closeCreateModal();
-            console.log('Link created successfully!');
-          }}
-        />
+        {/* Centralized Modal Management - All modals managed by store */}
+        <LinksModalManager />
       </div>
     </div>
   );

@@ -2,14 +2,19 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Eye, Clock } from 'lucide-react';
+import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
-import { LinkCardActions } from './link-card-actions';
+import {
+  SearchHighlight,
+  ActionButton,
+  AnimatedCopyButton,
+  CardActionsMenu,
+} from '@/components/ui';
 import type { LinkData } from '../../types';
 import type { ActionItem } from '@/components/ui/types';
 
@@ -25,6 +30,8 @@ interface LinkCardDesktopProps {
   onShare: () => void;
   onSelectionChange?: ((linkId: string, checked: boolean) => void) | undefined;
   actions: ActionItem[];
+  quickActions: ActionItem[];
+  searchQuery?: string;
 }
 
 export const LinkCardDesktop = memo(
@@ -40,6 +47,8 @@ export const LinkCardDesktop = memo(
     onShare,
     onSelectionChange,
     actions,
+    quickActions,
+    searchQuery,
   }: LinkCardDesktopProps) => {
     return (
       <motion.div
@@ -82,7 +91,10 @@ export const LinkCardDesktop = memo(
 
             <div className='min-w-0 flex-1'>
               <h3 className='font-medium text-gray-900 text-sm truncate'>
-                {link.name}
+                <SearchHighlight
+                  text={link.name}
+                  searchQuery={searchQuery || ''}
+                />
               </h3>
               <p className='text-xs text-gray-500 truncate'>{link.url}</p>
             </div>
@@ -107,17 +119,85 @@ export const LinkCardDesktop = memo(
           </div>
 
           {/* Date */}
-          <div className='flex items-center gap-1 text-sm text-gray-500 flex-shrink-0 min-w-[100px]'>
-            <Clock className='w-3.5 h-3.5' />
-            <span>{formattedDate}</span>
+          <div className='flex flex-col items-end gap-1 text-sm text-gray-500 flex-shrink-0 min-w-[120px]'>
+            <div className='flex items-center gap-1'>
+              <Clock className='w-3.5 h-3.5' />
+              <span>{formattedDate}</span>
+            </div>
+
+            {/* Expiry Date */}
+            {link.expiresAt && (
+              <div className='flex items-center gap-1 text-xs text-amber-600'>
+                <AlertTriangle className='w-3 h-3' />
+                <span className='font-medium'>Expires {link.expiresAt}</span>
+              </div>
+            )}
           </div>
 
-          {/* Quick Actions */}
-          <LinkCardActions
-            onCopyLink={onCopyLink}
-            onShare={onShare}
-            actions={actions}
-          />
+          {/* Quick Actions (Copy & Share) */}
+          <div
+            className='flex items-center gap-2 flex-shrink-0'
+            onClick={e => e.stopPropagation()}
+          >
+            {quickActions.map(action => {
+              const IconComponent = action.icon;
+
+              // Use AnimatedCopyButton for copy action
+              if (action.id === 'copy') {
+                return (
+                  <AnimatedCopyButton
+                    key={action.id}
+                    onCopy={async () => {
+                      action.onClick();
+                    }}
+                    variant='ghost'
+                    size='sm'
+                    title={action.label}
+                    className='text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                    iconSize='w-4 h-4'
+                  />
+                );
+              }
+
+              // Regular action button for other actions (like share)
+              return (
+                <motion.div
+                  key={action.id}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                >
+                  <ActionButton
+                    onClick={e => {
+                      e.stopPropagation();
+                      action.onClick();
+                    }}
+                    variant='ghost'
+                    size='sm'
+                    title={action.label}
+                    className='text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                  >
+                    <motion.div
+                      whileHover={{
+                        scale: action.id === 'share' ? [1, 1.1, 1] : 1,
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        ease: 'easeInOut',
+                      }}
+                    >
+                      <IconComponent className='w-4 h-4' />
+                    </motion.div>
+                  </ActionButton>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Dropdown Menu */}
+          <div className='flex-shrink-0' onClick={e => e.stopPropagation()}>
+            <CardActionsMenu actions={actions} />
+          </div>
         </div>
 
         {/* Hover overlay for visual feedback */}

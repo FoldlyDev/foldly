@@ -3,6 +3,7 @@
 // 📋 Modal Components - User Interactions
 export { LinkCreationModal } from './components/modals/link-creation-modal';
 export { CreateLinkModal } from './components/modals/create-link-modal';
+export { LinksModalManager } from './components/modals/links-modal-manager';
 export {
   LinkDetailsModal,
   ShareModal,
@@ -31,7 +32,7 @@ export { EmptyLinksState } from './components/views/empty-links-state';
 export { PopulatedLinksState } from './components/views/populated-links-state';
 
 // 🪝 Hooks - State Management
-export { useLinksState } from './hooks/use-links-state';
+// Legacy hooks removed - replaced by store-based composite hooks
 
 // 🏪 Store - Zustand State Management
 export { useLinksStore } from './store/links-store';

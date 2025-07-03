@@ -2,14 +2,25 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Eye, Clock, ExternalLink } from 'lucide-react';
+import {
+  FileText,
+  Eye,
+  Clock,
+  ExternalLink,
+  AlertTriangle,
+} from 'lucide-react';
 import { Checkbox } from '@/components/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
-import { CardActionsMenu } from '@/components/ui';
+import {
+  CardActionsMenu,
+  SearchHighlight,
+  ActionButton,
+  AnimatedCopyButton,
+} from '@/components/ui';
 import type { LinkData } from '../../types';
 import type { ActionItem } from '@/components/ui/types';
 
@@ -22,6 +33,8 @@ interface LinkCardGridProps {
   onOpenDetails: () => void;
   onMultiSelect?: ((linkId: string) => void) | undefined;
   actions: ActionItem[];
+  quickActions: ActionItem[];
+  searchQuery?: string;
 }
 
 export const LinkCardGrid = memo(
@@ -34,6 +47,8 @@ export const LinkCardGrid = memo(
     onOpenDetails,
     onMultiSelect,
     actions,
+    quickActions,
+    searchQuery,
   }: LinkCardGridProps) => {
     return (
       <motion.div
@@ -89,7 +104,10 @@ export const LinkCardGrid = memo(
                   </div>
                 )}
                 <h3 className='font-bold text-slate-900 text-lg truncate flex-1 min-w-0'>
-                  {link.name}
+                  <SearchHighlight
+                    text={link.name}
+                    searchQuery={searchQuery || ''}
+                  />
                 </h3>
               </div>
 
@@ -127,9 +145,82 @@ export const LinkCardGrid = memo(
 
           {/* Footer */}
           <div className='flex items-center justify-between pt-4 border-t border-gray-100'>
-            <div className='flex items-center gap-1 text-xs text-slate-500'>
-              <Clock className='w-3 h-3' />
-              {formattedDate}
+            {/* Left: Quick Actions (Copy & Share) */}
+            <div
+              className='flex items-center gap-2'
+              onClick={e => e.stopPropagation()}
+            >
+              {quickActions.map(action => {
+                const IconComponent = action.icon;
+
+                // Use AnimatedCopyButton for copy action
+                if (action.id === 'copy') {
+                  return (
+                    <AnimatedCopyButton
+                      key={action.id}
+                      onCopy={async () => {
+                        action.onClick();
+                      }}
+                      variant='ghost'
+                      size='sm'
+                      title={action.label}
+                      className='text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                      iconSize='w-4 h-4'
+                    />
+                  );
+                }
+
+                // Regular action button for other actions (like share)
+                return (
+                  <motion.div
+                    key={action.id}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                  >
+                    <ActionButton
+                      onClick={e => {
+                        e.stopPropagation();
+                        action.onClick();
+                      }}
+                      variant='ghost'
+                      size='sm'
+                      title={action.label}
+                      className='text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                    >
+                      <motion.div
+                        whileHover={{
+                          scale: action.id === 'share' ? [1, 1.1, 1] : 1,
+                        }}
+                        transition={{
+                          duration: 0.3,
+                          ease: 'easeInOut',
+                        }}
+                      >
+                        <IconComponent className='w-4 h-4' />
+                      </motion.div>
+                    </ActionButton>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Right: Date and Expiry Info */}
+            <div className='flex flex-col items-end gap-1'>
+              <div className='flex items-center gap-1 text-xs text-slate-500'>
+                <Clock className='w-3 h-3' />
+                {formattedDate}
+              </div>
+
+              {/* Expiry Date Display */}
+              {link.expiresAt && (
+                <div className='flex items-center gap-1 text-xs'>
+                  <AlertTriangle className='w-3 h-3 text-amber-500' />
+                  <span className='text-amber-600 font-medium'>
+                    Expires {link.expiresAt}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
