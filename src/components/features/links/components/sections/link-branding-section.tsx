@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Eye, Upload, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/shadcn/switch';
@@ -12,13 +13,16 @@ import {
 } from '@/components/ui/shadcn/avatar';
 
 // Use existing types from @/types
-import type { HexColor, ValidationError } from '@/types';
+import type { HexColor } from '@/types';
+
+// Import ValidationError from the correct location
+export type ValidationError = string;
 
 export interface LinkBrandingFormData {
   readonly brandingEnabled: boolean;
   readonly brandColor: HexColor;
   readonly accentColor: HexColor;
-  readonly logoFile: File | null;
+  readonly logoUrl: string;
 }
 
 export interface LinkBrandingSectionProps {
@@ -44,15 +48,30 @@ export function LinkBrandingSection({
   errors = {},
   isLoading = false,
 }: LinkBrandingSectionProps) {
+  // Store the actual file for FileUpload component
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+
   const handleFileChange = (files: File[]) => {
-    const file = files[0] || null;
-    onDataChange({ logoFile: file });
+    const file = files[0];
+    if (file) {
+      // Store the file and create blob URL
+      setLogoFile(file);
+      const logoUrl = URL.createObjectURL(file);
+      console.log('🖼️ BRANDING: Logo file uploaded, creating URL:', logoUrl);
+      onDataChange({ logoUrl });
+    } else {
+      // Clear logo if no file selected
+      setLogoFile(null);
+      console.log('🖼️ BRANDING: Logo file cleared');
+      onDataChange({ logoUrl: '' });
+    }
   };
 
-  // Helper to get logo preview URL
-  const logoUrl = formData.logoFile
-    ? URL.createObjectURL(formData.logoFile)
-    : undefined;
+  // Helper to get logo preview URL - now directly from formData.logoUrl
+  const logoUrl = formData.logoUrl;
+
+  // Convert logoFile to array for FileUpload component
+  const logoFiles: File[] = logoFile ? [logoFile] : [];
 
   return (
     <div className='space-y-6'>
@@ -163,12 +182,10 @@ export function LinkBrandingSection({
               <label className='text-sm font-medium text-foreground'>
                 Logo (Optional)
               </label>
-              <FileUpload
-                onChange={handleFileChange}
-                files={formData.logoFile ? [formData.logoFile] : []}
-              />
-              {errors.logoFile && (
-                <p className='text-sm text-destructive'>{errors.logoFile}</p>
+
+              <FileUpload onChange={handleFileChange} files={logoFiles} />
+              {errors.logoUrl && (
+                <p className='text-sm text-destructive'>{errors.logoUrl}</p>
               )}
             </div>
 

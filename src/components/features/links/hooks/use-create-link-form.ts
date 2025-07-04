@@ -189,13 +189,28 @@ const formReducers = createReducers<
   updateMultipleFields: (
     state: CreateLinkFormState,
     updates: Partial<CreateLinkFormData>
-  ) => ({
-    ...state,
-    formData: {
+  ) => {
+    console.log('🏪 FORM STORE: updateMultipleFields called with:', updates);
+    console.log(
+      '🏪 FORM STORE: Current password in store:',
+      state.formData.password ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
+    );
+
+    const newFormData = {
       ...state.formData,
       ...updates,
-    },
-  }),
+    };
+
+    console.log(
+      '🏪 FORM STORE: New password in store will be:',
+      newFormData.password ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
+    );
+
+    return {
+      ...state,
+      formData: newFormData,
+    };
+  },
 
   setFieldError: (
     state: CreateLinkFormState,

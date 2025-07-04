@@ -1,9 +1,7 @@
-'use client';
-
 import { cn } from '@/lib/utils/utils';
+import { Upload, X } from 'lucide-react';
 import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { UploadIcon, Cross2Icon } from '@radix-ui/react-icons';
 import { useDropzone } from 'react-dropzone';
 
 const mainVariant = {
@@ -37,7 +35,7 @@ export const FileUpload = ({
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sync internal state with external files prop
+  // Sync with external files prop for zustand store connection
   useEffect(() => {
     if (externalFiles) {
       setFiles(externalFiles);
@@ -45,24 +43,23 @@ export const FileUpload = ({
   }, [externalFiles]);
 
   const handleFileChange = (newFiles: File[]) => {
-    // Only take the first file since we want single file upload
+    // Single file upload - replace existing file
     const singleFile = newFiles[0];
     if (singleFile) {
-      setFiles([singleFile]); // Replace existing files with just the new one
+      setFiles([singleFile]);
       onChange && onChange([singleFile]);
     }
   };
 
   const handleRemoveFile = (indexToRemove: number) => {
-    const updatedFiles = files.filter((_, index) => index !== indexToRemove);
-    setFiles(updatedFiles);
+    setFiles([]);
 
-    // Reset the file input value
+    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
 
-    // Notify parent component that files have been cleared
+    // Notify parent for zustand store update
     onChange && onChange([]);
   };
 
@@ -101,10 +98,10 @@ export const FileUpload = ({
           <GridPattern />
         </div>
         <div className='flex flex-col items-center justify-center'>
-          <p className='relative z-20 font-sans font-bold text-[var(--quaternary)] text-base'>
+          <p className='relative z-20 font-sans font-bold text-neutral-700 text-base'>
             Upload file
           </p>
-          <p className='relative z-20 font-sans font-normal text-[var(--neutral-500)] text-base mt-2'>
+          <p className='relative z-20 font-sans font-normal text-neutral-400 text-base mt-2'>
             Drag or drop your files here or click to upload
           </p>
           <div className='relative w-full mt-10 max-w-xl mx-auto'>
@@ -114,14 +111,14 @@ export const FileUpload = ({
                   key={'file' + idx}
                   layoutId={idx === 0 ? 'file-upload' : 'file-upload-' + idx}
                   className={cn(
-                    'relative overflow-hidden z-40 bg-white border border-[var(--neutral-200)] flex flex-col items-start justify-start min-h-[6rem] p-4 mt-4 w-full mx-auto rounded-md',
-                    'shadow-sm'
+                    'relative overflow-hidden z-40 bg-white flex flex-col items-start justify-start md:h-28 p-5 mt-4 w-full mx-auto rounded-md',
+                    'shadow-sm border border-neutral-200'
                   )}
                 >
                   {/* Remove button */}
                   <button
                     onClick={e => {
-                      e.stopPropagation(); // Prevent triggering file upload
+                      e.stopPropagation();
                       handleRemoveFile(idx);
                     }}
                     className='absolute top-2 right-2 w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 
@@ -129,7 +126,7 @@ export const FileUpload = ({
                              transition-colors cursor-pointer z-50'
                     title='Remove file'
                   >
-                    <Cross2Icon className='w-3 h-3' />
+                    <X className='w-3 h-3' />
                   </button>
 
                   <div className='flex justify-between w-full items-center gap-4 pr-8'>
@@ -137,7 +134,7 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className='text-base text-[var(--quaternary)] truncate max-w-xs'
+                      className='text-base text-neutral-700 truncate max-w-xs'
                     >
                       {file.name}
                     </motion.p>
@@ -145,18 +142,18 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className='rounded-lg px-2 py-1 w-fit shrink-0 text-sm text-[var(--neutral-600)] bg-[var(--neutral-100)] shadow-sm'
+                      className='rounded-lg px-2 py-1 w-fit shrink-0 text-sm text-neutral-600 bg-gray-100 shadow-sm'
                     >
                       {(file.size / (1024 * 1024)).toFixed(2)} MB
                     </motion.p>
                   </div>
 
-                  <div className='flex text-sm md:flex-row flex-col items-start md:items-center w-full mt-2 justify-between text-[var(--neutral-600)] pb-1 pr-8'>
+                  <div className='flex text-sm md:flex-row flex-col items-start md:items-center w-full mt-2 justify-between text-neutral-600 pr-8'>
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className='px-1 py-0.5 rounded-md bg-[var(--neutral-100)]'
+                      className='px-1 py-0.5 rounded-md bg-gray-100'
                     >
                       {file.type}
                     </motion.p>
@@ -182,21 +179,21 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  'relative group-hover/file:shadow-2xl z-40 bg-white border border-[var(--neutral-200)] flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md',
-                  'shadow-[0px_10px_50px_rgba(0,0,0,0.1)]'
+                  'relative group-hover/file:shadow-2xl z-40 bg-white flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md',
+                  'shadow-[0px_10px_50px_rgba(0,0,0,0.1)] border border-neutral-200'
                 )}
               >
                 {isDragActive ? (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className='text-[var(--neutral-600)] flex flex-col items-center'
+                    className='text-neutral-600 flex flex-col items-center'
                   >
                     Drop it
-                    <UploadIcon className='h-4 w-4 text-[var(--neutral-600)] mt-1' />
+                    <Upload className='h-4 w-4 text-neutral-600 mt-1' />
                   </motion.p>
                 ) : (
-                  <UploadIcon className='h-4 w-4 text-[var(--neutral-600)]' />
+                  <Upload className='h-4 w-4 text-neutral-600' />
                 )}
               </motion.div>
             )}
@@ -204,7 +201,7 @@ export const FileUpload = ({
             {!files.length && (
               <motion.div
                 variants={secondaryVariant}
-                className='absolute opacity-0 border border-dashed border-[var(--primary)] inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md'
+                className='absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md'
               ></motion.div>
             )}
           </div>
@@ -218,7 +215,7 @@ export function GridPattern() {
   const columns = 41;
   const rows = 11;
   return (
-    <div className='flex bg-[var(--neutral-100)] shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105'>
+    <div className='flex bg-gray-100 shrink-0 flex-wrap justify-center items-center gap-x-px gap-y-px scale-105'>
       {Array.from({ length: rows }).map((_, row) =>
         Array.from({ length: columns }).map((_, col) => {
           const index = row * columns + col;
@@ -227,8 +224,8 @@ export function GridPattern() {
               key={`${col}-${row}`}
               className={`w-10 h-10 flex shrink-0 rounded-[2px] ${
                 index % 2 === 0
-                  ? 'bg-[var(--neutral-50)]'
-                  : 'bg-[var(--neutral-50)] shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset]'
+                  ? 'bg-gray-50'
+                  : 'bg-gray-50 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset]'
               }`}
             />
           );

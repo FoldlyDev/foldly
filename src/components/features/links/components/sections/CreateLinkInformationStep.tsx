@@ -50,6 +50,26 @@ export const CreateLinkInformationStep = () => {
       description: formData.description,
       requireEmail: formData.requireEmail,
       maxFiles: formData.maxFiles,
+      maxFileSize: formData.maxFileSize || 100, // Default to 100MB
+      // Convert array to string for UI component
+      allowedFileTypes: (() => {
+        if (
+          !formData.allowedFileTypes ||
+          formData.allowedFileTypes.length === 0
+        ) {
+          return 'all';
+        }
+        // Check for common patterns
+        const types = formData.allowedFileTypes;
+        if (types.includes('image/*')) return 'images';
+        if (types.includes('application/pdf')) return 'documents';
+        if (types.includes('video/*')) return 'media';
+        if (types.includes('application/zip')) return 'archives';
+        if (types.includes('text/javascript')) return 'code';
+        // Custom selection
+        return types.join(',');
+      })(),
+      autoCreateFolders: formData.autoCreateFolders || false, // Default to false
       isPublic: formData.isPublic,
       requirePassword: formData.requirePassword,
       password: formData.password,
@@ -97,10 +117,26 @@ export const CreateLinkInformationStep = () => {
 
       if ('requirePassword' in updates) {
         convertedUpdates.requirePassword = updates.requirePassword;
+        console.log(
+          '📝 INFORMATION STEP: Password protection toggled to:',
+          updates.requirePassword
+        );
+
+        // Only clear password if explicitly disabling protection AND we're not also updating the password in the same change
+        if (!updates.requirePassword && !('password' in updates)) {
+          convertedUpdates.password = '';
+          console.log(
+            '📝 INFORMATION STEP: Password cleared because protection disabled'
+          );
+        }
       }
 
       if ('password' in updates) {
         convertedUpdates.password = updates.password;
+        console.log(
+          '📝 INFORMATION STEP: Password updated to:',
+          updates.password ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
+        );
       }
 
       if ('isPublic' in updates) {
@@ -109,6 +145,48 @@ export const CreateLinkInformationStep = () => {
 
       if ('maxFiles' in updates) {
         convertedUpdates.maxFiles = updates.maxFiles;
+      }
+
+      if ('maxFileSize' in updates) {
+        convertedUpdates.maxFileSize = updates.maxFileSize;
+      }
+
+      if ('allowedFileTypes' in updates) {
+        // Convert UI string format to store array format
+        if (updates.allowedFileTypes === 'all') {
+          convertedUpdates.allowedFileTypes = []; // Empty array means all types allowed
+        } else if (updates.allowedFileTypes === 'images') {
+          convertedUpdates.allowedFileTypes = ['image/*'];
+        } else if (updates.allowedFileTypes === 'documents') {
+          convertedUpdates.allowedFileTypes = [
+            'application/pdf',
+            'application/msword',
+            'text/*',
+          ];
+        } else if (updates.allowedFileTypes === 'media') {
+          convertedUpdates.allowedFileTypes = ['video/*', 'audio/*'];
+        } else if (updates.allowedFileTypes === 'archives') {
+          convertedUpdates.allowedFileTypes = [
+            'application/zip',
+            'application/x-rar-compressed',
+          ];
+        } else if (updates.allowedFileTypes === 'code') {
+          convertedUpdates.allowedFileTypes = [
+            'text/javascript',
+            'text/css',
+            'text/html',
+          ];
+        } else {
+          // Custom selection - split by comma
+          convertedUpdates.allowedFileTypes = updates.allowedFileTypes
+            .split(',')
+            .map(t => t.trim())
+            .filter(Boolean);
+        }
+      }
+
+      if ('autoCreateFolders' in updates) {
+        convertedUpdates.autoCreateFolders = updates.autoCreateFolders;
       }
 
       if ('expiresAt' in updates && updates.expiresAt) {

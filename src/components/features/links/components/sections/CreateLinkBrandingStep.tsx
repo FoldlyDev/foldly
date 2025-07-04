@@ -56,7 +56,7 @@ export const CreateLinkBrandingStep = () => {
       brandingEnabled: formData.brandingEnabled,
       brandColor: formData.brandColor || ('#6c47ff' as HexColor),
       accentColor: formData.accentColor || ('#4ade80' as HexColor),
-      logoFile: null, // File upload handled separately
+      logoUrl: formData.logoUrl || '', // Use logoUrl from form store
     }),
     [formData]
   );

@@ -96,6 +96,7 @@ export interface LinkData {
   readonly maxFileSize: number; // Maximum file size in bytes
   readonly allowedFileTypes: readonly string[]; // File types allowed for upload
   readonly autoCreateFolders: boolean; // Auto-create folders setting
+  readonly logoUrl?: string; // Custom logo URL for branding
   readonly settings?: {
     readonly allowMultiple?: boolean;
     readonly maxFileSize?: string;
@@ -168,6 +169,7 @@ export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
     maxFileSize: uploadLink.maxFileSize,
     allowedFileTypes: uploadLink.allowedFileTypes || [],
     autoCreateFolders: uploadLink.autoCreateFolders || false,
+    ...(uploadLink.logoUrl && { logoUrl: uploadLink.logoUrl }),
     settings: {
       allowMultiple: true, // Default setting
       maxFileSize: `${Math.round(uploadLink.maxFileSize / (1024 * 1024))}MB`,

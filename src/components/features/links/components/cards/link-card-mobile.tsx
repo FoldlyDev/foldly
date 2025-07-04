@@ -71,12 +71,26 @@ export const LinkCardMobile = memo(
 
               {/* Title & URL */}
               <div className='min-w-0 flex-1'>
-                <h3 className='font-semibold text-gray-900 text-base truncate'>
-                  <SearchHighlight
-                    text={link.name}
-                    searchQuery={searchQuery || ''}
-                  />
-                </h3>
+                <div className='flex items-center gap-2'>
+                  {/* Show logo if available */}
+                  {link.logoUrl && (
+                    <img
+                      src={link.logoUrl}
+                      alt={`${link.name} logo`}
+                      className='w-4 h-4 rounded object-cover flex-shrink-0'
+                      onError={e => {
+                        // Hide logo if it fails to load
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )}
+                  <h3 className='font-semibold text-gray-900 text-base truncate'>
+                    <SearchHighlight
+                      text={link.name}
+                      searchQuery={searchQuery || ''}
+                    />
+                  </h3>
+                </div>
                 <p className='text-sm text-gray-500 truncate'>{link.url}</p>
               </div>
             </div>

@@ -13,6 +13,9 @@ import {
   Power,
   Calendar,
   CalendarIcon,
+  FolderOpen,
+  HardDrive,
+  FileType,
 } from 'lucide-react';
 import { Input } from '@/components/ui/shadcn/input';
 import { Textarea } from '@/components/ui/shadcn/textarea';
@@ -42,6 +45,9 @@ export interface LinkInformationFormData {
   readonly description: string; // Description/Welcome message
   readonly requireEmail: boolean;
   readonly maxFiles: number;
+  readonly maxFileSize: number; // Maximum file size in MB
+  readonly allowedFileTypes: string; // Comma-separated list of allowed file types
+  readonly autoCreateFolders: boolean; // Auto-organize uploads by date
   readonly isPublic: boolean; // Public/Private visibility
   readonly requirePassword: boolean; // Password protection toggle
   readonly password?: string; // Password if required
@@ -69,6 +75,26 @@ const FILE_SIZE_OPTIONS = [
 ] as const;
 
 const fileOptions = [5, 10, 25, 50, 100];
+
+const fileSizeOptions = [
+  { value: 5, label: '5 MB' },
+  { value: 10, label: '10 MB' },
+  { value: 25, label: '25 MB' },
+  { value: 50, label: '50 MB' },
+  { value: 100, label: '100 MB' },
+  { value: 250, label: '250 MB' },
+  { value: 500, label: '500 MB' },
+];
+
+const fileTypeOptions = [
+  { value: 'all', label: 'All file types' },
+  { value: 'images', label: 'Images (PNG, JPG, GIF, etc.)' },
+  { value: 'documents', label: 'Documents (PDF, DOC, TXT, etc.)' },
+  { value: 'media', label: 'Media (Video, Audio)' },
+  { value: 'archives', label: 'Archives (ZIP, RAR, etc.)' },
+  { value: 'code', label: 'Code Files (JS, CSS, HTML, etc.)' },
+  { value: 'custom', label: 'Custom selection...' },
+];
 
 export function LinkInformationSection({
   linkType,
@@ -338,7 +364,13 @@ export function LinkInformationSection({
                   <input
                     type='password'
                     value={formData.password || ''}
-                    onChange={e => onDataChange({ password: e.target.value })}
+                    onChange={e => {
+                      console.log(
+                        '🔒 PASSWORD INPUT: Value changed to:',
+                        e.target.value ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
+                      );
+                      onDataChange({ password: e.target.value });
+                    }}
                     placeholder='Enter password'
                     disabled={isLoading}
                     className='w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
@@ -414,6 +446,126 @@ export function LinkInformationSection({
               <p className='text-xs text-muted-foreground'>
                 Maximum number of files visitors can upload
               </p>
+            </div>
+
+            {/* File Size Limit Dropdown */}
+            <div className='space-y-2'>
+              <label className='text-sm font-medium text-foreground flex items-center gap-2'>
+                <HardDrive className='h-4 w-4 text-orange-600' />
+                Maximum File Size
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  disabled={isLoading}
+                  className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+                >
+                  <span>{formData.maxFileSize} MB</span>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className='w-full min-w-[200px]'>
+                  {fileSizeOptions.map(option => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() =>
+                        onDataChange({ maxFileSize: option.value })
+                      }
+                      className='cursor-pointer'
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className='text-xs text-muted-foreground'>
+                Maximum size per file that visitors can upload
+              </p>
+            </div>
+
+            {/* File Type Restrictions */}
+            <div className='space-y-2'>
+              <label className='text-sm font-medium text-foreground flex items-center gap-2'>
+                <FileType className='h-4 w-4 text-purple-600' />
+                Allowed File Types
+              </label>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  disabled={isLoading}
+                  className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
+                >
+                  <span className='truncate'>
+                    {formData.allowedFileTypes === 'all'
+                      ? 'All file types'
+                      : fileTypeOptions.find(
+                          opt => opt.value === formData.allowedFileTypes
+                        )?.label || 'Custom selection'}
+                  </span>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground shrink-0'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className='w-full min-w-[280px]'>
+                  {fileTypeOptions.map(option => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      onClick={() =>
+                        onDataChange({ allowedFileTypes: option.value })
+                      }
+                      className='cursor-pointer'
+                    >
+                      {option.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <p className='text-xs text-muted-foreground'>
+                Restrict which file types visitors can upload
+              </p>
+            </div>
+
+            {/* Auto-create Folders Toggle */}
+            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
+              <div className='space-y-1'>
+                <div className='flex items-center gap-2'>
+                  <FolderOpen className='h-4 w-4 text-amber-600' />
+                  <p className='text-sm font-medium text-foreground'>
+                    Auto-organize Uploads
+                  </p>
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Automatically organize uploads into folders by date (e.g.,
+                  2024-01-15)
+                </p>
+              </div>
+              <Switch
+                checked={formData.autoCreateFolders}
+                onCheckedChange={checked =>
+                  onDataChange({ autoCreateFolders: checked })
+                }
+                disabled={isLoading}
+                className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
+              />
             </div>
           </div>
         </motion.div>

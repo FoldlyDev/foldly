@@ -325,7 +325,7 @@ export function LinkDetailsModal({
                         : 'bg-gray-100 text-gray-600'
                     }`}
                   >
-                    {currentLink.requireEmail ? 'Required' : 'Optional'}
+                    {currentLink.requireEmail ? 'Required' : 'No'}
                   </div>
                 </div>
 
@@ -668,9 +668,10 @@ export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
   const [settings, setSettings] = useState({
     // Visibility and Security
     isPublic: link.isPublic,
-    requireEmail: link.requireEmail,
-    requirePassword: link.requirePassword,
+    requireEmail: link.requireEmail ?? false,
+    requirePassword: link.requirePassword ?? false,
     password: '',
+    expiresAt: link.expiresAt,
 
     // File and Upload Limits
     maxFiles: link.maxFiles,
@@ -681,7 +682,7 @@ export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
     autoCreateFolders: link.autoCreateFolders,
 
     // Legacy settings
-    allowMultiple: link.settings?.allowMultiple || false,
+    allowMultiple: link.settings?.allowMultiple ?? false,
     customMessage: link.settings?.customMessage || '',
   });
 
@@ -952,6 +953,86 @@ Share both:
                 </div>
               </div>
             </div>
+
+            {/* Expiration Date Settings - Only for topic links that haven't expired */}
+            {!isBaseLink && link.status !== 'expired' && (
+              <div className='space-y-4'>
+                <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+                  <Clock className='w-4 h-4' />
+                  Expiration Date
+                </h3>
+
+                <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+                  <div className='space-y-3'>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-sm font-medium text-[var(--quaternary)]'>
+                        Current Expiry
+                      </span>
+                      <HelpPopover
+                        title='Link Expiration'
+                        description='When this date is reached:
+
+• Link becomes inactive
+• New uploads are prevented
+• Existing files remain accessible
+
+Set a new date to extend the link.'
+                      />
+                    </div>
+                    <div className='p-3 bg-white border border-[var(--neutral-200)] rounded-md'>
+                      <p className='text-sm text-[var(--quaternary)]'>
+                        {link.expiresAt ? (
+                          <>
+                            Expires on{' '}
+                            <span className='font-medium'>
+                              {link.expiresAt}
+                            </span>
+                          </>
+                        ) : (
+                          <span className='text-[var(--neutral-500)]'>
+                            No expiration date set
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className='space-y-2'>
+                      <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                        Update Expiry Date
+                      </label>
+                      <input
+                        type='date'
+                        value={settings.expiresAt || ''}
+                        onChange={e => {
+                          setSettings(prev => ({
+                            ...prev,
+                            expiresAt: e.target.value,
+                          }));
+                        }}
+                        min={new Date().toISOString().split('T')[0]} // Prevent past dates
+                        className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+                      />
+                      <p className='text-xs text-[var(--neutral-500)]'>
+                        Choose a new expiration date or leave empty to remove
+                        expiry
+                      </p>
+
+                      {settings.expiresAt && (
+                        <button
+                          type='button'
+                          onClick={() =>
+                            setSettings(prev => ({ ...prev, expiresAt: '' }))
+                          }
+                          className='text-xs text-red-600 hover:text-red-700 font-medium'
+                        >
+                          Remove expiration date
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Organization Settings */}
             <div className='space-y-4'>
