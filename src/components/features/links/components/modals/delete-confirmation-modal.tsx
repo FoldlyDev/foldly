@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -26,7 +26,10 @@ export function DeleteConfirmationModal({
   link,
 }: DeleteConfirmationModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-  const { removeLink } = useLinksListStore();
+  const { removeLink, links } = useLinksListStore();
+
+  // Check if link still exists in store (real-time sync)
+  const linkExists = links.find(l => l.id === link.id);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -52,6 +55,14 @@ export function DeleteConfirmationModal({
     if (isDeleting) return; // Prevent closing while deleting
     onClose();
   };
+
+  // Auto-close if link no longer exists (deleted elsewhere)
+  React.useEffect(() => {
+    if (isOpen && !linkExists && !isDeleting) {
+      console.log('🗑️ Link no longer exists, auto-closing delete modal');
+      onClose();
+    }
+  }, [isOpen, linkExists, isDeleting, onClose]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>

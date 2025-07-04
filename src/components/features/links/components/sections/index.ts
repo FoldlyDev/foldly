@@ -9,10 +9,8 @@ export { CreateLinkBrandingStep } from './CreateLinkBrandingStep';
 export { CreateLinkStepperHeader } from './CreateLinkStepperHeader';
 
 // Reusable form sections
-export { LinkInformationSection } from './link-information-section';
 export { LinkBrandingSection } from './link-branding-section';
 export { LinkStatsGrid } from './link-stats-grid';
 
 // Export types from sections
-export type { LinkInformationFormData } from './link-information-section';
 export type { LinkBrandingFormData } from './link-branding-section';

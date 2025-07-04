@@ -51,6 +51,10 @@ import {
 
 // Import centralized types instead of defining our own
 import type { LinkData } from '../../types';
+import {
+  useLinksListStore,
+  useLinksModalsStore,
+} from '../../hooks/use-links-composite';
 
 // Helper Components
 interface HelpPopoverProps {
@@ -205,7 +209,11 @@ export function LinkDetailsModal({
   onClose,
   link,
 }: LinkDetailsModalProps) {
-  const linkUrl = `https://${link.url}`;
+  // Get real-time data from store
+  const { links } = useLinksListStore();
+  const currentLink = links.find(l => l.id === link.id) || link; // Fallback to prop if not found
+
+  const linkUrl = `https://${currentLink.url}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -223,12 +231,12 @@ export function LinkDetailsModal({
               <div>
                 <div className='flex items-center gap-3 mb-2 flex-wrap'>
                   <DialogTitle className='text-2xl font-bold text-[var(--quaternary)]'>
-                    {link.name}
+                    {currentLink.name}
                   </DialogTitle>
-                  <StatusBadge status={link.status} size='md' />
+                  <StatusBadge status={currentLink.status} size='md' />
                 </div>
                 <DialogDescription className='text-[var(--neutral-600)] flex items-center gap-2 flex-wrap'>
-                  <span className='break-all'>{link.url}</span>
+                  <span className='break-all'>{currentLink.url}</span>
                   <InlineCopy value={linkUrl} />
                 </DialogDescription>
               </div>
@@ -254,7 +262,7 @@ export function LinkDetailsModal({
                     </span>
                   </div>
                   <div className='flex items-center gap-2'>
-                    {link.linkType === 'base' ? (
+                    {currentLink.linkType === 'base' ? (
                       <div className='flex items-center gap-1 px-2 py-1 bg-[var(--primary-subtle)] rounded-full text-xs font-medium'>
                         <Link2 className='w-3 h-3 text-[var(--primary)]' />
                         <span className='text-[var(--primary-dark)] font-semibold'>
@@ -265,7 +273,7 @@ export function LinkDetailsModal({
                       <div className='flex items-center gap-1 px-2 py-1 bg-[var(--secondary-subtle)] rounded-full text-xs font-medium'>
                         <Link2 className='w-3 h-3 text-[var(--secondary)]' />
                         <span className='text-[var(--secondary-dark)] font-semibold capitalize'>
-                          {link.topic?.replace('-', ' ')}
+                          {currentLink.topic?.replace('-', ' ')}
                         </span>
                       </div>
                     )}
@@ -274,7 +282,7 @@ export function LinkDetailsModal({
 
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2'>
-                    {link.isPublic ? (
+                    {currentLink.isPublic ? (
                       <Globe className='w-4 h-4 text-emerald-600' />
                     ) : (
                       <EyeOff className='w-4 h-4 text-orange-600' />
@@ -285,12 +293,12 @@ export function LinkDetailsModal({
                   </div>
                   <div
                     className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${
-                      link.isPublic
+                      currentLink.isPublic
                         ? 'bg-emerald-100 text-emerald-700'
                         : 'bg-orange-100 text-orange-700'
                     }`}
                   >
-                    {link.isPublic ? 'Public' : 'Private'}
+                    {currentLink.isPublic ? 'Public' : 'Private'}
                   </div>
                 </div>
               </div>
@@ -312,12 +320,12 @@ export function LinkDetailsModal({
                   </div>
                   <div
                     className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      link.requireEmail
+                      currentLink.requireEmail
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-gray-100 text-gray-600'
                     }`}
                   >
-                    {link.requireEmail ? 'Required' : 'Optional'}
+                    {currentLink.requireEmail ? 'Required' : 'Optional'}
                   </div>
                 </div>
 
@@ -653,6 +661,10 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
+  // Connect to Zustand stores for real data operations
+  const { updateLink } = useLinksListStore();
+  const { setModalLoading, setModalError } = useLinksModalsStore();
+
   const [settings, setSettings] = useState({
     // Visibility and Security
     isPublic: link.isPublic,
@@ -735,10 +747,41 @@ export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
     { value: '1000', label: '1 GB', description: 'Maximum size' },
   ];
 
-  const handleSaveSettings = () => {
-    // Implement save logic here
-    console.log('Saving settings:', settings);
-    onClose();
+  const handleSaveSettings = async () => {
+    try {
+      setModalLoading(true);
+      setModalError(null);
+
+      // Convert UI settings back to LinkData format
+      const updatedSettings = {
+        isPublic: settings.isPublic,
+        requireEmail: settings.requireEmail,
+        requirePassword: settings.requirePassword,
+        maxFiles: settings.maxFiles,
+        maxFileSize: settings.maxFileSize * 1024 * 1024, // Convert MB back to bytes
+        allowedFileTypes: settings.allowedFileTypes
+          .split(',')
+          .map(type => type.trim())
+          .filter(Boolean),
+        autoCreateFolders: settings.autoCreateFolders,
+        settings: {
+          ...link.settings,
+          allowMultiple: settings.allowMultiple,
+          customMessage: settings.customMessage || undefined,
+        },
+      };
+
+      // Update link in store
+      updateLink(link.id, updatedSettings);
+
+      console.log('✅ Settings saved successfully:', updatedSettings);
+      onClose();
+    } catch (error) {
+      console.error('❌ Failed to save settings:', error);
+      setModalError('Failed to save settings. Please try again.');
+    } finally {
+      setModalLoading(false);
+    }
   };
 
   const isBaseLink = link.linkType === 'base';
