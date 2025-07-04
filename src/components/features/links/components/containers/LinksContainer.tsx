@@ -8,7 +8,7 @@ import {
 } from '@/components/features/links';
 import { ContentLoader } from '@/components/ui';
 import { useLinksListStore } from '../../hooks/use-links-composite';
-import { LinksModalManager } from '../modals/links-modal-manager';
+import { LinksModalManager } from '../managers/LinksModalManager';
 
 interface LinksContainerProps {
   readonly initialData?: {

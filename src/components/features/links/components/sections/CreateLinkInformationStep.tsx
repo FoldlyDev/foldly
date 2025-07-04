@@ -10,7 +10,7 @@ import {
 import {
   LinkInformationSection,
   type LinkInformationFormData,
-} from '../sections/link-information-section';
+} from '../sections/LinkInformationSection';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 
 /**
@@ -51,24 +51,8 @@ export const CreateLinkInformationStep = () => {
       requireEmail: formData.requireEmail,
       maxFiles: formData.maxFiles,
       maxFileSize: formData.maxFileSize || 100, // Default to 100MB
-      // Convert array to string for UI component
-      allowedFileTypes: (() => {
-        if (
-          !formData.allowedFileTypes ||
-          formData.allowedFileTypes.length === 0
-        ) {
-          return 'all';
-        }
-        // Check for common patterns
-        const types = formData.allowedFileTypes;
-        if (types.includes('image/*')) return 'images';
-        if (types.includes('application/pdf')) return 'documents';
-        if (types.includes('video/*')) return 'media';
-        if (types.includes('application/zip')) return 'archives';
-        if (types.includes('text/javascript')) return 'code';
-        // Custom selection
-        return types.join(',');
-      })(),
+      // Pass array directly to UI component for multi-select
+      allowedFileTypes: formData.allowedFileTypes || [],
       autoCreateFolders: formData.autoCreateFolders || false, // Default to false
       isPublic: formData.isPublic,
       requirePassword: formData.requirePassword,
@@ -152,37 +136,8 @@ export const CreateLinkInformationStep = () => {
       }
 
       if ('allowedFileTypes' in updates) {
-        // Convert UI string format to store array format
-        if (updates.allowedFileTypes === 'all') {
-          convertedUpdates.allowedFileTypes = []; // Empty array means all types allowed
-        } else if (updates.allowedFileTypes === 'images') {
-          convertedUpdates.allowedFileTypes = ['image/*'];
-        } else if (updates.allowedFileTypes === 'documents') {
-          convertedUpdates.allowedFileTypes = [
-            'application/pdf',
-            'application/msword',
-            'text/*',
-          ];
-        } else if (updates.allowedFileTypes === 'media') {
-          convertedUpdates.allowedFileTypes = ['video/*', 'audio/*'];
-        } else if (updates.allowedFileTypes === 'archives') {
-          convertedUpdates.allowedFileTypes = [
-            'application/zip',
-            'application/x-rar-compressed',
-          ];
-        } else if (updates.allowedFileTypes === 'code') {
-          convertedUpdates.allowedFileTypes = [
-            'text/javascript',
-            'text/css',
-            'text/html',
-          ];
-        } else {
-          // Custom selection - split by comma
-          convertedUpdates.allowedFileTypes = updates.allowedFileTypes
-            .split(',')
-            .map(t => t.trim())
-            .filter(Boolean);
-        }
+        // Pass array directly to store - no conversion needed
+        convertedUpdates.allowedFileTypes = updates.allowedFileTypes;
       }
 
       if ('autoCreateFolders' in updates) {
@@ -234,7 +189,7 @@ export const CreateLinkInformationStep = () => {
             value as string,
           ])
         )}
-        username={user?.username || user?.firstName?.toLowerCase() || 'user'}
+        username={user?.username?.toLowerCase() || 'username'}
       />
 
       <CreateLinkFormButtons

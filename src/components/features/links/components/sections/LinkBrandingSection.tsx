@@ -14,6 +14,7 @@ import {
 
 // Use existing types from @/types
 import type { HexColor } from '@/types';
+import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 
 // Import ValidationError from the correct location
 export type ValidationError = string;
@@ -30,8 +31,6 @@ export interface LinkBrandingSectionProps {
   readonly username: string;
   readonly linkName: string;
   readonly description: string;
-  readonly formData: LinkBrandingFormData;
-  readonly onDataChange: (data: Partial<LinkBrandingFormData>) => void;
   readonly errors?: Partial<
     Record<keyof LinkBrandingFormData, ValidationError>
   >;
@@ -43,11 +42,17 @@ export function LinkBrandingSection({
   username,
   linkName,
   description,
-  formData,
-  onDataChange,
   errors = {},
   isLoading = false,
 }: LinkBrandingSectionProps) {
+  // Use the branding store hook to get context-aware state
+  const {
+    brandingFormData: formData,
+    updateBrandingData,
+    brandingContext,
+    isCreationContext,
+    isSettingsContext,
+  } = useLinksBrandingStore();
   // Store the actual file for FileUpload component
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
 
@@ -58,12 +63,14 @@ export function LinkBrandingSection({
       setLogoFile(file);
       const logoUrl = URL.createObjectURL(file);
       console.log('🖼️ BRANDING: Logo file uploaded, creating URL:', logoUrl);
-      onDataChange({ logoUrl });
+      console.log('🖼️ BRANDING: Context:', brandingContext);
+      updateBrandingData({ logoUrl });
     } else {
       // Clear logo if no file selected
       setLogoFile(null);
       console.log('🖼️ BRANDING: Logo file cleared');
-      onDataChange({ logoUrl: '' });
+      console.log('🖼️ BRANDING: Context:', brandingContext);
+      updateBrandingData({ logoUrl: '' });
     }
   };
 
@@ -93,9 +100,15 @@ export function LinkBrandingSection({
           </div>
           <Switch
             checked={formData.brandingEnabled}
-            onCheckedChange={checked =>
-              onDataChange({ brandingEnabled: checked })
-            }
+            onCheckedChange={checked => {
+              console.log(
+                '🎨 BRANDING: Toggle branding enabled:',
+                checked,
+                'Context:',
+                brandingContext
+              );
+              updateBrandingData({ brandingEnabled: checked });
+            }}
             disabled={isLoading}
             className='data-[state=unchecked]:bg-muted-foreground/20'
           />
@@ -120,18 +133,34 @@ export function LinkBrandingSection({
                   <input
                     type='color'
                     value={formData.brandColor}
-                    onChange={e =>
-                      onDataChange({ brandColor: e.target.value as HexColor })
-                    }
+                    onChange={e => {
+                      console.log(
+                        '🎨 BRANDING: Brand color changed:',
+                        e.target.value,
+                        'Context:',
+                        brandingContext
+                      );
+                      updateBrandingData({
+                        brandColor: e.target.value as HexColor,
+                      });
+                    }}
                     disabled={isLoading}
                     className='w-12 h-10 rounded-lg cursor-pointer disabled:cursor-not-allowed'
                   />
                   <input
                     type='text'
                     value={formData.brandColor}
-                    onChange={e =>
-                      onDataChange({ brandColor: e.target.value as HexColor })
-                    }
+                    onChange={e => {
+                      console.log(
+                        '🎨 BRANDING: Brand color changed (text):',
+                        e.target.value,
+                        'Context:',
+                        brandingContext
+                      );
+                      updateBrandingData({
+                        brandColor: e.target.value as HexColor,
+                      });
+                    }}
                     disabled={isLoading}
                     placeholder='#6c47ff'
                     className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
@@ -152,18 +181,34 @@ export function LinkBrandingSection({
                   <input
                     type='color'
                     value={formData.accentColor}
-                    onChange={e =>
-                      onDataChange({ accentColor: e.target.value as HexColor })
-                    }
+                    onChange={e => {
+                      console.log(
+                        '🎨 BRANDING: Accent color changed:',
+                        e.target.value,
+                        'Context:',
+                        brandingContext
+                      );
+                      updateBrandingData({
+                        accentColor: e.target.value as HexColor,
+                      });
+                    }}
                     disabled={isLoading}
                     className='w-12 h-10 rounded-lg cursor-pointer disabled:cursor-not-allowed'
                   />
                   <input
                     type='text'
                     value={formData.accentColor}
-                    onChange={e =>
-                      onDataChange({ accentColor: e.target.value as HexColor })
-                    }
+                    onChange={e => {
+                      console.log(
+                        '🎨 BRANDING: Accent color changed (text):',
+                        e.target.value,
+                        'Context:',
+                        brandingContext
+                      );
+                      updateBrandingData({
+                        accentColor: e.target.value as HexColor,
+                      });
+                    }}
                     disabled={isLoading}
                     placeholder='#4ade80'
                     className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'

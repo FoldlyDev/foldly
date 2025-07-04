@@ -1,22 +1,20 @@
 // ===== 2025 FEATURE-BASED COMPONENT ARCHITECTURE =====
 
 // 📋 Modal Components - User Interactions
-export { LinksModalManager } from './components/modals/links-modal-manager';
-export { CreateLinkModalContainer } from './components/modals/CreateLinkModalContainer';
+export { CreateLinkModalContainer } from './components/containers/CreateLinkModalContainer';
 export {
   LinkDetailsModal,
   ShareModal,
   SettingsModal,
-} from './components/modals/link-modals';
+} from './components/modals';
 
 // 🔧 Section Components - Modular & Reusable
-export { LinkInformationSection } from './components/sections/link-information-section';
-export { LinkBrandingSection } from './components/sections/link-branding-section';
-export { LinkStatsGrid } from './components/sections/link-stats-grid';
+export { LinkInformationSection } from './components/sections/LinkInformationSection';
+export { LinkBrandingSection } from './components/sections/LinkBrandingSection';
 
 // 🎴 Card Components - Data Display
-export { LinkCard } from './components/cards/link-card';
-export { LinksOverviewCards } from './components/cards/links-overview-cards';
+export { LinkCard } from './components/cards/LinkCard';
+export { LinksOverviewCards } from './components/cards/LinksOverviewCards';
 
 // 🏷️ Indicator Components - Reusable Status & Type Displays
 export {
@@ -26,9 +24,13 @@ export {
 } from './components/indicators';
 
 // 👁️ View Components - Layout & Container Logic
-export { LinksContainer } from './components/views/links-container';
-export { EmptyLinksState } from './components/views/empty-links-state';
-export { PopulatedLinksState } from './components/views/populated-links-state';
+export { LinksContainer } from './components/containers/LinksContainer';
+export { EmptyLinksState } from './components/views/EmptyLinksState';
+export { PopulatedLinksState } from './components/views/PopulatedLinksState';
+export { LinkStatsGrid } from './components/views/LinkStatsGrid';
+
+// 🎛️ Manager Components - Application State Management
+export { LinksModalManager } from './components/managers/LinksModalManager';
 
 // 🪝 Hooks - State Management
 // Legacy hooks removed - replaced by store-based composite hooks

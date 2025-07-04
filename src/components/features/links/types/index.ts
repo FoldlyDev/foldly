@@ -79,7 +79,8 @@ export interface LinkData {
   readonly id: string;
   readonly name: string; // Display name for LinkCard component
   readonly title: string; // Keep both for compatibility
-  readonly slug: string;
+  readonly slug: string; // Always the username (foldly.io/username)
+  readonly username: string; // Explicit username field from Clerk (always available)
   readonly topic?: string;
   readonly linkType: LinkType;
   readonly isPublic: boolean;
@@ -102,7 +103,10 @@ export interface LinkData {
     readonly maxFileSize?: string;
     readonly customMessage?: string;
   };
-  readonly brandColor?: HexColor;
+  // Complete branding configuration
+  readonly brandingEnabled?: boolean; // Whether custom branding is enabled
+  readonly brandColor?: HexColor; // Primary brand color
+  readonly accentColor?: HexColor; // Secondary/accent brand color
 }
 
 /**
@@ -110,11 +114,12 @@ export interface LinkData {
  * Generates proper URLs and formats dates for display
  */
 export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
-  // Generate proper URL based on link type
+  // Generate proper URL based on link type (always lowercase username)
+  const lowercaseUsername = uploadLink.slug.toLowerCase();
   const baseUrl =
     uploadLink.linkType === 'base'
-      ? `foldly.io/${uploadLink.slug}`
-      : `foldly.io/${uploadLink.slug}/${uploadLink.topic}`;
+      ? `foldly.io/${lowercaseUsername}`
+      : `foldly.io/${lowercaseUsername}/${uploadLink.topic}`;
 
   // Determine status based on expiry and current state
   const now = new Date();
@@ -146,7 +151,8 @@ export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
     id: uploadLink.id,
     name: displayName, // Used by LinkCard component
     title: uploadLink.title, // Keep for compatibility
-    slug: uploadLink.slug,
+    slug: uploadLink.slug.toLowerCase(), // Always lowercase for URL consistency
+    username: uploadLink.slug.toLowerCase(), // Always lowercase for consistency
     ...(uploadLink.topic && { topic: uploadLink.topic }),
     linkType: uploadLink.linkType,
     isPublic: uploadLink.isPublic,
@@ -179,7 +185,10 @@ export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
           }
         : {}),
     },
+    // Map all branding fields from database
+    brandingEnabled: uploadLink.brandingEnabled,
     ...(uploadLink.brandColor && { brandColor: uploadLink.brandColor }),
+    ...(uploadLink.accentColor && { accentColor: uploadLink.accentColor }),
   };
 };
 

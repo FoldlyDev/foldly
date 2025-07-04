@@ -1,12 +1,12 @@
 // Main component
-export { LinkCard } from './link-card';
+export { LinkCard } from './LinkCard';
 
 // Layout components
-export { LinkCardMobile } from './link-card-mobile';
-export { LinkCardDesktop } from './link-card-desktop';
-export { LinkCardGrid } from './link-card-grid';
+export { LinkCardMobile } from './LinkCardMobile';
+export { LinkCardDesktop } from './LinkCardDesktop';
+export { LinkCardGrid } from './LinkCardGrid';
 
 // Action components - removed LinkCardActions and LinkMobileMenu (replaced with CardActionsMenu)
 
 // Existing components
-export { LinksOverviewCards } from './links-overview-cards';
+export { LinksOverviewCards } from './LinksOverviewCards';

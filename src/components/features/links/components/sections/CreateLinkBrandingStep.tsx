@@ -12,7 +12,8 @@ import { useLinksDataStore } from '../../store/links-data-store';
 import {
   LinkBrandingSection,
   type LinkBrandingFormData,
-} from '../sections/link-branding-section';
+} from '../sections/LinkBrandingSection';
+import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import type { CreateUploadLinkInput } from '../../types/database';
 import type { HexColor } from '@/types';
@@ -50,24 +51,8 @@ export const CreateLinkBrandingStep = () => {
   // Data store actions
   const addLink = useLinksDataStore(state => state.addLink);
 
-  // Convert form data to LinkBrandingSection format - identical structure for both link types
-  const linkBrandingData = useMemo(
-    (): LinkBrandingFormData => ({
-      brandingEnabled: formData.brandingEnabled,
-      brandColor: formData.brandColor || ('#6c47ff' as HexColor),
-      accentColor: formData.accentColor || ('#4ade80' as HexColor),
-      logoUrl: formData.logoUrl || '', // Use logoUrl from form store
-    }),
-    [formData]
-  );
-
-  // Handle form changes
-  const handleFormChange = useCallback(
-    (updates: Partial<LinkBrandingFormData>) => {
-      updateMultipleFields(updates);
-    },
-    [updateMultipleFields]
-  );
+  // Branding store for modal context-aware state
+  const { brandingFormData } = useLinksBrandingStore();
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
@@ -85,7 +70,8 @@ export const CreateLinkBrandingStep = () => {
       return;
     }
 
-    const userSlug = (user.firstName?.toLowerCase().replace(/\s+/g, '-') ||
+    const userSlug = (user?.username?.toLowerCase() ||
+      user.firstName?.toLowerCase().replace(/\s+/g, '-') ||
       user.id ||
       'user') as string;
 
@@ -118,10 +104,14 @@ export const CreateLinkBrandingStep = () => {
           allowedFileTypes: formData.allowedFileTypes,
         }),
         ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
-        brandingEnabled: formData.brandingEnabled,
-        ...(formData.brandColor && { brandColor: formData.brandColor }),
-        ...(formData.accentColor && { accentColor: formData.accentColor }),
-        ...(formData.logoUrl && { logoUrl: formData.logoUrl }),
+        brandingEnabled: brandingFormData.brandingEnabled,
+        ...(brandingFormData.brandColor && {
+          brandColor: brandingFormData.brandColor,
+        }),
+        ...(brandingFormData.accentColor && {
+          accentColor: brandingFormData.accentColor,
+        }),
+        ...(brandingFormData.logoUrl && { logoUrl: brandingFormData.logoUrl }),
         ...(formData.customCss && { customCss: formData.customCss }),
         ...(formData.welcomeMessage && {
           welcomeMessage: formData.welcomeMessage,
@@ -136,8 +126,8 @@ export const CreateLinkBrandingStep = () => {
       const linkId = `link_${Date.now()}`;
       const generatedUrl =
         linkType === 'base'
-          ? `foldly.io/${userSlug}`
-          : `foldly.io/${userSlug}/${formData.topic?.toLowerCase()}`;
+          ? `foldly.io/${userSlug.toLowerCase()}`
+          : `foldly.io/${userSlug.toLowerCase()}/${formData.topic?.toLowerCase()}`;
 
       console.log('🚀 BRANDING STEP: Generated linkId:', linkId);
       console.log('🚀 BRANDING STEP: Generated URL:', generatedUrl);
@@ -153,7 +143,8 @@ export const CreateLinkBrandingStep = () => {
           linkType === 'base'
             ? 'Personal Collection'
             : formData.title || formData.topic || 'Untitled',
-        slug: userSlug,
+        slug: userSlug.toLowerCase(),
+        username: userSlug.toLowerCase(), // Always lowercase username
         ...(linkType === 'custom' &&
           formData.topic && { topic: formData.topic }),
         linkType,
@@ -178,7 +169,15 @@ export const CreateLinkBrandingStep = () => {
           maxFileSize: `${formData.maxFileSize}MB`,
           ...(formData.description && { customMessage: formData.description }),
         },
-        ...(formData.brandColor && { brandColor: formData.brandColor }),
+        // Include all branding data from modal store
+        brandingEnabled: brandingFormData.brandingEnabled,
+        ...(brandingFormData.brandColor && {
+          brandColor: brandingFormData.brandColor,
+        }),
+        ...(brandingFormData.accentColor && {
+          accentColor: brandingFormData.accentColor,
+        }),
+        ...(brandingFormData.logoUrl && { logoUrl: brandingFormData.logoUrl }),
       };
 
       // Update form success state
@@ -205,6 +204,7 @@ export const CreateLinkBrandingStep = () => {
     user?.firstName,
     linkType,
     formData,
+    brandingFormData,
     setSubmitting,
     setSuccess,
     setGeneralError,
@@ -222,9 +222,7 @@ export const CreateLinkBrandingStep = () => {
         linkType={
           linkType === 'custom' || linkType === 'generated' ? 'topic' : 'base'
         }
-        formData={linkBrandingData}
-        onDataChange={handleFormChange}
-        username={user?.firstName || user?.id || 'User'}
+        username={user?.username?.toLowerCase() || 'username'}
         linkName={
           linkType === 'base'
             ? 'Personal Collection'

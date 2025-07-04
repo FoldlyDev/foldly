@@ -35,3 +35,7 @@ export { SearchHighlight } from './search-highlight';
 
 // Re-export from shadcn index (follows ADR004 pattern)
 export * from './shadcn';
+
+// New components
+export { HelpPopover } from './help-popover';
+export { AnimatedSelect } from './animated-select';

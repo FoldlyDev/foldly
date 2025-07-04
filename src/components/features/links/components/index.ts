@@ -6,7 +6,11 @@
 // Card components
 export * from './cards';
 
-// Create link components are now distributed across existing folders
+// Container components
+export * from './containers';
+
+// Manager components
+export * from './managers';
 
 // Indicator components
 export * from './indicators';
@@ -19,3 +23,12 @@ export * from './sections';
 
 // View components
 export * from './views';
+
+// Constants - Re-exported for easy access from components
+export {
+  FILE_TYPE_OPTIONS,
+  FILE_SIZE_OPTIONS,
+  SOCIAL_SHARE_PLATFORMS,
+  LINK_STATUS_CONFIGS,
+  DEFAULT_LINK_STATUS,
+} from '../constants';

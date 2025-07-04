@@ -16,7 +16,7 @@ import {
 import { CreateLinkStepperHeader } from '../sections/CreateLinkStepperHeader';
 import { CreateLinkInformationStep } from '../sections/CreateLinkInformationStep';
 import { CreateLinkBrandingStep } from '../sections/CreateLinkBrandingStep';
-import { CreateLinkSuccessStep } from '../views/CreateLinkSuccessStep';
+import { CreateLinkSuccessStep } from '../sections/CreateLinkSuccessStep';
 
 /**
  * Main container for the create link modal

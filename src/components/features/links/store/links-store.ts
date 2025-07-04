@@ -11,6 +11,7 @@ import type {
   LinkType,
 } from '../types';
 import type { LinkId, Result } from '../../../../types/index';
+import { FILE_UPLOAD_LIMITS } from '../constants/validation';
 
 // ===== 2025 ZUSTAND BEST PRACTICES =====
 // ✅ Pure reducers pattern
@@ -210,8 +211,9 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
         requirePassword: input.requirePassword ?? false,
         isPublic: input.isPublic ?? true,
         allowFolderCreation: input.allowFolderCreation ?? true,
-        maxFiles: input.maxFiles ?? 100,
-        maxFileSize: input.maxFileSize ?? 104857600, // 100MB
+        maxFiles: input.maxFiles ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILES,
+        maxFileSize:
+          input.maxFileSize ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE,
         brandingEnabled: input.brandingEnabled ?? false,
         totalUploads: 0,
         totalFiles: 0,
@@ -289,8 +291,8 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
         ...(input.password && { passwordHash: input.password }), // In real app, hash the password
         isPublic: input.isPublic ?? true,
         allowFolderCreation: true,
-        maxFiles: input.maxFiles ?? 100,
-        maxFileSize: 104857600, // 100MB default
+        maxFiles: input.maxFiles ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILES,
+        maxFileSize: FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE,
         brandingEnabled: input.brandingEnabled ?? false,
         totalUploads: 0,
         totalFiles: 0,

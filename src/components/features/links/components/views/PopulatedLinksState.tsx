@@ -2,9 +2,9 @@
 
 import { motion } from 'framer-motion';
 import { Plus, Filter, SlidersHorizontal } from 'lucide-react';
-import { LinkCard } from '../cards/link-card';
-import { EmptyLinksState } from './empty-links-state';
-import { LinksOverviewCards } from '../cards/links-overview-cards';
+import { LinkCard } from '../cards/LinkCard';
+import { EmptyLinksState } from './EmptyLinksState';
+import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import {
   useLinksListStore,
   useLinksModalsStore,

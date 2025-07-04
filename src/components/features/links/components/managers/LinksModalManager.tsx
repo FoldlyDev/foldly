@@ -1,9 +1,9 @@
 'use client';
 
 import { useLinksModalsStore } from '../../hooks/use-links-composite';
-import { LinkDetailsModal, ShareModal, SettingsModal } from './link-modals';
-import { CreateLinkModalContainer } from './CreateLinkModalContainer';
-import { DeleteConfirmationModal } from './delete-confirmation-modal';
+import { LinkDetailsModal, ShareModal, SettingsModal } from '../modals';
+import { CreateLinkModalContainer } from '../containers/CreateLinkModalContainer';
+import { DeleteConfirmationModal } from '../modals/DeleteConfirmationModal';
 
 /**
  * LinksModalManager - Centralized modal management using store architecture

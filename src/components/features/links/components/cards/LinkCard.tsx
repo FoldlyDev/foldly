@@ -4,9 +4,9 @@ import { memo } from 'react';
 import { Copy, Share2, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/lib/hooks/use-mobile';
 import { useLinkCardStore } from '../../hooks/use-links-composite';
-import { LinkCardMobile } from './link-card-mobile';
-import { LinkCardDesktop } from './link-card-desktop';
-import { LinkCardGrid } from './link-card-grid';
+import { LinkCardMobile } from './LinkCardMobile';
+import { LinkCardDesktop } from './LinkCardDesktop';
+import { LinkCardGrid } from './LinkCardGrid';
 import type { LinkId } from '@/types';
 
 interface LinkCardProps {

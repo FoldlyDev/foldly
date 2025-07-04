@@ -10,6 +10,7 @@ import type { LinkId, Result, ValidationError } from '@/types';
 
 import type { LinksServiceInterface } from './types';
 import { linksApiService } from './links-api-service';
+import { FILE_UPLOAD_LIMITS } from '../constants/validation';
 
 /**
  * Links Service Implementation
@@ -114,18 +115,24 @@ export class LinksService implements LinksServiceInterface {
       }
     }
 
-    // File constraints
+    // File constraints - using centralized constants
     if (
       data.maxFiles !== undefined &&
-      (data.maxFiles < 1 || data.maxFiles > 1000)
+      (data.maxFiles < FILE_UPLOAD_LIMITS.MIN_FILES ||
+        data.maxFiles > FILE_UPLOAD_LIMITS.MAX_FILES)
     ) {
-      errors.push('Max files must be between 1 and 1000');
+      errors.push(
+        `Max files must be between ${FILE_UPLOAD_LIMITS.MIN_FILES} and ${FILE_UPLOAD_LIMITS.MAX_FILES}`
+      );
     }
     if (
       data.maxFileSize !== undefined &&
-      (data.maxFileSize < 1 || data.maxFileSize > 500 * 1024 * 1024)
+      (data.maxFileSize < FILE_UPLOAD_LIMITS.MIN_FILE_SIZE ||
+        data.maxFileSize > FILE_UPLOAD_LIMITS.MAX_FILE_SIZE)
     ) {
-      errors.push('Max file size must be between 1 byte and 500MB');
+      errors.push(
+        `Max file size must be between ${Math.round(FILE_UPLOAD_LIMITS.MIN_FILE_SIZE / 1024)}KB and ${Math.round(FILE_UPLOAD_LIMITS.MAX_FILE_SIZE / (1024 * 1024))}MB`
+      );
     }
 
     if (errors.length > 0) {

@@ -21,12 +21,24 @@ import { Input } from '@/components/ui/shadcn/input';
 import { Textarea } from '@/components/ui/shadcn/textarea';
 import { Switch } from '@/components/ui/shadcn/switch';
 import { Button } from '@/components/ui/shadcn/button';
+import { Checkbox } from '@/components/ui/shadcn/checkbox';
+import { Badge } from '@/components/ui/shadcn/badge';
 import { Calendar as CalendarComponent } from '@/components/ui/shadcn/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/shadcn/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/shadcn/command';
+import { Separator } from '@/components/ui/shadcn/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,8 +48,8 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils/utils';
 
-// Import types from the correct locations
-import type { ValidationError } from '@/components/ui/types';
+// ValidationError is a simple string type for form validation messages
+type ValidationError = string;
 
 // Simplified interface that extends what's needed from existing types
 export interface LinkInformationFormData {
@@ -46,7 +58,7 @@ export interface LinkInformationFormData {
   readonly requireEmail: boolean;
   readonly maxFiles: number;
   readonly maxFileSize: number; // Maximum file size in MB
-  readonly allowedFileTypes: string; // Comma-separated list of allowed file types
+  readonly allowedFileTypes: string[]; // Array of allowed file types for multi-select
   readonly autoCreateFolders: boolean; // Auto-organize uploads by date
   readonly isPublic: boolean; // Public/Private visibility
   readonly requirePassword: boolean; // Password protection toggle
@@ -66,35 +78,21 @@ interface LinkInformationSectionProps {
   readonly isLoading?: boolean;
 }
 
-const FILE_SIZE_OPTIONS = [
-  { value: 25, label: '25 files' },
-  { value: 50, label: '50 files' },
-  { value: 100, label: '100 files' },
-  { value: 250, label: '250 files' },
-  { value: 500, label: '500 files' },
-] as const;
+// Import centralized constants - Following 2025 best practices
+import {
+  FILE_TYPE_OPTIONS,
+  FILE_SIZE_OPTIONS,
+  DEFAULT_FILE_TYPES,
+  DEFAULT_FILE_SIZES,
+} from '../../constants';
 
+// Transform centralized constants for local use
 const fileOptions = [5, 10, 25, 50, 100];
-
-const fileSizeOptions = [
-  { value: 5, label: '5 MB' },
-  { value: 10, label: '10 MB' },
-  { value: 25, label: '25 MB' },
-  { value: 50, label: '50 MB' },
-  { value: 100, label: '100 MB' },
-  { value: 250, label: '250 MB' },
-  { value: 500, label: '500 MB' },
-];
-
-const fileTypeOptions = [
-  { value: 'all', label: 'All file types' },
-  { value: 'images', label: 'Images (PNG, JPG, GIF, etc.)' },
-  { value: 'documents', label: 'Documents (PDF, DOC, TXT, etc.)' },
-  { value: 'media', label: 'Media (Video, Audio)' },
-  { value: 'archives', label: 'Archives (ZIP, RAR, etc.)' },
-  { value: 'code', label: 'Code Files (JS, CSS, HTML, etc.)' },
-  { value: 'custom', label: 'Custom selection...' },
-];
+const fileSizeOptions = FILE_SIZE_OPTIONS.map(option => ({
+  value: parseInt(option.value),
+  label: option.label,
+}));
+const fileTypeOptions = FILE_TYPE_OPTIONS;
 
 export function LinkInformationSection({
   linkType,
@@ -167,7 +165,8 @@ export function LinkInformationSection({
                   <p className='text-sm text-destructive'>{errors.name}</p>
                 )}
                 <p className='text-xs text-muted-foreground'>
-                  Will be used in your URL: foldly.io/{username}/[topic-name]
+                  Will be used in your URL: foldly.io/{username.toLowerCase()}
+                  /[topic-name]
                 </p>
               </div>
             </div>
@@ -493,54 +492,166 @@ export function LinkInformationSection({
               </p>
             </div>
 
-            {/* File Type Restrictions */}
+            {/* File Type Restrictions - Multi-Select */}
             <div className='space-y-2'>
               <label className='text-sm font-medium text-foreground flex items-center gap-2'>
                 <FileType className='h-4 w-4 text-purple-600' />
-                Allowed File Types
+                Allowed File Types (Select Multiple)
               </label>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  disabled={isLoading}
-                  className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
-                >
-                  <span className='truncate'>
-                    {formData.allowedFileTypes === 'all'
-                      ? 'All file types'
-                      : fileTypeOptions.find(
-                          opt => opt.value === formData.allowedFileTypes
-                        )?.label || 'Custom selection'}
-                  </span>
-                  <svg
-                    className='w-4 h-4 text-muted-foreground shrink-0'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant='outline'
+                    role='combobox'
+                    disabled={isLoading}
+                    className='w-full justify-between h-auto min-h-[40px] p-3'
                   >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M19 9l-7 7-7-7'
-                    />
-                  </svg>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className='w-full min-w-[280px]'>
-                  {fileTypeOptions.map(option => (
-                    <DropdownMenuItem
-                      key={option.value}
-                      onClick={() =>
-                        onDataChange({ allowedFileTypes: option.value })
-                      }
-                      className='cursor-pointer'
+                    <div className='flex flex-wrap gap-1'>
+                      {formData.allowedFileTypes.length === 0 ? (
+                        <span className='text-muted-foreground'>
+                          All file types
+                        </span>
+                      ) : formData.allowedFileTypes.length <= 3 ? (
+                        formData.allowedFileTypes.map(type => {
+                          const option = fileTypeOptions.find(
+                            opt => opt.value === type
+                          );
+                          return (
+                            <Badge
+                              key={type}
+                              variant='secondary'
+                              className='text-xs'
+                            >
+                              {option?.label?.split(' ')[0] || type}
+                            </Badge>
+                          );
+                        })
+                      ) : (
+                        <Badge variant='secondary' className='text-xs'>
+                          {formData.allowedFileTypes.length} types selected
+                        </Badge>
+                      )}
+                    </div>
+                    <svg
+                      className='w-4 h-4 text-muted-foreground shrink-0'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
                     >
-                      {option.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M19 9l-7 7-7-7'
+                      />
+                    </svg>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  className='w-full min-w-[320px] p-0'
+                  align='start'
+                >
+                  <Command>
+                    <CommandInput placeholder='Search file types...' />
+                    <CommandList>
+                      <CommandEmpty>No file types found.</CommandEmpty>
+                      <CommandGroup>
+                        {fileTypeOptions.map(option => {
+                          const isSelected =
+                            option.value === 'all'
+                              ? formData.allowedFileTypes.length === 0
+                              : formData.allowedFileTypes.includes(
+                                  option.value
+                                );
+
+                          return (
+                            <CommandItem
+                              key={option.value}
+                              onSelect={() => {
+                                let newSelection: string[];
+
+                                if (option.value === 'all') {
+                                  // If "all" is selected, clear all other selections
+                                  newSelection = [];
+                                } else {
+                                  if (isSelected) {
+                                    // Remove from selection
+                                    newSelection =
+                                      formData.allowedFileTypes.filter(
+                                        type => type !== option.value
+                                      );
+                                  } else {
+                                    // Add to selection and remove "all" if present
+                                    newSelection = [
+                                      ...formData.allowedFileTypes,
+                                      option.value,
+                                    ];
+                                  }
+                                }
+
+                                onDataChange({
+                                  allowedFileTypes: newSelection,
+                                });
+                              }}
+                              className='cursor-pointer'
+                            >
+                              <div
+                                className={cn(
+                                  'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
+                                  isSelected
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'opacity-50'
+                                )}
+                              >
+                                {isSelected && (
+                                  <svg
+                                    className='h-3 w-3'
+                                    fill='currentColor'
+                                    viewBox='0 0 20 20'
+                                  >
+                                    <path
+                                      fillRule='evenodd'
+                                      d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+                                      clipRule='evenodd'
+                                    />
+                                  </svg>
+                                )}
+                              </div>
+                              <span>{option.label}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                      {formData.allowedFileTypes.length > 0 && (
+                        <>
+                          <CommandSeparator />
+                          <CommandGroup>
+                            <CommandItem
+                              onSelect={() =>
+                                onDataChange({ allowedFileTypes: [] })
+                              }
+                              className='justify-center text-center cursor-pointer'
+                            >
+                              Clear all
+                            </CommandItem>
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <p className='text-xs text-muted-foreground'>
-                Restrict which file types visitors can upload
+                Select multiple file types that visitors can upload (as per{' '}
+                <a
+                  href='https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/multiple'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-primary hover:underline'
+                >
+                  MDN documentation
+                </a>
+                )
               </p>
             </div>
 

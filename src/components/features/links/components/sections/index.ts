@@ -7,12 +7,14 @@
 export { CreateLinkInformationStep } from './CreateLinkInformationStep';
 export { CreateLinkBrandingStep } from './CreateLinkBrandingStep';
 export { CreateLinkStepperHeader } from './CreateLinkStepperHeader';
+export { CreateLinkSuccessStep } from './CreateLinkSuccessStep';
 
 // Reusable form sections
-export { LinkBrandingSection } from './link-branding-section';
-export { LinkInformationSection } from './link-information-section';
-export { LinkStatsGrid } from './link-stats-grid';
+export { LinkBrandingSection } from './LinkBrandingSection';
+export { LinkInformationSection } from './LinkInformationSection';
+export { GeneralSettingsModalSection } from './GeneralSettingsModalSection';
 
 // Export types from sections
-export type { LinkBrandingFormData } from './link-branding-section';
-export type { LinkInformationFormData } from './link-information-section';
+export type { LinkBrandingFormData } from './LinkBrandingSection';
+export type { LinkInformationFormData } from './LinkInformationSection';
+export type { GeneralSettingsData } from './GeneralSettingsModalSection';

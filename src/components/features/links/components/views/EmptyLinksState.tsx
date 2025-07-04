@@ -26,9 +26,8 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
     state => state.openCreateLinkModal
   );
 
-  // Get username from Clerk user data
-  const username =
-    user?.username || user?.firstName?.toLowerCase() || 'your-username';
+  // Get username from Clerk user data (username is obligatory in Clerk, always lowercase)
+  const username = user?.username?.toLowerCase() || 'your-username';
   const baseUrl = `foldly.io/${username}`;
 
   return (

@@ -415,3 +415,70 @@ export const useLinksModalsStore = () => {
     ]
   );
 };
+
+/**
+ * Hook for branding functionality
+ * Handles branding state with modal context awareness (creation vs settings)
+ */
+export const useLinksBrandingStore = () => {
+  // Branding subscriptions from modal store
+  const brandingContext = useLinksModalStore(
+    linksModalSelectors.brandingContext
+  );
+  const brandingFormData = useLinksModalStore(
+    linksModalSelectors.brandingFormData
+  );
+  const isCreationContext = useLinksModalStore(
+    linksModalSelectors.isCreationContext
+  );
+  const isSettingsContext = useLinksModalStore(
+    linksModalSelectors.isSettingsContext
+  );
+  const modalData = useLinksModalStore(linksModalSelectors.modalData);
+
+  // Stable action references
+  const updateBrandingData = useLinksModalStore(
+    state => state.updateBrandingData
+  );
+  const initializeBrandingForCreation = useLinksModalStore(
+    state => state.initializeBrandingForCreation
+  );
+  const initializeBrandingForSettings = useLinksModalStore(
+    state => state.initializeBrandingForSettings
+  );
+
+  // Return memoized object
+  return useMemo(
+    () => ({
+      // State
+      brandingContext,
+      brandingFormData,
+      isCreationContext,
+      isSettingsContext,
+      currentLink: modalData.linkData || null,
+
+      // Computed
+      isBrandingEnabled: brandingFormData.brandingEnabled,
+      hasCustomBranding:
+        brandingFormData.brandingEnabled &&
+        (brandingFormData.brandColor !== '#6c47ff' ||
+          brandingFormData.accentColor !== '#4ade80' ||
+          brandingFormData.logoUrl !== ''),
+
+      // Actions
+      updateBrandingData,
+      initializeBrandingForCreation,
+      initializeBrandingForSettings,
+    }),
+    [
+      brandingContext,
+      brandingFormData,
+      isCreationContext,
+      isSettingsContext,
+      modalData.linkData,
+      updateBrandingData,
+      initializeBrandingForCreation,
+      initializeBrandingForSettings,
+    ]
+  );
+};
