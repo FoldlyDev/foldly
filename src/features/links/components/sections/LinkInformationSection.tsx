@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useMemo } from 'react';
 import {
   Globe,
   MessageSquare,
@@ -16,6 +17,8 @@ import {
   FolderOpen,
   HardDrive,
   FileType,
+  AlertCircle,
+  CheckCircle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/shadcn/input';
 import { Textarea } from '@/components/ui/shadcn/textarea';
@@ -55,6 +58,13 @@ import type {
   FieldValidationErrors,
 } from '../../types';
 
+// Import URL utility functions
+import {
+  generateUrlSlug,
+  validateTopicName,
+  generateTopicUrl,
+} from '../../utils';
+
 interface LinkInformationSectionProps {
   readonly linkType: 'base' | 'topic';
   readonly username: string;
@@ -90,10 +100,30 @@ export function LinkInformationSection({
   errors,
   isLoading = false,
 }: LinkInformationSectionProps) {
-  const displayUrl =
-    linkType === 'base'
-      ? `foldly.io/${username}`
-      : `foldly.io/${username}/${formData.name || '[topic-name]'}`;
+  // Real-time URL generation with validation
+  const urlData = useMemo(() => {
+    if (linkType === 'base') {
+      return {
+        displayUrl: `foldly.io/${username}`,
+        slug: '',
+        isValidTopic: true,
+        topicError: null,
+      };
+    }
+
+    const validation = validateTopicName(formData.name || '');
+    const slug = formData.name ? generateUrlSlug(formData.name) : '';
+    const displayUrl = formData.name
+      ? generateTopicUrl(username, formData.name)
+      : `foldly.io/${username}/[topic-name]`;
+
+    return {
+      displayUrl,
+      slug,
+      isValidTopic: validation.isValid,
+      topicError: validation.error || null,
+    };
+  }, [linkType, username, formData.name]);
 
   return (
     <div className='space-y-6'>
@@ -110,9 +140,22 @@ export function LinkInformationSection({
               <span className='text-sm font-medium'>Link Preview</span>
             </div>
             <div className='flex-1 min-w-0'>
-              <div className='font-mono text-sm sm:text-base text-primary bg-background px-3 py-2 rounded border truncate'>
-                {displayUrl}
+              <div
+                className={`font-mono text-sm sm:text-base bg-background px-3 py-2 rounded border truncate transition-colors ${
+                  linkType === 'topic' && formData.name && !urlData.isValidTopic
+                    ? 'text-destructive border-destructive/50'
+                    : 'text-primary'
+                }`}
+              >
+                {urlData.displayUrl}
               </div>
+              {/* Show generated slug for topic links */}
+              {linkType === 'topic' && formData.name && urlData.slug && (
+                <div className='mt-2 text-xs text-muted-foreground'>
+                  Generated slug:{' '}
+                  <span className='font-mono text-primary'>{urlData.slug}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -140,22 +183,74 @@ export function LinkInformationSection({
                 </div>
               </div>
 
-              <div className='space-y-2'>
-                <input
-                  type='text'
-                  value={formData.name}
-                  onChange={e => onDataChange({ name: e.target.value })}
-                  placeholder='e.g., resumes, portfolios, feedback'
-                  disabled={isLoading}
-                  className='w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
-                />
-                {errors?.name && (
-                  <p className='text-sm text-destructive'>{errors.name}</p>
+              <div className='space-y-3'>
+                <div className='relative'>
+                  <input
+                    type='text'
+                    value={formData.name}
+                    onChange={e => onDataChange({ name: e.target.value })}
+                    placeholder='e.g., resumes, portfolios, feedback'
+                    disabled={isLoading}
+                    className={`w-full px-3 py-2 pr-10 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                      formData.name
+                        ? urlData.isValidTopic
+                          ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
+                          : 'border-destructive focus:ring-destructive/20 focus:border-destructive'
+                        : 'border-border focus:ring-ring focus:border-ring'
+                    }`}
+                  />
+                  {/* Validation icon */}
+                  {formData.name && (
+                    <div className='absolute right-3 top-1/2 -translate-y-1/2'>
+                      {urlData.isValidTopic ? (
+                        <CheckCircle className='w-4 h-4 text-green-500' />
+                      ) : (
+                        <AlertCircle className='w-4 h-4 text-destructive' />
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Error message from real-time validation */}
+                {formData.name && urlData.topicError && (
+                  <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
+                    <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
+                    <p className='text-sm text-destructive'>
+                      {urlData.topicError}
+                    </p>
+                  </div>
                 )}
-                <p className='text-xs text-muted-foreground'>
-                  Will be used in your URL: foldly.io/{username.toLowerCase()}
-                  /[topic-name]
-                </p>
+
+                {/* Schema validation error (from form validation) */}
+                {errors?.name && (
+                  <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
+                    <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
+                    <p className='text-sm text-destructive'>{errors.name}</p>
+                  </div>
+                )}
+
+                {/* Success message for valid topics */}
+                {formData.name && urlData.isValidTopic && urlData.slug && (
+                  <div className='flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
+                    <CheckCircle className='w-4 h-4 text-green-600 mt-0.5 flex-shrink-0' />
+                    <div className='flex-1'>
+                      <p className='text-sm text-green-800'>
+                        Great! Your topic URL will be:{' '}
+                        <span className='font-mono font-medium'>
+                          {urlData.displayUrl}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Help text */}
+                <div className='space-y-2'>
+                  <p className='text-xs text-muted-foreground'>
+                    <strong>Allowed characters:</strong> Letters, numbers,
+                    spaces, hyphens, and underscores
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>

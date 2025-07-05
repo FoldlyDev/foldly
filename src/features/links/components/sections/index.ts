@@ -13,6 +13,7 @@ export { CreateLinkSuccessStep } from './CreateLinkSuccessStep';
 export { LinkBrandingSection } from './LinkBrandingSection';
 export { LinkInformationSection } from './LinkInformationSection';
 export { GeneralSettingsModalSection } from './GeneralSettingsModalSection';
+export { BrandingSettingsSection } from './BrandingSettingsModalSection';
 
 // Types are exported from the main types folder: @/features/links/types
 // Import them directly from there: import { LinkBrandingFormData } from '@/features/links/types';

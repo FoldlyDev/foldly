@@ -1,10 +1,14 @@
 /**
  * CreateLinkForm Store - Form state management for create link modal
  * Following 2025 Zustand patterns with pure reducers and auto-generated actions
+ * Enhanced with React Hook Form + Zod integration for dynamic save buttons
  */
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { useEffect } from 'react';
+import { useZodForm } from '@/lib/hooks/use-zod-form';
+import { createLinkFormSchema } from '../schemas';
 import {
   createReducers,
   convertReducersToActions,
@@ -22,7 +26,9 @@ import type {
   CreateLinkStep,
   CreateLinkFormData,
   CreateLinkFormState,
-} from '../types'; // =============================================================================
+} from '../types';
+
+// =============================================================================
 // INITIAL STATE
 // =============================================================================
 
@@ -228,7 +234,9 @@ export const useCreateLinkFormStore = create<
     }),
     { name: 'CreateLinkFormStore' }
   )
-); // =============================================================================
+);
+
+// =============================================================================
 // SELECTORS
 // =============================================================================
 
@@ -280,3 +288,197 @@ export const createLinkFormSelectors = {
     );
   },
 };
+
+// =============================================================================
+// REACT HOOK FORM INTEGRATION
+// =============================================================================
+
+/**
+ * Enhanced Create Link Form Hook with React Hook Form + Zod + Zustand Integration
+ * Following 2025 best practices from Brendonovich's ultimate form abstraction
+ *
+ * Features:
+ * - Automatic dirty state tracking
+ * - Dynamic button visibility and text
+ * - Zustand state sync
+ * - Type-safe form validation with Zod
+ */
+
+export interface UseCreateLinkFormEnhancedReturn {
+  // Form control (React Hook Form)
+  form: ReturnType<typeof useZodForm<typeof createLinkFormSchema>>;
+
+  // Zustand store state
+  currentStep: CreateLinkStep;
+  linkType: LinkType;
+  isSubmitting: boolean;
+
+  // Dynamic dirty state tracking
+  isDirty: boolean;
+  hasUnsavedChanges: boolean;
+
+  // Step navigation
+  canGoNext: boolean;
+  canGoPrevious: boolean;
+  isLastStep: boolean;
+  isFirstStep: boolean;
+
+  // Actions
+  nextStep: () => void;
+  previousStep: () => void;
+  goToStep: (step: CreateLinkStep) => void;
+  handleSubmit: () => Promise<void>;
+  resetForm: () => void;
+
+  // Dynamic button states
+  shouldShowSaveButton: boolean;
+  shouldShowSaveAndCloseButton: boolean;
+  saveButtonText: string;
+  cancelButtonText: string;
+}
+
+export const useCreateLinkFormEnhanced =
+  (): UseCreateLinkFormEnhancedReturn => {
+    // Zustand store state
+    const currentStep = useCreateLinkFormStore(
+      createLinkFormSelectors.currentStep
+    );
+    const linkType = useCreateLinkFormStore(createLinkFormSelectors.linkType);
+    const isSubmitting = useCreateLinkFormStore(
+      createLinkFormSelectors.isSubmitting
+    );
+    const formData = useCreateLinkFormStore(createLinkFormSelectors.formData);
+
+    // Zustand actions
+    const nextStepAction = useCreateLinkFormStore(state => state.nextStep);
+    const previousStepAction = useCreateLinkFormStore(
+      state => state.previousStep
+    );
+    const setCurrentStep = useCreateLinkFormStore(
+      state => state.setCurrentStep
+    );
+    const updateMultipleFields = useCreateLinkFormStore(
+      state => state.updateMultipleFields
+    );
+    const resetFormAction = useCreateLinkFormStore(state => state.resetForm);
+
+    // React Hook Form integration
+    const form = useZodForm({
+      schema: createLinkFormSchema,
+      defaultValues: formData,
+      mode: 'onChange', // Validate on change for immediate feedback
+    });
+
+    const {
+      formState: { isDirty },
+      watch,
+      reset,
+    } = form;
+
+    // Watch form values for Zustand sync
+    const watchedValues = watch();
+
+    // Sync form changes to Zustand store
+    useEffect(() => {
+      if (isDirty) {
+        updateMultipleFields(watchedValues);
+      }
+    }, [watchedValues, isDirty, updateMultipleFields]);
+
+    // Step management
+    const steps: CreateLinkStep[] = ['information', 'branding', 'success'];
+    const currentStepIndex = steps.indexOf(currentStep);
+    const isFirstStep = currentStepIndex === 0;
+    const isLastStep = currentStepIndex === steps.length - 1;
+
+    // Navigation conditions
+    const canGoNext = currentStepIndex < steps.length - 1;
+    const canGoPrevious = currentStepIndex > 0;
+
+    // Dynamic button state logic
+    const hasUnsavedChanges = isDirty;
+    const shouldShowSaveButton = hasUnsavedChanges;
+    const shouldShowSaveAndCloseButton = hasUnsavedChanges;
+
+    // Dynamic button text based on state
+    const saveButtonText = hasUnsavedChanges ? 'Save Changes' : 'Save';
+    const cancelButtonText = hasUnsavedChanges ? 'Cancel' : 'Close';
+
+    // Step navigation functions
+    const nextStep = () => {
+      if (canGoNext) {
+        nextStepAction();
+      }
+    };
+
+    const previousStep = () => {
+      if (canGoPrevious) {
+        previousStepAction();
+      }
+    };
+
+    const goToStep = (step: CreateLinkStep) => {
+      if (steps.includes(step)) {
+        setCurrentStep(step);
+      }
+    };
+
+    // Form submission
+    const handleSubmit = async () => {
+      const isValid = await form.trigger(); // Validate entire form
+
+      if (!isValid) {
+        console.warn('Form validation failed');
+        return;
+      }
+
+      // Use form.handleSubmit to get validated data
+      form.handleSubmit(async validatedData => {
+        // Handle the actual submission logic here
+        console.log('Form submitted with validated data:', validatedData);
+
+        // You can add your submission logic here
+        // For now, we'll just simulate it
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      })();
+    };
+
+    // Reset form function
+    const resetForm = () => {
+      reset();
+      resetFormAction();
+    };
+
+    return {
+      // Form control
+      form,
+
+      // Zustand store state
+      currentStep,
+      linkType,
+      isSubmitting,
+
+      // Dirty state tracking
+      isDirty,
+      hasUnsavedChanges,
+
+      // Step navigation
+      canGoNext,
+      canGoPrevious,
+      isLastStep,
+      isFirstStep,
+
+      // Actions
+      nextStep,
+      previousStep,
+      goToStep,
+      handleSubmit,
+      resetForm,
+
+      // Dynamic button states
+      shouldShowSaveButton,
+      shouldShowSaveAndCloseButton,
+      saveButtonText,
+      cancelButtonText,
+    };
+  };

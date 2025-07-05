@@ -1,39 +1,49 @@
 'use client';
 
 import * as React from 'react';
-import { Globe, Mail, Lock, Clock, FolderPlus, HardDrive } from 'lucide-react';
+import {
+  Globe,
+  Mail,
+  Lock,
+  Clock,
+  FolderPlus,
+  HardDrive,
+  Crown,
+  MessageSquare,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Checkbox } from '@/components/ui/shadcn/checkbox';
+import { Switch } from '@/components/ui/shadcn/switch';
 import { HelpPopover, AnimatedSelect } from '@/components/ui';
 import type { LinkData } from '../../types';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../constants';
-import { useLinksSettingsStore } from '../../hooks/use-links-composite';
+import type { UseFormReturn } from 'react-hook-form';
+import type { GeneralSettingsFormData } from '../../schemas';
+import type { HexColor } from '@/types';
 
 // Use centralized types from the types folder
 import type { GeneralSettingsData } from '../../types';
 
 interface GeneralSettingsModalSectionProps {
   link: LinkData;
+  form: UseFormReturn<GeneralSettingsFormData>;
 }
 
 export function GeneralSettingsModalSection({
   link,
+  form,
 }: GeneralSettingsModalSectionProps) {
-  // Connect directly to store instead of using prop drilling
-  const { settings, updateSettings, isLoading } = useLinksSettingsStore();
   const fileTypeOptions = FILE_TYPE_OPTIONS;
   const fileSizeOptions = FILE_SIZE_OPTIONS;
   const isBaseLink = link.linkType === 'base';
 
-  // Return early if no settings available
-  if (!settings) {
-    return <div className='text-center text-gray-500'>Loading settings...</div>;
-  }
-
-  const setSettings = (updates: Partial<GeneralSettingsData>) => {
-    console.log('🔄 GENERAL SETTINGS: Updating settings', updates);
-    updateSettings(updates);
-  };
+  // Use React Hook Form for state management
+  const {
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
+  const watchedValues = watch();
 
   return (
     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
@@ -66,9 +76,12 @@ Private: Users only see their own uploads - others' files stay hidden."
                   </p>
                 </div>
                 <Checkbox
-                  checked={settings.isPublic}
+                  checked={watchedValues.isPublic}
                   onCheckedChange={(checked: boolean) =>
-                    setSettings({ isPublic: checked })
+                    setValue('isPublic', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                 />
               </label>
@@ -95,9 +108,12 @@ Private: Users only see their own uploads - others' files stay hidden."
                   </p>
                 </div>
                 <Checkbox
-                  checked={settings.requireEmail}
+                  checked={watchedValues.requireEmail}
                   onCheckedChange={(checked: boolean) =>
-                    setSettings({ requireEmail: checked })
+                    setValue('requireEmail', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                 />
               </label>
@@ -124,15 +140,18 @@ Share both:
                   </p>
                 </div>
                 <Checkbox
-                  checked={settings.requirePassword}
+                  checked={watchedValues.requirePassword}
                   onCheckedChange={(checked: boolean) =>
-                    setSettings({ requirePassword: checked })
+                    setValue('requirePassword', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                 />
               </label>
 
               <AnimatePresence>
-                {settings.requirePassword && (
+                {watchedValues.requirePassword && (
                   <motion.div
                     initial={{
                       height: 0,
@@ -160,14 +179,74 @@ Share both:
                     </label>
                     <input
                       type='password'
-                      value={settings.password}
-                      onChange={e => setSettings({ password: e.target.value })}
+                      value={watchedValues.password}
+                      onChange={e =>
+                        setValue('password', e.target.value, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
                       placeholder='Enter new password'
                       className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
                     />
+                    {errors.password && (
+                      <p className='text-xs text-red-600'>
+                        {errors.password.message}
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        {/* Welcome Message Section */}
+        <div className='space-y-4'>
+          <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+            <MessageSquare className='w-4 h-4' />
+            Welcome Message
+          </h3>
+
+          <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+            <div className='space-y-3'>
+              <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                Description & Welcome Message
+                <HelpPopover
+                  title='Welcome Message for Uploaders'
+                  description='A friendly message shown to uploaders when they visit your link.
+
+Use this to:
+• Welcome uploaders
+• Explain what files you need
+• Provide upload instructions
+• Set expectations
+• Thank contributors'
+                />
+              </label>
+              <textarea
+                value={watchedValues.customMessage}
+                onChange={e =>
+                  setValue('customMessage', e.target.value, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+                placeholder='Write a friendly welcome message for your uploaders... 
+
+Example: "Hi! Thanks for contributing to our project. Please upload your photos from the event here. We appreciate your help!"'
+                rows={4}
+                className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] resize-none'
+              />
+              {errors.customMessage && (
+                <p className='text-xs text-red-600'>
+                  {errors.customMessage.message}
+                </p>
+              )}
+              <p className='text-xs text-[var(--neutral-500)]'>
+                This message will be displayed prominently on your upload page
+                to greet visitors
+              </p>
             </div>
           </div>
         </div>
@@ -198,57 +277,153 @@ Set a new date to extend the link.'
                   />
                 </div>
                 <div className='p-3 bg-white border border-[var(--neutral-200)] rounded-md'>
-                  <p className='text-sm text-[var(--quaternary)]'>
-                    {link.expiresAt ? (
-                      <>
-                        Expires on{' '}
-                        <span className='font-medium'>{link.expiresAt}</span>
-                      </>
-                    ) : (
-                      <span className='text-[var(--neutral-500)]'>
-                        No expiration date set
-                      </span>
-                    )}
+                  <p className='text-sm text-[var(--neutral-700)]'>
+                    {link.expiresAt || 'No expiry date set'}
                   </p>
                 </div>
+              </div>
 
-                <div className='space-y-2'>
-                  <label className='block text-sm font-medium text-[var(--quaternary)]'>
-                    Update Expiry Date
-                  </label>
-                  <input
-                    type='date'
-                    value={settings.expiresAt || ''}
-                    onChange={e => {
-                      setSettings({ expiresAt: e.target.value });
-                    }}
-                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
-                    className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
-                  />
-                  <p className='text-xs text-[var(--neutral-500)]'>
-                    Choose a new expiration date or leave empty to remove expiry
+              <div className='space-y-3'>
+                <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                  Set New Expiry Date
+                </label>
+                <input
+                  type='datetime-local'
+                  value={watchedValues.expiresAt || ''}
+                  onChange={e =>
+                    setValue('expiresAt', e.target.value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+                />
+                {errors.expiresAt && (
+                  <p className='text-xs text-red-600'>
+                    {errors.expiresAt.message}
                   </p>
-
-                  {settings.expiresAt && (
-                    <button
-                      type='button'
-                      onClick={() => setSettings({ expiresAt: '' })}
-                      className='text-xs text-red-600 hover:text-red-700 font-medium'
-                    >
-                      Remove expiration date
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
         )}
+      </div>
 
-        {/* Organization Settings */}
+      {/* Right Column - Upload Limits & File Management */}
+      <div className='space-y-6'>
+        {/* File Upload Limits */}
+        <div className='space-y-4'>
+          <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+            <HardDrive className='w-4 h-4' />
+            Upload Limits
+          </h3>
+
+          <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+            <div className='space-y-3'>
+              <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                Maximum Files
+                <HelpPopover
+                  title='File Count Limit'
+                  description='Total number of files that can be uploaded to this link.
+
+• Set 0 for unlimited
+• Counts all files from all uploaders'
+                />
+              </label>
+              <input
+                type='number'
+                value={watchedValues.maxFiles || ''}
+                onChange={e =>
+                  setValue(
+                    'maxFiles',
+                    e.target.value ? parseInt(e.target.value) : undefined,
+                    { shouldDirty: true, shouldValidate: true }
+                  )
+                }
+                placeholder='0 = unlimited'
+                min='0'
+                className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+              />
+              {errors.maxFiles && (
+                <p className='text-xs text-red-600'>
+                  {errors.maxFiles.message}
+                </p>
+              )}
+            </div>
+
+            <div className='space-y-3'>
+              <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                Maximum File Size (MB)
+                <HelpPopover
+                  title='File Size Limit'
+                  description='Largest individual file size allowed.
+
+• Applies to each file separately
+• Common sizes: 50MB (documents), 100MB (images), 500MB+ (videos)'
+                />
+              </label>
+              <AnimatedSelect
+                options={fileSizeOptions}
+                value={watchedValues.maxFileSize.toString()}
+                onChange={value => {
+                  // Ensure we're working with a string for single-select file size
+                  const fileSize = Array.isArray(value) ? value[0] : value;
+                  if (fileSize) {
+                    setValue('maxFileSize', parseInt(fileSize), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }
+                }}
+                placeholder='Select file size limit'
+              />
+              {errors.maxFileSize && (
+                <p className='text-xs text-red-600'>
+                  {errors.maxFileSize.message}
+                </p>
+              )}
+            </div>
+
+            <div className='space-y-3'>
+              <label className='block text-sm font-medium text-[var(--quaternary)]'>
+                Allowed File Types
+                <HelpPopover
+                  title='File Type Restrictions'
+                  description='Control what types of files can be uploaded.
+
+• Select multiple types or leave empty for all
+• Common combinations: Images + Documents, Videos only, etc.
+• More restrictive = better security'
+                />
+              </label>
+              <AnimatedSelect
+                options={fileTypeOptions}
+                value={watchedValues.allowedFileTypes || []}
+                onChange={values => {
+                  // Ensure we're working with an array for multi-select
+                  const fileTypes = Array.isArray(values) ? values : [];
+                  setValue('allowedFileTypes', fileTypes, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+                placeholder='All file types allowed'
+                multiple
+              />
+              {errors.allowedFileTypes && (
+                <p className='text-xs text-red-600'>
+                  {errors.allowedFileTypes.message}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* File Organization */}
         <div className='space-y-4'>
           <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
             <FolderPlus className='w-4 h-4' />
-            Organization
+            File Organization
           </h3>
 
           <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
@@ -261,20 +436,24 @@ Set a new date to extend the link.'
                     </span>
                     <HelpPopover
                       title='Automatic Folder Organization'
-                      description='Organizes uploads into date folders:
+                      description='Automatically organize uploads into folders by date.
 
-Enabled: Files go into 2024-01-15, 2024-01-16, etc.
-Disabled: All files in main folder.'
+• Creates YYYY-MM-DD folders
+• Keeps uploads organized
+• Easier to find files later'
                     />
                   </div>
                   <p className='text-xs text-[var(--neutral-500)]'>
-                    Organize uploads by date (2024-01-15, 2024-01-16, etc.)
+                    Organize uploads by date automatically
                   </p>
                 </div>
                 <Checkbox
-                  checked={settings.autoCreateFolders}
+                  checked={watchedValues.autoCreateFolders}
                   onCheckedChange={(checked: boolean) =>
-                    setSettings({ autoCreateFolders: checked })
+                    setValue('autoCreateFolders', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                 />
               </label>
@@ -285,164 +464,31 @@ Disabled: All files in main folder.'
                 <div className='space-y-1'>
                   <div className='flex items-center gap-2'>
                     <span className='text-sm font-medium text-[var(--quaternary)]'>
-                      Allow Multiple Uploads
+                      Allow Multiple Files
                     </span>
                     <HelpPopover
-                      title='Batch Upload Control'
-                      description='Controls how many files at once:
+                      title='Multiple File Upload'
+                      description='Let users upload multiple files at once.
 
-Enabled: Multiple files via drag & drop
-Disabled: One file at a time only'
+• Enabled: Bulk upload support
+• Disabled: One file at a time
+• Most users prefer bulk upload'
                     />
                   </div>
                   <p className='text-xs text-[var(--neutral-500)]'>
-                    Enable batch file uploads vs single file only
+                    Users can upload multiple files in one session
                   </p>
                 </div>
                 <Checkbox
-                  checked={settings.allowMultiple}
+                  checked={watchedValues.allowMultiple}
                   onCheckedChange={(checked: boolean) =>
-                    setSettings({ allowMultiple: checked })
+                    setValue('allowMultiple', checked, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
                   }
                 />
               </label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Column - File & Upload Limits */}
-      <div className='space-y-6'>
-        {/* File Limits */}
-        <div className='space-y-4'>
-          <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
-            <HardDrive className='w-4 h-4' />
-            Upload Limits
-          </h3>
-
-          <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
-            <div className='space-y-3'>
-              <div className='flex items-center gap-2'>
-                <label className='block text-sm font-medium text-[var(--quaternary)]'>
-                  Maximum Files
-                </label>
-                <HelpPopover
-                  title='File Count Limits'
-                  description='Total files allowed across all users.
-
-Link becomes inactive when limit reached.'
-                />
-              </div>
-              <input
-                type='number'
-                value={settings.maxFiles || 1}
-                onChange={e =>
-                  setSettings({ maxFiles: parseInt(e.target.value) || 1 })
-                }
-                min='1'
-                max='1000'
-                className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
-              />
-              <p className='text-xs text-[var(--neutral-500)]'>
-                Total file limit across all users (link deactivates when
-                reached)
-              </p>
-            </div>
-
-            <div className='space-y-3'>
-              <div className='flex items-center gap-2'>
-                <label className='block text-sm font-medium text-[var(--quaternary)]'>
-                  Maximum File Size (MB)
-                </label>
-                <HelpPopover
-                  title='Individual File Size Limits'
-                  description='Maximum size per file.
-
-Files larger than this are rejected with error message.'
-                />
-              </div>
-              <AnimatedSelect
-                value={settings.maxFileSize.toString()}
-                onChange={value =>
-                  setSettings({ maxFileSize: parseInt(value) })
-                }
-                options={fileSizeOptions}
-                placeholder='Select file size limit'
-              />
-              <p className='text-xs text-[var(--neutral-500)]'>
-                Per-file size limit (files larger than this are rejected)
-              </p>
-            </div>
-
-            <div className='space-y-3'>
-              <div className='flex items-center gap-2'>
-                <label className='block text-sm font-medium text-[var(--quaternary)]'>
-                  Allowed File Types
-                </label>
-                <HelpPopover
-                  title='File Type Restrictions'
-                  description='Choose from preset categories:
-
-• All File Types - no restrictions
-• Images Only - photos and graphics
-• Documents - PDFs, Word, text files'
-                />
-              </div>
-              <AnimatedSelect
-                value={
-                  Array.isArray(settings.allowedFileTypes)
-                    ? settings.allowedFileTypes[0] || '*'
-                    : settings.allowedFileTypes
-                }
-                onChange={selectedValue => {
-                  setSettings({
-                    allowedFileTypes: [selectedValue] as readonly string[],
-                  });
-                }}
-                options={fileTypeOptions}
-                placeholder='Select file types'
-              />
-
-              <p className='text-xs text-[var(--neutral-500)]'>
-                Choose from common file type categories
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Custom Message */}
-        <div className='space-y-4'>
-          <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
-            <Mail className='w-4 h-4' />
-            Custom Message
-          </h3>
-
-          <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
-            <div className='space-y-3'>
-              <div className='flex items-center gap-2'>
-                <label className='block text-sm font-medium text-[var(--quaternary)]'>
-                  Welcome Message
-                </label>
-                <HelpPopover
-                  title='Custom Upload Page Message'
-                  description='Message shown on upload page.
-
-Use for:
-• Instructions & guidelines
-• File naming requirements  
-• Deadlines & special notes'
-                />
-              </div>
-              <textarea
-                value={settings.customMessage}
-                onChange={e => setSettings({ customMessage: e.target.value })}
-                placeholder='Add a custom message for users who visit your upload page...'
-                rows={4}
-                className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
-              />
-              <p className='text-xs text-[var(--neutral-500)]'>
-                Provide instructions, context, or guidelines for uploaders
-              </p>
             </div>
           </div>
         </div>
