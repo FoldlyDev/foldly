@@ -135,28 +135,28 @@
    ============================================================================= */
 
 /* 🚀 Landing Feature Styles */
-@import '../components/features/landing/styles/hero-section.css';
-@import '../components/features/landing/styles/about-section.css';
-@import '../components/features/landing/styles/features-section.css';
-@import '../components/features/landing/styles/outro-section.css';
-@import '../components/features/landing/styles/cards.css';
-@import '../components/features/landing/styles/sections.css';
-@import '../components/features/landing/styles/flip-card.css';
+@import '../features/landing/styles/hero-section.css';
+@import '../features/landing/styles/about-section.css';
+@import '../features/landing/styles/features-section.css';
+@import '../features/landing/styles/outro-section.css';
+@import '../features/landing/styles/cards.css';
+@import '../features/landing/styles/sections.css';
+@import '../features/landing/styles/flip-card.css';
 
 /* 🔐 Auth Feature Styles */
-@import '../components/features/auth/styles/auth-pages.css';
+@import '../features/auth/styles/auth-pages.css';
 
 /* 📋 Links Feature Styles */
-@import '../components/features/links/styles/links-page.css';
+@import '../features/links/styles/links-page.css';
 
 /* 📊 Analytics Feature Styles */
-@import '../components/features/analytics/styles/home-container.css';
+@import '../features/analytics/styles/home-container.css';
 
 /* 🌐 Global UI Component Styles */
 @import '../styles/components/ui/content-loader.css';
 
 /* 🏗️ Dashboard Feature Styles */
-@import '../components/features/dashboard/styles/dashboard-navigation.css';
+@import '../features/dashboard/styles/dashboard-navigation.css';
 
 /* =============================================================================
    CSS VARIABLES

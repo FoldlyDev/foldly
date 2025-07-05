@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { FilesContainer } from '@/components/features/files';
+import { FilesContainer } from '@/features/files';
 
 export const metadata: Metadata = {
   title: 'Files & Downloads | Foldly',

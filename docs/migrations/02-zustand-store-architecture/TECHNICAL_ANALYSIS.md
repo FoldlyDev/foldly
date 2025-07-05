@@ -15,6 +15,10 @@ Following [Zustand architecture patterns at scale](https://brainhub.eu/library/z
 useLinksDataStore; // CRUD operations and data management
 useLinksUIStore; // UI state (view, search, filters, selection)
 useLinksModalStore; // Modal state management
+
+// Real-time sync composite hooks
+useLinksSettingsStore; // Settings modal real-time synchronization
+useLinksBrandingStore; // Branding functionality with modal context awareness
 ```
 
 ### **Pure Reducer Pattern**
@@ -96,11 +100,56 @@ export const useLinksUIStore = create<LinksUIState & Actions>()(
    const setSorting = useStore(state => state.setSorting);
    ```
 
+### **Store Connection Gap Resolution (January 2025)**
+
+**Critical Issue**: Mixed patterns where some components used direct store access while others relied on prop drilling, causing real-time sync failures.
+
+**Implementation**: Consistent store access patterns with dedicated composite hooks:
+
+```typescript
+// Settings store for real-time synchronization
+export const useLinksSettingsStore = () => {
+  // Stable store subscriptions
+  const modalData = useLinksModalStore(
+    useCallback(state => state.modalData, [])
+  );
+  const updateModalData = useLinksModalStore(
+    useCallback(state => state.updateModalData, [])
+  );
+
+  // Real-time settings extraction
+  const currentSettings = useMemo(() => {
+    if (!modalData.linkData) return null;
+    return extractSettingsFromLink(modalData.linkData);
+  }, [modalData.linkData]);
+
+  // Immediate store updates for cross-component sync
+  const updateSettings = useCallback(
+    updates => {
+      if (!modalData.linkData) return;
+      const updatedLinkData = { ...modalData.linkData, ...updates };
+      updateModalData({ linkData: updatedLinkData });
+    },
+    [modalData.linkData, updateModalData]
+  );
+
+  return { settings: currentSettings, updateSettings, saveSettings };
+};
+```
+
+**Real-Time Sync Flow**:
+
+1. GeneralSettings component updates → `updateSettings()` called
+2. Modal store updated immediately → All subscribed components re-render
+3. Branding section receives update → Description updates instantly
+4. No timing gaps or modal refresh required
+
 ### **Memory Optimization Techniques**
 
 1. **Granular Subscriptions**: Components only re-render when specific data changes
 2. **Memoized Return Objects**: All hooks return `useMemo` wrapped objects
 3. **Stable Dependencies**: All dependencies in `useMemo`/`useCallback` are stable references
+4. **useSyncExternalStore Pattern**: Ensures consistent reads across components during concurrent updates
 
 ### **Type Safety Implementation**
 

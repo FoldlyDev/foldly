@@ -19,15 +19,15 @@ export * from './utils';
 // FEATURE-SPECIFIC TYPES
 // =============================================================================
 // These have been moved to their proper feature locations:
-// - Analytics types: @/components/features/analytics/types
-// - Links types: @/components/features/links/types
-// - Files types: @/components/features/files/types
-// - Upload types: @/components/features/upload/types
-// - Notifications types: @/components/features/notifications/types
-// - Auth types: @/components/features/auth/types
+// - Analytics types: @/features/analytics/types
+// - Links types: @/features/links/types
+// - Files types: @/features/files/types
+// - Upload types: @/features/upload/types
+// - Notifications types: @/features/notifications/types
+// - Auth types: @/features/auth/types
 // - UI component types: @/components/ui/types
 
 // Use individual feature exports:
-// import { LinkType } from '@/components/features/links/types';
-// import { FileProcessingStatus } from '@/components/features/files/types';
-// import { UploadFlowStep } from '@/components/features/upload/types';
+// import { LinkType } from '@/features/links/types';
+// import { FileProcessingStatus } from '@/features/files/types';
+// import { UploadFlowStep } from '@/features/upload/types';

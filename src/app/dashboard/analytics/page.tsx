@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { AnalyticsContainer } from '@/components/features/analytics';
+import { AnalyticsContainer } from '@/features/analytics';
 
 export const metadata: Metadata = {
   title: 'Analytics & Insights | Foldly',

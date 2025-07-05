@@ -157,25 +157,28 @@ src/types/
     └── index.ts        # Shared component types and patterns
 ```
 
-### **Feature-Specific Types** (src/components/features/)
+### **Domain-Specific Types** (src/features/)
 
 ```
-src/components/features/
+src/features/
 ├── links/
-│   └── types/              # Link-specific domain types
-│       └── index.ts       # Link entities, states, validation
+│   └── types/              # Links domain types
+│       └── index.ts       # Link entities, states, validation, business rules
 ├── upload/
-│   └── types/              # Upload-specific processing types
+│   └── types/              # Upload domain types
 │       └── index.ts       # Upload pipeline, file processing, batch handling
 ├── dashboard/
-│   └── types/              # Dashboard-specific analytics types
-│       └── index.ts       # Metrics, reports, dashboard widgets
+│   └── types/              # Dashboard domain types
+│       └── index.ts       # Metrics, reports, dashboard widgets, analytics
+├── settings/
+│   └── types/              # Settings domain types
+│       └── index.ts       # User preferences, configuration, profiles
 ├── landing/
-│   └── types/              # Landing page specific types
-│       └── index.ts       # Marketing components, animations
-└── analytics/
-    └── types/              # Analytics-specific measurement types
-        └── index.ts       # Events, tracking, performance metrics
+│   └── types/              # Landing domain types
+│       └── index.ts       # Marketing components, animations, content
+└── auth/
+    └── types/              # Authentication domain types
+        └── index.ts       # User sessions, permissions, authentication state
 ```
 
 ### **Architecture Benefits**
@@ -185,35 +188,39 @@ src/components/features/
 - **Clear Boundaries**: Domain-specific types stay within their features
 - **Import Clarity**: Global imports for shared concerns, local imports for feature logic
 
-### Import Strategy (2025 Best Practice)
+### Import Strategy (2025 Domain-Driven Best Practice)
 
 ```typescript
 // ✅ GLOBAL TYPES: Import from centralized barrel with type modifier
 import type { UserId, LinkId, UploadLink, ApiResult, Result } from '@/types';
 
-// ✅ FEATURE TYPES: Import from feature-specific types
-import type {
-  LinkFormData,
-  LinkValidationError,
-} from '@/components/features/links/types';
+// ✅ DOMAIN TYPES: Import from domain-specific types
+import type { LinkFormData, LinkValidationError } from '@/features/links/types';
 import type {
   UploadProgress,
   FileValidationResult,
-} from '@/components/features/upload/types';
+} from '@/features/upload/types';
 
 // ✅ CORRECT: Separate type and value imports
 import type { ComponentProps } from 'react';
 import { useState, useCallback } from 'react';
 
-// ✅ FEATURE COMPONENT: Import related feature types and components together
-import { LinkCard } from '@/components/features/links/link-card';
-import type { LinkCardProps } from '@/components/features/links/types';
+// ✅ DOMAIN COMPONENT: Import related domain types and components together
+import { LinkCard } from '@/features/links/components/cards/LinkCard';
+import type { LinkCardProps } from '@/features/links/types';
+
+// ✅ DOMAIN EXPORTS: Use domain barrel exports for clean imports
+import { LinksContainer, useLinksStore } from '@/features/links';
+import { UploadService, type UploadState } from '@/features/upload';
 
 // ❌ NEVER: Import from individual global type files
 import type { UploadLink } from '@/types/database';
 
-// ❌ NEVER: Import global types from feature directories
-import type { UserId } from '@/components/features/auth/types';
+// ❌ NEVER: Import global types from domain directories
+import type { UserId } from '@/features/auth/types';
+
+// ❌ NEVER: Skip domain barrel exports
+import { LinkCard } from '@/features/links/components/cards/LinkCard';
 ```
 
 ---

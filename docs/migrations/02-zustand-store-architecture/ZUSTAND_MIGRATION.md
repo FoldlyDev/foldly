@@ -140,9 +140,15 @@ const LinkCard = ({ linkId, view, index }: LinkCardProps) => {
 ├── index.ts                    # Barrel exports
 ├── links-data-store.ts         # CRUD operations
 ├── links-ui-store.ts           # UI state management
-├── links-modal-store.ts        # Modal coordination
+├── links-modal-store.ts        # Modal coordination + settings state
 └── utils/
     └── convert-reducers-to-actions.ts  # Pure reducer utility
+
+// Enhanced composite hooks for real-time sync
+// src/components/features/links/hooks/use-links-composite.ts
+├── useLinksSettingsStore()     # Settings modal real-time sync
+├── useLinksBrandingStore()     # Branding with modal context awareness
+└── ... existing hooks
 ```
 
 ### **Composite Hooks**
@@ -166,6 +172,18 @@ export const useLinksListStore = () => {
 export const useLinksModalsStore = () => {
   const { activeModal, actions } = /* store subscriptions */;
   return { activeModal, ...actions };
+};
+
+// Settings modal real-time sync (Added January 2025)
+export const useLinksSettingsStore = () => {
+  const { settings, updateSettings, saveSettings } = /* store subscriptions */;
+  return { settings, updateSettings, saveSettings };
+};
+
+// Branding functionality with modal context awareness (Added January 2025)
+export const useLinksBrandingStore = () => {
+  const { brandingData, updateBrandingData, brandingContext } = /* store subscriptions */;
+  return { brandingData, updateBrandingData, brandingContext };
 };
 ```
 

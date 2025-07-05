@@ -49,33 +49,38 @@
 
 ## 🏗️ **Technical Architecture (2025)**
 
-### **Modern Feature-Based Architecture**
+### **Modern Domain-Driven Architecture**
 
-Foldly implements a sophisticated **feature-based architecture** following 2025 React/Next.js best practices:
+Foldly implements a sophisticated **domain-driven architecture** following 2025 React/Next.js best practices with clear separation of business concerns:
 
 ```
-src/components/features/
-├── links/              # 📋 Complete Link Management Feature
-│   ├── components/     # Feature-specific UI components
+src/features/
+├── links/              # 📋 Complete Link Management Domain
+│   ├── components/     # Domain-specific UI components
 │   │   ├── modals/     # Link creation, editing, details
 │   │   ├── sections/   # Information, branding, statistics
 │   │   ├── views/      # List, grid, empty states
 │   │   └── cards/      # Link cards and overview
-│   ├── hooks/          # Link-specific custom hooks
-│   ├── store/          # Zustand state management
-│   ├── services/       # API services & business logic
+│   ├── hooks/          # Domain-specific custom hooks
+│   ├── store/          # Domain state management (Zustand)
+│   ├── services/       # Business logic & API services
 │   ├── types/          # Domain types & interfaces
-│   ├── styles/         # Feature-specific styling
-│   └── tests/          # Feature-specific tests
+│   ├── styles/         # Domain-specific styling
+│   ├── tests/          # Domain-specific tests
+│   └── index.ts        # Domain barrel exports
 │
-├── upload/             # 📤 File Processing Feature
+├── upload/             # 📤 File Processing Domain
+│   ├── components/     # Upload UI components
 │   ├── services/       # Upload API & processing
+│   ├── store/          # Upload state management
 │   ├── types/          # Upload pipeline types
-│   └── tests/          # Upload functionality tests
+│   ├── tests/          # Upload functionality tests
+│   └── index.ts        # Domain barrel exports
 │
-├── dashboard/          # 📊 Analytics & Management
-├── landing/            # 🚀 Marketing & Onboarding
-└── auth/               # 🔐 Authentication (minimal)
+├── dashboard/          # 📊 Analytics & Management Domain
+├── settings/           # ⚙️ User Settings Domain
+├── landing/            # 🚀 Marketing & Onboarding Domain
+└── auth/               # 🔐 Authentication Domain (minimal)
 ```
 
 ### **Advanced Technology Stack**

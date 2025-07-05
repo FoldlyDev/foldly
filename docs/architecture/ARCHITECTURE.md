@@ -37,44 +37,57 @@ foldly/
 │   │   ├── not-found.tsx             # 404 page
 │   │   └── globals.css               # Global styles with feature imports
 │   │
-│   ├── components/                   # Feature-Based Component Architecture
-│   │   ├── features/                 # 🎯 FEATURE-BASED ORGANIZATION
-│   │   │   ├── links/                # 📋 Complete Link Management Feature
-│   │   │   │   ├── components/       # Feature-specific UI components
-│   │   │   │   │   ├── modals/       # Link creation, editing, details
-│   │   │   │   │   ├── sections/     # Information, branding, statistics
-│   │   │   │   │   ├── views/        # List, grid, empty states
-│   │   │   │   │   └── cards/        # Link cards and overview
-│   │   │   │   ├── hooks/            # Link-specific custom hooks
-│   │   │   │   ├── store/            # Zustand state management
-│   │   │   │   ├── services/         # API services & business logic
-│   │   │   │   ├── types/            # Domain types & interfaces
-│   │   │   │   ├── styles/           # Feature-specific styling
-│   │   │   │   └── tests/            # Feature-specific tests
-│   │   │   │
-│   │   │   ├── upload/               # 📤 File Processing Feature
-│   │   │   │   ├── services/         # Upload API & processing
-│   │   │   │   ├── types/            # Upload pipeline types
-│   │   │   │   └── tests/            # Upload functionality tests
-│   │   │   │
-│   │   │   ├── dashboard/            # 📊 Analytics & Management
-│   │   │   │   ├── components/
-│   │   │   │   │   ├── sections/     # Analytics cards, headers, actions
-│   │   │   │   │   └── views/        # Dashboard container, empty states
-│   │   │   │   ├── hooks/            # Dashboard data hooks
-│   │   │   │   ├── store/            # Dashboard state management
-│   │   │   │   └── services/         # Analytics API services
-│   │   │   │
-│   │   │   ├── landing/              # 🚀 Marketing & Onboarding
-│   │   │   │   ├── components/
-│   │   │   │   │   ├── sections/     # Hero, features, about, outro
-│   │   │   │   │   └── views/        # Landing page container
-│   │   │   │   ├── hooks/            # Landing animations (GSAP)
-│   │   │   │   └── styles/           # Landing page styles
-│   │   │   │
-│   │   │   └── auth/                 # 🔐 Authentication (minimal)
-│   │   │       └── styles/           # Auth page styling
+│   ├── features/                     # 🎯 DOMAIN-DRIVEN FEATURE ARCHITECTURE
+│   │   ├── links/                    # 📋 Complete Link Management Domain
+│   │   │   ├── components/           # Domain-specific UI components
+│   │   │   │   ├── modals/           # Link creation, editing, details
+│   │   │   │   ├── sections/         # Information, branding, statistics
+│   │   │   │   ├── views/            # List, grid, empty states
+│   │   │   │   └── cards/            # Link cards and overview
+│   │   │   ├── hooks/                # Domain-specific custom hooks
+│   │   │   ├── store/                # Domain state management (Zustand)
+│   │   │   ├── services/             # Business logic & API services
+│   │   │   ├── types/                # Domain types & interfaces
+│   │   │   ├── styles/               # Domain-specific styling
+│   │   │   ├── tests/                # Domain-specific tests
+│   │   │   └── index.ts              # Feature barrel exports
 │   │   │
+│   │   ├── upload/                   # 📤 File Processing Domain
+│   │   │   ├── components/           # Upload UI components
+│   │   │   ├── services/             # Upload API & processing logic
+│   │   │   ├── store/                # Upload state management
+│   │   │   ├── types/                # Upload pipeline types
+│   │   │   ├── tests/                # Upload functionality tests
+│   │   │   └── index.ts              # Feature barrel exports
+│   │   │
+│   │   ├── dashboard/                # 📊 Analytics & Management Domain
+│   │   │   ├── components/
+│   │   │   │   ├── sections/         # Analytics cards, headers, actions
+│   │   │   │   └── views/            # Dashboard container, empty states
+│   │   │   ├── hooks/                # Dashboard data hooks
+│   │   │   ├── store/                # Dashboard state management
+│   │   │   ├── services/             # Analytics API services
+│   │   │   └── index.ts              # Feature barrel exports
+│   │   │
+│   │   ├── landing/                  # 🚀 Marketing & Onboarding Domain
+│   │   │   ├── components/
+│   │   │   │   ├── sections/         # Hero, features, about, outro
+│   │   │   │   └── views/            # Landing page container
+│   │   │   ├── hooks/                # Landing animations (GSAP)
+│   │   │   ├── styles/               # Landing page styles
+│   │   │   └── index.ts              # Feature barrel exports
+│   │   │
+│   │   ├── settings/                 # ⚙️ User Settings Domain
+│   │   │   ├── components/           # Settings UI components
+│   │   │   ├── store/                # Settings state management
+│   │   │   ├── services/             # Settings API services
+│   │   │   └── index.ts              # Feature barrel exports
+│   │   │
+│   │   └── auth/                     # 🔐 Authentication Domain (minimal)
+│   │       ├── styles/               # Auth page styling
+│   │       └── index.ts              # Feature barrel exports
+│   │
+│   ├── components/                   # Shared UI Components
 │   │   ├── ui/                       # Global UI Components
 │   │   │   ├── shadcn/               # Shadcn/ui components
 │   │   │   ├── animate-ui/           # Custom animated components
@@ -137,18 +150,18 @@ foldly/
 
 ---
 
-## 🎯 **Feature Architecture Deep Dive**
+## 🎯 **Domain-Driven Feature Architecture**
 
-### **1. Links Feature - Complete Multi-Link System**
+### **1. Links Domain - Complete Multi-Link System**
 
-The **Links feature** represents the core innovation of Foldly with **advanced multi-link architecture**:
+The **Links domain** represents the core business capability of Foldly with **advanced multi-link architecture** following **domain-driven design principles**:
 
-#### **Component Organization**
+#### **Domain Organization**
 
 ```typescript
-// Feature-specific component structure
-links/
-├── components/
+// Domain-driven feature structure
+src/features/links/
+├── components/           // Domain-specific UI components
 │   ├── modals/           // Link creation & management modals
 │   │   ├── create-link-modal.tsx
 │   │   ├── link-creation-modal.tsx
@@ -165,22 +178,23 @@ links/
 │       ├── links-container.tsx
 │       ├── populated-links-state.tsx
 │       └── empty-links-state.tsx
-├── hooks/                // Link-specific hooks
+├── hooks/                // Domain-specific hooks
 │   ├── use-dashboard-links.ts
 │   └── use-link-creation.ts
-├── store/                // Feature state management
+├── store/                // Domain state management
 │   └── links-store.ts    // Zustand store with 2025 patterns
-├── services/             // Business logic & API
+├── services/             // Business logic & API services
 │   ├── links-api-service.ts      // Direct API communication
 │   ├── links-service.ts          // Business logic layer
 │   ├── types.ts                  // Service interfaces
 │   └── index.ts                  // Barrel exports
 ├── types/                // Domain-specific types
 │   └── index.ts          // Link domain types
-├── styles/               // Feature-specific styling
+├── styles/               // Domain-specific styling
 │   └── links-page.css    // Link management styles
-└── tests/                // Feature-specific tests
-    └── links.test.tsx    // Component and integration tests
+├── tests/                // Domain-specific tests
+│   └── links.test.tsx    // Component and integration tests
+└── index.ts              // Domain barrel exports
 ```
 
 #### **Multi-Link Type System**
@@ -196,33 +210,40 @@ export const LINK_TYPES = {
 export type LinkType = (typeof LINK_TYPES)[keyof typeof LINK_TYPES];
 ```
 
-### **2. Upload Feature - Advanced File Processing**
+### **2. Upload Domain - Advanced File Processing**
 
-#### **Service Architecture**
+#### **Domain Architecture**
 
 ```typescript
-// Upload processing pipeline
-upload/
+// Upload processing domain
+src/features/upload/
+├── components/           // Upload-specific UI components
+│   ├── forms/            // Upload forms and wizards
+│   ├── progress/         // Upload progress indicators
+│   └── validation/       // File validation components
 ├── services/
 │   ├── upload-api-service.ts     // File upload API
 │   ├── file-validation-service.ts // Security validation
 │   ├── batch-processing-service.ts // Batch management
 │   └── progress-tracking-service.ts // Real-time progress
+├── store/                // Upload state management
+│   └── upload-store.ts   // Zustand store for upload state
 ├── types/
 │   ├── upload-pipeline.ts        // Processing types
 │   ├── validation.ts             // Security types
 │   └── progress.ts               // Progress tracking types
-└── tests/
-    └── upload-processing.test.ts // Upload pipeline tests
+├── tests/
+│   └── upload-processing.test.ts // Upload pipeline tests
+└── index.ts              // Domain barrel exports
 ```
 
-### **3. Dashboard Feature - Analytics & Management**
+### **3. Dashboard Domain - Analytics & Management**
 
-#### **Component Structure**
+#### **Domain Structure**
 
 ```typescript
-// Dashboard organization
-dashboard/
+// Dashboard analytics domain
+src/features/dashboard/
 ├── components/
 │   ├── sections/         // Dashboard sections
 │   │   ├── dashboard-header.tsx
@@ -233,8 +254,10 @@ dashboard/
 │       ├── empty-state.tsx
 │       └── dashboard-layout-wrapper.tsx
 ├── hooks/                // Dashboard-specific hooks
-├── store/                // Dashboard state
-└── services/             // Analytics API services
+├── store/                // Dashboard state management
+├── services/             // Analytics API services
+├── types/                // Dashboard domain types
+└── index.ts              // Domain barrel exports
 ```
 
 ---
@@ -483,48 +506,64 @@ links/tests/
 
 ---
 
-## 🎯 **Architecture Benefits**
+## 🎯 **Domain-Driven Architecture Benefits**
 
-### **Developer Experience**
+### **Domain-Driven Design Advantages**
 
-- **Feature Isolation**: Clear boundaries and minimal conflicts
-- **Type Safety**: Compile-time error prevention
-- **Testing Strategy**: Comprehensive coverage with fast feedback
-- **Documentation**: Up-to-date architecture documentation
+- **Bounded Contexts**: Each feature domain has clear boundaries and responsibilities
+- **Ubiquitous Language**: Consistent terminology between business and technical teams
+- **Domain Isolation**: Independent domain evolution without cross-domain coupling
+- **Business Alignment**: Technical structure mirrors business capabilities
+
+### **Developer Experience Excellence**
+
+- **Domain Boundaries**: Clear separation of concerns with minimal cross-domain dependencies
+- **Type Safety**: End-to-end TypeScript with branded types and domain-specific validation
+- **Testing Strategy**: Domain-focused testing with comprehensive coverage and fast feedback
+- **Documentation**: Domain-specific documentation following business capabilities
 
 ### **Business Benefits**
 
-- **Team Scalability**: Multiple developers working independently
-- **Feature Velocity**: Rapid development and deployment
-- **Quality Assurance**: Built-in quality gates and testing
-- **Performance Predictability**: Consistent load times and reliability
+- **Team Scalability**: Multiple domain teams working independently on business capabilities
+- **Feature Velocity**: Domain-driven development enabling rapid business feature delivery
+- **Quality Assurance**: Domain-specific quality gates and business rule validation
+- **Performance Predictability**: Consistent load times with domain-optimized patterns
 
 ### **Technical Benefits**
 
-- **Maintainability**: Clear code organization and separation
-- **Extensibility**: Easy addition of new features and capabilities
-- **Performance**: Optimized loading and execution patterns
-- **Security**: Multi-layer protection and audit capabilities
+- **Maintainability**: Domain-driven organization with clear business-technical alignment
+- **Extensibility**: Easy addition of new business capabilities as independent domains
+- **Performance**: Domain-optimized loading and execution patterns
+- **Security**: Multi-layer protection with domain-specific security policies
 
 ---
 
-## 🏆 **Architecture Achievement Summary**
+## 🏆 **Domain-Driven Architecture Achievement Summary**
 
-**Foldly's architecture** represents a **production-ready, enterprise-grade foundation** that successfully implements **2025 best practices** for **scalable SaaS development**. The **feature-based organization** enables **rapid development**, **team collaboration**, and **long-term maintainability** while providing **excellent performance** and **security**.
+**Foldly's architecture** represents a **production-ready, enterprise-grade foundation** that successfully implements **2025 domain-driven design best practices** for **scalable SaaS development**. The **domain-focused organization** enables **business-aligned development**, **team autonomy**, and **long-term maintainability** while providing **excellent performance** and **security**.
 
 ### **Key Architectural Accomplishments**
 
-- ✅ **Modern Feature-Based Architecture**: Complete separation of concerns
-- ✅ **Type Safety Excellence**: End-to-end TypeScript with branded types
-- ✅ **Performance Optimization**: Sub-3-second load times globally
-- ✅ **Security Implementation**: Multi-layer protection with audit logging
-- ✅ **Scalability Foundation**: Architecture supports 10,000+ users
-- ✅ **Developer Experience**: Quality tools and clear organization
-- ✅ **Testing Infrastructure**: Comprehensive testing with high coverage
+- ✅ **Domain-Driven Design**: Complete business-technical alignment with bounded contexts
+- ✅ **Separation of Concerns**: Clear domain boundaries with minimal cross-domain coupling
+- ✅ **Type Safety Excellence**: End-to-end TypeScript with domain-specific branded types
+- ✅ **Performance Optimization**: Sub-3-second load times with domain-optimized patterns
+- ✅ **Security Implementation**: Multi-layer protection with domain-specific security policies
+- ✅ **Scalability Foundation**: Domain architecture supports independent scaling to 10,000+ users
+- ✅ **Developer Experience**: Domain-focused tools and clear business-technical organization
+- ✅ **Testing Infrastructure**: Domain-specific testing with comprehensive business rule coverage
+
+### **Domain-Driven Design Principles Achieved**
+
+- ✅ **Bounded Contexts**: Each domain operates independently with clear boundaries
+- ✅ **Ubiquitous Language**: Consistent business terminology throughout technical implementation
+- ✅ **Domain Services**: Business logic encapsulated in domain-specific services
+- ✅ **Anti-Corruption Layers**: Clean interfaces between domains preventing coupling
+- ✅ **Strategic Design**: Architecture aligned with business capabilities and growth strategy
 
 ---
 
-**Result**: 🚀 **Foldly is architected for enterprise success with a foundation that supports rapid growth, team scalability, and long-term technical excellence.**
+**Result**: 🚀 **Foldly is architected for enterprise success with domain-driven design supporting business agility, team autonomy, and long-term technical excellence.**
 
 ---
 

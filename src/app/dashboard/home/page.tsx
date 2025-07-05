@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { HomeContainer } from '@/components/features/dashboard';
+import { HomeContainer } from '@/features/dashboard';
 
 export const metadata: Metadata = {
   title: 'Dashboard Home | Foldly',

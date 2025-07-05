@@ -49,6 +49,8 @@ useLinksModalStore; // Modal management
 useLinkCardStore(linkId); // For individual link cards
 useLinksListStore(); // For list/container components
 useLinksModalsStore(); // For modal management
+useLinksSettingsStore(); // For settings modal real-time sync
+useLinksBrandingStore(); // For branding functionality
 ```
 
 **Components migrated:**
@@ -57,6 +59,9 @@ useLinksModalsStore(); // For modal management
 - `PopulatedLinksState` → Zero prop drilling
 - `LinksContainer` → Simplified orchestration
 - `LinksModalManager` → Centralized modal state
+- `SettingsModal` → Real-time sync with store-based state
+- `GeneralSettingsModalSection` → Direct store access (eliminated prop drilling)
+- `LinkBrandingSection` → Real-time description updates from settings
 
 ## 🚀 Benefits Realized
 
@@ -90,6 +95,67 @@ useLinksModalsStore(); // For modal management
 5. **Legacy Cleanup**: Removed old hooks and prop interfaces
 
 **Result**: Modern, performant, maintainable state management architecture.
+
+## 🔄 **Real-Time Sync Optimization (January 2025)**
+
+**Additional Enhancement**: Fixed store connection gaps for seamless real-time updates across modal components.
+
+### **Settings Modal Real-Time Sync**
+
+**Problem**: Settings modal components had mixed patterns - some used direct store access while others relied on prop drilling, causing timing gaps in real-time updates.
+
+**Solution**: Implemented consistent store access patterns with dedicated settings composite hook:
+
+```typescript
+// New: useLinksSettingsStore for consistent state management
+export const useLinksSettingsStore = () => {
+  const modalData = useLinksModalStore(
+    useCallback(state => state.modalData, [])
+  );
+  const currentSettings = useMemo(
+    () => extractSettingsFromLink(linkData),
+    [linkData]
+  );
+
+  const updateSettings = useCallback(
+    updates => {
+      updateModalData({ linkData: { ...linkData, ...updates } });
+    },
+    [linkData, updateModalData]
+  );
+
+  return { settings, updateSettings, saveSettings, isLoading, error };
+};
+```
+
+### **Store Connection Gap Fixes**
+
+1. **GeneralSettingsModalSection**: Eliminated prop drilling, now uses direct store access
+2. **SettingsModal**: Unified store access patterns for consistent state management
+3. **LinkBrandingSection**: Added real-time sync debugging and description updates
+4. **Stable Selectors**: Implemented [useSyncExternalStore patterns](https://www.epicreact.dev/use-sync-external-store-demystified-for-practical-react-development-w5ac0) for consistent reads
+
+### **Real-Time Flow Optimization**
+
+**Before (Timing Gaps)**:
+
+```
+GeneralSettings → callback → SettingsModal → local state → LinkBranding (stale data)
+```
+
+**After (Real-Time Sync)**:
+
+```
+GeneralSettings → store → SettingsModal → store → LinkBranding (instant updates)
+```
+
+**Benefits**:
+
+- ✅ Instant cross-tab updates (General Settings → Branding preview)
+- ✅ Eliminated modal close/reopen requirement
+- ✅ Consistent store connection patterns
+- ✅ Following [Zustand createStore best practices](https://zustand.docs.pmnd.rs/apis/create-store)
+- ✅ Consistent API naming: `useLinksModalsStore()` returns `isLoading` (not `modalLoading`)
 
 ---
 
