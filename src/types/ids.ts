@@ -11,6 +11,7 @@ export type UserId = string & { readonly __brand: 'UserId' };
 export type LinkId = string & { readonly __brand: 'LinkId' };
 export type FileId = string & { readonly __brand: 'FileId' };
 export type FolderId = string & { readonly __brand: 'FolderId' };
+export type WorkspaceId = string & { readonly __brand: 'WorkspaceId' };
 export type BatchId = string & { readonly __brand: 'BatchId' };
 export type SessionId = string & { readonly __brand: 'SessionId' };
 

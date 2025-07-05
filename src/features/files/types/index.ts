@@ -2,7 +2,16 @@
 // Business domain types specific to file functionality
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { FileId } from '@/types';
+import type { FileId, FolderId, WorkspaceId, UserId, BatchId } from '@/types';
+
+// =============================================================================
+// LOCAL TYPE DEFINITIONS
+// =============================================================================
+
+/**
+ * View mode options for displaying files
+ */
+export type ViewMode = 'grid' | 'list' | 'card';
 
 // =============================================================================
 // FILE PROCESSING CONSTANTS
