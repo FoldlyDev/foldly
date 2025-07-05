@@ -14,7 +14,9 @@ import {
   linksModalSelectors,
 } from '../store';
 import { useLinkCardActions } from './use-link-card-actions';
-import type { LinkData, LinkId } from '../store';
+import type { LinkData } from '../types';
+import { LINK_TYPE } from '../types';
+import type { LinkId } from '@/types';
 
 /**
  * Combined hook for link card components
@@ -47,7 +49,7 @@ export const useLinkCardStore = (linkId: LinkId) => {
   // Get actions using the new hook
   const actions = useLinkCardActions({
     link: link!,
-    isBaseLink: link?.linkType === 'base',
+    isBaseLink: link?.linkType === LINK_TYPE.BASE,
   });
 
   // Memoized computed values with stable dependencies
@@ -55,7 +57,7 @@ export const useLinkCardStore = (linkId: LinkId) => {
     if (!link) return null;
 
     return {
-      isBaseLink: link.linkType === 'base',
+      isBaseLink: link.linkType === LINK_TYPE.BASE,
       formattedDate: new Intl.DateTimeFormat('en-US', {
         month: 'short',
         day: 'numeric',
@@ -224,8 +226,10 @@ export const useLinksListStore = () => {
 
     // Apply type filter
     if (filters.type !== 'all') {
-      const isBase = filters.type === 'base';
-      filtered = filtered.filter(link => (link.linkType === 'base') === isBase);
+      const isBase = filters.type === LINK_TYPE.BASE;
+      filtered = filtered.filter(
+        link => (link.linkType === LINK_TYPE.BASE) === isBase
+      );
     }
 
     // Apply sorting with proper typing
@@ -266,8 +270,10 @@ export const useLinksListStore = () => {
 
     // Pin base links to the top (after filtering and sorting)
     // This ensures base links appear first if they match search/filter criteria
-    const baseLinks = filtered.filter(link => link.linkType === 'base');
-    const otherLinks = filtered.filter(link => link.linkType !== 'base');
+    const baseLinks = filtered.filter(link => link.linkType === LINK_TYPE.BASE);
+    const otherLinks = filtered.filter(
+      link => link.linkType !== LINK_TYPE.BASE
+    );
 
     // Return base links first, followed by other links
     return [...baseLinks, ...otherLinks];
@@ -430,8 +436,23 @@ export const useLinksSettingsStore = () => {
   );
   const error = useLinksModalStore(useCallback(state => state.error, []));
 
+  // Define the settings interface for type safety
+  interface SettingsData {
+    isPublic: boolean;
+    requireEmail: boolean;
+    requirePassword: boolean;
+    password: string;
+    expiresAt: string | undefined;
+    maxFiles: number | undefined;
+    maxFileSize: number;
+    allowedFileTypes: readonly string[];
+    autoCreateFolders: boolean;
+    allowMultiple: boolean;
+    customMessage: string;
+  }
+
   // Extract current settings from modal data
-  const currentSettings = useMemo(() => {
+  const currentSettings = useMemo((): SettingsData | null => {
     if (!modalData.linkData) return null;
 
     const link = modalData.linkData;
@@ -467,25 +488,48 @@ export const useLinksSettingsStore = () => {
 
   // Update settings in modal data for real-time sync
   const updateSettings = useCallback(
-    (updates: Partial<typeof currentSettings>) => {
-      if (!modalData.linkData) {
-        console.warn('⚠️ SETTINGS STORE: No linkData available for update');
+    (updates: Partial<SettingsData>) => {
+      if (!modalData.linkData || !updates) {
+        console.warn(
+          '⚠️ SETTINGS STORE: No linkData or updates available for update'
+        );
         return;
       }
 
-      const updatedLinkData = {
+      // Build the updated LinkData object carefully
+      const updatedLinkData: typeof modalData.linkData = {
         ...modalData.linkData,
-        ...updates,
-        // Handle file size conversion
-        maxFileSize: updates.maxFileSize
-          ? updates.maxFileSize * 1024 * 1024
-          : modalData.linkData.maxFileSize,
+        // Only update fields that exist in LinkData interface
+        ...(updates.isPublic !== undefined && { isPublic: updates.isPublic }),
+        ...(updates.requireEmail !== undefined && {
+          requireEmail: updates.requireEmail,
+        }),
+        ...(updates.requirePassword !== undefined && {
+          requirePassword: updates.requirePassword,
+        }),
+        ...(updates.expiresAt !== undefined && {
+          expiresAt: updates.expiresAt,
+        }),
+        ...(updates.maxFiles !== undefined && { maxFiles: updates.maxFiles }),
+        ...(updates.autoCreateFolders !== undefined && {
+          autoCreateFolders: updates.autoCreateFolders,
+        }),
+        // Handle file size conversion for maxFileSize
+        ...(updates.maxFileSize !== undefined && {
+          maxFileSize: updates.maxFileSize * 1024 * 1024, // Convert MB to bytes
+        }),
+        ...(updates.allowedFileTypes !== undefined && {
+          allowedFileTypes: updates.allowedFileTypes,
+        }),
+        // Handle settings object separately
         settings: {
           ...modalData.linkData.settings,
-          allowMultiple:
-            updates.allowMultiple ?? modalData.linkData.settings?.allowMultiple,
-          customMessage:
-            updates.customMessage ?? modalData.linkData.settings?.customMessage,
+          ...(updates.allowMultiple !== undefined && {
+            allowMultiple: updates.allowMultiple,
+          }),
+          ...(updates.customMessage !== undefined && {
+            customMessage: updates.customMessage,
+          }),
         },
       };
 
@@ -515,8 +559,8 @@ export const useLinksSettingsStore = () => {
       autoCreateFolders: link.autoCreateFolders,
       settings: {
         ...link.settings,
-        allowMultiple: link.settings?.allowMultiple || false,
-        customMessage: link.settings?.customMessage || undefined,
+        allowMultiple: link.settings?.allowMultiple ?? false,
+        customMessage: link.settings?.customMessage ?? '',
       },
     };
 

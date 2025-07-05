@@ -12,19 +12,14 @@ import {
   AvatarFallback,
 } from '@/components/ui/shadcn/avatar';
 
-// Use existing types from @/types
+// Use centralized types from the types folder
 import type { HexColor } from '@/types';
+import type {
+  ValidationError,
+  LinkBrandingFormData,
+  FieldValidationErrors,
+} from '../../types';
 import { useLinksBrandingStore } from '../../hooks/use-links-composite';
-
-// Import ValidationError from the correct location
-export type ValidationError = string;
-
-export interface LinkBrandingFormData {
-  readonly brandingEnabled: boolean;
-  readonly brandColor: HexColor;
-  readonly accentColor: HexColor;
-  readonly logoUrl: string;
-}
 
 export interface LinkBrandingSectionProps {
   readonly linkType: 'base' | 'topic';

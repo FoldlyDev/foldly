@@ -10,7 +10,7 @@ import { AnalyticsCards } from '../sections/analytics-cards';
 import { QuickActions } from '../sections/quick-actions';
 import { EmptyState } from './empty-state';
 import { ContentLoader } from '@/components/ui';
-import type { DashboardOverview } from '@/types';
+import type { DashboardOverview } from '@/features/analytics/types';
 
 interface HomeContainerProps {
   readonly data?: DashboardOverview & {

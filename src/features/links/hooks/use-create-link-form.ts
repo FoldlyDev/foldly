@@ -11,62 +11,18 @@ import {
   type Reducer,
 } from '../store/utils/convert-reducers-to-actions';
 import type { LinkType } from '../types';
-import type { HexColor } from '@/types/ids';
+import type { HexColor } from '@/types';
 
 // =============================================================================
 // FORM STATE TYPES
 // =============================================================================
 
-export type CreateLinkStep = 'information' | 'branding' | 'success';
-
-export interface CreateLinkFormData {
-  // Basic information
-  title: string;
-  topic: string;
-  description: string;
-  instructions: string;
-
-  // Security settings
-  requireEmail: boolean;
-  requirePassword: boolean;
-  password: string;
-  isPublic: boolean;
-
-  // Upload settings
-  maxFiles: number;
-  maxFileSize: number; // in MB
-  allowedFileTypes: string[];
-  expiresAt: string; // ISO date string
-  autoCreateFolders: boolean;
-  allowFolderCreation: boolean;
-
-  // Branding
-  brandingEnabled: boolean;
-  brandColor: HexColor | '';
-  accentColor: HexColor | '';
-  logoUrl: string;
-  customCss: string;
-  welcomeMessage: string;
-}
-
-interface CreateLinkFormState {
-  // Form data
-  linkType: LinkType;
-  formData: CreateLinkFormData;
-
-  // UI state
-  currentStep: CreateLinkStep;
-  isValid: boolean;
-  isSubmitting: boolean;
-
-  // Success state
-  createdLinkId: string | null;
-  generatedUrl: string | null;
-
-  // Error handling
-  fieldErrors: Partial<Record<keyof CreateLinkFormData, string>>;
-  generalError: string | null;
-} // =============================================================================
+// Use centralized types from the types folder
+import type {
+  CreateLinkStep,
+  CreateLinkFormData,
+  CreateLinkFormState,
+} from '../types'; // =============================================================================
 // INITIAL STATE
 // =============================================================================
 

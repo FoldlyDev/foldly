@@ -1,6 +1,6 @@
 'use client';
 
-import {
+import React, {
   useState,
   useTransition,
   useMemo,
@@ -188,7 +188,7 @@ export function useRealTimeSearch<T = any>(
 
   // Server search effect when deferredQuery changes
   useEffect(() => {
-    if (enableServerSearch && serverSearch) {
+    if (enableServerSearch && typeof serverSearch === 'function') {
       // This effect will be used by consumers to trigger server search
       // when deferredQuery changes
     }

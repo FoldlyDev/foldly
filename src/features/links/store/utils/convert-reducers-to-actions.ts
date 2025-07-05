@@ -34,7 +34,7 @@ export const convertReducersToActions = <
       | TState
       | Partial<TState>
       | ((state: TState) => TState | Partial<TState>),
-    replace?: boolean,
+    replace?: boolean | undefined,
     action?: any
   ) => void,
   reducers: TReducers

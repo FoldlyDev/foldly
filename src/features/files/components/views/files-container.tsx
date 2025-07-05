@@ -17,7 +17,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { ContentLoader } from '@/components/ui';
-import type { FileUpload, DashboardOverview } from '@/types';
+import type { DashboardOverview } from '@/features/analytics/types';
+import type { FileUpload } from '../../types';
 
 // Simple file interface for UI display (based on FileUpload schema)
 interface UIFileDisplay {

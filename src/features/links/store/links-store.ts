@@ -10,7 +10,7 @@ import type {
   UpdateUploadLinkInput,
   LinkType,
 } from '../types';
-import type { LinkId, Result } from '../../../../types/index';
+import type { LinkId, Result } from '@/types';
 import { FILE_UPLOAD_LIMITS } from '../constants/validation';
 
 // ===== 2025 ZUSTAND BEST PRACTICES =====

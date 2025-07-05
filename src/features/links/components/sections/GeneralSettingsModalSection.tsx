@@ -9,19 +9,8 @@ import type { LinkData } from '../../types';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../constants';
 import { useLinksSettingsStore } from '../../hooks/use-links-composite';
 
-export interface GeneralSettingsData {
-  isPublic: boolean;
-  requireEmail: boolean;
-  requirePassword: boolean;
-  password: string;
-  expiresAt: string | undefined;
-  maxFiles: number | undefined;
-  maxFileSize: number;
-  allowedFileTypes: readonly string[];
-  autoCreateFolders: boolean;
-  allowMultiple: boolean;
-  customMessage: string;
-}
+// Use centralized types from the types folder
+import type { GeneralSettingsData } from '../../types';
 
 interface GeneralSettingsModalSectionProps {
   link: LinkData;

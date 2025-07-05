@@ -31,6 +31,5 @@ export type AbsoluteUrl = (`https://${string}` | `http://${string}`) & {
 export type RelativeUrl = `/${string}` & { readonly __brand: 'RelativeUrl' };
 
 // Template literal types for generic routes
-export type ApiRoute = `/api/${string}`;
 export type UserRoute = `/user/${string}`;
 export type AdminRoute = `/admin/${string}`;

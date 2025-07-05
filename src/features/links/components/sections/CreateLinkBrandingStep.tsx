@@ -15,10 +15,8 @@ import {
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
 import { useLinksDataStore } from '../../store/links-data-store';
-import {
-  LinkBrandingSection,
-  type LinkBrandingFormData,
-} from '../sections/LinkBrandingSection';
+import { LinkBrandingSection } from '../sections/LinkBrandingSection';
+import type { LinkBrandingFormData } from '../../types';
 import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import type { CreateUploadLinkInput } from '../../types/database';
@@ -112,10 +110,10 @@ export const CreateLinkBrandingStep = () => {
         ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
         brandingEnabled: brandingFormData.brandingEnabled,
         ...(brandingFormData.brandColor && {
-          brandColor: brandingFormData.brandColor,
+          brandColor: brandingFormData.brandColor as HexColor,
         }),
         ...(brandingFormData.accentColor && {
-          accentColor: brandingFormData.accentColor,
+          accentColor: brandingFormData.accentColor as HexColor,
         }),
         ...(brandingFormData.logoUrl && { logoUrl: brandingFormData.logoUrl }),
         ...(formData.customCss && { customCss: formData.customCss }),
@@ -178,10 +176,10 @@ export const CreateLinkBrandingStep = () => {
         // Include all branding data from modal store
         brandingEnabled: brandingFormData.brandingEnabled,
         ...(brandingFormData.brandColor && {
-          brandColor: brandingFormData.brandColor,
+          brandColor: brandingFormData.brandColor as HexColor,
         }),
         ...(brandingFormData.accentColor && {
-          accentColor: brandingFormData.accentColor,
+          accentColor: brandingFormData.accentColor as HexColor,
         }),
         ...(brandingFormData.logoUrl && { logoUrl: brandingFormData.logoUrl }),
       };

@@ -37,4 +37,15 @@ export type { HexColor } from './colors';
 
 // Form validation rules and patterns
 export * from './validation';
-export type { ValidationRule, FieldValidation } from './validation';
+
+// Settings schema, defaults, and validation
+export * from './settings-schema';
+export type {
+  SettingsField,
+  SettingsCategory,
+  FieldType,
+} from './settings-schema';
+
+export * from './settings-defaults';
+
+export * from './settings-validation';

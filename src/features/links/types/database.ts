@@ -1,16 +1,11 @@
 // Links Feature Database Types - UploadLink and LinkSummary entities
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { BaseEntity } from '../../../../types/database-infrastructure';
+import type { BaseEntity } from '@/types/database-infrastructure';
 
-import type {
-  HexColor,
-  EmailAddress,
-  LinkId,
-  FolderId,
-} from '../../../../types/ids';
+import type { HexColor, EmailAddress, LinkId, FolderId } from '@/types';
 
-import type { DeepReadonly } from '../../../../types/utils';
+import type { DeepReadonly } from '@/types/utils';
 
 import type { LinkType } from './index';
 

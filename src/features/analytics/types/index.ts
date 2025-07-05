@@ -2,11 +2,7 @@
 // Feature-specific types for analytics and reporting functionality
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { HexColor } from '../../../../types/ids';
-
-import type { DeepReadonly } from '../../../../types/utils';
-
-import type { DashboardOverview } from '../../../../types/database';
+import type { HexColor, DeepReadonly, ValidationError } from '@/types';
 
 // =============================================================================
 // ANALYTICS CONSTANTS

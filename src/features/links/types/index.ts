@@ -70,7 +70,7 @@ export const isValidLinkErrorCode = (code: unknown): code is LinkErrorCode => {
 // =============================================================================
 
 import type { UploadLink } from './database';
-import type { HexColor } from '../../../../types/ids';
+import type { HexColor } from '@/types';
 
 /**
  * UI-optimized link data structure - matches LinkCard component expectations
@@ -197,4 +197,5 @@ export const adaptUploadLinkForUI = (uploadLink: UploadLink): LinkData => {
 // =============================================================================
 
 export * from './database';
+export * from './forms';
 export type * from './index';

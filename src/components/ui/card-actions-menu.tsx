@@ -23,15 +23,7 @@ import {
   Eye,
   FolderOpen,
 } from 'lucide-react';
-
-interface ActionItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  onClick: () => void;
-  variant?: 'default' | 'destructive';
-  disabled?: boolean;
-}
+import type { ActionItem } from '@/components/ui/types';
 
 interface CardActionsMenuProps {
   actions: ActionItem[];

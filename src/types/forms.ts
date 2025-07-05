@@ -3,6 +3,23 @@
 // Following 2025 TypeScript best practices with strict type safety
 
 // =============================================================================
+// VALIDATION TYPES
+// =============================================================================
+
+/**
+ * Standard validation error type for forms across the application
+ * Used consistently across all features for validation errors
+ */
+export type ValidationError = string;
+
+/**
+ * Field validation errors map for form fields
+ */
+export type FieldValidationErrors<T extends Record<string, any>> = Partial<
+  Record<keyof T, ValidationError>
+>;
+
+// =============================================================================
 // FORM STATE PATTERNS
 // =============================================================================
 

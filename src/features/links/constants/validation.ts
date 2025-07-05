@@ -4,19 +4,8 @@
  * Following 2025 validation best practices
  */
 
-export interface ValidationRule {
-  readonly required?: boolean;
-  readonly minLength?: number;
-  readonly maxLength?: number;
-  readonly pattern?: RegExp;
-  readonly min?: number;
-  readonly max?: number;
-  readonly message?: string;
-}
-
-export interface FieldValidation {
-  readonly [fieldName: string]: ValidationRule;
-}
+// Use centralized validation types from the types folder
+import type { ValidationRule, FieldValidation } from '../types';
 
 /**
  * File upload validation limits - centralized constants

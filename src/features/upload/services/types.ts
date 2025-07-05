@@ -1,13 +1,8 @@
 // Upload Service Types
 // Interfaces for upload feature services
 
-import type {
-  FileId,
-  BatchId,
-  ValidationError,
-  Result,
-  FileProcessingStatus,
-} from '@/types';
+import type { FileId, BatchId, ValidationError, Result } from '@/types';
+import type { FileProcessingStatus } from '../types';
 
 /**
  * Upload progress callback function

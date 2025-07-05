@@ -14,7 +14,5 @@ export { LinkBrandingSection } from './LinkBrandingSection';
 export { LinkInformationSection } from './LinkInformationSection';
 export { GeneralSettingsModalSection } from './GeneralSettingsModalSection';
 
-// Export types from sections
-export type { LinkBrandingFormData } from './LinkBrandingSection';
-export type { LinkInformationFormData } from './LinkInformationSection';
-export type { GeneralSettingsData } from './GeneralSettingsModalSection';
+// Types are exported from the main types folder: @/features/links/types
+// Import them directly from there: import { LinkBrandingFormData } from '@/features/links/types';

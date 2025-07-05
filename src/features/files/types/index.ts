@@ -2,7 +2,7 @@
 // Business domain types specific to file functionality
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { FileId } from '../../../../types/ids';
+import type { FileId } from '@/types';
 
 // =============================================================================
 // FILE PROCESSING CONSTANTS

@@ -48,24 +48,12 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils/utils';
 
-// ValidationError is a simple string type for form validation messages
-type ValidationError = string;
-
-// Simplified interface that extends what's needed from existing types
-export interface LinkInformationFormData {
-  readonly name: string; // Collection name for base link OR topic for topic link
-  readonly description: string; // Description/Welcome message
-  readonly requireEmail: boolean;
-  readonly maxFiles: number;
-  readonly maxFileSize: number; // Maximum file size in MB
-  readonly allowedFileTypes: string[]; // Array of allowed file types for multi-select
-  readonly autoCreateFolders: boolean; // Auto-organize uploads by date
-  readonly isPublic: boolean; // Public/Private visibility
-  readonly requirePassword: boolean; // Password protection toggle
-  readonly password?: string; // Password if required
-  readonly isActive: boolean; // Link active/inactive status
-  readonly expiresAt?: Date; // Optional expiration date
-}
+// Use centralized types from the types folder
+import type {
+  ValidationError,
+  LinkInformationFormData,
+  FieldValidationErrors,
+} from '../../types';
 
 interface LinkInformationSectionProps {
   readonly linkType: 'base' | 'topic';

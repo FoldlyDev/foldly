@@ -42,7 +42,8 @@ export class LinksService implements LinksServiceInterface {
       }
     } else {
       // Generate unique slug from title
-      data.slug = await this.generateUniqueSlug(data.title);
+      const uniqueSlug = await this.generateUniqueSlug(data.title);
+      data = { ...data, slug: uniqueSlug };
     } // Call API service
     return this.apiService.createLink(data);
   }
@@ -80,8 +81,8 @@ export class LinksService implements LinksServiceInterface {
   async archiveLink(id: LinkId): Promise<Result<boolean, ValidationError>> {
     return this.apiService
       .updateLink(id, {
-        isActive: false,
-        archivedAt: new Date().toISOString(),
+        id, // Include the id in the update data
+        expiresAt: new Date(), // Archive by setting expiry to now
       })
       .then(result =>
         result.success

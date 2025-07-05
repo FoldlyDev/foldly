@@ -2,7 +2,7 @@
 // Feature-specific types for notification and communication functionality
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { EmailAddress } from '../../../../types/ids';
+import type { EmailAddress } from '@/types';
 
 // =============================================================================
 // SYSTEM NOTIFICATION TYPES

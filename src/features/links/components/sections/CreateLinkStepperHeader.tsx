@@ -7,8 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
-import type { CreateLinkStep } from '../../hooks/use-create-link-form';
-import type { LinkType } from '../../types';
+import type { CreateLinkStep, LinkType } from '../../types';
 
 interface CreateLinkStepperHeaderProps {
   currentStep: CreateLinkStep;

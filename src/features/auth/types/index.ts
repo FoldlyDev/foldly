@@ -2,10 +2,7 @@
 // User sessions, permissions, and authentication state management
 // Following 2025 TypeScript best practices with strict type safety
 
-import type {
-  Timestamps,
-  WithId,
-} from '../../../../types/database-infrastructure';
+import type { Timestamps, WithId } from '@/types';
 
 // =============================================================================
 // BRANDED TYPES FOR ENHANCED TYPE SAFETY (2025 BEST PRACTICE)

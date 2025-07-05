@@ -16,7 +16,7 @@ import {
   Link2,
 } from 'lucide-react';
 import { GradientButton, ContentLoader } from '@/components/ui';
-import type { DashboardOverview } from '@/types';
+import type { DashboardOverview } from '../../types';
 
 // Simple interface that works without complex type extensions
 interface AnalyticsContainerProps {

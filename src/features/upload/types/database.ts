@@ -1,13 +1,14 @@
 // Upload Feature Database Types - UploadBatch entity
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { BaseEntity } from '../../../../types/database-infrastructure';
-
-import type { EmailAddress, LinkId, FolderId } from '../../../../types/ids';
-
-import type { DeepReadonly } from '../../../../types/utils';
-
-import type { BatchStatus } from '../../../files/types';
+import type {
+  BaseEntity,
+  EmailAddress,
+  LinkId,
+  FolderId,
+  DeepReadonly,
+} from '@/types';
+import type { BatchStatus } from '@/features/files/types';
 
 // =============================================================================
 // UPLOAD BATCHES - BATCH PROCESSING SYSTEM

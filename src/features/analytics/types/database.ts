@@ -1,11 +1,13 @@
 // Analytics Feature Database Types - Access logs and analytics data
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { BaseEntity } from '../../../../types/database-infrastructure';
-
-import type { EmailAddress, LinkId, FileId } from '../../../../types/ids';
-
-import type { DeepReadonly } from '../../../../types/utils';
+import type {
+  BaseEntity,
+  EmailAddress,
+  LinkId,
+  FileId,
+  DeepReadonly,
+} from '@/types';
 
 import type { AccessType } from './index';
 

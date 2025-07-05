@@ -1,18 +1,16 @@
 // Files Feature Database Types - Folder and FileUpload entities
 // Following 2025 TypeScript best practices with strict type safety
 
-import type { BaseEntity } from '../../../../types/database-infrastructure';
-
 import type {
+  BaseEntity,
   HexColor,
   EmailAddress,
   LinkId,
   FileId,
   FolderId,
   BatchId,
-} from '../../../../types/ids';
-
-import type { DeepReadonly } from '../../../../types/utils';
+  DeepReadonly,
+} from '@/types';
 
 import type {
   DataClassification,
