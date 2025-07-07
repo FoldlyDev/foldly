@@ -1,21 +1,61 @@
-# Foldly - Frictionless File Collection SaaS
+# Foldly - Advanced File Collection SaaS with Smart Organization
 
-> **Status**: 📋 Project Setup & Documentation Complete  
-> **Next**: 🚀 Development Environment Setup
+> **Status**: 🚀 Backend Infrastructure Complete (85%) - Authentication System Ready  
+> **Next**: 📁 Core Features Development (Multi-Type Link System & Advanced Organization)
 
 ## 🎯 Project Overview
 
-**Foldly** is a modern **full-stack Next.js application** for file collection SaaS that eliminates friction in requesting and organizing files from clients, collaborators, and prospects. Built with 2025's best practices for cost optimization and scalability.
+**Foldly** is a modern **full-stack Next.js application** for advanced file collection SaaS that provides multiple link types, smart organization, and flexible security controls for professional file management workflows.
 
 > **Architecture**: Full-stack Next.js application - frontend and backend integrated in a single codebase
 
-### Core Features
+### Core Link Types & Features
 
-- **Custom Upload Links**: Branded links like `foldly.com/yourname`
-- **Zero-Friction UX**: No login required for uploaders
-- **Auto-Organization**: Smart file categorization with metadata
-- **Professional Branding**: White-label solutions
-- **Real-time Analytics**: Upload tracking and progress monitoring
+#### **Base Upload Links**
+
+- **Format**: `foldly.com/username`
+- **Purpose**: General "data dump" area for any file uploads
+- **Use Case**: Primary collection point for various file types
+
+#### **Custom Topic Links**
+
+- **Format**: `foldly.com/username/topic_or_folder`
+- **Examples**: `foldly.com/mike/logo_competition`, `foldly.com/sarah/wedding-photos`
+- **Purpose**: Project-specific links with automatic folder organization
+- **Creation**: Right-click any folder to generate custom upload link
+
+### Advanced Upload & Organization System
+
+#### **Uploader Requirements (Minimal Friction)**
+
+- **Mandatory**: Name field only
+- **Optional**: Email (if required by recipient), batch/folder naming
+- **Organization**: Uploaders can create folders before submitting
+- **Batch Naming**: Auto-prompted to name file groups on submission
+
+#### **Smart File Organization**
+
+- **Display Format**: `[Uploader Name] (Batch Name) [Date]`
+- **Default**: Uses uploader name if no batch name provided
+- **Recipient Control**: Full reorganization capabilities post-upload
+- **Organization Workflow**: Recipients can only organize/reorganize files after dragging them into their personal workspace/repo area within the platform
+- **Automation**: Custom links auto-sort to designated folders
+
+### Security & Permission Controls (Recipient-Managed)
+
+#### **Access Controls**
+
+- **Email Requirement**: Toggle to require uploader email
+- **Password Protection**: Optional password-lock for upload links
+- **Visibility Settings**: Public vs private sublink configurations
+  - **Public**: `foldly.com/mikes_wedding_photos` (viewable by all)
+  - **Private**: `foldly.com/contractor_bids` (recipient-only access)
+
+#### **Security Features**
+
+- **File Type Warnings**: Alerts for compressed files (malware protection)
+- **No Forced Login**: Maintains zero-friction uploads for senders
+- **Future Branding**: Custom banner/logo upload page customization
 
 ## 🏗️ Modern Tech Stack (2025)
 
@@ -28,20 +68,20 @@
 
 ### Backend & Infrastructure (Integrated with Next.js)
 
-- **PostgreSQL** via **Neon** (serverless database)
-- **Drizzle ORM** (type-safe queries)
-- **Clerk** (authentication) + **tRPC** (type-safe APIs)
-- **AWS S3 + CloudFront** (file storage & CDN)
+- **Supabase** (PostgreSQL database + file storage + real-time)
+- **Clerk + Supabase** (JWT-based authentication with RLS)
+- **Next.js App Router** (full-stack framework with tRPC)
+- **Supabase Storage** (file storage with global CDN)
 - **Vercel** (hosting) + **Stripe** (payments)
 
 ## 📚 Documentation
 
 This project follows documentation-first development with comprehensive planning:
 
-- **[📋 PLANNING.md](docs/PLANNING.md)** - Complete development strategy, tech stack decisions, and cost projections
-- **[📝 TASK.md](docs/TASK.md)** - Task management, sprint planning, and development roadmap
-- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, database schemas, and system design
-- **[📖 PROJECT_OVERVIEW.md](docs/project_overview.md)** - Business requirements and feature specifications
+- **[📋 PLANNING.md](docs/PLANNING.md)** - Complete development strategy, multi-link architecture, and security requirements
+- **[📝 TASK.md](docs/TASK.md)** - Task management, sprint planning, and advanced feature development roadmap
+- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, advanced database schemas, and multi-link system design
+- **[📖 PROJECT_OVERVIEW.md](docs/project_overview.md)** - Business requirements, advanced features, and UX specifications
 
 ## 🚀 Getting Started
 
@@ -49,63 +89,89 @@ This project follows documentation-first development with comprehensive planning
 
 - **Node.js 18+** and **pnpm** (package manager)
 - **Git** for version control
-- **PostgreSQL** database (Neon account recommended)
+- **Supabase** account (database + storage + real-time)
 
-### Next Steps (Development Setup)
+### Development Environment ✅ Complete
 
-1. **Install Dependencies**: Update package.json with modern 2025 dependencies
-2. **Configure Environment**: Set up environment variables for Clerk, Neon, etc.
-3. **Initialize Database**: Set up Drizzle ORM with PostgreSQL schema
-4. **Setup Components**: Initialize Shadcn/ui component system
-5. **Configure Testing**: Set up Vitest + Playwright testing infrastructure
+**Completed Setup**:
 
-> **Current Task**: See [TASK.md](docs/TASK.md) for the active development roadmap
+- ✅ **Dependencies**: Modern 2025 stack (Next.js 15, React 19, TypeScript 5)
+- ✅ **Code Quality**: Prettier, Husky pre-commit hooks, lint-staged
+- ✅ **UI System**: Shadcn/ui components with manual setup (preserving existing styles)
+- ✅ **Database**: Supabase PostgreSQL with Row Level Security and real-time capabilities
+- ✅ **Testing**: Vitest + React Testing Library infrastructure
+- ✅ **Authentication**: Clerk integration with 2025 middleware, protected routes, webhooks
+
+### Next Development Phase
+
+1. **Advanced Database Schema**: Multi-link types, permission controls, batch organization (Task 10)
+2. **Multi-Link Upload System**: Base + custom links with automatic organization (Task 12)
+3. **Permission & Security Controls**: Email requirements, password protection, visibility settings (Task 13)
+4. **Advanced File Organization**: Pre-upload folders, post-upload reorganization, batch management (Task 14)
+
+> **Current Focus**: See [TASK.md](docs/TASK.md) for Task 10 (Advanced Multi-Link Database Setup)
+
+## 🔒 Advanced Security & UX Features
+
+### **Zero-Friction Upload Experience**
+
+- **No Mandatory Login**: Uploaders need only provide name
+- **Minimal Form Fields**: Optional email/batch naming to maintain low friction
+- **Security Warnings**: Smart alerts for potentially risky file types
+- **Progress Tracking**: Real-time upload progress and batch completion
+
+### **Professional Organization Tools**
+
+- **Automatic Sorting**: Custom links route to designated folders
+- **Batch Management**: Groups files with uploader and date information
+- **Drag-and-Drop**: Full reorganization capabilities for recipients (only after dragging files into personal workspace)
+- **Workspace Organization**: Recipients must move files to their personal workspace/repo area before organizing
+- **Custom Link Generation**: Right-click folder creation for targeted uploads
+
+### **Flexible Permission System**
+
+- **Recipient-Controlled**: All security features are optional toggles
+- **Granular Visibility**: Public/private settings per link or folder
+- **Password Protection**: Optional security layer for sensitive uploads
+- **Email Requirements**: Configurable uploader identification
 
 ## 💰 Cost Optimization Strategy
 
 **Monthly Operating Costs (Projected)**:
 
-- **MVP Stage**: ~$40/month (Vercel + Neon + basic services)
-- **Growth Stage**: ~$150/month (scaled services)
+- **MVP Stage**: ~$45/month (Vercel + Supabase + basic services)
+- **Growth Stage**: ~$176/month (scaled services with enterprise security)
 - **Target Revenue**: $2,450/month by month 6
 
 **Key Cost Optimizations**:
 
 - Serverless-first architecture (pay-per-use)
-- Neon PostgreSQL (database auto-scaling)
-- S3 Intelligent Tiering (automatic storage optimization)
+- Supabase unified platform (database + storage + real-time)
+- Automatic file CDN optimization via Supabase Storage
 - Vercel Edge Network (global CDN included)
 
 ## 🎯 Development Phases
 
-### Phase 1: MVP (Weeks 1-2)
+### Phase 1: Advanced MVP (Weeks 1-3)
 
-- Authentication & user management
-- Basic file upload & organization
-- Custom upload link generation
-- Payment integration (Stripe)
+- Multi-link system (base + custom topic links)
+- Advanced upload requirements (name mandatory, email optional)
+- Batch organization and folder creation
+- Basic permission controls (public/private)
 
-### Phase 2: Growth (Weeks 3-4)
+### Phase 2: Professional Features (Weeks 4-5)
 
-- Advanced file management
-- Custom branding options
-- Analytics dashboard
-- Mobile optimization
+- Password protection for upload links
+- Advanced file organization tools
+- Real-time notifications and progress tracking
+- Analytics dashboard with batch insights
 
-### Phase 3: Scale (Weeks 5-6)
+### Phase 3: Enterprise Scale (Weeks 6-8)
 
-- White-label solutions
-- Enterprise features
-- Advanced integrations
-- Multi-language support
-
-## 🔒 Security & Compliance
-
-- **Encryption**: AES-256 at rest, TLS 1.3 in transit
-- **Authentication**: Clerk with MFA support
-- **File Security**: Virus scanning, presigned URLs
-- **Privacy**: GDPR-ready with data export/deletion
-- **Monitoring**: Sentry error tracking, uptime monitoring
+- Custom branding and white-label solutions
+- Advanced security controls and audit logs
+- API for integrations and automation
+- Multi-language support and accessibility
 
 ## 📊 Success Metrics
 
@@ -121,26 +187,27 @@ This project follows documentation-first development with comprehensive planning
 - **Growth**: 100 signups in first month
 - **Conversion**: 10% free-to-paid rate
 - **Retention**: < 2% monthly churn
-- **Satisfaction**: NPS > 50
+- **Organization Efficiency**: 90% reduction in manual file sorting
 
 ## 🛠️ Development Standards
 
 - **TypeScript Strict Mode**: Maximum type safety
 - **Clean Code Principles**: DRY, SOLID, senior-level quality
-- **Testing Required**: Unit, integration, and E2E tests
+- **Testing Required**: Unit, integration, and E2E tests for all link types
 - **Documentation-First**: All features documented before coding
 - **Performance Budget**: Core Web Vitals compliance mandatory
+- **Security-First**: All permission controls tested for edge cases
 
 ## 📞 Next Actions
 
-1. **Review Documentation**: Read through all documentation files
-2. **Environment Setup**: Begin Task 2 in [TASK.md](docs/TASK.md)
-3. **Dependency Installation**: Update package.json with modern 2025 stack
-4. **Database Setup**: Initialize Neon PostgreSQL + Drizzle ORM
-5. **Component System**: Install and configure Shadcn/ui
+1. **Advanced Database Schema**: Multi-link types, permission controls, batch metadata (Task 10)
+2. **Multi-Link Upload System**: Implement base + custom link handling (Task 12)
+3. **Permission Controls**: Email requirements, password protection, visibility toggles (Task 13)
+4. **Organization Features**: Pre/post-upload folder management, batch naming (Task 14)
+5. **Security Integration**: File type warnings, access controls, audit logging (Task 15)
 
-> **Ready to build?** Check [TASK.md](docs/TASK.md) for the detailed development roadmap and current sprint goals.
+> **Ready to continue?** Check [TASK.md](docs/TASK.md) for Task 10 (Advanced Multi-Link Database Setup) and current sprint goals.
 
 ---
 
-**Built with 2025's modern SaaS architecture** • **Optimized for cost and scale** • **Documentation-driven development**
+**Built with 2025's modern SaaS architecture** • **Multi-link organization system** • **Advanced security controls** • **Documentation-driven development**

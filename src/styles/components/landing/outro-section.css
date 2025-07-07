@@ -22,33 +22,9 @@
   justify-content: center;
 }
 
-.cta-primary,
-.cta-secondary {
-  padding: 1rem 2rem;
-  border-radius: 0.5rem;
+/* Remove underlines from Next.js Link components */
+.no-underline {
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.cta-primary {
-  background-color: var(--light);
-  color: var(--dark);
-}
-
-.cta-primary:hover {
-  background-color: var(--accent-1);
-}
-
-.cta-secondary {
-  background-color: transparent;
-  color: var(--light);
-  border: 1px solid var(--light);
-}
-
-.cta-secondary:hover {
-  background-color: var(--light);
-  color: var(--dark);
 }
 
 /* Responsive Design */

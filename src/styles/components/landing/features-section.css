@@ -85,10 +85,7 @@
     opacity: 1 !important;
     transform: none !important;
     position: relative !important;
-    margin-bottom: 2rem;
-    max-width: 350px;
-    margin-left: auto;
-    margin-right: auto;
+    /* Remove margin overrides - let Tailwind handle spacing */
   }
 
   .cards .card .flip-card-inner {
@@ -114,8 +111,7 @@
   }
 
   .cards .card {
-    margin-bottom: 1.5rem;
-    max-width: 280px;
+    /* Let Tailwind handle spacing and sizing */
   }
 }
 

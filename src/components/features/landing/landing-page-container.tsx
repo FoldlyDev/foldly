@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import { HeroSection } from "@/components/features/landing/hero-section";
-import { AboutSection } from "@/components/features/landing/about-section";
-import { FeaturesSection } from "@/components/features/landing/features-section";
-import { OutroSection } from "@/components/features/landing/outro-section";
-import { Navigation } from "@/components/layout/navigation";
-import { useGSAPLandingAnimations } from "@/lib/hooks/useGSAPLandingAnimations";
+import { useRef } from 'react';
+import { HeroSection } from '@/components/features/landing/hero-section';
+import { AboutSection } from '@/components/features/landing/about-section';
+import { FeaturesSection } from '@/components/features/landing/features-section';
+import { OutroSection } from '@/components/features/landing/outro-section';
+import { Navigation } from '@/components/layout/navigation';
+import { useGSAPLandingAnimations } from '@/lib/hooks/useGSAPLandingAnimations';
 
 /**
  * Client-side container component for the landing page
@@ -68,8 +68,8 @@ export function LandingPageContainer() {
   });
 
   return (
-    <div className="landing-page">
-      {/* <Navigation />  */}
+    <div className='landing-page'>
+      <Navigation />
       <HeroSection ref={heroSectionRefs} />
       <AboutSection />
       <FeaturesSection ref={featuresSectionRefs} />

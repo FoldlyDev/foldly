@@ -1,0 +1,15 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+1. Always verify the following documentation files before starting new implementations: [TASK.md](mdc:docs/TASK.md), [PLANNING.md](mdc:docs/PLANNING.md), [project_overview.md](mdc:docs/project_overview.md), [TYPE_ARCHITECTURE.md](mdc:docs/TYPE_ARCHITECTURE.md), and [ARCHITECTURE.md](mdc:docs/ARCHITECTURE.md). If your implementation adds new functionality not yet covered, update the relevant documents immediately.
+
+2. Decompose components into modular, reusable elements. Adhere to DRY (Don’t Repeat Yourself) and SOLID design principles—each component should have a single responsibility, be open for extension, loosely coupled, and easily testable
+
+3. Before hardcoding any types, check the types folder [index.ts](mdc:src/types/index.ts) [index.ts](mdc:src/types/api/index.ts) [index.ts](mdc:src/types/auth/index.ts) [index.ts](mdc:src/components/ui/index.ts) [index.ts](mdc:src/types/global/index.ts) [index.ts](mdc:src/types/upload/index.ts) [index.ts](mdc:src/types/features/index.ts) and other relarted types to what you are implementing at the moment. Import and reuse existing TypeScript types whenever possible to maintain consistency and reduce duplication.
+
+4. Inspect the animate-ui/ components folder for the UI element you intend to implement. If it exists, use it; if not, use an existing animate-ui component as a reference. If the component isn’t available in animate-ui but exists in shadcn/, apply the same approach—use it or extend it as a base.
+
+
+5. When creating a component (e.g., a modal), first search for similar components in the project. Use one of them as a template or reference. Do not build a new component from scratch if existing ones already adhere to the design system.

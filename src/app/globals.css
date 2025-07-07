@@ -1,13 +1,22 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* =============================================================================
    TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
    ============================================================================= */
 
 @theme {
+  /* Custom Breakpoints - Mobile-First Responsive Design */
+  --breakpoint-xs: 30rem; /* 480px - Extra small devices */
+  --breakpoint-sm: 40rem; /* 640px - Small devices */
+  --breakpoint-md: 48rem; /* 768px - Medium devices */
+  --breakpoint-lg: 64rem; /* 1024px - Large devices */
+  --breakpoint-xl: 80rem; /* 1280px - Extra large devices */
+  --breakpoint-2xl: 96rem; /* 1536px - 2X Extra large devices */
+  --breakpoint-3xl: 120rem; /* 1920px - Ultra wide screens */
+
   /* Font Families */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
   --color-primary: #c3e1f7;
@@ -54,12 +63,61 @@
   --color-neutral-900: #18181b;
   --color-neutral-950: #09090b;
 
+  /* Shadcn/ui Colors - Optimized for Foldly Brand with Professional Contrast */
+  --color-background: white;
+  --color-foreground: #0f1922; /* quaternary - excellent contrast on white */
+  --color-card: white;
+  --color-card-foreground: #0f1922; /* quaternary - excellent readability */
+  --color-popover: white;
+  --color-popover-foreground: #0f1922; /* quaternary - excellent readability */
+
+  /* Primary - Using tertiary for strong, professional presence */
+  --color-primary: #2d4f6b; /* tertiary - professional dark blue, excellent contrast */
+  --color-primary-foreground: white; /* white text on dark blue - perfect contrast */
+
+  /* Secondary - Using secondary for secondary actions */
+  --color-secondary: #9abede; /* secondary - professional medium blue */
+  --color-secondary-foreground: #0f1922; /* quaternary - excellent contrast on medium blue */
+
+  /* Muted - Using neutral tones with subtle brand influence */
+  --color-muted: #f0f8fe; /* primary-subtle - very subtle brand presence */
+  --color-muted-foreground: #52525b; /* neutral-600 - good contrast for secondary text */
+
+  /* Accent - Using light brand color for interactive elements */
+  --color-accent: #e1f0fc; /* primary-light - subtle brand highlight */
+  --color-accent-foreground: #0f1922; /* quaternary - excellent contrast */
+
+  /* Destructive - Professional red with excellent contrast */
+  --color-destructive: #dc2626; /* slightly darker red for better professionalism */
+  --color-destructive-foreground: white; /* white text on red - perfect contrast */
+
+  /* Borders and Inputs - Subtle with brand influence */
+  --color-border: #d1d5db; /* neutral-300 - subtle, professional borders */
+  --color-input: #f9fafb; /* neutral-50 - clean input backgrounds */
+
+  /* Ring - Using primary brand color for focus states */
+  --color-ring: #c3e1f7; /* primary - brand color for focus rings */
+
+  /* Additional Professional Utility Colors */
+  --color-success: #059669; /* professional green - excellent contrast */
+  --color-success-foreground: white; /* white text on green - perfect contrast */
+  --color-warning: #d97706; /* professional amber - excellent contrast */
+  --color-warning-foreground: white; /* white text on amber - perfect contrast */
+  --color-info: #0369a1; /* professional blue - excellent contrast */
+  --color-info-foreground: white; /* white text on blue - perfect contrast */
+
+  /* Hover States - Slightly darker versions for interactions */
+  --color-primary-hover: #1e3a52; /* tertiary-dark - darker on hover */
+  --color-secondary-hover: #7ba5c7; /* secondary-dark - darker on hover */
+  --color-accent-hover: #c3e1f7; /* primary - lighter on hover */
+
   /* Custom Spacing */
   --spacing-18: 4.5rem;
   --spacing-112: 28rem;
   --spacing-128: 32rem;
 
   /* Custom Border Radius */
+  --radius: 0.5rem;
   --radius-4xl: 2rem;
   --radius-5xl: 2.5rem;
 
@@ -72,14 +130,20 @@
    COMPONENT STYLES IMPORTS
    ============================================================================= */
 
-@import "../styles/components/layout/navigation.css";
-@import "../styles/components/landing/hero-section.css";
-@import "../styles/components/landing/about-section.css";
-@import "../styles/components/landing/features-section.css";
-@import "../styles/components/landing/outro-section.css";
-@import "../styles/components/landing/cards.css";
-@import "../styles/components/landing/sections.css";
-@import "../styles/components/ui/flip-card.css";
+@import '../styles/components/landing/hero-section.css';
+@import '../styles/components/landing/about-section.css';
+@import '../styles/components/landing/features-section.css';
+@import '../styles/components/landing/outro-section.css';
+@import '../styles/components/landing/cards.css';
+@import '../styles/components/landing/sections.css';
+@import '../styles/components/ui/flip-card.css';
+@import '../styles/components/ui/content-loader.css';
+@import '../styles/components/layout/dashboard-navigation.css';
+@import '../styles/components/auth/auth-pages.css';
+@import '../styles/components/links/links-page.css';
+@import '../styles/components/analytics/home-container.css';
+
+@custom-variant dark (&:is(.dark *));
 
 /* =============================================================================
    CSS VARIABLES
@@ -144,32 +208,12 @@
   --accent-2: var(--secondary);
   --accent-3: var(--tertiary);
 
-  /* Shadcn/ui variables - Updated for dark professional color system */
-  --background: 0 0% 100%;
-  --foreground: 210 29% 9%; /* quaternary equivalent */
-  --card: 0 0% 100%;
-  --card-foreground: 210 29% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 210 29% 9%;
-  --primary-hsl: 205 87% 87%; /* primary */
-  --primary-foreground: 210 29% 9%;
-  --secondary-hsl: 205 44% 75%; /* secondary */
-  --secondary-foreground: 210 29% 9%;
-  --muted: 220 14% 96%; /* neutral-100 */
-  --muted-foreground: 220 9% 46%; /* neutral-500 */
-  --accent-hsl: 205 29% 42%; /* tertiary */
-  --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%; /* error-red */
-  --destructive-foreground: 0 0% 100%;
-  --border: 220 13% 91%; /* neutral-200 */
-  --input: 220 13% 91%;
-  --ring: 205 87% 87%; /* primary */
+  /* Chart colors for data visualization */
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
   --chart-3: var(--tertiary);
   --chart-4: var(--success-green);
   --chart-5: var(--warning-amber);
-  --radius: 0.5rem;
 }
 
 .dark {
@@ -219,17 +263,60 @@
   --accent-2: var(--secondary);
   --accent-3: var(--tertiary);
 
-  /* Shadcn/ui dark mode variables */
-  --background: 210 29% 9%; /* quaternary equivalent */
-  --foreground: 205 87% 87%; /* primary equivalent */
-  --card: 210 29% 9%;
-  --card-foreground: 205 87% 87%;
-  --popover: 210 29% 9%;
-  --popover-foreground: 205 87% 87%;
-  --primary-hsl: 205 44% 75%; /* secondary for dark mode */
-  --primary-foreground: 210 29% 9%;
-  --secondary-hsl: 205 29% 42%; /* tertiary for dark mode */
-  --secondary-foreground: 205 87% 87%;
+  /* Dark Mode Shadcn Colors - Optimized for Brand Consistency */
+  --color-background: #0a0d0f; /* quinary - darkest background */
+  --color-foreground: #c3e1f7; /* primary - excellent contrast on dark */
+  --color-card: #1a2a35; /* quaternary-light - elevated surface */
+  --color-card-foreground: #c3e1f7; /* primary - excellent readability */
+  --color-popover: #1a2a35; /* quaternary-light - elevated surface */
+  --color-popover-foreground: #c3e1f7; /* primary - excellent readability */
+
+  /* Primary - Brighter for dark mode visibility */
+  --color-primary: #9abede; /* secondary - more vibrant on dark */
+  --color-primary-foreground: #0f1922; /* quaternary - excellent contrast */
+
+  /* Secondary - Adjusted for dark mode */
+  --color-secondary: #4a6b85; /* tertiary-light - visible on dark */
+  --color-secondary-foreground: #c3e1f7; /* primary - excellent contrast */
+
+  /* Muted - Dark mode appropriate */
+  --color-muted: #1e3a52; /* tertiary-dark - subtle dark background */
+  --color-muted-foreground: #9abede; /* secondary - good contrast for secondary text */
+
+  /* Accent - Dark mode highlight */
+  --color-accent: #2d4f6b; /* tertiary - professional accent */
+  --color-accent-foreground: #c3e1f7; /* primary - excellent contrast */
+
+  /* Destructive - Consistent across modes */
+  --color-destructive: #ef4444; /* slightly brighter red for dark backgrounds */
+  --color-destructive-foreground: white; /* white text - perfect contrast */
+
+  /* Borders and Inputs - Dark mode appropriate */
+  --color-border: #2d4f6b; /* tertiary - subtle, visible borders */
+  --color-input: #1a2a35; /* quaternary-light - input backgrounds */
+
+  /* Ring - Brand color for focus states */
+  --color-ring: #c3e1f7; /* primary - consistent brand focus */
+
+  /* Additional Professional Utility Colors - Dark Mode */
+  --color-success: #10b981; /* brighter green for dark backgrounds */
+  --color-success-foreground: #0a0d0f; /* dark text on bright green */
+  --color-warning: #f59e0b; /* brighter amber for dark backgrounds */
+  --color-warning-foreground: #0a0d0f; /* dark text on bright amber */
+  --color-info: #3b82f6; /* brighter blue for dark backgrounds */
+  --color-info-foreground: #0a0d0f; /* dark text on bright blue */
+
+  /* Hover States - Dark Mode */
+  --color-primary-hover: #b8d1e8; /* secondary-light - brighter on hover */
+  --color-secondary-hover: #5a8caf; /* secondary-dark - darker on hover */
+  --color-accent-hover: #4a6b85; /* tertiary-light - lighter on hover */
+
+  /* Chart colors for data visualization */
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--tertiary);
+  --chart-4: var(--success-green);
+  --chart-5: var(--warning-amber);
 }
 
 /* =============================================================================
@@ -238,17 +325,20 @@
 
 @layer base {
   * {
-    border-color: hsl(var(--border));
     margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
 
   body {
-    background: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
       sans-serif;
     overflow-x: hidden;
     max-width: 100%;
@@ -275,6 +365,58 @@ span {
 :focus-visible {
   outline: 2px solid var(--accent-1);
   outline-offset: 2px;
+}
+
+/* Remove focus outlines for modal triggers and interactive elements to prevent unwanted outlines */
+[data-state='open'] *:focus,
+[data-state='open'] *:focus-visible,
+[aria-expanded='true'] *:focus,
+[aria-expanded='true'] *:focus-visible,
+.modal-open *:focus,
+.modal-open *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove unwanted focus outlines on bulk selection checkboxes */
+[data-bulk-select] input[type='checkbox']:focus,
+[data-bulk-select] input[type='checkbox']:focus-visible,
+.bulk-select-mode input[type='checkbox']:focus,
+.bulk-select-mode input[type='checkbox']:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure buttons and interactive elements still have focus when they should */
+button:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+[role='button']:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+
+/* Ensure all checkboxes have cursor pointer and are visible */
+[role='checkbox'],
+input[type='checkbox'],
+[data-state] {
+  cursor: pointer !important;
+}
+
+/* Make sure checkboxes are always visible with proper borders */
+[role='checkbox'] {
+  border: 2px solid #52525b !important;
+  background-color: white !important;
+}
+
+[role='checkbox'][data-state='checked'] {
+  background-color: #2d4f6b !important;
+  border-color: #2d4f6b !important;
 }
 
 ::selection {
@@ -396,4 +538,24 @@ span {
 
 .delay-300 {
   animation-delay: 300ms;
+}
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
