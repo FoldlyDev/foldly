@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { SettingsContainer } from '@/components/features/settings/settings-container';
+import { SettingsContainer } from '@/features/settings';
 
 export const metadata: Metadata = {
   title: 'Settings | Foldly',

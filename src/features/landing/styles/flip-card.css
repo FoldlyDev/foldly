@@ -1,0 +1,250 @@
+/* =============================================================================
+   FLIP CARD UI COMPONENT STYLES
+   ============================================================================= */
+
+.card {
+  flex: 1;
+  position: relative;
+  aspect-ratio: 5/7;
+  perspective: 1000px;
+}
+
+.card-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  /* Softer, faded 3D shadow using blur and transparency */
+  filter: drop-shadow(6px 6px 12px rgba(45, 79, 107, 0.3));
+}
+
+/* Floating animation - only for feature section cards */
+@keyframes floating {
+  0% {
+    transform: translate(-50%, -50%);
+  }
+  50% {
+    transform: translate(-50%, -55%);
+  }
+  100% {
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Apply floating animation only to feature section cards */
+.features-section .card .card-wrapper {
+  animation: floating 2s infinite ease-in-out;
+}
+
+.features-section #card-1 .card-wrapper,
+.features-section #mobile-card-1 .card-wrapper {
+  animation-delay: 0;
+}
+
+.features-section #card-2 .card-wrapper,
+.features-section #mobile-card-2 .card-wrapper {
+  animation-delay: 0.25s;
+}
+
+.features-section #card-3 .card-wrapper,
+.features-section #mobile-card-3 .card-wrapper {
+  animation-delay: 0.5s;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+
+.flip-card-front {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  /* position: relative; */
+}
+
+/* Corner Icons */
+.card-corner-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.card-corner-icons svg:nth-child(1) {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+}
+
+.card-corner-icons svg:nth-child(2) {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.card-corner-icons svg:nth-child(3) {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+}
+
+.card-corner-icons svg:nth-child(4) {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+}
+
+/* Center Icon - Lighter color for better contrast */
+.card-icon-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neutral-100); /* Much lighter color for better contrast */
+  transition: transform 0.3s ease;
+}
+
+.card:hover .card-icon-center {
+  transform: scale(1.1);
+}
+
+/* Card Background Colors with Switched Gradients */
+#card-1 .flip-card-front,
+#mobile-card-1 .flip-card-front,
+#hero-card-1 .flip-card-front {
+  /* First card (CREATE) now gets the third card's gradient */
+  background: linear-gradient(
+    135deg,
+    var(--tertiary) 0%,
+    var(--quaternary) 40%,
+    var(--quinary) 100%
+  );
+}
+
+#card-2 .flip-card-front,
+#mobile-card-2 .flip-card-front,
+#hero-card-2 .flip-card-front {
+  /* Second card (COLLECT) remains but with darker bluish colors */
+  background: linear-gradient(
+    135deg,
+    var(--secondary) 0%,
+    var(--quaternary) 50%,
+    var(--quinary) 100%
+  );
+}
+
+#card-3 .flip-card-front,
+#mobile-card-3 .flip-card-front,
+#hero-card-3 .flip-card-front {
+  /* Third card (ORGANIZE) with inverted colors from first card's gradient */
+  background: linear-gradient(
+    135deg,
+    var(--quinary) 0%,
+    var(--quaternary) 40%,
+    var(--tertiary) 100%
+  );
+}
+
+.flip-card-back {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  background-color: var(--neutral-200);
+  transform: rotateY(180deg);
+}
+
+.card-title {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.card-title span {
+  font-size: 0.7rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(
+    --neutral-100
+  ); /* Lighter color for better contrast on front face */
+}
+
+/* Back face title styling */
+.flip-card-back .card-title span {
+  color: var(--quaternary); /* Darker color for back face */
+}
+
+.card-copy {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card-copy p {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.9rem;
+  background-color: var(--neutral-100);
+  border-radius: 0.25rem;
+  font-weight: 500;
+  color: var(--quaternary);
+  padding: 0.5rem;
+  min-height: 2.5rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1000px) {
+  /* Disable floating animation on mobile for better performance and UX */
+  .features-section .card .card-wrapper,
+  .features-section #card-1 .card-wrapper,
+  .features-section #card-2 .card-wrapper,
+  .features-section #card-3 .card-wrapper,
+  .features-section #mobile-card-1 .card-wrapper,
+  .features-section #mobile-card-2 .card-wrapper,
+  .features-section #mobile-card-3 .card-wrapper {
+    animation: none !important;
+  }
+
+  .mobile-cards .card-copy p {
+    font-size: 0.8rem;
+    min-height: 2rem;
+    padding: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-cards .card-copy p {
+    font-size: 0.75rem;
+    min-height: 1.8rem;
+    padding: 0.3rem;
+  }
+
+  .mobile-cards .card-title span {
+    font-size: 0.6rem;
+  }
+}

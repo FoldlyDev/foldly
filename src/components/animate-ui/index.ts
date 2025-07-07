@@ -61,8 +61,6 @@ export {
   DialogTitle,
   DialogDescription,
   useDialog,
-  type DialogProps,
-  type DialogContentProps,
 } from './radix/dialog';
 export {
   DropdownMenu,
@@ -89,27 +87,3 @@ export { StarIcon } from './icons/star';
 
 // 🔘 Button Components
 export { CopyButton } from './buttons/copy';
-
-// Type exports (if needed)
-export type { AvatarGroupProps } from './components/avatar-group';
-export type { CounterProps } from './components/counter';
-// Add more type exports as needed
-
-/**
- * Usage Examples:
- *
- * // Individual imports
- * import { AvatarGroup, TypingText, BubbleBackground } from '@/components/animate-ui';
- *
- * // Or import specific categories
- * import { BubbleBackground, StarsBackground } from '@/components/animate-ui';
- * import { TypingText, GradientText, CountingNumber } from '@/components/animate-ui';
- * import { Magnetic, MotionHighlight } from '@/components/animate-ui';
- *
- * // Example usage in component:
- * <BubbleBackground />
- * <AvatarGroup />
- * <Magnetic><button>Hover me!</button></Magnetic>
- * <TypingText text="Welcome to our site!" />
- * <CountingNumber from={0} to={100} duration={2000} />
- */

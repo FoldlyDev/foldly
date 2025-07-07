@@ -23,8 +23,13 @@ export const config = {
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     // Always run for API routes
     '/(api|trpc)(.*)',
-    // Ensure not-found and other special pages are covered
+    // Explicitly include important routes
     '/',
+    '/_not-found',
     '/not-found',
+    '/unauthorized',
+    '/dashboard/:path*',
+    '/sign-in/:path*',
+    '/sign-up/:path*',
   ],
 };

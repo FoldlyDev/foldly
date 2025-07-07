@@ -1,17 +1,10 @@
+'use client';
+
 import Link from 'next/link';
-import { auth } from '@clerk/nextjs/server';
+import { useUser } from '@clerk/nextjs';
 
-export default async function NotFound() {
-  let userId: string | null = null;
-
-  try {
-    const authResult = await auth();
-    userId = authResult.userId;
-  } catch (error) {
-    // If auth fails (e.g., middleware didn't run), default to unauthenticated state
-    console.warn('Auth failed in not-found page:', error);
-    userId = null;
-  }
+export default function NotFound() {
+  const { isSignedIn, user } = useUser();
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4'>
@@ -53,7 +46,7 @@ export default async function NotFound() {
             Go Home
           </Link>
 
-          {userId && (
+          {isSignedIn && (
             <Link
               href='/dashboard'
               className='inline-flex items-center px-6 py-3 bg-white text-[#6c47ff] font-semibold rounded-lg border-2 border-[#6c47ff] hover:bg-[#6c47ff] hover:text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105'
@@ -75,7 +68,7 @@ export default async function NotFound() {
             </Link>
           )}
 
-          {!userId && (
+          {!isSignedIn && (
             <Link
               href='/sign-in'
               className='inline-flex items-center px-6 py-3 bg-white text-[#6c47ff] font-semibold rounded-lg border-2 border-[#6c47ff] hover:bg-[#6c47ff] hover:text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105'

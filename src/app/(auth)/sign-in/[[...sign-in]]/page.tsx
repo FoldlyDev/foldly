@@ -4,7 +4,7 @@ import { AnimateIcon } from '@/components/animate-ui/icons/icon';
 import { ContentLoader } from '@/components/ui/content-loader';
 import { BubbleBackground } from '@/components/ui/bubble';
 
-import '@/styles/components/auth/auth-pages.css';
+import '@/features/auth/styles/auth-pages.css';
 
 export default function SignInPage() {
   return (
