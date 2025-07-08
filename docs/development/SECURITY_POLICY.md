@@ -192,7 +192,10 @@ const cleanupRules = {
 ```
 Foldly Organization
 ├── Owner: [Company Email]
-├── Billing Admin: [Company Email]
+├── Billing Admin: [Company Email] - Clerk + Stripe Access
+│   ├── Clerk Billing: Full subscription management
+│   ├── Stripe Dashboard: Payment monitoring & disputes
+│   └── Feature Management: Subscription tier controls
 ├── Developers: [Limited Access]
 │   ├── Development: Read/Write
 │   ├── Staging: Read/Write
@@ -201,6 +204,16 @@ Foldly Organization
     ├── Development: Read/Write
     └── Production: No Access
 ```
+
+#### **Clerk Billing Security Architecture**
+
+**Zero-Integration Security Benefits**:
+
+- **Reduced Attack Surface**: No custom payment handling code reduces security vulnerabilities
+- **PCI Compliance**: Stripe handles all payment data - Foldly never touches card information
+- **Enterprise Authentication**: Clerk's enterprise-grade security combined with payment processing
+- **Audit Trail**: Complete billing and subscription change logs through Clerk dashboard
+- **Real-time Monitoring**: Automatic fraud detection and subscription abuse prevention
 
 #### **Developer Access Controls**
 

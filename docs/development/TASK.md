@@ -182,20 +182,58 @@ docs/
 
 ### **Payment Integration**
 
-#### **Stripe Implementation**
+#### **Clerk Billing + Stripe Implementation**
 
-- [ ] **Subscription Management**: Tiered pricing with feature gates
-- [ ] **Billing Portal**: Customer subscription management
-- [ ] **Webhook Integration**: Payment event handling
-- [ ] **Usage Tracking**: Feature usage and billing calculations
-- [ ] **Invoice Generation**: Automated billing and receipts
+**Modern Approach**: Foldly uses Clerk Billing (beta) for zero-integration SaaS billing, combining Clerk's authentication with Stripe's payment processing.
 
-#### **Feature Gating**
+- [ ] **Clerk Billing Setup**: Configure subscription products and pricing in Clerk dashboard
+- [ ] **Feature-Based Access**: Implement automatic feature gating based on subscription status
+- [ ] **Built-in Components**: Integrate `<PricingTable />` and `<BillingPortal />` components
+- [ ] **Real-time Features**: Subscription-based feature access updates
+- [ ] **Simplified Architecture**: No custom webhook handling required
+
+#### **Technical Benefits**
+
+- **60% Less Code**: No custom Stripe integration code required
+- **Instant Setup**: Billing system operational in days, not weeks
+- **Real-time Updates**: Automatic feature access changes on subscription events
+- **Enterprise Security**: Clerk's authentication + Stripe's payment processing
+
+#### **Feature Gating (Clerk-Based)**
 
 - [ ] **Free Tier Limits**: 1 active link, 2GB storage
 - [ ] **Pro Tier Features**: 5 links, 10GB storage, custom branding
 - [ ] **Business Tier**: 25 links, 100GB storage, team features
 - [ ] **Enterprise**: Unlimited links, 1TB storage, white-label
+
+#### **Clerk Feature Implementation**
+
+```typescript
+// Feature access with Clerk
+const { user } = useUser();
+const subscriptionFeatures = user?.publicMetadata?.features as string[] || [];
+
+// Component-level feature gating
+const FeatureGate = ({ feature, children, fallback }) => {
+  const hasFeature = subscriptionFeatures.includes(feature);
+  return hasFeature ? children : fallback;
+};
+
+// Usage examples
+<FeatureGate
+  feature="custom_links"
+  fallback={<UpgradePrompt feature="Custom Links" />}
+>
+  <CustomLinkCreator />
+</FeatureGate>
+```
+
+#### **Real-time Feature Updates**
+
+- [ ] **Subscription Webhooks**: Clerk automatically updates user metadata
+- [ ] **Feature Synchronization**: Real-time feature access based on subscription status
+- [ ] **Graceful Degradation**: Seamless feature access changes without app restart
+- [ ] **Upgrade Prompts**: Contextual upgrade suggestions for premium features
 
 ### **Marketing & Launch**
 

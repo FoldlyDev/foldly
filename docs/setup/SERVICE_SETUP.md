@@ -102,29 +102,44 @@ Services for production optimization: 8. **Cloudflare** (DNS & Security) 9. **Se
 
 ---
 
-### **4. Stripe - Payment Processing**
+### **4. Stripe - Payment Processing (Clerk Billing Integration)**
 
-**Purpose**: Handle subscription payments and billing
+**Purpose**: Handle subscription payments and billing through Clerk's integrated billing system
+
+#### **Modern Integration Approach:**
+
+**Foldly uses Clerk Billing (Beta)** - a zero-integration SaaS billing solution that combines Clerk authentication with Stripe payment processing, providing instant setup and feature-based access control.
 
 #### **Setup Steps:**
 
 1. Go to [stripe.com](https://stripe.com)
-2. Create Stripe account
-3. **Plan**: Pay-per-transaction (2.9% + 30¢ per successful charge)
-4. Complete account verification (may take 1-2 business days)
-5. Set up webhook endpoints (developer will provide URLs)
+2. Create Stripe account and complete verification (1-2 business days)
+3. **Plan**: Pay-per-transaction (2.9% + 30¢ per successful charge) + 0.7% Clerk fee
+4. Connect Stripe to Clerk Billing in Clerk dashboard
+5. Configure subscription products and pricing in Clerk's interface
+6. No manual webhook setup required - Clerk handles all Stripe integration
+
+#### **Clerk Billing Advantages:**
+
+- **Zero Integration**: No custom Stripe code required - Clerk manages everything
+- **Built-in UI**: Pre-built `<PricingTable />` and billing components
+- **Feature-Based Access**: Automatic feature gating based on subscription status
+- **Real-time Updates**: Instant feature access changes on subscription events
+- **Simplified Architecture**: -60% code complexity vs direct Stripe integration
 
 #### **What Developer Needs:**
 
-- Stripe publishable key
-- Stripe secret key
-- Webhook signing secret
-- Access to Stripe dashboard
+- Stripe account connected to Clerk
+- Clerk Billing configuration access
+- Feature definitions for access control
+- Access to unified Clerk + Stripe dashboard
 
 #### **Monthly Cost:**
 
-- **No monthly fee**: 2.9% + 30¢ per transaction
-- **Estimated**: $50-200/month based on revenue
+- **Stripe fees**: 2.9% + 30¢ per transaction
+- **Clerk Billing fee**: +0.7% of transaction volume
+- **Total processing**: ~3.6% + 30¢ per transaction
+- **Estimated**: $60-240/month based on revenue (includes simplified development)
 
 ---
 

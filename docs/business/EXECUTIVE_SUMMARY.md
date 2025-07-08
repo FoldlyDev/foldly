@@ -127,6 +127,17 @@ Foldly introduces **three distinct link types** that cover every file collection
   - Unlimited links, 1TB storage, white-label, dedicated support
   - Target: Large organizations, enterprise clients, custom needs
 
+#### **Modern Billing Architecture (Clerk + Stripe)**
+
+**Revolutionary Integration Approach**: Foldly leverages **Clerk Billing** (beta), a zero-integration SaaS billing solution that provides instant setup with Stripe while maintaining enterprise-grade security and compliance.
+
+**Key Benefits**:
+
+- **60% Less Development Time**: Pre-built billing components and automatic feature gating
+- **Real-time Feature Access**: Instant subscription-based feature updates
+- **Simplified Architecture**: No custom webhook handling or payment edge cases
+- **Enhanced Security**: Clerk's enterprise authentication combined with Stripe's payment processing
+
 #### **Revenue Projections**
 
 **Year 1 Targets**:
@@ -257,7 +268,8 @@ Foldly introduces **three distinct link types** that cover every file collection
 - **Supabase Pro**: $25/month (database and storage)
 - **Clerk Pro**: $25/month (authentication and user management)
 - **Additional Services**: $30/month (email, monitoring, analytics)
-- **Total**: $100/month base cost
+- **Stripe + Clerk Billing**: 3.6% per transaction (2.9% Stripe + 0.7% Clerk)
+- **Total**: $100/month base cost + transaction fees
 
 #### **Customer Acquisition Cost (CAC)**
 
