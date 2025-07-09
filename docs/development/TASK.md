@@ -81,13 +81,17 @@ docs/
 - **Timeline**: 2-3 weeks
 - **Description**: Implement advanced multi-link database architecture with three link types
 
-#### **Database Schema Requirements**
+#### **Database Schema Requirements (MVP)**
 
-- [ ] **Upload Links Table**: Multi-link type support (base, custom, generated)
-- [ ] **Folder Management**: Hierarchical folder structure with permissions
-- [ ] **File Processing**: Upload pipeline with security validation
-- [ ] **Access Controls**: Granular permissions and security settings
-- [ ] **Audit Logging**: Complete operation tracking and security logs
+> **🎯 MVP Simplification Philosophy**: Following the **["Minimum Delightful Product"](https://www.wayline.io/blog/ditch-mvp-minimum-delightful-product-game-dev)** approach rather than traditional MVP, we've simplified the database schema to focus on core user delight while removing complexity that doesn't directly contribute to the primary user experience. This includes removing the tasks table (deferred to post-MVP) and simplifying folders (no colors/descriptions) to create a more focused, polished experience.
+
+- [x] **Users Table**: SaaS subscription management with Clerk integration
+- [x] **Workspaces Table**: 1:1 user workspace relationship (MVP simplification)
+- [ ] **Links Table**: Multi-link type support (base, custom, generated)
+- [ ] **Folders Table**: Simplified hierarchical structure (no colors/descriptions for MVP)
+- [ ] **Batches Table**: Upload batch organization and progress tracking
+- [ ] **Files Table**: Comprehensive file metadata and processing status
+- [ ] **Access Controls**: Row Level Security policies for multi-tenant architecture
 
 #### **API Development Requirements**
 

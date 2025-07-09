@@ -8,13 +8,7 @@ import { memo, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { FileCard, FolderCard } from '../cards';
-import { useFilesListStore } from '../../hooks';
-import {
-  sortFiles,
-  sortFolders,
-  filterFiles,
-  filterFolders,
-} from '../../utils';
+import { useFilesListStore } from '../../hooks/use-files-composite';
 import type { ViewMode } from '../../types';
 
 // =============================================================================
@@ -44,49 +38,21 @@ const FilesList = memo(
       files,
       folders,
       viewMode: storeViewMode,
-      sortBy,
-      sortOrder,
-      searchQuery,
-      activeFilters,
-      computed,
       isLoading,
+      filters,
     } = useFilesListStore();
 
     // Use prop view mode or store view mode
     const effectiveViewMode = propViewMode || storeViewMode;
 
-    // Memoized filtered and sorted data
+    // Memoized filtered data based on show options
     const processedFolders = useMemo(() => {
-      if (!showFolders) return [];
-
-      let processed = folders;
-
-      // Apply filters
-      if (searchQuery || Object.keys(activeFilters).length > 0) {
-        processed = filterFolders(processed, searchQuery, activeFilters);
-      }
-
-      // Apply sorting
-      processed = sortFolders(processed, sortBy, sortOrder);
-
-      return processed;
-    }, [folders, showFolders, searchQuery, activeFilters, sortBy, sortOrder]);
+      return showFolders ? folders : [];
+    }, [folders, showFolders]);
 
     const processedFiles = useMemo(() => {
-      if (!showFiles) return [];
-
-      let processed = files;
-
-      // Apply filters
-      if (searchQuery || Object.keys(activeFilters).length > 0) {
-        processed = filterFiles(processed, searchQuery, activeFilters);
-      }
-
-      // Apply sorting
-      processed = sortFiles(processed, sortBy, sortOrder);
-
-      return processed;
-    }, [files, showFiles, searchQuery, activeFilters, sortBy, sortOrder]);
+      return showFiles ? files : [];
+    }, [files, showFiles]);
 
     // Loading state
     if (isLoading) {
@@ -108,7 +74,7 @@ const FilesList = memo(
           <div className='text-gray-500'>
             <p className='text-lg font-medium'>No files or folders found</p>
             <p className='text-sm mt-1'>
-              {computed.isFiltered
+              {filters.hasActiveFilters
                 ? 'Try adjusting your search or filters'
                 : 'Upload files or create folders to get started'}
             </p>

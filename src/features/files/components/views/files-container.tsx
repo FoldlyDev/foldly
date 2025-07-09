@@ -1,359 +1,160 @@
-// Files Container Component - Two-Panel Layout
-// Left panel: Shared files via links | Right panel: Personal workspace
+// Files Container Component - Main Files Display
 // Following 2025 React patterns with Zustand store integration
+// Eliminates prop drilling through composite hooks
 
 'use client';
 
-import { memo, useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Link2,
-  User,
-  Download,
-  Copy,
-  Share2,
-  Trash2,
+  Grid3X3,
+  List,
+  LayoutGrid,
+  Search,
+  Filter,
   Plus,
   FolderPlus,
   Upload,
+  SortAsc,
+  SortDesc,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/shadcn/button';
-import { Files, Folder, File } from '@/components/animate-ui/components/files';
+import { Input } from '@/components/ui/shadcn/input';
 import {
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-  useAccordionItem,
-  Accordion,
-} from '@/components/animate-ui/radix/accordion';
-import {
-  MotionHighlight,
-  MotionHighlightItem,
-} from '@/components/animate-ui/effects/motion-highlight';
-import type {
-  AccordionItemProps,
-  AccordionTriggerProps,
-} from '@/components/animate-ui/radix/accordion';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/shadcn/select';
 import { Badge } from '@/components/ui/shadcn/badge';
+import { Separator } from '@/components/ui/shadcn/separator';
 import { cn } from '@/lib/utils';
-
-// Custom SharedLink component that uses link icons instead of folder icons
-interface SharedLinkTriggerProps extends AccordionTriggerProps {
-  sideComponent?: React.ReactNode;
-}
-
-function SharedLinkTrigger({
-  children,
-  className,
-  sideComponent,
-  ...props
-}: SharedLinkTriggerProps) {
-  const { isOpen } = useAccordionItem();
-
-  return (
-    <AccordionTrigger
-      data-slot='shared-link-trigger'
-      className='h-auto py-0 hover:no-underline font-normal relative z-10 max-w-full'
-      {...props}
-      chevron={false}
-    >
-      <MotionHighlightItem className='size-full'>
-        <div className='flex items-center truncate gap-2 p-2 h-10 relative z-10 rounded-lg w-full cursor-default'>
-          <span className='flex [&_svg]:size-4 [&_svg]:shrink-0 items-center gap-2 shrink-1 truncate'>
-            <motion.span
-              key={isOpen ? 'open' : 'close'}
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              transition={{ duration: 0.15 }}
-            >
-              <Link2
-                className={cn(
-                  'w-4 h-4',
-                  isOpen ? 'text-blue-600' : 'text-blue-500'
-                )}
-              />
-            </motion.span>
-            <span className='shrink-1 text-sm block truncate break-words'>
-              {children}
-            </span>
-          </span>
-          {sideComponent}
-        </div>
-      </MotionHighlightItem>
-    </AccordionTrigger>
-  );
-}
-
-interface SharedLinkProps
-  extends Omit<
-    AccordionItemProps,
-    'value' | 'onValueChange' | 'defaultValue' | 'children'
-  > {
-  children?: React.ReactNode;
-  name: string;
-  open?: string[];
-  onOpenChange?: (open: string[]) => void;
-  defaultOpen?: string[];
-  sideComponent?: React.ReactNode;
-}
-
-function SharedLink({
-  children,
-  className,
-  name,
-  open,
-  defaultOpen,
-  onOpenChange,
-  sideComponent,
-  ...props
-}: SharedLinkProps) {
-  return (
-    <AccordionItem
-      data-slot='shared-link'
-      value={name}
-      className='relative border-b-0'
-      {...props}
-    >
-      <SharedLinkTrigger className={className} sideComponent={sideComponent}>
-        {name}
-      </SharedLinkTrigger>
-      {children && (
-        <AccordionContent className='relative pb-0 !ml-7 before:absolute before:-left-3 before:inset-y-0 before:w-px before:h-full before:bg-border'>
-          <Accordion type='multiple' className='p-2'>
-            {children}
-          </Accordion>
-        </AccordionContent>
-      )}
-    </AccordionItem>
-  );
-}
-
-// =============================================================================
-// MOCK DATA FOR SHARED LINKS AND PERSONAL WORKSPACE
-// =============================================================================
-
-const sharedLinksData = [
-  {
-    id: 'link-1',
-    name: 'Client Project Assets',
-    url: 'https://foldly.app/link/abc123',
-    createdAt: '2024-01-15',
-    folders: [
-      {
-        name: 'Brand Guidelines',
-        files: [
-          { name: 'logo-dark.png', size: '2.3 MB', type: 'image' },
-          { name: 'logo-light.png', size: '2.1 MB', type: 'image' },
-          { name: 'brand-colors.pdf', size: '1.8 MB', type: 'document' },
-          { name: 'typography-guide.pdf', size: '3.2 MB', type: 'document' },
-        ],
-      },
-      {
-        name: 'Marketing Materials',
-        files: [
-          { name: 'hero-banner.jpg', size: '4.5 MB', type: 'image' },
-          { name: 'product-showcase.mp4', size: '45.2 MB', type: 'video' },
-          { name: 'brochure-template.ai', size: '12.8 MB', type: 'design' },
-        ],
-      },
-    ],
-    files: [
-      { name: 'project-brief.docx', size: '1.2 MB', type: 'document' },
-      { name: 'requirements.txt', size: '0.8 KB', type: 'text' },
-    ],
-  },
-  {
-    id: 'link-2',
-    name: 'Team Collaboration Hub',
-    url: 'https://foldly.app/link/def456',
-    createdAt: '2024-01-20',
-    folders: [
-      {
-        name: 'Meeting Notes',
-        files: [
-          { name: 'q1-planning.md', size: '5.2 KB', type: 'text' },
-          { name: 'retrospective-jan.md', size: '3.8 KB', type: 'text' },
-          { name: 'team-photos.zip', size: '28.5 MB', type: 'archive' },
-        ],
-      },
-      {
-        name: 'Resources',
-        files: [
-          { name: 'team-handbook.pdf', size: '8.7 MB', type: 'document' },
-          {
-            name: 'onboarding-checklist.xlsx',
-            size: '2.1 MB',
-            type: 'spreadsheet',
-          },
-        ],
-      },
-    ],
-    files: [{ name: 'welcome-message.txt', size: '1.5 KB', type: 'text' }],
-  },
-  {
-    id: 'link-3',
-    name: 'Design System Library',
-    url: 'https://foldly.app/link/ghi789',
-    createdAt: '2024-01-25',
-    folders: [
-      {
-        name: 'Components',
-        files: [
-          { name: 'button-variants.figma', size: '3.4 MB', type: 'design' },
-          { name: 'input-fields.sketch', size: '2.8 MB', type: 'design' },
-          { name: 'navigation-patterns.xd', size: '5.1 MB', type: 'design' },
-        ],
-      },
-      {
-        name: 'Icons',
-        files: [
-          { name: 'icon-set-v2.svg', size: '1.2 MB', type: 'image' },
-          { name: 'icon-library.ai', size: '15.6 MB', type: 'design' },
-        ],
-      },
-    ],
-    files: [
-      { name: 'design-tokens.json', size: '45.2 KB', type: 'data' },
-      { name: 'style-guide.pdf', size: '6.8 MB', type: 'document' },
-    ],
-  },
-];
-
-const personalWorkspaceData = {
-  folders: [
-    {
-      name: 'My Projects',
-      folders: [
-        {
-          name: 'Website Redesign',
-          files: [
-            { name: 'wireframes.png', size: '3.2 MB', type: 'image' },
-            { name: 'mockups-v3.psd', size: '124.8 MB', type: 'design' },
-            { name: 'user-feedback.xlsx', size: '2.1 MB', type: 'spreadsheet' },
-          ],
-        },
-        {
-          name: 'Mobile App',
-          files: [
-            { name: 'app-flow.pdf', size: '4.7 MB', type: 'document' },
-            { name: 'prototype-demo.mp4', size: '78.3 MB', type: 'video' },
-          ],
-        },
-      ],
-      files: [
-        { name: 'project-timeline.pdf', size: '1.8 MB', type: 'document' },
-      ],
-    },
-    {
-      name: 'Resources',
-      folders: [
-        {
-          name: 'Stock Photos',
-          files: [
-            { name: 'hero-backgrounds.zip', size: '156.7 MB', type: 'archive' },
-            { name: 'product-shots.zip', size: '89.2 MB', type: 'archive' },
-          ],
-        },
-        {
-          name: 'Fonts',
-          files: [
-            { name: 'Inter-Variable.ttf', size: '1.2 MB', type: 'font' },
-            { name: 'Roboto-Regular.woff2', size: '67.8 KB', type: 'font' },
-          ],
-        },
-      ],
-      files: [
-        { name: 'asset-inventory.csv', size: '23.4 KB', type: 'spreadsheet' },
-      ],
-    },
-    {
-      name: 'Archive',
-      files: [
-        { name: 'old-website-backup.zip', size: '45.7 MB', type: 'archive' },
-        { name: 'legacy-designs.psd', size: '234.1 MB', type: 'design' },
-      ],
-    },
-  ],
-  files: [
-    { name: 'notes.txt', size: '2.1 KB', type: 'text' },
-    { name: 'todo-list.md', size: '1.8 KB', type: 'text' },
-    { name: 'bookmarks.json', size: '15.6 KB', type: 'data' },
-  ],
-};
+import { useFilesListStore } from '../../hooks/use-files-composite';
+import FileCard from '../cards/FileCard';
+import FolderCard from '../cards/FolderCard';
+import EmptyFilesState from './EmptyFilesState';
+import TwoPanelFilesView from './TwoPanelFilesView';
+import {
+  VIEW_MODE,
+  SORT_BY,
+  SORT_ORDER,
+  FILTER_STATUS,
+  FILTER_TYPE,
+} from '../../store/files-ui-store';
 
 // =============================================================================
 // COMPONENT PROPS
 // =============================================================================
 
 interface FilesContainerProps {
-  className?: string;
+  readonly className?: string;
 }
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-const getFileIcon = (type: string) => {
-  switch (type) {
-    case 'image':
-      return '🖼️';
-    case 'video':
-      return '🎥';
-    case 'document':
-      return '📄';
-    case 'spreadsheet':
-      return '📊';
-    case 'design':
-      return '🎨';
-    case 'archive':
-      return '📦';
-    case 'font':
-      return '🔤';
-    case 'data':
-      return '📋';
-    case 'text':
-      return '📝';
-    default:
-      return '📎';
-  }
-};
 
 // =============================================================================
 // COMPONENT IMPLEMENTATION
 // =============================================================================
 
 const FilesContainer = memo(({ className }: FilesContainerProps) => {
-  const [draggedFile, setDraggedFile] = useState<any>(null);
-  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null);
+  // Panel mode state
+  const [panelMode, setPanelMode] = useState<'single' | 'dual'>('single');
 
-  // Drag and drop handlers
-  const handleDragStart = useCallback((file: any, source: string) => {
-    setDraggedFile({ ...file, source });
-  }, []);
+  // Store-based state - eliminates prop drilling
+  const {
+    files,
+    folders,
+    totalItems,
+    isLoading,
+    error,
+    stats,
+    viewMode,
+    sorting,
+    searchQuery,
+    filters,
+    selection,
+    currentFolderId,
+    // Actions
+    setViewMode,
+    setSorting,
+    setSearchQuery,
+    setFilterStatus,
+    setFilterType,
+    clearFilters,
+    clearSelection,
+    toggleMultiSelectMode,
+    fetchWorkspaceData,
+    // Modal actions
+    openUploadModal,
+    openCreateFolderModal,
+    openBulkActionsModal,
+  } = useFilesListStore();
 
-  const handleDragEnd = useCallback(() => {
-    setDraggedFile(null);
-    setDragOverTarget(null);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent, target: string) => {
-    e.preventDefault();
-    setDragOverTarget(target);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent, target: string) => {
-      e.preventDefault();
-      if (draggedFile && draggedFile.source === 'shared') {
-        // Copy file from shared to personal workspace
-        console.log('Copying file to personal workspace:', draggedFile.name);
-        // TODO: Implement actual file copying logic
-      }
-      setDragOverTarget(null);
+  // Event handlers
+  const handleViewModeChange = useCallback(
+    (mode: string) => {
+      setViewMode(mode as (typeof VIEW_MODE)[keyof typeof VIEW_MODE]);
     },
-    [draggedFile]
+    [setViewMode]
   );
+
+  const handleSortChange = useCallback(
+    (sortBy: string) => {
+      setSorting(
+        sortBy as (typeof SORT_BY)[keyof typeof SORT_BY],
+        sorting.sortOrder
+      );
+    },
+    [setSorting, sorting.sortOrder]
+  );
+
+  const handleSortOrderToggle = useCallback(() => {
+    setSorting(
+      sorting.sortBy,
+      sorting.sortOrder === SORT_ORDER.ASC ? SORT_ORDER.DESC : SORT_ORDER.ASC
+    );
+  }, [setSorting, sorting]);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearchQuery(e.target.value);
+    },
+    [setSearchQuery]
+  );
+
+  const handleFilterStatusChange = useCallback(
+    (status: string) => {
+      setFilterStatus(
+        status as (typeof FILTER_STATUS)[keyof typeof FILTER_STATUS]
+      );
+    },
+    [setFilterStatus]
+  );
+
+  const handleFilterTypeChange = useCallback(
+    (type: string) => {
+      setFilterType(type as (typeof FILTER_TYPE)[keyof typeof FILTER_TYPE]);
+    },
+    [setFilterType]
+  );
+
+  const handleRefresh = useCallback(() => {
+    fetchWorkspaceData();
+  }, [fetchWorkspaceData]);
+
+  // Grid classes based on view mode
+  const gridClasses = useMemo(() => {
+    switch (viewMode) {
+      case VIEW_MODE.GRID:
+        return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+      case VIEW_MODE.CARD:
+        return 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6';
+      case VIEW_MODE.LIST:
+        return 'flex flex-col gap-2';
+      default:
+        return 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4';
+    }
+  }, [viewMode]);
 
   // Animation variants
   const containerVariants = {
@@ -361,237 +162,323 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: 0.05,
+        delayChildren: 0.1,
       },
     },
   };
 
-  const panelVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.3 },
-    },
-  };
+  // Show empty state if no items
+  if (!isLoading && totalItems === 0 && !filters.hasActiveFilters) {
+    return (
+      <div className={cn('h-full flex flex-col', className)}>
+        <EmptyFilesState
+          onUpload={openUploadModal}
+          onCreateFolder={openCreateFolderModal}
+        />
+      </div>
+    );
+  }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial='hidden'
-      animate='visible'
-      className={cn('h-full flex gap-6', className)}
-    >
-      {/* Left Panel - Shared Files via Links */}
-      <motion.div variants={panelVariants} className='flex-1 flex flex-col'>
-        <div className='flex items-center gap-2 mb-4'>
-          <Link2 className='w-5 h-5 text-blue-600' />
-          <h2 className='text-lg font-semibold'>Shared Files</h2>
-          <Badge variant='secondary' className='ml-auto'>
-            {sharedLinksData.length} links
-          </Badge>
-        </div>
+    <div className={cn('h-full flex flex-col', className)}>
+      {/* Header with controls */}
+      <div className='flex flex-col gap-4 mb-6'>
+        {/* Top row - Title and actions */}
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <h1 className='text-2xl font-semibold'>
+              {currentFolderId ? 'Folder Contents' : 'My Files'}
+            </h1>
+            <Badge variant='secondary'>
+              {stats.totalFiles} files, {stats.totalFolders} folders
+            </Badge>
+            {selection.hasSelection && (
+              <Badge variant='outline'>
+                {selection.totalSelected} selected
+              </Badge>
+            )}
+          </div>
 
-        <div className='flex-1 relative size-full rounded-xl border bg-background overflow-auto'>
-          <MotionHighlight
-            controlledItems
-            mode='parent'
-            hover
-            className='bg-muted rounded-lg pointer-events-none'
-          >
-            <Accordion
-              type='multiple'
-              defaultValue={['Client Project Assets']}
-              className='p-2'
-            >
-              {sharedLinksData.map(link => (
-                <SharedLink
-                  key={link.id}
-                  name={link.name}
-                  sideComponent={
-                    <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-                      <div
-                        className='inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-gray-100 cursor-pointer transition-colors'
-                        onClick={e => {
-                          e.stopPropagation();
-                          console.log('Share link:', link.name);
-                        }}
-                        title='Share link'
-                      >
-                        <Share2 className='w-3 h-3' />
-                      </div>
-                      <div
-                        className='inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-gray-100 cursor-pointer transition-colors'
-                        onClick={e => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(link.url);
-                          console.log('Copied link URL:', link.url);
-                        }}
-                        title='Copy link URL'
-                      >
-                        <Copy className='w-3 h-3' />
-                      </div>
-                    </div>
-                  }
+          <div className='flex items-center gap-2'>
+            {selection.hasSelection && (
+              <>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={openBulkActionsModal}
                 >
-                  {/* Folders within the link */}
-                  {link.folders.map(folder => (
-                    <Folder key={folder.name} name={folder.name}>
-                      {folder.files.map(file => (
-                        <File
-                          key={file.name}
-                          name={file.name}
-                          draggable
-                          onDragStart={() => handleDragStart(file, 'shared')}
-                          onDragEnd={handleDragEnd}
-                          sideComponent={
-                            <div className='flex items-center gap-1 text-xs text-gray-500'>
-                              <span>{getFileIcon(file.type)}</span>
-                              <span>{file.size}</span>
-                            </div>
-                          }
-                        />
-                      ))}
-                    </Folder>
-                  ))}
+                  Bulk Actions
+                </Button>
+                <Button variant='ghost' size='sm' onClick={clearSelection}>
+                  Clear Selection
+                </Button>
+                <Separator orientation='vertical' className='h-6' />
+              </>
+            )}
 
-                  {/* Files directly in the link */}
-                  {link.files.map(file => (
-                    <File
-                      key={file.name}
-                      name={file.name}
-                      draggable
-                      onDragStart={() => handleDragStart(file, 'shared')}
-                      onDragEnd={handleDragEnd}
-                      sideComponent={
-                        <div className='flex items-center gap-1 text-xs text-gray-500'>
-                          <span>{getFileIcon(file.type)}</span>
-                          <span>{file.size}</span>
-                        </div>
-                      }
-                    />
-                  ))}
-                </SharedLink>
-              ))}
-            </Accordion>
-          </MotionHighlight>
-        </div>
-      </motion.div>
-
-      {/* Divider */}
-      <div className='w-px bg-border' />
-
-      {/* Right Panel - Personal Workspace */}
-      <motion.div
-        variants={panelVariants}
-        className='flex-1 flex flex-col'
-        onDragOver={e => handleDragOver(e, 'personal')}
-        onDrop={e => handleDrop(e, 'personal')}
-      >
-        <div className='flex items-center gap-2 mb-4'>
-          <User className='w-5 h-5 text-green-600' />
-          <h2 className='text-lg font-semibold'>My Workspace</h2>
-          <div className='flex items-center gap-2 ml-auto'>
-            <Button variant='outline' size='sm'>
+            <Button variant='outline' size='sm' onClick={openCreateFolderModal}>
               <FolderPlus className='w-4 h-4 mr-2' />
               New Folder
             </Button>
-            <Button variant='outline' size='sm'>
+            <Button variant='outline' size='sm' onClick={openUploadModal}>
               <Upload className='w-4 h-4 mr-2' />
               Upload
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={toggleMultiSelectMode}
+              className={selection.isMultiSelectMode ? 'bg-blue-100' : ''}
+            >
+              <Grid3X3 className='w-4 h-4' />
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <RefreshCw
+                className={cn('w-4 h-4', isLoading && 'animate-spin')}
+              />
             </Button>
           </div>
         </div>
 
-        <Files
-          className={cn(
-            'flex-1 transition-all duration-200',
-            dragOverTarget === 'personal' &&
-              'ring-2 ring-green-500 ring-offset-2'
-          )}
-          defaultOpen={['My Projects']}
-        >
-          {/* Folders */}
-          {personalWorkspaceData.folders.map(folder => (
-            <Folder
-              key={folder.name}
-              name={folder.name}
-              sideComponent={
-                <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
-                  <div
-                    className='inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-gray-100 cursor-pointer transition-colors'
-                    onClick={e => {
-                      e.stopPropagation();
-                      console.log('Share folder:', folder.name);
-                    }}
-                    title='Share folder'
-                  >
-                    <Share2 className='w-3 h-3' />
-                  </div>
-                  <div
-                    className='inline-flex items-center justify-center h-6 w-6 rounded-md hover:bg-red-100 cursor-pointer transition-colors'
-                    onClick={e => {
-                      e.stopPropagation();
-                      console.log('Delete folder:', folder.name);
-                    }}
-                    title='Delete folder'
-                  >
-                    <Trash2 className='w-3 h-3 text-red-600' />
-                  </div>
-                </div>
-              }
-            >
-              {/* Subfolders */}
-              {folder.folders?.map(subfolder => (
-                <Folder key={subfolder.name} name={subfolder.name}>
-                  {subfolder.files.map(file => (
-                    <File
-                      key={file.name}
-                      name={file.name}
-                      sideComponent={
-                        <div className='flex items-center gap-1 text-xs text-gray-500'>
-                          <span>{getFileIcon(file.type)}</span>
-                          <span>{file.size}</span>
-                        </div>
-                      }
-                    />
-                  ))}
-                </Folder>
-              ))}
-
-              {/* Files directly in the folder */}
-              {folder.files?.map(file => (
-                <File
-                  key={file.name}
-                  name={file.name}
-                  sideComponent={
-                    <div className='flex items-center gap-1 text-xs text-gray-500'>
-                      <span>{getFileIcon(file.type)}</span>
-                      <span>{file.size}</span>
-                    </div>
-                  }
-                />
-              ))}
-            </Folder>
-          ))}
-
-          {/* Files in root */}
-          {personalWorkspaceData.files.map(file => (
-            <File
-              key={file.name}
-              name={file.name}
-              sideComponent={
-                <div className='flex items-center gap-1 text-xs text-gray-500'>
-                  <span>{getFileIcon(file.type)}</span>
-                  <span>{file.size}</span>
-                </div>
-              }
+        {/* Second row - Search, filters, and view controls */}
+        <div className='flex items-center gap-4'>
+          {/* Search */}
+          <div className='relative flex-1 max-w-md'>
+            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400' />
+            <Input
+              placeholder='Search files and folders...'
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className='pl-9'
             />
-          ))}
-        </Files>
-      </motion.div>
-    </motion.div>
+          </div>
+
+          {/* Filters */}
+          <Select
+            value={filters.status}
+            onValueChange={handleFilterStatusChange}
+          >
+            <SelectTrigger className='w-32'>
+              <SelectValue placeholder='Status' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FILTER_STATUS.ALL}>All Status</SelectItem>
+              <SelectItem value={FILTER_STATUS.ACTIVE}>Active</SelectItem>
+              <SelectItem value={FILTER_STATUS.PROCESSING}>
+                Processing
+              </SelectItem>
+              <SelectItem value={FILTER_STATUS.ERROR}>Error</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.type} onValueChange={handleFilterTypeChange}>
+            <SelectTrigger className='w-32'>
+              <SelectValue placeholder='Type' />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FILTER_TYPE.ALL}>All Types</SelectItem>
+              <SelectItem value={FILTER_TYPE.FILES}>Files</SelectItem>
+              <SelectItem value={FILTER_TYPE.FOLDERS}>Folders</SelectItem>
+              <SelectItem value={FILTER_TYPE.IMAGES}>Images</SelectItem>
+              <SelectItem value={FILTER_TYPE.DOCUMENTS}>Documents</SelectItem>
+              <SelectItem value={FILTER_TYPE.VIDEOS}>Videos</SelectItem>
+              <SelectItem value={FILTER_TYPE.AUDIO}>Audio</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort */}
+          <div className='flex items-center gap-1'>
+            <Select value={sorting.sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className='w-32'>
+                <SelectValue placeholder='Sort by' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SORT_BY.NAME}>Name</SelectItem>
+                <SelectItem value={SORT_BY.SIZE}>Size</SelectItem>
+                <SelectItem value={SORT_BY.TYPE}>Type</SelectItem>
+                <SelectItem value={SORT_BY.CREATED_AT}>Created</SelectItem>
+                <SelectItem value={SORT_BY.UPDATED_AT}>Modified</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={handleSortOrderToggle}
+              className='p-2'
+            >
+              {sorting.sortOrder === SORT_ORDER.ASC ? (
+                <SortAsc className='w-4 h-4' />
+              ) : (
+                <SortDesc className='w-4 h-4' />
+              )}
+            </Button>
+          </div>
+
+          {/* View mode toggles */}
+          <div className='flex items-center border rounded-lg p-1'>
+            <Button
+              variant={viewMode === VIEW_MODE.GRID ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleViewModeChange(VIEW_MODE.GRID)}
+              className='p-2'
+            >
+              <Grid3X3 className='w-4 h-4' />
+            </Button>
+            <Button
+              variant={viewMode === VIEW_MODE.CARD ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleViewModeChange(VIEW_MODE.CARD)}
+              className='p-2'
+            >
+              <LayoutGrid className='w-4 h-4' />
+            </Button>
+            <Button
+              variant={viewMode === VIEW_MODE.LIST ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => handleViewModeChange(VIEW_MODE.LIST)}
+              className='p-2'
+            >
+              <List className='w-4 h-4' />
+            </Button>
+          </div>
+
+          {/* Panel mode toggle */}
+          <div className='flex items-center border rounded-lg p-1 ml-2'>
+            <Button
+              variant={panelMode === 'single' ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => setPanelMode('single')}
+              className='p-2 text-xs'
+              title='Single Panel View'
+            >
+              Single
+            </Button>
+            <Button
+              variant={panelMode === 'dual' ? 'default' : 'ghost'}
+              size='sm'
+              onClick={() => setPanelMode('dual')}
+              className='p-2 text-xs'
+              title='Dual Panel View'
+            >
+              Dual
+            </Button>
+          </div>
+
+          {/* Clear filters */}
+          {filters.hasActiveFilters && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={clearFilters}
+              className='text-red-600 hover:text-red-700'
+            >
+              <Filter className='w-4 h-4 mr-2' />
+              Clear Filters
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className='flex items-center justify-center p-8 text-red-600'>
+          <div className='text-center'>
+            <p className='text-lg font-medium'>Error loading files</p>
+            <p className='text-sm text-red-500 mt-1'>{error}</p>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleRefresh}
+              className='mt-4'
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className='flex items-center justify-center p-8'>
+          <div className='flex items-center gap-3 text-gray-600'>
+            <RefreshCw className='w-5 h-5 animate-spin' />
+            <span>Loading files...</span>
+          </div>
+        </div>
+      )}
+
+      {/* No results state */}
+      {!isLoading && !error && totalItems === 0 && filters.hasActiveFilters && (
+        <div className='flex items-center justify-center p-8 text-gray-500'>
+          <div className='text-center'>
+            <Search className='w-12 h-12 mx-auto mb-4 text-gray-300' />
+            <p className='text-lg font-medium'>No files found</p>
+            <p className='text-sm mt-1'>Try adjusting your search or filters</p>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={clearFilters}
+              className='mt-4'
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content - Conditional rendering based on panel mode */}
+      {!isLoading && !error && (
+        <>
+          {/* Dual Panel View */}
+          {panelMode === 'dual' ? (
+            <div className='flex-1'>
+              <TwoPanelFilesView />
+            </div>
+          ) : /* Single Panel View - Traditional Files Grid */
+          totalItems > 0 ? (
+            <motion.div
+              variants={containerVariants}
+              initial='hidden'
+              animate='visible'
+              className={cn('flex-1 overflow-auto', gridClasses)}
+            >
+              {/* Folders first */}
+              <AnimatePresence mode='popLayout'>
+                {folders.map((folder, index) => (
+                  <FolderCard
+                    key={folder.id}
+                    folderId={folder.id}
+                    view={viewMode}
+                    index={index}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {/* Then files */}
+              <AnimatePresence mode='popLayout'>
+                {files.map((file, index) => (
+                  <FileCard
+                    key={file.id}
+                    fileId={file.id}
+                    view={viewMode}
+                    index={folders.length + index}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          ) : (
+            /* Empty state for single panel */
+            <EmptyFilesState />
+          )}
+        </>
+      )}
+    </div>
   );
 });
 

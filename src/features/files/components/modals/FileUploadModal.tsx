@@ -17,7 +17,13 @@ import {
   DialogTitle,
 } from '@/components/ui/shadcn/dialog';
 import { Progress } from '@/components/ui/shadcn/progress';
-import { useFilesModalsStore } from '../../hooks';
+import { Badge } from '@/components/ui/shadcn/badge';
+import {
+  useFilesModalsStore,
+  useFilesUploadStore,
+} from '../../hooks/use-files-composite';
+import { useFilesDataStore } from '../../store';
+import { MODAL_TYPE } from '../../store/files-modal-store';
 
 // =============================================================================
 // COMPONENT IMPLEMENTATION
@@ -25,30 +31,52 @@ import { useFilesModalsStore } from '../../hooks';
 
 const FileUploadModal = memo(() => {
   // Store-based state - eliminates prop drilling
-  const { activeModal, isModalOpen, actions } = useFilesModalsStore();
+  const { activeModal, isModalOpen, closeModal, modalData } =
+    useFilesModalsStore();
+
+  const { uploadState, clearUploadData, updateUploadFormData } =
+    useFilesUploadStore();
+
+  const uploadFile = useFilesDataStore(state => state.uploadFile);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Show modal only if upload modal is active
-  const isOpen = isModalOpen && activeModal === 'upload';
+  const isOpen = isModalOpen && activeModal === MODAL_TYPE.UPLOAD;
 
   // Event handlers
   const handleClose = useCallback(() => {
-    actions.onClose();
-  }, [actions]);
+    closeModal();
+    clearUploadData();
+  }, [closeModal, clearUploadData]);
 
   const handleFileSelect = useCallback(() => {
     fileInputRef.current?.click();
   }, []);
 
   const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
       if (files.length > 0) {
-        // TODO: Implement file upload logic
-        console.log('Files selected:', files);
+        // Update form data
+        updateUploadFormData({
+          files,
+          folderId: modalData?.currentFolderId || null,
+        });
+
+        // Start upload
+        await uploadFile({
+          files,
+          folderId: modalData?.currentFolderId || null,
+        });
+
+        // Close modal on success
+        if (uploadState.isCompleted && !uploadState.hasErrors) {
+          handleClose();
+        }
       }
     },
-    []
+    [modalData, updateUploadFormData, uploadFile, uploadState, handleClose]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -56,16 +84,33 @@ const FileUploadModal = memo(() => {
     e.stopPropagation();
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDrop = useCallback(
+    async (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      // TODO: Implement file upload logic
-      console.log('Files dropped:', files);
-    }
-  }, []);
+      const files = Array.from(e.dataTransfer.files);
+      if (files.length > 0) {
+        // Update form data
+        updateUploadFormData({
+          files,
+          folderId: modalData?.currentFolderId || null,
+        });
+
+        // Start upload
+        await uploadFile({
+          files,
+          folderId: modalData?.currentFolderId || null,
+        });
+
+        // Close modal on success
+        if (uploadState.isCompleted && !uploadState.hasErrors) {
+          handleClose();
+        }
+      }
+    },
+    [modalData, updateUploadFormData, uploadFile, uploadState, handleClose]
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -110,21 +155,67 @@ const FileUploadModal = memo(() => {
             onChange={handleFileChange}
           />
 
-          {/* Upload progress (placeholder) */}
-          <div className='space-y-2'>
-            <div className='flex justify-between text-sm'>
-              <span>Uploading files...</span>
-              <span>0%</span>
+          {/* Upload progress */}
+          {uploadState.isUploading && (
+            <div className='space-y-2'>
+              <div className='flex justify-between text-sm'>
+                <span>Uploading {uploadState.totalFiles} files...</span>
+                <span>{uploadState.totalProgress}%</span>
+              </div>
+              <Progress value={uploadState.totalProgress} className='h-2' />
+
+              {/* Upload status */}
+              <div className='flex gap-2 text-xs'>
+                <Badge variant='secondary'>
+                  {uploadState.completedFiles} completed
+                </Badge>
+                {uploadState.failedFiles > 0 && (
+                  <Badge variant='destructive'>
+                    {uploadState.failedFiles} failed
+                  </Badge>
+                )}
+                {uploadState.pendingFiles > 0 && (
+                  <Badge variant='outline'>
+                    {uploadState.pendingFiles} pending
+                  </Badge>
+                )}
+              </div>
             </div>
-            <Progress value={0} className='h-2' />
-          </div>
+          )}
+
+          {/* Upload completed message */}
+          {uploadState.isCompleted && (
+            <div className='text-center p-4 bg-green-50 rounded-lg'>
+              <p className='text-green-800 font-medium'>
+                Upload completed successfully!
+              </p>
+              {uploadState.failedFiles > 0 && (
+                <p className='text-red-600 text-sm mt-1'>
+                  {uploadState.failedFiles} files failed to upload
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Error message */}
+          {uploadState.hasErrors && (
+            <div className='text-center p-4 bg-red-50 rounded-lg'>
+              <p className='text-red-800 font-medium'>
+                Upload failed. Please try again.
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className='flex justify-end gap-2'>
             <Button variant='outline' onClick={handleClose}>
-              Cancel
+              {uploadState.isUploading ? 'Cancel' : 'Close'}
             </Button>
-            <Button onClick={handleFileSelect}>Select Files</Button>
+            {!uploadState.isUploading && (
+              <Button onClick={handleFileSelect}>
+                {uploadState.isCompleted ? 'Upload More' : 'Select Files'}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

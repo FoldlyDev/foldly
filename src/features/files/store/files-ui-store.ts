@@ -1,827 +1,498 @@
-// Files UI Store - View State, Search, Filters, and Selection
-// Zustand store for file UI state management
-// Following 2025 TypeScript best practices with pure reducers
+/**
+ * FilesUIStore - Focused store for UI state management
+ * Handles view mode, search, filters, selection, and sorting
+ */
+
+'use client';
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type {
-  FileId,
-  FolderId,
-  FileFilters,
-  SearchOptions,
-  FilesUIState,
-  BreadcrumbItem,
-  FileType,
-  FolderColor,
-  WORKSPACE_VIEW,
-  SORT_OPTIONS,
-} from '../types';
-import {
-  convertReducersToActions,
-  createReducers,
-} from './utils/convert-reducers-to-actions';
-import { DEFAULT_VALUES } from '../constants';
+import type { FileId, FolderId } from '@/types';
+
+// =============================================================================
+// CONSTANTS
+// =============================================================================
+
+export const VIEW_MODE = {
+  GRID: 'grid',
+  LIST: 'list',
+  CARD: 'card',
+} as const;
+
+export const SORT_BY = {
+  NAME: 'name',
+  SIZE: 'size',
+  TYPE: 'type',
+  CREATED_AT: 'createdAt',
+  UPDATED_AT: 'updatedAt',
+  DOWNLOAD_COUNT: 'downloadCount',
+} as const;
+
+export const SORT_ORDER = {
+  ASC: 'asc',
+  DESC: 'desc',
+} as const;
+
+export const FILTER_STATUS = {
+  ALL: 'all',
+  ACTIVE: 'active',
+  ARCHIVED: 'archived',
+  PROCESSING: 'processing',
+} as const;
+
+export const FILTER_TYPE = {
+  ALL: 'all',
+  FILES: 'files',
+  FOLDERS: 'folders',
+  IMAGES: 'images',
+  DOCUMENTS: 'documents',
+  VIDEOS: 'videos',
+  AUDIO: 'audio',
+  OTHERS: 'others',
+} as const;
 
 // =============================================================================
 // STATE INTERFACE
 // =============================================================================
 
-export interface FilesUIStateStore extends FilesUIState {
-  // View controls
-  readonly viewMode: 'grid' | 'list' | 'card';
-  readonly sortBy:
+interface FilesUIState {
+  // View and layout
+  viewMode: 'grid' | 'list' | 'card';
+  sortBy:
     | 'name'
     | 'size'
     | 'type'
     | 'createdAt'
     | 'updatedAt'
     | 'downloadCount';
-  readonly sortOrder: 'asc' | 'desc';
-  readonly showHiddenFiles: boolean;
-  readonly thumbnailSize: 'small' | 'medium' | 'large';
+  sortDirection: 'asc' | 'desc';
 
   // Navigation
-  readonly currentFolderId: FolderId | null;
-  readonly breadcrumbs: BreadcrumbItem[];
-  readonly navigationHistory: string[];
-  readonly historyIndex: number;
+  currentFolderId: FolderId | null;
+  navigationHistory: (FolderId | null)[];
+  historyIndex: number;
 
-  // Search and filters
-  readonly searchQuery: string;
-  readonly searchOptions: SearchOptions;
-  readonly activeFilters: FileFilters;
-  readonly isFilterPanelOpen: boolean;
-  readonly savedSearches: Array<{
-    name: string;
-    query: string;
-    filters: FileFilters;
-  }>;
+  // Search and filtering
+  searchQuery: string;
+  filterStatus: 'all' | 'active' | 'archived' | 'processing';
+  filterType: 'all' | 'images' | 'documents' | 'videos' | 'audio' | 'others';
 
-  // Selection
-  readonly selectedFileIds: FileId[];
-  readonly selectedFolderIds: FolderId[];
-  readonly isMultiSelectMode: boolean;
-  readonly lastSelectedId: string | null;
+  // Selection state
+  isMultiSelectMode: boolean;
+  selectedFileIds: Set<FileId>;
+  selectedFolderIds: Set<FolderId>;
 
   // Drag and drop
-  readonly draggedItems: Array<{ id: string; type: 'file' | 'folder' }>;
-  readonly dragOverFolderId: FolderId | null;
-  readonly isDragging: boolean;
-
-  // UI state
-  readonly isLoading: boolean;
-  readonly isRefreshing: boolean;
-  readonly expandedFolderIds: FolderId[];
-  readonly collapsedFolderIds: FolderId[];
-  readonly focusedItemId: string | null;
-
-  // Panels and modals
-  readonly isUploadPanelOpen: boolean;
-  readonly isCreateFolderModalOpen: boolean;
-  readonly isFileDetailsModalOpen: boolean;
-  readonly isShareModalOpen: boolean;
-  readonly isDeleteConfirmModalOpen: boolean;
-
-  // Preferences
-  readonly preferences: {
-    readonly autoSelectOnNavigation: boolean;
-    readonly showFileExtensions: boolean;
-    readonly showItemCount: boolean;
-    readonly enableKeyboardNavigation: boolean;
-    readonly enableInfiniteScroll: boolean;
-    readonly itemsPerPage: number;
+  isDragging: boolean;
+  draggedItems: {
+    fileIds: FileId[];
+    folderIds: FolderId[];
   };
+
+  // UI states
+  showHiddenFiles: boolean;
+  showPreviewPanel: boolean;
+  previewFileId: FileId | null;
+
+  // Pagination
+  currentPage: number;
+  itemsPerPage: number;
+
+  // Additional UI states needed by composite hooks
+  draggedItemIds: string[];
+  focusedItemId: string | null;
+  expandedFolderIds: string[];
+  dragOverFolderId: string | null;
+
+  // Sort order for compatibility
+  sortOrder: 'asc' | 'desc';
+
+  // Actions
+  setViewMode: (mode: 'grid' | 'list' | 'card') => void;
+  setSorting: (
+    sortBy:
+      | 'name'
+      | 'size'
+      | 'type'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'downloadCount',
+    direction?: 'asc' | 'desc'
+  ) => void;
+  setSortOrder: (direction: 'asc' | 'desc') => void;
+
+  navigateToFolder: (folderId: FolderId | null) => void;
+  navigateBack: () => void;
+  navigateForward: () => void;
+
+  setSearchQuery: (query: string) => void;
+  setStatusFilter: (
+    status: 'all' | 'active' | 'archived' | 'processing'
+  ) => void;
+  setTypeFilter: (
+    type: 'all' | 'images' | 'documents' | 'videos' | 'audio' | 'others'
+  ) => void;
+  setFilterStatus: (
+    status: 'all' | 'active' | 'archived' | 'processing'
+  ) => void;
+  setFilterType: (
+    type: 'all' | 'images' | 'documents' | 'videos' | 'audio' | 'others'
+  ) => void;
+
+  toggleMultiSelectMode: () => void;
+  selectFile: (fileId: FileId) => void;
+  selectFolder: (folderId: FolderId) => void;
+  deselectFile: (fileId: FileId) => void;
+  deselectFolder: (folderId: FolderId) => void;
+  toggleFileSelection: (fileId: FileId) => void;
+  toggleFolderSelection: (folderId: FolderId) => void;
+  selectAllFiles: (fileIds: FileId[]) => void;
+  selectAllFolders: (folderIds: FolderId[]) => void;
+  clearSelection: () => void;
+
+  startDrag: (fileIds: FileId[], folderIds: FolderId[]) => void;
+  endDrag: () => void;
+
+  toggleHiddenFiles: () => void;
+  togglePreviewPanel: () => void;
+  setPreviewFile: (fileId: FileId | null) => void;
+
+  setPage: (page: number) => void;
+  setCurrentPage: (page: number) => void;
+  resetFilters: () => void;
+
+  // Additional actions needed by composite hooks
+  setFocusedItem: (id: string | null) => void;
+  toggleFolderExpansion: (folderId: string) => void;
+  setDragOver: (folderId: string | null) => void;
+  clearFilters: () => void;
 }
-
-// =============================================================================
-// INITIAL STATE
-// =============================================================================
-
-const initialState: FilesUIStateStore = {
-  // View controls
-  viewMode: DEFAULT_VALUES.VIEW_MODE,
-  sortBy: DEFAULT_VALUES.SORT_BY,
-  sortOrder: DEFAULT_VALUES.SORT_ORDER,
-  showHiddenFiles: false,
-  thumbnailSize: 'medium',
-
-  // Navigation
-  currentFolderId: null,
-  breadcrumbs: [{ name: 'Home', path: '/', folderId: null, isLast: true }],
-  navigationHistory: ['/'],
-  historyIndex: 0,
-
-  // Search and filters
-  searchQuery: '',
-  searchOptions: {
-    includeContent: false,
-    includeMetadata: true,
-    includeTags: true,
-    caseSensitive: false,
-    useRegex: false,
-  },
-  activeFilters: {
-    types: [],
-    tags: [],
-    sizeMin: undefined,
-    sizeMax: undefined,
-    dateFrom: undefined,
-    dateTo: undefined,
-    isShared: undefined,
-    isPublic: undefined,
-    query: '',
-  },
-  isFilterPanelOpen: false,
-  savedSearches: [],
-
-  // Selection
-  selectedFileIds: [],
-  selectedFolderIds: [],
-  isMultiSelectMode: false,
-  lastSelectedId: null,
-
-  // Drag and drop
-  draggedItems: [],
-  dragOverFolderId: null,
-  isDragging: false,
-
-  // UI state
-  isLoading: false,
-  isRefreshing: false,
-  expandedFolderIds: [],
-  collapsedFolderIds: [],
-  focusedItemId: null,
-
-  // Panels and modals
-  isUploadPanelOpen: false,
-  isCreateFolderModalOpen: false,
-  isFileDetailsModalOpen: false,
-  isShareModalOpen: false,
-  isDeleteConfirmModalOpen: false,
-
-  // Preferences
-  preferences: {
-    autoSelectOnNavigation: true,
-    showFileExtensions: true,
-    showItemCount: true,
-    enableKeyboardNavigation: true,
-    enableInfiniteScroll: false,
-    itemsPerPage: 50,
-  },
-};
-
-// =============================================================================
-// PURE REDUCERS
-// =============================================================================
-
-const uiReducers = createReducers<
-  FilesUIStateStore,
-  {
-    // View controls
-    setViewMode: (
-      state: FilesUIStateStore,
-      mode: 'grid' | 'list' | 'card'
-    ) => FilesUIStateStore;
-    setSortBy: (
-      state: FilesUIStateStore,
-      sortBy:
-        | 'name'
-        | 'size'
-        | 'type'
-        | 'createdAt'
-        | 'updatedAt'
-        | 'downloadCount'
-    ) => FilesUIStateStore;
-    setSortOrder: (
-      state: FilesUIStateStore,
-      order: 'asc' | 'desc'
-    ) => FilesUIStateStore;
-    setShowHiddenFiles: (
-      state: FilesUIStateStore,
-      show: boolean
-    ) => FilesUIStateStore;
-    setThumbnailSize: (
-      state: FilesUIStateStore,
-      size: 'small' | 'medium' | 'large'
-    ) => FilesUIStateStore;
-
-    // Navigation
-    navigateToFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId | null,
-      breadcrumbs: BreadcrumbItem[]
-    ) => FilesUIStateStore;
-    navigateBack: (state: FilesUIStateStore) => FilesUIStateStore;
-    navigateForward: (state: FilesUIStateStore) => FilesUIStateStore;
-    updateBreadcrumbs: (
-      state: FilesUIStateStore,
-      breadcrumbs: BreadcrumbItem[]
-    ) => FilesUIStateStore;
-
-    // Search and filters
-    setSearchQuery: (
-      state: FilesUIStateStore,
-      query: string
-    ) => FilesUIStateStore;
-    setSearchOptions: (
-      state: FilesUIStateStore,
-      options: Partial<SearchOptions>
-    ) => FilesUIStateStore;
-    setActiveFilters: (
-      state: FilesUIStateStore,
-      filters: Partial<FileFilters>
-    ) => FilesUIStateStore;
-    clearFilters: (state: FilesUIStateStore) => FilesUIStateStore;
-    toggleFilterPanel: (state: FilesUIStateStore) => FilesUIStateStore;
-    setFilterPanelOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    addSavedSearch: (
-      state: FilesUIStateStore,
-      search: { name: string; query: string; filters: FileFilters }
-    ) => FilesUIStateStore;
-    removeSavedSearch: (
-      state: FilesUIStateStore,
-      name: string
-    ) => FilesUIStateStore;
-
-    // Selection
-    selectFile: (
-      state: FilesUIStateStore,
-      fileId: FileId,
-      multiSelect?: boolean
-    ) => FilesUIStateStore;
-    selectFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId,
-      multiSelect?: boolean
-    ) => FilesUIStateStore;
-    deselectFile: (
-      state: FilesUIStateStore,
-      fileId: FileId
-    ) => FilesUIStateStore;
-    deselectFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId
-    ) => FilesUIStateStore;
-    selectAll: (
-      state: FilesUIStateStore,
-      fileIds: FileId[],
-      folderIds: FolderId[]
-    ) => FilesUIStateStore;
-    deselectAll: (state: FilesUIStateStore) => FilesUIStateStore;
-    toggleMultiSelectMode: (state: FilesUIStateStore) => FilesUIStateStore;
-    setMultiSelectMode: (
-      state: FilesUIStateStore,
-      enabled: boolean
-    ) => FilesUIStateStore;
-
-    // Drag and drop
-    startDrag: (
-      state: FilesUIStateStore,
-      items: Array<{ id: string; type: 'file' | 'folder' }>
-    ) => FilesUIStateStore;
-    endDrag: (state: FilesUIStateStore) => FilesUIStateStore;
-    setDragOverFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId | null
-    ) => FilesUIStateStore;
-
-    // UI state
-    setLoading: (
-      state: FilesUIStateStore,
-      loading: boolean
-    ) => FilesUIStateStore;
-    setRefreshing: (
-      state: FilesUIStateStore,
-      refreshing: boolean
-    ) => FilesUIStateStore;
-    expandFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId
-    ) => FilesUIStateStore;
-    collapseFolder: (
-      state: FilesUIStateStore,
-      folderId: FolderId
-    ) => FilesUIStateStore;
-    toggleFolderExpansion: (
-      state: FilesUIStateStore,
-      folderId: FolderId
-    ) => FilesUIStateStore;
-    setFocusedItem: (
-      state: FilesUIStateStore,
-      itemId: string | null
-    ) => FilesUIStateStore;
-
-    // Panels and modals
-    setUploadPanelOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    setCreateFolderModalOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    setFileDetailsModalOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    setShareModalOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    setDeleteConfirmModalOpen: (
-      state: FilesUIStateStore,
-      open: boolean
-    ) => FilesUIStateStore;
-    closeAllModals: (state: FilesUIStateStore) => FilesUIStateStore;
-
-    // Preferences
-    updatePreferences: (
-      state: FilesUIStateStore,
-      preferences: Partial<FilesUIStateStore['preferences']>
-    ) => FilesUIStateStore;
-
-    // Reset
-    resetUIState: (state: FilesUIStateStore) => FilesUIStateStore;
-  }
->({
-  // View controls
-  setViewMode: (state, mode) => ({
-    ...state,
-    viewMode: mode,
-  }),
-
-  setSortBy: (state, sortBy) => ({
-    ...state,
-    sortBy,
-  }),
-
-  setSortOrder: (state, order) => ({
-    ...state,
-    sortOrder: order,
-  }),
-
-  setShowHiddenFiles: (state, show) => ({
-    ...state,
-    showHiddenFiles: show,
-  }),
-
-  setThumbnailSize: (state, size) => ({
-    ...state,
-    thumbnailSize: size,
-  }),
-
-  // Navigation
-  navigateToFolder: (state, folderId, breadcrumbs) => {
-    const newPath = breadcrumbs.map(b => b.path).join('');
-    const newHistory = [
-      ...state.navigationHistory.slice(0, state.historyIndex + 1),
-      newPath,
-    ];
-
-    return {
-      ...state,
-      currentFolderId: folderId,
-      breadcrumbs,
-      navigationHistory: newHistory,
-      historyIndex: newHistory.length - 1,
-    };
-  },
-
-  navigateBack: state => {
-    if (state.historyIndex > 0) {
-      return {
-        ...state,
-        historyIndex: state.historyIndex - 1,
-      };
-    }
-    return state;
-  },
-
-  navigateForward: state => {
-    if (state.historyIndex < state.navigationHistory.length - 1) {
-      return {
-        ...state,
-        historyIndex: state.historyIndex + 1,
-      };
-    }
-    return state;
-  },
-
-  updateBreadcrumbs: (state, breadcrumbs) => ({
-    ...state,
-    breadcrumbs,
-  }),
-
-  // Search and filters
-  setSearchQuery: (state, query) => ({
-    ...state,
-    searchQuery: query,
-    activeFilters: {
-      ...state.activeFilters,
-      query,
-    },
-  }),
-
-  setSearchOptions: (state, options) => ({
-    ...state,
-    searchOptions: {
-      ...state.searchOptions,
-      ...options,
-    },
-  }),
-
-  setActiveFilters: (state, filters) => ({
-    ...state,
-    activeFilters: {
-      ...state.activeFilters,
-      ...filters,
-    },
-  }),
-
-  clearFilters: state => ({
-    ...state,
-    activeFilters: {
-      types: [],
-      tags: [],
-      sizeMin: undefined,
-      sizeMax: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-      isShared: undefined,
-      isPublic: undefined,
-      query: '',
-    },
-    searchQuery: '',
-  }),
-
-  toggleFilterPanel: state => ({
-    ...state,
-    isFilterPanelOpen: !state.isFilterPanelOpen,
-  }),
-
-  setFilterPanelOpen: (state, open) => ({
-    ...state,
-    isFilterPanelOpen: open,
-  }),
-
-  addSavedSearch: (state, search) => ({
-    ...state,
-    savedSearches: [...state.savedSearches, search],
-  }),
-
-  removeSavedSearch: (state, name) => ({
-    ...state,
-    savedSearches: state.savedSearches.filter(search => search.name !== name),
-  }),
-
-  // Selection
-  selectFile: (state, fileId, multiSelect = false) => {
-    if (multiSelect) {
-      const isSelected = state.selectedFileIds.includes(fileId);
-      return {
-        ...state,
-        selectedFileIds: isSelected
-          ? state.selectedFileIds.filter(id => id !== fileId)
-          : [...state.selectedFileIds, fileId],
-        lastSelectedId: fileId,
-        isMultiSelectMode: true,
-      };
-    } else {
-      return {
-        ...state,
-        selectedFileIds: [fileId],
-        selectedFolderIds: [],
-        lastSelectedId: fileId,
-        isMultiSelectMode: false,
-      };
-    }
-  },
-
-  selectFolder: (state, folderId, multiSelect = false) => {
-    if (multiSelect) {
-      const isSelected = state.selectedFolderIds.includes(folderId);
-      return {
-        ...state,
-        selectedFolderIds: isSelected
-          ? state.selectedFolderIds.filter(id => id !== folderId)
-          : [...state.selectedFolderIds, folderId],
-        lastSelectedId: folderId,
-        isMultiSelectMode: true,
-      };
-    } else {
-      return {
-        ...state,
-        selectedFileIds: [],
-        selectedFolderIds: [folderId],
-        lastSelectedId: folderId,
-        isMultiSelectMode: false,
-      };
-    }
-  },
-
-  deselectFile: (state, fileId) => ({
-    ...state,
-    selectedFileIds: state.selectedFileIds.filter(id => id !== fileId),
-  }),
-
-  deselectFolder: (state, folderId) => ({
-    ...state,
-    selectedFolderIds: state.selectedFolderIds.filter(id => id !== folderId),
-  }),
-
-  selectAll: (state, fileIds, folderIds) => ({
-    ...state,
-    selectedFileIds: fileIds,
-    selectedFolderIds: folderIds,
-    isMultiSelectMode: fileIds.length > 1 || folderIds.length > 1,
-  }),
-
-  deselectAll: state => ({
-    ...state,
-    selectedFileIds: [],
-    selectedFolderIds: [],
-    isMultiSelectMode: false,
-    lastSelectedId: null,
-  }),
-
-  toggleMultiSelectMode: state => ({
-    ...state,
-    isMultiSelectMode: !state.isMultiSelectMode,
-    selectedFileIds: state.isMultiSelectMode ? [] : state.selectedFileIds,
-    selectedFolderIds: state.isMultiSelectMode ? [] : state.selectedFolderIds,
-  }),
-
-  setMultiSelectMode: (state, enabled) => ({
-    ...state,
-    isMultiSelectMode: enabled,
-    selectedFileIds: enabled ? state.selectedFileIds : [],
-    selectedFolderIds: enabled ? state.selectedFolderIds : [],
-  }),
-
-  // Drag and drop
-  startDrag: (state, items) => ({
-    ...state,
-    draggedItems: items,
-    isDragging: true,
-  }),
-
-  endDrag: state => ({
-    ...state,
-    draggedItems: [],
-    isDragging: false,
-    dragOverFolderId: null,
-  }),
-
-  setDragOverFolder: (state, folderId) => ({
-    ...state,
-    dragOverFolderId: folderId,
-  }),
-
-  // UI state
-  setLoading: (state, loading) => ({
-    ...state,
-    isLoading: loading,
-  }),
-
-  setRefreshing: (state, refreshing) => ({
-    ...state,
-    isRefreshing: refreshing,
-  }),
-
-  expandFolder: (state, folderId) => ({
-    ...state,
-    expandedFolderIds: state.expandedFolderIds.includes(folderId)
-      ? state.expandedFolderIds
-      : [...state.expandedFolderIds, folderId],
-    collapsedFolderIds: state.collapsedFolderIds.filter(id => id !== folderId),
-  }),
-
-  collapseFolder: (state, folderId) => ({
-    ...state,
-    collapsedFolderIds: state.collapsedFolderIds.includes(folderId)
-      ? state.collapsedFolderIds
-      : [...state.collapsedFolderIds, folderId],
-    expandedFolderIds: state.expandedFolderIds.filter(id => id !== folderId),
-  }),
-
-  toggleFolderExpansion: (state, folderId) => {
-    const isExpanded = state.expandedFolderIds.includes(folderId);
-
-    if (isExpanded) {
-      return {
-        ...state,
-        expandedFolderIds: state.expandedFolderIds.filter(
-          id => id !== folderId
-        ),
-        collapsedFolderIds: [...state.collapsedFolderIds, folderId],
-      };
-    } else {
-      return {
-        ...state,
-        expandedFolderIds: [...state.expandedFolderIds, folderId],
-        collapsedFolderIds: state.collapsedFolderIds.filter(
-          id => id !== folderId
-        ),
-      };
-    }
-  },
-
-  setFocusedItem: (state, itemId) => ({
-    ...state,
-    focusedItemId: itemId,
-  }),
-
-  // Panels and modals
-  setUploadPanelOpen: (state, open) => ({
-    ...state,
-    isUploadPanelOpen: open,
-  }),
-
-  setCreateFolderModalOpen: (state, open) => ({
-    ...state,
-    isCreateFolderModalOpen: open,
-  }),
-
-  setFileDetailsModalOpen: (state, open) => ({
-    ...state,
-    isFileDetailsModalOpen: open,
-  }),
-
-  setShareModalOpen: (state, open) => ({
-    ...state,
-    isShareModalOpen: open,
-  }),
-
-  setDeleteConfirmModalOpen: (state, open) => ({
-    ...state,
-    isDeleteConfirmModalOpen: open,
-  }),
-
-  closeAllModals: state => ({
-    ...state,
-    isUploadPanelOpen: false,
-    isCreateFolderModalOpen: false,
-    isFileDetailsModalOpen: false,
-    isShareModalOpen: false,
-    isDeleteConfirmModalOpen: false,
-  }),
-
-  // Preferences
-  updatePreferences: (state, preferences) => ({
-    ...state,
-    preferences: {
-      ...state.preferences,
-      ...preferences,
-    },
-  }),
-
-  // Reset
-  resetUIState: state => ({
-    ...initialState,
-    preferences: state.preferences, // Keep preferences
-  }),
-});
 
 // =============================================================================
 // STORE IMPLEMENTATION
 // =============================================================================
 
-export const useFilesUIStore = create<
-  FilesUIStateStore &
-    ReturnType<
-      typeof convertReducersToActions<FilesUIStateStore, typeof uiReducers>
-    >
->()(
+export const useFilesUIStore = create<FilesUIState>()(
   devtools(
-    set => ({
-      ...initialState,
-      ...convertReducersToActions(set, uiReducers),
+    (set, get) => ({
+      // Initial state
+      viewMode: 'grid',
+      sortBy: 'name',
+      sortDirection: 'asc',
+
+      currentFolderId: null,
+      navigationHistory: [null],
+      historyIndex: 0,
+
+      searchQuery: '',
+      filterStatus: 'all',
+      filterType: 'all',
+
+      isMultiSelectMode: false,
+      selectedFileIds: new Set(),
+      selectedFolderIds: new Set(),
+
+      isDragging: false,
+      draggedItems: {
+        fileIds: [],
+        folderIds: [],
+      },
+
+      showHiddenFiles: false,
+      showPreviewPanel: false,
+      previewFileId: null,
+
+      currentPage: 1,
+      itemsPerPage: 20,
+
+      // Additional UI states needed by composite hooks
+      draggedItemIds: [],
+      focusedItemId: null,
+      expandedFolderIds: [],
+      dragOverFolderId: null,
+      sortOrder: 'asc',
+
+      // View and layout actions
+      setViewMode: mode => set({ viewMode: mode }),
+
+      setSorting: (sortBy, direction) =>
+        set(state => ({
+          sortBy,
+          sortDirection:
+            direction ||
+            (state.sortBy === sortBy && state.sortDirection === 'asc'
+              ? 'desc'
+              : 'asc'),
+          currentPage: 1,
+        })),
+
+      // Navigation actions
+      navigateToFolder: folderId =>
+        set(state => {
+          const newHistory = state.navigationHistory.slice(
+            0,
+            state.historyIndex + 1
+          );
+          newHistory.push(folderId);
+          return {
+            currentFolderId: folderId,
+            navigationHistory: newHistory,
+            historyIndex: newHistory.length - 1,
+          };
+        }),
+
+      navigateBack: () =>
+        set(state => {
+          if (state.historyIndex > 0) {
+            const newIndex = state.historyIndex - 1;
+            return {
+              currentFolderId: state.navigationHistory[newIndex] || null,
+              historyIndex: newIndex,
+            };
+          }
+          return {};
+        }),
+
+      navigateForward: () =>
+        set(state => {
+          if (state.historyIndex < state.navigationHistory.length - 1) {
+            const newIndex = state.historyIndex + 1;
+            return {
+              currentFolderId: state.navigationHistory[newIndex] || null,
+              historyIndex: newIndex,
+            };
+          }
+          return {};
+        }),
+
+      // Search and filter actions
+      setSearchQuery: query =>
+        set({
+          searchQuery: query,
+          currentPage: 1,
+        }),
+
+      setStatusFilter: status =>
+        set({
+          filterStatus: status,
+          currentPage: 1,
+        }),
+
+      setTypeFilter: type =>
+        set({
+          filterType: type,
+          currentPage: 1,
+        }),
+
+      setFilterStatus: status =>
+        set({
+          filterStatus: status,
+          currentPage: 1,
+        }),
+
+      setFilterType: type =>
+        set({
+          filterType: type,
+          currentPage: 1,
+        }),
+
+      setSortOrder: direction =>
+        set({
+          sortDirection: direction,
+          currentPage: 1,
+        }),
+
+      // Selection actions
+      toggleMultiSelectMode: () =>
+        set(state => ({
+          isMultiSelectMode: !state.isMultiSelectMode,
+          selectedFileIds: new Set(),
+          selectedFolderIds: new Set(),
+        })),
+
+      selectFile: fileId =>
+        set(state => ({
+          selectedFileIds: new Set([...state.selectedFileIds, fileId]),
+        })),
+
+      selectFolder: folderId =>
+        set(state => ({
+          selectedFolderIds: new Set([...state.selectedFolderIds, folderId]),
+        })),
+
+      deselectFile: fileId =>
+        set(state => {
+          const newSelection = new Set(state.selectedFileIds);
+          newSelection.delete(fileId);
+          return { selectedFileIds: newSelection };
+        }),
+
+      deselectFolder: folderId =>
+        set(state => {
+          const newSelection = new Set(state.selectedFolderIds);
+          newSelection.delete(folderId);
+          return { selectedFolderIds: newSelection };
+        }),
+
+      toggleFileSelection: fileId =>
+        set(state => {
+          const newSelection = new Set(state.selectedFileIds);
+          if (newSelection.has(fileId)) {
+            newSelection.delete(fileId);
+          } else {
+            newSelection.add(fileId);
+          }
+          return { selectedFileIds: newSelection };
+        }),
+
+      toggleFolderSelection: folderId =>
+        set(state => {
+          const newSelection = new Set(state.selectedFolderIds);
+          if (newSelection.has(folderId)) {
+            newSelection.delete(folderId);
+          } else {
+            newSelection.add(folderId);
+          }
+          return { selectedFolderIds: newSelection };
+        }),
+
+      selectAllFiles: fileIds =>
+        set({
+          selectedFileIds: new Set(fileIds),
+        }),
+
+      selectAllFolders: folderIds =>
+        set({
+          selectedFolderIds: new Set(folderIds),
+        }),
+
+      clearSelection: () =>
+        set({
+          selectedFileIds: new Set(),
+          selectedFolderIds: new Set(),
+          isMultiSelectMode: false,
+        }),
+
+      // Drag and drop actions
+      startDrag: (fileIds, folderIds) =>
+        set({
+          isDragging: true,
+          draggedItems: { fileIds, folderIds },
+          draggedItemIds: [...fileIds, ...folderIds],
+        }),
+
+      endDrag: () =>
+        set({
+          isDragging: false,
+          draggedItems: { fileIds: [], folderIds: [] },
+          draggedItemIds: [],
+          dragOverFolderId: null,
+        }),
+
+      // UI state actions
+      toggleHiddenFiles: () =>
+        set(state => ({
+          showHiddenFiles: !state.showHiddenFiles,
+        })),
+
+      togglePreviewPanel: () =>
+        set(state => ({
+          showPreviewPanel: !state.showPreviewPanel,
+        })),
+
+      setPreviewFile: fileId => set({ previewFileId: fileId }),
+
+      // Pagination actions
+      setPage: page => set({ currentPage: Math.max(1, page) }),
+
+      setCurrentPage: page => set({ currentPage: Math.max(1, page) }),
+
+      resetFilters: () =>
+        set({
+          searchQuery: '',
+          filterStatus: 'all',
+          filterType: 'all',
+          currentPage: 1,
+        }),
+
+      // Additional actions needed by composite hooks
+      setFocusedItem: id => set({ focusedItemId: id }),
+
+      toggleFolderExpansion: folderId =>
+        set(state => {
+          const expanded = new Set(state.expandedFolderIds);
+          if (expanded.has(folderId)) {
+            expanded.delete(folderId);
+          } else {
+            expanded.add(folderId);
+          }
+          return { expandedFolderIds: Array.from(expanded) };
+        }),
+
+      setDragOver: folderId => set({ dragOverFolderId: folderId }),
+
+      clearFilters: () =>
+        set({
+          searchQuery: '',
+          filterStatus: 'all',
+          filterType: 'all',
+          currentPage: 1,
+        }),
     }),
-    {
-      name: 'files-ui-store',
-    }
+    { name: 'FilesUIStore' }
   )
 );
 
 // =============================================================================
-// COMPUTED SELECTORS
+// SELECTORS
 // =============================================================================
 
-/**
- * Check if any item is selected
- */
-export const hasSelection = (state: FilesUIStateStore): boolean => {
-  return state.selectedFileIds.length > 0 || state.selectedFolderIds.length > 0;
-};
+export const filesUISelectors = {
+  viewMode: (state: FilesUIState) => state.viewMode,
+  sorting: (state: FilesUIState) => ({
+    sortBy: state.sortBy,
+    sortDirection: state.sortDirection,
+  }),
 
-/**
- * Get total selected items count
- */
-export const getSelectedCount = (state: FilesUIStateStore): number => {
-  return state.selectedFileIds.length + state.selectedFolderIds.length;
-};
+  navigation: (state: FilesUIState) => ({
+    currentFolderId: state.currentFolderId,
+    canGoBack: state.historyIndex > 0,
+    canGoForward: state.historyIndex < state.navigationHistory.length - 1,
+  }),
 
-/**
- * Check if file is selected
- */
-export const isFileSelected = (
-  state: FilesUIStateStore,
-  fileId: FileId
-): boolean => {
-  return state.selectedFileIds.includes(fileId);
-};
+  searchQuery: (state: FilesUIState) => state.searchQuery,
+  filters: (state: FilesUIState) => ({
+    status: state.filterStatus,
+    type: state.filterType,
+  }),
 
-/**
- * Check if folder is selected
- */
-export const isFolderSelected = (
-  state: FilesUIStateStore,
-  folderId: FolderId
-): boolean => {
-  return state.selectedFolderIds.includes(folderId);
-};
+  selection: (state: FilesUIState) => ({
+    isMultiSelectMode: state.isMultiSelectMode,
+    selectedFileIds: state.selectedFileIds,
+    selectedFolderIds: state.selectedFolderIds,
+    selectedFileCount: state.selectedFileIds.size,
+    selectedFolderCount: state.selectedFolderIds.size,
+  }),
 
-/**
- * Check if folder is expanded
- */
-export const isFolderExpanded = (
-  state: FilesUIStateStore,
-  folderId: FolderId
-): boolean => {
-  return state.expandedFolderIds.includes(folderId);
-};
+  dragDrop: (state: FilesUIState) => ({
+    isDragging: state.isDragging,
+    draggedItems: state.draggedItems,
+  }),
 
-/**
- * Check if any filters are active
- */
-export const hasActiveFilters = (state: FilesUIStateStore): boolean => {
-  const { activeFilters } = state;
-  return !!(
-    activeFilters.query ||
-    activeFilters.types.length > 0 ||
-    activeFilters.tags.length > 0 ||
-    activeFilters.sizeMin !== undefined ||
-    activeFilters.sizeMax !== undefined ||
-    activeFilters.dateFrom !== undefined ||
-    activeFilters.dateTo !== undefined ||
-    activeFilters.isShared !== undefined ||
-    activeFilters.isPublic !== undefined
-  );
-};
+  uiState: (state: FilesUIState) => ({
+    showHiddenFiles: state.showHiddenFiles,
+    showPreviewPanel: state.showPreviewPanel,
+    previewFileId: state.previewFileId,
+  }),
 
-/**
- * Get active filters count
- */
-export const getActiveFiltersCount = (state: FilesUIStateStore): number => {
-  const { activeFilters } = state;
-  let count = 0;
+  pagination: (state: FilesUIState) => ({
+    currentPage: state.currentPage,
+    itemsPerPage: state.itemsPerPage,
+  }),
 
-  if (activeFilters.query) count++;
-  if (activeFilters.types.length > 0) count++;
-  if (activeFilters.tags.length > 0) count++;
-  if (activeFilters.sizeMin !== undefined) count++;
-  if (activeFilters.sizeMax !== undefined) count++;
-  if (activeFilters.dateFrom !== undefined) count++;
-  if (activeFilters.dateTo !== undefined) count++;
-  if (activeFilters.isShared !== undefined) count++;
-  if (activeFilters.isPublic !== undefined) count++;
+  isFileSelected: (fileId: FileId) => (state: FilesUIState) =>
+    state.selectedFileIds.has(fileId),
 
-  return count;
-};
-
-/**
- * Check if any modal is open
- */
-export const isAnyModalOpen = (state: FilesUIStateStore): boolean => {
-  return (
-    state.isUploadPanelOpen ||
-    state.isCreateFolderModalOpen ||
-    state.isFileDetailsModalOpen ||
-    state.isShareModalOpen ||
-    state.isDeleteConfirmModalOpen
-  );
-};
-
-/**
- * Get current path string
- */
-export const getCurrentPath = (state: FilesUIStateStore): string => {
-  return state.breadcrumbs.map(b => b.path).join('');
-};
-
-/**
- * Check if navigation can go back
- */
-export const canNavigateBack = (state: FilesUIStateStore): boolean => {
-  return state.historyIndex > 0;
-};
-
-/**
- * Check if navigation can go forward
- */
-export const canNavigateForward = (state: FilesUIStateStore): boolean => {
-  return state.historyIndex < state.navigationHistory.length - 1;
+  isFolderSelected: (folderId: FolderId) => (state: FilesUIState) =>
+    state.selectedFolderIds.has(folderId),
 };

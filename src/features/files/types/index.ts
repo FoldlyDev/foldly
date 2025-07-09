@@ -138,6 +138,19 @@ export const isValidDataClassification = (
 };
 
 // =============================================================================
+// ADDITIONAL TYPE ALIASES FOR COMPATIBILITY
+// =============================================================================
+
+/**
+ * Type aliases for backwards compatibility and easier usage
+ */
+export type { FileData, FolderData } from './database';
+export type WorkspaceData = any; // Define based on your workspace structure
+export type FileType = string;
+export type FileTreeNode = any; // Define based on your tree structure
+export type FileTreeStats = any; // Define based on your stats structure
+
+// =============================================================================
 // EXPORT ALL FILES TYPES
 // =============================================================================
 

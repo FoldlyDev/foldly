@@ -378,34 +378,59 @@ export const isValidUserRole = (value: unknown): value is UserRole => {
 
 **Location**: `src/types/database/index.ts`
 
-### Enhanced Upload Links
+### User Management Types
 
 ```typescript
-export interface UploadLink extends BaseEntity {
+export interface User extends BaseEntity {
+  readonly email: EmailAddress;
+  readonly username: UsernameString;
+  readonly firstName?: string;
+  readonly lastName?: string;
+  readonly avatarUrl?: string;
+  readonly subscriptionTier: SubscriptionTier;
+  readonly storageUsed: number;
+  readonly storageLimit: number;
+}
+
+export interface Workspace extends BaseEntity {
+  readonly name: string;
+}
+```
+
+### Enhanced Link Types
+
+```typescript
+export interface Link extends BaseEntity {
+  readonly workspaceId: WorkspaceId;
+
   // Link identification with branded types
   readonly slug: SlugString;
   readonly topic?: string;
   readonly title: string;
   readonly description?: string;
-  readonly instructions?: string;
 
   // Link behavior configuration
   readonly linkType: LinkType;
-  readonly autoCreateFolders: boolean;
-  readonly defaultFolderId?: FolderId;
 
   // Security controls with branded types
   readonly requireEmail: boolean;
   readonly requirePassword: boolean;
   readonly passwordHash?: string;
   readonly isPublic: boolean;
-  readonly allowFolderCreation: boolean;
+  readonly isActive: boolean;
 
   // File and upload limits
   readonly maxFiles: number;
   readonly maxFileSize: number;
   readonly allowedFileTypes?: DeepReadonly<string[]>;
   readonly expiresAt?: Date;
+
+  // Branding (Pro+ features)
+  readonly brandEnabled: boolean;
+  readonly brandColor?: HexColor;
+  readonly accentColor?: HexColor;
+  readonly brandLogoUrl?: string;
+  readonly brandBannerUrl?: string;
 
   // Usage tracking
   readonly totalUploads: number;
@@ -415,38 +440,32 @@ export interface UploadLink extends BaseEntity {
 }
 
 // Database operation types
-export type UploadLinkRow = UploadLink;
-export type UploadLinkInsert = Omit<
-  UploadLink,
-  'id' | 'createdAt' | 'updatedAt'
->;
-export type UploadLinkUpdate = Partial<
-  Omit<UploadLink, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+export type LinkRow = Link;
+export type LinkInsert = Omit<Link, 'id' | 'createdAt' | 'updatedAt'>;
+export type LinkUpdate = Partial<
+  Omit<Link, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 >;
 ```
 
-### Hierarchical Folder System
+### Simplified Folder System
 
 ```typescript
 export interface Folder extends BaseEntity {
+  readonly workspaceId: WorkspaceId;
   readonly parentFolderId?: FolderId;
-  readonly uploadLinkId?: LinkId;
+  readonly linkId?: LinkId; // for generated links only
   readonly name: string;
-  readonly description?: string;
-  readonly color?: HexColor;
   readonly path: string;
+  readonly depth: number;
   readonly isArchived: boolean;
-  readonly sortOrder: number;
   readonly isPublic: boolean;
-  readonly classification: DataClassification;
+  readonly sortOrder: number;
   readonly fileCount: number;
   readonly totalSize: number;
-  readonly lastActivity?: Date;
 }
 
 export interface FolderTree extends Folder {
   readonly children: DeepReadonly<FolderTree[]>;
-  readonly depth: number;
   readonly hasChildren: boolean;
 }
 
@@ -458,55 +477,88 @@ export type FolderUpdate = Partial<
 >;
 ```
 
-### Enhanced File Uploads
+### Upload Batch System
 
 ```typescript
-export interface FileUpload extends BaseEntity {
-  readonly uploadLinkId: LinkId;
+export interface Batch extends BaseEntity {
+  readonly linkId: LinkId;
   readonly folderId?: FolderId;
-  readonly batchId: BatchId;
 
-  // Uploader information with branded types
+  // Uploader information
   readonly uploaderName: string;
   readonly uploaderEmail?: EmailAddress;
   readonly uploaderMessage?: string;
 
+  // Batch metadata
+  readonly name?: string;
+  readonly displayName: string;
+  readonly status: BatchStatus;
+
+  // Progress tracking
+  readonly totalFiles: number;
+  readonly processedFiles: number;
+  readonly totalSize: number;
+
+  readonly uploadCompletedAt?: Date;
+}
+
+export type BatchStatus = 'uploading' | 'processing' | 'completed' | 'failed';
+
+// Database operation types
+export type BatchRow = Batch;
+export type BatchInsert = Omit<Batch, 'id' | 'createdAt' | 'updatedAt'>;
+export type BatchUpdate = Partial<
+  Omit<Batch, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+>;
+```
+
+### Enhanced File System
+
+```typescript
+export interface File extends BaseEntity {
+  readonly linkId: LinkId;
+  readonly batchId: BatchId;
+  readonly folderId?: FolderId;
+
   // File metadata with branded types
   readonly fileName: SafeFileName;
-  readonly originalFileName: string;
+  readonly originalName: string;
   readonly fileSize: number;
-  readonly fileType: string;
   readonly mimeType: string;
+  readonly extension?: string;
   readonly storagePath: string;
+  readonly storageProvider: 'supabase' | 's3' | 'cloudflare';
 
   // Security and integrity
-  readonly md5Hash?: string;
-  readonly sha256Hash?: string;
-  readonly virusScanResult?: 'clean' | 'infected' | 'suspicious' | 'pending';
+  readonly checksum?: string;
+  readonly virusScanResult: 'clean' | 'infected' | 'suspicious' | 'pending';
   readonly securityWarnings?: DeepReadonly<SecurityWarning[]>;
 
-  // Processing status with branded types
+  // Processing status
   readonly processingStatus: FileProcessingStatus;
-  readonly isProcessed: boolean;
   readonly isSafe: boolean;
-  readonly thumbnailPath?: StaticAssetPath;
+  readonly thumbnailPath?: string;
+  readonly isOrganized: boolean;
+  readonly needsReview: boolean;
 
   // Access tracking
   readonly downloadCount: number;
-  readonly lastDownloadAt?: Date;
-  readonly classification: DataClassification;
-  readonly tags?: DeepReadonly<string[]>;
-  readonly isArchived: boolean;
+  readonly lastAccessedAt?: Date;
+
+  readonly uploadedAt: Date;
 }
 
-// Database operation types with branded types
-export type FileUploadRow = FileUpload;
-export type FileUploadInsert = Omit<
-  FileUpload,
-  'id' | 'createdAt' | 'updatedAt'
->;
-export type FileUploadUpdate = Partial<
-  Omit<FileUpload, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+export type FileProcessingStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
+// Database operation types
+export type FileRow = File;
+export type FileInsert = Omit<File, 'id' | 'createdAt' | 'updatedAt'>;
+export type FileUpdate = Partial<
+  Omit<File, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 >;
 ```
 

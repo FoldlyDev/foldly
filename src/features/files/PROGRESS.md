@@ -89,7 +89,7 @@ src/features/files/
 ### **Workspace Management**
 
 - [ ] Folder creation and management
-- [ ] Folder colors and icons
+- [ ] ~~Folder colors and icons~~ (Removed for MVP simplification)
 - [ ] Drag & drop file organization
 - [ ] Workspace views (grid, list, tree)
 - [ ] Breadcrumb navigation

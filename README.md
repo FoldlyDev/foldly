@@ -80,7 +80,7 @@ This project follows documentation-first development with comprehensive planning
 
 - **[📋 PLANNING.md](docs/PLANNING.md)** - Complete development strategy, multi-link architecture, and security requirements
 - **[📝 TASK.md](docs/TASK.md)** - Task management, sprint planning, and advanced feature development roadmap
-- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, advanced database schemas, and multi-link system design
+- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, simplified database schemas, and multi-link system design
 - **[📖 PROJECT_OVERVIEW.md](docs/project_overview.md)** - Business requirements, advanced features, and UX specifications
 
 ## 🚀 Getting Started
@@ -104,7 +104,7 @@ This project follows documentation-first development with comprehensive planning
 
 ### Next Development Phase
 
-1. **Advanced Database Schema**: Multi-link types, permission controls, batch organization (Task 10)
+1. **Simplified Database Schema**: Multi-link types, permission controls, batch organization (MVP Ready)
 2. **Multi-Link Upload System**: Base + custom links with automatic organization (Task 12)
 3. **Permission & Security Controls**: Email requirements, password protection, visibility settings (Task 13)
 4. **Advanced File Organization**: Pre-upload folders, post-upload reorganization, batch management (Task 14)
@@ -200,7 +200,7 @@ This project follows documentation-first development with comprehensive planning
 
 ## 📞 Next Actions
 
-1. **Advanced Database Schema**: Multi-link types, permission controls, batch metadata (Task 10)
+1. **Simplified Database Schema**: Multi-link types, permission controls, batch metadata (MVP Ready)
 2. **Multi-Link Upload System**: Implement base + custom link handling (Task 12)
 3. **Permission Controls**: Email requirements, password protection, visibility toggles (Task 13)
 4. **Organization Features**: Pre/post-upload folder management, batch naming (Task 14)

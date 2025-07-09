@@ -11,8 +11,8 @@ export {
   useFolderCardStore,
   useFilesListStore,
   useFilesModalsStore,
-  useFilesDragDropStore,
-  useFilesWorkspaceComposite,
+  useFilesUploadStore,
+  useFilesWorkspaceCompositeStore,
 } from './hooks';
 
 // Files stores (core Zustand stores)
@@ -20,8 +20,7 @@ export {
   useFilesDataStore,
   useFilesUIStore,
   useFilesModalStore,
-  type ModalType,
-  type ModalData,
+  useFilesWorkspaceStore,
 } from './store';
 
 // Files services
