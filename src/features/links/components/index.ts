@@ -31,4 +31,4 @@ export {
   SOCIAL_SHARE_PLATFORMS,
   LINK_STATUS_CONFIGS,
   DEFAULT_LINK_STATUS,
-} from '../constants';
+} from '../lib/constants';

@@ -9,7 +9,7 @@ import {
   BUTTON_TEXT,
   NOTIFICATION_MESSAGES,
   PLACEHOLDER_TEXT,
-} from '../../constants';
+} from '../../lib/constants';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,

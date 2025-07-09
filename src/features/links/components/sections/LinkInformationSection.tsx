@@ -63,7 +63,7 @@ import {
   generateUrlSlug,
   validateTopicName,
   generateTopicUrl,
-} from '../../utils';
+} from '../../lib/utils';
 
 interface LinkInformationSectionProps {
   readonly linkType: 'base' | 'topic';
@@ -82,7 +82,7 @@ import {
   FILE_SIZE_OPTIONS,
   DEFAULT_FILE_TYPES,
   DEFAULT_FILE_SIZES,
-} from '../../constants';
+} from '../../lib/constants';
 
 // Transform centralized constants for local use
 const fileOptions = [5, 10, 25, 50, 100];

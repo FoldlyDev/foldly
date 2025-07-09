@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { validateTopicName } from '../utils';
+import { validateTopicName } from '../lib/utils';
 
 // =============================================================================
 // UTILITY SCHEMAS

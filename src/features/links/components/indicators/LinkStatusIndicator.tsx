@@ -6,7 +6,7 @@ import {
   COMPONENT_SIZES,
   STATUS_MESSAGES,
   COMPONENT_DEFAULTS,
-} from '../../constants';
+} from '../../lib/constants';
 
 interface LinkStatusIndicatorProps {
   status: string;

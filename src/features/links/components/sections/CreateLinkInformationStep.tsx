@@ -10,7 +10,7 @@ import {
 import { LinkInformationSection } from '../sections/LinkInformationSection';
 import type { LinkInformationFormData } from '../../types';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
-import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../constants';
+import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 
 /**
  * Information step for create link modal

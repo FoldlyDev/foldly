@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Switch } from '@/components/ui/shadcn/switch';
 import { HelpPopover, AnimatedSelect } from '@/components/ui';
 import type { LinkData } from '../../types';
-import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../constants';
+import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../lib/constants';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../schemas';
 import type { HexColor } from '@/types';

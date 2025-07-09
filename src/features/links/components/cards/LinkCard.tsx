@@ -7,7 +7,7 @@ import { useLinkCardStore } from '../../hooks/use-links-composite';
 import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
-import { COMPONENT_DEFAULTS } from '../../constants';
+import { COMPONENT_DEFAULTS } from '../../lib/constants';
 import type { LinkId } from '@/types';
 
 interface LinkCardProps {
