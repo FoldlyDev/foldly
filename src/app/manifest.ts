@@ -42,7 +42,7 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Dashboard',
         short_name: 'Dashboard',
         description: 'View your dashboard',
-        url: '/dashboard/home',
+        url: '/dashboard/workspace',
         icons: [
           {
             src: '/assets/img/logo/foldly_logo_sm.png',

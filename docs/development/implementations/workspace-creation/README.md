@@ -71,7 +71,7 @@ src/lib/webhooks/                  # Webhook utilities (GLOBAL)
 ├── webhook-types.ts               # Webhook type definitions
 └── index.ts                       # Webhook exports
 
-src/features/dashboard-home/       # Dashboard home feature (FEATURE-SPECIFIC)
+src/features/workspace/            # Workspace feature (FEATURE-SPECIFIC)
 ├── components/
 │   └── workspace-management/      # Workspace settings & rename
 ├── hooks/
@@ -109,14 +109,14 @@ src/features/dashboard-home/       # Dashboard home feature (FEATURE-SPECIFIC)
 
 ### **Dashboard Home Feature Integration**
 
-**Workspace management actions belong in dashboard-home feature:**
+**Workspace management actions belong in workspace feature:**
 
 ```typescript
-// src/features/dashboard-home/components/workspace-management/
+// src/features/workspace/components/workspace-management/
 // - WorkspaceSettings.tsx (rename workspace)
 // - WorkspaceOverview.tsx (workspace info)
 
-// src/features/dashboard-home/hooks/
+// src/features/workspace/hooks/
 // - use-workspace-settings.ts (workspace customization)
 ```
 

@@ -41,7 +41,7 @@ export default function DashboardError({
             </Button>
             <Button
               variant='outline'
-              onClick={() => (window.location.href = '/dashboard/home')}
+              onClick={() => (window.location.href = '/dashboard/workspace')}
               className='flex-1'
             >
               Go to home

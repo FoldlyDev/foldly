@@ -5,15 +5,15 @@ import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui';
 import { Plus, Settings, Bell } from 'lucide-react';
 
-interface DashboardHeaderProps {
+interface WorkspaceHeaderProps {
   totalLinks?: number;
   totalFiles?: number;
 }
 
-export function DashboardHeader({
+export function WorkspaceHeader({
   totalLinks = 0,
   totalFiles = 0,
-}: DashboardHeaderProps) {
+}: WorkspaceHeaderProps) {
   const { user } = useUser();
 
   // Get appropriate greeting based on time of day

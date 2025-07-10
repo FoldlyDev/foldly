@@ -5,14 +5,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
-import { DashboardHeader } from '../sections/dashboard-header';
+import { WorkspaceHeader } from '../sections/workspace-header';
 import { AnalyticsCards } from '../sections/analytics-cards';
 import { QuickActions } from '../sections/quick-actions';
 import { EmptyState } from './empty-state';
 import { ContentLoader } from '@/components/ui';
 import type { DashboardOverview } from '@/features/analytics/types';
 
-interface HomeContainerProps {
+interface WorkspaceContainerProps {
   readonly data?: DashboardOverview & {
     readonly storageUsed: string; // UI-friendly formatted storage
     readonly totalViews: number;
@@ -23,16 +23,16 @@ interface HomeContainerProps {
   readonly error?: string | null;
 }
 
-export function HomeContainer({
+export function WorkspaceContainer({
   data,
   isLoading = false,
   error = null,
-}: HomeContainerProps) {
+}: WorkspaceContainerProps) {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const [showContent, setShowContent] = useState(false);
 
-  const mockData: HomeContainerProps['data'] = {
+  const mockData: WorkspaceContainerProps['data'] = {
     totalLinks: 0,
     totalFiles: 0,
     totalSize: 0,
@@ -166,7 +166,7 @@ export function HomeContainer({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.6 }}
               >
-                <DashboardHeader
+                <WorkspaceHeader
                   totalLinks={dashboardData.totalLinks}
                   totalFiles={dashboardData.totalFiles}
                 />
@@ -314,4 +314,4 @@ export function HomeContainer({
 }
 
 // Maintain backward compatibility
-export const DashboardContainer = HomeContainer;
+export const HomeContainer = WorkspaceContainer;

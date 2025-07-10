@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { UserButton } from '@clerk/nextjs';
-import { useNavigationContext } from '@/features/dashboard';
+import { useNavigationContext } from '@/components/shared/dashboard-layout-wrapper';
 import {
   LayoutDashboard,
   Link2,
@@ -42,7 +42,7 @@ const navigationData: NavSection[] = [
       {
         id: 'home',
         label: 'Home',
-        href: '/dashboard/home',
+        href: '/dashboard/workspace',
         icon: LayoutDashboard,
         color: 'primary',
       },
@@ -163,8 +163,8 @@ export function DashboardNavigation() {
   };
 
   const isActiveRoute = (href: string) => {
-    if (href === '/dashboard/home') {
-      return pathname === '/dashboard/home' || pathname === '/dashboard';
+    if (href === '/dashboard/workspace') {
+      return pathname === '/dashboard/workspace' || pathname === '/dashboard';
     }
     return pathname.startsWith(href);
   };

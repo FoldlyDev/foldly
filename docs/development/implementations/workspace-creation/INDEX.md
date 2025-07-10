@@ -62,12 +62,12 @@ src/lib/webhooks/                   # Webhook utilities
 └── index.ts                        # Webhook exports
 ```
 
-### **Feature-Specific (Dashboard Home)**
+### **Feature-Specific (Workspace)**
 
-**Location:** `src/features/dashboard-home/` - UI and workspace management
+**Location:** `src/features/workspace/` - UI and workspace management
 
 ```
-src/features/dashboard-home/
+src/features/workspace/
 ├── components/
 │   ├── workspace-management/
 │   │   ├── WorkspaceSettings.tsx   # Workspace settings UI
@@ -96,7 +96,7 @@ src/features/dashboard-home/
 ### **Phase 3: Testing & Dashboard Integration** (Day 3)
 
 - ✅ End-to-end testing and validation
-- ✅ Dashboard home workspace management components
+- ✅ Workspace management components
 - ✅ Error handling and performance optimization
 
 ## 🔗 Quick Reference Links
@@ -117,7 +117,7 @@ src/features/dashboard-home/
 ### **File Structure**
 
 - 🌐 **Global**: Cross-feature services in `src/lib/`
-- 🎨 **Feature**: Dashboard components in `src/features/dashboard-home/`
+- 🎨 **Feature**: Dashboard components in `src/features/workspace/`
 - 📝 **Types**: Shared types in global, UI types in features
 
 ## 📊 Implementation Status

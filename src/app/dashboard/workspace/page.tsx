@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import { HomeContainer } from '@/features/dashboard';
+import { WorkspaceContainer } from '@/features/workspace';
 
 export const metadata: Metadata = {
-  title: 'Dashboard Home | Foldly',
+  title: 'Dashboard wroskapce | Foldly',
   description:
-    'Your file collection dashboard - track links, manage files, and monitor performance',
+    'Your file collection dashboard workspace - track links, manage files, and monitor performance',
 };
 
 export default function HomePage() {
@@ -12,7 +12,7 @@ export default function HomePage() {
   // const dashboardData = await getDashboardData();
 
   return (
-    <HomeContainer
+    <WorkspaceContainer
     // data={dashboardData}
     // isLoading={false}
     // error={null}

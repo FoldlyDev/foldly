@@ -78,7 +78,7 @@ export class WorkspaceService {
   }
 
   /**
-   * Update workspace (used by dashboard-home feature)
+   * Update workspace (used by workspace feature)
    */
   async updateWorkspace(
     workspaceId: string,

@@ -3,6 +3,7 @@
 // Following 2025 TypeScript best practices with strict type safety
 
 import type { FileId, FolderId, WorkspaceId, UserId, BatchId } from '@/types';
+import type { Workspace } from '@/lib/supabase/types';
 
 // =============================================================================
 // LOCAL TYPE DEFINITIONS
@@ -145,7 +146,11 @@ export const isValidDataClassification = (
  * Type aliases for backwards compatibility and easier usage
  */
 export type { FileData, FolderData } from './database';
-export type WorkspaceData = any; // Define based on your workspace structure
+/**
+ * Re-export canonical workspace type from single source of truth
+ * @deprecated Use Workspace directly from @/lib/supabase/types instead
+ */
+export type WorkspaceData = Workspace;
 export type FileType = string;
 export type FileTreeNode = any; // Define based on your tree structure
 export type FileTreeStats = any; // Define based on your stats structure

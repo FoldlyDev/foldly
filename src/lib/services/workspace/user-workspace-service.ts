@@ -128,7 +128,7 @@ export class UserWorkspaceService {
   }
 
   /**
-   * Get user with their workspace (for dashboard-home feature)
+   * Get user with their workspace (for workspace feature)
    */
   async getUserWithWorkspace(
     userId: string
