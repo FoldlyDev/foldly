@@ -4,11 +4,16 @@
 **Implementation Date:** January 2025  
 **Pattern Type:** Server Components + Zustand + Direct Supabase  
 **Performance Target:** < 200ms API responses  
-**Status:** 🎯 **Phase 1 Complete** - Database Foundation Implemented
+**Status:** 🎯 **Phase 1 Complete** - Database Foundation Implemented  
+**Scope:** Dashboard Link Administration Only
 
 ## 🎯 Architecture Overview
 
-This document outlines the **2025 hybrid architecture pattern** for integrating database capabilities into Foldly's existing links feature, following modern React/Next.js best practices while preserving the existing component architecture. **Phase 1 has been successfully completed** with a solid database foundation now in place.
+This document outlines the **2025 hybrid architecture pattern** for integrating database capabilities into Foldly's existing **Links Feature** - the dashboard administration area where authenticated users create, configure, edit, delete, and view their links. This feature does NOT handle file uploads (that's handled by the separate Upload Feature).
+
+**Links Feature Scope:** Link creation, configuration, editing, deletion, and visualization in user dashboard.
+
+**Phase 1 has been successfully completed** with a solid database foundation now in place.
 
 ## 🏛️ Hybrid Architecture Pattern
 
@@ -39,12 +44,15 @@ CREATE TABLE files (id, link_id, batch_id, folder_id, file_name, ...);
 **Key Features Implemented:**
 
 - ✅ Multi-link system (base, custom, generated)
-- ✅ Hierarchical folder structure with root folder support
-- ✅ File upload with batch processing
 - ✅ User workspace management
 - ✅ Row Level Security policies
 - ✅ Complete TypeScript type system
 - ✅ Drizzle ORM configuration
+
+**Database Table Usage:**
+
+- **Links Feature**: `users`, `workspaces`, `links` (primary focus)
+- **Upload Feature**: `folders`, `batches`, `files` (separate implementation)
 
 **File Structure:**
 
@@ -78,15 +86,15 @@ src/lib/db/                 # ✅ COMPLETED: Database connection
 
 src/features/links/         # 📋 NEXT: Service layer implementation
 ├── lib/                   # Database integration layer
-│   ├── db-service.ts      # Database service layer
-│   ├── actions.ts         # Server actions
-│   ├── supabase-client.ts # Supabase client setup
-│   └── utils/             # Utility functions
+│   ├── db-service.ts      # Database service layer for link operations
+│   ├── actions.ts         # Server actions for link CRUD
+│   ├── supabase-client.ts # Supabase client setup for links
+│   └── utils/             # Link utility functions
 ├── schemas/               # Validation schemas
-│   └── index.ts           # Zod validation schemas
+│   └── index.ts           # Zod validation schemas for links
 ├── hooks/                 # Enhanced hooks
-│   ├── use-links.ts       # Database integration
-│   └── use-realtime-links.ts # Real-time subscriptions
+│   ├── use-links.ts       # Database integration for links
+│   └── use-realtime-links.ts # Real-time subscriptions for link updates
 ├── store/                 # ✅ Existing stores (ready for enhancement)
 │   ├── links-store.ts     # Ready for database integration
 │   ├── links-ui-store.ts  # UI state management

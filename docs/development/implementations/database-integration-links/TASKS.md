@@ -4,11 +4,16 @@
 **Total Estimated Time:** 35-40 hours  
 **Team Members:** Development Team  
 **Priority:** High  
-**Status:** 🎯 Ready for Phase 2 Implementation
+**Status:** 🎯 Ready for Phase 2 Implementation  
+**Scope:** Dashboard Link Administration Only
 
 ## 🎯 Task Overview
 
-This document provides a comprehensive breakdown of all tasks required to integrate the database with the links feature, following the hybrid architecture pattern. **Phase 1 has been completed** with the database schema, services, and foundation in place.
+This document provides a comprehensive breakdown of all tasks required to integrate the database with the **Links Feature** - the dashboard administration area where authenticated users create, configure, edit, delete, and view their links. This feature does NOT handle file uploads (that's handled by the separate Upload Feature).
+
+**Links Feature Scope:** Link creation, configuration, editing, deletion, and visualization in user dashboard.
+
+**Phase 1 has been completed** with the database schema, services, and foundation in place.
 
 ---
 
@@ -170,8 +175,8 @@ This document provides a comprehensive breakdown of all tasks required to integr
 
 - ✅ Create links service using Drizzle ORM
 - ✅ Implement multi-link system queries
-- ✅ Add file and folder management
-- ✅ Include batch processing logic
+- ✅ Add link CRUD operations (create, read, update, delete)
+- ✅ Add link statistics and metadata queries
 - ✅ Add performance optimization
 - ✅ Implement adapter pattern for type alignment
 - ✅ Add comprehensive error handling with DatabaseResult pattern
@@ -179,10 +184,9 @@ This document provides a comprehensive breakdown of all tasks required to integr
 
 **Acceptance Criteria:**
 
-- ✅ Links service supports all three link types
-- ✅ File uploads integrated with links
-- ✅ Folder hierarchy working correctly
-- ✅ Batch processing for uploads
+- ✅ Links service supports all three link types (base, custom, generated)
+- ✅ Link CRUD operations work correctly
+- ✅ Link statistics and metadata queries optimized
 - ✅ Type alignment between database and UI layers resolved
 - ✅ Adapter pattern implemented for clean separation of concerns
 
@@ -281,15 +285,15 @@ This document provides a comprehensive breakdown of all tasks required to integr
 **Sub-tasks:**
 
 - [ ] Configure Supabase client for real-time subscriptions
-- [ ] Set up channel management for link updates
+- [ ] Set up channel management for link status updates
 - [ ] Implement connection state handling
 - [ ] Add subscription cleanup on unmount
 - [ ] Include error handling for connection issues
 
 **Acceptance Criteria:**
 
-- ✅ Real-time client properly configured
-- ✅ Channel subscriptions working
+- ✅ Real-time client properly configured for link updates
+- ✅ Channel subscriptions working for link status changes
 - ✅ Connection state managed
 - ✅ Memory leaks prevented with proper cleanup
 
@@ -357,18 +361,18 @@ This document provides a comprehensive breakdown of all tasks required to integr
 
 **Sub-tasks:**
 
-- [ ] **Enhance existing hooks** with real-time link updates capability
+- [ ] **Enhance existing hooks** with real-time link status updates capability
 - [ ] **Add** Supabase subscription management to existing hook architecture
 - [ ] **Implement** connection state handling in current hook pattern
 - [ ] **Include** automatic reconnection logic
-- [ ] **Add** selective update filtering to existing hooks
+- [ ] **Add** selective update filtering for link changes only
 
 **Acceptance Criteria:**
 
-- ✅ **Enhanced existing hooks** provide real-time updates across sessions
+- ✅ **Enhanced existing hooks** provide real-time link updates across sessions
 - ✅ **Improved** connection state managed properly
 - ✅ **Maintained** existing hook patterns and performance
-- ✅ Performance: only relevant updates processed
+- ✅ Performance: only relevant link updates processed
 - ✅ **Added** error handling for connection issues
 
 ### **Task 3.4: Server Components Enhancement (Enhance Existing)**
@@ -439,15 +443,15 @@ This document provides a comprehensive breakdown of all tasks required to integr
 
 - [ ] Create E2E tests for link creation flow
 - [ ] Test multi-link system functionality
-- [ ] Validate file upload integration
-- [ ] Test real-time updates
+- [ ] Validate link configuration and settings
+- [ ] Test real-time link status updates
 - [ ] Add performance benchmarks
 
 **Acceptance Criteria:**
 
-- ✅ All user workflows tested
+- ✅ All link management workflows tested
 - ✅ Multi-link system validated
-- ✅ File uploads working correctly
+- ✅ Link configuration and settings working correctly
 - ✅ Performance targets met
 
 ### **Task 4.2: Documentation Updates**

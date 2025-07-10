@@ -3,11 +3,36 @@
 **Project:** Links Feature Database Integration  
 **Timeline:** 1 Week Sprint  
 **Approach:** Hybrid Architecture (Server Components + Zustand + Direct Supabase)  
-**Status:** 🚀 **Phase 1 Complete** - Database Foundation Implemented
+**Status:** 🚀 **Phase 1 Complete** - Database Foundation Implemented  
+**Scope:** Dashboard Link Administration Only
 
 ## 🎯 Executive Summary
 
-This roadmap provides a comprehensive guide for integrating database capabilities into Foldly's existing links feature while preserving all existing components and maintaining excellent performance. **Phase 1 has been successfully completed** with a solid database foundation in place.
+This roadmap provides a comprehensive guide for integrating database capabilities into Foldly's existing **Links Feature** - the dashboard administration area where authenticated users create, configure, edit, delete, and view their links. This feature does NOT handle file uploads (that's handled by the separate Upload Feature).
+
+**Phase 1 has been successfully completed** with a solid database foundation in place.
+
+## 🎯 Feature Scope Clarification
+
+**IMPORTANT:** This roadmap covers the **Links Feature** ONLY. Foldly operates with two distinct features:
+
+### **1. Links Feature (Dashboard Administration) - THIS ROADMAP**
+
+- **Location**: `src/features/links/`
+- **Purpose**: Link management and administration in user dashboard
+- **Users**: Authenticated users managing their own links
+- **Functionality**: Create, configure, edit, delete, view links
+- **NO File Uploads**: Users don't upload files here
+- **Database Tables**: `users`, `workspaces`, `links`
+
+### **2. Upload Feature (Public File Collection) - SEPARATE ROADMAP**
+
+- **Location**: `src/features/upload/`
+- **Purpose**: Public-facing file upload interface
+- **Users**: Anonymous uploaders using links created by authenticated users
+- **Functionality**: Upload files to specific links
+- **Database Tables**: `folders`, `batches`, `files`
+- **NOT COVERED**: This roadmap does not include upload functionality
 
 ### **Project Goals**
 
@@ -18,7 +43,7 @@ This roadmap provides a comprehensive guide for integrating database capabilitie
 - ✅ **COMPLETED**: Database service layer with type alignment fixes
 - 🎯 **IN PROGRESS**: Server actions and validation schemas
 - 📋 **PLANNED**: Component integration and store enhancement
-- 📋 **PLANNED**: Real-time collaboration capabilities
+- 📋 **PLANNED**: Real-time link status updates
 - 📋 **PLANNED**: Maintain type safety throughout the application
 - 📋 **PLANNED**: Achieve < 200ms API response times
 
@@ -47,9 +72,12 @@ This roadmap provides a comprehensive guide for integrating database capabilitie
 
 ```sql
 -- ✅ COMPLETED: Multi-link system with 6 core tables
+-- Links Feature Primary Tables:
 users (id, email, username, subscription_tier, storage_used, ...)
 workspaces (id, user_id, name, created_at)
 links (id, user_id, workspace_id, slug, topic, link_type, ...)
+
+-- Upload Feature Tables (separate implementation):
 folders (id, user_id, workspace_id, parent_folder_id, link_id, ...)
 batches (id, link_id, user_id, uploader_name, status, ...)
 files (id, link_id, batch_id, folder_id, file_name, ...)
@@ -57,11 +85,11 @@ files (id, link_id, batch_id, folder_id, file_name, ...)
 
 ### **Preserved Components**
 
-All existing components will be **enhanced**, not replaced:
+All existing link management components will be **enhanced**, not replaced:
 
 - ✅ `LinksContainer.tsx` - Ready for server data enhancement
 - ✅ `CreateLinkModalContainer.tsx` - Ready for database connection
-- ✅ `LinkCard.tsx` - Ready for real data integration
+- ✅ `LinkCard.tsx` - Ready for real link data integration
 - ✅ All existing stores - Ready for database sync enhancement
 
 ## 📋 Quick Start Guide
@@ -95,9 +123,9 @@ src/features/links/lib/db-service.ts    # Database operations implemented
 
 # 🎯 REFACTOR-FIRST APPROACH: Service layer and type migration
 # PRIORITY 1: Type alignment + cleanup (CRITICAL)
-# 1. Update imports to use @/lib/supabase/types
+# 1. Update imports to use @/lib/supabase/types for link types
 # 2. DELETE src/features/links/types/ directory entirely
-# 3. REFACTOR existing schemas/index.ts (EXISTING FILE)
+# 3. REFACTOR existing schemas/index.ts (EXISTING FILE) for link validation
 
 # REMAINING TASKS:
 # 4. src/features/links/lib/actions.ts       # Server actions (NEW FILE)

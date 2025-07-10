@@ -3,11 +3,22 @@
 **Implementation Date:** January 2025  
 **Status:** 🎯 **Phase 2 In Progress** - Database Service Layer Complete  
 **Architecture Pattern:** Hybrid Zustand + Server Components  
-**Expected Completion:** 1 week
+**Expected Completion:** 1 week  
+**Scope:** Dashboard Link Administration Only
 
 ## 🎯 Implementation Overview
 
-This document outlines the comprehensive database integration strategy for Foldly's links feature, implementing the **2025 hybrid architecture pattern** that combines:
+This document outlines the comprehensive database integration strategy for Foldly's **Links Feature** - the dashboard administration area where authenticated users create, configure, edit, delete, and view their links. This feature does NOT handle file uploads (that's handled by the separate Upload Feature).
+
+**Links Feature Scope:**
+
+- ✅ **Link Creation** - Create base, custom, and generated links
+- ✅ **Link Configuration** - Settings, branding, security options
+- ✅ **Link Management** - Edit, delete, duplicate links
+- ✅ **Link Visualization** - View link statistics and status
+- ✅ **Dashboard Integration** - Links page in user dashboard
+
+**Implementation Strategy:**
 
 - ✅ **Database Foundation** - Complete PostgreSQL schema with 6 tables
 - ✅ **Database Service Layer** - Full CRUD operations implemented
@@ -15,6 +26,28 @@ This document outlines the comprehensive database integration strategy for Foldl
 - 🎯 **Server Actions** - Type-safe mutations (next task)
 - 📋 **Zustand stores** for client-side state management
 - 📋 **Direct Supabase client** usage (no context wrapper)
+
+## 🎯 Feature Scope Clarification
+
+**IMPORTANT:** This documentation covers the **Links Feature** ONLY. Foldly operates with two distinct features:
+
+### **1. Links Feature (Dashboard Administration) - THIS IMPLEMENTATION**
+
+- **Location**: `src/features/links/`
+- **Purpose**: Link management and administration in user dashboard
+- **Users**: Authenticated users managing their own links
+- **Functionality**: Create, configure, edit, delete, view links
+- **NO File Uploads**: Users don't upload files here
+- **Database Tables**: `links`, `users`, `workspaces`
+
+### **2. Upload Feature (Public File Collection) - SEPARATE FEATURE**
+
+- **Location**: `src/features/upload/`
+- **Purpose**: Public-facing file upload interface
+- **Users**: Anonymous uploaders using links created by authenticated users
+- **Functionality**: Upload files to specific links
+- **Database Tables**: `files`, `batches`, `folders`
+- **NOT COVERED**: This implementation does not include upload functionality
 
 ## 📋 Implementation Strategy
 
@@ -42,7 +75,7 @@ This document outlines the comprehensive database integration strategy for Foldl
 
 - Update existing containers to use server components
 - Implement proper data fetching patterns
-- Add real-time subscriptions where needed
+- Add real-time subscriptions for link status updates
 
 ## 🏗️ Architecture Integration
 
@@ -66,30 +99,39 @@ src/features/links/
 ```
 src/features/links/
 ├── lib/                    # 🆕 CREATE - Database service layer & utilities
-│   ├── db-service.ts       # Database service
-│   ├── actions.ts          # Server actions
-│   ├── supabase-client.ts  # Supabase client
-│   ├── utils/              # Utility functions
-│   └── constants/          # Constants
+│   ├── db-service.ts       # Database service for link operations
+│   ├── actions.ts          # Server actions for link CRUD
+│   ├── supabase-client.ts  # Supabase client for link data
+│   ├── utils/              # Link utility functions
+│   └── constants/          # Link constants
 └── schemas/                # 🆕 CREATE - Zod validation schemas
-    └── link-schemas.ts
+    └── link-schemas.ts     # Link validation schemas
 ```
 
 ## 🎯 Success Criteria
 
-- ✅ All existing components work with real database data
-- ✅ Optimistic updates provide smooth UX
+- ✅ All existing link management components work with real database data
+- ✅ Link creation, editing, deletion operations work smoothly
+- ✅ Optimistic updates provide smooth UX for link operations
 - ✅ Error handling covers all edge cases
 - ✅ Performance targets: < 200ms API responses
 - ✅ Type safety maintained end-to-end
-- ✅ Real-time updates work seamlessly
+- ✅ Real-time updates work seamlessly for link status changes
 
 ## 📚 Related Documents
 
-- [Implementation Tasks](./TASKS.md) - Detailed task breakdown
-- [Architecture Design](./ARCHITECTURE.md) - Technical architecture
-- [Database Schema](./DATABASE_SCHEMA.md) - Database design
-- [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step implementation
+- [Implementation Tasks](./TASKS.md) - Detailed task breakdown (Links Feature only)
+- [Architecture Design](./ARCHITECTURE.md) - Technical architecture (Links Feature only)
+- [Database Schema](./DATABASE_SCHEMA.md) - Database design (full schema)
+- [Migration Guide](./MIGRATION_GUIDE.md) - Step-by-step implementation (Links Feature only)
+
+## 🎯 Implementation Summary
+
+**What's Covered:** Complete database integration for Links Feature dashboard administration.
+
+**What's NOT Covered:** File upload functionality (handled by separate Upload Feature).
+
+**Next Steps:** Complete Phase 2 and Phase 3 for link management, then proceed to Upload Feature implementation separately.
 
 ## 🔗 External References
 
