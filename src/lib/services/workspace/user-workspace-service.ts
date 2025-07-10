@@ -29,33 +29,138 @@ export class UserWorkspaceService {
     try {
       return await db.transaction(async tx => {
         // Phase 1: Create or update user (idempotent)
-        const [user] = await tx
-          .insert(users)
-          .values({
-            id: userData.id,
-            email: userData.email,
-            username: userData.username,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            avatarUrl: userData.avatarUrl,
-            subscriptionTier: 'free',
-            storageUsed: 0,
-            storageLimit: 2147483648, // 2GB default
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: users.id,
-            set: {
-              email: userData.email,
-              username: userData.username,
-              firstName: userData.firstName,
-              lastName: userData.lastName,
-              avatarUrl: userData.avatarUrl,
-              updatedAt: new Date(),
-            },
-          })
-          .returning();
+        // Handle conflicts on multiple unique constraints (id, email, username)
+        let user;
+
+        // Strategy: Check for existing user first, then handle conflicts gracefully
+        const existingUserByEmail = await tx
+          .select()
+          .from(users)
+          .where(eq(users.email, userData.email))
+          .limit(1);
+
+        if (existingUserByEmail.length > 0) {
+          const existingUser = existingUserByEmail[0];
+
+          if (!existingUser) {
+            throw new Error('Unexpected: existing user not found');
+          }
+
+          // If the existing user has the same Clerk ID, just return it
+          if (existingUser.id === userData.id) {
+            console.log(
+              `✅ EXISTING_USER: User ${userData.id} already exists with correct Clerk ID`
+            );
+            user = existingUser;
+          } else {
+            // Different Clerk ID - use cascade deletion to clean up old user and create new one
+            console.log(
+              `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email} but different Clerk ID. Deleting old user ${existingUser.id} and creating new user ${userData.id}`
+            );
+
+            // Delete the old user - this will cascade delete all related records (workspaces, files, links, etc.)
+            await tx.delete(users).where(eq(users.id, existingUser.id));
+
+            // Create the new user with the new Clerk ID
+            [user] = await tx
+              .insert(users)
+              .values({
+                id: userData.id,
+                email: userData.email,
+                username: userData.username,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                avatarUrl: userData.avatarUrl,
+                subscriptionTier: 'free',
+                storageUsed: 0,
+                storageLimit: 2147483648, // 2GB default
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .returning();
+
+            if (!user) {
+              throw new Error(
+                'Failed to create user after conflict resolution'
+              );
+            }
+          }
+        } else {
+          // No existing user - try to create new one
+          try {
+            [user] = await tx
+              .insert(users)
+              .values({
+                id: userData.id,
+                email: userData.email,
+                username: userData.username,
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                avatarUrl: userData.avatarUrl,
+                subscriptionTier: 'free',
+                storageUsed: 0,
+                storageLimit: 2147483648, // 2GB default
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .onConflictDoUpdate({
+                target: users.id,
+                set: {
+                  email: userData.email,
+                  username: userData.username,
+                  firstName: userData.firstName,
+                  lastName: userData.lastName,
+                  avatarUrl: userData.avatarUrl,
+                  updatedAt: new Date(),
+                },
+              })
+              .returning();
+          } catch (insertError: any) {
+            // Final fallback - if any constraint violation, try to find by email/username and use cascade deletion
+            if (insertError?.code === '23505') {
+              console.log(
+                `🔄 FINAL_FALLBACK: Constraint violation, attempting cascade deletion for ${userData.id}`
+              );
+
+              // Try to find by email or username
+              const [existingUser] = await tx
+                .select()
+                .from(users)
+                .where(eq(users.email, userData.email))
+                .limit(1);
+
+              if (existingUser) {
+                // Delete the existing user (cascade delete all related records)
+                await tx.delete(users).where(eq(users.id, existingUser.id));
+
+                // Create the new user
+                [user] = await tx
+                  .insert(users)
+                  .values({
+                    id: userData.id,
+                    email: userData.email,
+                    username: userData.username,
+                    firstName: userData.firstName,
+                    lastName: userData.lastName,
+                    avatarUrl: userData.avatarUrl,
+                    subscriptionTier: 'free',
+                    storageUsed: 0,
+                    storageLimit: 2147483648, // 2GB default
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                  })
+                  .returning();
+              } else {
+                // This should rarely happen, but handle gracefully
+                throw new Error(
+                  'Could not create user - constraint violation with no matching record'
+                );
+              }
+            } else {
+              throw insertError;
+            }
+          }
+        }
 
         if (!user) {
           throw new Error('Failed to create or update user');
@@ -167,33 +272,64 @@ export class UserWorkspaceService {
    */
   async createUser(userData: WebhookUserData): Promise<DatabaseResult<User>> {
     try {
-      const [user] = await db
-        .insert(users)
-        .values({
-          id: userData.id,
-          email: userData.email,
-          username: userData.username,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          avatarUrl: userData.avatarUrl,
-          subscriptionTier: 'free',
-          storageUsed: 0,
-          storageLimit: 2147483648,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: users.id,
-          set: {
+      let user;
+
+      // Strategy: Check for existing user first, then handle conflicts gracefully
+      const existingUserByEmail = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, userData.email))
+        .limit(1);
+
+      if (existingUserByEmail.length > 0) {
+        // User exists with this email - update with new Clerk ID
+        console.log(
+          `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email}, updating with new Clerk ID ${userData.id}`
+        );
+
+        [user] = await db
+          .update(users)
+          .set({
+            id: userData.id, // Update to new Clerk ID
             email: userData.email,
             username: userData.username,
             firstName: userData.firstName,
             lastName: userData.lastName,
             avatarUrl: userData.avatarUrl,
             updatedAt: new Date(),
-          },
-        })
-        .returning();
+          })
+          .where(eq(users.email, userData.email))
+          .returning();
+      } else {
+        // No existing user - create new one
+        [user] = await db
+          .insert(users)
+          .values({
+            id: userData.id,
+            email: userData.email,
+            username: userData.username,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            avatarUrl: userData.avatarUrl,
+            subscriptionTier: 'free',
+            storageUsed: 0,
+            storageLimit: 2147483648,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: users.id,
+            set: {
+              email: userData.email,
+              username: userData.username,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              avatarUrl: userData.avatarUrl,
+              updatedAt: new Date(),
+            },
+          })
+          .returning();
+      }
 
       if (!user) {
         throw new Error('Failed to create or update user');

@@ -28,7 +28,7 @@ export const batches = pgTable(
     linkId: uuid('link_id')
       .references(() => links.id, { onDelete: 'cascade' })
       .notNull(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     folderId: uuid('folder_id').references(() => folders.id, {

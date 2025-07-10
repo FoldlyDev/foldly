@@ -8,6 +8,7 @@ import {
   varchar,
   timestamp,
   uuid,
+  text,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
@@ -19,7 +20,7 @@ export const workspaces = pgTable(
   'workspaces',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     name: varchar('name', { length: 255 }).notNull().default('My Files'),

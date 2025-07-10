@@ -303,6 +303,7 @@ export function WorkspaceContainer({
                     onCreateLink={handleCreateBaseLink}
                     onLearnMore={() => router.push('/dashboard/links')}
                   />
+                  {/* <WorkspaceOverview /> */}
                 </motion.div>
               )}
             </motion.div>

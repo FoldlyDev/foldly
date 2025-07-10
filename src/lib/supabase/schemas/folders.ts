@@ -26,7 +26,7 @@ export const folders = pgTable(
   'folders',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     workspaceId: uuid('workspace_id')

@@ -9,7 +9,6 @@ import {
   text,
   bigint,
   timestamp,
-  uuid,
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
@@ -21,7 +20,7 @@ import { subscriptionTierEnum } from './enums';
 export const users = pgTable(
   'users',
   {
-    id: uuid('id').primaryKey().notNull(), // Clerk user ID
+    id: text('id').primaryKey().notNull(), // Clerk user ID (string format)
     email: varchar('email', { length: 255 }).unique().notNull(),
     username: varchar('username', { length: 100 }).unique().notNull(),
     firstName: varchar('first_name', { length: 100 }),

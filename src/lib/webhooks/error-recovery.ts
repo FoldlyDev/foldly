@@ -83,7 +83,7 @@ export function validateWebhookPrerequisites(): {
 
   if (!process.env.POSTGRES_URL && !process.env.DATABASE_URL) {
     errors.push(
-      'Database URL environment variable not set (POSTGRES_URL or DATABASE_URL)'
+      'Database URL environment variable not set (need either POSTGRES_URL or DATABASE_URL)'
     );
   }
 

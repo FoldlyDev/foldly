@@ -34,7 +34,7 @@ export const files = pgTable(
     batchId: uuid('batch_id')
       .references(() => batches.id, { onDelete: 'cascade' })
       .notNull(),
-    userId: uuid('user_id')
+    userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     folderId: uuid('folder_id').references(() => folders.id, {

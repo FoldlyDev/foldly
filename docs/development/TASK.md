@@ -99,6 +99,81 @@ docs/
   - Task 4.1: End-to-End Testing
   - Task 4.2: Unit Testing for Service Layer
 
+#### **⚠️ CRITICAL PRIORITY: User Deletion Webhook Implementation**
+
+- **Status**: 🔥 **URGENT** - Required for Production Robustness
+- **Priority**: **CRITICAL**
+- **Timeline**: 1-2 hours
+- **Description**: Implement user deletion webhook to maintain database integrity when users are deleted from Clerk
+
+##### **Implementation Requirements**
+
+- **Task 1**: Create User Deletion Webhook Endpoint
+  - [ ] **Endpoint**: `POST /api/webhooks/clerk/user-deleted`
+  - [ ] **Validation**: Verify Clerk webhook signature
+  - [ ] **Processing**: Handle `user.deleted` event type
+  - [ ] **Cleanup**: Cascade delete user data (workspace, files, links, folders)
+  - [ ] **Error Handling**: Graceful failure with proper logging
+  - [ ] **Idempotency**: Handle duplicate deletion events safely
+
+- **Task 2**: Database Cleanup Service
+  - [ ] **User Data Removal**: Delete user record and all associated data
+  - [ ] **Cascade Logic**: Remove workspaces, links, files, folders, batches
+  - [ ] **Foreign Key Handling**: Respect referential integrity constraints
+  - [ ] **Audit Logging**: Log deletion events for compliance
+  - [ ] **Soft Delete Option**: Consider soft delete for data recovery needs
+
+- **Task 3**: Webhook Configuration
+  - [ ] **Clerk Dashboard**: Enable user deletion webhook events
+  - [ ] **Environment Setup**: Configure webhook endpoint URL
+  - [ ] **Testing**: Verify webhook delivery and processing
+  - [ ] **Monitoring**: Add deletion event tracking and alerts
+
+##### **Technical Implementation**
+
+```typescript
+// Example webhook endpoint structure
+export async function POST(request: NextRequest) {
+  try {
+    // 1. Verify Clerk webhook signature
+    const verification = await validateClerkWebhook(request);
+    if (!verification.success) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // 2. Extract user deletion event
+    const { type, data } = verification.data;
+    if (type !== 'user.deleted') {
+      return new Response('Event not handled', { status: 200 });
+    }
+
+    // 3. Cascade delete user data
+    await userDeletionService.deleteUserData(data.id);
+
+    return new Response('User data deleted', { status: 200 });
+  } catch (error) {
+    console.error('User deletion webhook failed:', error);
+    return new Response('Internal server error', { status: 500 });
+  }
+}
+```
+
+##### **Database Cleanup Strategy**
+
+1. **Transaction-based Deletion**: Ensure atomicity of cleanup operations
+2. **Cascade Order**: Delete in proper order (files → folders → batches → links → workspaces → users)
+3. **Storage Cleanup**: Remove uploaded files from Supabase Storage
+4. **Audit Trail**: Log deletion events for compliance and debugging
+5. **Error Recovery**: Handle partial failures gracefully
+
+##### **Business Impact**
+
+- **Data Integrity**: Prevents orphaned records when users delete accounts
+- **Storage Optimization**: Automatic cleanup of unused files and data
+- **Compliance**: Proper data deletion for GDPR and privacy regulations
+- **User Experience**: Clean account deletion process without residual data
+- **Cost Optimization**: Reduced storage costs from automatic cleanup
+
 ## 🎯 Next Priority: Multi-Link Database Implementation
 
 ### **📋 Multi-Link System Development**
