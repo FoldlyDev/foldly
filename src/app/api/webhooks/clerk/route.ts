@@ -1,6 +1,9 @@
 import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
+import { userDeletionService } from '@/lib/services/workspace/user-deletion-service';
+import { userWorkspaceService } from '@/lib/services/workspace/user-workspace-service';
+import { transformClerkUserData } from '@/lib/webhooks/clerk-webhook-handler';
 // TODO: Implement database layer
 // import { syncUserWithClerk } from '@/lib/db/queries';
 
@@ -62,34 +65,118 @@ export async function POST(req: NextRequest) {
   try {
     switch (eventType) {
       case 'user.created':
-      case 'user.updated':
-        // TODO: Implement user sync with database
-        // await syncUserWithClerk(evt.data.id, {
-        //   email: evt.data.email_addresses[0]?.email_address || '',
-        //   firstName: evt.data.first_name,
-        //   lastName: evt.data.last_name,
-        //   imageUrl: evt.data.image_url,
-        // });
+        const newUserId = evt.data.id;
         console.log(
-          `User ${evt.data.id} webhook received - database sync pending implementation`
+          `👤 USER_CREATION_WEBHOOK: Processing creation for user ${newUserId}`
         );
+
+        try {
+          // Transform Clerk user data to our format
+          const userData = transformClerkUserData(evt.data);
+
+          // Create user and workspace atomically
+          const result =
+            await userWorkspaceService.createUserWithWorkspace(userData);
+
+          if (result.success) {
+            console.log(
+              `✅ USER_CREATED: User ${newUserId} created successfully with workspace`
+            );
+          } else {
+            console.error(
+              `❌ USER_CREATION_FAILED: ${newUserId} - ${result.error}`
+            );
+          }
+        } catch (error) {
+          console.error(`❌ USER_CREATION_ERROR: ${newUserId}`, error);
+        }
+        break;
+
+      case 'user.updated':
+        const updatedUserId = evt.data.id;
+        console.log(
+          `🔄 USER_UPDATE_WEBHOOK: Processing update for user ${updatedUserId}`
+        );
+
+        try {
+          // Check if user exists in our database first
+          const userExists =
+            await userWorkspaceService.userExists(updatedUserId);
+
+          if (!userExists) {
+            console.log(
+              `ℹ️ USER_NOT_FOUND: User ${updatedUserId} not in database, creating...`
+            );
+            // If user doesn't exist, treat as creation
+            const userData = transformClerkUserData(evt.data);
+            const result =
+              await userWorkspaceService.createUserWithWorkspace(userData);
+
+            if (result.success) {
+              console.log(
+                `✅ USER_CREATED_ON_UPDATE: User ${updatedUserId} created successfully`
+              );
+            } else {
+              console.error(
+                `❌ USER_CREATION_ON_UPDATE_FAILED: ${updatedUserId} - ${result.error}`
+              );
+            }
+          } else {
+            // User exists, update their information
+            const userData = transformClerkUserData(evt.data);
+            const result = await userWorkspaceService.createUser(userData); // This handles updates via upsert
+
+            if (result.success) {
+              console.log(
+                `✅ USER_UPDATED: User ${updatedUserId} updated successfully`
+              );
+            } else {
+              console.error(
+                `❌ USER_UPDATE_FAILED: ${updatedUserId} - ${result.error}`
+              );
+            }
+          }
+        } catch (error) {
+          console.error(`❌ USER_UPDATE_ERROR: ${updatedUserId}`, error);
+        }
         break;
 
       case 'user.deleted':
-        // TODO: Implement user deletion from database
+        const userId = evt.data.id;
         console.log(
-          `User ${evt.data.id} deleted from Clerk - database cleanup pending implementation`
+          `🗑️ USER_DELETION_WEBHOOK: Processing deletion for user ${userId}`
         );
+
+        // Check if user exists in our database
+        const userExists = await userDeletionService.userExists(userId);
+        if (!userExists) {
+          console.log(`ℹ️ USER_NOT_FOUND: User ${userId} not in database`);
+          break;
+        }
+
+        // Delete user and all associated data
+        const deletionResult = await userDeletionService.deleteUserData(userId);
+        if (deletionResult.success) {
+          console.log(
+            `✅ USER_DELETED: User ${userId} and all data removed successfully`
+          );
+        } else {
+          console.error(
+            `❌ USER_DELETION_FAILED: ${userId}`,
+            deletionResult.error
+          );
+        }
         break;
 
       default:
         console.log(`Unhandled webhook event type: ${eventType}`);
     }
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    console.error('❌ WEBHOOK_ERROR: Error handling webhook:', error);
+    // Return 200 even for errors to prevent webhook retries
     return NextResponse.json(
-      { error: 'Error processing webhook' },
-      { status: 500 }
+      { success: false, error: 'Error processing webhook' },
+      { status: 200 }
     );
   }
 
