@@ -12,14 +12,12 @@ import {
   AvatarFallback,
 } from '@/components/ui/shadcn/avatar';
 
-// Use centralized types from the types folder
-// Local form types
+// Use centralized types from the database schema
 type ValidationError = string;
 interface LinkBrandingFormData {
-  brandingEnabled: boolean;
-  brandColor: string;
-  accentColor: string;
-  logoUrl: string;
+  brandEnabled: boolean; // Updated to match database schema
+  brandColor: string; // Only one brand color as per database schema
+  logoUrl?: string; // Optional logo URL (not in store, handled separately)
 }
 type FieldValidationErrors<T extends Record<string, any>> = Partial<
   Record<keyof T, ValidationError>
@@ -49,6 +47,7 @@ export function LinkBrandingSection({
   React.useEffect(() => {
     console.log('🎨 BRANDING: Description updated to:', description);
   }, [description]);
+
   // Use the branding store hook to get context-aware state
   const {
     brandingFormData: formData,
@@ -57,29 +56,31 @@ export function LinkBrandingSection({
     isCreationContext,
     isSettingsContext,
   } = useLinksBrandingStore();
-  // Store the actual file for FileUpload component
+
+  // Store the actual file for FileUpload component and logo URL separately
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = React.useState<string>('');
+
+  // Ensure controlled inputs by providing default values
+  const brandColor = formData.brandColor || '#6c47ff';
 
   const handleFileChange = (files: File[]) => {
     const file = files[0];
     if (file) {
       // Store the file and create blob URL
       setLogoFile(file);
-      const logoUrl = URL.createObjectURL(file);
-      console.log('🖼️ BRANDING: Logo file uploaded, creating URL:', logoUrl);
+      const newLogoUrl = URL.createObjectURL(file);
+      setLogoUrl(newLogoUrl);
+      console.log('🖼️ BRANDING: Logo file uploaded, creating URL:', newLogoUrl);
       console.log('🖼️ BRANDING: Context:', brandingContext);
-      updateBrandingData({ logoUrl });
     } else {
       // Clear logo if no file selected
       setLogoFile(null);
+      setLogoUrl('');
       console.log('🖼️ BRANDING: Logo file cleared');
       console.log('🖼️ BRANDING: Context:', brandingContext);
-      updateBrandingData({ logoUrl: '' });
     }
   };
-
-  // Helper to get logo preview URL - now directly from formData.logoUrl
-  const logoUrl = formData.logoUrl;
 
   // Convert logoFile to array for FileUpload component
   const logoFiles: File[] = logoFile ? [logoFile] : [];
@@ -103,7 +104,7 @@ export function LinkBrandingSection({
             </div>
           </div>
           <Switch
-            checked={formData.brandingEnabled}
+            checked={formData.brandEnabled || false}
             onCheckedChange={checked => {
               console.log(
                 '🎨 BRANDING: Toggle branding enabled:',
@@ -111,7 +112,7 @@ export function LinkBrandingSection({
                 'Context:',
                 brandingContext
               );
-              updateBrandingData({ brandingEnabled: checked });
+              updateBrandingData({ brandEnabled: checked });
             }}
             disabled={isLoading}
             className='data-[state=unchecked]:bg-muted-foreground/20'
@@ -119,7 +120,7 @@ export function LinkBrandingSection({
         </div>
 
         {/* Branding Options */}
-        {formData.brandingEnabled && (
+        {formData.brandEnabled && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -127,103 +128,55 @@ export function LinkBrandingSection({
             transition={{ duration: 0.2 }}
             className='space-y-4'
           >
-            {/* Color Selection */}
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-foreground'>
-                  Brand Color
-                </label>
-                <div className='flex items-center gap-3'>
-                  <input
-                    type='color'
-                    value={formData.brandColor}
-                    onChange={e => {
-                      console.log(
-                        '🎨 BRANDING: Brand color changed:',
-                        e.target.value,
-                        'Context:',
-                        brandingContext
-                      );
-                      updateBrandingData({
-                        brandColor: e.target.value as HexColor,
-                      });
-                    }}
-                    disabled={isLoading}
-                    className='w-12 h-10 rounded-lg cursor-pointer disabled:cursor-not-allowed'
-                  />
-                  <input
-                    type='text'
-                    value={formData.brandColor}
-                    onChange={e => {
-                      console.log(
-                        '🎨 BRANDING: Brand color changed (text):',
-                        e.target.value,
-                        'Context:',
-                        brandingContext
-                      );
-                      updateBrandingData({
-                        brandColor: e.target.value as HexColor,
-                      });
-                    }}
-                    disabled={isLoading}
-                    placeholder='#6c47ff'
-                    className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
-                  />
-                </div>
-                {errors.brandColor && (
-                  <p className='text-sm text-destructive'>
-                    {errors.brandColor}
-                  </p>
-                )}
+            {/* Single Brand Color Selection - Aligned with Database Schema */}
+            <div className='space-y-2'>
+              <label className='text-sm font-medium text-foreground'>
+                Brand Color
+              </label>
+              <div className='flex items-center gap-3'>
+                <input
+                  type='color'
+                  value={brandColor}
+                  onChange={e => {
+                    console.log(
+                      '🎨 BRANDING: Brand color changed:',
+                      e.target.value,
+                      'Context:',
+                      brandingContext
+                    );
+                    updateBrandingData({
+                      brandColor: e.target.value,
+                    });
+                  }}
+                  disabled={isLoading}
+                  className='w-12 h-10 rounded-lg cursor-pointer disabled:cursor-not-allowed'
+                />
+                <input
+                  type='text'
+                  value={brandColor}
+                  onChange={e => {
+                    console.log(
+                      '🎨 BRANDING: Brand color changed (text):',
+                      e.target.value,
+                      'Context:',
+                      brandingContext
+                    );
+                    updateBrandingData({
+                      brandColor: e.target.value,
+                    });
+                  }}
+                  disabled={isLoading}
+                  placeholder='#6c47ff'
+                  className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
+                />
               </div>
-
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-foreground'>
-                  Accent Color
-                </label>
-                <div className='flex items-center gap-3'>
-                  <input
-                    type='color'
-                    value={formData.accentColor}
-                    onChange={e => {
-                      console.log(
-                        '🎨 BRANDING: Accent color changed:',
-                        e.target.value,
-                        'Context:',
-                        brandingContext
-                      );
-                      updateBrandingData({
-                        accentColor: e.target.value as HexColor,
-                      });
-                    }}
-                    disabled={isLoading}
-                    className='w-12 h-10 rounded-lg cursor-pointer disabled:cursor-not-allowed'
-                  />
-                  <input
-                    type='text'
-                    value={formData.accentColor}
-                    onChange={e => {
-                      console.log(
-                        '🎨 BRANDING: Accent color changed (text):',
-                        e.target.value,
-                        'Context:',
-                        brandingContext
-                      );
-                      updateBrandingData({
-                        accentColor: e.target.value as HexColor,
-                      });
-                    }}
-                    disabled={isLoading}
-                    placeholder='#4ade80'
-                    className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
-                  />
-                </div>
-                {errors.accentColor && (
-                  <p className='text-sm text-destructive'>
-                    {errors.accentColor}
-                  </p>
-                )}
-              </div>
+              {errors.brandColor && (
+                <p className='text-sm text-destructive'>{errors.brandColor}</p>
+              )}
+              <p className='text-xs text-muted-foreground'>
+                This color will be used for buttons, highlights, and branding
+                elements
+              </p>
             </div>
 
             {/* Logo Upload */}
@@ -238,7 +191,7 @@ export function LinkBrandingSection({
               )}
             </div>
 
-            {/* Preview Section - moved to bottom and only shown when branding is enabled */}
+            {/* Preview Section - Updated to use single brand color */}
             <div className='space-y-3 pt-2'>
               <div className='flex items-center gap-2'>
                 <Eye className='w-4 h-4 text-muted-foreground' />
@@ -249,8 +202,8 @@ export function LinkBrandingSection({
               <div
                 className='w-full p-6 rounded-xl border border-gray-200/50 bg-gradient-to-br from-white to-gray-50/30'
                 style={{
-                  background: `linear-gradient(135deg, ${formData.brandColor}03 0%, ${formData.brandColor}08 100%)`,
-                  borderColor: `${formData.brandColor}20`,
+                  background: `linear-gradient(135deg, ${brandColor}03 0%, ${brandColor}08 100%)`,
+                  borderColor: `${brandColor}20`,
                 }}
               >
                 {/* Title with logo on the left if uploaded */}
@@ -264,7 +217,7 @@ export function LinkBrandingSection({
                   )}
                   <h3
                     className='text-xl font-semibold leading-tight'
-                    style={{ color: formData.brandColor }}
+                    style={{ color: brandColor }}
                   >
                     {linkName}
                   </h3>
@@ -275,11 +228,11 @@ export function LinkBrandingSection({
                   {description || 'Your description will appear here'}
                 </p>
 
-                {/* Choose Files button - compact, not full width */}
+                {/* Choose Files button - uses brand color with good contrast */}
                 <button
                   className='inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:scale-[1.02]'
                   style={{
-                    backgroundColor: formData.accentColor,
+                    backgroundColor: brandColor,
                   }}
                 >
                   Choose Files

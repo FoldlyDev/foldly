@@ -6,9 +6,13 @@ import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import {
-  useLinksListStore,
-  useLinksModalsStore,
-} from '../../hooks/use-links-composite';
+  useLinksStore,
+  useLinksActions,
+  useLinksUIState,
+  useLinksSelection,
+  useFilteredLinks,
+} from '../../store/links-store';
+import { useLinksModalsStore } from '../../hooks/use-links-composite';
 import { ActionButton } from '@/components/ui/action-button';
 import { SearchInput } from '@/components/ui/search-input';
 import { ViewToggle } from '@/components/ui/view-toggle';
@@ -23,23 +27,28 @@ import { toast } from 'sonner';
 
 // No props needed - all state comes from stores!
 export function PopulatedLinksState() {
-  // Get all state and actions from stores
+  // Get all state and actions from the correct stores
+  const links = useLinksStore(state => state.links);
+  const isLoading = useLinksStore(state => state.isLoading);
+  const totalCount = useLinksStore(state => state.totalCount);
+
+  // Use filtered links for display
+  const filteredLinks = useFilteredLinks();
+
+  // Get UI state
+  const { searchQuery, filter, viewMode } = useLinksUIState();
+  const { selectedLinkIds, hasSelection, selectionCount } = useLinksSelection();
+
+  // Get actions
   const {
-    links,
-    isLoading,
-    stats,
-    viewMode,
-    searchQuery,
-    filters,
-    selection,
-    // Actions
-    setViewMode,
     setSearchQuery,
-    setStatusFilter,
-    toggleMultiSelectMode,
-    openCreateLinkModal,
-    removeLink,
-  } = useLinksListStore();
+    setFilter,
+    setViewMode,
+    deleteLink,
+    openCreateModal,
+    toggleLinkSelection,
+    clearSelection,
+  } = useLinksActions();
 
   const {
     activeModal,
@@ -49,6 +58,17 @@ export function PopulatedLinksState() {
     openLinkSettingsModal,
     closeModal,
   } = useLinksModalsStore();
+
+  // Calculate stats from actual links
+  const stats = {
+    total: totalCount,
+    active: links.filter(link => link.isActive && !link.expiresAt).length,
+    totalUploads: links.reduce(
+      (sum, link) => sum + (link.totalUploads || 0),
+      0
+    ),
+    totalViews: 0, // This would need to be calculated from database
+  };
 
   // Map stats to match LinksOverviewCards expected format
   const overviewData = {
@@ -69,8 +89,12 @@ export function PopulatedLinksState() {
     }
 
     try {
-      removeLink(linkId);
-      toast.success(`${link.name} deleted successfully`);
+      const result = await deleteLink(linkId);
+      if (result.success) {
+        toast.success(`${link.title} deleted successfully`);
+      } else {
+        toast.error(result.error || 'Failed to delete link');
+      }
     } catch (error) {
       toast.error('Failed to delete link');
     }
@@ -81,6 +105,14 @@ export function PopulatedLinksState() {
     toast.info('Templates functionality coming soon');
   };
 
+  console.log(
+    '📊 PopulatedLinksState: Rendering with',
+    filteredLinks.length,
+    'filtered links out of',
+    links.length,
+    'total links'
+  );
+
   return (
     <div className='space-y-6'>
       {/* Overview Cards */}
@@ -90,15 +122,15 @@ export function PopulatedLinksState() {
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
         <div className='flex items-center gap-3'>
           <h2 className='text-xl font-semibold text-[var(--quaternary)]'>
-            Your Links ({links.length})
+            Your Links ({filteredLinks.length})
           </h2>
 
           {/* Filter Badge */}
-          {filters.status !== 'all' && (
+          {filter !== 'all' && (
             <div className='px-2 py-1 bg-[var(--primary-subtle)] text-[var(--tertiary)] rounded-md text-sm font-medium'>
-              {filters.status === 'active' && 'Active'}
-              {filters.status === 'paused' && 'Paused'}
-              {filters.status === 'expired' && 'Expired'}
+              {filter === 'active' && 'Active'}
+              {filter === 'paused' && 'Paused'}
+              {filter === 'expired' && 'Expired'}
             </div>
           )}
         </div>
@@ -120,10 +152,8 @@ export function PopulatedLinksState() {
             size='sm'
             onClick={() => {
               console.log('🔥 POPULATED STATE: Create Link button clicked');
-              openCreateLinkModal('topic');
-              console.log(
-                '🔥 POPULATED STATE: openCreateLinkModal("topic") called'
-              );
+              openCreateModal();
+              console.log('🔥 POPULATED STATE: openCreateModal() called');
             }}
             className='bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-[var(--quaternary)]'
           >
@@ -149,7 +179,7 @@ export function PopulatedLinksState() {
         <div className='flex items-center gap-3'>
           {/* Status Filter */}
           <div className='min-w-[140px]'>
-            <Select value={filters.status} onValueChange={setStatusFilter}>
+            <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger size='sm' className='border-[var(--neutral-200)]'>
                 <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
                 <SelectValue placeholder='Filter' />
@@ -173,15 +203,15 @@ export function PopulatedLinksState() {
       </div>
 
       {/* Multi-select Actions */}
-      {selection.isMultiSelectMode && (
+      {hasSelection && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           className='flex items-center justify-between p-4 bg-[var(--primary-subtle)] border border-[var(--primary)] rounded-lg'
         >
           <span className='text-sm font-medium text-[var(--tertiary)]'>
-            {selection.selectedCount} link
-            {selection.selectedCount > 1 ? 's' : ''} selected
+            {selectionCount} link
+            {selectionCount > 1 ? 's' : ''} selected
           </span>
           <div className='flex items-center gap-2'>
             <ActionButton
@@ -200,59 +230,43 @@ export function PopulatedLinksState() {
       )}
 
       {/* Links Grid/List */}
-      {isLoading ? (
-        <div className='flex justify-center items-center h-32'>
-          <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
-        </div>
-      ) : links.length === 0 ? (
-        // Show "No results" message instead of EmptyLinksState when search/filter is active
-        <div className='flex flex-col items-center justify-center py-12 text-center'>
-          <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4'>
-            <Filter className='w-8 h-8 text-gray-400' />
-          </div>
-          <h3 className='text-lg font-semibold text-gray-900 mb-2'>
+      <div
+        className={`${
+          viewMode === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+            : 'space-y-4'
+        }`}
+      >
+        {filteredLinks.map((link, index) => (
+          <LinkCard
+            key={link.id}
+            linkId={link.id}
+            view={viewMode}
+            index={index}
+            searchQuery={searchQuery}
+          />
+        ))}
+      </div>
+
+      {/* Empty state for filtered results */}
+      {filteredLinks.length === 0 && links.length > 0 && (
+        <div className='text-center py-12'>
+          <h3 className='text-lg font-medium text-[var(--neutral-600)] mb-2'>
             No links found
           </h3>
-          <p className='text-gray-500 mb-4 max-w-sm'>
-            {searchQuery.trim()
-              ? `No links match "${searchQuery}". Try adjusting your search.`
-              : filters.status !== 'all'
-                ? `No ${filters.status} links found. Try changing your filters.`
-                : 'No links match your current filters.'}
+          <p className='text-[var(--neutral-500)] mb-4'>
+            Try adjusting your search or filter criteria
           </p>
           <ActionButton
             variant='outline'
-            size='sm'
             onClick={() => {
               setSearchQuery('');
-              setStatusFilter('all');
+              setFilter('all');
             }}
-            className='text-gray-600 border-gray-200'
           >
             Clear filters
           </ActionButton>
         </div>
-      ) : (
-        <motion.div
-          className={
-            viewMode === 'grid'
-              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-              : 'space-y-4'
-          }
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {links.map((link, index) => (
-            <LinkCard
-              key={link.id}
-              linkId={link.id as any}
-              view={viewMode}
-              index={index}
-              searchQuery={searchQuery}
-            />
-          ))}
-        </motion.div>
       )}
     </div>
   );

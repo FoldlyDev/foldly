@@ -6,6 +6,20 @@
 import type { LinkWithStats, DatabaseId, LinkType } from '@/lib/supabase/types';
 
 /**
+ * Generate full URL for link
+ */
+export const generateFullUrl = (
+  baseUrl: string,
+  slug: string,
+  topic?: string | null
+): string => {
+  if (topic) {
+    return `${baseUrl}/${slug}/${topic}`;
+  }
+  return `${baseUrl}/${slug}`;
+};
+
+/**
  * Seed data functions - moved from deleted utils/seed-data.ts
  */
 export function createSeedLinks(): LinkWithStats[] {

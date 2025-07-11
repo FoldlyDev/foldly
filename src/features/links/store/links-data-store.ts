@@ -34,18 +34,18 @@ const dataReducers = createReducers<
   {
     setLoading: (state: LinksDataState, loading: boolean) => LinksDataState;
     setError: (state: LinksDataState, error: string | null) => LinksDataState;
-    setLinks: (state: LinksDataState, links: LinkData[]) => LinksDataState;
-    addLink: (state: LinksDataState, link: LinkData) => LinksDataState;
+    setLinks: (state: LinksDataState, links: LinkWithStats[]) => LinksDataState;
+    addLink: (state: LinksDataState, link: LinkWithStats) => LinksDataState;
     updateLink: (
       state: LinksDataState,
-      id: LinkId,
-      updates: Partial<LinkData>
+      id: DatabaseId,
+      updates: Partial<LinkWithStats>
     ) => LinksDataState;
-    removeLink: (state: LinksDataState, id: LinkId) => LinksDataState;
+    removeLink: (state: LinksDataState, id: DatabaseId) => LinksDataState;
     updateLinkStats: (
       state: LinksDataState,
-      id: LinkId,
-      stats: { views?: number; uploads?: number }
+      id: DatabaseId,
+      stats: { totalFiles?: number; totalUploads?: number; totalSize?: number }
     ) => LinksDataState;
   }
 >({
@@ -95,9 +95,11 @@ const dataReducers = createReducers<
       link.id === id
         ? {
             ...link,
-            views: stats.views ?? link.views,
-            uploads: stats.uploads ?? link.uploads,
-            lastActivity: new Date().toISOString(),
+            totalFiles: stats.totalFiles ?? link.totalFiles,
+            totalUploads: stats.totalUploads ?? link.totalUploads,
+            totalSize: stats.totalSize ?? link.totalSize,
+            lastUploadAt: new Date(),
+            updatedAt: new Date(),
           }
         : link
     ),
@@ -111,7 +113,7 @@ export const useLinksDataStore = create<
   devtools(
     set => ({
       ...initialState,
-      ...convertReducersToActions(set, dataReducers),
+      ...convertReducersToActions(set as any, dataReducers),
     }),
     { name: 'LinksDataStore' }
   )
@@ -125,23 +127,27 @@ export const linksDataSelectors = {
   // Get links by type
   baseLinks: (state: LinksDataState) =>
     state.links.filter(link => link.linkType === 'base'),
-  topicLinks: (state: LinksDataState) =>
-    state.links.filter(link => link.linkType !== 'base'),
+  customLinks: (state: LinksDataState) =>
+    state.links.filter(link => link.linkType === 'custom'),
+  generatedLinks: (state: LinksDataState) =>
+    state.links.filter(link => link.linkType === 'generated'),
 
   // Get link by ID
-  getLinkById: (id: LinkId) => (state: LinksDataState) =>
+  getLinkById: (id: DatabaseId) => (state: LinksDataState) =>
     state.links.find(link => link.id === id),
 
   // Loading and error states
   isLoading: (state: LinksDataState) => state.isLoading,
   error: (state: LinksDataState) => state.error,
 
-  // Computed values
+  // Computed values using database fields
   totalLinks: (state: LinksDataState) => state.links.length,
   activeLinks: (state: LinksDataState) =>
-    state.links.filter(link => link.status === 'active').length,
-  totalViews: (state: LinksDataState) =>
-    state.links.reduce((sum, link) => sum + link.views, 0),
+    state.links.filter(link => link.isActive && !link.expiresAt).length,
+  totalFiles: (state: LinksDataState) =>
+    state.links.reduce((sum, link) => sum + link.totalFiles, 0),
   totalUploads: (state: LinksDataState) =>
-    state.links.reduce((sum, link) => sum + link.uploads, 0),
+    state.links.reduce((sum, link) => sum + link.totalUploads, 0),
+  totalSize: (state: LinksDataState) =>
+    state.links.reduce((sum, link) => sum + link.totalSize, 0),
 };

@@ -7,15 +7,17 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { useEffect } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 import { useZodForm } from '@/lib/hooks/use-zod-form';
-import { createLinkFormSchema } from '../schemas';
+import { createLinkFormSchema } from '../lib/validations/forms';
+import { createLinkAction } from '../lib/actions';
 import {
   createReducers,
   convertReducersToActions,
   type Reducer,
 } from '../store/utils/convert-reducers-to-actions';
 import type { LinkType } from '@/lib/supabase/types';
-import type { HexColor } from '@/lib/supabase/types';
 
 // =============================================================================
 // FORM STATE TYPES
@@ -24,34 +26,35 @@ import type { HexColor } from '@/lib/supabase/types';
 // Form step type
 type CreateLinkStep = 'information' | 'branding' | 'success';
 
-// Basic form data interface - will use database types for final submission
+// Basic form data interface - aligned with database schema only
 interface CreateLinkFormData {
+  // === DATABASE FIELDS ONLY ===
   title: string;
-  topic: string;
-  description: string;
-  instructions: string;
+  topic?: string;
+  description?: string;
   requireEmail: boolean;
   requirePassword: boolean;
-  password: string;
+  password?: string;
   isPublic: boolean;
   maxFiles: number;
   maxFileSize: number;
   allowedFileTypes: string[];
-  expiresAt: Date | null;
-  brandingEnabled: boolean;
-  brandColor: string;
-  accentColor: string;
-  logoUrl: string;
+  expiresAt?: string;
+  brandEnabled: boolean;
+  brandColor?: string;
 }
 
 // Form state interface
 interface CreateLinkFormState {
+  linkType: LinkType;
   formData: CreateLinkFormData;
   currentStep: CreateLinkStep;
   isValid: boolean;
-  errors: Record<string, string>;
-  isDirty: boolean;
   isSubmitting: boolean;
+  createdLinkId: string | null;
+  generatedUrl: string | null;
+  fieldErrors: Record<string, string | undefined>;
+  generalError: string | null;
 }
 
 // =============================================================================
@@ -59,23 +62,15 @@ interface CreateLinkFormState {
 // =============================================================================
 
 const initialFormData: CreateLinkFormData = {
+  // === DATABASE FIELDS ONLY ===
   title: '',
-  topic: '',
-  description: '',
-  instructions: '',
   requireEmail: false,
   requirePassword: false,
-  password: '',
   isPublic: true,
   maxFiles: 100,
-  maxFileSize: 104857600, // 100MB in bytes
+  maxFileSize: 100, // MB (converted to bytes in action)
   allowedFileTypes: [],
-  expiresAt: null,
-  brandingEnabled: false,
-  brandColor: '',
-  accentColor: '',
-  logoUrl: '',
-  welcomeMessage: '',
+  brandEnabled: false,
 };
 
 const initialState: CreateLinkFormState = {
@@ -284,6 +279,7 @@ export const createLinkFormSelectors = {
       // Topic/custom links: only require topic field to be filled
       return (
         (state.linkType === 'custom' || state.linkType === 'generated') &&
+        state.formData.topic &&
         state.formData.topic.trim() !== ''
       );
     }
@@ -307,6 +303,7 @@ export const createLinkFormSelectors = {
     // Topic/custom links: require topic field only
     return (
       (state.linkType === 'custom' || state.linkType === 'generated') &&
+      state.formData.topic &&
       state.formData.topic.trim() !== ''
     );
   },
@@ -362,6 +359,8 @@ export interface UseCreateLinkFormEnhancedReturn {
 
 export const useCreateLinkFormEnhanced =
   (): UseCreateLinkFormEnhancedReturn => {
+    const { user } = useUser();
+
     // Zustand store state
     const currentStep = useCreateLinkFormStore(
       createLinkFormSelectors.currentStep
@@ -384,6 +383,11 @@ export const useCreateLinkFormEnhanced =
       state => state.updateMultipleFields
     );
     const resetFormAction = useCreateLinkFormStore(state => state.resetForm);
+    const setSubmitting = useCreateLinkFormStore(state => state.setSubmitting);
+    const setSuccess = useCreateLinkFormStore(state => state.setSuccess);
+    const setGeneralError = useCreateLinkFormStore(
+      state => state.setGeneralError
+    );
 
     // React Hook Form integration
     const form = useZodForm({
@@ -448,6 +452,11 @@ export const useCreateLinkFormEnhanced =
 
     // Form submission
     const handleSubmit = async () => {
+      if (!user) {
+        toast.error('Please sign in to create links');
+        return;
+      }
+
       const isValid = await form.trigger(); // Validate entire form
 
       if (!isValid) {
@@ -457,12 +466,74 @@ export const useCreateLinkFormEnhanced =
 
       // Use form.handleSubmit to get validated data
       form.handleSubmit(async validatedData => {
-        // Handle the actual submission logic here
         console.log('Form submitted with validated data:', validatedData);
 
-        // You can add your submission logic here
-        // For now, we'll just simulate it
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        setSubmitting(true);
+        setGeneralError(null);
+
+        try {
+          // Prepare data for server action
+          const linkInput = {
+            workspaceId: 'temp-workspace-id', // TODO: Get actual workspace ID
+            title: validatedData.title,
+            topic: validatedData.topic || undefined,
+            description: validatedData.description || undefined,
+            requireEmail: validatedData.requireEmail,
+            requirePassword: validatedData.requirePassword,
+            password: validatedData.password || undefined,
+            isPublic: validatedData.isPublic,
+            isActive: true, // Default to active for new links
+            maxFiles: validatedData.maxFiles,
+            maxFileSize: validatedData.maxFileSize,
+            allowedFileTypes:
+              validatedData.allowedFileTypes &&
+              validatedData.allowedFileTypes.length > 0
+                ? validatedData.allowedFileTypes
+                : undefined,
+            expiresAt: validatedData.expiresAt || undefined,
+            brandEnabled: validatedData.brandEnabled,
+            brandColor: validatedData.brandColor || undefined,
+          };
+
+          console.log('Submitting to server action:', linkInput);
+
+          // Call server action
+          const result = await createLinkAction(linkInput);
+
+          if (result.success && result.data) {
+            // Success - move to success step
+            setSuccess(
+              result.data.id,
+              `foldly.io/${user.username}${linkType === 'custom' && validatedData.topic ? `/${validatedData.topic}` : ''}`
+            );
+            toast.success('Link created successfully!');
+          } else {
+            // Handle field errors
+            if (result.fieldErrors) {
+              Object.entries(result.fieldErrors).forEach(([field, errors]) => {
+                const errorMessage = Array.isArray(errors) ? errors[0] : errors;
+                if (errorMessage) {
+                  form.setError(field as any, { message: errorMessage });
+                }
+              });
+            }
+
+            // Handle general error
+            const errorMessage = result.error || 'Failed to create link';
+            setGeneralError(errorMessage);
+            toast.error(errorMessage);
+          }
+        } catch (error) {
+          console.error('Link creation error:', error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : 'An unexpected error occurred';
+          setGeneralError(errorMessage);
+          toast.error(errorMessage);
+        } finally {
+          setSubmitting(false);
+        }
       })();
     };
 

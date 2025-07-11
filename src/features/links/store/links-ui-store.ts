@@ -9,19 +9,19 @@ import {
   convertReducersToActions,
   createReducers,
 } from './utils/convert-reducers-to-actions';
-import type { DatabaseId } from '@/lib/supabase/types';
+import type { DatabaseId, LinkSortField } from '@/lib/supabase/types';
 
 // State interface
 interface LinksUIState {
   // View and layout
   viewMode: 'grid' | 'list';
-  sortBy: 'createdAt' | 'name' | 'views' | 'uploads' | 'lastActivity';
+  sortBy: LinkSortField;
   sortDirection: 'asc' | 'desc';
 
   // Search and filtering
   searchQuery: string;
   filterStatus: 'all' | 'active' | 'paused' | 'expired';
-  filterType: 'all' | 'base' | 'topic';
+  filterType: 'all' | 'base' | 'custom' | 'generated';
 
   // Selection state
   isMultiSelectMode: boolean;
@@ -53,7 +53,7 @@ const uiReducers = createReducers<
     setViewMode: (state: LinksUIState, mode: 'grid' | 'list') => LinksUIState;
     setSorting: (
       state: LinksUIState,
-      sortBy: LinksUIState['sortBy'],
+      sortBy: LinkSortField,
       direction?: LinksUIState['sortDirection']
     ) => LinksUIState;
     setSearchQuery: (state: LinksUIState, query: string) => LinksUIState;
@@ -66,10 +66,16 @@ const uiReducers = createReducers<
       type: LinksUIState['filterType']
     ) => LinksUIState;
     toggleMultiSelectMode: (state: LinksUIState) => LinksUIState;
-    selectLink: (state: LinksUIState, linkId: LinkId) => LinksUIState;
-    deselectLink: (state: LinksUIState, linkId: LinkId) => LinksUIState;
-    toggleLinkSelection: (state: LinksUIState, linkId: LinkId) => LinksUIState;
-    selectAllLinks: (state: LinksUIState, linkIds: LinkId[]) => LinksUIState;
+    selectLink: (state: LinksUIState, linkId: DatabaseId) => LinksUIState;
+    deselectLink: (state: LinksUIState, linkId: DatabaseId) => LinksUIState;
+    toggleLinkSelection: (
+      state: LinksUIState,
+      linkId: DatabaseId
+    ) => LinksUIState;
+    selectAllLinks: (
+      state: LinksUIState,
+      linkIds: DatabaseId[]
+    ) => LinksUIState;
     clearSelection: (state: LinksUIState) => LinksUIState;
     setPage: (state: LinksUIState, page: number) => LinksUIState;
     resetFilters: (state: LinksUIState) => LinksUIState;
@@ -201,6 +207,4 @@ export const linksUISelectors = {
     currentPage: state.currentPage,
     itemsPerPage: state.itemsPerPage,
   }),
-  isLinkSelected: (linkId: LinkId) => (state: LinksUIState) =>
-    state.selectedLinkIds.has(linkId),
 };

@@ -9,8 +9,9 @@ import type {
   LinkInsert,
   LinkUpdate,
   LinkType,
+  LinkSortField,
 } from '@/lib/supabase/types';
-import type { DatabaseId, Result } from '@/lib/supabase/types';
+import type { DatabaseId, DatabaseResult } from '@/lib/supabase/types';
 import { FILE_UPLOAD_LIMITS } from '../lib/constants/validation';
 
 // ===== 2025 ZUSTAND BEST PRACTICES =====
@@ -44,6 +45,8 @@ export const SORT_OPTION = {
   TITLE_DESC: 'title_desc',
   UPLOADS_DESC: 'uploads_desc',
   UPLOADS_ASC: 'uploads_asc',
+  SIZE_DESC: 'size_desc',
+  SIZE_ASC: 'size_asc',
 } as const satisfies Record<string, string>;
 
 export type SortOption = (typeof SORT_OPTION)[keyof typeof SORT_OPTION];
@@ -73,9 +76,6 @@ export interface LinksStoreState {
   readonly isCreateModalOpen: boolean;
   readonly isEditModalOpen: boolean;
   readonly editingLinkId: DatabaseId | null;
-
-  // Temporary storage for created links (simulates database persistence)
-  readonly _createdLinks: readonly LinkWithStats[];
 }
 
 // ===== STORE ACTIONS =====
@@ -92,13 +92,13 @@ export interface LinksStoreActions {
   // Async actions
   readonly createLink: (
     input: LinkInsert
-  ) => Promise<Result<LinkWithStats, string>>;
+  ) => Promise<DatabaseResult<LinkWithStats>>;
   readonly createBaseLink: (
     input: LinkInsert
-  ) => Promise<Result<LinkWithStats, string>>;
+  ) => Promise<DatabaseResult<LinkWithStats>>;
   readonly fetchLinks: () => Promise<void>;
   readonly publishCreatedLinks: () => Promise<void>;
-  readonly deleteLink: (linkId: DatabaseId) => Promise<Result<void, string>>;
+  readonly deleteLink: (linkId: DatabaseId) => Promise<DatabaseResult<void>>;
 
   // UI actions
   readonly setLoading: (isLoading: boolean) => void;
@@ -153,9 +153,6 @@ const initialState: LinksStoreState = {
   isCreateModalOpen: false,
   isEditModalOpen: false,
   editingLinkId: null,
-
-  // Temporary storage for created links (simulates database persistence)
-  _createdLinks: [],
 };
 
 // ===== STORE DEFINITION =====
@@ -202,49 +199,66 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
     set(state => ({ ...state, isLoading: true, error: null }));
 
     try {
-      // Mock API call - replace with actual API call
-      const newLink: UploadLink = {
-        id: `link_${Date.now()}` as LinkId,
-        userId: 'user_123' as any, // Replace with actual user ID from Clerk
-        slug: input.slug,
+      console.log('🚀 Creating link with database API...');
+      console.log('Input received:', input);
+
+      // Prepare data for the API
+      const linkInput = {
+        workspaceId: 'temp-workspace-id', // Will be resolved by server action
         title: input.title,
-        linkType: input.linkType || 'base',
-        autoCreateFolders: input.autoCreateFolders ?? true,
+        topic: input.topic || undefined,
+        description: input.description || undefined,
         requireEmail: input.requireEmail ?? false,
         requirePassword: input.requirePassword ?? false,
+        password: input.passwordHash || undefined,
         isPublic: input.isPublic ?? true,
-        allowFolderCreation: input.allowFolderCreation ?? true,
+        isActive: true,
         maxFiles: input.maxFiles ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILES,
         maxFileSize:
-          input.maxFileSize ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE,
-        brandingEnabled: input.brandingEnabled ?? false,
-        totalUploads: 0,
-        totalFiles: 0,
-        totalSize: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // Conditionally include optional properties only when they have values
-        ...(input.topic && { topic: input.topic }),
-        ...(input.description && { description: input.description }),
-        ...(input.instructions && { instructions: input.instructions }),
-        ...(input.defaultFolderId && {
-          defaultFolderId: input.defaultFolderId,
-        }),
-        ...(input.password && { passwordHash: 'hashed_password' }),
-        ...(input.allowedFileTypes && {
-          allowedFileTypes: input.allowedFileTypes,
-        }),
-        ...(input.expiresAt && { expiresAt: input.expiresAt }),
-        ...(input.brandColor && { brandColor: input.brandColor }),
-        ...(input.accentColor && { accentColor: input.accentColor }),
-        ...(input.logoUrl && { logoUrl: input.logoUrl }),
-        ...(input.customCss && { customCss: input.customCss }),
-        ...(input.welcomeMessage && { welcomeMessage: input.welcomeMessage }),
+          (input.maxFileSize ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE) /
+          (1024 * 1024), // Convert bytes to MB for validation
+        allowedFileTypes: input.allowedFileTypes || undefined,
+        expiresAt: input.expiresAt?.toISOString() || undefined,
+        brandEnabled: input.brandEnabled ?? false,
+        brandColor: input.brandColor || undefined,
       };
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('🚀 Calling API with:', linkInput);
 
+      // Call the API route to save to database
+      const response = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(linkInput),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create link');
+      }
+
+      const linkData = await response.json();
+      console.log('✅ Link saved to database:', linkData);
+
+      // Create LinkWithStats object for the store
+      const newLink: LinkWithStats = {
+        ...linkData,
+        // Add stats required for LinkWithStats
+        stats: {
+          fileCount: 0,
+          batchCount: 0,
+          folderCount: 0,
+          totalViewCount: 0,
+          uniqueViewCount: 0,
+          averageFileSize: 0,
+          storageUsedPercentage: 0,
+          isNearLimit: false,
+        },
+      };
+
+      // Add the created link to the store
       set(state => ({
         ...state,
         links: [...state.links, newLink],
@@ -254,10 +268,17 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
         selectedLinkIds: [], // Clear selection after creating new link
       }));
 
+      console.log('✅ Link added to store');
+      console.log(
+        '🔗 Link URL:',
+        `https://foldly.io/${linkData.slug}${linkData.topic ? `/${linkData.topic}` : ''}`
+      );
+
       return { success: true, data: newLink };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create link';
+      console.error('❌ Link creation failed:', errorMessage);
       set(state => ({ ...state, isLoading: false, error: errorMessage }));
       return { success: false, error: errorMessage };
     }
@@ -267,78 +288,65 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
     set(state => ({ ...state, isLoading: true, error: null }));
 
     try {
-      console.log('=== BASE LINK CREATION DATA ===');
+      console.log('🚀 Creating base link with database API...');
       console.log('Input received:', input);
 
-      // Process logo file if provided
-      let logoUrl: string | undefined = undefined;
-      if (input.logoUrl && input.logoUrl.startsWith('blob:')) {
-        // In a real app, you would upload this to your storage service
-        // For now, we'll simulate a URL
-        logoUrl = `https://storage.foldly.io/logos/${input.username}_${Date.now()}.png`;
-        console.log('Logo file processed, generated URL:', logoUrl);
-      } else if (input.logoUrl) {
-        logoUrl = input.logoUrl;
-      }
-
-      // Create the base link using the CreateBaseLinkInput interface
-      const newBaseLink: UploadLink = {
-        id: `base_link_${Date.now()}` as LinkId,
-        userId: 'user_123' as any, // Replace with actual user ID from Clerk
-        slug: input.username, // Base links use username as slug
-        title: input.title || 'Personal Collection', // Use input title or fallback
-        linkType: 'base' as LinkType,
-        autoCreateFolders: true,
+      // Prepare data for the API (using base link defaults)
+      const linkInput = {
+        title: input.title || 'Personal Collection',
+        topic: undefined, // Base links have no topic
+        description: input.description || undefined,
         requireEmail: input.requireEmail ?? false,
         requirePassword: input.requirePassword ?? false,
-        ...(input.password && { passwordHash: input.password }), // In real app, hash the password
+        password: input.passwordHash || undefined,
         isPublic: input.isPublic ?? true,
-        allowFolderCreation: true,
+        isActive: true, // Base links are active by default
         maxFiles: input.maxFiles ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILES,
-        maxFileSize: FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE,
-        brandingEnabled: input.brandingEnabled ?? false,
-        totalUploads: 0,
-        totalFiles: 0,
-        totalSize: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        // Conditionally include optional properties only when they have values
-        ...(input.description && { description: input.description }),
-        ...(input.expiresAt && { expiresAt: input.expiresAt }),
-        ...(input.brandColor && { brandColor: input.brandColor }),
-        ...(input.accentColor && { accentColor: input.accentColor }),
-        ...(logoUrl && { logoUrl }),
-        ...(input.customCss && { customCss: input.customCss }),
+        maxFileSize:
+          (input.maxFileSize ?? FILE_UPLOAD_LIMITS.DEFAULT_MAX_FILE_SIZE) /
+          (1024 * 1024), // Convert bytes to MB for validation
+        allowedFileTypes: input.allowedFileTypes || undefined,
+        expiresAt: input.expiresAt?.toISOString() || undefined,
+        brandEnabled: input.brandEnabled ?? false,
+        brandColor: input.brandColor || undefined,
       };
 
-      console.log('=== GENERATED BASE LINK ===');
-      console.log('Full base link object:', newBaseLink);
-      console.log('Base link URL:', `https://foldly.io/${input.username}`);
-      console.log('=== DATABASE STORAGE SIMULATION ===');
-      console.log('This data would be saved to database:', {
-        id: newBaseLink.id,
-        user_id: newBaseLink.userId,
-        slug: newBaseLink.slug,
-        title: newBaseLink.title,
-        description: newBaseLink.description || null,
-        link_type: newBaseLink.linkType,
-        require_email: newBaseLink.requireEmail,
-        max_files: newBaseLink.maxFiles,
-        branding_enabled: newBaseLink.brandingEnabled,
-        brand_color: newBaseLink.brandColor || null,
-        accent_color: newBaseLink.accentColor || null,
-        logo_url: newBaseLink.logoUrl || null,
-        custom_css: newBaseLink.customCss || null,
-        created_at: newBaseLink.createdAt.toISOString(),
-        updated_at: newBaseLink.updatedAt.toISOString(),
+      console.log('🚀 Calling API with:', linkInput);
+
+      // Call the API route to save to database
+      const response = await fetch('/api/links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(linkInput),
       });
-      console.log('===========================');
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create base link');
+      }
 
-      // Add the created link directly to the main links array
-      // This ensures it appears immediately on the dashboard
+      const linkData = await response.json();
+      console.log('✅ Base link saved to database:', linkData);
+
+      // Create LinkWithStats object for the store
+      const newBaseLink: LinkWithStats = {
+        ...linkData,
+        // Add stats required for LinkWithStats
+        stats: {
+          fileCount: 0,
+          batchCount: 0,
+          folderCount: 0,
+          totalViewCount: 0,
+          uniqueViewCount: 0,
+          averageFileSize: 0,
+          storageUsedPercentage: 0,
+          isNearLimit: false,
+        },
+      };
+
+      // Add the created link to the store
       set(state => ({
         ...state,
         links: [...state.links, newBaseLink],
@@ -348,11 +356,14 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
         selectedLinkIds: [], // Clear selection after creating base link
       }));
 
-      // Return the created link data
+      console.log('✅ Base link added to store');
+      console.log('🔗 Link URL:', `https://foldly.io/${linkData.slug}`);
+
       return { success: true, data: newBaseLink };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to create base link';
+      console.error('❌ Base link creation failed:', errorMessage);
       set(state => ({ ...state, isLoading: false, error: errorMessage }));
       return { success: false, error: errorMessage };
     }
@@ -362,26 +373,29 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
     set(state => ({ ...state, isLoading: true, error: null }));
 
     try {
-      // Mock API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      console.log('🚀 Fetching links from database API...');
 
-      // In a real app, this would fetch all user's links from the database
-      // For development, we preserve any existing links that were created locally
-      // This simulates the fact that in production, created links would persist in the database
-      const { links: currentLinks } = get();
+      // Call the API route to fetch from database
+      const response = await fetch(
+        '/api/links?includeInactive=false&limit=1000'
+      );
 
-      // Simulate fetching from database - in real app this would be:
-      // const response = await fetch('/api/links');
-      // const linksFromDatabase = await response.json();
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch links');
+      }
 
-      // For now, we keep existing links (simulates database persistence)
-      // In production, this would be replaced with actual API data
-      const linksFromDatabase = currentLinks;
+      const linksData = await response.json();
+      console.log(
+        '✅ Links fetched from database:',
+        linksData?.length || 0,
+        'links'
+      );
 
       set(state => ({
         ...state,
-        links: linksFromDatabase,
-        totalCount: linksFromDatabase.length,
+        links: linksData || [],
+        totalCount: linksData?.length || 0,
         isLoading: false,
         error: null,
         selectedLinkIds: [], // Clear any selection when fetching fresh data
@@ -389,15 +403,21 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to fetch links';
+      console.error('❌ Fetch links failed:', errorMessage);
       set(state => ({ ...state, isLoading: false, error: errorMessage }));
     }
+  },
+
+  publishCreatedLinks: async () => {
+    // This method is not needed anymore as links are created directly
+    // Keeping for backward compatibility
   },
 
   deleteLink: async linkId => {
     set(state => ({ ...state, isLoading: true, error: null }));
 
     try {
-      // Mock API call
+      // Mock API call - replace with actual API call
       await new Promise(resolve => setTimeout(resolve, 500));
 
       set(state => ({
@@ -421,9 +441,8 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
   // ===== UI ACTIONS =====
   setLoading: isLoading => set(state => ({ ...state, isLoading })),
   setError: error => set(state => ({ ...state, error })),
-  setSearchQuery: searchQuery =>
-    set(state => ({ ...state, searchQuery, currentPage: 1 })),
-  setFilter: filter => set(state => ({ ...state, filter, currentPage: 1 })),
+  setSearchQuery: searchQuery => set(state => ({ ...state, searchQuery })),
+  setFilter: filter => set(state => ({ ...state, filter })),
   setViewMode: viewMode => set(state => ({ ...state, viewMode })),
   setSortOption: sortOption => set(state => ({ ...state, sortOption })),
 
@@ -432,34 +451,33 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
     set(state => ({ ...state, selectedLinkIds })),
 
   toggleLinkSelection: linkId =>
-    set(state => {
-      const isSelected = state.selectedLinkIds.includes(linkId);
-      return {
-        ...state,
-        selectedLinkIds: isSelected
-          ? state.selectedLinkIds.filter(id => id !== linkId)
-          : [...state.selectedLinkIds, linkId],
-      };
-    }),
+    set(state => ({
+      ...state,
+      selectedLinkIds: state.selectedLinkIds.includes(linkId)
+        ? state.selectedLinkIds.filter(id => id !== linkId)
+        : [...state.selectedLinkIds, linkId],
+    })),
 
   clearSelection: () => set(state => ({ ...state, selectedLinkIds: [] })),
 
-  selectAllLinks: () => {
-    const { links } = get();
-    const allLinkIds = links.map(link => link.id) as LinkId[];
-    set(state => ({ ...state, selectedLinkIds: allLinkIds }));
-  },
+  selectAllLinks: () =>
+    set(state => ({
+      ...state,
+      selectedLinkIds: state.links.map(link => link.id),
+    })),
 
   // ===== MODAL ACTIONS =====
   openCreateModal: () => set(state => ({ ...state, isCreateModalOpen: true })),
   closeCreateModal: () =>
     set(state => ({ ...state, isCreateModalOpen: false })),
+
   openEditModal: linkId =>
     set(state => ({
       ...state,
       isEditModalOpen: true,
       editingLinkId: linkId,
     })),
+
   closeEditModal: () =>
     set(state => ({
       ...state,
@@ -469,24 +487,13 @@ export const useLinksStore = create<LinksStore>()((set, get) => ({
 
   // ===== PAGINATION ACTIONS =====
   setCurrentPage: currentPage => set(state => ({ ...state, currentPage })),
-  setPageSize: pageSize =>
-    set(state => ({ ...state, pageSize, currentPage: 1 })),
+  setPageSize: pageSize => set(state => ({ ...state, pageSize })),
 
   // ===== UTILITY ACTIONS =====
   reset: () => set(() => ({ ...initialState })),
-
-  // Refresh links from the database (replaces the old publish mechanism)
-  publishCreatedLinks: async () => {
-    // Simply refresh the links from the database
-    // In the old system, this moved links from _createdLinks to links
-    // Now it just ensures we have the latest data from the server
-    await get().fetchLinks();
-  },
 }));
 
-// ===== 2025 HOOKS - FOLLOWING BEST PRACTICES =====
-
-// ✅ CORRECT: Select single values to avoid unnecessary re-renders
+// ===== SELECTOR HOOKS =====
 export const useLinksData = () => useLinksStore(state => state.links);
 export const useLinksLoading = () => useLinksStore(state => state.isLoading);
 export const useLinksError = () => useLinksStore(state => state.error);
@@ -499,7 +506,7 @@ export const useLinksSelectedIds = () =>
 export const useIsCreateModalOpen = () =>
   useLinksStore(state => state.isCreateModalOpen);
 
-// ✅ CORRECT: Use useShallow for multiple values when needed
+// ===== COMPOSITE SELECTORS =====
 export const useLinksUIState = () =>
   useLinksStore(
     useShallow(state => ({
@@ -515,7 +522,7 @@ export const useLinksSelection = () =>
     useShallow(state => ({
       selectedLinkIds: state.selectedLinkIds,
       hasSelection: state.selectedLinkIds.length > 0,
-      selectedCount: state.selectedLinkIds.length,
+      selectionCount: state.selectedLinkIds.length,
     }))
   );
 
@@ -528,29 +535,32 @@ export const useLinksModalState = () =>
     }))
   );
 
-// ✅ CORRECT: Action selectors to avoid passing entire store
 export const useLinksActions = () =>
   useLinksStore(
     useShallow(state => ({
+      // Data actions
+      setLinks: state.setLinks,
+      addLink: state.addLink,
+      updateLink: state.updateLink,
+      removeLink: state.removeLink,
       createLink: state.createLink,
       createBaseLink: state.createBaseLink,
       fetchLinks: state.fetchLinks,
-      publishCreatedLinks: state.publishCreatedLinks,
       deleteLink: state.deleteLink,
+      // UI actions
       setSearchQuery: state.setSearchQuery,
       setFilter: state.setFilter,
       setViewMode: state.setViewMode,
       setSortOption: state.setSortOption,
+      // Selection actions
       toggleLinkSelection: state.toggleLinkSelection,
       clearSelection: state.clearSelection,
       selectAllLinks: state.selectAllLinks,
+      // Modal actions
       openCreateModal: state.openCreateModal,
       closeCreateModal: state.closeCreateModal,
       openEditModal: state.openEditModal,
       closeEditModal: state.closeEditModal,
-      setCurrentPage: state.setCurrentPage,
-      setPageSize: state.setPageSize,
-      reset: state.reset,
     }))
   );
 
@@ -559,63 +569,82 @@ export const useFilteredLinks = () => {
   return useLinksStore(
     useMemo(
       () => state => {
-        let filtered = [...state.links];
+        let filteredLinks = [...state.links];
 
         // Apply search filter
         if (state.searchQuery) {
           const query = state.searchQuery.toLowerCase();
-          filtered = filtered.filter(
+          filteredLinks = filteredLinks.filter(
             link =>
               link.title.toLowerCase().includes(query) ||
               link.slug.toLowerCase().includes(query) ||
-              link.description?.toLowerCase().includes(query)
+              (link.topic && link.topic.toLowerCase().includes(query)) ||
+              (link.description &&
+                link.description.toLowerCase().includes(query))
           );
         }
 
         // Apply status filter
-        switch (state.filter) {
-          case LINK_FILTER.ACTIVE:
-            filtered = filtered.filter(link => !link.expiresAt);
-            break;
-          case LINK_FILTER.PAUSED:
-            // Add paused logic when implemented
-            break;
-          case LINK_FILTER.EXPIRED:
-            filtered = filtered.filter(
-              link => link.expiresAt && new Date(link.expiresAt) < new Date()
-            );
-            break;
+        if (state.filter !== LINK_FILTER.ALL) {
+          filteredLinks = filteredLinks.filter(link => {
+            switch (state.filter) {
+              case LINK_FILTER.ACTIVE:
+                return link.isActive && !link.expiresAt;
+              case LINK_FILTER.PAUSED:
+                return !link.isActive;
+              case LINK_FILTER.EXPIRED:
+                return link.expiresAt && new Date(link.expiresAt) < new Date();
+              default:
+                return true;
+            }
+          });
         }
 
         // Apply sorting
-        filtered.sort((a, b) => {
+        filteredLinks.sort((a, b) => {
           switch (state.sortOption) {
-            case SORT_OPTION.CREATED_DESC:
-              return (
-                new Date(b.createdAt).getTime() -
-                new Date(a.createdAt).getTime()
-              );
             case SORT_OPTION.CREATED_ASC:
               return (
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
               );
+            case SORT_OPTION.CREATED_DESC:
+              return (
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+              );
             case SORT_OPTION.TITLE_ASC:
               return a.title.localeCompare(b.title);
             case SORT_OPTION.TITLE_DESC:
               return b.title.localeCompare(a.title);
-            case SORT_OPTION.UPLOADS_DESC:
-              return b.totalUploads - a.totalUploads;
             case SORT_OPTION.UPLOADS_ASC:
               return a.totalUploads - b.totalUploads;
+            case SORT_OPTION.UPLOADS_DESC:
+              return b.totalUploads - a.totalUploads;
+            case SORT_OPTION.SIZE_ASC:
+              return a.totalSize - b.totalSize;
+            case SORT_OPTION.SIZE_DESC:
+              return b.totalSize - a.totalSize;
             default:
               return 0;
           }
         });
 
-        return filtered;
+        return filteredLinks;
       },
       []
     )
   );
 };
+
+export const useLinksPagination = () =>
+  useLinksStore(
+    useShallow(state => ({
+      currentPage: state.currentPage,
+      pageSize: state.pageSize,
+      totalCount: state.totalCount,
+      totalPages: Math.ceil(state.totalCount / state.pageSize),
+      hasNextPage: state.currentPage * state.pageSize < state.totalCount,
+      hasPreviousPage: state.currentPage > 1,
+    }))
+  );

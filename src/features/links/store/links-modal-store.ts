@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Link, LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats, LinkType } from '@/lib/supabase/types';
 import type { DatabaseId } from '@/lib/supabase/types';
 
 // Modal types
@@ -24,25 +24,23 @@ interface LinksModalState {
   modalData: {
     linkData?: LinkWithStats;
     linkId?: DatabaseId;
-    linkType?: 'base' | 'topic';
+    linkType?: LinkType;
     selectedLinkIds?: DatabaseId[];
     bulkAction?: 'delete' | 'archive' | 'activate' | 'pause';
   };
   isLoading: boolean;
   error: string | null;
-  // Branding context and state
+  // Branding context and state (simplified to database-only fields)
   brandingContext: 'creation' | 'settings' | null;
   brandingFormData: {
-    brandingEnabled: boolean;
+    brandEnabled: boolean;
     brandColor: string;
-    accentColor: string;
-    logoUrl: string;
   };
 }
 
 // Actions interface
 interface LinksModalActions {
-  openCreateLinkModal: (linkType?: 'base' | 'topic') => void;
+  openCreateLinkModal: (linkType?: LinkType) => void;
   openLinkDetailsModal: (linkData: LinkWithStats) => void;
   openLinkSettingsModal: (linkData: LinkWithStats) => void;
   openShareLinkModal: (linkData: LinkWithStats) => void;
@@ -55,12 +53,12 @@ interface LinksModalActions {
   setModalLoading: (loading: boolean) => void;
   setModalError: (error: string | null) => void;
   updateModalData: (data: Partial<LinksModalState['modalData']>) => void;
-  // Branding-specific actions
+  // Branding-specific actions (simplified to database-only fields)
   updateBrandingData: (
     updates: Partial<LinksModalState['brandingFormData']>
   ) => void;
   initializeBrandingForCreation: () => void;
-  initializeBrandingForSettings: (linkData: LinkData) => void;
+  initializeBrandingForSettings: (linkData: LinkWithStats) => void;
 }
 
 // Create the store
@@ -74,10 +72,8 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
       error: null,
       brandingContext: null,
       brandingFormData: {
-        brandingEnabled: false,
+        brandEnabled: false,
         brandColor: '#6c47ff',
-        accentColor: '#4ade80',
-        logoUrl: '',
       },
 
       // Actions
@@ -92,10 +88,8 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
           error: null,
           brandingContext: 'creation',
           brandingFormData: {
-            brandingEnabled: false, // Start disabled for creation
+            brandEnabled: false, // Start disabled for creation
             brandColor: '#6c47ff',
-            accentColor: '#4ade80',
-            logoUrl: '',
           },
         });
       },
@@ -107,7 +101,7 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         );
         set({
           activeModal: 'link-details',
-          modalData: { linkData, linkId: linkData.id as LinkId },
+          modalData: { linkData, linkId: linkData.id },
           error: null,
         });
       },
@@ -119,14 +113,12 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         );
         set({
           activeModal: 'link-settings',
-          modalData: { linkData, linkId: linkData.id as LinkId },
+          modalData: { linkData, linkId: linkData.id },
           error: null,
           brandingContext: 'settings',
           brandingFormData: {
-            brandingEnabled: linkData.brandingEnabled ?? false,
+            brandEnabled: linkData.brandEnabled ?? false,
             brandColor: linkData.brandColor ?? '#6c47ff',
-            accentColor: linkData.accentColor ?? '#4ade80',
-            logoUrl: linkData.logoUrl ?? '',
           },
         });
       },
@@ -138,7 +130,7 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         );
         set({
           activeModal: 'share-link',
-          modalData: { linkData, linkId: linkData.id as LinkId },
+          modalData: { linkData, linkId: linkData.id },
           error: null,
         });
       },
@@ -150,7 +142,7 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         );
         set({
           activeModal: 'delete-confirmation',
-          modalData: { linkData, linkId: linkData.id as LinkId },
+          modalData: { linkData, linkId: linkData.id },
           error: null,
         });
       },
@@ -178,10 +170,8 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
           error: null,
           brandingContext: null,
           brandingFormData: {
-            brandingEnabled: false,
+            brandEnabled: false,
             brandColor: '#6c47ff',
-            accentColor: '#4ade80',
-            logoUrl: '',
           },
         });
       },
@@ -206,7 +196,7 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         }));
       },
 
-      // Branding-specific actions
+      // Branding-specific actions (simplified to database-only fields)
       updateBrandingData: updates => {
         console.log('🎨 MODAL STORE: updateBrandingData called with:', updates);
         set(state => ({
@@ -219,10 +209,8 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         set({
           brandingContext: 'creation',
           brandingFormData: {
-            brandingEnabled: false, // Start disabled for creation
+            brandEnabled: false, // Start disabled for creation
             brandColor: '#6c47ff',
-            accentColor: '#4ade80',
-            logoUrl: '',
           },
         });
       },
@@ -235,10 +223,8 @@ export const useLinksModalStore = create<LinksModalState & LinksModalActions>()(
         set({
           brandingContext: 'settings',
           brandingFormData: {
-            brandingEnabled: linkData.brandingEnabled ?? false,
+            brandEnabled: linkData.brandEnabled ?? false,
             brandColor: linkData.brandColor ?? '#6c47ff',
-            accentColor: linkData.accentColor ?? '#4ade80',
-            logoUrl: linkData.logoUrl ?? '',
           },
         });
       },
@@ -256,7 +242,7 @@ export const linksModalSelectors = {
   isLoading: (state: LinksModalState) => state.isLoading,
   error: (state: LinksModalState) => state.error,
 
-  // Branding selectors
+  // Branding selectors (simplified to database-only fields)
   brandingContext: (state: LinksModalState) => state.brandingContext,
   brandingFormData: (state: LinksModalState) => state.brandingFormData,
   isCreationContext: (state: LinksModalState) =>

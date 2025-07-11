@@ -2,6 +2,8 @@
  * Composite hooks that combine multiple stores
  * Eliminates prop drilling by providing clean, focused interfaces
  * Following 2025 React + Zustand best practices
+ *
+ * ALIGNED WITH DATABASE SCHEMA - Only uses fields from src/lib/supabase/types
  */
 
 import { useMemo, useCallback } from 'react';
@@ -123,7 +125,7 @@ export const useLinksListStore = () => {
   // Use atomic selectors to prevent object recreation on every call
   const totalLinks = useLinksDataStore(linksDataSelectors.totalLinks);
   const activeLinks = useLinksDataStore(linksDataSelectors.activeLinks);
-  const totalViews = useLinksDataStore(linksDataSelectors.totalViews);
+  const totalFiles = useLinksDataStore(linksDataSelectors.totalFiles);
   const totalUploads = useLinksDataStore(linksDataSelectors.totalUploads);
 
   // Memoize stats object with stable dependencies
@@ -131,10 +133,10 @@ export const useLinksListStore = () => {
     () => ({
       total: totalLinks,
       active: activeLinks,
-      totalViews,
+      totalFiles,
       totalUploads,
     }),
-    [totalLinks, activeLinks, totalViews, totalUploads]
+    [totalLinks, activeLinks, totalFiles, totalUploads]
   );
 
   // UI subscriptions with atomic selectors to prevent object recreation
@@ -198,107 +200,25 @@ export const useLinksListStore = () => {
   const toggleMultiSelectMode = useLinksUIStore(
     state => state.toggleMultiSelectMode
   );
-  const selectAllLinks = useLinksUIStore(state => state.selectAllLinks);
   const clearSelection = useLinksUIStore(state => state.clearSelection);
-  const setPage = useLinksUIStore(state => state.setPage);
-  const resetFilters = useLinksUIStore(state => state.resetFilters);
-
-  const openCreateLinkModal = useLinksModalStore(
-    state => state.openCreateLinkModal
+  const selectAllLinks = useLinksUIStore(state => state.selectAllLinks);
+  const toggleLinkSelection = useLinksUIStore(
+    state => state.toggleLinkSelection
   );
-  const openBulkActionsModal = useLinksModalStore(
-    state => state.openBulkActionsModal
-  );
+  const setCurrentPage = useLinksUIStore(state => state.setCurrentPage);
+  const setItemsPerPage = useLinksUIStore(state => state.setItemsPerPage);
 
-  // Process links (filtering, sorting, pagination)
-  const processedLinks = useMemo(() => {
-    let filtered = [...links];
-
-    // Apply search filter if query exists
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        link =>
-          link.name.toLowerCase().includes(query) ||
-          link.url.toLowerCase().includes(query) ||
-          link.settings?.customMessage?.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply status filter
-    if (filters.status !== 'all') {
-      filtered = filtered.filter(link => link.status === filters.status);
-    }
-
-    // Apply type filter
-    if (filters.type !== 'all') {
-      const isBase = filters.type === LINK_TYPE.BASE;
-      filtered = filtered.filter(
-        link => (link.linkType === LINK_TYPE.BASE) === isBase
-      );
-    }
-
-    // Apply sorting with proper typing
-    filtered.sort((a, b) => {
-      let aValue: string | number | Date;
-      let bValue: string | number | Date;
-
-      // Type-safe property access
-      switch (sorting.sortBy) {
-        case 'createdAt':
-          aValue = new Date(a.createdAt).getTime();
-          bValue = new Date(b.createdAt).getTime();
-          break;
-        case 'lastActivity':
-          aValue = new Date(a.lastActivity || a.createdAt).getTime();
-          bValue = new Date(b.lastActivity || b.createdAt).getTime();
-          break;
-        case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-          break;
-        case 'views':
-          aValue = a.views;
-          bValue = b.views;
-          break;
-        case 'uploads':
-          aValue = a.uploads;
-          bValue = b.uploads;
-          break;
-        default:
-          aValue = a.createdAt;
-          bValue = b.createdAt;
-      }
-
-      const comparison = aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      return sorting.sortDirection === 'asc' ? comparison : -comparison;
-    });
-
-    // Pin base links to the top (after filtering and sorting)
-    // This ensures base links appear first if they match search/filter criteria
-    const baseLinks = filtered.filter(link => link.linkType === LINK_TYPE.BASE);
-    const otherLinks = filtered.filter(
-      link => link.linkType !== LINK_TYPE.BASE
-    );
-
-    // Return base links first, followed by other links
-    return [...baseLinks, ...otherLinks];
-  }, [links, searchQuery, filters, sorting]);
-
-  // Return memoized object to prevent recreation
   return useMemo(
     () => ({
-      // Data
-      links: processedLinks,
-      originalLinks: links,
+      // State
+      links,
+      originalLinks: links, // Alias for compatibility with LinksContainer
       isLoading,
       error,
       stats,
-
-      // UI State
       viewMode,
-      sorting,
       searchQuery,
+      sorting,
       filters,
       selection,
       pagination,
@@ -316,22 +236,20 @@ export const useLinksListStore = () => {
       setStatusFilter,
       setTypeFilter,
       toggleMultiSelectMode,
-      selectAllLinks,
       clearSelection,
-      setPage,
-      resetFilters,
-      openCreateLinkModal,
-      openBulkActionsModal,
+      selectAllLinks,
+      toggleLinkSelection,
+      setCurrentPage,
+      setItemsPerPage,
     }),
     [
-      processedLinks,
       links,
       isLoading,
       error,
       stats,
       viewMode,
-      sorting,
       searchQuery,
+      sorting,
       filters,
       selection,
       pagination,
@@ -347,90 +265,47 @@ export const useLinksListStore = () => {
       setStatusFilter,
       setTypeFilter,
       toggleMultiSelectMode,
-      selectAllLinks,
       clearSelection,
-      setPage,
-      resetFilters,
-      openCreateLinkModal,
-      openBulkActionsModal,
+      selectAllLinks,
+      toggleLinkSelection,
+      setCurrentPage,
+      setItemsPerPage,
     ]
   );
 };
 
 /**
  * Hook for modal management
- * Centralized modal state and actions
+ * Provides modal state and actions
  */
 export const useLinksModalsStore = () => {
-  const activeModal = useLinksModalStore(linksModalSelectors.activeModal);
-  const modalData = useLinksModalStore(linksModalSelectors.modalData);
-  const isLoading = useLinksModalStore(linksModalSelectors.isLoading);
-  const error = useLinksModalStore(linksModalSelectors.error);
+  const modalStore = useLinksModalStore();
 
-  // Stable action references
-  const openCreateLinkModal = useLinksModalStore(
-    state => state.openCreateLinkModal
-  );
-  const openLinkDetailsModal = useLinksModalStore(
-    state => state.openLinkDetailsModal
-  );
-  const openLinkSettingsModal = useLinksModalStore(
-    state => state.openLinkSettingsModal
-  );
-  const openShareLinkModal = useLinksModalStore(
-    state => state.openShareLinkModal
-  );
-  const openDeleteConfirmationModal = useLinksModalStore(
-    state => state.openDeleteConfirmationModal
-  );
-  const openBulkActionsModal = useLinksModalStore(
-    state => state.openBulkActionsModal
-  );
-  const closeModal = useLinksModalStore(state => state.closeModal);
-  const setModalLoading = useLinksModalStore(state => state.setModalLoading);
-  const setModalError = useLinksModalStore(state => state.setModalError);
-  const updateModalData = useLinksModalStore(state => state.updateModalData);
-
-  // Return memoized object
   return useMemo(
     () => ({
-      activeModal,
-      modalData,
-      isLoading,
-      error,
-      openCreateLinkModal,
-      openLinkDetailsModal,
-      openLinkSettingsModal,
-      openShareLinkModal,
-      openDeleteConfirmationModal,
-      openBulkActionsModal,
-      closeModal,
-      setModalLoading,
-      setModalError,
-      updateModalData,
+      // State
+      activeModal: modalStore.activeModal,
+      modalData: modalStore.modalData,
+      isLoading: modalStore.isLoading,
+      error: modalStore.error,
+
+      // Actions
+      openLinkDetailsModal: modalStore.openLinkDetailsModal,
+      openShareLinkModal: modalStore.openShareLinkModal,
+      openLinkSettingsModal: modalStore.openLinkSettingsModal,
+      openDeleteConfirmationModal: modalStore.openDeleteConfirmationModal,
+      openCreateLinkModal: modalStore.openCreateLinkModal,
+      closeModal: modalStore.closeModal,
+      updateModalData: modalStore.updateModalData,
     }),
-    [
-      activeModal,
-      modalData,
-      isLoading,
-      error,
-      openCreateLinkModal,
-      openLinkDetailsModal,
-      openLinkSettingsModal,
-      openShareLinkModal,
-      openDeleteConfirmationModal,
-      openBulkActionsModal,
-      closeModal,
-      setModalLoading,
-      setModalError,
-      updateModalData,
-    ]
+    [modalStore]
   );
 };
 
 /**
  * Hook for settings functionality
  * Handles settings state with real-time synchronization
+ * ALIGNED WITH DATABASE SCHEMA - Only database fields
  */
 export const useLinksSettingsStore = () => {
   // Settings subscriptions from modal store with stable selectors
@@ -442,45 +317,43 @@ export const useLinksSettingsStore = () => {
   );
   const error = useLinksModalStore(useCallback(state => state.error, []));
 
-  // Define the settings interface for type safety
+  // Define the settings interface for type safety - only database fields
   interface SettingsData {
+    title: string;
+    description: string | null;
     isPublic: boolean;
     requireEmail: boolean;
     requirePassword: boolean;
     password: string;
     expiresAt: string | undefined;
-    maxFiles: number | undefined;
+    maxFiles: number;
     maxFileSize: number;
-    allowedFileTypes: readonly string[];
-    autoCreateFolders: boolean;
-    allowMultiple: boolean;
-    customMessage: string;
+    allowedFileTypes: string[];
+    brandEnabled: boolean;
+    brandColor: string;
   }
 
-  // Extract current settings from modal data
+  // Extract current settings from modal data - only database fields
   const currentSettings = useMemo((): SettingsData | null => {
     if (!modalData.linkData) return null;
 
     const link = modalData.linkData;
     return {
-      // Visibility and Security
+      // Database fields only
+      title: link.title,
+      description: link.description,
       isPublic: link.isPublic,
-      requireEmail: link.requireEmail ?? false,
-      requirePassword: link.requirePassword ?? false,
+      requireEmail: link.requireEmail,
+      requirePassword: link.requirePassword,
       password: '',
-      expiresAt: link.expiresAt,
-
-      // File and Upload Limits
+      expiresAt: link.expiresAt
+        ? link.expiresAt.toISOString().split('T')[0]
+        : undefined,
       maxFiles: link.maxFiles,
       maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
-      allowedFileTypes: link.allowedFileTypes,
-
-      // Organization Settings
-      autoCreateFolders: link.autoCreateFolders,
-
-      // Legacy settings
-      allowMultiple: link.settings?.allowMultiple ?? false,
-      customMessage: link.settings?.customMessage || '',
+      allowedFileTypes: link.allowedFileTypes ? [...link.allowedFileTypes] : [],
+      brandEnabled: link.brandEnabled,
+      brandColor: link.brandColor || '',
     };
   }, [modalData.linkData]);
 
@@ -492,7 +365,7 @@ export const useLinksSettingsStore = () => {
     useCallback(state => state.updateLink, [])
   );
 
-  // Update settings in modal data for real-time sync
+  // Update settings in modal data for real-time sync - only database fields
   const updateSettings = useCallback(
     (updates: Partial<SettingsData>) => {
       if (!modalData.linkData || !updates) {
@@ -502,10 +375,14 @@ export const useLinksSettingsStore = () => {
         return;
       }
 
-      // Build the updated LinkData object carefully
+      // Build the updated LinkData object with only database fields
       const updatedLinkData: typeof modalData.linkData = {
         ...modalData.linkData,
-        // Only update fields that exist in LinkData interface
+        // Only update database fields
+        ...(updates.title !== undefined && { title: updates.title }),
+        ...(updates.description !== undefined && {
+          description: updates.description,
+        }),
         ...(updates.isPublic !== undefined && { isPublic: updates.isPublic }),
         ...(updates.requireEmail !== undefined && {
           requireEmail: updates.requireEmail,
@@ -514,29 +391,25 @@ export const useLinksSettingsStore = () => {
           requirePassword: updates.requirePassword,
         }),
         ...(updates.expiresAt !== undefined && {
-          expiresAt: updates.expiresAt,
+          expiresAt: updates.expiresAt ? new Date(updates.expiresAt) : null,
         }),
         ...(updates.maxFiles !== undefined && { maxFiles: updates.maxFiles }),
-        ...(updates.autoCreateFolders !== undefined && {
-          autoCreateFolders: updates.autoCreateFolders,
-        }),
         // Handle file size conversion for maxFileSize
         ...(updates.maxFileSize !== undefined && {
           maxFileSize: updates.maxFileSize * 1024 * 1024, // Convert MB to bytes
         }),
         ...(updates.allowedFileTypes !== undefined && {
-          allowedFileTypes: updates.allowedFileTypes,
+          allowedFileTypes:
+            updates.allowedFileTypes.length > 0
+              ? updates.allowedFileTypes
+              : null,
         }),
-        // Handle settings object separately
-        settings: {
-          ...modalData.linkData.settings,
-          ...(updates.allowMultiple !== undefined && {
-            allowMultiple: updates.allowMultiple,
-          }),
-          ...(updates.customMessage !== undefined && {
-            customMessage: updates.customMessage,
-          }),
-        },
+        ...(updates.brandEnabled !== undefined && {
+          brandEnabled: updates.brandEnabled,
+        }),
+        ...(updates.brandColor !== undefined && {
+          brandColor: updates.brandColor || null,
+        }),
       };
 
       console.log('🔄 SETTINGS STORE: Updating settings', {
@@ -548,26 +421,25 @@ export const useLinksSettingsStore = () => {
     [modalData.linkData, updateModalData]
   );
 
-  // Save settings to actual store
+  // Save settings to actual store - only database fields
   const saveSettings = useCallback(async () => {
     if (!modalData.linkData) return;
 
     const link = modalData.linkData;
 
-    // Convert UI settings back to LinkData format
+    // Convert UI settings back to database format
     const updatedSettings = {
+      title: link.title,
+      description: link.description,
       isPublic: link.isPublic,
       requireEmail: link.requireEmail,
       requirePassword: link.requirePassword,
       maxFiles: link.maxFiles,
       maxFileSize: link.maxFileSize, // Already converted in updateSettings
       allowedFileTypes: link.allowedFileTypes,
-      autoCreateFolders: link.autoCreateFolders,
-      settings: {
-        ...link.settings,
-        allowMultiple: link.settings?.allowMultiple ?? false,
-        customMessage: link.settings?.customMessage ?? '',
-      },
+      expiresAt: link.expiresAt,
+      brandEnabled: link.brandEnabled,
+      brandColor: link.brandColor,
     };
 
     updateLink(link.id, updatedSettings);
@@ -585,6 +457,7 @@ export const useLinksSettingsStore = () => {
 /**
  * Hook for branding functionality
  * Handles branding state with modal context awareness (creation vs settings)
+ * ALIGNED WITH DATABASE SCHEMA - Only database branding fields
  */
 export const useLinksBrandingStore = () => {
   // Branding subscriptions from modal store
@@ -613,7 +486,7 @@ export const useLinksBrandingStore = () => {
     state => state.initializeBrandingForSettings
   );
 
-  // Return memoized object
+  // Return memoized object with only database branding fields
   return useMemo(
     () => ({
       // State
@@ -623,13 +496,10 @@ export const useLinksBrandingStore = () => {
       isSettingsContext,
       currentLink: modalData.linkData || null,
 
-      // Computed
-      isBrandingEnabled: brandingFormData.brandingEnabled,
+      // Computed - only database branding fields
+      isBrandingEnabled: brandingFormData.brandEnabled,
       hasCustomBranding:
-        brandingFormData.brandingEnabled &&
-        (brandingFormData.brandColor !== '#6c47ff' ||
-          brandingFormData.accentColor !== '#4ade80' ||
-          brandingFormData.logoUrl !== ''),
+        brandingFormData.brandEnabled && !!brandingFormData.brandColor,
 
       // Actions
       updateBrandingData,

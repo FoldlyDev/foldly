@@ -411,19 +411,7 @@ export interface LinkQueryOptions {
 // LINK HELPER FUNCTIONS - Type-safe utility functions
 // =============================================================================
 
-/**
- * Generate full URL for link
- */
-export const generateFullUrl = (
-  baseUrl: string,
-  slug: string,
-  topic?: string | null
-): string => {
-  if (topic) {
-    return `${baseUrl}/${slug}/${topic}`;
-  }
-  return `${baseUrl}/${slug}`;
-};
+// generateFullUrl moved to src/features/links/lib/utils.ts to avoid server/client imports
 
 /**
  * Generate short URL for link
