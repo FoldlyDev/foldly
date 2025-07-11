@@ -49,12 +49,37 @@ This document tracks all major architectural migrations and refactors performed 
 - ✅ Infinite loop prevention and performance optimization
 - ✅ Complete TypeScript type safety
 
+## 🚀 Active Migrations
+
+### Migration 03: React Query + Server Actions Hybrid
+
+- **Date**: January 2025
+- **Status**: 📋 Planning
+- **Type**: Database Communication Optimization
+- **Scope**: Links feature data fetching modernization
+- **Documentation**: [03-react-query-server-actions-hybrid/](./03-react-query-server-actions-hybrid/)
+
+**Summary**: Migrate from manual state management to React Query v5 + Server Actions hybrid architecture for optimal 2025 performance patterns. Eliminate redundant API routes and implement optimistic updates with server-side rendering.
+
+**Key Objectives**:
+
+- 🎯 Remove redundant API routes layer
+- 🚀 Implement React Query v5 with SSR hydration
+- ⚡ Add optimistic updates for all mutations
+- 📊 Achieve 50% reduction in API calls
+- 🔄 Improve page load performance by 30%
+
+**Target Completion**: 3-4 days
+
+---
+
 ## 🎯 Migration Metrics
 
 | Migration                 | Files Changed | Performance Impact        | Maintainability Gain |
 | ------------------------- | ------------- | ------------------------- | -------------------- |
 | 01 - Feature Architecture | 150+ files    | Neutral                   | +85%                 |
 | 02 - Zustand Stores       | 15+ files     | +60% (reduced re-renders) | +90%                 |
+| 03 - React Query Hybrid   | 20+ files     | +50% (API call reduction) | +75%                 |
 
 ## 📊 Overall Architecture Progress
 

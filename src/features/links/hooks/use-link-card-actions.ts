@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import type { ActionItem } from '@/components/ui/types';
 import type { LinkWithStats } from '@/lib/supabase/types';
 import { generateFullUrl } from '../lib/utils';
-import { useLinksModalsStore } from './use-links-composite';
+import { useModalStore } from '../store';
 
 /**
  * Hook that provides standardized link card actions with modal connections
@@ -55,14 +55,12 @@ export const useLinkCardActions = ({
   showDeleteAction = true,
   showSettingsAction = true,
 }: UseLinkCardActionsOptions): UseLinkCardActionsReturn => {
-  const modalStore = useLinksModalsStore();
-
   const {
-    openLinkDetailsModal,
-    openShareLinkModal,
-    openLinkSettingsModal,
-    openDeleteConfirmationModal,
-  } = modalStore;
+    openDetailsModal,
+    openShareModal,
+    openSettingsModal,
+    openDeleteModal,
+  } = useModalStore();
 
   // Individual action handlers
   const handleCopyLink = useCallback(async () => {
@@ -79,20 +77,20 @@ export const useLinkCardActions = ({
   }, [link.slug, link.topic, link.id]);
 
   const handleShare = useCallback(() => {
-    openShareLinkModal(link);
-  }, [openShareLinkModal, link]);
+    openShareModal(link);
+  }, [openShareModal, link]);
 
   const handleViewDetails = useCallback(() => {
-    openLinkDetailsModal(link);
-  }, [openLinkDetailsModal, link]);
+    openDetailsModal(link);
+  }, [openDetailsModal, link]);
 
   const handleSettings = useCallback(() => {
-    openLinkSettingsModal(link);
-  }, [openLinkSettingsModal, link]);
+    openSettingsModal(link);
+  }, [openSettingsModal, link]);
 
   const handleDelete = useCallback(() => {
-    openDeleteConfirmationModal(link);
-  }, [openDeleteConfirmationModal, link]);
+    openDeleteModal(link);
+  }, [openDeleteModal, link]);
 
   const handleOpenExternal = useCallback(() => {
     // Generate the full URL from slug and topic

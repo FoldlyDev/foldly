@@ -42,7 +42,16 @@ export async function deleteLinkAction(
       };
     }
 
-    // 4. Delete link from database (using soft delete)
+    // 4. Prevent deletion of base links
+    if (existingLink.data.linkType === 'base') {
+      return {
+        success: false,
+        error:
+          'Base links cannot be deleted. They are permanent and serve as your primary collection.',
+      };
+    }
+
+    // 5. Delete link from database (using soft delete)
     const result = await linksDbService.softDelete(validatedId);
 
     if (!result.success) {
@@ -122,7 +131,20 @@ export async function bulkDeleteLinksAction(
       };
     }
 
-    // 4. Delete all links
+    // 4. Check for base links (cannot be deleted)
+    const baseLinks = ownershipResults.filter(result => {
+      return result.success && result.data && result.data.linkType === 'base';
+    });
+
+    if (baseLinks.length > 0) {
+      return {
+        success: false,
+        error:
+          'Base links cannot be deleted. They are permanent and serve as your primary collection.',
+      };
+    }
+
+    // 5. Delete all links
     const deletionResults = await Promise.all(
       validatedIds.map(id => linksDbService.softDelete(id))
     );

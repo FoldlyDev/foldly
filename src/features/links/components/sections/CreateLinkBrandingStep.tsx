@@ -4,16 +4,14 @@ import { motion } from 'framer-motion';
 import { useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
-import { LINK_TYPE_LABELS, PLACEHOLDER_TEXT } from '../../lib/constants';
+import { createLinkAction } from '../../lib/actions';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
-import { useLinksStore } from '../../store/links-store';
+import { useModalStore } from '../../store';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
-import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
-import type { LinkInsert, LinkWithStats } from '@/lib/supabase/types';
 
 /**
  * Branding step for create link modal
@@ -34,16 +32,15 @@ export const CreateLinkBrandingStep = () => {
   // Form actions
   const previousStep = useCreateLinkFormStore(state => state.previousStep);
   const setSubmitting = useCreateLinkFormStore(state => state.setSubmitting);
-  const setSuccess = useCreateLinkFormStore(state => state.setSuccess);
-  const setGeneralError = useCreateLinkFormStore(
-    state => state.setGeneralError
+  const setGeneratedUrl = useCreateLinkFormStore(
+    state => state.setGeneratedUrl
   );
+  const setCurrentStep = useCreateLinkFormStore(state => state.setCurrentStep);
+  const setError = useCreateLinkFormStore(state => state.setError);
+  const resetForm = useCreateLinkFormStore(state => state.resetForm);
 
-  // Links store actions
-  const createBaseLink = useLinksStore(state => state.createBaseLink);
-
-  // Branding store for modal context-aware state (only database fields)
-  const { brandingFormData } = useLinksBrandingStore();
+  // Modal actions
+  const { closeModal } = useModalStore();
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
@@ -51,67 +48,46 @@ export const CreateLinkBrandingStep = () => {
     console.log('🚀 BRANDING STEP: user?.id =', user?.id);
     console.log('🚀 BRANDING STEP: linkType =', linkType);
     console.log('🚀 BRANDING STEP: formData =', formData);
-    console.log('🚀 BRANDING STEP: brandingFormData =', brandingFormData);
 
-    // Use user.id as fallback if no name is available
     if (!user?.id) {
       console.log('🚀 BRANDING STEP: No user available, setting error');
-      setGeneralError('User information not available');
+      setError('User information not available');
       return;
     }
-
-    const userSlug = (user?.username?.toLowerCase() ||
-      user.firstName?.toLowerCase().replace(/\s+/g, '-') ||
-      user.id ||
-      'user') as string;
 
     console.log('🚀 BRANDING STEP: Setting submitting to true');
     setSubmitting(true);
 
     try {
-      // Prepare link data for creation using database schema only
-      const linkInput: Partial<LinkInsert> = {
-        slug: userSlug,
-        ...(linkType === 'custom' &&
-          formData.topic && { topic: formData.topic }),
+      // Prepare link data for creation
+      const linkInput = {
         title:
           linkType === 'base'
-            ? LINK_TYPE_LABELS.base.title
-            : formData.title || formData.topic || PLACEHOLDER_TEXT.untitled,
-        ...(formData.description && { description: formData.description }),
-        linkType,
+            ? 'Personal Collection'
+            : formData.title || formData.topic || 'Untitled Link',
+        topic: linkType === 'base' ? undefined : formData.topic,
+        description: formData.description || undefined,
         requireEmail: formData.requireEmail,
         requirePassword: formData.requirePassword,
-        ...(formData.requirePassword &&
-          formData.password && { passwordHash: formData.password }), // Will be hashed on server
+        password: formData.requirePassword ? formData.password : undefined,
         isPublic: formData.isPublic,
-        isActive: true,
+        isActive: formData.isActive,
         maxFiles: formData.maxFiles,
-        maxFileSize: formData.maxFileSize * 1024 * 1024, // Convert MB to bytes
-        allowedFileTypes:
-          formData.allowedFileTypes.length > 0
-            ? formData.allowedFileTypes
-            : null,
-        ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
-        // Database branding fields only
-        brandEnabled: brandingFormData.brandEnabled,
-        brandColor: brandingFormData.brandColor || null,
-        // Initialize stats
-        totalUploads: 0,
-        totalFiles: 0,
-        totalSize: 0,
-        lastUploadAt: null,
+        maxFileSize: formData.maxFileSize,
+        allowedFileTypes: formData.allowedFileTypes,
+        expiresAt: formData.expiresAt
+          ? formData.expiresAt.toISOString()
+          : undefined,
+        brandEnabled: formData.brandEnabled,
+        brandColor: formData.brandEnabled ? formData.brandColor : undefined,
       };
 
       console.log('🚀 BRANDING STEP: Prepared linkInput:', linkInput);
 
-      // Create link using database service
-      console.log('🚀 BRANDING STEP: Creating real link with database...');
+      // Create link using server action
+      const result = await createLinkAction(linkInput);
 
-      // Call the store's database function
-      const result = await createBaseLink(linkInput as LinkInsert);
-
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create link');
       }
 
@@ -120,30 +96,51 @@ export const CreateLinkBrandingStep = () => {
       // Generate URL for success message
       const generatedUrl = `foldly.io/${result.data.slug}${result.data.topic ? `/${result.data.topic}` : ''}`;
 
-      // Update form success state
-      console.log('🚀 BRANDING STEP: Setting success state...');
-      setSuccess(result.data.id, generatedUrl);
-
       console.log('🚀 BRANDING STEP: Real link created successfully!');
-      toast.success('Link created successfully!');
+      toast.success(`Link created successfully! Visit: ${generatedUrl}`);
+
+      // IMMEDIATELY CLOSE MODAL AND REFRESH DATA - NO PAGE REFRESH EVER!
+      // 1. First close modal and reset form to prevent any race conditions
+
+      // Close modal immediately
+      closeModal();
+
+      // Reset form state
+      resetForm();
+
+      // 2. Then refresh data after modal is closed
+      setTimeout(() => {
+        const refreshLinksData = (window as any).refreshLinksData;
+        if (refreshLinksData) {
+          console.log(
+            '🔄 BRANDING STEP: Data refresh AFTER modal closed - ZERO page refresh'
+          );
+          refreshLinksData().catch((error: Error) => {
+            console.error('Failed to refresh links:', error);
+          });
+        } else {
+          console.warn(
+            'refreshLinksData not available - check LinksContainer setup'
+          );
+        }
+      }, 150); // Delay to ensure modal is fully closed
     } catch (error) {
       console.error('🚀 BRANDING STEP: Failed to create link:', error);
-      setGeneralError('Failed to create link. Please try again.');
+      setError('Failed to create link. Please try again.');
       toast.error('Failed to create link');
     } finally {
       setSubmitting(false);
     }
   }, [
     user?.id,
-    user?.username,
-    user?.firstName,
     linkType,
     formData,
-    brandingFormData,
     setSubmitting,
-    setSuccess,
-    setGeneralError,
-    createBaseLink,
+    setGeneratedUrl,
+    setCurrentStep,
+    setError,
+    closeModal,
+    resetForm,
   ]);
 
   return (

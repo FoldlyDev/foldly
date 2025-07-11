@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
+  type CreateLinkFormData,
 } from '../../hooks/use-create-link-form';
 import { LinkInformationSection } from '../sections/LinkInformationSection';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
@@ -23,20 +24,14 @@ export const CreateLinkInformationStep = () => {
   // Form store subscriptions
   const formData = useCreateLinkFormStore(createLinkFormSelectors.formData);
   const linkType = useCreateLinkFormStore(createLinkFormSelectors.linkType);
-  const fieldErrors = useCreateLinkFormStore(
-    createLinkFormSelectors.fieldErrors
-  );
   const isSubmitting = useCreateLinkFormStore(
     createLinkFormSelectors.isSubmitting
   );
-  const canGoNext = useCreateLinkFormStore(state => {
-    const value = createLinkFormSelectors.canGoNext(state);
-    return Boolean(value);
-  });
+  const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canProceed);
 
   // Form actions
-  const updateMultipleFields = useCreateLinkFormStore(
-    state => state.updateMultipleFields
+  const updateFormField = useCreateLinkFormStore(
+    state => state.updateFormField
   );
   const nextStep = useCreateLinkFormStore(state => state.nextStep);
 
@@ -62,8 +57,8 @@ export const CreateLinkInformationStep = () => {
       brandEnabled: formData.brandEnabled,
       ...(formData.brandColor && { brandColor: formData.brandColor }),
 
-      // Additional field for UI (not in CreateLinkFormData but needed by component)
-      isActive: true, // Default value
+      // Additional field for UI (now included in CreateLinkFormData)
+      isActive: formData.isActive,
 
       // Backwards compatibility field (maps to topic)
       name:
@@ -80,6 +75,7 @@ export const CreateLinkInformationStep = () => {
       console.log('📝 INFORMATION STEP: handleFormChange called');
       console.log('📝 INFORMATION STEP: updates =', updates);
       console.log('📝 INFORMATION STEP: linkType =', linkType);
+      console.log('📝 INFORMATION STEP: current formData =', formData);
 
       // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
@@ -87,10 +83,11 @@ export const CreateLinkInformationStep = () => {
       // Handle the name field which maps to different fields based on link type
       if (updates.name !== undefined) {
         if (linkType === 'base') {
-          convertedUpdates.title = String(updates.name);
+          // Base links get auto-assigned titles - set a default title
+          convertedUpdates.title = `${user?.username || 'user'}'s Collection`;
           console.log(
-            '📝 INFORMATION STEP: Base link - setting title =',
-            updates.name
+            '📝 INFORMATION STEP: Base link - auto-setting title =',
+            convertedUpdates.title
           );
         } else {
           // For topic links, set both topic and title fields
@@ -140,7 +137,9 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.isPublic = Boolean(updates.isPublic);
       }
 
-      // Note: isActive is not part of CreateLinkFormData, handled by component only
+      if (updates.isActive !== undefined) {
+        convertedUpdates.isActive = Boolean(updates.isActive);
+      }
 
       if (updates.maxFiles !== undefined) {
         convertedUpdates.maxFiles = Number(updates.maxFiles);
@@ -162,7 +161,7 @@ export const CreateLinkInformationStep = () => {
         updates.expiresAt !== undefined &&
         updates.expiresAt instanceof Date
       ) {
-        convertedUpdates.expiresAt = updates.expiresAt.toISOString();
+        convertedUpdates.expiresAt = updates.expiresAt;
       }
 
       if (updates.brandEnabled !== undefined) {
@@ -174,9 +173,13 @@ export const CreateLinkInformationStep = () => {
       }
 
       console.log('📝 INFORMATION STEP: convertedUpdates =', convertedUpdates);
-      updateMultipleFields(convertedUpdates);
+
+      // Update form fields individually since updateMultipleFields doesn't exist
+      Object.entries(convertedUpdates).forEach(([field, value]) => {
+        updateFormField(field as keyof CreateLinkFormData, value);
+      });
     },
-    [updateMultipleFields, linkType]
+    [updateFormField, linkType]
   );
 
   // Handle next step
@@ -185,6 +188,14 @@ export const CreateLinkInformationStep = () => {
     console.log('📝 INFORMATION STEP: canGoNext =', canGoNext);
     console.log('📝 INFORMATION STEP: linkType =', linkType);
     console.log('📝 INFORMATION STEP: formData =', formData);
+    console.log(
+      '📝 INFORMATION STEP: title length =',
+      formData.title?.length || 0
+    );
+    console.log(
+      '📝 INFORMATION STEP: topic length =',
+      formData.topic?.length || 0
+    );
 
     if (canGoNext) {
       console.log('📝 INFORMATION STEP: Calling nextStep()');
@@ -208,12 +219,7 @@ export const CreateLinkInformationStep = () => {
         }
         formData={linkInformationData}
         onDataChange={handleFormChange}
-        errors={Object.fromEntries(
-          Object.entries(fieldErrors).map(([key, value]) => [
-            key,
-            typeof value === 'string' ? value : '',
-          ])
-        )}
+        errors={{}}
         username={user?.username?.toLowerCase() || 'username'}
       />
 

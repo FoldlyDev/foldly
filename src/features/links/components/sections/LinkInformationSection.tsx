@@ -102,6 +102,10 @@ const fileSizeOptions = FILE_SIZE_OPTIONS.map(option => ({
 }));
 const fileTypeOptions = FILE_TYPE_OPTIONS;
 
+// Default values from constants
+const defaultMaxFileSize = parseInt(DEFAULT_FILE_SIZES); // 10 MB
+const defaultFileTypes = DEFAULT_FILE_TYPES === '*' ? [] : [DEFAULT_FILE_TYPES];
+
 export function LinkInformationSection({
   linkType,
   username,
@@ -519,7 +523,7 @@ export function LinkInformationSection({
                   disabled={isLoading}
                   className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 >
-                  <span>{formData.maxFiles || 10} files</span>
+                  <span>{formData.maxFiles || 100} files</span>
                   <svg
                     className='w-4 h-4 text-muted-foreground'
                     fill='none'
@@ -562,7 +566,7 @@ export function LinkInformationSection({
                   disabled={isLoading}
                   className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 >
-                  <span>{formData.maxFileSize || 10} MB</span>
+                  <span>{formData.maxFileSize || defaultMaxFileSize} MB</span>
                   <svg
                     className='w-4 h-4 text-muted-foreground'
                     fill='none'

@@ -15,11 +15,11 @@ import {
   AnimatedCopyButton,
   CardActionsMenu,
 } from '@/components/ui';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { Link, LinkWithStats } from '@/lib/supabase/types';
 import type { ActionItem } from '@/components/ui/types';
 
 interface LinkCardDesktopProps {
-  link: LinkData;
+  link: LinkWithStats;
   index: number;
   isBaseLink: boolean;
   formattedDate: string;
@@ -91,32 +91,23 @@ export const LinkCardDesktop = memo(
 
             <div className='min-w-0 flex-1'>
               <div className='flex items-center gap-2'>
-                {/* Show logo if available */}
-                {link.logoUrl && (
-                  <img
-                    src={link.logoUrl}
-                    alt={`${link.name} logo`}
-                    className='w-4 h-4 rounded object-cover flex-shrink-0'
-                    onError={e => {
-                      // Hide logo if it fails to load
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                )}
                 <h3 className='font-medium text-gray-900 text-sm truncate'>
                   <SearchHighlight
-                    text={link.name}
+                    text={link.title}
                     searchQuery={searchQuery || ''}
                   />
                 </h3>
               </div>
-              <p className='text-xs text-gray-500 truncate'>{link.url}</p>
+              <p className='text-xs text-gray-500 truncate'>
+                foldly.io/{link.slug}
+                {link.topic ? `/${link.topic}` : ''}
+              </p>
             </div>
           </div>
 
           {/* Status & Visibility */}
           <div className='flex items-center gap-3 flex-shrink-0'>
-            <LinkStatusIndicator status={link.status} />
+            <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
             <LinkVisibilityIndicator isPublic={link.isPublic} />
           </div>
 
@@ -124,11 +115,11 @@ export const LinkCardDesktop = memo(
           <div className='flex items-center gap-4 text-sm text-gray-500 flex-shrink-0'>
             <span className='flex items-center gap-1'>
               <FileText className='w-3.5 h-3.5' />
-              {link.uploads}
+              {link.stats.fileCount}
             </span>
             <span className='flex items-center gap-1'>
               <Eye className='w-3.5 h-3.5' />
-              {link.views}
+              {link.stats.totalViewCount}
             </span>
           </div>
 
@@ -143,7 +134,9 @@ export const LinkCardDesktop = memo(
             {link.expiresAt && (
               <div className='flex items-center gap-1 text-xs text-amber-600'>
                 <AlertTriangle className='w-3 h-3' />
-                <span className='font-medium'>Expires {link.expiresAt}</span>
+                <span className='font-medium'>
+                  Expires {new Date(link.expiresAt).toLocaleDateString()}
+                </span>
               </div>
             )}
           </div>

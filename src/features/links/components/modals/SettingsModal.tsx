@@ -1,9 +1,10 @@
 'use client';
 
-import * as React from 'react';
-import { useState } from 'react';
-import { Settings, Crown, CheckCircle, AlertCircle } from 'lucide-react';
-
+import React, { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Settings, Save } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -12,138 +13,140 @@ import {
   DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
 import { ActionButton } from '@/components/ui/action-button';
-
-// Import centralized types instead of defining our own
-import type { LinkWithStats } from '@/lib/supabase/types';
-import type { HexColor } from '@/types';
+import { useCurrentModal, useModalData, useModalStore } from '../../store';
+import { updateLinkAction } from '../../lib/actions';
+import { GeneralSettingsModalSection } from '../sections/GeneralSettingsModalSection';
 import {
-  useLinksListStore,
-  useLinksModalsStore,
-  useLinksBrandingStore,
-  useLinksSettingsStore,
-} from '../../hooks/use-links-composite';
+  generalSettingsSchema,
+  type GeneralSettingsFormData,
+} from '../../lib/validations';
+import type { Link } from '@/lib/supabase/types';
 
-// Import the enhanced settings form hook
-import { useSettingsFormEnhanced } from '../../hooks/use-settings-form';
+export function SettingsModal() {
+  const currentModal = useCurrentModal();
+  const { link } = useModalData();
+  const { closeModal, setLoading } = useModalStore();
 
-// Custom UI Components
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContents,
-  TabsContent,
-} from '@/components/animate-ui/components/tabs';
+  const isOpen = currentModal === 'link-settings';
 
-// Import the sections
-import {
-  GeneralSettingsModalSection,
-  BrandingSettingsSection,
-} from '../sections';
+  // React Hook Form setup with 2025 patterns
+  const form = useForm<GeneralSettingsFormData>({
+    resolver: zodResolver(generalSettingsSchema),
+    mode: 'onChange', // 2025 best practice for real-time validation
+    defaultValues: {
+      description: '',
+      isPublic: true,
+      isActive: true,
+      requireEmail: false,
+      requirePassword: false,
+      password: '',
+      maxFiles: 100,
+      maxFileSize: 10,
+      allowedFileTypes: [],
+      brandEnabled: false,
+      brandColor: '',
+    },
+  });
 
-// Settings Modal
-interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  link: LinkData;
-}
-
-export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
-  // Use the enhanced settings form hook for dynamic button behavior
   const {
-    form,
-    linkData,
-    isSubmitting,
-    isDirty,
-    hasUnsavedChanges,
-    shouldShowSaveButton,
-    shouldShowSaveAndCloseButton,
-    saveButtonText,
-    cancelButtonText,
-    handleSave,
-    handleSaveAndClose,
-    handleCancel,
-    resetForm,
-    isLoading: formLoading,
-  } = useSettingsFormEnhanced();
+    handleSubmit,
+    reset,
+    formState: { isSubmitting, isDirty, isValid },
+  } = form;
 
-  // Connect to other stores for additional operations
-  const { updateLink } = useLinksListStore();
-  const {
-    setModalLoading,
-    setModalError,
-    isLoading: modalLoading,
-  } = useLinksModalsStore();
-  const { brandingFormData } = useLinksBrandingStore();
+  // Initialize form with real link data when modal opens
+  // Following 2025 React Hook Form best practices for async data loading
+  useEffect(() => {
+    if (link && isOpen) {
+      console.log('🔧 SETTINGS MODAL: Loading real link data into form:', link);
 
-  // Local state for save feedback
-  const [saveStatus, setSaveStatus] = useState<{
-    type: 'success' | 'error' | null;
-    message: string;
-    timestamp?: number;
-  }>({ type: null, message: '' });
+      // Use reset() to properly set form values after async data load
+      // This is the recommended pattern from React Hook Form documentation
+      reset({
+        description: link.description || '',
+        isPublic: link.isPublic,
+        isActive: link.isActive,
+        requireEmail: link.requireEmail,
+        requirePassword: link.requirePassword,
+        password: '', // Never pre-fill passwords for security
+        maxFiles: link.maxFiles,
+        maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
+        allowedFileTypes: link.allowedFileTypes || [],
+        brandEnabled: link.brandEnabled,
+        brandColor: link.brandColor || '',
+        expiresAt: link.expiresAt
+          ? new Date(link.expiresAt).toISOString().slice(0, 16)
+          : '',
+      });
 
-  // Use the enhanced form's loading state
-  const isLoading = formLoading || modalLoading;
-
-  // Clear save status when modal opens
-  React.useEffect(() => {
-    if (isOpen) {
-      setSaveStatus({ type: null, message: '' });
+      console.log('✅ SETTINGS MODAL: Form initialized with link data');
     }
-  }, [isOpen]);
+  }, [link, isOpen, reset]);
 
-  // Enhanced save function that provides feedback
-  const handleSaveWithFeedback = async (shouldClose = false) => {
+  if (!isOpen || !link) return null;
+
+  const onSubmit = async (data: GeneralSettingsFormData) => {
+    setLoading(true);
+
     try {
-      setSaveStatus({ type: null, message: '' }); // Clear previous status
+      const updateData = {
+        id: link.id,
+        description: data.description || undefined,
+        isPublic: data.isPublic ?? true,
+        isActive: data.isActive ?? true,
+        requireEmail: data.requireEmail ?? false,
+        requirePassword: data.requirePassword ?? false,
+        password:
+          data.requirePassword && data.password ? data.password : undefined,
+        maxFiles: data.maxFiles ?? 100,
+        maxFileSize: data.maxFileSize ?? 10, // Keep as MB - action will convert to bytes
+        allowedFileTypes: data.allowedFileTypes?.length
+          ? data.allowedFileTypes
+          : undefined,
+        expiresAt: data.expiresAt || undefined,
+        brandEnabled: data.brandEnabled ?? false,
+        brandColor:
+          data.brandEnabled && data.brandColor ? data.brandColor : undefined,
+      };
 
-      if (shouldClose) {
-        await handleSaveAndClose();
-        // Modal will be closed by the enhanced hook
-      } else {
-        const success = await handleSave(form.getValues());
+      const result = await updateLinkAction(updateData);
 
-        if (success) {
-          // Show success message and keep modal open
-          setSaveStatus({
-            type: 'success',
-            message:
-              'Settings saved successfully! You can continue editing or close the modal.',
-            timestamp: Date.now(),
-          });
+      if (result.success) {
+        toast.success('Settings saved successfully');
+        closeModal();
 
-          // Auto-clear success message after 5 seconds
-          setTimeout(() => {
-            setSaveStatus(prev =>
-              prev.type === 'success' ? { type: null, message: '' } : prev
-            );
-          }, 5000);
+        // 2025 React best practice: Update UI state immediately after successful mutation
+        if ((window as any).refreshLinksData) {
+          console.log(
+            '🔄 SETTINGS MODAL: Triggering immediate links data refresh...'
+          );
+          (window as any).refreshLinksData();
         }
+      } else {
+        throw new Error(result.error || 'Failed to save settings');
       }
     } catch (error) {
-      console.error('❌ Failed to save settings:', error);
-      setSaveStatus({
-        type: 'error',
-        message: 'Failed to save settings. Please try again.',
-        timestamp: Date.now(),
-      });
+      console.error('Failed to save settings:', error);
+      toast.error('Failed to save settings. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Enhanced cancel function
-  const handleCancelWithConfirmation = () => {
-    if (hasUnsavedChanges) {
-      handleCancel(); // This will show confirmation if needed
-    } else {
-      onClose();
+  const handleCancel = () => {
+    if (isDirty) {
+      const shouldClose = window.confirm(
+        'You have unsaved changes. Are you sure you want to close?'
+      );
+      if (!shouldClose) return;
     }
+    closeModal();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleCancelWithConfirmation}>
+    <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className='max-w-5xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
+        className='max-w-3xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
         from='left'
         transition={{ type: 'spring', stiffness: 160, damping: 20 }}
       >
@@ -153,89 +156,64 @@ export function SettingsModal({ isOpen, onClose, link }: SettingsModalProps) {
             Link Settings
           </DialogTitle>
           <DialogDescription className='text-[var(--neutral-600)]'>
-            Configure how &quot;{link.name}&quot; works for uploaders
-            {hasUnsavedChanges && (
-              <span className='ml-2 text-amber-600 font-medium'>
-                • Unsaved changes
-              </span>
-            )}
+            Configure how &quot;{link.title}&quot; works for uploaders
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue='general' className='pt-6'>
-          <TabsList className='w-full mb-6'>
-            <TabsTrigger value='general' className='flex items-center gap-2'>
-              <Settings className='w-4 h-4' />
-              General Settings
-            </TabsTrigger>
-            <TabsTrigger value='branding' className='flex items-center gap-2'>
-              <Crown className='w-4 h-4' />
-              Brand Settings
-            </TabsTrigger>
-          </TabsList>
-          <TabsContents>
-            <TabsContent value='general'>
-              <GeneralSettingsModalSection link={link} form={form} />
-            </TabsContent>
-            <TabsContent value='branding' className='space-y-6 mt-6'>
-              <BrandingSettingsSection form={form} link={link} />
-            </TabsContent>
-          </TabsContents>
-        </Tabs>
+        <form onSubmit={handleSubmit(onSubmit)} className='pt-6 space-y-6'>
+          {/* General Settings Section */}
+          <GeneralSettingsModalSection
+            link={{
+              ...link,
+              stats: {
+                fileCount: link.totalFiles || 0,
+                batchCount: 0,
+                folderCount: 0,
+                totalViewCount: 0,
+                uniqueViewCount: 0,
+                averageFileSize:
+                  link.totalFiles > 0
+                    ? (link.totalSize || 0) / link.totalFiles
+                    : 0,
+                storageUsedPercentage: 0,
+                isNearLimit: false,
+              },
+            }}
+            form={form}
+          />
 
-        {/* Status Message */}
-        {saveStatus.type && (
-          <div
-            className={`flex items-center gap-2 p-4 rounded-lg ${
-              saveStatus.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
-            }`}
-          >
-            {saveStatus.type === 'success' ? (
-              <CheckCircle className='w-5 h-5 text-green-600' />
-            ) : (
-              <AlertCircle className='w-5 h-5 text-red-600' />
-            )}
-            <span className='text-sm font-medium'>{saveStatus.message}</span>
-          </div>
-        )}
-
-        {/* Dynamic Actions Based on Form State */}
-        <div className='flex items-center gap-3 pt-6 border-t border-[var(--neutral-200)]'>
-          {/* Cancel/Close Button - Always visible */}
-          <ActionButton
-            variant='outline'
-            onClick={handleCancelWithConfirmation}
-            className='flex-1'
-            disabled={isLoading}
-          >
-            {cancelButtonText}
-          </ActionButton>
-
-          {/* Save Button - Only shows when there are changes */}
-          {shouldShowSaveButton && (
+          {/* Action Buttons */}
+          <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-[var(--neutral-200)]'>
             <ActionButton
-              onClick={() => handleSaveWithFeedback(false)}
-              className='flex-1'
-              disabled={isLoading}
+              type='button'
               variant='outline'
-            >
-              {isLoading ? 'Saving...' : saveButtonText}
-            </ActionButton>
-          )}
-
-          {/* Save & Close Button - Only shows when there are changes */}
-          {shouldShowSaveAndCloseButton && (
-            <ActionButton
-              onClick={() => handleSaveWithFeedback(true)}
+              onClick={handleCancel}
+              disabled={isSubmitting}
               className='flex-1'
-              disabled={isLoading}
             >
-              {isLoading ? 'Saving...' : 'Save & Close'}
+              Cancel
             </ActionButton>
-          )}
-        </div>
+
+            <ActionButton
+              type='submit'
+              variant='default'
+              disabled={isSubmitting || !isDirty || !isValid}
+              className='flex-1 flex items-center justify-center gap-2'
+            >
+              {isSubmitting ? (
+                <>
+                  <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className='w-4 h-4' />
+                  Save Settings
+                </>
+              )}
+            </ActionButton>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

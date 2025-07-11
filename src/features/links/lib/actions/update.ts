@@ -44,10 +44,22 @@ export async function updateLinkAction(
       };
     }
 
-    // 4. Prepare update data - filter out undefined values
+    // 4. Prevent modification of base link names/titles
+    if (
+      existingLink.data.linkType === 'base' &&
+      updateData.title !== undefined
+    ) {
+      return {
+        success: false,
+        error:
+          'Base link names cannot be modified. They are automatically assigned.',
+      };
+    }
+
+    // 5. Prepare update data - filter out undefined values
     const linkUpdate: Record<string, any> = {};
 
-    if (updateData.name !== undefined) linkUpdate.title = updateData.name;
+    if (updateData.title !== undefined) linkUpdate.title = updateData.title;
     if (updateData.description !== undefined)
       linkUpdate.description = updateData.description || null;
     if (updateData.requireEmail !== undefined)
@@ -93,9 +105,10 @@ export async function updateLinkAction(
       details: { changes: Object.keys(updateData) },
     });
 
-    // 7. Revalidate relevant paths
-    revalidatePath('/dashboard/links');
-    revalidatePath(`/dashboard/links/${id}`);
+    // 7. DISABLED: No revalidatePath to prevent page refresh
+    // We handle UI updates manually via React state in LinksContainer
+    // revalidatePath('/dashboard/links');
+    // revalidatePath(`/dashboard/links/${id}`);
 
     return {
       success: true,
@@ -123,14 +136,14 @@ export async function updateLinkAction(
  * Update link settings (branding, security, etc.)
  */
 export async function updateLinkSettingsAction(
-  input: z.infer<typeof updateLinkSettingsSchema>
+  input: z.infer<typeof updateSettingsActionSchema>
 ): Promise<ActionResult<Link>> {
   try {
     // 1. Authenticate user
     const user = await requireAuth();
 
     // 2. Validate input
-    const validatedData = updateLinkSettingsSchema.parse(input);
+    const validatedData = updateSettingsActionSchema.parse(input);
     const { id, ...settings } = validatedData;
 
     // 3. Verify link ownership
@@ -163,7 +176,7 @@ export async function updateLinkSettingsAction(
         ? settings.maxFileSize * 1024 * 1024
         : undefined,
       allowedFileTypes: settings.allowedFileTypes || null,
-      brandEnabled: settings.brandingEnabled,
+      brandEnabled: settings.brandEnabled,
       brandColor: settings.brandColor || null,
     };
 
@@ -187,9 +200,10 @@ export async function updateLinkSettingsAction(
       details: { settingsChanged: Object.keys(settings) },
     });
 
-    // 7. Revalidate relevant paths
-    revalidatePath('/dashboard/links');
-    revalidatePath(`/dashboard/links/${id}`);
+    // 7. DISABLED: No revalidatePath to prevent page refresh
+    // We handle UI updates manually via React state in LinksContainer
+    // revalidatePath('/dashboard/links');
+    // revalidatePath(`/dashboard/links/${id}`);
 
     return {
       success: true,

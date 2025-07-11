@@ -5,10 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 
 import { Dialog, DialogContent } from '@/components/animate-ui/radix/dialog';
-import {
-  useLinksModalStore,
-  linksModalSelectors,
-} from '../../store/links-modal-store';
+import { useModalStore } from '../../store';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
@@ -19,18 +16,16 @@ import { CreateLinkBrandingStep } from '../sections/CreateLinkBrandingStep';
 import { CreateLinkSuccessStep } from '../sections/CreateLinkSuccessStep';
 
 /**
- * Main container for the create link modal
- * Orchestrates the form flow and integrates with the modal store
- * Following 2025 architecture patterns with store integration
- * Provides identical layout and design for both base and topic link creation
+ * Create Link Modal Component
+ * Multi-step wizard for creating new links (base or custom/topic)
+ * Following 2025 architecture patterns with proper modal structure
  */
-export const CreateLinkModalContainer = () => {
+export const CreateLinkModal = () => {
   const { user } = useUser();
 
   // Modal store subscriptions
-  const isOpen = useLinksModalStore(linksModalSelectors.isCreateLinkModalOpen);
-  const modalData = useLinksModalStore(linksModalSelectors.modalData);
-  const closeModal = useLinksModalStore(state => state.closeModal);
+  const { activeModal, modalData, closeModal } = useModalStore();
+  const isOpen = activeModal === 'create-link';
 
   // Form store subscriptions
   const currentStep = useCreateLinkFormStore(
@@ -40,26 +35,19 @@ export const CreateLinkModalContainer = () => {
   const initializeForm = useCreateLinkFormStore(state => state.initializeForm);
   const resetForm = useCreateLinkFormStore(state => state.resetForm);
 
-  // Initialize form when modal opens with identical setup for both link types
+  // Initialize form when modal opens
   useEffect(() => {
-    console.log('🎪 MODAL CONTAINER: useEffect triggered');
-    console.log('🎪 MODAL CONTAINER: isOpen =', isOpen);
-    console.log('🎪 MODAL CONTAINER: modalData =', modalData);
-    console.log('🎪 MODAL CONTAINER: initializeForm =', !!initializeForm);
-
     if (isOpen && modalData.linkType && initializeForm) {
-      // Convert from modal linkType (base/topic) to store linkType (base/custom)
-      const storeLinkType =
-        modalData.linkType === 'topic' ? 'custom' : modalData.linkType;
+      // Use the linkType directly from modalData (it's already the correct LinkType)
       console.log(
-        '🎪 MODAL CONTAINER: Initializing form with storeLinkType:',
-        storeLinkType
+        '🎪 CREATE LINK MODAL: Initializing form with linkType:',
+        modalData.linkType
       );
-      initializeForm(storeLinkType);
+      initializeForm(modalData.linkType);
     }
   }, [isOpen, modalData.linkType, initializeForm]);
 
-  // Handle modal close with identical behavior for both link types
+  // Handle modal close
   const handleClose = useCallback(() => {
     if (currentStep !== 'success' && resetForm) {
       resetForm();
@@ -74,13 +62,13 @@ export const CreateLinkModalContainer = () => {
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
         <div className='space-y-6'>
-          {/* Progress indicator - identical for both link types */}
+          {/* Progress indicator */}
           <CreateLinkStepperHeader
             currentStep={currentStep}
             linkType={linkType}
           />
 
-          {/* Step content with animations - identical layout for both link types */}
+          {/* Step content with animations */}
           <AnimatePresence mode='wait'>
             {currentStep === 'information' && (
               <CreateLinkInformationStep key='information' />

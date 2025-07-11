@@ -22,7 +22,7 @@ interface LinkBrandingFormData {
 type FieldValidationErrors<T extends Record<string, any>> = Partial<
   Record<keyof T, ValidationError>
 >;
-import { useLinksBrandingStore } from '../../hooks/use-links-composite';
+// import { useLinksBrandingStore } from '../../hooks/use-links-composite'; // Disabled during refactoring
 
 export interface LinkBrandingSectionProps {
   readonly linkType: 'base' | 'topic';
@@ -48,14 +48,20 @@ export function LinkBrandingSection({
     console.log('🎨 BRANDING: Description updated to:', description);
   }, [description]);
 
-  // Use the branding store hook to get context-aware state
-  const {
-    brandingFormData: formData,
-    updateBrandingData,
-    brandingContext,
-    isCreationContext,
-    isSettingsContext,
-  } = useLinksBrandingStore();
+  // Temporary simple local state during refactoring
+  const [formData, setFormData] = React.useState<LinkBrandingFormData>({
+    brandEnabled: false,
+    brandColor: '#6c47ff',
+  });
+
+  const updateBrandingData = (updates: Partial<LinkBrandingFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  // Simplified context flags
+  const brandingContext = 'creation';
+  const isCreationContext = true;
+  const isSettingsContext = false;
 
   // Store the actual file for FileUpload component and logo URL separately
   const [logoFile, setLogoFile] = React.useState<File | null>(null);

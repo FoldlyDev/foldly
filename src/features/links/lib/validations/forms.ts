@@ -113,28 +113,48 @@ export const linkBrandingSchema = z.object({
 /**
  * Schema for unified settings modal (includes both general and branding)
  * Used in the settings modal that combines multiple tabs
+ * Updated for 2025 React Hook Form + Zod patterns
  */
-export const generalSettingsSchema = withPasswordRequirement(
-  z.object({
+export const generalSettingsSchema = z
+  .object({
     // === DATABASE FIELDS ===
 
-    // General settings
-    isPublic: z.boolean().default(true),
-    requireEmail: z.boolean().default(false),
-    requirePassword: z.boolean().default(false),
-    password: z.string().default(''),
+    // Basic information
+    description: descriptionSchema,
+
+    // General settings (all optional for partial updates)
+    isPublic: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    requireEmail: z.boolean().optional(),
+    requirePassword: z.boolean().optional(),
+    password: z.string().optional(),
     expiresAt: z.string().optional(),
 
     // Upload constraints (database fields)
-    maxFiles: maxFilesSchema.default(100),
-    maxFileSize: maxFileSizeSchema.default(100), // Form shows MB
-    allowedFileTypes: fileTypesSchema.default([]),
+    maxFiles: z.number().min(1).max(1000).optional(),
+    maxFileSize: z.number().min(1).max(1000).optional(), // Form shows MB
+    allowedFileTypes: z.array(z.string()).optional(),
 
     // Branding settings (aligned with database field names)
-    brandEnabled: z.boolean().default(false),
-    brandColor: hexColorSchema.default(''),
+    brandEnabled: z.boolean().optional(),
+    brandColor: z.string().optional(),
   })
-);
+  .refine(
+    data => {
+      if (
+        data.requirePassword &&
+        (!data.password || data.password.length < 8)
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message:
+        'Password is required and must be at least 8 characters when password protection is enabled',
+      path: ['password'],
+    }
+  );
 
 // =============================================================================
 // SPECIALIZED FORM SCHEMAS

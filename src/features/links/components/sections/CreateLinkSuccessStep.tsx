@@ -8,7 +8,7 @@ import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
-import { useLinksModalStore } from '../../store/links-modal-store';
+import { useModalStore } from '../../store';
 import { GradientButton, AnimatedCopyButton } from '@/components/ui';
 
 /**
@@ -24,7 +24,7 @@ export const CreateLinkSuccessStep = () => {
   );
 
   // Modal store actions
-  const closeModal = useLinksModalStore(state => state.closeModal);
+  const { closeModal } = useModalStore();
   const resetForm = useCreateLinkFormStore(state => state.resetForm);
 
   // Handle opening external link
@@ -47,15 +47,18 @@ export const CreateLinkSuccessStep = () => {
     console.log('🎉 SUCCESS STEP: resetForm available:', !!resetForm);
     console.log('🎉 SUCCESS STEP: closeModal available:', !!closeModal);
 
+    // First reset form state
     if (resetForm) {
       console.log('🎉 SUCCESS STEP: Calling resetForm...');
       resetForm();
     }
 
-    console.log('🎉 SUCCESS STEP: Calling closeModal...');
-    closeModal();
-
-    console.log('🎉 SUCCESS STEP: Done action completed');
+    // Then close modal with a small delay to ensure state cleanup
+    setTimeout(() => {
+      console.log('🎉 SUCCESS STEP: Calling closeModal...');
+      closeModal();
+      console.log('🎉 SUCCESS STEP: Done action completed');
+    }, 50);
   }, [resetForm, closeModal]);
   return (
     <motion.div

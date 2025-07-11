@@ -37,13 +37,35 @@ export async function createLinkAction(
       };
     }
 
-    // 4. Prepare link data for database
+    // 4. Determine link type and validate base link restrictions
+    const linkType = validatedData.topic ? 'custom' : 'base';
+
+    // Check if user already has a base link (only one allowed per user)
+    if (linkType === 'base') {
+      const existingLinksResult = await linksDbService.getByUserId(user.id);
+
+      if (existingLinksResult.success && existingLinksResult.data) {
+        const hasBaseLink = existingLinksResult.data.some(
+          (link: Link) => link.linkType === 'base'
+        );
+
+        if (hasBaseLink) {
+          return {
+            success: false,
+            error:
+              'You already have a base link. Only one base link is allowed per user.',
+          };
+        }
+      }
+    }
+
+    // 5. Prepare link data for database
     const linkData: LinkInsert = {
       userId: user.id,
       workspaceId: workspaceResult.data.id,
       slug: user.username || user.id, // Use username or fallback to ID
       topic: validatedData.topic || null,
-      linkType: validatedData.topic ? 'custom' : 'base',
+      linkType,
       title: validatedData.title,
       description: validatedData.description || null,
       requireEmail: validatedData.requireEmail,
@@ -52,8 +74,8 @@ export async function createLinkAction(
         ? // In production, use proper password hashing
           Buffer.from(validatedData.password).toString('base64')
         : null,
-      isPublic: validatedData.isPublic,
-      isActive: true,
+      isPublic: validatedData.isPublic ?? true, // Default to true if not provided
+      isActive: validatedData.isActive ?? true, // Default to true if not provided
       maxFiles: validatedData.maxFiles,
       maxFileSize: validatedData.maxFileSize * 1024 * 1024, // Convert MB to bytes
       allowedFileTypes:
@@ -73,7 +95,7 @@ export async function createLinkAction(
       lastUploadAt: null,
     };
 
-    // 4. Create link in database
+    // 6. Create link in database
     const result = await linksDbService.create(linkData);
 
     if (!result.success) {
@@ -93,9 +115,10 @@ export async function createLinkAction(
       details: { title: linkData.title, linkType: linkData.linkType },
     });
 
-    // 6. Revalidate relevant paths
-    revalidatePath('/dashboard/links');
-    revalidatePath(`/dashboard/links/${result.data!.id}`);
+    // 6. DISABLED: No revalidatePath to prevent page refresh
+    // We handle UI updates manually via React state in LinksContainer
+    // revalidatePath('/dashboard/links');
+    // revalidatePath(`/dashboard/links/${result.data!.id}`);
 
     return {
       success: true,

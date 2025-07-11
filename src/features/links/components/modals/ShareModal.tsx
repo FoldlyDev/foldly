@@ -17,44 +17,47 @@ import {
 } from '@/components/animate-ui/radix/dialog';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ActionButton } from '@/components/ui/action-button';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import { useCurrentModal, useModalData, useModalStore } from '../../store';
 
-interface ShareModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  link: LinkData;
-}
+export function ShareModal() {
+  const currentModal = useCurrentModal();
+  const { link } = useModalData();
+  const { closeModal } = useModalStore();
 
-export function ShareModal({ isOpen, onClose, link }: ShareModalProps) {
-  const linkUrl = `https://${link.url}`;
-  const shareText = `Check out this file collection link: ${link.name}`;
+  const isOpen = currentModal === 'share-link';
+
+  if (!isOpen || !link) return null;
+
+  const linkUrl = `foldly.com/${link.slug}${link.topic ? `/${link.topic}` : ''}`;
+  const fullUrl = `https://${linkUrl}`;
+  const shareText = `Check out this file collection: ${link.title}`;
 
   const socialShareLinks = [
     {
       name: 'Twitter',
       icon: Twitter,
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(linkUrl)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(fullUrl)}`,
       color: 'text-blue-500',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
     },
     {
       name: 'Facebook',
       icon: Facebook,
-      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(linkUrl)}`,
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
     },
     {
       name: 'LinkedIn',
       icon: Linkedin,
-      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(linkUrl)}`,
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
       color: 'text-blue-700',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
     },
     {
       name: 'WhatsApp',
       icon: MessageCircle,
-      url: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${linkUrl}`)}`,
+      url: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${fullUrl}`)}`,
       color: 'text-green-600',
       bgColor: 'bg-green-50 hover:bg-green-100',
     },
@@ -65,7 +68,7 @@ export function ShareModal({ isOpen, onClose, link }: ShareModalProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={closeModal}>
       <DialogContent
         className='max-w-2xl bg-white border border-[var(--neutral-200)]'
         from='bottom'
@@ -73,7 +76,7 @@ export function ShareModal({ isOpen, onClose, link }: ShareModalProps) {
       >
         <DialogHeader className='text-center'>
           <DialogTitle className='text-xl font-bold text-[var(--quaternary)]'>
-            Share &quot;{link.name}&quot;
+            Share &quot;{link.title}&quot;
           </DialogTitle>
           <DialogDescription className='text-[var(--neutral-600)]'>
             Share this link with others to let them upload files
@@ -88,16 +91,29 @@ export function ShareModal({ isOpen, onClose, link }: ShareModalProps) {
             </label>
             <div className='flex items-center gap-2 p-3 bg-[var(--neutral-50)] border border-[var(--neutral-200)] rounded-lg'>
               <span className='flex-1 text-sm text-[var(--neutral-700)] break-all'>
-                {linkUrl}
+                {fullUrl}
               </span>
               <CopyButton
-                value={linkUrl}
+                value={fullUrl}
                 size='sm'
                 showText
                 variant='outline'
                 className='flex-shrink-0'
               />
             </div>
+          </div>
+
+          {/* Link Type Info */}
+          <div className='text-center p-3 bg-blue-50 border border-blue-200 rounded-lg'>
+            <p className='text-sm text-blue-700'>
+              <span className='font-medium'>Type:</span>{' '}
+              {link.linkType === 'base'
+                ? 'Personal Collection'
+                : 'Topic Collection'}
+              {link.topic && (
+                <span className='block mt-1'>Topic: {link.topic}</span>
+              )}
+            </p>
           </div>
 
           {/* QR Code Section */}
@@ -150,7 +166,7 @@ export function ShareModal({ isOpen, onClose, link }: ShareModalProps) {
               size='default'
               motionType='subtle'
               onClick={() => {
-                const mailtoUrl = `mailto:?subject=${encodeURIComponent(`File Collection: ${link.name}`)}&body=${encodeURIComponent(`${shareText}\n\n${linkUrl}`)}`;
+                const mailtoUrl = `mailto:?subject=${encodeURIComponent(`File Collection: ${link.title}`)}&body=${encodeURIComponent(`${shareText}\n\n${fullUrl}`)}`;
                 window.location.href = mailtoUrl;
               }}
               className='w-full flex items-center justify-center gap-2'

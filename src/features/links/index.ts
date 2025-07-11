@@ -1,7 +1,7 @@
 // ===== 2025 FEATURE-BASED COMPONENT ARCHITECTURE =====
 
 // 📋 Modal Components - User Interactions
-export { CreateLinkModalContainer } from './components/containers/CreateLinkModalContainer';
+export { CreateLinkModal } from './components/modals/CreateLinkModal';
 export {
   LinkDetailsModal,
   ShareModal,
@@ -35,8 +35,8 @@ export { LinksModalManager } from './components/managers/LinksModalManager';
 // 🪝 Hooks - State Management
 // Legacy hooks removed - replaced by store-based composite hooks
 
-// 🏪 Store - Zustand State Management
-export { useLinksStore } from './store/links-store';
+// 🏪 Store - Zustand State Management (Simplified)
+export { useModalStore, useUIStore } from './store';
 
 // 🔧 Client-Safe Utilities Only - NO server-only database services
 

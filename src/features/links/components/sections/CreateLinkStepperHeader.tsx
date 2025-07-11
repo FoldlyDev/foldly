@@ -37,7 +37,7 @@ export const CreateLinkStepperHeader = ({
     switch (currentStep) {
       case 'information':
         return linkType === 'base'
-          ? 'Create Your Personal Collection'
+          ? 'Create Your Base Link'
           : 'Create New Topic Link';
       case 'branding':
         return 'Customize Your Link';
