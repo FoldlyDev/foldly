@@ -17,7 +17,7 @@ import {
 } from '@/components/animate-ui/radix/dialog';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ActionButton } from '@/components/ui/action-button';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface ShareModalProps {
   isOpen: boolean;

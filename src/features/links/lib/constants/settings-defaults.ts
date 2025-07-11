@@ -4,10 +4,24 @@
  * Following 2025 best practices - only static defaults, no user-customizable values
  */
 
-import type {
-  GeneralSettingsData,
-  LinkBrandingFormData,
-} from '../../types/forms';
+// Local form types for constants
+interface GeneralSettingsData {
+  title: string;
+  description: string;
+  requireEmail: boolean;
+  requirePassword: boolean;
+  isPublic: boolean;
+  maxFiles: number;
+  maxFileSize: number;
+  expiresAt: Date | null;
+}
+
+interface LinkBrandingFormData {
+  brandingEnabled: boolean;
+  brandColor: string;
+  accentColor: string;
+  logoUrl: string;
+}
 
 // =============================================================================
 // STRUCTURAL DEFAULTS (Not user-customizable)

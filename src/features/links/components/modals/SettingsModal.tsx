@@ -14,7 +14,7 @@ import {
 import { ActionButton } from '@/components/ui/action-button';
 
 // Import centralized types instead of defining our own
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import type { HexColor } from '@/types';
 import {
   useLinksListStore,

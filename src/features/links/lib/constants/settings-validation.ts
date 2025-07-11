@@ -4,7 +4,11 @@
  * Following 2025 form validation best practices
  */
 
-import type { ValidationError, FieldValidationErrors } from '../../types/forms';
+// Local validation types
+type ValidationError = string;
+type FieldValidationErrors<T extends Record<string, any>> = Partial<
+  Record<keyof T, ValidationError>
+>;
 
 // =============================================================================
 // VALIDATION RULES

@@ -16,5 +16,10 @@ export {
 export type { Reducer } from './utils/convert-reducers-to-actions';
 
 // Re-export types for convenience
-export type { LinkData } from '../types';
-export type { LinkId } from '@/types';
+export type {
+  Link,
+  LinkWithStats,
+  LinkInsert,
+  LinkUpdate,
+} from '@/lib/supabase/types';
+export type { DatabaseId } from '@/lib/supabase/types';

@@ -14,19 +14,25 @@ import {
   linksModalSelectors,
 } from '../store';
 import { useLinkCardActions } from './use-link-card-actions';
-import type { LinkData } from '../types';
-import { LINK_TYPE } from '../types';
-import type { LinkId } from '@/types';
+import type { LinkWithStats, LinkType } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/supabase/types';
+
+// Link type constants for convenience
+const LINK_TYPE = {
+  BASE: 'base',
+  CUSTOM: 'custom',
+  GENERATED: 'generated',
+} as const satisfies Record<string, LinkType>;
 
 /**
  * Combined hook for link card components
  * Replaces the current useLinkCard hook with store-based approach
  */
-export const useLinkCardStore = (linkId: LinkId) => {
+export const useLinkCardStore = (linkId: DatabaseId) => {
   // Data subscriptions with stable selectors
   const link = useLinksDataStore(
     useCallback(
-      state => state.links.find((l: LinkData) => l.id === linkId),
+      state => state.links.find((l: LinkWithStats) => l.id === linkId),
       [linkId]
     )
   );

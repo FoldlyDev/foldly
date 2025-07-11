@@ -9,7 +9,7 @@ import {
   convertReducersToActions,
   createReducers,
 } from './utils/convert-reducers-to-actions';
-import type { LinkId } from '@/types';
+import type { DatabaseId } from '@/lib/supabase/types';
 
 // State interface
 interface LinksUIState {
@@ -25,7 +25,7 @@ interface LinksUIState {
 
   // Selection state
   isMultiSelectMode: boolean;
-  selectedLinkIds: Set<LinkId>;
+  selectedLinkIds: Set<DatabaseId>;
 
   // Pagination
   currentPage: number;

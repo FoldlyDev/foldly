@@ -13,12 +13,17 @@ import {
 } from '@/components/ui/shadcn/avatar';
 
 // Use centralized types from the types folder
-import type { HexColor } from '@/types';
-import type {
-  ValidationError,
-  LinkBrandingFormData,
-  FieldValidationErrors,
-} from '../../types';
+// Local form types
+type ValidationError = string;
+interface LinkBrandingFormData {
+  brandingEnabled: boolean;
+  brandColor: string;
+  accentColor: string;
+  logoUrl: string;
+}
+type FieldValidationErrors<T extends Record<string, any>> = Partial<
+  Record<keyof T, ValidationError>
+>;
 import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 
 export interface LinkBrandingSectionProps {

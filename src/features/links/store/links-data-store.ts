@@ -9,12 +9,12 @@ import {
   convertReducersToActions,
   createReducers,
 } from './utils/convert-reducers-to-actions';
-import type { LinkData } from '../types';
-import type { LinkId } from '@/types';
+import type { LinkWithStats } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/supabase/types';
 
 // State interface
 interface LinksDataState {
-  links: LinkData[];
+  links: LinkWithStats[];
   isLoading: boolean;
   error: string | null;
   lastFetch: Date | null;

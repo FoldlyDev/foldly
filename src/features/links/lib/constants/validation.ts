@@ -5,7 +5,16 @@
  */
 
 // Use centralized validation types from the types folder
-import type { ValidationRule, FieldValidation } from '../../types';
+// Local validation types
+interface ValidationRule {
+  message: string;
+  test: (value: any) => boolean;
+}
+
+interface FieldValidation {
+  required?: boolean;
+  rules?: ValidationRule[];
+}
 
 /**
  * File upload validation limits - centralized constants

@@ -16,12 +16,17 @@ import {
 } from '../../hooks/use-create-link-form';
 import { useLinksDataStore } from '../../store/links-data-store';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
-import type { LinkBrandingFormData } from '../../types';
 import { useLinksBrandingStore } from '../../hooks/use-links-composite';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
-import type { CreateUploadLinkInput } from '../../types/database';
-import type { HexColor } from '@/types';
-import type { LinkData } from '../../types';
+import type { LinkInsert, LinkWithStats } from '@/lib/supabase/types';
+
+// Local form type for branding data
+interface LinkBrandingFormData {
+  brandingEnabled: boolean;
+  brandColor: string;
+  accentColor: string;
+  logoUrl: string;
+}
 
 /**
  * Branding step for create link modal

@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ActionItem } from '@/components/ui/types';
-import type { LinkData } from '../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import { useLinksModalsStore } from './use-links-composite';
 
 /**

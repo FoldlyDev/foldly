@@ -21,7 +21,7 @@ import {
   ActionButton,
   AnimatedCopyButton,
 } from '@/components/ui';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import type { ActionItem } from '@/components/ui/types';
 
 interface LinkCardGridProps {

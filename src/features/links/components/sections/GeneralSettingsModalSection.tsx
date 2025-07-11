@@ -15,17 +15,25 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Switch } from '@/components/ui/shadcn/switch';
 import { HelpPopover, AnimatedSelect } from '@/components/ui';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../lib/constants';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../schemas';
-import type { HexColor } from '@/types';
 
-// Use centralized types from the types folder
-import type { GeneralSettingsData } from '../../types';
+// Local settings data type
+interface GeneralSettingsData {
+  title: string;
+  description: string;
+  requireEmail: boolean;
+  requirePassword: boolean;
+  isPublic: boolean;
+  maxFiles: number;
+  maxFileSize: number;
+  expiresAt: Date | null;
+}
 
 interface GeneralSettingsModalSectionProps {
-  link: LinkData;
+  link: LinkWithStats;
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 

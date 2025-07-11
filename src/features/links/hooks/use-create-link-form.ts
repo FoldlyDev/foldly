@@ -14,19 +14,45 @@ import {
   convertReducersToActions,
   type Reducer,
 } from '../store/utils/convert-reducers-to-actions';
-import type { LinkType } from '../types';
-import type { HexColor } from '@/types';
+import type { LinkType } from '@/lib/supabase/types';
+import type { HexColor } from '@/lib/supabase/types';
 
 // =============================================================================
 // FORM STATE TYPES
 // =============================================================================
 
-// Use centralized types from the types folder
-import type {
-  CreateLinkStep,
-  CreateLinkFormData,
-  CreateLinkFormState,
-} from '../types';
+// Form step type
+type CreateLinkStep = 'information' | 'branding' | 'success';
+
+// Basic form data interface - will use database types for final submission
+interface CreateLinkFormData {
+  title: string;
+  topic: string;
+  description: string;
+  instructions: string;
+  requireEmail: boolean;
+  requirePassword: boolean;
+  password: string;
+  isPublic: boolean;
+  maxFiles: number;
+  maxFileSize: number;
+  allowedFileTypes: string[];
+  expiresAt: Date | null;
+  brandingEnabled: boolean;
+  brandColor: string;
+  accentColor: string;
+  logoUrl: string;
+}
+
+// Form state interface
+interface CreateLinkFormState {
+  formData: CreateLinkFormData;
+  currentStep: CreateLinkStep;
+  isValid: boolean;
+  errors: Record<string, string>;
+  isDirty: boolean;
+  isSubmitting: boolean;
+}
 
 // =============================================================================
 // INITIAL STATE
@@ -42,16 +68,13 @@ const initialFormData: CreateLinkFormData = {
   password: '',
   isPublic: true,
   maxFiles: 100,
-  maxFileSize: 100, // 100MB default
+  maxFileSize: 104857600, // 100MB in bytes
   allowedFileTypes: [],
-  expiresAt: '',
-  autoCreateFolders: false,
-  allowFolderCreation: true,
+  expiresAt: null,
   brandingEnabled: false,
   brandColor: '',
   accentColor: '',
   logoUrl: '',
-  customCss: '',
   welcomeMessage: '',
 };
 

@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/animate-ui/radix/dialog';
 import { useLinksListStore } from '../../hooks/use-links-composite';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;

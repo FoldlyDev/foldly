@@ -8,10 +8,10 @@ import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
 import { COMPONENT_DEFAULTS } from '../../lib/constants';
-import type { LinkId } from '@/types';
+import type { DatabaseId } from '@/lib/supabase/types';
 
 interface LinkCardProps {
-  linkId: LinkId;
+  linkId: DatabaseId;
   view: 'grid' | 'list';
   index: number;
   searchQuery?: string;

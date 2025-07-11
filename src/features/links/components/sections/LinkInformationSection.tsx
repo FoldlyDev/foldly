@@ -51,12 +51,19 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils/utils';
 
-// Use centralized types from the types folder
-import type {
-  ValidationError,
-  LinkInformationFormData,
-  FieldValidationErrors,
-} from '../../types';
+// Local form types
+type ValidationError = string;
+type FieldValidationErrors<T extends Record<string, any>> = Partial<
+  Record<keyof T, ValidationError>
+>;
+
+// Form data interface for link information section
+interface LinkInformationFormData {
+  title: string;
+  topic: string;
+  description: string;
+  instructions: string;
+}
 
 // Import URL utility functions
 import {

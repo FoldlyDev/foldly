@@ -8,7 +8,13 @@ import {
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
 import { LinkInformationSection } from '../sections/LinkInformationSection';
-import type { LinkInformationFormData } from '../../types';
+// Local form type for information data
+interface LinkInformationFormData {
+  title: string;
+  topic: string;
+  description: string;
+  instructions: string;
+}
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 

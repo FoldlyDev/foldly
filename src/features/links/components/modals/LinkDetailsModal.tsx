@@ -28,7 +28,7 @@ import {
 import { AnimatedCopyButton } from '@/components/ui';
 
 // Use centralized types instead of inline interface
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface LinkDetailsModalProps {
   isOpen: boolean;

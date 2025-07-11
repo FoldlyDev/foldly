@@ -5,8 +5,8 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { LinkData } from '../types';
-import type { LinkId } from '@/types';
+import type { Link, LinkWithStats } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/supabase/types';
 
 // Modal types
 type ModalType =
@@ -22,10 +22,10 @@ type ModalType =
 interface LinksModalState {
   activeModal: ModalType;
   modalData: {
-    linkData?: LinkData;
-    linkId?: LinkId;
+    linkData?: LinkWithStats;
+    linkId?: DatabaseId;
     linkType?: 'base' | 'topic';
-    selectedLinkIds?: LinkId[];
+    selectedLinkIds?: DatabaseId[];
     bulkAction?: 'delete' | 'archive' | 'activate' | 'pause';
   };
   isLoading: boolean;
@@ -43,12 +43,12 @@ interface LinksModalState {
 // Actions interface
 interface LinksModalActions {
   openCreateLinkModal: (linkType?: 'base' | 'topic') => void;
-  openLinkDetailsModal: (linkData: LinkData) => void;
-  openLinkSettingsModal: (linkData: LinkData) => void;
-  openShareLinkModal: (linkData: LinkData) => void;
-  openDeleteConfirmationModal: (linkData: LinkData) => void;
+  openLinkDetailsModal: (linkData: LinkWithStats) => void;
+  openLinkSettingsModal: (linkData: LinkWithStats) => void;
+  openShareLinkModal: (linkData: LinkWithStats) => void;
+  openDeleteConfirmationModal: (linkData: LinkWithStats) => void;
   openBulkActionsModal: (
-    selectedLinkIds: LinkId[],
+    selectedLinkIds: DatabaseId[],
     action: 'delete' | 'archive' | 'activate' | 'pause'
   ) => void;
   closeModal: () => void;

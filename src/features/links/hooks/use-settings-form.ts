@@ -18,7 +18,7 @@ import {
 } from '../schemas';
 import { useLinksModalStore } from '../store/links-modal-store';
 import { useLinksDataStore } from '../store/links-data-store';
-import type { LinkData } from '../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 export interface UseSettingsFormEnhancedReturn {
   // Form control

@@ -4,13 +4,13 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { useMemo } from 'react';
 import type {
-  UploadLink,
-  CreateUploadLinkInput,
-  CreateBaseLinkInput,
-  UpdateUploadLinkInput,
+  Link,
+  LinkWithStats,
+  LinkInsert,
+  LinkUpdate,
   LinkType,
-} from '../types';
-import type { LinkId, Result } from '@/types';
+} from '@/lib/supabase/types';
+import type { DatabaseId, Result } from '@/lib/supabase/types';
 import { FILE_UPLOAD_LIMITS } from '../lib/constants/validation';
 
 // ===== 2025 ZUSTAND BEST PRACTICES =====
@@ -51,12 +51,12 @@ export type SortOption = (typeof SORT_OPTION)[keyof typeof SORT_OPTION];
 // ===== STORE STATE =====
 export interface LinksStoreState {
   // Data
-  readonly links: readonly UploadLink[];
+  readonly links: readonly LinkWithStats[];
   readonly isLoading: boolean;
   readonly error: string | null;
 
   // Selection
-  readonly selectedLinkIds: readonly LinkId[];
+  readonly selectedLinkIds: readonly DatabaseId[];
 
   // UI State
   readonly searchQuery: string;
@@ -72,30 +72,33 @@ export interface LinksStoreState {
   // Modal states
   readonly isCreateModalOpen: boolean;
   readonly isEditModalOpen: boolean;
-  readonly editingLinkId: LinkId | null;
+  readonly editingLinkId: DatabaseId | null;
 
   // Temporary storage for created links (simulates database persistence)
-  readonly _createdLinks: readonly UploadLink[];
+  readonly _createdLinks: readonly LinkWithStats[];
 }
 
 // ===== STORE ACTIONS =====
 export interface LinksStoreActions {
   // Data actions
-  readonly setLinks: (links: readonly UploadLink[]) => void;
-  readonly addLink: (link: UploadLink) => void;
-  readonly updateLink: (linkId: LinkId, updates: Partial<UploadLink>) => void;
-  readonly removeLink: (linkId: LinkId) => void;
+  readonly setLinks: (links: readonly LinkWithStats[]) => void;
+  readonly addLink: (link: LinkWithStats) => void;
+  readonly updateLink: (
+    linkId: DatabaseId,
+    updates: Partial<LinkUpdate>
+  ) => void;
+  readonly removeLink: (linkId: DatabaseId) => void;
 
   // Async actions
   readonly createLink: (
-    input: CreateUploadLinkInput
-  ) => Promise<Result<UploadLink, string>>;
+    input: LinkInsert
+  ) => Promise<Result<LinkWithStats, string>>;
   readonly createBaseLink: (
-    input: CreateBaseLinkInput
-  ) => Promise<Result<UploadLink, string>>;
+    input: LinkInsert
+  ) => Promise<Result<LinkWithStats, string>>;
   readonly fetchLinks: () => Promise<void>;
   readonly publishCreatedLinks: () => Promise<void>;
-  readonly deleteLink: (linkId: LinkId) => Promise<Result<void, string>>;
+  readonly deleteLink: (linkId: DatabaseId) => Promise<Result<void, string>>;
 
   // UI actions
   readonly setLoading: (isLoading: boolean) => void;
@@ -106,15 +109,15 @@ export interface LinksStoreActions {
   readonly setSortOption: (option: SortOption) => void;
 
   // Selection actions
-  readonly setSelectedLinkIds: (linkIds: readonly LinkId[]) => void;
-  readonly toggleLinkSelection: (linkId: LinkId) => void;
+  readonly setSelectedLinkIds: (linkIds: readonly DatabaseId[]) => void;
+  readonly toggleLinkSelection: (linkId: DatabaseId) => void;
   readonly clearSelection: () => void;
   readonly selectAllLinks: () => void;
 
   // Modal actions
   readonly openCreateModal: () => void;
   readonly closeCreateModal: () => void;
-  readonly openEditModal: (linkId: LinkId) => void;
+  readonly openEditModal: (linkId: DatabaseId) => void;
   readonly closeEditModal: () => void;
 
   // Pagination actions

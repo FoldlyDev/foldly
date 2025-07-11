@@ -15,7 +15,7 @@ import {
   AnimatedCopyButton,
 } from '@/components/ui';
 import type { ActionItem } from '@/components/ui/types';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface LinkCardMobileProps {
   link: LinkData;

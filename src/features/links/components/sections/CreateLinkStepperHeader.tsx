@@ -7,7 +7,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
-import type { CreateLinkStep, LinkType } from '../../types';
+import type { LinkType } from '@/lib/supabase/types';
+
+// Local form step type
+type CreateLinkStep = 'information' | 'branding' | 'success';
 
 interface CreateLinkStepperHeaderProps {
   currentStep: CreateLinkStep;
