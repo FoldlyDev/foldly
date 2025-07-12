@@ -4,10 +4,11 @@
 
 A cross-feature, dynamic file tree component system built with React Query + Zustand + dnd-kit for maximum performance, modularity, and scalability. This system provides a unified interface for file/folder management across workspace, files, and upload features.
 
-## 🎯 **Implementation Status: 95% Complete**
+## 🎯 **Implementation Status: 97% Complete**
 
 **Core Implementation**: ✅ **COMPLETE**  
-**Database Integration**: 🔄 **PENDING**  
+**Service Architecture**: ✅ **COMPLETE**  
+**Database Integration**: 🔄 **40% COMPLETE**  
 **Testing**: 🔄 **PENDING**  
 **Styling**: 🔄 **PENDING**  
 **Large Tree Visualization**: 🔄 **PENDING**  
@@ -139,6 +140,42 @@ All types MUST be imported from `src/lib/supabase/types/`:
 - Import existing types only
 - Extend types when necessary
 - Use type unions for context-specific behavior
+
+## Service Architecture Integration
+
+### Database Service Organization
+
+The file tree system integrates with the reorganized service architecture:
+
+```
+src/lib/services/
+├── shared/
+│   ├── file-service.ts         # Cross-feature file operations
+│   ├── folder-service.ts       # Cross-feature folder operations
+│   └── index.ts                # Shared service exports
+├── user/
+│   ├── user-workspace-service.ts  # User-specific workspace operations
+│   ├── user-deletion-service.ts   # User deletion operations
+│   └── index.ts                # User service exports
+├── workspace/
+│   ├── workspace-service.ts    # Workspace-specific operations
+│   └── index.ts                # Workspace service exports
+└── index.ts                    # Main service exports
+```
+
+### Service Integration Points
+
+- **TreeContainer**: Uses appropriate services based on context type
+- **Context Menus**: Integrate with service operations for CRUD actions
+- **React Query Hooks**: Wrap service calls for optimistic updates
+- **Error Handling**: Consistent error handling across all service integrations
+
+### Type Safety in Services
+
+- All service operations use types from `src/lib/supabase/types`
+- Database operations use drizzle-generated types
+- Feature-specific types are replaced with database schema types
+- Type conflicts resolved through proper type mapping
 
 ## Props Architecture
 

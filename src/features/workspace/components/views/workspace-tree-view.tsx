@@ -114,8 +114,10 @@ export function WorkspaceTreeView({ className }: WorkspaceTreeViewProps) {
           {workspaceData.workspace.name}
         </h2>
         <p className='text-[var(--neutral-600)] text-sm'>
-          {workspaceData.folders.length} folders • {workspaceData.files.length}{' '}
-          files
+          {workspaceData.stats?.folderCount || workspaceData.folders.length}{' '}
+          folders •{' '}
+          {workspaceData.stats?.fileCount || workspaceData.files.length} files •{' '}
+          {Math.round((workspaceData.stats?.totalSize || 0) / 1024 / 1024)} MB
         </p>
       </div>
 
@@ -162,7 +164,7 @@ export function WorkspaceTreeView({ className }: WorkspaceTreeViewProps) {
             <div>
               <p className='text-blue-600 text-sm font-medium'>Total Files</p>
               <p className='text-blue-800 text-lg font-bold'>
-                {workspaceData.files.length}
+                {workspaceData.stats?.fileCount || workspaceData.files.length}
               </p>
             </div>
           </div>
@@ -188,7 +190,8 @@ export function WorkspaceTreeView({ className }: WorkspaceTreeViewProps) {
             <div>
               <p className='text-green-600 text-sm font-medium'>Folders</p>
               <p className='text-green-800 text-lg font-bold'>
-                {workspaceData.folders.length}
+                {workspaceData.stats?.folderCount ||
+                  workspaceData.folders.length}
               </p>
             </div>
           </div>
@@ -217,12 +220,7 @@ export function WorkspaceTreeView({ className }: WorkspaceTreeViewProps) {
               </p>
               <p className='text-purple-800 text-lg font-bold'>
                 {Math.round(
-                  workspaceData.files.reduce(
-                    (total, file) => total + file.fileSize,
-                    0
-                  ) /
-                    1024 /
-                    1024
+                  (workspaceData.stats?.totalSize || 0) / 1024 / 1024
                 )}{' '}
                 MB
               </p>

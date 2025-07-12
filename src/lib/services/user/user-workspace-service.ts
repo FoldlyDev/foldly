@@ -1,7 +1,7 @@
 import { db } from '@/lib/db/db';
 import { users, workspaces } from '@/lib/supabase/schemas';
 import { eq } from 'drizzle-orm';
-import { workspaceService } from './workspace-service';
+import { workspaceService } from '../workspace/workspace-service';
 import type {
   User,
   UserInsert,

@@ -1,8 +1,8 @@
-import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { Webhook } from 'svix';
-import { userDeletionService } from '@/lib/services/workspace/user-deletion-service';
-import { userWorkspaceService } from '@/lib/services/workspace/user-workspace-service';
+import { userDeletionService } from '@/lib/services/user/user-deletion-service';
+import { userWorkspaceService } from '@/lib/services/user/user-workspace-service';
 import { transformClerkUserData } from '@/lib/webhooks/clerk-webhook-handler';
 // TODO: Implement database layer
 // import { syncUserWithClerk } from '@/lib/db/queries';
