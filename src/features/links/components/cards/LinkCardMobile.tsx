@@ -95,11 +95,11 @@ export const LinkCardMobile = memo(
             <div className='flex items-center gap-4'>
               <span className='flex items-center gap-1'>
                 <FileText className='w-4 h-4' />
-                {link.stats.fileCount}
+                {link.stats?.fileCount ?? 0}
               </span>
               <span className='flex items-center gap-1'>
                 <Eye className='w-4 h-4' />
-                {link.stats.totalViewCount}
+                {link.stats?.totalViewCount ?? 0}
               </span>
             </div>
 

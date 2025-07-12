@@ -28,6 +28,8 @@ export interface CreateLinkFormData {
   allowedFileTypes: string[];
   brandEnabled: boolean;
   brandColor: string;
+  logoUrl?: string;
+  logoFile?: File | null;
 }
 
 interface CreateLinkFormState {
@@ -66,6 +68,8 @@ const initialFormData: CreateLinkFormData = {
   allowedFileTypes: DEFAULT_FILE_TYPES === '*' ? [] : [DEFAULT_FILE_TYPES],
   brandEnabled: false,
   brandColor: '#6c47ff',
+  logoUrl: '',
+  logoFile: null,
 };
 
 const initialState = {

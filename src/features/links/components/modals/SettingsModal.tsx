@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Settings, Save } from 'lucide-react';
-import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -14,13 +13,13 @@ import {
 } from '@/components/animate-ui/radix/dialog';
 import { ActionButton } from '@/components/ui/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
-import { updateLinkAction } from '../../lib/actions';
 import { GeneralSettingsModalSection } from '../sections/GeneralSettingsModalSection';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
 } from '../../lib/validations';
 import type { Link } from '@/lib/supabase/types';
+import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
 
 export function SettingsModal() {
   const currentModal = useCurrentModal();
@@ -28,6 +27,9 @@ export function SettingsModal() {
   const { closeModal, setLoading } = useModalStore();
 
   const isOpen = currentModal === 'link-settings';
+
+  // React Query mutation hook
+  const updateLink = useUpdateLinkMutation();
 
   // React Hook Form setup with 2025 patterns
   const form = useForm<GeneralSettingsFormData>({
@@ -51,8 +53,10 @@ export function SettingsModal() {
   const {
     handleSubmit,
     reset,
-    formState: { isSubmitting, isDirty, isValid },
+    formState: { isDirty, isValid },
   } = form;
+
+  const isSubmitting = updateLink.isPending;
 
   // Initialize form with real link data when modal opens
   // Following 2025 React Hook Form best practices for async data loading
@@ -89,8 +93,7 @@ export function SettingsModal() {
     setLoading(true);
 
     try {
-      const updateData = {
-        id: link.id,
+      const updates = {
         description: data.description || undefined,
         isPublic: data.isPublic ?? true,
         isActive: data.isActive ?? true,
@@ -109,25 +112,17 @@ export function SettingsModal() {
           data.brandEnabled && data.brandColor ? data.brandColor : undefined,
       };
 
-      const result = await updateLinkAction(updateData);
+      // Use React Query mutation with proper structure
+      await updateLink.mutateAsync({
+        id: link.id,
+        ...updates,
+      });
 
-      if (result.success) {
-        toast.success('Settings saved successfully');
-        closeModal();
-
-        // 2025 React best practice: Update UI state immediately after successful mutation
-        if ((window as any).refreshLinksData) {
-          console.log(
-            '🔄 SETTINGS MODAL: Triggering immediate links data refresh...'
-          );
-          (window as any).refreshLinksData();
-        }
-      } else {
-        throw new Error(result.error || 'Failed to save settings');
-      }
+      // Success handling and UI updates are handled by the mutation hook
+      closeModal();
     } catch (error) {
       console.error('Failed to save settings:', error);
-      toast.error('Failed to save settings. Please try again.');
+      // Error handling is also managed by the mutation hook
     } finally {
       setLoading(false);
     }

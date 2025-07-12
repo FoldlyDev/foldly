@@ -1,26 +1,16 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Upload, Crown } from 'lucide-react';
+import { Eye, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/shadcn/switch';
 import { FileUpload } from '@/components/ui/file-upload';
-import { Card } from '@/components/ui/shadcn/card';
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from '@/components/ui/shadcn/avatar';
-
-// Use centralized types from the types folder
-import type { HexColor } from '@/types';
 import type { LinkWithStats } from '@/lib/supabase/types';
 import type { UseFormReturn } from 'react-hook-form';
-import type { GeneralSettingsFormData } from '../../schemas';
+import type { GeneralSettingsFormData } from '../../lib/validations';
 
 export interface BrandingSettingsSectionProps {
   form: UseFormReturn<GeneralSettingsFormData>;
-  link: LinkData;
+  link: LinkWithStats;
 }
 
 export function BrandingSettingsSection({
@@ -35,23 +25,27 @@ export function BrandingSettingsSection({
 
   const watchedValues = watch();
 
-  // Store the actual file for FileUpload component
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
-
   const handleFileChange = (files: File[]) => {
     const file = files[0];
     if (file) {
-      // Store the file and create blob URL
-      setLogoFile(file);
+      // Create blob URL and store both file and URL in form
       const logoUrl = URL.createObjectURL(file);
       setValue('logoUrl', logoUrl, {
         shouldDirty: true,
         shouldValidate: true,
       });
+      // Store file reference for potential upload
+      setValue('logoFile', file, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
     } else {
       // Clear logo if no file selected
-      setLogoFile(null);
       setValue('logoUrl', '', {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      setValue('logoFile', null, {
         shouldDirty: true,
         shouldValidate: true,
       });
@@ -62,7 +56,9 @@ export function BrandingSettingsSection({
   const logoUrl = watchedValues.logoUrl;
 
   // Convert logoFile to array for FileUpload component
-  const logoFiles: File[] = logoFile ? [logoFile] : [];
+  const logoFiles: File[] = watchedValues.logoFile
+    ? [watchedValues.logoFile]
+    : [];
 
   return (
     <div className='space-y-6'>
@@ -114,7 +110,7 @@ export function BrandingSettingsSection({
                     type='color'
                     value={watchedValues.brandColor}
                     onChange={e =>
-                      setValue('brandColor', e.target.value as HexColor, {
+                      setValue('brandColor', e.target.value, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
@@ -125,7 +121,7 @@ export function BrandingSettingsSection({
                     type='text'
                     value={watchedValues.brandColor}
                     onChange={e =>
-                      setValue('brandColor', e.target.value as HexColor, {
+                      setValue('brandColor', e.target.value, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
@@ -150,7 +146,7 @@ export function BrandingSettingsSection({
                     type='color'
                     value={watchedValues.accentColor}
                     onChange={e =>
-                      setValue('accentColor', e.target.value as HexColor, {
+                      setValue('accentColor', e.target.value, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
@@ -161,7 +157,7 @@ export function BrandingSettingsSection({
                     type='text'
                     value={watchedValues.accentColor}
                     onChange={e =>
-                      setValue('accentColor', e.target.value as HexColor, {
+                      setValue('accentColor', e.target.value, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })

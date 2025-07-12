@@ -131,7 +131,7 @@ export const LinkCardGrid = memo(
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <FileText className='w-4 h-4 text-slate-500' />
                 <span className='text-2xl font-bold text-slate-900'>
-                  {link.stats.fileCount}
+                  {link.stats?.fileCount ?? 0}
                 </span>
               </div>
               <div className='text-xs text-slate-500'>Files</div>
@@ -141,7 +141,7 @@ export const LinkCardGrid = memo(
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <Eye className='w-4 h-4 text-slate-500' />
                 <span className='text-2xl font-bold text-slate-900'>
-                  {link.stats.totalViewCount}
+                  {link.stats?.totalViewCount ?? 0}
                 </span>
               </div>
               <div className='text-xs text-slate-500'>Views</div>

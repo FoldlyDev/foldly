@@ -115,11 +115,11 @@ export const LinkCardDesktop = memo(
           <div className='flex items-center gap-4 text-sm text-gray-500 flex-shrink-0'>
             <span className='flex items-center gap-1'>
               <FileText className='w-3.5 h-3.5' />
-              {link.stats.fileCount}
+              {link.stats?.fileCount ?? 0}
             </span>
             <span className='flex items-center gap-1'>
               <Eye className='w-3.5 h-3.5' />
-              {link.stats.totalViewCount}
+              {link.stats?.totalViewCount ?? 0}
             </span>
           </div>
 

@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -12,48 +11,32 @@ import {
   DialogTitle,
 } from '@/components/animate-ui/radix/dialog';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
-import { deleteLinkAction } from '../../lib/actions'; // Assuming server action exists
+import { useDeleteLinkMutation } from '../../hooks/react-query/use-delete-link-mutation';
 
 export function DeleteConfirmationModal() {
   const currentModal = useCurrentModal();
   const { link } = useModalData();
   const { closeModal, setLoading } = useModalStore();
-  const [isDeleting, setIsDeleting] = useState(false);
+
+  // React Query mutation hook
+  const deleteLink = useDeleteLinkMutation();
 
   const isOpen = currentModal === 'delete-confirmation';
+  const isDeleting = deleteLink.isPending;
 
   if (!isOpen || !link) return null;
 
   const handleDelete = async () => {
-    setIsDeleting(true);
     setLoading(true);
 
     try {
-      // Call server action to delete link
-      const result = await deleteLinkAction(link.id);
-
-      if (result.success) {
-        // Show success message
-        toast.success(`${link.title} has been deleted successfully`);
-
-        // Close modal
-        closeModal();
-
-        // 2025 React best practice: Update UI state immediately after successful mutation
-        if ((window as any).refreshLinksData) {
-          console.log(
-            '🗑️ DELETE MODAL: Triggering immediate links data refresh...'
-          );
-          (window as any).refreshLinksData();
-        }
-      } else {
-        throw new Error(result.error || 'Failed to delete link');
-      }
+      await deleteLink.mutateAsync(link.id);
+      // Success handling and UI updates are handled by the mutation hook
+      closeModal();
     } catch (error) {
-      console.error('Failed to delete link:', error);
-      toast.error('Failed to delete link. Please try again.');
+      // Error handling is managed by the mutation hook
+      console.error('Delete failed:', error);
     } finally {
-      setIsDeleting(false);
       setLoading(false);
     }
   };

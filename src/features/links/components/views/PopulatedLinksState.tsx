@@ -18,10 +18,10 @@ import {
   SelectValue,
 } from '@/components/ui/shadcn/select';
 import { toast } from 'sonner';
-import type { Link } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface PopulatedLinksStateProps {
-  links: Link[];
+  links: LinkWithStats[];
   isLoading?: boolean;
 }
 
@@ -168,28 +168,28 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
     // Memoize modal handlers to prevent unnecessary re-renders
     const handleDetailsModal = useCallback(
-      (link: Link) => {
+      (link: LinkWithStats) => {
         openDetailsModal(link);
       },
       [openDetailsModal]
     );
 
     const handleShareModal = useCallback(
-      (link: Link) => {
+      (link: LinkWithStats) => {
         openShareModal(link);
       },
       [openShareModal]
     );
 
     const handleSettingsModal = useCallback(
-      (link: Link) => {
+      (link: LinkWithStats) => {
         openSettingsModal(link);
       },
       [openSettingsModal]
     );
 
     const handleDeleteModal = useCallback(
-      (link: Link) => {
+      (link: LinkWithStats) => {
         openDeleteModal(link);
       },
       [openDeleteModal]

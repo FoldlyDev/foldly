@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { EmptyLinksState, PopulatedLinksState } from '@/features/links';
 import { ContentLoader } from '@/components/ui';
 import { LinksModalManager } from '../managers/LinksModalManager';
-import type { Link } from '@/lib/supabase/types';
+import { useFilteredLinksQuery } from '../../hooks/react-query/use-links-query';
+import { useUIStore } from '../../store/ui-store';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -25,68 +25,32 @@ export function LinksContainer({
   isLoading: propLoading = false,
   error: propError = null,
 }: LinksContainerProps) {
-  // Local state for links data
-  const [links, setLinks] = useState<Link[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Get UI state from store
+  const searchQuery = useUIStore(state => state.searchQuery);
+  const filterType = useUIStore(state => state.filterType);
+  const filterStatus = useUIStore(state => state.filterStatus);
+  const sortBy = useUIStore(state => state.sortBy);
+  const sortDirection = useUIStore(state => state.sortDirection);
 
-  // Load links function - PURE STATE UPDATE, NO PAGE REFRESH
-  const loadLinks = async () => {
-    try {
-      console.log('🚀 LinksContainer: PURE STATE UPDATE - Fetching links...');
-      setIsLoading(true);
+  // Use React Query for data fetching with client-side filtering
+  const {
+    data: links,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+  } = useFilteredLinksQuery({
+    searchQuery,
+    filterType,
+    filterStatus,
+    sortBy,
+    sortDirection,
+  });
 
-      const response = await fetch('/api/links', {
-        cache: 'no-cache', // Ensure fresh data
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch links');
-      }
-
-      const linksData = await response.json();
-
-      // CRITICAL: Pure state update - this triggers empty → populated transition
-      setLinks(linksData);
-      setError(null);
-
-      console.log(
-        '✅ LinksContainer: STATE UPDATED - Links count:',
-        linksData.length,
-        '(NO PAGE REFRESH)'
-      );
-    } catch (err) {
-      console.error('❌ LinksContainer: Error loading links:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load links');
-      setLinks([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Expose refresh function globally for proper state management
-  // Following 2025 React best practices for immediate UI updates after mutations
-  useEffect(() => {
-    // Store refresh function globally so modals can trigger immediate data refresh
-    (window as any).refreshLinksData = loadLinks;
-
-    // Cleanup on unmount
-    return () => {
-      delete (window as any).refreshLinksData;
-    };
-  }, [loadLinks]);
-
-  // Fetch links from API on mount
-  useEffect(() => {
-    loadLinks();
-  }, []); // Empty dependency array to run only on mount
-
-  // Use prop loading/error state if provided, otherwise use store state
+  // Use prop loading/error state if provided, otherwise use query state
   const isComponentLoading = propLoading || isLoading;
-  const componentError = propError || error;
+  const componentError = propError || (isError ? error?.message : null);
   const isEmpty = links.length === 0;
 
   if (isComponentLoading) {
@@ -119,8 +83,7 @@ export function LinksContainer({
             <button
               onClick={() => {
                 console.log('🔄 LinksContainer: Retrying fetch...');
-                setIsLoading(true);
-                loadLinks();
+                refetch();
               }}
               className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
             >
@@ -150,8 +113,8 @@ export function LinksContainer({
                   console.log(
                     '🔄 LinksContainer: Refreshing data (NO PAGE RELOAD)'
                   );
-                  // NO page reload - just refresh data
-                  loadLinks();
+                  // NO page reload - just refresh data with React Query
+                  refetch();
                 }}
               />
             </motion.div>

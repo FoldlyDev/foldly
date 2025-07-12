@@ -1,37 +1,25 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, Upload, Crown } from 'lucide-react';
+import { Eye, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/shadcn/switch';
 import { FileUpload } from '@/components/ui/file-upload';
-import { Card } from '@/components/ui/shadcn/card';
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from '@/components/ui/shadcn/avatar';
 
-// Use centralized types from the database schema
-type ValidationError = string;
 interface LinkBrandingFormData {
-  brandEnabled: boolean; // Updated to match database schema
-  brandColor: string; // Only one brand color as per database schema
-  logoUrl?: string; // Optional logo URL (not in store, handled separately)
+  brandEnabled: boolean;
+  brandColor: string;
+  logoUrl?: string;
+  logoFile?: File | null;
 }
-type FieldValidationErrors<T extends Record<string, any>> = Partial<
-  Record<keyof T, ValidationError>
->;
-// import { useLinksBrandingStore } from '../../hooks/use-links-composite'; // Disabled during refactoring
 
 export interface LinkBrandingSectionProps {
   readonly linkType: 'base' | 'topic';
   readonly username: string;
   readonly linkName: string;
   readonly description: string;
-  readonly errors?: Partial<
-    Record<keyof LinkBrandingFormData, ValidationError>
-  >;
+  readonly formData: LinkBrandingFormData;
+  readonly onDataChange: (updates: Partial<LinkBrandingFormData>) => void;
+  readonly errors?: Partial<Record<keyof LinkBrandingFormData, string>>;
   readonly isLoading?: boolean;
 }
 
@@ -40,33 +28,11 @@ export function LinkBrandingSection({
   username,
   linkName,
   description,
+  formData,
+  onDataChange,
   errors = {},
   isLoading = false,
 }: LinkBrandingSectionProps) {
-  // Log when description updates for debugging
-  React.useEffect(() => {
-    console.log('🎨 BRANDING: Description updated to:', description);
-  }, [description]);
-
-  // Temporary simple local state during refactoring
-  const [formData, setFormData] = React.useState<LinkBrandingFormData>({
-    brandEnabled: false,
-    brandColor: '#6c47ff',
-  });
-
-  const updateBrandingData = (updates: Partial<LinkBrandingFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
-  };
-
-  // Simplified context flags
-  const brandingContext = 'creation';
-  const isCreationContext = true;
-  const isSettingsContext = false;
-
-  // Store the actual file for FileUpload component and logo URL separately
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = React.useState<string>('');
-
   // Ensure controlled inputs by providing default values
   const brandColor = formData.brandColor || '#6c47ff';
 
@@ -74,22 +40,22 @@ export function LinkBrandingSection({
     const file = files[0];
     if (file) {
       // Store the file and create blob URL
-      setLogoFile(file);
       const newLogoUrl = URL.createObjectURL(file);
-      setLogoUrl(newLogoUrl);
-      console.log('🖼️ BRANDING: Logo file uploaded, creating URL:', newLogoUrl);
-      console.log('🖼️ BRANDING: Context:', brandingContext);
+      onDataChange({
+        logoFile: file,
+        logoUrl: newLogoUrl,
+      });
     } else {
       // Clear logo if no file selected
-      setLogoFile(null);
-      setLogoUrl('');
-      console.log('🖼️ BRANDING: Logo file cleared');
-      console.log('🖼️ BRANDING: Context:', brandingContext);
+      onDataChange({
+        logoFile: null,
+        logoUrl: '',
+      });
     }
   };
 
   // Convert logoFile to array for FileUpload component
-  const logoFiles: File[] = logoFile ? [logoFile] : [];
+  const logoFiles: File[] = formData.logoFile ? [formData.logoFile] : [];
 
   return (
     <div className='space-y-6'>
@@ -112,13 +78,7 @@ export function LinkBrandingSection({
           <Switch
             checked={formData.brandEnabled || false}
             onCheckedChange={checked => {
-              console.log(
-                '🎨 BRANDING: Toggle branding enabled:',
-                checked,
-                'Context:',
-                brandingContext
-              );
-              updateBrandingData({ brandEnabled: checked });
+              onDataChange({ brandEnabled: checked });
             }}
             disabled={isLoading}
             className='data-[state=unchecked]:bg-muted-foreground/20'
@@ -144,13 +104,7 @@ export function LinkBrandingSection({
                   type='color'
                   value={brandColor}
                   onChange={e => {
-                    console.log(
-                      '🎨 BRANDING: Brand color changed:',
-                      e.target.value,
-                      'Context:',
-                      brandingContext
-                    );
-                    updateBrandingData({
+                    onDataChange({
                       brandColor: e.target.value,
                     });
                   }}
@@ -161,13 +115,7 @@ export function LinkBrandingSection({
                   type='text'
                   value={brandColor}
                   onChange={e => {
-                    console.log(
-                      '🎨 BRANDING: Brand color changed (text):',
-                      e.target.value,
-                      'Context:',
-                      brandingContext
-                    );
-                    updateBrandingData({
+                    onDataChange({
                       brandColor: e.target.value,
                     });
                   }}
@@ -214,9 +162,9 @@ export function LinkBrandingSection({
               >
                 {/* Title with logo on the left if uploaded */}
                 <div className='flex items-center gap-3 mb-4'>
-                  {logoUrl && (
+                  {formData.logoUrl && (
                     <img
-                      src={logoUrl}
+                      src={formData.logoUrl}
                       alt='Logo'
                       className='w-6 h-6 rounded object-cover'
                     />
