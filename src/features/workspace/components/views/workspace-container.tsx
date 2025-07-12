@@ -9,6 +9,7 @@ import { WorkspaceHeader } from '../sections/workspace-header';
 import { AnalyticsCards } from '../sections/analytics-cards';
 import { QuickActions } from '../sections/quick-actions';
 import { EmptyState } from './empty-state';
+import { WorkspaceTreeView } from './workspace-tree-view';
 import { ContentLoader } from '@/components/ui';
 import type { DashboardOverview } from '@/features/analytics/types';
 
@@ -287,12 +288,15 @@ export function WorkspaceContainer({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.6 }}
               >
-                <EmptyState
+                {/* Temporarily commenting out empty state to test file tree system */}
+                {/* <EmptyState
                   type='dashboard'
                   onCreateLink={handleCreateBaseLink}
                   onLearnMore={() => router.push('/dashboard/links')}
-                />
-                {/* <WorkspaceOverview /> */}
+                /> */}
+
+                {/* Testing the file tree system */}
+                <WorkspaceTreeView />
               </motion.div>
             )}
           </div>

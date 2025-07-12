@@ -16,6 +16,7 @@ export {
   HomeContainer,
 } from './components/views/workspace-container';
 export { EmptyState } from './components/views/empty-state';
+export { WorkspaceTreeView } from './components/views/workspace-tree-view';
 
 // 📝 Types - TypeScript type definitions for workspace UI
 export type {
@@ -27,3 +28,6 @@ export type {
   WorkspaceEditForm,
   UseWorkspaceManagementOptions,
 } from './types/workspace-ui';
+
+// 📚 Lib - Actions, Query Keys, and Utilities
+export { workspaceQueryKeys, fetchWorkspaceTreeAction } from './lib';
