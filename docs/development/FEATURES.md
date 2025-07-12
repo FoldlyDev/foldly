@@ -113,6 +113,44 @@ Domains in development or testing phases:
 - **🏗️ Impact**: Enterprise-grade form validation with enhanced user experience
 - **📚 Documentation**: [LINK_VALIDATION_IMPLEMENTATION.md](./implementations/link-validation-system/LINK_VALIDATION_IMPLEMENTATION.md)
 
+#### **React Query Migration & Critical Fixes** (January 2025)
+
+- **📁 Location**: `src/features/links/hooks/react-query/`
+- **🎯 Objective**: Complete migration to React Query v5 with enterprise-grade caching and search fixes
+- **📊 Status**: ✅ **COMPLETED** - 100% migration complete with critical functionality fixes
+- **🏗️ Impact**: Modern state management, search functionality, base link pinning, and inactive links visibility
+- **📚 Documentation**: [REACT_QUERY_MIGRATION_IMPLEMENTATION.md](./implementations/react-query-migration/REACT_QUERY_MIGRATION_IMPLEMENTATION.md)
+
+##### **Sub-Features Completed**
+
+###### **Search Functionality Overhaul**
+
+- **🎯 Objective**: Fix broken search that caused page refreshes and empty states
+- **📊 Status**: ✅ **COMPLETED** - Dual query pattern with proper state management
+- **🏗️ Impact**: Smooth search experience without page refreshes, proper empty state handling
+- **🔧 Technical**: Separate `useLinksQuery` (unfiltered) and `useFilteredLinksQuery` (filtered) hooks
+
+###### **Base Link Pinning System**
+
+- **🎯 Objective**: Ensure base links always appear at the top of lists with smart search behavior
+- **📊 Status**: ✅ **COMPLETED** - Smart pinning with search integration
+- **🏗️ Impact**: Consistent UX with base links always visible and properly ordered
+- **🔧 Technical**: Enhanced `useMemo` filtering logic maintaining pinning through all operations
+
+###### **Inactive Links Visibility Fix**
+
+- **🎯 Objective**: Fix issue where inactive/paused links disappeared from UI
+- **📊 Status**: ✅ **COMPLETED** - Database query and cache invalidation fixes
+- **🏗️ Impact**: All links visible regardless of status, proper status filtering
+- **🔧 Technical**: Updated query defaults, enhanced cache key structure, type safety improvements
+
+###### **Query Caching Improvements**
+
+- **🎯 Objective**: Optimize React Query caching with proper invalidation strategies
+- **📊 Status**: ✅ **COMPLETED** - Enhanced cache differentiation and key structure
+- **🏗️ Impact**: Improved performance, reduced unnecessary re-fetching, better memory efficiency
+- **🔧 Technical**: Separate cache entries per `includeInactive` value, optimized stale time management
+
 ### **🔄 In Development**
 
 _No features currently in active development_
@@ -197,7 +235,8 @@ Executive and business stakeholder updates:
 docs/development/
 ├── FEATURES.md                           # This comprehensive hub
 ├── implementations/                      # Individual domain feature documentation
-│   ├── link-validation-system/          # Example completed domain feature
+│   ├── link-validation-system/          # Completed: Zod validation system
+│   ├── react-query-migration/           # Completed: React Query v5 migration & fixes
 │   │   ├── LINK_VALIDATION_IMPLEMENTATION.md
 │   │   ├── ARCHITECTURE_CHANGES.md
 │   │   └── USER_GUIDE.md

@@ -18,6 +18,7 @@ export interface LinksQueryFilters {
   filterStatus?: 'all' | 'active' | 'paused' | 'expired';
   sortBy?: LinkSortField;
   sortDirection?: 'asc' | 'desc';
+  includeInactive?: boolean;
 }
 
 export const linksQueryKeys = {

@@ -51,50 +51,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
       setViewMode,
     } = useUIStore();
 
-    // Memoize filtered links to prevent recalculation on every render
-    const filteredLinks = useMemo(() => {
-      return links.filter(link => {
-        // Search filter
-        if (
-          searchQuery &&
-          !link.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !link.slug.toLowerCase().includes(searchQuery.toLowerCase()) &&
-          !(
-            link.topic &&
-            link.topic.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-        ) {
-          return false;
-        }
-
-        // Type filter
-        if (filterType !== 'all' && link.linkType !== filterType) {
-          return false;
-        }
-
-        // Status filter
-        if (
-          filterStatus === 'active' &&
-          (!link.isActive ||
-            (link.expiresAt && new Date(link.expiresAt) < new Date()))
-        ) {
-          return false;
-        }
-        if (filterStatus === 'paused' && link.isActive) {
-          return false;
-        }
-        if (
-          filterStatus === 'expired' &&
-          (!link.expiresAt || new Date(link.expiresAt) >= new Date())
-        ) {
-          return false;
-        }
-
-        return true;
-      });
-    }, [links, searchQuery, filterType, filterStatus]);
-
-    // Memoize stats calculation
+    // Memoize stats calculation using the passed-in links (already filtered)
     const overviewData = useMemo(() => {
       const stats = {
         total: links.length,
@@ -195,7 +152,8 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
       [openDeleteModal]
     );
 
-    if (filteredLinks.length === 0 && searchQuery) {
+    // Show no results message if there are no links and there's a search query
+    if (links.length === 0 && searchQuery) {
       return (
         <div className='space-y-6'>
           <LinksOverviewCards data={overviewData} />
@@ -237,7 +195,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <div className='flex items-center gap-3'>
             <h2 className='text-xl font-semibold text-[var(--quaternary)]'>
-              Your Links ({filteredLinks.length})
+              Your Links ({links.length})
             </h2>
 
             {/* Filter Badges */}
@@ -366,7 +324,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
           >
-            {filteredLinks.map((link, index) => (
+            {links.map((link, index) => (
               <motion.div
                 key={link.id}
                 initial={{ opacity: 0, y: 20 }}

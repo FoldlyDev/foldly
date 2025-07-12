@@ -116,7 +116,7 @@ docs/
 - ✅ **Modern Stack**: React Query v5 + Server Actions + Zustand UI state
 - ✅ **Real-time Updates**: Instant UI updates without page refreshes
 - ✅ **Optimistic UX**: Immediate feedback with automatic rollback on errors
-- ✅ **Smart Caching**: 5-minute stale time, 10-minute garbage collection
+- ✅ **Smart Caching**: 5-minute stale time, 10-minute garbage collection with proper cache invalidation
 - ✅ **SSR Integration**: Prefetched data with proper hydration
 - ✅ **Type Safety**: End-to-end TypeScript with branded types
 
@@ -140,6 +140,40 @@ docs/
 - ✅ **Always Fresh**: Background refetching keeps data current
 - ✅ **Offline Support**: Cached data available during network issues
 - ✅ **Smooth Interactions**: No loading spinners for cached data
+
+#### **🎯 RECENT CRITICAL FIXES (January 2025)**
+
+##### **Search Functionality Overhaul**
+
+- ✅ **Issue Resolution**: Fixed search functionality that caused page refreshes and showed empty states
+- ✅ **Dual Query Pattern**: Implemented separate `useLinksQuery` (unfiltered) and `useFilteredLinksQuery` (filtered) hooks
+- ✅ **State Management**: Proper distinction between empty state (no links) vs filtered empty state (no search results)
+- ✅ **Performance**: Eliminated redundant filtering logic and improved query efficiency
+- ✅ **User Experience**: Smooth search without page refreshes, proper empty state handling
+
+##### **Base Link Pinning System**
+
+- ✅ **Smart Pinning**: Base links automatically pinned at top of lists in both grid and list modes
+- ✅ **Search Integration**: Base links remain pinned during search if they match search terms
+- ✅ **Filtering Logic**: Enhanced `useMemo` implementation for proper base link handling
+- ✅ **Sorting Maintenance**: Base link pinning preserved through all sorting operations
+- ✅ **Multi-View Support**: Consistent pinning behavior across grid and list view modes
+
+##### **Inactive Links Visibility Fix**
+
+- ✅ **Database Query Fix**: Updated `useLinksQuery` default to `includeInactive = true`
+- ✅ **Cache Invalidation**: Fixed query key structure to include `includeInactive` parameter
+- ✅ **Type Safety**: Added `includeInactive?: boolean` to `LinksQueryFilters` interface
+- ✅ **Persistence**: Inactive links now properly visible after page refresh
+- ✅ **Status Filtering**: Proper integration with client-side status filters (all/active/paused/expired)
+
+##### **Query Caching Improvements**
+
+- ✅ **Cache Differentiation**: Separate cache entries for different `includeInactive` values
+- ✅ **Key Structure**: Enhanced query key structure: `linksQueryKeys.list({ ...filters, includeInactive })`
+- ✅ **Stale Time Management**: Optimized 5-minute stale time with proper cache invalidation
+- ✅ **Memory Efficiency**: Proper garbage collection of unused query cache entries
+- ✅ **Performance**: Reduced unnecessary re-fetching while maintaining data freshness
 
 #### **🎯 RECENT MAJOR ACHIEVEMENTS (Database Integration - Phase 2 at 60%)**
 

@@ -6,6 +6,7 @@ import { ContentLoader } from '@/components/ui';
 import { LinksModalManager } from '../managers/LinksModalManager';
 import { useFilteredLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useUIStore } from '../../store/ui-store';
+import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -32,13 +33,22 @@ export function LinksContainer({
   const sortBy = useUIStore(state => state.sortBy);
   const sortDirection = useUIStore(state => state.sortDirection);
 
-  // Use React Query for data fetching with client-side filtering
+  // Get all links first (unfiltered) to determine if user has any links
   const {
-    data: links,
-    isLoading,
-    isError,
-    error,
-    refetch,
+    data: allLinks,
+    isLoading: allLinksLoading,
+    isError: allLinksError,
+    error: allLinksQueryError,
+    refetch: refetchAllLinks,
+  } = useLinksQuery();
+
+  // Get filtered links for display
+  const {
+    data: filteredLinks,
+    isLoading: filteredLoading,
+    isError: filteredError,
+    error: filteredQueryError,
+    refetch: refetchFiltered,
     isFetching,
   } = useFilteredLinksQuery({
     searchQuery,
@@ -49,9 +59,14 @@ export function LinksContainer({
   });
 
   // Use prop loading/error state if provided, otherwise use query state
-  const isComponentLoading = propLoading || isLoading;
-  const componentError = propError || (isError ? error?.message : null);
-  const isEmpty = links.length === 0;
+  const isComponentLoading = propLoading || allLinksLoading || filteredLoading;
+  const componentError =
+    propError ||
+    (allLinksError ? allLinksQueryError?.message : null) ||
+    (filteredError ? filteredQueryError?.message : null);
+
+  // Check if user has any links at all (before filtering)
+  const hasNoLinksAtAll = allLinks.length === 0;
 
   if (isComponentLoading) {
     return (
@@ -83,7 +98,8 @@ export function LinksContainer({
             <button
               onClick={() => {
                 console.log('🔄 LinksContainer: Retrying fetch...');
-                refetch();
+                refetchAllLinks();
+                refetchFiltered();
               }}
               className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
             >
@@ -95,14 +111,20 @@ export function LinksContainer({
     );
   }
 
-  console.log('📊 LinksContainer: Rendering with', links.length, 'links');
+  console.log(
+    '📊 LinksContainer: Rendering with',
+    allLinks.length,
+    'total links,',
+    filteredLinks.length,
+    'filtered links'
+  );
 
   return (
     <div className='min-h-screen bg-[var(--neutral-50)]'>
       <div className='home-container w-full mx-auto'>
         <div className='space-y-8'>
-          {/* Conditional rendering: Empty vs Populated state */}
-          {isEmpty ? (
+          {/* Only show empty state if user has no links at all */}
+          {hasNoLinksAtAll ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -114,12 +136,16 @@ export function LinksContainer({
                     '🔄 LinksContainer: Refreshing data (NO PAGE RELOAD)'
                   );
                   // NO page reload - just refresh data with React Query
-                  refetch();
+                  refetchAllLinks();
+                  refetchFiltered();
                 }}
               />
             </motion.div>
           ) : (
-            <PopulatedLinksState links={links} isLoading={isLoading} />
+            <PopulatedLinksState
+              links={filteredLinks}
+              isLoading={filteredLoading}
+            />
           )}
         </div>
 
