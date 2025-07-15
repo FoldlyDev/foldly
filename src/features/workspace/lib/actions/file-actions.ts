@@ -109,7 +109,7 @@ export async function deleteFileAction(
 }
 
 /**
- * Move a file to a different folder
+ * Move a file to a different folder with conflict resolution
  */
 export async function moveFileAction(
   fileId: DatabaseId,
@@ -123,11 +123,114 @@ export async function moveFileAction(
     }
 
     const fileService = new FileService();
+
+    // Get the file being moved to check its name
+    const fileResult = await fileService.getFileById(fileId);
+    if (!fileResult.success) {
+      return { success: false, error: 'File not found' };
+    }
+
+    const fileToMove = fileResult.data;
+    let finalFileName = fileToMove.fileName;
+
+    // Check for conflicts in target folder
+    if (targetFolderId) {
+      // Moving to a specific folder - check existing files in that folder
+      const existingFilesResult =
+        await fileService.getFilesByFolder(targetFolderId);
+      if (existingFilesResult.success) {
+        const existingFileNames = existingFilesResult.data
+          .filter(f => f.id !== fileId) // Exclude the file being moved
+          .map(f => f.fileName);
+
+        // Check if there's a conflict
+        if (existingFileNames.includes(fileToMove.fileName)) {
+          // Import the generateUniqueName function
+          const { generateUniqueName } = await import(
+            '@/features/files/utils/file-operations'
+          );
+
+          // Generate unique name to avoid conflict
+          finalFileName = generateUniqueName(
+            fileToMove.fileName,
+            existingFileNames
+          );
+
+          // Update file name if it changed
+          if (finalFileName !== fileToMove.fileName) {
+            const renameResult = await fileService.renameFile(
+              fileId,
+              finalFileName
+            );
+            if (!renameResult.success) {
+              return {
+                success: false,
+                error: `Failed to rename file: ${renameResult.error}`,
+              };
+            }
+          }
+        }
+      }
+    } else {
+      // Moving to root - check existing root files
+      // Note: This handles workspace root files
+      const { workspaceService } = await import('@/lib/services/workspace');
+      const workspace = await workspaceService.getWorkspaceByUserId(userId);
+      if (!workspace) {
+        return { success: false, error: 'Workspace not found' };
+      }
+
+      const existingRootFilesResult = await fileService.getRootFilesByWorkspace(
+        workspace.id
+      );
+      if (existingRootFilesResult.success) {
+        const existingFileNames = existingRootFilesResult.data
+          .filter(f => f.id !== fileId) // Exclude the file being moved
+          .map(f => f.fileName);
+
+        // Check if there's a conflict
+        if (existingFileNames.includes(fileToMove.fileName)) {
+          // Import the generateUniqueName function
+          const { generateUniqueName } = await import(
+            '@/features/files/utils/file-operations'
+          );
+
+          // Generate unique name to avoid conflict
+          finalFileName = generateUniqueName(
+            fileToMove.fileName,
+            existingFileNames
+          );
+
+          // Update file name if it changed
+          if (finalFileName !== fileToMove.fileName) {
+            const renameResult = await fileService.renameFile(
+              fileId,
+              finalFileName
+            );
+            if (!renameResult.success) {
+              return {
+                success: false,
+                error: `Failed to rename file: ${renameResult.error}`,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Now move the file (with potentially updated name)
     const result = await fileService.moveFile(fileId, targetFolderId);
 
     if (result.success) {
       // Don't revalidate path - React Query handles cache updates
-      return { success: true, data: result.data };
+      return {
+        success: true,
+        data: {
+          ...result.data,
+          renamedTo:
+            finalFileName !== fileToMove.fileName ? finalFileName : undefined,
+        },
+      };
     } else {
       return { success: false, error: result.error };
     }
@@ -201,7 +304,7 @@ export async function downloadFileAction(
 }
 
 /**
- * Upload a file to the workspace with quota validation
+ * Upload a file to the workspace with quota validation and auto-increment for duplicates
  */
 export async function uploadFileAction(
   file: File,
@@ -229,6 +332,42 @@ export async function uploadFileAction(
       };
     }
 
+    // Check for existing files in the target folder and auto-increment name if needed
+    let uniqueFileName = file.name;
+
+    if (folderId) {
+      // Get existing files in the folder
+      const existingFilesResult = await fileService.getFilesByFolder(folderId);
+      if (existingFilesResult.success) {
+        const existingFileNames = existingFilesResult.data.map(f => f.fileName);
+
+        // Import the generateUniqueName function
+        const { generateUniqueName } = await import(
+          '@/features/files/utils/file-operations'
+        );
+
+        // Generate unique name if duplicates exist
+        uniqueFileName = generateUniqueName(file.name, existingFileNames);
+      }
+    } else {
+      // For root files, check existing root files in workspace
+      const existingRootFilesResult =
+        await fileService.getRootFilesByWorkspace(workspaceId);
+      if (existingRootFilesResult.success) {
+        const existingFileNames = existingRootFilesResult.data.map(
+          f => f.fileName
+        );
+
+        // Import the generateUniqueName function
+        const { generateUniqueName } = await import(
+          '@/features/files/utils/file-operations'
+        );
+
+        // Generate unique name if duplicates exist
+        uniqueFileName = generateUniqueName(file.name, existingFileNames);
+      }
+    }
+
     // Determine upload path
     const uploadPath = folderId ? `folders/${folderId}` : 'workspace';
 
@@ -251,13 +390,13 @@ export async function uploadFileAction(
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
 
-    // Create database record with storage information
+    // Create database record with storage information using unique file name
     const fileData = {
-      fileName: file.name,
-      originalName: file.name,
+      fileName: uniqueFileName, // Use the unique name (auto-incremented if needed)
+      originalName: file.name, // Keep original name for reference
       fileSize: file.size,
       mimeType: file.type,
-      extension: file.name.split('.').pop() || '',
+      extension: uniqueFileName.split('.').pop() || '',
       userId,
       folderId: folderId || null,
       linkId: workspaceId, // Link to workspace
@@ -346,16 +485,62 @@ export async function uploadFileToLinkAction(
       };
     }
 
+    // Check for existing files in the target folder and auto-increment name if needed
+    let uniqueFileName = file.name;
+
+    if (folderId) {
+      // Get existing files in the folder
+      const existingFilesResult = await fileService.getFilesByFolder(folderId);
+      if (existingFilesResult.success) {
+        const existingFileNames = existingFilesResult.data.map(f => f.fileName);
+
+        // Import the generateUniqueName function
+        const { generateUniqueName } = await import(
+          '@/features/files/utils/file-operations'
+        );
+
+        // Generate unique name if duplicates exist
+        uniqueFileName = generateUniqueName(file.name, existingFileNames);
+      }
+    } else {
+      // For link root files, check existing root files for this link
+      const { db } = await import('@/lib/db/db');
+      const { files } = await import('@/lib/supabase/schemas');
+      const { and, isNull, eq } = await import('drizzle-orm');
+
+      const existingRootFilesResult = await db
+        .select()
+        .from(files)
+        .where(
+          and(
+            isNull(files.folderId), // No folder (root level)
+            eq(files.linkId, linkId) // Belongs to this link
+          )
+        );
+
+      if (existingRootFilesResult && existingRootFilesResult.length > 0) {
+        const existingFileNames = existingRootFilesResult.map(f => f.fileName);
+
+        // Import the generateUniqueName function
+        const { generateUniqueName } = await import(
+          '@/features/files/utils/file-operations'
+        );
+
+        // Generate unique name if duplicates exist
+        uniqueFileName = generateUniqueName(file.name, existingFileNames);
+      }
+    }
+
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
 
-    // Create database record with storage information
+    // Create database record with storage information using unique file name
     const fileData = {
-      fileName: file.name,
-      originalName: file.name,
+      fileName: uniqueFileName, // Use the unique name (auto-incremented if needed)
+      originalName: file.name, // Keep original name for reference
       fileSize: file.size,
       mimeType: file.type,
-      extension: file.name.split('.').pop() || '',
+      extension: uniqueFileName.split('.').pop() || '',
       userId,
       folderId: folderId || null,
       linkId, // Link to specific collection link

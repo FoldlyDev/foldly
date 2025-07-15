@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   createOnDropHandler,
   dragAndDropFeature,
@@ -10,7 +10,13 @@ import {
   syncDataLoaderFeature,
 } from '@headless-tree/core';
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
-import { FolderIcon, FolderOpenIcon, FileIcon } from 'lucide-react';
+import {
+  FolderIcon,
+  FolderOpenIcon,
+  FileIcon,
+  CheckSquare,
+  Square,
+} from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -25,13 +31,23 @@ import {
   VIRTUAL_ROOT_ID,
 } from '@/lib/utils/workspace-tree-utils';
 import { ContentLoader } from '@/components/ui';
+import { cn } from '@/lib/utils';
 import { workspaceQueryKeys } from '../../lib/query-keys';
-import { updateItemOrderAction, moveItemAction } from '../../lib/actions';
+import {
+  updateItemOrderAction,
+  moveItemAction,
+  batchMoveItemsAction,
+} from '../../lib/actions';
+import {
+  enhancedBatchMoveItemsAction,
+  enhancedBatchDeleteItemsAction,
+} from '../../lib/actions/enhanced-batch-actions';
+import { useTreeOperationStatus } from '../../hooks/use-tree-operation-status';
+import { TreeOperationOverlay } from '../loading/tree-operation-overlay';
 import {
   showWorkspaceNotification,
   showWorkspaceError,
 } from '@/features/notifications';
-import { WorkspaceTreeSelectionProvider } from '../providers/workspace-tree-selection-provider';
 
 interface Item {
   name: string;
@@ -41,8 +57,39 @@ interface Item {
 
 const indent = 20;
 
-function TreeContent({ workspaceData }: { workspaceData: any }) {
+function TreeContent({
+  workspaceData,
+  selectMode,
+}: {
+  workspaceData: any;
+  selectMode: {
+    isSelectMode: boolean;
+    selectedItems: string[];
+    selectedItemsCount: number;
+    toggleSelectMode: () => void;
+    enableSelectMode: () => void;
+    disableSelectMode: () => void;
+    toggleItemSelection: (itemId: string) => void;
+    clearSelection: () => void;
+    selectItem: (itemId: string) => void;
+    deselectItem: (itemId: string) => void;
+    isItemSelected: (itemId: string) => boolean;
+  };
+}) {
   const queryClient = useQueryClient();
+
+  // Operation status management
+  const {
+    operationState,
+    startOperation,
+    updateProgress,
+    setCompleting,
+    completeOperation,
+    failOperation,
+    resetOperation,
+    isOperationInProgress,
+    canInteract,
+  } = useTreeOperationStatus();
 
   // Convert database data to tree format
   const treeData = useMemo(() => {
@@ -179,6 +226,79 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
     },
   });
 
+  // Enhanced mutation for batch moving multiple items
+  const batchMoveItemsMutation = useMutation({
+    mutationFn: async ({
+      nodeIds,
+      targetId,
+    }: {
+      nodeIds: string[];
+      targetId: string;
+    }) => {
+      // Start operation tracking
+      startOperation('batch_move', nodeIds.length, 'Preparing batch move...');
+
+      try {
+        setCompleting('Finalizing batch move...');
+
+        const result = await enhancedBatchMoveItemsAction(
+          nodeIds,
+          targetId === VIRTUAL_ROOT_ID ? 'root' : targetId
+        );
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to batch move items');
+        }
+
+        completeOperation();
+        return result.data;
+      } catch (error) {
+        failOperation(error instanceof Error ? error.message : 'Unknown error');
+        throw error;
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate and refetch the workspace tree
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+
+      // Show success notification
+      const targetItem = items[variables.targetId];
+      const targetName =
+        variables.targetId === VIRTUAL_ROOT_ID
+          ? 'workspace root'
+          : targetItem?.name;
+
+      const itemCount = variables.nodeIds.length;
+      showWorkspaceNotification('items_reordered', {
+        itemName: `${itemCount} items`,
+        itemType: 'folder',
+        ...(targetName && { targetLocation: targetName }),
+      });
+    },
+    onError: (error, variables) => {
+      // Revert optimistic update
+      setItems(treeData);
+
+      // Show error notification
+      const targetItem = items[variables.targetId];
+      const targetName =
+        variables.targetId === VIRTUAL_ROOT_ID
+          ? 'workspace root'
+          : targetItem?.name;
+
+      const itemCount = variables.nodeIds.length;
+      showWorkspaceError(
+        'items_reordered',
+        {
+          itemName: `${itemCount} items`,
+          itemType: 'folder',
+          ...(targetName && { targetLocation: targetName }),
+        },
+        error instanceof Error ? error.message : 'Unknown error'
+      );
+    },
+  });
+
   // Memoize dataLoader to ensure it updates when items change
   const dataLoader = useMemo(
     () => ({
@@ -202,7 +322,7 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
   const tree = useTree<Item>({
     initialState: {
       expandedItems: [VIRTUAL_ROOT_ID],
-      selectedItems: [],
+      selectedItems: selectMode.isSelectMode ? selectMode.selectedItems : [],
     },
     indent,
     rootItemId: VIRTUAL_ROOT_ID,
@@ -213,10 +333,18 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
     },
     canReorder: true,
     onDrop: createOnDropHandler((parentItem, newChildrenIds) => {
+      // Prevent drops during operations
+      if (!canInteract) return;
+
       const parentId = parentItem.getId();
       const parentItemData = items[parentId];
 
       if (!parentItemData) return;
+
+      // Disable select mode on drag/drop
+      if (selectMode.isSelectMode) {
+        selectMode.disableSelectMode();
+      }
 
       // Optimistically update the UI first
       setItems(prevItems => {
@@ -239,12 +367,33 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
         // This is a reorder operation within the same parent
         updateOrderMutation.mutate({ parentId, newChildrenIds });
       } else {
-        // This is a move operation - find the moved item
-        const movedItemId = newChildrenIds.find(
+        // This is a move operation - find the moved item(s)
+        const movedItemIds = newChildrenIds.filter(
           id => !originalChildren.includes(id)
         );
-        if (movedItemId) {
-          moveItemMutation.mutate({ nodeId: movedItemId, targetId: parentId });
+
+        if (movedItemIds.length === 0) return;
+
+        // Check if this is a batch move (multiple selected items being moved)
+        const isBatchMove =
+          selectMode.selectedItems.length > 1 &&
+          movedItemIds.some(id => selectMode.selectedItems.includes(id));
+
+        if (isBatchMove) {
+          // Batch move all selected items
+          batchMoveItemsMutation.mutate({
+            nodeIds: selectMode.selectedItems,
+            targetId: parentId,
+          });
+        } else {
+          // Single item move
+          const movedItemId = movedItemIds[0];
+          if (movedItemId) {
+            moveItemMutation.mutate({
+              nodeId: movedItemId,
+              targetId: parentId,
+            });
+          }
         }
       }
     }),
@@ -258,66 +407,119 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
     ],
   });
 
+  // Sync select mode selections with tree state and handle clearing selections
+  useEffect(() => {
+    if (selectMode.isSelectMode) {
+      // When in select mode, sync the tree's selection with our select mode state
+      tree.setSelectedItems(selectMode.selectedItems);
+    } else {
+      // When not in select mode, clear tree selections
+      tree.setSelectedItems([]);
+    }
+  }, [tree, selectMode.isSelectMode, selectMode.selectedItems]);
+
   console.log('🌲 TreeContent: Tree initialized with items:', {
     itemsCount: Object.keys(items).length,
     treeItemsCount: tree.getItems().length,
   });
 
   return (
-    <WorkspaceTreeSelectionProvider tree={tree} items={items}>
-      <div className='flex h-full flex-col gap-2 *:first:grow'>
-        <Tree indent={indent} tree={tree}>
-          <AssistiveTreeDescription tree={tree} />
-          {tree.getItems().map(item => {
-            const itemData = item.getItemData();
-            const isFolder = !itemData.isFile;
+    <div className='flex h-full flex-col gap-2 *:first:grow'>
+      <Tree indent={indent} tree={tree}>
+        <AssistiveTreeDescription tree={tree} />
+        {tree.getItems().map(item => {
+          const itemData = item.getItemData();
+          const isFolder = !itemData.isFile;
+          const itemId = item.getId();
+          const showCheckboxes = selectMode.isSelectMode;
+          const isSelected = selectMode.isItemSelected(itemId);
 
-            return (
-              <TreeItem key={item.getId()} item={item}>
-                <TreeItemLabel>
-                  <span className='flex items-center gap-2'>
+          return (
+            <TreeItem key={item.getId()} item={item}>
+              <TreeItemLabel
+                className='before:bg-background relative before:absolute before:inset-x-0 before:-inset-y-0.5 before:-z-10'
+                onClick={e => {
+                  // Clear selection and exit select mode when item is clicked (but not when checkbox is clicked)
+                  if (selectMode.isSelectMode) {
+                    selectMode.disableSelectMode();
+                  }
+                }}
+              >
+                <div className='flex items-center gap-2 w-full'>
+                  {showCheckboxes && (
+                    <div
+                      className='flex-shrink-0 p-1 -m-1 rounded hover:bg-muted/50 transition-colors'
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectMode.toggleItemSelection(itemId);
+                      }}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className='text-blue-600 size-4 cursor-pointer' />
+                      ) : (
+                        <Square className='text-muted-foreground size-4 cursor-pointer hover:text-foreground transition-colors' />
+                      )}
+                    </div>
+                  )}
+                  <div className='flex items-center gap-2 flex-1 min-w-0'>
                     {isFolder ? (
                       item.isExpanded() ? (
-                        <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4' />
+                        <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
                       ) : (
-                        <FolderIcon className='text-muted-foreground pointer-events-none size-4' />
+                        <FolderIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
                       )
                     ) : (
-                      <FileIcon className='text-muted-foreground pointer-events-none size-4' />
+                      <FileIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
                     )}
-                    {item.getItemName()}
-                  </span>
-                </TreeItemLabel>
-              </TreeItem>
-            );
-          })}
-          <TreeDragLine />
-        </Tree>
+                    <span className='truncate'>{item.getItemName()}</span>
+                  </div>
+                </div>
+              </TreeItemLabel>
+            </TreeItem>
+          );
+        })}
+        <TreeDragLine />
+      </Tree>
 
-        <p
-          aria-live='polite'
-          role='region'
-          className='text-muted-foreground mt-2 text-xs'
-        >
-          Tree with multi-select and drag and drop ∙{' '}
-          <a
-            href='https://headless-tree.lukasbach.com'
-            className='hover:text-foreground underline'
-            target='_blank'
-            rel='noopener noreferrer'
-          >
-            API
-          </a>
-          {(updateOrderMutation.isPending || moveItemMutation.isPending) && (
-            <span className='ml-2 text-blue-600'>Updating...</span>
-          )}
-        </p>
-      </div>
-    </WorkspaceTreeSelectionProvider>
+      <p
+        aria-live='polite'
+        role='region'
+        className='text-muted-foreground mt-2 text-xs'
+      >
+        {(updateOrderMutation.isPending ||
+          moveItemMutation.isPending ||
+          batchMoveItemsMutation.isPending) && (
+          <span className='ml-2 text-blue-600'>Updating...</span>
+        )}
+      </p>
+
+      {/* Loading Overlay - Replaces tree during operations */}
+      <TreeOperationOverlay
+        operationState={operationState}
+        onCancel={resetOperation}
+      />
+    </div>
   );
 }
 
-export default function WorkspaceTree() {
+export default function WorkspaceTree({
+  selectMode,
+}: {
+  selectMode: {
+    isSelectMode: boolean;
+    selectedItems: string[];
+    selectedItemsCount: number;
+    toggleSelectMode: () => void;
+    enableSelectMode: () => void;
+    disableSelectMode: () => void;
+    toggleItemSelection: (itemId: string) => void;
+    clearSelection: () => void;
+    selectItem: (itemId: string) => void;
+    deselectItem: (itemId: string) => void;
+    isItemSelected: (itemId: string) => boolean;
+  };
+}) {
   const {
     data: workspaceData,
     isLoading,
@@ -388,5 +590,11 @@ export default function WorkspaceTree() {
   console.log('🔑 WorkspaceTree: Using treeContentKey:', treeContentKey);
 
   // Force TreeContent remount with key when data changes significantly
-  return <TreeContent key={treeContentKey} workspaceData={workspaceData} />;
+  return (
+    <TreeContent
+      key={treeContentKey}
+      workspaceData={workspaceData}
+      selectMode={selectMode}
+    />
+  );
 }

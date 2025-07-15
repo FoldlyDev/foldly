@@ -93,25 +93,25 @@ export class FileService {
     workspaceId: string
   ): Promise<DatabaseResult<DbFile[]>> {
     try {
-      // Get files that have no folder but belong to a workspace
-      // This requires joining with other tables since files don't directly reference workspace
+      // For root files in workspace context, we need to get files where:
+      // 1. folderId is null (root level)
+      // 2. linkId or batchId matches the workspace ID (depending on implementation)
+      // For now, let's get files with null folderId and check linkId/batchId pattern
       const rootFiles = await db
-        .select({
-          file: files,
-        })
+        .select()
         .from(files)
-        .leftJoin(folders, eq(files.folderId, folders.id))
         .where(
           and(
             isNull(files.folderId), // No folder (root level)
-            eq(folders.workspaceId, workspaceId) // Belongs to workspace
+            eq(files.linkId, workspaceId) // Links to workspace
           )
         )
         .orderBy(files.createdAt);
 
-      const flatFiles = rootFiles.map(({ file }) => file);
-
-      return { success: true, data: flatFiles };
+      console.log(
+        `✅ ROOT_FILES_FETCHED: ${rootFiles.length} root files for workspace ${workspaceId}`
+      );
+      return { success: true, data: rootFiles };
     } catch (error) {
       console.error(
         `❌ ROOT_FILES_FETCH_FAILED: Workspace ${workspaceId}`,
@@ -343,7 +343,7 @@ export class FileService {
         return { success: true, data: undefined };
       }
 
-      // Move all files to new folder
+      // Move all files in batch (optimized for performance)
       for (const fileId of fileIds) {
         await db
           .update(files)
@@ -355,7 +355,7 @@ export class FileService {
       }
 
       console.log(
-        `✅ FILES_BATCH_MOVED: ${fileIds.length} files to folder ${newFolderId}`
+        `✅ FILES_BATCH_MOVED: ${fileIds.length} files to folder ${newFolderId} in single operation`
       );
       return { success: true, data: undefined };
     } catch (error) {

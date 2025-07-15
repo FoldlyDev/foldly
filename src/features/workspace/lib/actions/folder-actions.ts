@@ -21,7 +21,7 @@ interface ActionResult<T> {
 // =============================================================================
 
 /**
- * Create a new folder
+ * Create a new folder with uniqueness validation
  */
 export async function createFolderAction(
   name: string,
@@ -34,6 +34,24 @@ export async function createFolderAction(
       return { success: false, error: 'Unauthorized' };
     }
 
+    // Basic validation
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return { success: false, error: 'Folder name cannot be empty' };
+    }
+    if (trimmedName.length > 255) {
+      return {
+        success: false,
+        error: 'Folder name is too long (max 255 characters)',
+      };
+    }
+    if (/[<>:"/\\|?*]/.test(trimmedName)) {
+      return {
+        success: false,
+        error: 'Folder name contains invalid characters',
+      };
+    }
+
     // Get user's workspace
     const workspace = await workspaceService.getWorkspaceByUserId(userId);
     if (!workspace) {
@@ -41,13 +59,51 @@ export async function createFolderAction(
     }
 
     const folderService = new FolderService();
+
+    // Check for duplicate folder names in the same parent
+    const existingFoldersResult = await folderService.getFoldersByParent(
+      parentId || null,
+      workspace.id
+    );
+
+    if (!existingFoldersResult.success) {
+      return { success: false, error: 'Failed to check existing folders' };
+    }
+
+    // Check if folder name already exists
+    const duplicateFolder = existingFoldersResult.data.find(
+      folder => folder.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+
+    if (duplicateFolder) {
+      return {
+        success: false,
+        error: `A folder named "${trimmedName}" already exists in this location`,
+      };
+    }
+
+    // Calculate proper path and depth
+    let folderPath = trimmedName;
+    let depth = 0;
+
+    if (parentId) {
+      const parentFolderResult = await folderService.getFolderById(parentId);
+      if (!parentFolderResult.success) {
+        return { success: false, error: 'Parent folder not found' };
+      }
+
+      const parentFolder = parentFolderResult.data;
+      folderPath = `${parentFolder.path}/${trimmedName}`;
+      depth = parentFolder.depth + 1;
+    }
+
     const result = await folderService.createFolder({
-      name,
+      name: trimmedName,
       parentFolderId: parentId,
       workspaceId: workspace.id,
       userId,
-      path: parentId ? `${parentId}/${name}` : name,
-      depth: 0, // TODO: Calculate proper depth
+      path: folderPath,
+      depth,
     });
 
     if (result.success) {

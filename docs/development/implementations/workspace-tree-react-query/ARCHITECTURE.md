@@ -27,6 +27,10 @@ This document outlines the architectural decisions and technical implementation 
 │  │   Loading       │  │   Error         │  │   Tree Content  │     │
 │  │   States        │  │   Handling      │  │   Rendering     │     │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
+│  │   Selection     │  │   Operation     │  │   Progress      │     │
+│  │   Mode          │  │   Overlay       │  │   Tracking      │     │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ User Actions
@@ -34,10 +38,14 @@ This document outlines the architectural decisions and technical implementation 
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      Business Logic Layer                          │
 ├─────────────────────────────────────────────────────────────────────┤
-│  Server Actions & Mutations                                         │
+│  Enhanced Server Actions & Mutations                               │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
-│  │   Move Item     │  │   Update Order  │  │   Optimistic    │     │
-│  │   Action        │  │   Action        │  │   Updates       │     │
+│  │   Batch Move    │  │   Batch Delete  │  │   Nested        │     │
+│  │   Operations    │  │   Operations    │  │   Management    │     │
+│  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
+│  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
+│  │   Progress      │  │   Update Order  │  │   Optimistic    │     │
+│  │   Callbacks     │  │   Action        │  │   Updates       │     │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
 └─────────────────────────────────────────────────────────────────────┘
                                     │
@@ -48,7 +56,8 @@ This document outlines the architectural decisions and technical implementation 
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │
 │  │   Files Table   │  │   Folders Table │  │   Workspace     │     │
-│  │                 │  │                 │  │   Table         │     │
+│  │   + Recursive   │  │   + Nested      │  │   Table         │     │
+│  │   Operations    │  │   Management    │  │                 │     │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘     │
 └─────────────────────────────────────────────────────────────────────┘
 ```

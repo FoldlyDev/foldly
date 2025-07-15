@@ -52,6 +52,73 @@ function DashboardLayout() {
 }
 ```
 
+### `TreeOperationOverlay`
+
+Advanced loading overlay component that replaces the tree interface during operations.
+
+```typescript
+function TreeOperationOverlay({
+  operationState: OperationState;
+  onCancel: () => void;
+}): JSX.Element;
+```
+
+#### Props
+
+- `operationState` (required): Current operation state with progress and status information
+- `onCancel` (required): Callback to cancel the current operation
+
+#### Features
+
+- **Complete UI Replacement**: Overlays the entire tree during operations
+- **Real-time Progress**: Animated progress bars with percentages
+- **Status-specific Design**: Different icons and colors for each operation stage
+- **Current Item Display**: Shows what item is currently being processed
+- **Error Handling**: Recovery options and error messages
+- **User Interaction Control**: Prevents clicks during operations
+
+#### States
+
+- **Analyzing**: Calculating total operations and nested content
+- **Processing**: Executing the actual operations with progress
+- **Completing**: Finalizing and cleanup operations
+- **Success**: Operation completed successfully
+- **Error**: Operation failed with recovery options
+
+#### Example
+
+```typescript
+import { TreeOperationOverlay } from '@/features/workspace/components/loading/tree-operation-overlay';
+import { useTreeOperationStatus } from '@/features/workspace/hooks/use-tree-operation-status';
+
+function WorkspaceTree() {
+  const {
+    operationState,
+    startOperation,
+    resetOperation,
+    isOperationInProgress
+  } = useTreeOperationStatus();
+
+  const handleBatchMove = async (items, target) => {
+    startOperation('batch_move', items.length, 'Preparing move operation...');
+    // ... operation logic
+  };
+
+  return (
+    <div className="workspace-tree">
+      {/* Regular tree content */}
+      <TreeContent />
+
+      {/* Operation overlay - shows when operations are running */}
+      <TreeOperationOverlay
+        operationState={operationState}
+        onCancel={resetOperation}
+      />
+    </div>
+  );
+}
+```
+
 ### `TreeContent`
 
 Internal component that renders the tree when data is available.
@@ -144,6 +211,122 @@ import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-r
 function WorkspaceProvider({ children }) {
   useWorkspaceRealtime(); // Set up real-time updates
   return <div>{children}</div>;
+}
+```
+
+### `useTreeOperationStatus`
+
+Hook for managing complex operation states with loading overlays and progress tracking.
+
+```typescript
+function useTreeOperationStatus(): {
+  operationState: OperationState;
+  startOperation: (type: string, totalItems: number, message: string) => void;
+  updateProgress: (current: number, message?: string) => void;
+  setCompleting: (message: string) => void;
+  completeOperation: () => void;
+  failOperation: (error: string) => void;
+  resetOperation: () => void;
+  isOperationInProgress: boolean;
+  canInteract: boolean;
+};
+```
+
+#### Features
+
+- Manages operation lifecycle from start to completion
+- Provides progress tracking with current/total counts
+- Controls user interaction during operations
+- Handles error states with recovery options
+
+#### Example
+
+```typescript
+import { useTreeOperationStatus } from '@/features/workspace/hooks/use-tree-operation-status';
+
+function WorkspaceComponent() {
+  const {
+    operationState,
+    startOperation,
+    updateProgress,
+    completeOperation,
+    isOperationInProgress,
+    canInteract,
+  } = useTreeOperationStatus();
+
+  const handleBatchDelete = async (items) => {
+    startOperation('batch_delete', items.length, 'Preparing to delete...');
+
+    for (let i = 0; i < items.length; i++) {
+      await deleteItem(items[i]);
+      updateProgress(i + 1, `Deleting ${items[i].name}...`);
+    }
+
+    completeOperation();
+  };
+
+  return (
+    <div>
+      {isOperationInProgress && <OperationOverlay state={operationState} />}
+      <button disabled={!canInteract} onClick={handleBatchDelete}>
+        Delete Items
+      </button>
+    </div>
+  );
+}
+```
+
+### `useTreeSelectionMode`
+
+Hook for managing multi-selection mode with checkbox interface.
+
+```typescript
+function useTreeSelectionMode(): {
+  isSelectMode: boolean;
+  selectedItems: string[];
+  selectedItemsCount: number;
+  toggleSelectMode: () => void;
+  enableSelectMode: () => void;
+  disableSelectMode: () => void;
+  toggleItemSelection: (itemId: string) => void;
+  clearSelection: () => void;
+  selectItem: (itemId: string) => void;
+  deselectItem: (itemId: string) => void;
+  isItemSelected: (itemId: string) => boolean;
+};
+```
+
+#### Features
+
+- Toggle between normal and selection modes
+- Track multiple selected items
+- Provide selection utilities and state management
+- Integrate with batch operations
+
+#### Example
+
+```typescript
+import { useTreeSelectionMode } from '@/features/workspace/hooks/use-tree-selection-mode';
+
+function WorkspaceTree() {
+  const selectMode = useTreeSelectionMode();
+
+  return (
+    <div>
+      <button onClick={selectMode.toggleSelectMode}>
+        {selectMode.isSelectMode ? 'Cancel' : 'Select Multiple'}
+      </button>
+
+      {selectMode.selectedItemsCount > 0 && (
+        <div>
+          {selectMode.selectedItemsCount} items selected
+          <button onClick={selectMode.clearSelection}>Clear</button>
+        </div>
+      )}
+
+      <TreeContent selectMode={selectMode} />
+    </div>
+  );
 }
 ```
 
@@ -283,6 +466,81 @@ if (result.success) {
 } else {
   console.error('Failed to move item:', result.error);
 }
+```
+
+### `enhancedBatchMoveItemsAction`
+
+Enhanced batch move operation with progress tracking and nested content handling.
+
+```typescript
+async function enhancedBatchMoveItemsAction(
+  nodeIds: string[],
+  targetId: string,
+  progressCallback?: (progress: ProgressInfo) => void
+): Promise<ActionResult<any>>;
+```
+
+#### Parameters
+
+- `nodeIds`: Array of item IDs to move
+- `targetId`: Destination parent ID ('root' for workspace root)
+- `progressCallback`: Optional callback for progress updates
+
+#### Features
+
+- Handles nested folder content automatically
+- Provides real-time progress updates
+- Calculates accurate total operation count
+- Reports detailed operation stages
+
+#### Example
+
+```typescript
+const result = await enhancedBatchMoveItemsAction(
+  ['folder-1', 'file-2', 'file-3'],
+  'folder-target',
+  progress => {
+    console.log(
+      `Progress: ${progress.current}/${progress.total} - ${progress.message}`
+    );
+  }
+);
+```
+
+### `enhancedBatchDeleteItemsAction`
+
+Enhanced batch delete operation with recursive nested content handling.
+
+```typescript
+async function enhancedBatchDeleteItemsAction(
+  nodeIds: string[],
+  progressCallback?: (progress: ProgressInfo) => void
+): Promise<ActionResult<any>>;
+```
+
+#### Parameters
+
+- `nodeIds`: Array of item IDs to delete
+- `progressCallback`: Optional callback for progress updates
+
+#### Features
+
+- Recursively deletes all nested content
+- Prevents orphaned files and folders
+- Provides progress tracking for large operations
+- Handles mixed file/folder selections
+
+#### Example
+
+```typescript
+const result = await enhancedBatchDeleteItemsAction(
+  ['folder-with-nested-content', 'standalone-file'],
+  progress => {
+    updateUI(
+      `Deleting ${progress.current}/${progress.total}: ${progress.message}`
+    );
+  }
+);
 ```
 
 ## Types

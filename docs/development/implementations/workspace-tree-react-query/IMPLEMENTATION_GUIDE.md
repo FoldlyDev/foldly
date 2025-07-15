@@ -437,7 +437,374 @@ const updateOrderMutation = useMutation({
 });
 ```
 
-### Step 7: Set Up Real-time Updates
+### Step 7: Implement Advanced Loading States
+
+Create the operation status hook for managing complex operations:
+
+```typescript
+// src/features/workspace/hooks/use-tree-operation-status.ts
+import { useState, useCallback } from 'react';
+
+export type OperationStatus =
+  | 'idle'
+  | 'analyzing'
+  | 'processing'
+  | 'completing'
+  | 'success'
+  | 'error';
+
+export interface OperationState {
+  status: OperationStatus;
+  type: string;
+  totalItems: number;
+  currentItem: number;
+  message: string;
+  error?: string;
+}
+
+export function useTreeOperationStatus() {
+  const [operationState, setOperationState] = useState<OperationState>({
+    status: 'idle',
+    type: '',
+    totalItems: 0,
+    currentItem: 0,
+    message: '',
+  });
+
+  const startOperation = useCallback(
+    (type: string, totalItems: number, message: string) => {
+      setOperationState({
+        status: 'analyzing',
+        type,
+        totalItems,
+        currentItem: 0,
+        message,
+      });
+    },
+    []
+  );
+
+  const updateProgress = useCallback((current: number, message?: string) => {
+    setOperationState(prev => ({
+      ...prev,
+      status: 'processing',
+      currentItem: current,
+      message: message || prev.message,
+    }));
+  }, []);
+
+  const setCompleting = useCallback((message: string) => {
+    setOperationState(prev => ({
+      ...prev,
+      status: 'completing',
+      message,
+    }));
+  }, []);
+
+  const completeOperation = useCallback(() => {
+    setOperationState(prev => ({
+      ...prev,
+      status: 'success',
+      message: 'Operation completed successfully',
+    }));
+
+    setTimeout(() => {
+      setOperationState({
+        status: 'idle',
+        type: '',
+        totalItems: 0,
+        currentItem: 0,
+        message: '',
+      });
+    }, 2000);
+  }, []);
+
+  const failOperation = useCallback((error: string) => {
+    setOperationState(prev => ({
+      ...prev,
+      status: 'error',
+      error,
+      message: 'Operation failed',
+    }));
+  }, []);
+
+  const resetOperation = useCallback(() => {
+    setOperationState({
+      status: 'idle',
+      type: '',
+      totalItems: 0,
+      currentItem: 0,
+      message: '',
+    });
+  }, []);
+
+  const isOperationInProgress = operationState.status !== 'idle';
+  const canInteract = operationState.status === 'idle';
+
+  return {
+    operationState,
+    startOperation,
+    updateProgress,
+    setCompleting,
+    completeOperation,
+    failOperation,
+    resetOperation,
+    isOperationInProgress,
+    canInteract,
+  };
+}
+```
+
+### Step 8: Create Selection Mode System
+
+Implement multi-selection functionality with checkboxes:
+
+```typescript
+// src/features/workspace/hooks/use-tree-selection-mode.ts
+import { useState, useCallback } from 'react';
+
+export function useTreeSelectionMode() {
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  const toggleSelectMode = useCallback(() => {
+    setIsSelectMode(prev => !prev);
+    if (isSelectMode) {
+      setSelectedItems([]);
+    }
+  }, [isSelectMode]);
+
+  const enableSelectMode = useCallback(() => {
+    setIsSelectMode(true);
+  }, []);
+
+  const disableSelectMode = useCallback(() => {
+    setIsSelectMode(false);
+    setSelectedItems([]);
+  }, []);
+
+  const toggleItemSelection = useCallback((itemId: string) => {
+    setSelectedItems(prev =>
+      prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedItems([]);
+  }, []);
+
+  const selectItem = useCallback((itemId: string) => {
+    setSelectedItems(prev =>
+      prev.includes(itemId) ? prev : [...prev, itemId]
+    );
+  }, []);
+
+  const deselectItem = useCallback((itemId: string) => {
+    setSelectedItems(prev => prev.filter(id => id !== itemId));
+  }, []);
+
+  const isItemSelected = useCallback(
+    (itemId: string) => {
+      return selectedItems.includes(itemId);
+    },
+    [selectedItems]
+  );
+
+  return {
+    isSelectMode,
+    selectedItems,
+    selectedItemsCount: selectedItems.length,
+    toggleSelectMode,
+    enableSelectMode,
+    disableSelectMode,
+    toggleItemSelection,
+    clearSelection,
+    selectItem,
+    deselectItem,
+    isItemSelected,
+  };
+}
+```
+
+### Step 9: Create Enhanced Batch Operations
+
+Implement advanced server actions with progress tracking:
+
+```typescript
+// src/features/workspace/lib/actions/enhanced-batch-actions.ts
+'use server';
+
+import { folderService } from '@/lib/services/shared/folder-service';
+import { fileService } from '@/lib/services/shared/file-service';
+
+export interface ProgressInfo {
+  current: number;
+  total: number;
+  message: string;
+}
+
+export async function enhancedBatchMoveItemsAction(
+  nodeIds: string[],
+  targetId: string,
+  progressCallback?: (progress: ProgressInfo) => void
+) {
+  try {
+    // Analyze operations needed
+    let totalOperations = 0;
+    const analysisResults = [];
+
+    for (const nodeId of nodeIds) {
+      const folderExists = await folderService.getFolderById(nodeId);
+      if (folderExists) {
+        const nestedFiles = await folderService.getNestedFiles(nodeId);
+        const nestedFolders = await folderService.getNestedFolders(nodeId);
+        totalOperations += 1 + nestedFiles.length + nestedFolders.length;
+        analysisResults.push({
+          id: nodeId,
+          type: 'folder',
+          nestedCount: nestedFiles.length + nestedFolders.length,
+        });
+      } else {
+        totalOperations += 1;
+        analysisResults.push({ id: nodeId, type: 'file', nestedCount: 0 });
+      }
+    }
+
+    progressCallback?.({
+      current: 0,
+      total: totalOperations,
+      message: `Analyzed ${totalOperations} operations to perform`,
+    });
+
+    // Execute operations
+    let currentOperation = 0;
+    for (const result of analysisResults) {
+      if (result.type === 'folder') {
+        await folderService.moveFolder(result.id, targetId);
+        currentOperation += 1 + result.nestedCount;
+      } else {
+        await fileService.moveFile(result.id, targetId);
+        currentOperation += 1;
+      }
+
+      progressCallback?.({
+        current: currentOperation,
+        total: totalOperations,
+        message: `Processing ${result.type}...`,
+      });
+    }
+
+    return { success: true, data: { totalOperations } };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Batch move failed',
+    };
+  }
+}
+```
+
+### Step 10: Create Operation Overlay Component
+
+Build the advanced loading interface:
+
+```typescript
+// src/features/workspace/components/loading/tree-operation-overlay.tsx
+import React from 'react';
+import { CheckCircle, AlertCircle, Loader2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { OperationState } from '../../hooks/use-tree-operation-status';
+
+interface TreeOperationOverlayProps {
+  operationState: OperationState;
+  onCancel: () => void;
+}
+
+export function TreeOperationOverlay({
+  operationState,
+  onCancel,
+}: TreeOperationOverlayProps) {
+  if (operationState.status === 'idle') {
+    return null;
+  }
+
+  const progressPercentage = operationState.totalItems > 0
+    ? (operationState.currentItem / operationState.totalItems) * 100
+    : 0;
+
+  const getStatusIcon = () => {
+    switch (operationState.status) {
+      case 'analyzing':
+      case 'processing':
+      case 'completing':
+        return <Loader2 className="h-6 w-6 animate-spin text-blue-600" />;
+      case 'success':
+        return <CheckCircle className="h-6 w-6 text-green-600" />;
+      case 'error':
+        return <AlertCircle className="h-6 w-6 text-red-600" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="bg-card border rounded-lg p-6 shadow-lg min-w-[320px] max-w-md w-full mx-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            {getStatusIcon()}
+            <div>
+              <h3 className="font-medium text-blue-600">
+                {operationState.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {operationState.status === 'error' ? operationState.error : operationState.message}
+              </p>
+            </div>
+          </div>
+
+          {operationState.status !== 'success' && operationState.status !== 'error' && (
+            <Button variant="ghost" size="sm" onClick={onCancel} className="h-8 w-8 p-0">
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {operationState.status !== 'error' && operationState.totalItems > 0 && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium">
+                {operationState.currentItem} / {operationState.totalItems}
+              </span>
+            </div>
+            <Progress value={progressPercentage} className="h-2" />
+            <p className="text-xs text-center text-muted-foreground">
+              {Math.round(progressPercentage)}% complete
+            </p>
+          </div>
+        )}
+
+        {operationState.status === 'error' && (
+          <div className="mt-4 flex gap-2">
+            <Button variant="outline" onClick={onCancel} className="flex-1">
+              Close
+            </Button>
+            <Button onClick={() => window.location.reload()} className="flex-1">
+              Retry
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### Step 11: Set Up Real-time Updates (Optional)
 
 Implement real-time synchronization:
 
