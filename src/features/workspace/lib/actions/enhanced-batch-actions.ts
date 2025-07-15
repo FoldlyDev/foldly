@@ -78,7 +78,7 @@ export async function enhancedBatchMoveItemsAction(
       );
 
     // Determine actual target ID
-    const actualTargetId = targetId === 'root' ? workspace.id : targetId;
+    const actualTargetId = targetId === 'root' ? null : targetId;
     let currentOperation = 0;
 
     console.log('🚚 Starting enhanced batch move:', {
@@ -99,7 +99,7 @@ export async function enhancedBatchMoveItemsAction(
 
       // Get existing files in target folder to check for conflicts
       let existingFileNames: string[] = [];
-      if (actualTargetId && actualTargetId !== workspace.id) {
+      if (actualTargetId) {
         // Moving to a specific folder
         const existingFilesResult =
           await fileService.getFilesByFolder(actualTargetId);
