@@ -14,3 +14,6 @@ export { UploadModal } from './modals/upload-modal';
 
 // Tree
 export { WorkspaceTree } from './tree/WorkspaceTree';
+
+// Providers
+export { WorkspaceTreeSelectionProvider } from './providers/workspace-tree-selection-provider';

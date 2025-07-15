@@ -31,6 +31,7 @@ import {
   showWorkspaceNotification,
   showWorkspaceError,
 } from '@/features/notifications';
+import { WorkspaceTreeSelectionProvider } from '../providers/workspace-tree-selection-provider';
 
 interface Item {
   name: string;
@@ -45,6 +46,12 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
 
   // Convert database data to tree format
   const treeData = useMemo(() => {
+    console.log('🔄 TreeContent: Creating treeData from workspaceData:', {
+      folders: workspaceData.folders?.length || 0,
+      files: workspaceData.files?.length || 0,
+      workspaceName: workspaceData.workspace?.name,
+    });
+
     return createWorkspaceTreeData(
       workspaceData.folders || [],
       workspaceData.files || [],
@@ -57,6 +64,11 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
 
   // Update items when treeData changes
   useEffect(() => {
+    console.log('🔄 TreeContent: treeData changed, updating items:', {
+      oldItemsCount: Object.keys(items).length,
+      newTreeDataCount: Object.keys(treeData).length,
+      newTreeData: treeData,
+    });
     setItems(treeData);
   }, [treeData]);
 
@@ -167,6 +179,25 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
     },
   });
 
+  // Memoize dataLoader to ensure it updates when items change
+  const dataLoader = useMemo(
+    () => ({
+      getItem: (itemId: string) => {
+        const item = items[itemId];
+        if (!item) {
+          console.warn(`Item with id "${itemId}" not found`);
+          return { name: 'Unknown', children: [], isFile: true };
+        }
+        return item;
+      },
+      getChildren: (itemId: string) => {
+        const item = items[itemId];
+        return item?.children ?? [];
+      },
+    }),
+    [items]
+  );
+
   // Only initialize tree after we have data
   const tree = useTree<Item>({
     initialState: {
@@ -217,20 +248,7 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
         }
       }
     }),
-    dataLoader: {
-      getItem: itemId => {
-        const item = items[itemId];
-        if (!item) {
-          console.warn(`Item with id "${itemId}" not found`);
-          return { name: 'Unknown', children: [], isFile: true };
-        }
-        return item;
-      },
-      getChildren: itemId => {
-        const item = items[itemId];
-        return item?.children ?? [];
-      },
-    },
+    dataLoader,
     features: [
       syncDataLoaderFeature,
       selectionFeature,
@@ -240,60 +258,94 @@ function TreeContent({ workspaceData }: { workspaceData: any }) {
     ],
   });
 
+  console.log('🌲 TreeContent: Tree initialized with items:', {
+    itemsCount: Object.keys(items).length,
+    treeItemsCount: tree.getItems().length,
+  });
+
   return (
-    <div className='flex h-full flex-col gap-2 *:first:grow'>
-      <Tree indent={indent} tree={tree}>
-        <AssistiveTreeDescription tree={tree} />
-        {tree.getItems().map(item => {
-          const itemData = item.getItemData();
-          const isFolder = !itemData.isFile;
+    <WorkspaceTreeSelectionProvider tree={tree} items={items}>
+      <div className='flex h-full flex-col gap-2 *:first:grow'>
+        <Tree indent={indent} tree={tree}>
+          <AssistiveTreeDescription tree={tree} />
+          {tree.getItems().map(item => {
+            const itemData = item.getItemData();
+            const isFolder = !itemData.isFile;
 
-          return (
-            <TreeItem key={item.getId()} item={item}>
-              <TreeItemLabel>
-                <span className='flex items-center gap-2'>
-                  {isFolder ? (
-                    item.isExpanded() ? (
-                      <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4' />
+            return (
+              <TreeItem key={item.getId()} item={item}>
+                <TreeItemLabel>
+                  <span className='flex items-center gap-2'>
+                    {isFolder ? (
+                      item.isExpanded() ? (
+                        <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4' />
+                      ) : (
+                        <FolderIcon className='text-muted-foreground pointer-events-none size-4' />
+                      )
                     ) : (
-                      <FolderIcon className='text-muted-foreground pointer-events-none size-4' />
-                    )
-                  ) : (
-                    <FileIcon className='text-muted-foreground pointer-events-none size-4' />
-                  )}
-                  {item.getItemName()}
-                </span>
-              </TreeItemLabel>
-            </TreeItem>
-          );
-        })}
-        <TreeDragLine />
-      </Tree>
+                      <FileIcon className='text-muted-foreground pointer-events-none size-4' />
+                    )}
+                    {item.getItemName()}
+                  </span>
+                </TreeItemLabel>
+              </TreeItem>
+            );
+          })}
+          <TreeDragLine />
+        </Tree>
 
-      <p
-        aria-live='polite'
-        role='region'
-        className='text-muted-foreground mt-2 text-xs'
-      >
-        Tree with multi-select and drag and drop ∙{' '}
-        <a
-          href='https://headless-tree.lukasbach.com'
-          className='hover:text-foreground underline'
-          target='_blank'
-          rel='noopener noreferrer'
+        <p
+          aria-live='polite'
+          role='region'
+          className='text-muted-foreground mt-2 text-xs'
         >
-          API
-        </a>
-        {(updateOrderMutation.isPending || moveItemMutation.isPending) && (
-          <span className='ml-2 text-blue-600'>Updating...</span>
-        )}
-      </p>
-    </div>
+          Tree with multi-select and drag and drop ∙{' '}
+          <a
+            href='https://headless-tree.lukasbach.com'
+            className='hover:text-foreground underline'
+            target='_blank'
+            rel='noopener noreferrer'
+          >
+            API
+          </a>
+          {(updateOrderMutation.isPending || moveItemMutation.isPending) && (
+            <span className='ml-2 text-blue-600'>Updating...</span>
+          )}
+        </p>
+      </div>
+    </WorkspaceTreeSelectionProvider>
   );
 }
 
 export default function WorkspaceTree() {
-  const { data: workspaceData, isLoading, error } = useWorkspaceTree();
+  const {
+    data: workspaceData,
+    isLoading,
+    error,
+    dataUpdatedAt,
+    isFetching,
+  } = useWorkspaceTree();
+
+  // Add debugging for query state
+  console.log('🌳 WorkspaceTree: Query state:', {
+    isLoading,
+    isFetching,
+    hasData: !!workspaceData,
+    dataUpdatedAt: new Date(dataUpdatedAt || 0).toISOString(),
+    foldersCount: workspaceData?.folders?.length || 0,
+    filesCount: workspaceData?.files?.length || 0,
+  });
+
+  // Create a stable key for TreeContent to force remount when data changes significantly
+  const treeContentKey = useMemo(() => {
+    if (!workspaceData) return 'empty';
+
+    const foldersCount = workspaceData.folders?.length || 0;
+    const filesCount = workspaceData.files?.length || 0;
+    const workspaceId = workspaceData.workspace?.id || 'unknown';
+
+    return `tree-${workspaceId}-${foldersCount}-${filesCount}`;
+  }, [workspaceData]);
 
   // Loading state
   if (isLoading) {
@@ -333,6 +385,8 @@ export default function WorkspaceTree() {
     );
   }
 
-  // Only render tree content when data is ready
-  return <TreeContent workspaceData={workspaceData} />;
+  console.log('🔑 WorkspaceTree: Using treeContentKey:', treeContentKey);
+
+  // Force TreeContent remount with key when data changes significantly
+  return <TreeContent key={treeContentKey} workspaceData={workspaceData} />;
 }
