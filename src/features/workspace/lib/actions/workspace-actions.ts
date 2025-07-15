@@ -75,7 +75,6 @@ export async function updateWorkspaceAction(
     if (result.success) {
       // Revalidate cache for any pages that depend on workspace data
       revalidatePath('/dashboard/workspace');
-      revalidatePath('/dashboard');
 
       return {
         success: true,

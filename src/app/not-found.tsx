@@ -48,7 +48,7 @@ export default function NotFound() {
 
           {isSignedIn && (
             <Link
-              href='/dashboard'
+              href='/dashboard/workspace'
               className='inline-flex items-center px-6 py-3 bg-white text-[#6c47ff] font-semibold rounded-lg border-2 border-[#6c47ff] hover:bg-[#6c47ff] hover:text-white transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105'
             >
               <svg

@@ -125,7 +125,7 @@ const HeroCTA: React.FC = () => {
 
   if (user) {
     return (
-      <Link href='/dashboard'>
+      <Link href='/dashboard/workspace'>
         <GradientButton className='hero-cta-button' variant='primary' size='lg'>
           Go to Dashboard
         </GradientButton>

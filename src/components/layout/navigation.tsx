@@ -47,7 +47,7 @@ export function Navigation() {
         {isSignedIn ? (
           // Signed in: Show dashboard button + user button
           <>
-            <Link href='/dashboard' className='no-underline'>
+            <Link href='/dashboard/workspace' className='no-underline'>
               <ActionButton
                 variant='default'
                 size='sm'
