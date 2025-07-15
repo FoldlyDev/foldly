@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserButton } from '@clerk/nextjs';
+import ClientOnlyUserButton from '@/components/ui/client-only-user-button';
 import { useNavigationContext } from '@/components/shared/dashboard-layout-wrapper';
 import {
   LayoutDashboard,
@@ -225,7 +225,7 @@ export function DashboardNavigation() {
               ${shouldExpand ? '' : 'justify-center'}
             `}
           >
-            <UserButton
+            <ClientOnlyUserButton
               appearance={{
                 elements: {
                   avatarBox: 'w-8 h-8',

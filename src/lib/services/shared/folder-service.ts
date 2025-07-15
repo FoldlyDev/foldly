@@ -33,6 +33,32 @@ export class FolderService {
   }
 
   /**
+   * Get all folders for a workspace ordered by sortOrder
+   */
+  async getFoldersByWorkspaceOrdered(
+    workspaceId: string
+  ): Promise<DatabaseResult<DbFolder[]>> {
+    try {
+      const workspaceFolders = await db
+        .select()
+        .from(folders)
+        .where(eq(folders.workspaceId, workspaceId))
+        .orderBy(folders.sortOrder, folders.path);
+
+      console.log(
+        `✅ FOLDERS_FETCHED_ORDERED: ${workspaceFolders.length} folders for workspace ${workspaceId}`
+      );
+      return { success: true, data: workspaceFolders };
+    } catch (error) {
+      console.error(
+        `❌ FOLDERS_FETCH_ORDERED_FAILED: Workspace ${workspaceId}`,
+        error
+      );
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
    * Get folder by ID
    */
   async getFolderById(folderId: string): Promise<DatabaseResult<DbFolder>> {
@@ -152,6 +178,129 @@ export class FolderService {
       };
     } catch (error) {
       console.error(`❌ FOLDER_STATS_FAILED: ${workspaceId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Rename folder (simplified updateFolder for just name changes)
+   */
+  async renameFolder(
+    folderId: string,
+    newName: string
+  ): Promise<DatabaseResult<DbFolder>> {
+    try {
+      // Get current folder to update path
+      const folderResult = await this.getFolderById(folderId);
+      if (!folderResult.success) {
+        return folderResult;
+      }
+
+      const currentFolder = folderResult.data;
+
+      // Calculate new path
+      const pathParts = currentFolder.path.split('/');
+      pathParts[pathParts.length - 1] = newName;
+      const newPath = pathParts.join('/');
+
+      const [updatedFolder] = await db
+        .update(folders)
+        .set({
+          name: newName,
+          path: newPath,
+          updatedAt: new Date(),
+        })
+        .where(eq(folders.id, folderId))
+        .returning();
+
+      if (!updatedFolder) {
+        return { success: false, error: 'Folder not found' };
+      }
+
+      console.log(`✅ FOLDER_RENAMED: ${folderId} to "${newName}"`);
+      return { success: true, data: updatedFolder };
+    } catch (error) {
+      console.error(`❌ FOLDER_RENAME_FAILED: ${folderId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Move folder to different parent
+   */
+  async moveFolder(
+    folderId: string,
+    newParentId: string | null
+  ): Promise<DatabaseResult<DbFolder>> {
+    try {
+      // Get current folder details
+      const folderResult = await this.getFolderById(folderId);
+      if (!folderResult.success) {
+        return folderResult;
+      }
+
+      const currentFolder = folderResult.data;
+      let newPath = currentFolder.name;
+      let newDepth = 0;
+
+      // Calculate new path and depth based on parent
+      if (newParentId) {
+        const parentResult = await this.getFolderById(newParentId);
+        if (!parentResult.success) {
+          return { success: false, error: 'Parent folder not found' };
+        }
+
+        const parentFolder = parentResult.data;
+        newPath = `${parentFolder.path}/${currentFolder.name}`;
+        newDepth = parentFolder.depth + 1;
+      }
+
+      const [movedFolder] = await db
+        .update(folders)
+        .set({
+          parentFolderId: newParentId,
+          path: newPath,
+          depth: newDepth,
+          updatedAt: new Date(),
+        })
+        .where(eq(folders.id, folderId))
+        .returning();
+
+      if (!movedFolder) {
+        return { success: false, error: 'Folder not found' };
+      }
+
+      console.log(`✅ FOLDER_MOVED: ${folderId} to parent ${newParentId}`);
+      return { success: true, data: movedFolder };
+    } catch (error) {
+      console.error(`❌ FOLDER_MOVE_FAILED: ${folderId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Batch delete multiple folders
+   */
+  async batchDeleteFolders(folderIds: string[]): Promise<DatabaseResult<void>> {
+    try {
+      if (folderIds.length === 0) {
+        return { success: true, data: undefined };
+      }
+
+      // Delete all files in these folders first
+      for (const folderId of folderIds) {
+        await db.delete(files).where(eq(files.folderId, folderId));
+      }
+
+      // Delete the folders
+      for (const folderId of folderIds) {
+        await db.delete(folders).where(eq(folders.id, folderId));
+      }
+
+      console.log(`✅ FOLDERS_BATCH_DELETED: ${folderIds.length} folders`);
+      return { success: true, data: undefined };
+    } catch (error) {
+      console.error(`❌ FOLDERS_BATCH_DELETE_FAILED:`, error);
       return { success: false, error: (error as Error).message };
     }
   }

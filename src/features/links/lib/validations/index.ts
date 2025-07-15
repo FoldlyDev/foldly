@@ -116,12 +116,5 @@ export {
 // RE-EXPORTS FOR BACKWARD COMPATIBILITY
 // =============================================================================
 
-/**
- * @deprecated Use createLinkFormSchema instead
- */
-export { createLinkFormSchema as createLinkSchema };
-
-/**
- * @deprecated Use generalSettingsSchema instead
- */
-export { generalSettingsSchema as settingsSchema };
+// Note: Temporarily removed deprecated re-exports to fix build issues
+// These should be added back once the webpack issue is resolved

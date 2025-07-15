@@ -68,6 +68,14 @@ export const links = pgTable(
     totalSize: bigint('total_size', { mode: 'number' }).default(0).notNull(),
     lastUploadAt: timestamp('last_upload_at', { withTimezone: true }),
 
+    // Storage Quota Management
+    storageUsed: bigint('storage_used', { mode: 'number' })
+      .default(0)
+      .notNull(),
+    storageLimit: bigint('storage_limit', { mode: 'number' })
+      .default(524288000)
+      .notNull(), // 500MB default per link
+
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()

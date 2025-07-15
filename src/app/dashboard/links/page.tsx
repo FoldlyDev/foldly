@@ -3,7 +3,7 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { LinksContainer } from '@/features/links';
 import { linksQueryKeys } from '@/features/links/lib/query-keys';
 import { fetchLinksAction } from '@/features/links/lib/actions/fetch';
-import { getQueryClient } from '@/lib/query-client';
+import { getQueryClient } from '@/lib/config/query-client';
 
 export const metadata: Metadata = {
   title: 'Links - Foldly',

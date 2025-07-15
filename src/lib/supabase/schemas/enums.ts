@@ -42,10 +42,10 @@ export const batchStatusEnum = pgEnum('batch_status', [
 /**
  * Subscription tier enumeration
  * Defines user subscription levels and feature access in the SaaS model
+ * MVP: Free, Pro, Business tiers only
  */
 export const subscriptionTierEnum = pgEnum('subscription_tier', [
   'free',
   'pro',
   'business',
-  'enterprise',
 ]);

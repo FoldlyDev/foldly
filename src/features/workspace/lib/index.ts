@@ -3,7 +3,10 @@
 // =============================================================================
 
 // Actions
-export { fetchWorkspaceTreeAction } from './actions/fetch-tree';
+export {
+  fetchWorkspaceTreeAction,
+  updateItemOrderAction,
+} from './actions/tree-actions';
 
 // Query Keys
 export { workspaceQueryKeys } from './query-keys';

@@ -17,24 +17,53 @@ export class FileService {
     workspaceId: string
   ): Promise<DatabaseResult<DbFile[]>> {
     try {
-      // Get files via the links relationship (files -> links -> workspaces)
+      // Get files that belong to a workspace through folders
       const workspaceFiles = await db
         .select({
           file: files,
         })
         .from(files)
-        .innerJoin(links, eq(files.linkId, links.id))
-        .where(eq(links.workspaceId, workspaceId))
+        .leftJoin(folders, eq(files.folderId, folders.id))
+        .where(eq(folders.workspaceId, workspaceId))
         .orderBy(files.createdAt);
 
       const flatFiles = workspaceFiles.map(({ file }) => file);
 
-      console.log(
-        `✅ FILES_FETCHED: ${flatFiles.length} files for workspace ${workspaceId}`
-      );
       return { success: true, data: flatFiles };
     } catch (error) {
-      console.error(`❌ FILES_FETCH_FAILED: Workspace ${workspaceId}`, error);
+      console.error(
+        `❌ FILES_BY_WORKSPACE_FETCH_FAILED: ${workspaceId}`,
+        error
+      );
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get all files for a workspace ordered by sortOrder
+   */
+  async getFilesByWorkspaceOrdered(
+    workspaceId: string
+  ): Promise<DatabaseResult<DbFile[]>> {
+    try {
+      // Get files that belong to a workspace through folders
+      const workspaceFiles = await db
+        .select({
+          file: files,
+        })
+        .from(files)
+        .leftJoin(folders, eq(files.folderId, folders.id))
+        .where(eq(folders.workspaceId, workspaceId))
+        .orderBy(files.fileName); // Files don't have sortOrder yet, so order by name
+
+      const flatFiles = workspaceFiles.map(({ file }) => file);
+
+      return { success: true, data: flatFiles };
+    } catch (error) {
+      console.error(
+        `❌ FILES_BY_WORKSPACE_ORDERED_FETCH_FAILED: ${workspaceId}`,
+        error
+      );
       return { success: false, error: (error as Error).message };
     }
   }
@@ -269,6 +298,150 @@ export class FileService {
       return { success: true, data: undefined };
     } catch (error) {
       console.error(`❌ FILE_DOWNLOAD_COUNT_UPDATE_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Rename file (simplified updateFile for just name changes)
+   */
+  async renameFile(
+    fileId: string,
+    newName: string
+  ): Promise<DatabaseResult<DbFile>> {
+    try {
+      const [updatedFile] = await db
+        .update(files)
+        .set({
+          fileName: newName,
+          updatedAt: new Date(),
+        })
+        .where(eq(files.id, fileId))
+        .returning();
+
+      if (!updatedFile) {
+        return { success: false, error: 'File not found' };
+      }
+
+      console.log(`✅ FILE_RENAMED: ${fileId} to "${newName}"`);
+      return { success: true, data: updatedFile };
+    } catch (error) {
+      console.error(`❌ FILE_RENAME_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Batch move multiple files to different folder
+   */
+  async batchMoveFiles(
+    fileIds: string[],
+    newFolderId: string | null
+  ): Promise<DatabaseResult<void>> {
+    try {
+      if (fileIds.length === 0) {
+        return { success: true, data: undefined };
+      }
+
+      // Move all files to new folder
+      for (const fileId of fileIds) {
+        await db
+          .update(files)
+          .set({
+            folderId: newFolderId,
+            updatedAt: new Date(),
+          })
+          .where(eq(files.id, fileId));
+      }
+
+      console.log(
+        `✅ FILES_BATCH_MOVED: ${fileIds.length} files to folder ${newFolderId}`
+      );
+      return { success: true, data: undefined };
+    } catch (error) {
+      console.error(`❌ FILES_BATCH_MOVE_FAILED:`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Batch delete multiple files
+   */
+  async batchDeleteFiles(fileIds: string[]): Promise<DatabaseResult<void>> {
+    try {
+      if (fileIds.length === 0) {
+        return { success: true, data: undefined };
+      }
+
+      // Delete all files
+      for (const fileId of fileIds) {
+        await db.delete(files).where(eq(files.id, fileId));
+      }
+
+      console.log(`✅ FILES_BATCH_DELETED: ${fileIds.length} files`);
+      return { success: true, data: undefined };
+    } catch (error) {
+      console.error(`❌ FILES_BATCH_DELETE_FAILED:`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Prepare file for download (increment count and return file data)
+   */
+  async prepareFileForDownload(
+    fileId: string
+  ): Promise<DatabaseResult<DbFile>> {
+    try {
+      // Get file data
+      const fileResult = await this.getFileById(fileId);
+      if (!fileResult.success) {
+        return fileResult;
+      }
+
+      // Increment download count
+      await this.incrementDownloadCount(fileId);
+
+      console.log(`✅ FILE_PREPARED_FOR_DOWNLOAD: ${fileId}`);
+      return { success: true, data: fileResult.data };
+    } catch (error) {
+      console.error(`❌ FILE_DOWNLOAD_PREPARE_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get file download info with metadata
+   */
+  async getFileDownloadInfo(fileId: string): Promise<
+    DatabaseResult<{
+      file: DbFile;
+      downloadUrl: string;
+      expiresAt: Date;
+    }>
+  > {
+    try {
+      const fileResult = await this.getFileById(fileId);
+      if (!fileResult.success) {
+        return fileResult;
+      }
+
+      const file = fileResult.data;
+
+      // Generate download URL (this would be implemented based on your storage provider)
+      const downloadUrl = `/api/files/${fileId}/download`;
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      return {
+        success: true,
+        data: {
+          file,
+          downloadUrl,
+          expiresAt,
+        },
+      };
+    } catch (error) {
+      console.error(`❌ FILE_DOWNLOAD_INFO_FAILED: ${fileId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }

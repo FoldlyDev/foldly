@@ -12,6 +12,9 @@ export const workspaceQueryKeys = {
   // Workspace settings
   settings: () => [...workspaceQueryKeys.all, 'settings'] as const,
 
+  // Workspace statistics
+  stats: () => [...workspaceQueryKeys.all, 'stats'] as const,
+
   // Workspace analytics
   analytics: () => [...workspaceQueryKeys.all, 'analytics'] as const,
 

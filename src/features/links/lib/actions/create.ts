@@ -11,7 +11,7 @@ import {
   createLinkActionSchema,
 } from '../validations';
 import type { LinkInsert, Link } from '@/lib/supabase/types/links';
-import { getWorkspaceByUserId } from '@/lib/actions/workspace-actions';
+import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
 
 /**
  * Create a new link

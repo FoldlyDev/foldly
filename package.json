@@ -24,9 +24,8 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.1",
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
+    "@headless-tree/core": "^0.0.0-20250630160730",
+    "@headless-tree/react": "^0.0.0-20250630160730",
     "@heroui/react": "^2.7.11",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
