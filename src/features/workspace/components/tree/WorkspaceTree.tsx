@@ -4,8 +4,10 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   createOnDropHandler,
   dragAndDropFeature,
+  expandAllFeature,
   hotkeysCoreFeature,
   keyboardDragAndDropFeature,
+  searchFeature,
   selectionFeature,
   syncDataLoaderFeature,
 } from '@headless-tree/core';
@@ -31,7 +33,6 @@ import {
   VIRTUAL_ROOT_ID,
 } from '@/lib/utils/workspace-tree-utils';
 import { ContentLoader } from '@/components/ui';
-import { cn } from '@/lib/utils';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import {
   updateItemOrderAction,
@@ -60,6 +61,8 @@ const indent = 20;
 function TreeContent({
   workspaceData,
   selectMode,
+  onTreeReady,
+  searchQuery,
 }: {
   workspaceData: any;
   selectMode: {
@@ -75,6 +78,8 @@ function TreeContent({
     deselectItem: (itemId: string) => void;
     isItemSelected: (itemId: string) => boolean;
   };
+  onTreeReady?: (tree: any) => void;
+  searchQuery?: string;
 }) {
   const queryClient = useQueryClient();
 
@@ -93,12 +98,6 @@ function TreeContent({
 
   // Convert database data to tree format
   const treeData = useMemo(() => {
-    console.log('🔄 TreeContent: Creating treeData from workspaceData:', {
-      folders: workspaceData.folders?.length || 0,
-      files: workspaceData.files?.length || 0,
-      workspaceName: workspaceData.workspace?.name,
-    });
-
     return createWorkspaceTreeData(
       workspaceData.folders || [],
       workspaceData.files || [],
@@ -111,13 +110,11 @@ function TreeContent({
 
   // Update items when treeData changes
   useEffect(() => {
-    console.log('🔄 TreeContent: treeData changed, updating items:', {
-      oldItemsCount: Object.keys(items).length,
-      newTreeDataCount: Object.keys(treeData).length,
-      newTreeData: treeData,
-    });
     setItems(treeData);
   }, [treeData]);
+
+  // Store initial expanded items to reset when search is cleared
+  const initialExpandedItems = [VIRTUAL_ROOT_ID];
 
   // Mutation for updating item order (reordering within same parent)
   const updateOrderMutation = useMutation({
@@ -305,7 +302,6 @@ function TreeContent({
       getItem: (itemId: string) => {
         const item = items[itemId];
         if (!item) {
-          console.warn(`Item with id "${itemId}" not found`);
           return { name: 'Unknown', children: [], isFile: true };
         }
         return item;
@@ -318,12 +314,16 @@ function TreeContent({
     [items]
   );
 
+  // Tree state management
+  const [treeState, setTreeState] = useState<any>({
+    expandedItems: [VIRTUAL_ROOT_ID],
+    selectedItems: selectMode.isSelectMode ? selectMode.selectedItems : [],
+  });
+
   // Only initialize tree after we have data
   const tree = useTree<Item>({
-    initialState: {
-      expandedItems: [VIRTUAL_ROOT_ID],
-      selectedItems: selectMode.isSelectMode ? selectMode.selectedItems : [],
-    },
+    state: treeState,
+    setState: setTreeState,
     indent,
     rootItemId: VIRTUAL_ROOT_ID,
     getItemName: item => item.getItemData().name,
@@ -404,8 +404,23 @@ function TreeContent({
       hotkeysCoreFeature,
       dragAndDropFeature,
       keyboardDragAndDropFeature,
+      expandAllFeature,
+      searchFeature,
     ],
   });
+
+  // Track if tree is ready
+  const [isTreeReady, setIsTreeReady] = useState(false);
+
+  // Notify parent when tree is ready
+  useEffect(() => {
+    if (tree && tree.getItems && typeof tree.getItems === 'function') {
+      setIsTreeReady(true);
+      if (onTreeReady) {
+        onTreeReady(tree);
+      }
+    }
+  }, [tree, onTreeReady]);
 
   // Sync select mode selections with tree state and handle clearing selections
   useEffect(() => {
@@ -418,67 +433,117 @@ function TreeContent({
     }
   }, [tree, selectMode.isSelectMode, selectMode.selectedItems]);
 
-  console.log('🌲 TreeContent: Tree initialized with items:', {
-    itemsCount: Object.keys(items).length,
-    treeItemsCount: tree.getItems().length,
-  });
+  // Handle search using tree's built-in search feature
+  useEffect(() => {
+    if (!isTreeReady || !tree) {
+      return;
+    }
+
+    // Use the tree's search feature directly
+    const searchProps = tree.getSearchInputElementProps();
+    if (searchProps.onChange) {
+      const syntheticEvent = {
+        target: { value: searchQuery || '' },
+      } as React.ChangeEvent<HTMLInputElement>;
+      searchProps.onChange(syntheticEvent);
+    }
+
+    if (searchQuery && searchQuery.length > 0) {
+      // Expand all items when searching
+      tree.expandAll();
+    } else {
+      // Reset to initial expanded state when search is cleared
+      tree.collapseAll();
+      initialExpandedItems.forEach(id => {
+        const item = tree.getItems().find(i => i.getId() === id);
+        if (item) {
+          item.expand();
+        }
+      });
+    }
+  }, [searchQuery, isTreeReady, tree]);
 
   return (
     <div className='flex h-full flex-col gap-2 *:first:grow'>
       <Tree indent={indent} tree={tree}>
         <AssistiveTreeDescription tree={tree} />
-        {tree.getItems().map(item => {
-          const itemData = item.getItemData();
-          const isFolder = !itemData.isFile;
-          const itemId = item.getId();
-          const showCheckboxes = selectMode.isSelectMode;
-          const isSelected = selectMode.isItemSelected(itemId);
+        {(() => {
+          const visibleItems = tree
+            .getItems()
+            .filter(item => (searchQuery ? item.isMatchingSearch() : true));
 
-          return (
-            <TreeItem key={item.getId()} item={item}>
-              <TreeItemLabel
-                className='before:bg-background relative before:absolute before:inset-x-0 before:-inset-y-0.5 before:-z-10'
-                onClick={e => {
-                  // Clear selection and exit select mode when item is clicked (but not when checkbox is clicked)
-                  if (selectMode.isSelectMode) {
-                    selectMode.disableSelectMode();
-                  }
-                }}
-              >
-                <div className='flex items-center gap-2 w-full'>
-                  {showCheckboxes && (
-                    <div
-                      className='flex-shrink-0 p-1 -m-1 rounded hover:bg-muted/50 transition-colors'
-                      onClick={e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        selectMode.toggleItemSelection(itemId);
-                      }}
-                    >
-                      {isSelected ? (
-                        <CheckSquare className='text-blue-600 size-4 cursor-pointer' />
-                      ) : (
-                        <Square className='text-muted-foreground size-4 cursor-pointer hover:text-foreground transition-colors' />
+          if (searchQuery && visibleItems.length === 0) {
+            return (
+              <p className='px-3 py-4 text-center text-sm text-muted-foreground'>
+                No items found for "{searchQuery}"
+              </p>
+            );
+          }
+
+          return tree
+            .getItems()
+            .map(item => {
+              const itemData = item.getItemData();
+              const isFolder = !itemData.isFile;
+              const itemId = item.getId();
+              const showCheckboxes = selectMode.isSelectMode;
+              const isSelected = selectMode.isItemSelected(itemId);
+              const isMatchingSearch = searchQuery
+                ? item.isMatchingSearch()
+                : true;
+
+              // Skip rendering items that don't match search
+              if (!isMatchingSearch && searchQuery) {
+                return null;
+              }
+
+              return (
+                <TreeItem key={item.getId()} item={item}>
+                  <TreeItemLabel
+                    className='before:bg-background relative before:absolute before:inset-x-0 before:-inset-y-0.5 before:-z-10'
+                    onClick={e => {
+                      // Clear selection and exit select mode when item is clicked (but not when checkbox is clicked)
+                      if (selectMode.isSelectMode) {
+                        selectMode.disableSelectMode();
+                      }
+                    }}
+                  >
+                    <div className='flex items-center gap-2 w-full'>
+                      {showCheckboxes && (
+                        <div
+                          className='flex-shrink-0 p-1 -m-1 rounded hover:bg-muted/50 transition-colors'
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectMode.toggleItemSelection(itemId);
+                          }}
+                        >
+                          {isSelected ? (
+                            <CheckSquare className='text-blue-600 size-4 cursor-pointer' />
+                          ) : (
+                            <Square className='text-muted-foreground size-4 cursor-pointer hover:text-foreground transition-colors' />
+                          )}
+                        </div>
                       )}
+                      <div className='flex items-center gap-2 flex-1 min-w-0'>
+                        {isFolder ? (
+                          item.isExpanded() ? (
+                            <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
+                          ) : (
+                            <FolderIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
+                          )
+                        ) : (
+                          <FileIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
+                        )}
+                        <span className='truncate'>{item.getItemName()}</span>
+                      </div>
                     </div>
-                  )}
-                  <div className='flex items-center gap-2 flex-1 min-w-0'>
-                    {isFolder ? (
-                      item.isExpanded() ? (
-                        <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                      ) : (
-                        <FolderIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                      )
-                    ) : (
-                      <FileIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                    )}
-                    <span className='truncate'>{item.getItemName()}</span>
-                  </div>
-                </div>
-              </TreeItemLabel>
-            </TreeItem>
-          );
-        })}
+                  </TreeItemLabel>
+                </TreeItem>
+              );
+            })
+            .filter(Boolean);
+        })()}
         <TreeDragLine />
       </Tree>
 
@@ -505,6 +570,8 @@ function TreeContent({
 
 export default function WorkspaceTree({
   selectMode,
+  onTreeReady,
+  searchQuery,
 }: {
   selectMode: {
     isSelectMode: boolean;
@@ -519,24 +586,10 @@ export default function WorkspaceTree({
     deselectItem: (itemId: string) => void;
     isItemSelected: (itemId: string) => boolean;
   };
+  onTreeReady?: (tree: any) => void;
+  searchQuery?: string;
 }) {
-  const {
-    data: workspaceData,
-    isLoading,
-    error,
-    dataUpdatedAt,
-    isFetching,
-  } = useWorkspaceTree();
-
-  // Add debugging for query state
-  console.log('🌳 WorkspaceTree: Query state:', {
-    isLoading,
-    isFetching,
-    hasData: !!workspaceData,
-    dataUpdatedAt: new Date(dataUpdatedAt || 0).toISOString(),
-    foldersCount: workspaceData?.folders?.length || 0,
-    filesCount: workspaceData?.files?.length || 0,
-  });
+  const { data: workspaceData, isLoading, error } = useWorkspaceTree();
 
   // Create a stable key for TreeContent to force remount when data changes significantly
   const treeContentKey = useMemo(() => {
@@ -587,14 +640,14 @@ export default function WorkspaceTree({
     );
   }
 
-  console.log('🔑 WorkspaceTree: Using treeContentKey:', treeContentKey);
-
   // Force TreeContent remount with key when data changes significantly
   return (
     <TreeContent
       key={treeContentKey}
       workspaceData={workspaceData}
       selectMode={selectMode}
+      {...(onTreeReady && { onTreeReady })}
+      {...(searchQuery && { searchQuery })}
     />
   );
 }

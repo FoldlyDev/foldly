@@ -12,6 +12,8 @@ import {
   Filter,
   MoreVertical,
   Minimize2,
+  Maximize2,
+  X,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,11 +35,17 @@ import { MiniActionsToolbar } from './mini-actions-toolbar';
 interface WorkspaceToolbarProps {
   className?: string;
   selectMode: ReturnType<typeof useSelectMode>;
+  treeInstance?: any;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
 }
 
 export function WorkspaceToolbar({
   className = '',
   selectMode,
+  treeInstance,
+  searchQuery = '',
+  setSearchQuery,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -47,8 +55,6 @@ export function WorkspaceToolbar({
   const treeSelection = useWorkspaceTreeSelectionSafe();
 
   const {
-    searchQuery,
-    setSearchQuery,
     filterBy,
     setFilterBy,
     sortBy,
@@ -58,10 +64,24 @@ export function WorkspaceToolbar({
     openUploadModal,
   } = useWorkspaceUI();
 
-  // Collapse all functionality is now handled by the new WorkspaceTree component
+  // Collapse all functionality using tree instance
   const handleCollapseAll = () => {
-    // This will be handled by the new WorkspaceTree component's built-in functionality
-    toast.success('All folders collapsed');
+    if (treeInstance && treeInstance.collapseAll) {
+      treeInstance.collapseAll();
+      toast.success('All folders collapsed');
+    } else {
+      toast.error('Tree not ready yet');
+    }
+  };
+
+  // Expand all functionality using tree instance
+  const handleExpandAll = () => {
+    if (treeInstance && treeInstance.expandAll) {
+      treeInstance.expandAll();
+      toast.success('All folders expanded');
+    } else {
+      toast.error('Tree not ready yet');
+    }
   };
 
   // Create folder mutation with smart parent detection
@@ -282,11 +302,24 @@ export function WorkspaceToolbar({
               </Button>
 
               <Button
+                onClick={handleExpandAll}
+                size='sm'
+                variant='ghost'
+                className='flex items-center gap-2'
+                disabled={!treeInstance}
+                title='Expand all folders'
+              >
+                <Maximize2 className='w-4 h-4' />
+                Expand All
+              </Button>
+
+              <Button
                 onClick={handleCollapseAll}
                 size='sm'
                 variant='ghost'
                 className='flex items-center gap-2'
-                disabled={false}
+                disabled={!treeInstance}
+                title='Collapse all folders'
               >
                 <Minimize2 className='w-4 h-4' />
                 Collapse All
@@ -302,10 +335,19 @@ export function WorkspaceToolbar({
             <Search className='w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--neutral-500)]' />
             <Input
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery?.(e.target.value)}
               placeholder='Search files...'
-              className='pl-9 w-64'
+              className='pl-9 pr-9 w-64'
             />
+            {searchQuery && (
+              <button
+                className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-muted rounded-sm transition-colors'
+                onClick={() => setSearchQuery?.('')}
+                aria-label='Clear search'
+              >
+                <X className='w-4 h-4 text-[var(--neutral-500)]' />
+              </button>
+            )}
           </div>
 
           {/* Filter dropdown */}
