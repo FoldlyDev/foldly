@@ -1034,8 +1034,93 @@ useEffect(() => {
 }, []);
 ```
 
+### Issue 4: Filter State Not Updating Tree UI
+
+**Problem**: Filter dropdown changes don't trigger tree UI updates
+**Solution**: Ensure filter state is properly shared between components
+
+The issue occurs when `WorkspaceToolbar` and `WorkspaceContainer` create separate instances of the `useWorkspaceUI` hook:
+
+```typescript
+// ❌ Problem: Each component has its own state instance
+// WorkspaceContainer.tsx
+const workspaceUI = useWorkspaceUI();
+
+// WorkspaceToolbar.tsx
+const { filterBy, setFilterBy } = useWorkspaceUI();
+```
+
+**Fix**: Pass filter state from parent to child as props:
+
+```typescript
+// ✅ Solution: Share state via props
+// WorkspaceContainer.tsx
+const workspaceUI = useWorkspaceUI();
+
+<WorkspaceToolbar
+  filterBy={workspaceUI.filterBy}
+  setFilterBy={workspaceUI.setFilterBy}
+  sortBy={workspaceUI.sortBy}
+  setSortBy={workspaceUI.setSortBy}
+  sortOrder={workspaceUI.sortOrder}
+  setSortOrder={workspaceUI.setSortOrder}
+/>
+
+<WorkspaceTree
+  filterBy={workspaceUI.filterBy}
+  sortBy={workspaceUI.sortBy}
+  sortOrder={workspaceUI.sortOrder}
+/>
+```
+
+**Implementation Details**:
+
+1. **Update Toolbar Props Interface**:
+
+```typescript
+interface WorkspaceToolbarProps {
+  filterBy?: 'all' | 'files' | 'folders';
+  setFilterBy?: (filter: 'all' | 'files' | 'folders') => void;
+  sortBy?: 'name' | 'date' | 'size';
+  setSortBy?: (sort: 'name' | 'date' | 'size') => void;
+  sortOrder?: 'asc' | 'desc';
+  setSortOrder?: (order: 'asc' | 'desc') => void;
+}
+```
+
+2. **Remove Hook from Toolbar**:
+
+```typescript
+// Remove this line from WorkspaceToolbar
+const { filterBy, setFilterBy } = useWorkspaceUI();
+```
+
+3. **Update Event Handlers**:
+
+```typescript
+// Use optional chaining for prop functions
+<DropdownMenuItem onClick={() => setFilterBy?.('all')}>
+  All Items
+</DropdownMenuItem>
+```
+
+4. **Force Tree Re-render on Filter Change**:
+
+```typescript
+// Create unique key that includes filter parameters
+const treeKey = useMemo(() => {
+  const itemIds = Object.keys(filteredItems).sort().join(',');
+  return `${filterBy}-${sortBy}-${sortOrder}-${itemIds}`;
+}, [filterBy, sortBy, sortOrder, filteredItems]);
+
+// Force complete re-mount when filters change
+<Tree key={treeKey} indent={indent} tree={tree}>
+  {/* Tree content */}
+</Tree>
+```
+
 ---
 
-_Implementation Guide Version: 1.0.0_
+_Implementation Guide Version: 1.1.0_
 _Last Updated: January 2025_
 _Status: Production Ready_

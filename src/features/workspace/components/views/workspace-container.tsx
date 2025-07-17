@@ -8,6 +8,7 @@ import WorkspaceTree from '../tree/WorkspaceTree';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useSelectMode } from '@/features/workspace/hooks/use-select-mode';
+import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
 import type { WorkspaceTreeItem } from '@/features/workspace/types/tree';
 
 export function WorkspaceContainer() {
@@ -19,6 +20,9 @@ export function WorkspaceContainer() {
 
   // Select mode state - shared between toolbar and tree
   const selectMode = useSelectMode();
+
+  // UI state from workspace UI hook
+  const workspaceUI = useWorkspaceUI();
 
   // Tree instance state
   const [treeInstance, setTreeInstance] = useState<any>(null);
@@ -34,6 +38,12 @@ export function WorkspaceContainer() {
         treeInstance={treeInstance}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        filterBy={workspaceUI.filterBy}
+        setFilterBy={workspaceUI.setFilterBy}
+        sortBy={workspaceUI.sortBy}
+        setSortBy={workspaceUI.setSortBy}
+        sortOrder={workspaceUI.sortOrder}
+        setSortOrder={workspaceUI.setSortOrder}
       />
 
       {/* Enhanced tree container with better space and accessibility */}
@@ -43,6 +53,9 @@ export function WorkspaceContainer() {
             selectMode={selectMode}
             onTreeReady={setTreeInstance}
             searchQuery={searchQuery}
+            filterBy={workspaceUI.filterBy}
+            sortBy={workspaceUI.sortBy}
+            sortOrder={workspaceUI.sortOrder}
           />
         </div>
 

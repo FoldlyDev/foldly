@@ -38,6 +38,12 @@ interface WorkspaceToolbarProps {
   treeInstance?: any;
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
+  filterBy?: 'all' | 'files' | 'folders';
+  setFilterBy?: (filter: 'all' | 'files' | 'folders') => void;
+  sortBy?: 'name' | 'date' | 'size';
+  setSortBy?: (sort: 'name' | 'date' | 'size') => void;
+  sortOrder?: 'asc' | 'desc';
+  setSortOrder?: (order: 'asc' | 'desc') => void;
 }
 
 export function WorkspaceToolbar({
@@ -46,6 +52,12 @@ export function WorkspaceToolbar({
   treeInstance,
   searchQuery = '',
   setSearchQuery,
+  filterBy = 'all',
+  setFilterBy,
+  sortBy = 'name',
+  setSortBy,
+  sortOrder = 'asc',
+  setSortOrder,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -54,15 +66,7 @@ export function WorkspaceToolbar({
   // Get tree selection context (may be null if not in tree context)
   const treeSelection = useWorkspaceTreeSelectionSafe();
 
-  const {
-    filterBy,
-    setFilterBy,
-    sortBy,
-    setSortBy,
-    sortOrder,
-    setSortOrder,
-    openUploadModal,
-  } = useWorkspaceUI();
+  const { openUploadModal } = useWorkspaceUI();
 
   // Collapse all functionality using tree instance
   const handleCollapseAll = () => {
@@ -363,13 +367,13 @@ export function WorkspaceToolbar({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setFilterBy('all')}>
+              <DropdownMenuItem onClick={() => setFilterBy?.('all')}>
                 All Items
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterBy('files')}>
+              <DropdownMenuItem onClick={() => setFilterBy?.('files')}>
                 Files Only
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterBy('folders')}>
+              <DropdownMenuItem onClick={() => setFilterBy?.('folders')}>
                 Folders Only
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -384,13 +388,13 @@ export function WorkspaceToolbar({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setSortBy('name')}>
+              <DropdownMenuItem onClick={() => setSortBy?.('name')}>
                 Name
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('date')}>
+              <DropdownMenuItem onClick={() => setSortBy?.('date')}>
                 Date Modified
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy('size')}>
+              <DropdownMenuItem onClick={() => setSortBy?.('size')}>
                 Size
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -406,7 +410,7 @@ export function WorkspaceToolbar({
             <DropdownMenuContent>
               <DropdownMenuItem
                 onClick={() =>
-                  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+                  setSortOrder?.(sortOrder === 'asc' ? 'desc' : 'asc')
                 }
               >
                 <SortAsc className='w-4 h-4 mr-2' />
