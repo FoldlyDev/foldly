@@ -1,0 +1,77 @@
+.container {
+    width: 1000px;
+    padding: 0 20px;
+    margin: auto;
+}
+
+@media screen and (max-width: 1100px) {
+    .container {
+        width: 100%;
+    }
+}
+
+:global([data-theme='light']) {
+    --demobtn-fg: #ffffff;
+    --demobtn-bg: #131313;
+    --demobtn-text: #c5c5c5;
+}
+:global([data-theme='dark']) {
+    --demobtn-fg: black;
+    --demobtn-bg: white;
+    --demobtn-text: #515151;
+}
+
+.sampleHeader {
+    text-align: center;
+    margin: 3rem 0 1rem 0;
+    font-family: 'Noto Sans', sans-serif;
+    font-weight: 300;
+}
+
+.demoButtonGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
+}
+
+.demoButton {
+    font-family: 'Noto Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+
+    background-color: var(--demobtn-bg);
+    color: var(--demobtn-fg);
+    border-radius: 8px;
+    cursor: pointer;
+
+    border: none;
+    padding: .3rem .6rem;
+    transition: transform .05s;
+}
+.demoButton:hover {
+    transform: translateY(0) scale(1.05);
+}
+.demoButtonSelected {
+}
+[data-theme='light'] .demoButtonX {
+    border: 1px solid black;
+}
+.demoButtonSelected, .demoButtonSelected:hover, .demoButton:focus-visible {
+    pointer-events: none;
+    outline: 2px solid var(--demobtn-bg) !important;
+    outline-offset: 3px;
+}
+
+.demoTitle {
+    font-weight: 400;
+    font-size: 1.2rem;
+    margin: .5rem 0;
+}
+
+.demoText {
+    font-weight: 300;
+    margin: .2rem 0;
+    color: var(--demobtn-text);
+    font-size: .8rem;
+}

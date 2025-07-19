@@ -1,19 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import {
   FolderPlus,
   Upload,
   Search,
-  SortAsc,
-  Filter,
   MoreVertical,
   Minimize2,
   Maximize2,
   X,
+  Trash2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -23,412 +21,385 @@ import {
 } from '@/components/ui/shadcn/dropdown-menu';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFolderAction } from '../../lib/actions';
+import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { toast } from 'sonner';
-import { useWorkspaceTreeSelectionSafe } from '../../hooks/use-workspace-tree-selection';
-import { VIRTUAL_ROOT_ID } from '@/lib/utils/workspace-tree-utils';
-import type { useSelectMode } from '../../hooks/use-select-mode';
-import { MiniActionsToolbar } from './mini-actions-toolbar';
-// No longer using old tree store - functionality moved to new WorkspaceTree component
+import { 
+  BatchOperationModal, 
+  type BatchOperationItem,
+  type BatchOperationProgress 
+} from '../modals/batch-operation-modal';
 
 interface WorkspaceToolbarProps {
   className?: string;
-  selectMode: ReturnType<typeof useSelectMode>;
-  treeInstance?: any;
+  treeInstance?: {
+    getSelectedItems?: () => Array<{ getId: () => string; getItemName: () => string; isFolder: () => boolean }>;
+    getItemInstance?: (id: string) => { expand: () => void; isExpanded: () => boolean } | null;
+    addFolder?: (name: string, parentId?: string) => string | null;
+    deleteItems?: (itemIds: string[]) => void;
+    expandAll?: () => void;
+    collapseAll?: () => void;
+  };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
-  filterBy?: 'all' | 'files' | 'folders';
-  setFilterBy?: (filter: 'all' | 'files' | 'folders') => void;
-  sortBy?: 'name' | 'date' | 'size';
-  setSortBy?: (sort: 'name' | 'date' | 'size') => void;
-  sortOrder?: 'asc' | 'desc';
-  setSortOrder?: (order: 'asc' | 'desc') => void;
+  selectedItems?: string[];
+  onClearSelection?: () => void;
 }
 
 export function WorkspaceToolbar({
   className = '',
-  selectMode,
   treeInstance,
   searchQuery = '',
   setSearchQuery,
-  filterBy = 'all',
-  setFilterBy,
-  sortBy = 'name',
-  setSortBy,
-  sortOrder = 'asc',
-  setSortOrder,
+  selectedItems = [],
+  onClearSelection,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchOperationProgress | undefined>();
   const queryClient = useQueryClient();
-
-  // Get tree selection context (may be null if not in tree context)
-  const treeSelection = useWorkspaceTreeSelectionSafe();
 
   const { openUploadModal } = useWorkspaceUI();
 
-  // Collapse all functionality using tree instance
+  // Collapse all functionality
   const handleCollapseAll = () => {
-    if (treeInstance && treeInstance.collapseAll) {
+    if (treeInstance?.collapseAll) {
       treeInstance.collapseAll();
       toast.success('All folders collapsed');
-    } else {
-      toast.error('Tree not ready yet');
     }
   };
 
-  // Expand all functionality using tree instance
+  // Expand all functionality
   const handleExpandAll = () => {
-    if (treeInstance && treeInstance.expandAll) {
+    if (treeInstance?.expandAll) {
       treeInstance.expandAll();
       toast.success('All folders expanded');
-    } else {
-      toast.error('Tree not ready yet');
     }
   };
 
-  // Create folder mutation with smart parent detection
+  // Enhanced batch delete mutation with progress tracking
+  const batchDeleteMutation = useMutation({
+    mutationFn: async () => {
+      if (selectedItems.length === 0) {
+        throw new Error('No items selected');
+      }
+
+      const totalItems = selectedItems.length;
+      
+      // Initialize progress
+      setBatchProgress({
+        completed: 0,
+        total: totalItems,
+        failed: [],
+      });
+
+      // Update the tree UI immediately
+      if (treeInstance?.deleteItems) {
+        treeInstance.deleteItems(selectedItems);
+      }
+
+      // Track progress
+      setBatchProgress(prev => prev ? { ...prev, currentItem: 'Processing items...' } : undefined);
+
+      const result = await batchDeleteItemsAction(selectedItems);
+      
+      if (!result.success) {
+        setBatchProgress(prev => prev ? { 
+          ...prev, 
+          failed: [result.error || 'Unknown error'],
+          completed: totalItems 
+        } : undefined);
+        throw new Error(result.error || 'Failed to delete items');
+      }
+
+      // Mark as complete
+      setBatchProgress(prev => {
+        if (!prev) return undefined;
+        const { currentItem, ...rest } = prev;
+        return {
+          ...rest,
+          completed: totalItems
+        };
+      });
+
+      return result.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      onClearSelection?.();
+    },
+    onError: (error) => {
+      // If database deletion fails, restore the tree state
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+    },
+    onSettled: () => {
+      // Auto-close modal after a delay for successful operations
+      if (batchProgress?.completed === selectedItems.length) {
+        setTimeout(() => {
+          setShowBatchModal(false);
+          setBatchProgress(undefined);
+        }, 2000);
+      }
+    },
+  });
+
+
+  // Create folder mutation - simplified
   const createFolderMutation = useMutation({
     mutationFn: async (folderName: string) => {
-      console.log('📁 Creating folder:', folderName);
-
-      // Validate folder name
       const trimmedName = folderName.trim();
       if (!trimmedName) {
         throw new Error('Folder name cannot be empty');
       }
-      if (trimmedName.length > 255) {
-        throw new Error('Folder name is too long (max 255 characters)');
+
+      // Get selected folder from tree if available
+      const selectedItems = treeInstance?.getSelectedItems?.() || [];
+      const parentFolderId = selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
+
+      // Add to tree UI immediately
+      if (treeInstance?.addFolder) {
+        treeInstance.addFolder(trimmedName, parentFolderId);
       }
-      if (/[<>:"/\\|?*]/.test(trimmedName)) {
-        throw new Error('Folder name contains invalid characters');
-      }
 
-      // Determine parent folder based on tree selection
-      const parentFolderId = treeSelection?.getSelectedFolderForCreation();
-      const actualParentId =
-        parentFolderId === VIRTUAL_ROOT_ID ? undefined : parentFolderId;
-
-      console.log('📁 Folder creation details:', {
-        folderName: trimmedName,
-        parentFolderId,
-        actualParentId,
-      });
-
-      const result = await createFolderAction(trimmedName, actualParentId);
-      console.log('📁 Create folder result:', result);
-
+      const result = await createFolderAction(trimmedName, parentFolderId);
       if (!result.success) {
         throw new Error(result.error || 'Failed to create folder');
       }
-      return { data: result.data, parentFolderId, folderName: trimmedName };
+      return result.data;
     },
-    onSuccess: ({ parentFolderId, folderName }) => {
-      console.log('✅ Folder created successfully, invalidating queries...', {
-        folderName,
-        parentFolderId,
-      });
-
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-
-      console.log(
-        '🔄 Query invalidation called for key:',
-        workspaceQueryKeys.tree()
-      );
-
-      // Show success message with context
-      const parentName =
-        parentFolderId === VIRTUAL_ROOT_ID
-          ? 'workspace root'
-          : treeSelection?.getItemName(parentFolderId!) || 'selected folder';
-
-      toast.success(`Folder "${folderName}" created in ${parentName}`);
-
-      // Expand parent folder to show new folder (best effort)
-      if (
-        treeSelection &&
-        parentFolderId &&
-        parentFolderId !== VIRTUAL_ROOT_ID
-      ) {
-        try {
-          treeSelection.expandItem(parentFolderId);
-        } catch (error) {
-          // Expansion is not critical, continue silently
-          console.debug('Could not expand parent folder:', parentFolderId);
-        }
-      }
-
+      toast.success('Folder created successfully');
       setNewFolderName('');
       setIsCreatingFolder(false);
     },
-    onError: error => {
-      console.error('❌ Folder creation failed:', error);
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create folder'
-      );
+    onError: (error) => {
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      toast.error(error instanceof Error ? error.message : 'Failed to create folder');
     },
   });
 
   const handleCreateFolder = () => {
-    if (isCreatingFolder) {
-      if (canCreateFolder) {
-        createFolderMutation.mutate(newFolderName.trim());
-      } else if (!newFolderName.trim()) {
-        toast.error('Please enter a folder name');
-      } else {
-        toast.error(nameValidation.error || 'Invalid folder name');
-      }
+    if (newFolderName.trim()) {
+      createFolderMutation.mutate(newFolderName);
+    }
+  };
+
+  // Convert selected items to BatchOperationItem format
+  const getBatchOperationItems = (): BatchOperationItem[] => {
+    try {
+      const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
+      return selectedItems.map(id => {
+        const treeItem = selectedTreeItems.find(item => {
+          try {
+            return item?.getId?.() === id;
+          } catch {
+            return false;
+          }
+        });
+        
+        let name = 'Unknown';
+        let type: 'file' | 'folder' = 'file';
+        
+        try {
+          name = treeItem?.getItemName?.() || 'Unknown';
+        } catch {
+          name = 'Unknown';
+        }
+        
+        try {
+          type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
+        } catch {
+          type = 'file';
+        }
+        
+        return { id, name, type };
+      }).filter(item => item.name !== 'Unknown'); // Filter out invalid items
+    } catch (error) {
+      console.warn('Error in getBatchOperationItems:', error);
+      return [];
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedItems.length === 0) return;
+    
+    // Always show the modal for confirmation (both single and multiple items)
+    setShowBatchModal(true);
+  };
+
+  const handleBatchDeleteConfirm = async () => {
+    batchDeleteMutation.mutate();
+  };
+
+  // Get the container folder name for new folder creation
+  const getTargetFolderName = () => {
+    const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
+    const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
+    
+    if (selectedFolders.length === 1) {
+      return selectedFolders[0]?.getItemName?.() || 'Selected Folder';
+    } else if (selectedFolders.length > 1) {
+      return 'Multiple Folders';
     } else {
-      setIsCreatingFolder(true);
-      setNewFolderName('');
-    }
-  };
-
-  // Get context for where folder will be created
-  const getCreateFolderContext = () => {
-    if (!treeSelection) return 'workspace root';
-
-    const parentFolderId = treeSelection.getSelectedFolderForCreation();
-    if (parentFolderId === VIRTUAL_ROOT_ID) {
-      return 'workspace root';
-    }
-
-    return treeSelection.getItemName(parentFolderId);
-  };
-
-  // Validate folder name in real-time
-  const validateFolderName = (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return { isValid: false, error: '' }; // Empty is allowed for UX
-    if (trimmed.length > 255)
-      return { isValid: false, error: 'Name too long (max 255 characters)' };
-    if (/[<>:"/\\|?*]/.test(trimmed))
-      return {
-        isValid: false,
-        error: 'Invalid characters: < > : " / \\ | ? *',
-      };
-    return { isValid: true, error: '' };
-  };
-
-  const nameValidation = validateFolderName(newFolderName);
-  const canCreateFolder =
-    newFolderName.trim() &&
-    nameValidation.isValid &&
-    !createFolderMutation.isPending;
-
-  const handleCancelCreate = () => {
-    setIsCreatingFolder(false);
-    setNewFolderName('');
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleCreateFolder();
-    } else if (e.key === 'Escape') {
-      handleCancelCreate();
+      return 'Workspace Root';
     }
   };
 
   return (
-    <>
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`flex items-center justify-between p-4 bg-white border-b border-[var(--neutral-200)] ${className}`}
-      >
-        {/* Left side - Actions */}
+    <div className={`workspace-toolbar ${className}`}>
+      {/* Main toolbar */}
+      <div className='flex items-center justify-between px-6 py-3 border-b border-[var(--neutral-200)]'>
+        {/* Left side - Main actions */}
         <div className='flex items-center gap-2'>
+          {/* Create folder */}
           {isCreatingFolder ? (
-            <div className='flex items-start gap-2'>
-              <div className='flex flex-col gap-1 items-start'>
-                <Input
-                  value={newFolderName}
-                  onChange={e => setNewFolderName(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder='Folder name'
-                  className={`w-48 ${!nameValidation.isValid && newFolderName ? 'border-destructive' : ''}`}
-                  autoFocus
-                />
-                <div className='flex flex-col gap-0.5'>
-                  <span className='text-xs text-muted-foreground ml-1'>
-                    Creating in: {getCreateFolderContext()}
-                  </span>
-                  {!nameValidation.isValid && newFolderName && (
-                    <span className='text-xs text-destructive ml-1'>
-                      {nameValidation.error}
+                <div className='flex items-center gap-2'>
+                  <div className="flex flex-col gap-1">
+                    <Input
+                      type='text'
+                      placeholder='Folder name'
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateFolder();
+                        } else if (e.key === 'Escape') {
+                          setIsCreatingFolder(false);
+                          setNewFolderName('');
+                        }
+                      }}
+                      className='h-8 w-48'
+                      autoFocus
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      Creating in: {getTargetFolderName()}
                     </span>
-                  )}
+                  </div>
+                  <Button
+                    size='sm'
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim() || createFolderMutation.isPending}
+                  >
+                    Create
+                  </Button>
+                  <Button
+                    size='sm'
+                    variant='ghost'
+                    onClick={() => {
+                      setIsCreatingFolder(false);
+                      setNewFolderName('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
                 </div>
-              </div>
-              <Button
-                onClick={handleCreateFolder}
-                disabled={!canCreateFolder}
-                size='sm'
-                variant='default'
-              >
-                {createFolderMutation.isPending ? 'Creating...' : 'Create'}
-              </Button>
-              <Button onClick={handleCancelCreate} size='sm' variant='ghost'>
-                Cancel
-              </Button>
-            </div>
           ) : (
             <>
               <Button
-                onClick={handleCreateFolder}
                 size='sm'
-                variant='default'
-                className='flex items-center gap-2'
-                title={`Create new folder in ${getCreateFolderContext()}`}
+                variant='ghost'
+                onClick={() => setIsCreatingFolder(true)}
               >
-                <FolderPlus className='w-4 h-4' />
+                <FolderPlus className='h-4 w-4 mr-2' />
                 New Folder
-                {treeSelection?.selectedItem && (
-                  <span className='text-xs opacity-70'>
-                    in {getCreateFolderContext().substring(0, 15)}
-                    {getCreateFolderContext().length > 15 ? '...' : ''}
-                  </span>
-                )}
               </Button>
 
               <Button
-                onClick={() => {
-                  openUploadModal();
-                }}
                 size='sm'
-                variant='outline'
-                className='flex items-center gap-2'
+                variant='ghost'
+                onClick={openUploadModal}
               >
-                <Upload className='w-4 h-4' />
+                <Upload className='h-4 w-4 mr-2' />
                 Upload
-              </Button>
-
-              <Button
-                onClick={handleExpandAll}
-                size='sm'
-                variant='ghost'
-                className='flex items-center gap-2'
-                disabled={!treeInstance}
-                title='Expand all folders'
-              >
-                <Maximize2 className='w-4 h-4' />
-                Expand All
-              </Button>
-
-              <Button
-                onClick={handleCollapseAll}
-                size='sm'
-                variant='ghost'
-                className='flex items-center gap-2'
-                disabled={!treeInstance}
-                title='Collapse all folders'
-              >
-                <Minimize2 className='w-4 h-4' />
-                Collapse All
               </Button>
             </>
           )}
         </div>
 
-        {/* Right side - Search and View options */}
+        {/* Right side - Search and menu */}
         <div className='flex items-center gap-2'>
-          {/* Search */}
+          {/* Search - always visible */}
           <div className='relative'>
-            <Search className='w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--neutral-500)]' />
             <Input
+              type='text'
+              placeholder='Search files and folders...'
               value={searchQuery}
-              onChange={e => setSearchQuery?.(e.target.value)}
-              placeholder='Search files...'
-              className='pl-9 pr-9 w-64'
+              onChange={(e) => setSearchQuery?.(e.target.value)}
+              className='h-8 w-64 pl-8'
             />
-            {searchQuery && (
-              <button
-                className='absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-muted rounded-sm transition-colors'
-                onClick={() => setSearchQuery?.('')}
-                aria-label='Clear search'
-              >
-                <X className='w-4 h-4 text-[var(--neutral-500)]' />
-              </button>
-            )}
+            <Search className='absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
           </div>
 
-          {/* Filter dropdown */}
+          {/* More options menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant='outline' size='sm'>
-                <Filter className='w-4 h-4 mr-2' />
-                {filterBy === 'all'
-                  ? 'All'
-                  : filterBy === 'files'
-                    ? 'Files'
-                    : 'Folders'}
+              <Button size='sm' variant='ghost'>
+                <MoreVertical className='h-4 w-4' />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setFilterBy?.('all')}>
-                All Items
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={handleExpandAll}>
+                <Maximize2 className='h-4 w-4 mr-2' />
+                Expand All
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterBy?.('files')}>
-                Files Only
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterBy?.('folders')}>
-                Folders Only
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Sort dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='outline' size='sm'>
-                <SortAsc className='w-4 h-4 mr-2' />
-                Sort
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setSortBy?.('name')}>
-                Name
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy?.('date')}>
-                Date Modified
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy?.('size')}>
-                Size
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* More options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant='ghost' size='sm'>
-                <MoreVertical className='w-4 h-4' />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                onClick={() =>
-                  setSortOrder?.(sortOrder === 'asc' ? 'desc' : 'asc')
-                }
-              >
-                <SortAsc className='w-4 h-4 mr-2' />
-                Toggle Sort Order
+              <DropdownMenuItem onClick={handleCollapseAll}>
+                <Minimize2 className='h-4 w-4 mr-2' />
+                Collapse All
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Mini Actions Toolbar */}
-      <MiniActionsToolbar
-        isSelectMode={selectMode.isSelectMode}
-        selectedItemsCount={selectMode.selectedItemsCount}
-        selectedItems={selectMode.selectedItems}
-        onToggleSelectMode={selectMode.toggleSelectMode}
-        onClearSelection={selectMode.clearSelection}
+      {/* Mini-actions toolbar - shows when items are selected */}
+      {selectedItems.length > 0 && (
+        <div className="flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-blue-700">
+              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleDelete}
+              disabled={batchDeleteMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 px-3"
+              onClick={onClearSelection}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Batch Delete Modal */}
+      <BatchOperationModal
+        isOpen={showBatchModal}
+        onClose={() => {
+          setShowBatchModal(false);
+          setBatchProgress(undefined);
+        }}
+        operation="delete"
+        items={getBatchOperationItems()}
+        onConfirm={handleBatchDeleteConfirm}
+        progress={batchProgress}
+        isProcessing={batchDeleteMutation.isPending}
       />
-    </>
+    </div>
   );
 }

@@ -1,0 +1,42 @@
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx-cloud",
+      "options": {
+        "cacheableOperations": [
+          "build:cjs",
+          "build:esm",
+          "build:docs",
+          "typecheck",
+          "build:sb",
+          "lint:test"
+        ],
+        "accessToken": "YmU4OTg0NzYtZTIzYy00ZTdmLWJhM2ItMGRmYTUyZGE0YzJkfHJlYWQtb25seQ=="
+      }
+    }
+  },
+  "targetDefaults": {
+    "build:cjs": {
+      "outputs": [
+        "{projectRoot}/lib/cjs"
+      ]
+    },
+    "build:esm": {
+      "outputs": [
+        "{projectRoot}/lib/esm"
+      ]
+    },
+    "build:docs": {
+      "outputs": [
+        "{projectRoot}/public",
+        "{projectRoot}/build",
+        "{projectRoot}/.docusaurus"
+      ]
+    },
+    "build:sb": {
+      "outputs": [
+        "{projectRoot}/storybook-static"
+      ]
+    }
+  }
+}

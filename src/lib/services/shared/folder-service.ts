@@ -10,7 +10,7 @@ type DbFolderUpdate = Partial<DbFolderInsert>;
 
 export class FolderService {
   /**
-   * Get all folders for a workspace
+   * Get all personal workspace folders (excludes link-uploaded folders)
    */
   async getFoldersByWorkspace(
     workspaceId: string
@@ -19,7 +19,12 @@ export class FolderService {
       const workspaceFolders = await db
         .select()
         .from(folders)
-        .where(eq(folders.workspaceId, workspaceId))
+        .where(
+          and(
+            eq(folders.workspaceId, workspaceId),
+            isNull(folders.linkId) // Only personal folders, not link-uploaded
+          )
+        )
         .orderBy(folders.path);
 
       console.log(
@@ -33,7 +38,7 @@ export class FolderService {
   }
 
   /**
-   * Get all folders for a workspace ordered by sortOrder
+   * Get all personal workspace folders ordered by sortOrder (excludes link-uploaded folders)
    */
   async getFoldersByWorkspaceOrdered(
     workspaceId: string
@@ -42,7 +47,12 @@ export class FolderService {
       const workspaceFolders = await db
         .select()
         .from(folders)
-        .where(eq(folders.workspaceId, workspaceId))
+        .where(
+          and(
+            eq(folders.workspaceId, workspaceId),
+            isNull(folders.linkId) // Only personal folders, not link-uploaded
+          )
+        )
         .orderBy(folders.sortOrder, folders.path);
 
       console.log(

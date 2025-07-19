@@ -1,28 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import WorkspaceTree from '../tree/WorkspaceTree';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
-import { useSelectMode } from '@/features/workspace/hooks/use-select-mode';
-import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
-import type { WorkspaceTreeItem } from '@/features/workspace/types/tree';
 
 export function WorkspaceContainer() {
   // Get workspace data
-  const { data: workspaceData, isLoading } = useWorkspaceTree();
+  const { data: workspaceData } = useWorkspaceTree();
 
   // Set up real-time subscription for workspace changes
   const { isSubscribed } = useWorkspaceRealtime(workspaceData?.workspace?.id);
-
-  // Select mode state - shared between toolbar and tree
-  const selectMode = useSelectMode();
-
-  // UI state from workspace UI hook
-  const workspaceUI = useWorkspaceUI();
 
   // Tree instance state
   const [treeInstance, setTreeInstance] = useState<any>(null);
@@ -30,36 +21,37 @@ export function WorkspaceContainer() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Selection state
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  const handleClearSelection = () => {
+    // Clear all selections
+    setSelectedItems([]);
+  };
+
   return (
     <div className='home-container w-full h-screen mx-auto bg-[var(--neutral-50)] flex flex-col'>
       <WorkspaceHeader />
       <WorkspaceToolbar
-        selectMode={selectMode}
         treeInstance={treeInstance}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        filterBy={workspaceUI.filterBy}
-        setFilterBy={workspaceUI.setFilterBy}
-        sortBy={workspaceUI.sortBy}
-        setSortBy={workspaceUI.setSortBy}
-        sortOrder={workspaceUI.sortOrder}
-        setSortOrder={workspaceUI.setSortOrder}
+        selectedItems={selectedItems}
+        onClearSelection={handleClearSelection}
       />
 
-      {/* Enhanced tree container with better space and accessibility */}
+      {/* Tree container */}
       <div className='flex-1 w-full max-w-md p-6 overflow-hidden flex flex-col'>
         <div className='flex-1 min-h-0 bg-white rounded-lg border border-[var(--neutral-200)] shadow-sm p-4'>
           <WorkspaceTree
-            selectMode={selectMode}
             onTreeReady={setTreeInstance}
             searchQuery={searchQuery}
-            filterBy={workspaceUI.filterBy}
-            sortBy={workspaceUI.sortBy}
-            sortOrder={workspaceUI.sortOrder}
+            selectedItems={selectedItems}
+            onSelectionChange={setSelectedItems}
           />
         </div>
 
-        {/* Root drop zone indicator for better UX */}
+        {/* Root drop zone indicator */}
         <div className='mt-2 text-xs text-muted-foreground text-center'>
           Drag items to workspace root or between folders
         </div>

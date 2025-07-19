@@ -11,10 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/shadcn/dialog';
-import { Label } from '@/components/ui/shadcn/label';
 import { Progress } from '@/components/ui/shadcn/progress';
 import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { uploadFileAction } from '../../lib/actions';
 import { useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';

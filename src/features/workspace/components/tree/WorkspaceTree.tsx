@@ -1,531 +1,552 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { Fragment } from 'react';
 import {
   createOnDropHandler,
   dragAndDropFeature,
-  expandAllFeature,
   hotkeysCoreFeature,
+  insertItemsAtTarget,
   keyboardDragAndDropFeature,
+  removeItemsFromParents,
+  renamingFeature,
   searchFeature,
   selectionFeature,
   syncDataLoaderFeature,
+  expandAllFeature,
 } from '@headless-tree/core';
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+import { useWorkspaceTree } from '../../hooks/use-workspace-tree';
+import { workspaceQueryKeys } from '../../lib/query-keys';
+import {
+  updateItemOrderAction,
+  moveItemAction,
+  renameFileAction,
+  renameFolderAction,
+  batchMoveItemsAction,
+} from '../../lib/actions';
+import {
+  data,
+  dataLoader,
+  populateFromDatabase,
+  insertNewItem,
+  deleteItemsFromTree,
+  type WorkspaceTreeItem,
+} from '../../lib/tree-data';
+import { ContentLoader } from '@/components/ui';
+import { BatchOperationModal } from '../modals/batch-operation-modal';
+import type {
+  BatchOperationItem,
+  BatchOperationProgress,
+} from '../modals/batch-operation-modal';
+import '../../styles/workspace-tree.css';
+
+// Import tree UI components
 import {
   FolderIcon,
   FolderOpenIcon,
   FileIcon,
-  CheckSquare,
-  Square,
-  MinusSquare,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import {
-  Tree,
-  TreeDragLine,
-  TreeItem,
-  TreeItemLabel,
-} from '@/components/file-tree/tree';
-import { useWorkspaceTree } from '../../hooks/use-workspace-tree';
-import {
-  createWorkspaceTreeData,
-  VIRTUAL_ROOT_ID,
-} from '@/lib/utils/workspace-tree-utils';
-import { ContentLoader } from '@/components/ui';
-import { workspaceQueryKeys } from '../../lib/query-keys';
-import { updateItemOrderAction, moveItemAction } from '../../lib/actions';
-import { enhancedBatchMoveItemsAction } from '../../lib/actions/enhanced-batch-actions';
-import { useTreeOperationStatus } from '../../hooks/use-tree-operation-status';
-import { TreeOperationOverlay } from '../loading/tree-operation-overlay';
-import {
-  showWorkspaceNotification,
-  showWorkspaceError,
-} from '@/features/notifications';
+import type {
+  DragTarget,
+  ItemInstance,
+  FeatureImplementation,
+} from '@headless-tree/core';
 
-interface Item {
-  name: string;
-  children?: string[];
-  isFile?: boolean;
-}
+// Custom click behavior - only allow expand/collapse via chevron clicks
+const customClickBehavior: FeatureImplementation = {
+  itemInstance: {
+    getProps: ({ tree, item, prev }) => ({
+      ...prev?.(),
+      onClick: (e: MouseEvent) => {
+        // Handle selection only - no expand/collapse
+        if (e.shiftKey) {
+          item.selectUpTo(e.ctrlKey || e.metaKey);
+        } else if (e.ctrlKey || e.metaKey) {
+          item.toggleSelect();
+        } else {
+          tree.setSelectedItems([item.getItemMeta().itemId]);
+        }
 
-const indent = 20;
+        item.setFocused();
+      },
+    }),
+  },
+};
 
-function TreeContent({
-  workspaceData,
-  selectMode,
-  onTreeReady,
-  searchQuery,
-  filterBy = 'all',
-  sortBy = 'name',
-  sortOrder = 'asc',
-}: {
-  workspaceData: any;
-  selectMode: {
-    isSelectMode: boolean;
-    selectedItems: string[];
-    selectedItemsCount: number;
-    toggleSelectMode: () => void;
-    enableSelectMode: () => void;
-    disableSelectMode: () => void;
-    toggleItemSelection: (itemId: string) => void;
-    clearSelection: () => void;
-    selectItem: (itemId: string) => void;
-    deselectItem: (itemId: string) => void;
-    isItemSelected: (itemId: string) => boolean;
-  };
+// Remove hardcoded virtual root - use actual workspace ID
+
+interface WorkspaceTreeProps {
   onTreeReady?: (tree: any) => void;
   searchQuery?: string;
-  filterBy?: FilterBy;
-  sortBy?: SortBy;
-  sortOrder?: SortOrder;
-}) {
+  onRootClick?: () => void;
+  onRootDrop?: (dataTransfer: DataTransfer) => void;
+  selectedItems?: string[];
+  onSelectionChange?: (selectedItems: string[]) => void;
+}
+
+// Simple approach - directly use exported data and loader
+
+export default function WorkspaceTree({
+  onTreeReady,
+  searchQuery = '',
+  onRootClick,
+  onRootDrop,
+  selectedItems = [],
+  onSelectionChange,
+}: WorkspaceTreeProps) {
+  const { data: workspaceData, isLoading, error } = useWorkspaceTree();
   const queryClient = useQueryClient();
 
-  // Operation status management
-  const {
-    operationState,
-    startOperation,
-    setCompleting,
-    completeOperation,
-    failOperation,
-    resetOperation,
-    canInteract,
-  } = useTreeOperationStatus();
+  // Get the actual workspace root ID
+  const rootId = workspaceData?.workspace?.id;
 
-  // Convert database data to tree format
-  const treeData = useMemo(() => {
-    return createWorkspaceTreeData(
-      workspaceData.folders || [],
-      workspaceData.files || [],
-      workspaceData.workspace?.name || 'Workspace'
-    );
-  }, [workspaceData]);
+  // Track search state and preserve expanded items
+  const [isSearching, setIsSearching] = React.useState(false);
+  const [preSearchExpandedItems, setPreSearchExpandedItems] = React.useState<
+    string[]
+  >([]);
 
-  // State for items that can be updated by drag and drop
-  const [items, setItems] = useState<Record<string, Item>>(treeData);
+  // Force re-render state
+  const [forceRender, setForceRender] = React.useState(0);
 
-  // Update items when treeData changes
-  useEffect(() => {
-    setItems(treeData);
-  }, [treeData]);
-
-  // Create filtered items based on filterBy
-  const filteredItems = useMemo(() => {
-    if (filterBy === 'all') return items;
-
-    const filtered: Record<string, Item> = {};
-
-    // First pass: collect items that match the filter
-    Object.entries(items).forEach(([id, item]) => {
-      const shouldInclude = filterBy === 'files' ? item.isFile : !item.isFile;
-      if (shouldInclude) {
-        filtered[id] = { ...item };
-      }
-    });
-
-    // Second pass: ensure parent folders are included for files
-    if (filterBy === 'files') {
-      Object.keys(filtered).forEach(id => {
-        let currentId = id;
-        while (currentId && currentId !== VIRTUAL_ROOT_ID) {
-          // Find parent
-          const parent = Object.entries(items).find(([_, item]) =>
-            item.children?.includes(currentId)
-          );
-          if (parent) {
-            const [parentId, parentItem] = parent;
-            if (!filtered[parentId]) {
-              filtered[parentId] = { ...parentItem, children: [] };
-            }
-            // Add this child to parent's filtered children
-            const parentFiltered = filtered[parentId];
-            if (
-              parentFiltered &&
-              !parentFiltered.children?.includes(currentId)
-            ) {
-              parentFiltered.children = [
-                ...(parentFiltered.children || []),
-                currentId,
-              ];
-            }
-            currentId = parentId;
-          } else {
-            break;
-          }
+  // Batch operation modal state
+  const [batchMoveModal, setBatchMoveModal] = React.useState({
+    isOpen: false,
+    items: [] as BatchOperationItem[],
+    targetFolder: undefined as string | undefined,
+    targetParentId: undefined as string | undefined,
+    progress: undefined as BatchOperationProgress | undefined,
+    isProcessing: false,
+    // Store pending tree state changes for revert on cancel
+    pendingMove: undefined as
+      | {
+          parentId: string;
+          oldChildren: string[];
+          newChildren: string[];
         }
-      });
-    }
-
-    // Third pass: for folders filter, update children arrays
-    if (filterBy === 'folders') {
-      Object.entries(filtered).forEach(([id, item]) => {
-        if (item?.children) {
-          const filteredItem = filtered[id];
-          if (filteredItem) {
-            filteredItem.children = item.children.filter(
-              childId => childId in filtered
-            );
-          }
-        }
-      });
-    }
-
-    // Always include the root
-    if (!filtered[VIRTUAL_ROOT_ID] && items[VIRTUAL_ROOT_ID]) {
-      filtered[VIRTUAL_ROOT_ID] = {
-        ...items[VIRTUAL_ROOT_ID],
-        children:
-          items[VIRTUAL_ROOT_ID].children?.filter(id => id in filtered) || [],
-      };
-    }
-
-    // Apply sorting to children arrays
-    const sortChildren = (children: string[]): string[] => {
-      return children.sort((a, b) => {
-        const aItem = filtered[a];
-        const bItem = filtered[b];
-
-        if (!aItem || !bItem) return 0;
-
-        // Folders first, then files
-        if (aItem.isFile !== bItem.isFile) {
-          return aItem.isFile ? 1 : -1;
-        }
-
-        let comparison = 0;
-
-        switch (sortBy) {
-          case 'name':
-            comparison = aItem.name.localeCompare(bItem.name);
-            break;
-          case 'date':
-            // TODO: Add date field to items
-            comparison = 0;
-            break;
-          case 'size':
-            // TODO: Add size field to items
-            comparison = 0;
-            break;
-        }
-
-        return sortOrder === 'asc' ? comparison : -comparison;
-      });
-    };
-
-    // Apply sorting to all children arrays
-    Object.values(filtered).forEach(item => {
-      if (item?.children && item.children.length > 0) {
-        item.children = sortChildren(item.children);
-      }
-    });
-
-    return filtered;
-  }, [items, filterBy, sortBy, sortOrder]);
-
-  // Store initial expanded items to reset when search is cleared
-  const initialExpandedItems = [VIRTUAL_ROOT_ID];
-
-  // Mutation for updating item order (reordering within same parent)
-  const updateOrderMutation = useMutation({
-    mutationFn: async ({
-      parentId,
-      newChildrenIds,
-    }: {
-      parentId: string;
-      newChildrenIds: string[];
-    }) => {
-      const result = await updateItemOrderAction(parentId, newChildrenIds);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to update item order');
-      }
-      return result.data;
-    },
-    onSuccess: (_data, variables) => {
-      // Invalidate and refetch the workspace tree
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-
-      // Show success notification
-      const parentItem = filteredItems[variables.parentId];
-      showWorkspaceNotification('items_reordered', {
-        itemName: 'Items',
-        itemType: 'folder',
-        targetLocation: parentItem?.name || 'workspace',
-      });
-    },
-    onError: (error, variables) => {
-      // Revert optimistic update
-      setItems(treeData);
-
-      // Show error notification
-      const parentItem = filteredItems[variables.parentId];
-      showWorkspaceError(
-        'items_reordered',
-        {
-          itemName: 'Items',
-          itemType: 'folder',
-          targetLocation: parentItem?.name || 'workspace',
-        },
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    },
+      | undefined,
   });
 
-  // Mutation for moving items (moving to different parent)
-  const moveItemMutation = useMutation({
-    mutationFn: async ({
-      nodeId,
-      targetId,
-    }: {
-      nodeId: string;
-      targetId: string;
-    }) => {
-      const result = await moveItemAction(
-        nodeId,
-        targetId === VIRTUAL_ROOT_ID ? 'root' : targetId
-      );
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to move item');
+  // Function to handle batch move with modal integration
+  const handleBatchMove = React.useCallback(
+    async (
+      movedItems: string[],
+      parentId: string,
+      oldChildren?: string[],
+      newChildren?: string[]
+    ) => {
+      if (movedItems.length === 0) return;
+
+      // For single items, move immediately without modal
+      if (movedItems.length === 1) {
+        const result = await batchMoveItemsAction(movedItems, parentId);
+        if (result.success) {
+          await queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.tree(),
+          });
+          toast.success('Item moved successfully');
+          // Clear selection after successful move
+          onSelectionChange?.([]);
+        } else {
+          toast.error(result.error || 'Failed to move item');
+          await queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.tree(),
+          });
+        }
+        return;
       }
-      return result.data;
-    },
-    onSuccess: (_data, variables) => {
-      // Invalidate and refetch the workspace tree
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
 
-      // Show success notification
-      const movedItem = filteredItems[variables.nodeId];
-      const targetItem = filteredItems[variables.targetId];
-      const isFile = movedItem?.isFile;
-      const targetName =
-        variables.targetId === VIRTUAL_ROOT_ID
+      // For multiple items, show modal first
+      const batchItems: BatchOperationItem[] = movedItems.map(itemId => {
+        const itemData = data[itemId];
+        return {
+          id: itemId,
+          name: itemData?.name || 'Unknown',
+          type: itemData?.isFile ? 'file' : 'folder',
+        };
+      });
+
+      // Get target folder name
+      const targetFolderName =
+        parentId === rootId
           ? 'workspace root'
-          : targetItem?.name;
+          : data[parentId]?.name || 'Unknown';
 
-      showWorkspaceNotification(isFile ? 'file_moved' : 'folder_moved', {
-        itemName: movedItem?.name || 'Item',
-        itemType: isFile ? 'file' : 'folder',
-        ...(targetName && { targetLocation: targetName }),
+      setBatchMoveModal({
+        isOpen: true,
+        items: batchItems,
+        targetFolder: targetFolderName,
+        targetParentId: parentId,
+        progress: undefined,
+        isProcessing: false,
+        pendingMove:
+          oldChildren && newChildren
+            ? {
+                parentId,
+                oldChildren,
+                newChildren,
+              }
+            : undefined,
       });
     },
-    onError: (error, variables) => {
-      // Revert optimistic update
-      setItems(treeData);
-
-      // Show error notification
-      const movedItem = filteredItems[variables.nodeId];
-      const targetItem = filteredItems[variables.targetId];
-      const isFile = movedItem?.isFile;
-      const targetName =
-        variables.targetId === VIRTUAL_ROOT_ID
-          ? 'workspace root'
-          : targetItem?.name;
-
-      showWorkspaceError(
-        isFile ? 'file_moved' : 'folder_moved',
-        {
-          itemName: movedItem?.name || 'Item',
-          itemType: isFile ? 'file' : 'folder',
-          ...(targetName && { targetLocation: targetName }),
-        },
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    },
-  });
-
-  // Enhanced mutation for batch moving multiple items
-  const batchMoveItemsMutation = useMutation({
-    mutationFn: async ({
-      nodeIds,
-      targetId,
-    }: {
-      nodeIds: string[];
-      targetId: string;
-    }) => {
-      // Start operation tracking
-      startOperation('batch_move', nodeIds.length, 'Preparing batch move...');
-
-      try {
-        setCompleting('Finalizing batch move...');
-
-        const result = await enhancedBatchMoveItemsAction(
-          nodeIds,
-          targetId === VIRTUAL_ROOT_ID ? 'root' : targetId
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to batch move items');
-        }
-
-        completeOperation();
-        return result.data;
-      } catch (error) {
-        failOperation(error instanceof Error ? error.message : 'Unknown error');
-        throw error;
-      }
-    },
-    onSuccess: (_data, variables) => {
-      // Invalidate and refetch the workspace tree
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-
-      // Show success notification
-      const targetItem = filteredItems[variables.targetId];
-      const targetName =
-        variables.targetId === VIRTUAL_ROOT_ID
-          ? 'workspace root'
-          : targetItem?.name;
-
-      const itemCount = variables.nodeIds.length;
-      showWorkspaceNotification('items_reordered', {
-        itemName: `${itemCount} items`,
-        itemType: 'folder',
-        ...(targetName && { targetLocation: targetName }),
-      });
-    },
-    onError: (error, variables) => {
-      // Revert optimistic update
-      setItems(treeData);
-
-      // Show error notification
-      const targetItem = filteredItems[variables.targetId];
-      const targetName =
-        variables.targetId === VIRTUAL_ROOT_ID
-          ? 'workspace root'
-          : targetItem?.name;
-
-      const itemCount = variables.nodeIds.length;
-      showWorkspaceError(
-        'items_reordered',
-        {
-          itemName: `${itemCount} items`,
-          itemType: 'folder',
-          ...(targetName && { targetLocation: targetName }),
-        },
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-    },
-  });
-
-  // Create a stable data structure that forces tree re-render
-  const dataLoader = useMemo(
-    () => ({
-      getItem: (itemId: string) => {
-        const item = filteredItems[itemId];
-        if (!item) {
-          return { name: 'Unknown', children: [], isFile: true };
-        }
-        return item;
-      },
-      getChildren: (itemId: string) => {
-        const item = filteredItems[itemId];
-        return item?.children ?? [];
-      },
-    }),
-    [filteredItems]
+    [queryClient, rootId, onSelectionChange]
   );
 
-  // Force tree to recognize data changes by creating a new instance key
-  const treeKey = useMemo(() => {
-    // Include a hash of the actual item IDs to ensure key changes when data changes
-    const itemIds = Object.keys(filteredItems).sort().join(',');
-    return `${filterBy}-${sortBy}-${sortOrder}-${itemIds}`;
-  }, [filterBy, sortBy, sortOrder, filteredItems]);
+  // Function to handle single item moves
+  const handleSingleMove = React.useCallback(
+    async (
+      itemId: string,
+      parentId: string,
+      oldChildren: string[],
+      newChildren: string[]
+    ) => {
+      try {
+        const result = await batchMoveItemsAction([itemId], parentId);
+        if (result.success) {
+          console.log('✅ Single item move completed successfully');
+          toast.success('Item moved successfully');
+          onSelectionChange?.([]);
+          // Also clear tree internal selection state
+          tree.setSelectedItems([]);
 
-  // Tree state management - reset when filters change
-  const [treeState, setTreeState] = useState<any>({
-    expandedItems: [VIRTUAL_ROOT_ID],
-    selectedItems: selectMode.isSelectMode ? selectMode.selectedItems : [],
-  });
-
-  // Reset tree state when filters change to force re-render
-  useEffect(() => {
-    setTreeState((prev: any) => ({
-      ...prev,
-      expandedItems: searchQuery ? prev.expandedItems : [VIRTUAL_ROOT_ID],
-      // Force a state change to trigger re-render
-      _filterKey: treeKey,
-    }));
-  }, [treeKey, searchQuery]);
-
-  // Only initialize tree after we have data
-  const tree = useTree<Item>({
-    state: treeState,
-    setState: setTreeState,
-    indent,
-    rootItemId: VIRTUAL_ROOT_ID,
-    getItemName: item => item.getItemData().name,
-    isItemFolder: item => {
-      const itemData = item.getItemData();
-      return !itemData.isFile && (itemData.children?.length ?? 0) >= 0;
-    },
-    canReorder: true,
-    onDrop: createOnDropHandler((parentItem, newChildrenIds) => {
-      // Prevent drops during operations
-      if (!canInteract) return;
-
-      const parentId = parentItem.getId();
-      const parentItemData = filteredItems[parentId];
-
-      if (!parentItemData) return;
-
-      // Disable select mode on drag/drop
-      if (selectMode.isSelectMode) {
-        selectMode.disableSelectMode();
-      }
-
-      // Optimistically update the UI first
-      setItems(prevItems => {
-        const updatedItems = { ...prevItems };
-        if (updatedItems[parentId]) {
-          updatedItems[parentId] = {
-            ...updatedItems[parentId],
-            children: newChildrenIds,
-          };
+          // Don't rebuild tree immediately - wait for database sync to complete
+          console.log(
+            '📡 Letting realtime subscription handle single move database updates and tree rebuild'
+          );
+        } else {
+          // Revert on failure
+          const parentData = data[parentId];
+          if (parentData) {
+            parentData.children = oldChildren;
+          }
+          tree.rebuildTree(); // Trigger tree re-render
+          toast.error(result.error || 'Failed to move item');
+          await queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.tree(),
+          });
         }
-        return updatedItems;
-      });
+      } catch (error) {
+        // Revert on error
+        const parentData = data[parentId];
+        if (parentData) {
+          parentData.children = oldChildren;
+        }
+        tree.rebuildTree(); // Trigger tree re-render
+        toast.error('Failed to move item');
+        await queryClient.invalidateQueries({
+          queryKey: workspaceQueryKeys.tree(),
+        });
+      }
+    },
+    [queryClient, onSelectionChange]
+  );
 
-      // Determine if this is a reorder or move operation
-      const originalChildren = treeData[parentId]?.children || [];
-      const isReorder =
-        originalChildren.length === newChildrenIds.length &&
-        originalChildren.every(id => newChildrenIds.includes(id));
+  // Function to execute the batch move operation
+  const executeBatchMove = React.useCallback(async () => {
+    if (!batchMoveModal.items.length) return;
 
-      if (isReorder) {
-        // This is a reorder operation within the same parent
-        updateOrderMutation.mutate({ parentId, newChildrenIds });
-      } else {
-        // This is a move operation - find the moved item(s)
-        const movedItemIds = newChildrenIds.filter(
-          id => !originalChildren.includes(id)
+    setBatchMoveModal(prev => ({ ...prev, isProcessing: true }));
+
+    // Initialize progress
+    const totalItems = batchMoveModal.items.length;
+    setBatchMoveModal(prev => ({
+      ...prev,
+      progress: {
+        completed: 0,
+        total: totalItems,
+        currentItem: batchMoveModal.items[0]?.name || 'Unknown',
+        failed: [],
+      },
+    }));
+
+    try {
+      const movedItemIds = batchMoveModal.items.map(item => item.id);
+      const result = await batchMoveItemsAction(
+        movedItemIds,
+        batchMoveModal.targetParentId || rootId
+      );
+
+      if (result.success) {
+        // UI already updated optimistically, just mark as complete
+
+        // Mark as complete
+        setBatchMoveModal(prev => {
+          if (!prev.progress) return prev;
+          const { currentItem, ...rest } = prev.progress;
+          return {
+            ...prev,
+            progress: {
+              ...rest,
+              completed: totalItems,
+            },
+          };
+        });
+
+        console.log(
+          '✅ Batch move completed successfully, waiting for database sync'
         );
 
-        if (movedItemIds.length === 0) return;
+        // Don't rebuild tree immediately - wait for database sync to complete
+        // The tree will rebuild automatically when populateFromDatabase runs
+        console.log(
+          '📡 Letting realtime subscription handle database updates and tree rebuild'
+        );
 
-        // Check if this is a batch move (multiple selected items being moved)
-        const isBatchMove =
-          selectMode.selectedItems.length > 1 &&
-          movedItemIds.some(id => selectMode.selectedItems.includes(id));
-
-        if (isBatchMove) {
-          // Batch move all selected items
-          batchMoveItemsMutation.mutate({
-            nodeIds: selectMode.selectedItems,
-            targetId: parentId,
-          });
+        const { movedItems: actualMoved, totalItems: actualTotal } =
+          result.data || {};
+        if (actualMoved && actualTotal && actualMoved < actualTotal) {
+          toast.success(
+            `Moved ${actualMoved} items (${actualTotal - actualMoved} were children of moved folders)`
+          );
         } else {
-          // Single item move
-          const movedItemId = movedItemIds[0];
-          if (movedItemId) {
-            moveItemMutation.mutate({
-              nodeId: movedItemId,
-              targetId: parentId,
-            });
+          toast.success(
+            `Moved ${movedItemIds.length} item${movedItemIds.length === 1 ? '' : 's'}`
+          );
+        }
+
+        // Clear selection after successful batch move
+        onSelectionChange?.([]);
+        // Also clear tree internal selection state
+        tree.setSelectedItems([]);
+      } else {
+        // Revert UI changes on database failure
+        if (batchMoveModal.pendingMove) {
+          const parentData = data[batchMoveModal.pendingMove.parentId];
+          if (parentData) {
+            parentData.children = batchMoveModal.pendingMove.oldChildren;
           }
+        }
+        tree.rebuildTree(); // Trigger tree re-render
+        setBatchMoveModal(prev => ({
+          ...prev,
+          progress: prev.progress
+            ? {
+                ...prev.progress,
+                failed: [result.error || 'Failed to move items'],
+              }
+            : undefined,
+        }));
+        throw new Error(result.error || 'Failed to move items');
+      }
+    } catch (error) {
+      // Revert UI changes on error
+      if (batchMoveModal.pendingMove) {
+        const parentData = data[batchMoveModal.pendingMove.parentId];
+        if (parentData) {
+          parentData.children = batchMoveModal.pendingMove.oldChildren;
+        }
+      }
+      tree.rebuildTree(); // Trigger tree re-render
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to move items'
+      );
+      await queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.tree(),
+      });
+    } finally {
+      // Stop processing but keep modal open for user to see results
+      setBatchMoveModal(prev => ({
+        ...prev,
+        isProcessing: false,
+      }));
+    }
+  }, [
+    batchMoveModal.items,
+    batchMoveModal.targetParentId,
+    queryClient,
+    rootId,
+  ]);
+
+  // Function to handle modal close
+  const handleModalClose = React.useCallback(() => {
+    console.log('🚪 Modal close triggered:', {
+      hasPendingMove: !!batchMoveModal.pendingMove,
+      isProcessing: batchMoveModal.isProcessing,
+      hasProgress: !!batchMoveModal.progress,
+      operationCompleted:
+        batchMoveModal.progress?.completed === batchMoveModal.progress?.total,
+      pendingMove: batchMoveModal.pendingMove,
+    });
+
+    // Only allow revert if operation hasn't completed successfully
+    const operationCompleted =
+      batchMoveModal.progress?.completed === batchMoveModal.progress?.total;
+    const canRevert =
+      batchMoveModal.pendingMove &&
+      !batchMoveModal.isProcessing &&
+      !operationCompleted;
+
+    if (canRevert && batchMoveModal.pendingMove) {
+      console.log(
+        '⏪ Reverting UI changes due to user cancel (operation not completed)'
+      );
+      const parentData = data[batchMoveModal.pendingMove.parentId];
+      if (parentData) {
+        console.log(
+          '📋 Reverting parent children from:',
+          parentData.children,
+          'to:',
+          batchMoveModal.pendingMove.oldChildren
+        );
+        parentData.children = batchMoveModal.pendingMove.oldChildren;
+      }
+      tree.rebuildTree(); // Trigger tree re-render
+      console.log('🔄 Tree rebuilt after revert');
+    } else if (operationCompleted) {
+      console.log('✅ Operation completed successfully - no revert needed');
+    } else if (batchMoveModal.isProcessing) {
+      console.log('⚠️ Operation in progress - no revert allowed');
+    } else {
+      console.log('🤷 No pending move to revert');
+    }
+
+    setBatchMoveModal({
+      isOpen: false,
+      items: [],
+      targetFolder: undefined,
+      targetParentId: undefined,
+      progress: undefined,
+      isProcessing: false,
+      pendingMove: undefined,
+    });
+    console.log('✅ Modal state reset');
+  }, [
+    batchMoveModal.pendingMove,
+    batchMoveModal.isProcessing,
+    batchMoveModal.progress,
+  ]);
+
+  // Handler for dropping foreign drag objects (like adding new folders)
+  const onDropForeignDragObject = (
+    dataTransfer: DataTransfer,
+    target: DragTarget<WorkspaceTreeItem>
+  ) => {
+    const newId = insertNewItem(dataTransfer.getData('text/plain'));
+    insertItemsAtTarget([newId], target, (item, newChildrenIds) => {
+      const itemData = data[item.getId()];
+      if (itemData) {
+        itemData.children = newChildrenIds;
+      }
+    });
+  };
+
+  // Handler for completing foreign drop
+  const onCompleteForeignDrop = (items: ItemInstance<WorkspaceTreeItem>[]) =>
+    removeItemsFromParents(items, (item, newChildren) => {
+      item.getItemData().children = newChildren;
+    });
+
+  // Rename handler - exactly like library example
+  const onRename = (item: ItemInstance<WorkspaceTreeItem>, value: string) => {
+    const itemData = data[item.getId()];
+    if (itemData) {
+      itemData.name = value;
+    }
+
+    // Persist to database
+    const itemId = item.getId();
+    const isFile = item.getItemData().isFile;
+    const action = isFile ? renameFileAction : renameFolderAction;
+
+    action(itemId, value).then(result => {
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+        toast.success(`Renamed to ${value}`);
+      } else {
+        toast.error(result.error || 'Failed to rename');
+        // Revert on error
+        queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      }
+    });
+  };
+
+  // Get CSS class for items - exactly like library example
+  const getCssClass = (item: ItemInstance<WorkspaceTreeItem>) =>
+    cn('treeitem', {
+      focused: item.isFocused(),
+      expanded: item.isExpanded(),
+      selected: item.isSelected(),
+      folder: item.isFolder(),
+      drop: item.isDragTarget(),
+      searchmatch: item.isMatchingSearch(),
+    });
+
+  // Initialize tree - using actual workspace ID as root
+  const tree = useTree<WorkspaceTreeItem>({
+    initialState: {
+      expandedItems: rootId ? [rootId] : [],
+      selectedItems: [],
+    },
+    rootItemId: rootId || '',
+    getItemName: item => item.getItemData()?.name || 'Unknown',
+    isItemFolder: item => !item.getItemData()?.isFile,
+    canReorder: true,
+    onDrop: createOnDropHandler((parentItem, newChildren) => {
+      const parentId = parentItem.getId();
+      const parentData = data[parentId];
+
+      if (parentData) {
+        const oldChildren = [...(parentData.children || [])];
+
+        // Apply the change immediately (optimistic update)
+        parentData.children = newChildren;
+
+        // Find items that are new to this parent (moved from elsewhere)
+        const movedItems = newChildren.filter(
+          childId => !oldChildren.includes(childId)
+        );
+
+        if (movedItems.length > 0) {
+          console.log('🚀 Detected item move:', {
+            movedItems,
+            parentId,
+            oldChildren,
+            newChildren,
+            isMultiple: movedItems.length > 1,
+          });
+
+          // Handle moves
+          if (movedItems.length > 1) {
+            console.log('📦 Handling batch move for multiple items');
+            // Multiple items - show confirmation modal and handle async operation
+            handleBatchMove(movedItems, parentId, oldChildren, newChildren);
+          } else if (movedItems[0]) {
+            console.log('📄 Handling single item move');
+            // Single item - handle async operation directly
+            handleSingleMove(movedItems[0], parentId, oldChildren, newChildren);
+          }
+        } else {
+          // Handle reordering within same parent
+          updateItemOrderAction(parentId, newChildren).then(result => {
+            if (!result.success) {
+              // Revert on failure
+              parentData.children = oldChildren;
+              tree.rebuildTree(); // Trigger tree re-render
+              toast.error(result.error || 'Failed to update order');
+              queryClient.invalidateQueries({
+                queryKey: workspaceQueryKeys.tree(),
+              });
+            }
+          });
         }
       }
     }),
+    onRename,
+    onDropForeignDragObject,
+    onCompleteForeignDrop,
+    createForeignDragObject: items => ({
+      format: 'text/plain',
+      data: items.map(item => item.getId()).join(','),
+    }),
+    canDropForeignDragObject: (_, target) => target.item.isFolder(),
+    indent: 20,
     dataLoader,
     features: [
       syncDataLoaderFeature,
@@ -533,310 +554,134 @@ function TreeContent({
       hotkeysCoreFeature,
       dragAndDropFeature,
       keyboardDragAndDropFeature,
-      expandAllFeature,
+      renamingFeature,
       searchFeature,
+      expandAllFeature,
+      customClickBehavior,
     ],
   });
 
-  // Track if tree is ready
-  const [isTreeReady, setIsTreeReady] = useState(false);
+  // Sync database data to tree data store
+  React.useEffect(() => {
+    console.log('🔄 Database sync effect triggered:', {
+      hasWorkspaceData: !!workspaceData,
+      folderCount: workspaceData?.folders?.length || 0,
+      fileCount: workspaceData?.files?.length || 0,
+      timestamp: new Date().toISOString(),
+    });
 
-  // Notify parent when tree is ready
-  useEffect(() => {
-    if (tree && tree.getItems && typeof tree.getItems === 'function') {
-      setIsTreeReady(true);
-      if (onTreeReady) {
-        onTreeReady(tree);
-      }
+    if (!workspaceData) return;
+
+    console.log(
+      '📊 Before populateFromDatabase - current tree data keys:',
+      Object.keys(data)
+    );
+
+    const dataUpdated = populateFromDatabase(
+      workspaceData.workspace,
+      workspaceData.folders || [],
+      workspaceData.files || []
+    );
+
+    console.log(
+      '📊 After populateFromDatabase - new tree data keys:',
+      Object.keys(data)
+    );
+    console.log('📊 Full tree data structure:', JSON.stringify(data, null, 2));
+
+    // Rebuild tree after database sync to ensure UI reflects latest data
+    if (dataUpdated && tree) {
+      console.log('🔄 Triggering tree rebuild after database sync');
+      tree.rebuildTree();
     }
-  }, [tree, onTreeReady]);
+  }, [workspaceData, tree]);
 
-  // Sync select mode selections with tree state and handle clearing selections
-  useEffect(() => {
-    setTreeState((prev: any) => ({
-      ...prev,
-      selectedItems: selectMode.isSelectMode ? selectMode.selectedItems : [],
-    }));
-  }, [selectMode.isSelectMode, selectMode.selectedItems]);
+  // Handle search - let tree manage its own state
+  React.useEffect(() => {
+    if (!tree) return;
 
-  // Handle search using tree's built-in search feature
-  useEffect(() => {
-    if (!isTreeReady || !tree) {
-      return;
-    }
+    const hasSearchQuery = searchQuery.trim().length > 0;
 
-    // Use the tree's search feature directly
+    // Apply the search to the tree's internal state
     const searchProps = tree.getSearchInputElementProps();
     if (searchProps?.onChange) {
-      // Defer the search update to avoid render-phase updates
-      const timeoutId = setTimeout(() => {
-        const syntheticEvent = {
-          target: { value: searchQuery || '' },
-        } as React.ChangeEvent<HTMLInputElement>;
-        searchProps.onChange(syntheticEvent);
-      }, 0);
-
-      return () => clearTimeout(timeoutId);
+      const syntheticEvent = {
+        target: { value: searchQuery },
+      } as React.ChangeEvent<HTMLInputElement>;
+      searchProps.onChange(syntheticEvent);
     }
-  }, [searchQuery, isTreeReady, tree]);
 
-  // Manage expanded items separately to avoid render-phase updates
-  useEffect(() => {
-    if (!isTreeReady || !tree) return;
-
-    if (searchQuery && searchQuery.length > 0) {
-      // Expand all items when searching
-      const timeoutId = setTimeout(() => {
-        const allItemIds = tree
-          .getItems()
-          .filter(item => item.isFolder())
-          .map(item => item.getId());
-        setTreeState((prev: any) => ({
-          ...prev,
-          expandedItems: allItemIds,
-        }));
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    } else {
-      // Reset to initial expanded state when search is cleared
-      const timeoutId = setTimeout(() => {
-        setTreeState((prev: any) => ({
-          ...prev,
-          expandedItems: initialExpandedItems,
-        }));
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
+    // Handle expand/collapse based on search state
+    if (hasSearchQuery && !isSearching) {
+      // Starting search - save current state and expand all
+      const currentExpanded = tree.getState()?.expandedItems || [];
+      setPreSearchExpandedItems(currentExpanded);
+      setIsSearching(true);
+      tree.expandAll();
+    } else if (!hasSearchQuery && isSearching) {
+      // Ending search - restore previous expanded state
+      setIsSearching(false);
+      // tree.setState(prevState => ({
+      //   ...prevState,
+      //   expandedItems: preSearchExpandedItems,
+      // }));
+      tree.collapseAll();
     }
-  }, [searchQuery, isTreeReady, tree]);
+  }, [searchQuery, tree, isSearching]);
 
-  // Force complete re-mount when filters change
-  if (!tree) {
-    return (
-      <div className='flex h-full items-center justify-center'>
-        <span className='text-sm text-muted-foreground'>Loading tree...</span>
-      </div>
-    );
-  }
+  // Track selection changes and notify parent
+  React.useEffect(() => {
+    if (tree && onSelectionChange) {
+      const currentSelection = tree
+        .getSelectedItems()
+        .map(item => item.getId());
+      onSelectionChange(currentSelection);
+    }
+  }, [tree?.getState?.()?.selectedItems, onSelectionChange]);
 
-  return (
-    <div className='flex h-full flex-col gap-2 *:first:grow'>
-      <Tree key={treeKey} indent={indent} tree={tree}>
-        <AssistiveTreeDescription tree={tree} />
-        {(() => {
-          const allItems = tree.getItems();
-          const visibleItems = allItems.filter(item =>
-            searchQuery ? item.isMatchingSearch() : true
-          );
+  // Notify parent when tree is ready
+  React.useEffect(() => {
+    if (tree && onTreeReady) {
+      // Add custom method for adding folders programmatically
+      const addFolder = (name: string, parentId?: string) => {
+        const targetId = parentId || rootId;
+        const targetItem = tree.getItemInstance(targetId);
+        if (targetItem && rootId) {
+          const newId = insertNewItem(name, false);
+          const target: DragTarget<WorkspaceTreeItem> = {
+            item: targetItem,
+          };
 
-          if (searchQuery && visibleItems.length === 0) {
-            return (
-              <p className='px-3 py-4 text-center text-sm text-muted-foreground'>
-                No items found for "{searchQuery}"
-              </p>
-            );
+          insertItemsAtTarget([newId], target, (item, newChildrenIds) => {
+            const itemData = data[item.getId()];
+            if (itemData) {
+              itemData.children = newChildrenIds;
+            }
+          });
+
+          // Expand parent folder if it's not the workspace root
+          if (targetId !== rootId) {
+            targetItem.expand();
           }
 
-          if (
-            filterBy !== 'all' &&
-            allItems.length === 1 &&
-            allItems[0]?.getId() === VIRTUAL_ROOT_ID
-          ) {
-            return (
-              <p className='px-3 py-4 text-center text-sm text-muted-foreground'>
-                No {filterBy} found
-              </p>
-            );
-          }
+          return newId;
+        }
+        return null;
+      };
 
-          return allItems
-            .map(item => {
-              const itemData = item.getItemData();
-              const isFolder = !itemData.isFile;
-              const itemId = item.getId();
-              const showCheckboxes = selectMode.isSelectMode;
-              const isSelected = selectMode.isItemSelected(itemId);
+      // Add custom method for deleting items from tree
+      const deleteItems = (itemIds: string[]) => {
+        deleteItemsFromTree(itemIds);
+        tree.rebuildTree();
+      };
 
-              // Check if this folder has any selected children (for partial selection state)
-              let hasSelectedChildren = false;
-              if (isFolder && !isSelected) {
-                const checkDescendants = (id: string): boolean => {
-                  const itemData = filteredItems[id];
-                  if (itemData?.children) {
-                    for (const childId of itemData.children) {
-                      if (
-                        selectMode.isItemSelected(childId) ||
-                        checkDescendants(childId)
-                      ) {
-                        return true;
-                      }
-                    }
-                  }
-                  return false;
-                };
-                hasSelectedChildren = checkDescendants(itemId);
-              }
-
-              const isMatchingSearch = searchQuery
-                ? item.isMatchingSearch()
-                : true;
-
-              // Skip rendering items that don't match search
-              if (!isMatchingSearch && searchQuery) {
-                return null;
-              }
-
-              return (
-                <TreeItem key={item.getId()} item={item}>
-                  <TreeItemLabel
-                    className='before:bg-background relative before:absolute before:inset-x-0 before:-inset-y-0.5 before:-z-10'
-                    onClick={_e => {
-                      // Clear selection and exit select mode when item is clicked (but not when checkbox is clicked)
-                      if (selectMode.isSelectMode) {
-                        selectMode.disableSelectMode();
-                      }
-                    }}
-                  >
-                    <div className='flex items-center gap-2 w-full'>
-                      {showCheckboxes && (
-                        <div
-                          className='flex-shrink-0 p-1 -m-1 rounded hover:bg-muted/50 transition-colors'
-                          onClick={e => {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            // If this is a folder, we need to handle selecting all children
-                            if (isFolder) {
-                              const getAllDescendants = (
-                                id: string
-                              ): string[] => {
-                                const result: string[] = [id];
-                                const itemData = filteredItems[id];
-                                if (itemData?.children) {
-                                  itemData.children.forEach(childId => {
-                                    result.push(...getAllDescendants(childId));
-                                  });
-                                }
-                                return result;
-                              };
-
-                              const allIds = getAllDescendants(itemId);
-                              const allSelected = allIds.every(id =>
-                                selectMode.isItemSelected(id)
-                              );
-
-                              allIds.forEach(id => {
-                                if (allSelected) {
-                                  selectMode.deselectItem(id);
-                                } else {
-                                  selectMode.selectItem(id);
-                                }
-                              });
-                            } else {
-                              selectMode.toggleItemSelection(itemId);
-                            }
-                          }}
-                        >
-                          {isSelected ? (
-                            <CheckSquare className='text-blue-600 size-4 cursor-pointer' />
-                          ) : hasSelectedChildren ? (
-                            <MinusSquare className='text-blue-600 size-4 cursor-pointer' />
-                          ) : (
-                            <Square className='text-muted-foreground size-4 cursor-pointer hover:text-foreground transition-colors' />
-                          )}
-                        </div>
-                      )}
-                      <div className='flex items-center gap-2 flex-1 min-w-0'>
-                        {isFolder ? (
-                          item.isExpanded() ? (
-                            <FolderOpenIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                          ) : (
-                            <FolderIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                          )
-                        ) : (
-                          <FileIcon className='text-muted-foreground pointer-events-none size-4 flex-shrink-0' />
-                        )}
-                        <span className='truncate'>{item.getItemName()}</span>
-                      </div>
-                    </div>
-                  </TreeItemLabel>
-                </TreeItem>
-              );
-            })
-            .filter(Boolean);
-        })()}
-        <TreeDragLine />
-      </Tree>
-
-      <p
-        aria-live='polite'
-        role='region'
-        className='text-muted-foreground mt-2 text-xs'
-      >
-        {(updateOrderMutation.isPending ||
-          moveItemMutation.isPending ||
-          batchMoveItemsMutation.isPending) && (
-          <span className='ml-2 text-blue-600'>Updating...</span>
-        )}
-      </p>
-
-      {/* Loading Overlay - Replaces tree during operations */}
-      <TreeOperationOverlay
-        operationState={operationState}
-        onCancel={resetOperation}
-      />
-    </div>
-  );
-}
-
-type FilterBy = 'all' | 'files' | 'folders';
-type SortBy = 'name' | 'date' | 'size';
-type SortOrder = 'asc' | 'desc';
-
-export default function WorkspaceTree({
-  selectMode,
-  onTreeReady,
-  searchQuery,
-  filterBy = 'all',
-  sortBy = 'name',
-  sortOrder = 'asc',
-}: {
-  selectMode: {
-    isSelectMode: boolean;
-    selectedItems: string[];
-    selectedItemsCount: number;
-    toggleSelectMode: () => void;
-    enableSelectMode: () => void;
-    disableSelectMode: () => void;
-    toggleItemSelection: (itemId: string) => void;
-    clearSelection: () => void;
-    selectItem: (itemId: string) => void;
-    deselectItem: (itemId: string) => void;
-    isItemSelected: (itemId: string) => boolean;
-  };
-  onTreeReady?: (tree: any) => void;
-  searchQuery?: string;
-  filterBy?: FilterBy;
-  sortBy?: SortBy;
-  sortOrder?: SortOrder;
-}) {
-  const { data: workspaceData, isLoading, error } = useWorkspaceTree();
-
-  // Create a stable key for TreeContent to force remount when data changes significantly
-  const treeContentKey = useMemo(() => {
-    if (!workspaceData) return 'empty';
-
-    const foldersCount = workspaceData.folders?.length || 0;
-    const filesCount = workspaceData.files?.length || 0;
-    const workspaceId = workspaceData.workspace?.id || 'unknown';
-
-    // Include filter and sort in key to force complete re-mount
-    return `tree-${workspaceId}-${foldersCount}-${filesCount}-${filterBy}-${sortBy}-${sortOrder}`;
-  }, [workspaceData, filterBy, sortBy, sortOrder]);
+      const extendedTree = Object.assign(tree, { addFolder, deleteItems });
+      onTreeReady(extendedTree);
+    }
+  }, [tree, onTreeReady, rootId]);
 
   // Loading state
-  if (isLoading) {
+  if (isLoading || !workspaceData) {
     return (
       <div className='flex h-full items-center justify-center'>
         <ContentLoader className='w-6 h-6' />
@@ -852,18 +697,14 @@ export default function WorkspaceTree({
     return (
       <div className='flex h-full items-center justify-center'>
         <span className='text-sm text-destructive'>
-          Failed to load workspace:{' '}
-          {error instanceof Error ? error.message : 'Unknown error'}
+          Failed to load workspace
         </span>
       </div>
     );
   }
 
   // Empty state
-  if (
-    !workspaceData ||
-    (workspaceData.folders.length === 0 && workspaceData.files.length === 0)
-  ) {
+  if (!workspaceData.folders?.length && !workspaceData.files?.length) {
     return (
       <div className='flex h-full items-center justify-center'>
         <span className='text-sm text-muted-foreground'>
@@ -873,20 +714,110 @@ export default function WorkspaceTree({
     );
   }
 
-  // Force TreeContent remount with key when data changes significantly
-  // Use a more aggressive key that includes filter parameters
-  const contentKey = `${treeContentKey}-${filterBy}-${sortBy}-${sortOrder}`;
-
   return (
-    <TreeContent
-      key={contentKey}
-      workspaceData={workspaceData}
-      selectMode={selectMode}
-      {...(onTreeReady && { onTreeReady })}
-      {...(searchQuery && { searchQuery })}
-      filterBy={filterBy}
-      sortBy={sortBy}
-      sortOrder={sortOrder}
-    />
+    <div className='h-full flex flex-col'>
+      <div
+        {...tree.getContainerProps()}
+        className='tree flex-1 overflow-auto relative'
+        onClick={e => {
+          // Handle click on empty space - clear selection
+          if (e.target === e.currentTarget) {
+            tree.setSelectedItems([]);
+            if (onRootClick) {
+              onRootClick();
+            }
+          }
+        }}
+      >
+        <AssistiveTreeDescription tree={tree} />
+
+        {tree.getItems().map(item => {
+          const itemId = item.getId();
+
+          // Include all items - let the tree handle root normally
+
+          return (
+            <Fragment key={itemId}>
+              {item.isRenaming() ? (
+                <div
+                  className='renaming-item'
+                  style={{ marginLeft: `${item.getItemMeta().level * 20}px` }}
+                >
+                  <input
+                    {...item.getRenameInputProps()}
+                    className='px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary'
+                    autoFocus
+                  />
+                </div>
+              ) : (
+                <button
+                  {...item.getProps()}
+                  style={{ paddingLeft: `${item.getItemMeta().level * 20}px` }}
+                >
+                  <div
+                    className={cn(
+                      'flex items-center gap-1.5 flex-1 min-w-0',
+                      getCssClass(item)
+                    )}
+                  >
+                    {/* Expand/Collapse icon for folders */}
+                    {item.isFolder() ? (
+                      <span
+                        className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted/80 rounded'
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (item.isExpanded()) {
+                            item.collapse();
+                          } else {
+                            item.expand();
+                          }
+                        }}
+                      >
+                        {item.isExpanded() ? (
+                          <ChevronDown className='size-4 text-muted-foreground' />
+                        ) : (
+                          <ChevronRight className='size-4 text-muted-foreground' />
+                        )}
+                      </span>
+                    ) : (
+                      <span className='w-5' />
+                    )}
+
+                    {/* Folder/File icon */}
+                    {item.isFolder() ? (
+                      item.isExpanded() ? (
+                        <FolderOpenIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                      ) : (
+                        <FolderIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                      )
+                    ) : (
+                      <FileIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                    )}
+
+                    {/* Item name */}
+                    <span className='truncate'>{item.getItemName()}</span>
+                  </div>
+                </button>
+              )}
+            </Fragment>
+          );
+        })}
+
+        <div style={tree.getDragLineStyle()} className='dragline' />
+      </div>
+
+      {/* Batch Move Modal */}
+      <BatchOperationModal
+        isOpen={batchMoveModal.isOpen}
+        onClose={handleModalClose}
+        operation='move'
+        items={batchMoveModal.items}
+        targetFolder={batchMoveModal.targetFolder || 'Unknown'}
+        onConfirm={executeBatchMove}
+        progress={batchMoveModal.progress}
+        isProcessing={batchMoveModal.isProcessing}
+      />
+    </div>
   );
 }

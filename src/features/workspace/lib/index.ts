@@ -10,3 +10,12 @@ export {
 
 // Query Keys
 export { workspaceQueryKeys } from './query-keys';
+
+// Tree Data Utilities
+export type { WorkspaceTreeItem } from './tree-data';
+export {
+  data,
+  dataLoader,
+  populateFromDatabase,
+  insertNewItem,
+} from './tree-data';

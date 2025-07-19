@@ -1,0 +1,32 @@
+{
+  "name": "@headless-tree/core",
+  "version": "1.2.1",
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
+  "types": "lib/esm/index.d.ts",
+  "exports": {
+    "types": "./lib/esm/index.d.ts",
+    "import": "./lib/esm/index.js",
+    "default": "./lib/cjs/index.js"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "build:cjs": "tsc -m commonjs --outDir lib/cjs",
+    "build:esm": "tsc",
+    "start": "tsc -w",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:lukasbach/headless-tree.git",
+    "directory": "packages/core"
+  },
+  "author": "Lukas Bach <npm@lukasbach.com>",
+  "funding": "https://github.com/sponsors/lukasbach",
+  "license": "MIT",
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.3"
+  }
+}

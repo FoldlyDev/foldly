@@ -1,7 +1,6 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
 import { FileService } from '@/lib/services/shared/file-service';
 import type { DatabaseId } from '@/lib/supabase/types';
 

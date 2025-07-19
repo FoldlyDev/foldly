@@ -1,21 +1,19 @@
-// =============================================================================
-// WORKSPACE FEATURE - Public API
-// =============================================================================
+// Workspace feature public API
 
 // Actions
 export {
-  getWorkspaceByUserId,
-  updateWorkspaceAction,
   fetchWorkspaceTreeAction,
-  fetchWorkspaceStatsAction,
+  moveItemAction,
+  updateItemOrderAction,
+  batchMoveItemsAction,
+  batchDeleteItemsAction,
   createFolderAction,
   renameFolderAction,
   deleteFolderAction,
   renameFileAction,
   deleteFileAction,
-  moveFileAction,
   downloadFileAction,
-  type WorkspaceTreeData,
+  type ActionResult,
 } from './lib/actions';
 
 // Hooks
@@ -23,14 +21,10 @@ export {
   useWorkspaceTree,
   useWorkspaceRealtime,
   useWorkspaceUI,
-  useWorkspaceTreeSelection,
-  useWorkspaceTreeSelectionSafe,
 } from './hooks';
 
 // Components
 export {
   WorkspaceTree,
-  WorkspaceTreeSelectionProvider,
-  WorkspaceToolbar,
   WorkspaceContainer,
 } from './components';

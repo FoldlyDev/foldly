@@ -1,0 +1,5 @@
+.noarrow .treeitem.folder:before {
+    content: " ";
+    width: 0;
+    margin-right: 0;
+}

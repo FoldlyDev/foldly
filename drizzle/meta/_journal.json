@@ -43,6 +43,13 @@
       "when": 1752384774762,
       "tag": "0005_illegal_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1752885837084,
+      "tag": "0006_slippery_naoko",
+      "breakpoints": true
     }
   ]
 }
