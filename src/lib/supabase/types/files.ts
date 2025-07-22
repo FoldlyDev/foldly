@@ -53,6 +53,9 @@ export interface File extends TimestampFields {
   isPublic: boolean;
   downloadCount: number;
   lastDownloadAt: Date | null;
+  
+  // Organization
+  sortOrder: number;
 
   // Expiration
   expiresAt: Date | null;

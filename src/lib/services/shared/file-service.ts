@@ -27,7 +27,7 @@ export class FileService {
             isNull(files.linkId) // Only personal files, not link-uploaded
           )
         )
-        .orderBy(files.createdAt);
+        .orderBy(files.sortOrder, files.createdAt);
 
       return { success: true, data: workspaceFiles };
     } catch (error) {
@@ -54,7 +54,7 @@ export class FileService {
         .from(files)
         .leftJoin(folders, eq(files.folderId, folders.id))
         .where(eq(folders.workspaceId, workspaceId))
-        .orderBy(files.fileName); // Files don't have sortOrder yet, so order by name
+        .orderBy(files.sortOrder, files.fileName); // Order by sortOrder first, then fileName
 
       const flatFiles = workspaceFiles.map(({ file }) => file);
 

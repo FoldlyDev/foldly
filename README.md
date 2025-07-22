@@ -5,7 +5,7 @@
 
 ## 🎯 Project Overview
 
-**Foldly** is a modern **full-stack Next.js application** for advanced file collection SaaS that provides multiple link types, smart organization, and flexible security controls for professional file management workflows.
+**Foldly** is a modern **full-stack Next.js application** for advanced file collection SaaS that provides multiple link types, and flexible security controls for professional file management workflows.
 
 > **Architecture**: Full-stack Next.js application - frontend and backend integrated in a single codebase
 

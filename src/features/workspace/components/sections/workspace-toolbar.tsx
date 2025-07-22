@@ -23,6 +23,7 @@ import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
+import { setDragOperationActive } from '../../lib/tree-data';
 import { toast } from 'sonner';
 import { 
   BatchOperationModal, 
@@ -87,50 +88,62 @@ export function WorkspaceToolbar({
 
       const totalItems = selectedItems.length;
       
-      // Initialize progress
-      setBatchProgress({
-        completed: 0,
-        total: totalItems,
-        failed: [],
-      });
-
-      // Update the tree UI immediately
-      if (treeInstance?.deleteItems) {
-        treeInstance.deleteItems(selectedItems);
-      }
-
-      // Track progress
-      setBatchProgress(prev => prev ? { ...prev, currentItem: 'Processing items...' } : undefined);
-
-      const result = await batchDeleteItemsAction(selectedItems);
+      // Set operation active to prevent data rebuilds during batch operation
+      setDragOperationActive(true);
       
-      if (!result.success) {
-        setBatchProgress(prev => prev ? { 
-          ...prev, 
-          failed: [result.error || 'Unknown error'],
-          completed: totalItems 
-        } : undefined);
-        throw new Error(result.error || 'Failed to delete items');
+      try {
+        // Initialize progress
+        setBatchProgress({
+          completed: 0,
+          total: totalItems,
+          failed: [],
+        });
+
+        // Update the tree UI immediately
+        if (treeInstance?.deleteItems) {
+          treeInstance.deleteItems(selectedItems);
+        }
+
+        // Track progress
+        setBatchProgress(prev => prev ? { ...prev, currentItem: 'Processing items...' } : undefined);
+
+        const result = await batchDeleteItemsAction(selectedItems);
+        
+        if (!result.success) {
+          setBatchProgress(prev => prev ? { 
+            ...prev, 
+            failed: [result.error || 'Unknown error'],
+            completed: totalItems 
+          } : undefined);
+          throw new Error(result.error || 'Failed to delete items');
+        }
+
+        // Mark as complete
+        setBatchProgress(prev => {
+          if (!prev) return undefined;
+          const { currentItem, ...rest } = prev;
+          return {
+            ...rest,
+            completed: totalItems
+          };
+        });
+
+        return result.data;
+      } finally {
+        // Always clear operation state
+        setDragOperationActive(false);
       }
-
-      // Mark as complete
-      setBatchProgress(prev => {
-        if (!prev) return undefined;
-        const { currentItem, ...rest } = prev;
-        return {
-          ...rest,
-          completed: totalItems
-        };
-      });
-
-      return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      // Mark cache as stale but don't refetch immediately
+      queryClient.invalidateQueries({ 
+        queryKey: workspaceQueryKeys.tree(),
+        refetchType: 'none'
+      });
       onClearSelection?.();
     },
     onError: (error) => {
-      // If database deletion fails, restore the tree state
+      // If database deletion fails, restore the tree state with immediate refetch
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
     },
     onSettled: () => {

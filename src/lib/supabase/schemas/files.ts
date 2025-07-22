@@ -71,6 +71,7 @@ export const files = pgTable(
     // Organization flags
     isOrganized: boolean('is_organized').default(false).notNull(),
     needsReview: boolean('needs_review').default(false).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
     // Access tracking
     downloadCount: integer('download_count').default(0).notNull(),

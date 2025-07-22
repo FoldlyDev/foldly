@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/shadcn/button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { batchDeleteItemsAction } from '../../lib/actions';
+import { setDragOperationActive } from '../../lib/tree-data';
 import { toast } from 'sonner';
 
 interface MiniActionsToolbarProps {
@@ -23,25 +24,39 @@ export function MiniActionsToolbar({
 }: MiniActionsToolbarProps) {
   const queryClient = useQueryClient();
 
-  // Batch delete mutation
+  // Batch delete mutation with drag operation state protection
   const batchDeleteMutation = useMutation({
     mutationFn: async () => {
       if (selectMode.selectedItems.length === 0) {
         throw new Error('No items selected');
       }
 
-      const result = await batchDeleteItemsAction(selectMode.selectedItems);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to delete items');
+      // Set operation active to prevent data rebuilds during batch operation
+      setDragOperationActive(true);
+      
+      try {
+        const result = await batchDeleteItemsAction(selectMode.selectedItems);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete items');
+        }
+        return result.data;
+      } finally {
+        // Always clear operation state
+        setDragOperationActive(false);
       }
-      return result.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      // Mark cache as stale but don't refetch immediately
+      queryClient.invalidateQueries({ 
+        queryKey: workspaceQueryKeys.tree(),
+        refetchType: 'none'
+      });
       toast.success(`${selectedCount} item${selectedCount > 1 ? 's' : ''} deleted`);
       selectMode.clearSelection();
     },
     onError: (error) => {
+      // Force refetch on error to ensure consistency
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
       toast.error(
         error instanceof Error ? error.message : 'Failed to delete items'
       );

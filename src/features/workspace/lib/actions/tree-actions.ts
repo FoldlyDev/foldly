@@ -100,7 +100,7 @@ export async function moveItemAction(
 }
 
 /**
- * Update item order within a parent (simplified - only for folders with sortOrder)
+ * Update item order within a parent (handles both files and folders with sortOrder)
  */
 export async function updateItemOrderAction(
   parentId: string,
@@ -112,12 +112,46 @@ export async function updateItemOrderAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    // Update sort order for folders only (files don't have sortOrder)
-    const updates = orderedChildIds.map((id, index) => 
-      folderService.updateFolder(id, { sortOrder: index })
-    );
+    // Get workspace to access tree data
+    const workspace = await workspaceService.getWorkspaceByUserId(userId);
+    if (!workspace) {
+      return { success: false, error: 'Workspace not found' };
+    }
 
-    await Promise.all(updates);
+    // Get current files and folders to distinguish between them
+    const [foldersResult, filesResult] = await Promise.all([
+      folderService.getFoldersByWorkspace(workspace.id),
+      fileService.getFilesByWorkspace(workspace.id),
+    ]);
+
+    if (!foldersResult.success || !filesResult.success) {
+      return { success: false, error: 'Failed to fetch workspace data' };
+    }
+
+    const folderIds = new Set(foldersResult.data?.map(f => f.id) || []);
+    const fileIds = new Set(filesResult.data?.map(f => f.id) || []);
+
+    // Separate files and folders, then update their sortOrder
+    const updates = orderedChildIds.map(async (id, index) => {
+      if (folderIds.has(id)) {
+        return folderService.updateFolder(id, { sortOrder: index });
+      } else if (fileIds.has(id)) {
+        return fileService.updateFile(id, { sortOrder: index });
+      } else {
+        console.warn(`Item ${id} not found in workspace`);
+        return { success: false, error: `Item ${id} not found` };
+      }
+    });
+
+    const results = await Promise.all(updates);
+    
+    // Check if any updates failed
+    const failedUpdates = results.filter(result => !result.success);
+    if (failedUpdates.length > 0) {
+      console.error('Some updates failed:', failedUpdates);
+      return { success: false, error: 'Some items failed to update' };
+    }
+
     revalidatePath('/dashboard/workspace');
     
     return { success: true };
