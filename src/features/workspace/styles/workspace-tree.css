@@ -13,7 +13,7 @@
   min-height: 100px;
 }
 
-.tree button[role="treeitem"] {
+.tree button[role='treeitem'] {
   display: flex;
   background: transparent;
   border: none;
@@ -51,7 +51,7 @@
 
 /* Selection indicator - blue left border */
 .treeitem.selected::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 5px;
   left: -2px;
@@ -100,7 +100,7 @@
 
 /* Drag line indicator circle */
 .dragline::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: -3px;
@@ -109,6 +109,25 @@
   background: #fff;
   border: 2px solid var(--tree-primary-blue);
   border-radius: 99px;
+}
+
+/* Enhanced reordering feedback - top drop indicator */
+.treeitem.drop-above {
+  border-top: 0.5px solid var(--tree-primary-blue);
+}
+
+/* Enhanced reordering feedback - bottom drop indicator */
+.treeitem.drop-below {
+  border-bottom: 0.5px solid var(--tree-primary-blue);
+}
+
+/* Drag preview element - positioned off-screen */
+.drag-preview {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  pointer-events: none;
+  z-index: 1000;
 }
 
 .searchbox {

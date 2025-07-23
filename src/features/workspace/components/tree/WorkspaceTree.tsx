@@ -39,6 +39,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { ContentLoader } from '@/components/ui';
 import { BatchOperationModal } from '../modals/batch-operation-modal';
+import { DragPreview, useDragPreview } from './DragPreview';
 import '../../styles/workspace-tree.css';
 
 // Import tree UI components
@@ -50,9 +51,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 
-import type {
-  FeatureImplementation,
-} from '@headless-tree/core';
+import type { FeatureImplementation } from '@headless-tree/core';
 
 // Custom click behavior - only allow expand/collapse via chevron clicks
 const customClickBehavior: FeatureImplementation = {
@@ -78,7 +77,12 @@ const customClickBehavior: FeatureImplementation = {
 // Remove hardcoded virtual root - use actual workspace ID
 
 interface WorkspaceTreeProps {
-  onTreeReady?: (tree: TreeInstance<WorkspaceTreeItem> & { addFolder: (name: string, parentId?: string) => string | null; deleteItems: (itemIds: string[]) => void; }) => void;
+  onTreeReady?: (
+    tree: TreeInstance<WorkspaceTreeItem> & {
+      addFolder: (name: string, parentId?: string) => string | null;
+      deleteItems: (itemIds: string[]) => void;
+    }
+  ) => void;
   searchQuery?: string;
   onRootClick?: () => void;
   onRootDrop?: (dataTransfer: DataTransfer) => void;
@@ -99,7 +103,7 @@ export default function WorkspaceTree({
   // Get the actual workspace root ID
   const rootId = workspaceData?.workspace?.id;
 
-  // Get CSS class for items - exactly like library example
+  // Get CSS class for items - exactly like library example with enhanced drag feedback
   const getCssClass = (item: ItemInstance<WorkspaceTreeItem>) =>
     cn('treeitem', {
       focused: item.isFocused(),
@@ -107,10 +111,15 @@ export default function WorkspaceTree({
       selected: item.isSelected(),
       folder: item.isFolder(),
       drop: item.isDragTarget(),
+      'drop-above': item.isDragTargetAbove?.(),
+      'drop-below': item.isDragTargetBelow?.(),
       searchmatch: item.isMatchingSearch(),
     });
 
   const queryClient = useQueryClient();
+
+  // Get drag preview configuration
+  const dragPreviewConfig = useDragPreview();
 
   // Initialize tree with inline handlers to avoid circular dependencies
   const tree: TreeInstance<WorkspaceTreeItem> = useTree<WorkspaceTreeItem>({
@@ -119,24 +128,33 @@ export default function WorkspaceTree({
       selectedItems: [],
     },
     rootItemId: rootId || '',
-    getItemName: (item: ItemInstance<WorkspaceTreeItem>) => item.getItemData()?.name || 'Unknown',
-    isItemFolder: (item: ItemInstance<WorkspaceTreeItem>) => !item.getItemData()?.isFile,
+    getItemName: (item: ItemInstance<WorkspaceTreeItem>) =>
+      item.getItemData()?.name || 'Unknown',
+    isItemFolder: (item: ItemInstance<WorkspaceTreeItem>) =>
+      !item.getItemData()?.isFile,
     canReorder: true,
+    reorderAreaPercentage: 0.4, // Increase reorder zone sensitivity for better UX
     
+    // Custom drag preview
+    ...dragPreviewConfig,
+
     // Use custom onDrop handler that properly distinguishes between move vs reorder operations
-    onDrop: async (items: ItemInstance<WorkspaceTreeItem>[], target: DragTarget<WorkspaceTreeItem>): Promise<void> => {
+    onDrop: async (
+      items: ItemInstance<WorkspaceTreeItem>[],
+      target: DragTarget<WorkspaceTreeItem>
+    ): Promise<void> => {
       return handleDrop({ items, target }, { tree, queryClient });
     },
-    
+
     onRename: (item: ItemInstance<WorkspaceTreeItem>, value: string) => {
       return handleRename({ item, value }, { queryClient });
     },
-    
+
     onDropForeignDragObject: handleDropForeignDragObject,
     onCompleteForeignDrop: handleCompleteForeignDrop,
     createForeignDragObject: createForeignDragObject,
     canDropForeignDragObject: canDropForeignDragObject,
-    
+
     indent: 20,
     dataLoader,
     features: [
@@ -154,7 +172,7 @@ export default function WorkspaceTree({
 
   // Initialize handlers for non-tree operations (add/delete items)
   const handlers = useTreeHandlers({ tree, rootId });
-  
+
   // Initialize other hooks after tree is created
   const batchOperations = useBatchOperations({
     rootId,
@@ -166,7 +184,7 @@ export default function WorkspaceTree({
   // Sync database data to tree data store
   React.useEffect(() => {
     const isDragActive = getDragOperationActive();
-    
+
     console.log('🔄 Database sync effect triggered:', {
       hasWorkspaceData: !!workspaceData,
       folderCount: workspaceData?.folders?.length || 0,
@@ -353,7 +371,34 @@ export default function WorkspaceTree({
           );
         })}
 
-        <div style={tree.getDragLineStyle()} className='dragline' />
+        {/* Conditionally render drag line - hide drag lines that don't make logical sense */}
+        {(() => {
+          const draggedItems = tree.getState()?.dnd?.draggedItems;
+          const dragTarget = tree.getDragTarget?.();
+          const dragLineStyle = tree.getDragLineStyle();
+          
+          // Check if the drag line is targeting one of the currently dragged items
+          // This prevents showing drag lines between/above/below items that are being dragged
+          const isDragLineOnDraggedItem = draggedItems && dragTarget && 
+            draggedItems.some(draggedItem => draggedItem.getId() === dragTarget.item.getId());
+          
+          // Check if the drag line is targeting the root workspace
+          // Root workspace shouldn't show drag lines for reordering
+          const isTargetingRootWorkspace = dragTarget && dragTarget.item.getId() === rootId;
+          
+          // Hide drag line if:
+          // 1. It's targeting one of the dragged items (illogical)
+          // 2. It's targeting the root workspace (no reordering in root)
+          // 3. No drag line style available
+          if (isDragLineOnDraggedItem || isTargetingRootWorkspace || !dragLineStyle || dragLineStyle.display === 'none') {
+            return null;
+          }
+          
+          return <div style={dragLineStyle} className='dragline' />;
+        })()}
+        
+        {/* Drag preview component */}
+        <DragPreview tree={tree} />
       </div>
 
       {/* Batch Move Modal */}

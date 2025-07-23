@@ -318,15 +318,6 @@ export function WorkspaceToolbar({
                 <FolderPlus className='h-4 w-4 mr-2' />
                 New Folder
               </Button>
-
-              <Button
-                size='sm'
-                variant='ghost'
-                onClick={openUploadModal}
-              >
-                <Upload className='h-4 w-4 mr-2' />
-                Upload
-              </Button>
             </>
           )}
         </div>

@@ -25,12 +25,16 @@ export function WorkspaceContainer() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
   const handleClearSelection = () => {
-    // Clear all selections
+    // Clear tree instance selection
+    if (treeInstance?.setSelectedItems) {
+      treeInstance.setSelectedItems([]);
+    }
+    // Clear local state
     setSelectedItems([]);
   };
 
   return (
-    <div className='home-container w-full h-screen mx-auto bg-[var(--neutral-50)] flex flex-col'>
+    <div className='dashboard-container w-full h-screen mx-auto bg-[var(--neutral-50)] flex flex-col'>
       <WorkspaceHeader />
       <WorkspaceToolbar
         treeInstance={treeInstance}

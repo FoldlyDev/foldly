@@ -1,10 +1,10 @@
 /* =============================================================================
-   HOME CONTAINER - ANALYTICS DASHBOARD RESPONSIVE STYLES
+   DASHBOARD CONTAINER - RESPONSIVE STYLES
    ============================================================================= */
 
-/* Home Container - Mobile-First Responsive Design */
+/* Dashboard Container - Mobile-First Responsive Design */
 @layer components {
-  .home-container {
+  .dashboard-container {
     /* Base Styles - Mobile First (320px+) */
     --container-padding: 0.75rem;
     --container-max-width: 2000px;
@@ -21,30 +21,30 @@
   }
 
   /* Header Mobile Optimizations */
-  .home-container .dashboard-header {
+  .dashboard-container .dashboard-header {
     margin-bottom: 1.5rem;
   }
 
-  .home-container .dashboard-header h1 {
+  .dashboard-container .dashboard-header h1 {
     font-size: 1.5rem;
     line-height: 1.2;
     margin-bottom: 0.5rem;
   }
 
-  .home-container .dashboard-header p {
+  .dashboard-container .dashboard-header p {
     font-size: 0.875rem;
     line-height: 1.4;
   }
 
-  /* Analytics Cards Mobile Layout */
-  .analytics-grid {
+  /* Dashboard Grid Layouts */
+  .dashboard-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--content-spacing);
     margin-bottom: var(--content-spacing);
   }
 
-  .analytics-card {
+  .dashboard-card {
     background: white;
     border: 1px solid var(--neutral-200);
     border-radius: 1rem;
@@ -56,12 +56,12 @@
     overflow: hidden;
   }
 
-  .analytics-card:hover {
+  .dashboard-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
   }
 
-  .card-title {
+  .dashboard-card-title {
     font-size: 16px;
     font-weight: 600;
     color: var(--quaternary);
@@ -71,22 +71,21 @@
     gap: 0.5rem;
   }
 
-  .card-title svg {
+  .dashboard-card-title svg {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
   }
 
-  /* Quick Actions Mobile Layout */
-  .quick-actions-grid {
+  /* Dashboard Section Grids */
+  .dashboard-actions-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--content-spacing);
     margin-bottom: var(--content-spacing);
   }
 
-  /* Recent Items Mobile Layout */
-  .recent-items-grid {
+  .dashboard-items-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--content-spacing);
@@ -133,25 +132,25 @@
 
   /* Small Mobile (xs: 480px+) */
   @media (min-width: 30rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 1rem;
       --content-spacing: 1.25rem;
       --card-min-height: 300px;
     }
 
-    .home-container .dashboard-header h1 {
+    .dashboard-container .dashboard-header h1 {
       font-size: 1.75rem;
     }
 
-    .home-container .dashboard-header p {
+    .dashboard-container .dashboard-header p {
       font-size: 1rem;
     }
 
-    .card-title {
+    .dashboard-card-title {
       font-size: 17px;
     }
 
-    .card-title svg {
+    .dashboard-card-title svg {
       width: 22px;
       height: 22px;
     }
@@ -164,34 +163,34 @@
 
   /* Tablet (sm: 640px+) */
   @media (min-width: 40rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 1.5rem;
       --content-spacing: 1.5rem;
       --card-min-height: 300px;
     }
 
-    .home-container .dashboard-header {
+    .dashboard-container .dashboard-header {
       margin-bottom: 2rem;
     }
 
-    .home-container .dashboard-header h1 {
+    .dashboard-container .dashboard-header h1 {
       font-size: 2rem;
       margin-bottom: 0.75rem;
     }
 
-    .home-container .dashboard-header p {
+    .dashboard-container .dashboard-header p {
       font-size: 1.125rem;
     }
 
-    .analytics-grid {
+    .dashboard-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .quick-actions-grid {
+    .dashboard-actions-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .card-title svg {
+    .dashboard-card-title svg {
       width: 24px;
       height: 24px;
     }
@@ -204,46 +203,46 @@
 
   /* Medium Screens (md: 768px+) */
   @media (min-width: 48rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 2rem;
       --content-spacing: 1.75rem;
       --card-min-height: 310px;
     }
 
-    .analytics-grid {
+    .dashboard-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .quick-actions-grid {
+    .dashboard-actions-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .card-title {
+    .dashboard-card-title {
       font-size: 18px;
     }
   }
 
   /* Large Screens (lg: 1024px+) */
   @media (min-width: 64rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 2.5rem;
       --content-spacing: 2rem;
       --card-min-height: 320px;
     }
 
-    .home-container .dashboard-header h1 {
+    .dashboard-container .dashboard-header h1 {
       font-size: 2.25rem;
     }
 
-    .analytics-grid {
+    .dashboard-grid {
       grid-template-columns: repeat(4, 1fr);
     }
 
-    .quick-actions-grid {
+    .dashboard-actions-grid {
       grid-template-columns: repeat(4, 1fr);
     }
 
-    .card-title svg {
+    .dashboard-card-title svg {
       width: 26px;
       height: 26px;
     }
@@ -251,11 +250,11 @@
 
   /* Extra Large (xl: 1280px+) */
   @media (min-width: 80rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 3rem;
     }
 
-    .recent-items-grid {
+    .dashboard-items-grid {
       grid-template-columns: repeat(2, 1fr);
     }
 
@@ -267,15 +266,15 @@
 
   /* 2XL Screens (2xl: 1536px+) */
   @media (min-width: 96rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 3.5rem;
     }
 
-    .card-title {
+    .dashboard-card-title {
       font-size: 20px;
     }
 
-    .card-title svg {
+    .dashboard-card-title svg {
       width: 28px;
       height: 28px;
     }
@@ -283,24 +282,24 @@
 
   /* Ultra Wide (3xl: 1920px+) */
   @media (min-width: 120rem) {
-    .home-container {
+    .dashboard-container {
       --container-padding: 4rem;
     }
   }
 
   /* Accessibility & Performance */
   @media (prefers-reduced-motion: reduce) {
-    .analytics-card {
+    .dashboard-card {
       transition: none;
     }
 
-    .analytics-card:hover {
+    .dashboard-card:hover {
       transform: none;
     }
   }
 
   @media (prefers-contrast: high) {
-    .analytics-card {
+    .dashboard-card {
       border-width: 2px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
@@ -308,12 +307,12 @@
 
   /* Print Styles */
   @media print {
-    .home-container {
+    .dashboard-container {
       background: white;
       padding: 1rem;
     }
 
-    .analytics-card {
+    .dashboard-card {
       break-inside: avoid;
       box-shadow: none;
       border: 1px solid #ccc;
@@ -322,7 +321,7 @@
 
   /* Hover Effects - Only on devices that support hover */
   @media (hover: hover) {
-    .analytics-card:hover {
+    .dashboard-card:hover {
       box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     }
   }

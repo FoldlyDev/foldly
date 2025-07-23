@@ -51,7 +51,7 @@ export function WorkspaceHeader({
           className='text-[var(--neutral-600)] text-base sm:text-lg'
         >
           {totalLinks === 0 && totalFiles === 0
-            ? 'Ready to collect your first files?'
+            ? 'Organize and manage your collected files in one place'
             : `You've collected ${totalFiles} files across ${totalLinks} links. Keep going!`}
         </motion.p>
       </div>
@@ -96,7 +96,7 @@ export function WorkspaceHeader({
           className='shadow-brand flex-shrink-0 px-4 sm:px-6'
         >
           <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
-          <span className='text-sm sm:text-base'>Create Link</span>
+          <span className='text-sm sm:text-base'>Upload File</span>
         </GradientButton>
 
         {/* Mobile Settings Button - Only show on mobile */}

@@ -88,18 +88,35 @@ async function handleDropInternal(
     return;
   }
 
+  // Determine if this is actually a reorder (same parent) or move (different parent)
+  const firstItemId = itemIds[0];
+  if (!firstItemId) {
+    console.warn('No items to process');
+    return;
+  }
+  
+  // Find the current parent by looking for which parent has this item in its children
+  const currentParentId = Object.keys(data).find(parentId => 
+    data[parentId]?.children?.includes(firstItemId)
+  );
+  
+  const isReorderOperation = currentParentId === targetItemId;
+  const hasChildIndex = 'childIndex' in target;
+
   console.log('🔄 Drop operation started:', {
     itemIds: itemIds.map(id => `${data[id]?.name || 'Unknown'} (${id.slice(-8)})`),
     targetId: `${targetItemData.name} (${targetItemId.slice(-8)})`,
-    hasChildIndex: 'childIndex' in target,
-    operationType: 'childIndex' in target ? 'REORDER' : 'MOVE',
+    currentParentId: currentParentId?.slice(-8),
+    hasChildIndex,
+    isReorderOperation,
+    operationType: isReorderOperation ? 'REORDER' : 'MOVE',
   });
 
   // Set drag operation active to prevent data rebuilds
   setDragOperationActive(true);
 
   try {
-    if ('childIndex' in target) {
+    if (isReorderOperation) {
       // REORDERING: Items stay in same parent, just change sortOrder
       console.log('🔄 Handling REORDER operation within same parent');
       await handleReorderOperation({ items, target }, { tree, queryClient });
@@ -121,12 +138,6 @@ async function handleReorderOperation(
   { items, target }: DropHandlerParams,
   { tree, queryClient }: DropHandlerDependencies
 ): Promise<void> {
-  // This should use the existing logic from createOnDropHandler
-  const targetWithChildIndex = target as DragTarget<WorkspaceTreeItem> & {
-    childIndex: number;
-    insertionIndex: number;
-  };
-
   const parentId = target.item.getId();
   const parentData = data[parentId];
   
@@ -136,10 +147,44 @@ async function handleReorderOperation(
   }
   
   const oldChildren = [...(parentData.children || [])];
-  
-  // Calculate new children order based on insertion index
   const itemIds = items.map(item => item.getId());
-  const insertionIndex = targetWithChildIndex.insertionIndex;
+  
+  // Handle cases where there's no childIndex (dragging to empty space)
+  let insertionIndex = 0;
+  let childIndex = -1;
+  
+  if ('childIndex' in target && 'insertionIndex' in target) {
+    const targetWithChildIndex = target as DragTarget<WorkspaceTreeItem> & {
+      childIndex: number;
+      insertionIndex: number;
+    };
+    insertionIndex = targetWithChildIndex.insertionIndex;
+    childIndex = targetWithChildIndex.childIndex;
+  } else {
+    // No specific insertion point - this means dragging to empty space
+    // For items already in this parent, this should be a no-op
+    const currentIndices = itemIds.map(id => oldChildren.indexOf(id));
+    const allIndicesFound = currentIndices.every(index => index !== -1);
+    
+    if (allIndicesFound) {
+      // Items are already in this parent and there's no specific drop target
+      // This should be treated as no change
+      console.log('🔄 No specific drop target - items already in correct parent, skipping');
+      return;
+    }
+    
+    // If items aren't in this parent, append to end
+    insertionIndex = oldChildren.length;
+  }
+  
+  console.log('🔍 Reorder Debug:', {
+    parentId: parentId.slice(-8),
+    parentName: parentData.name,
+    itemIds: itemIds.map(id => `${data[id]?.name || 'Unknown'} (${id.slice(-8)})`),
+    insertionIndex,
+    childIndex,
+    oldChildren: oldChildren.map(id => `${data[id]?.name || 'Unknown'} (${id.slice(-8)})`),
+  });
   
   // Remove dragged items from their current positions
   const filteredChildren = oldChildren.filter(childId => !itemIds.includes(childId));
@@ -150,6 +195,13 @@ async function handleReorderOperation(
     ...itemIds,
     ...filteredChildren.slice(insertionIndex),
   ];
+  
+  console.log('🔍 Reorder Comparison:', {
+    oldChildrenIds: oldChildren,
+    newChildrenIds: newChildren,
+    filteredChildren,
+    areEqual: JSON.stringify(oldChildren) === JSON.stringify(newChildren),
+  });
   
   // Check if this is actually a change to avoid unnecessary operations
   if (JSON.stringify(oldChildren) === JSON.stringify(newChildren)) {
