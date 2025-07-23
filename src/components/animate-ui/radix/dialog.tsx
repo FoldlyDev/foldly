@@ -11,6 +11,7 @@ import {
 } from 'motion/react';
 
 import { cn } from '@/lib/utils/utils';
+import { useIsMobile } from '@/lib/hooks/use-mobile';
 
 type DialogContextType = {
   isOpen: boolean;
@@ -109,11 +110,49 @@ function DialogContent({
   ...props
 }: DialogContentProps) {
   const { isOpen } = useDialog();
+  const isMobile = useIsMobile();
 
   const initialRotation =
     from === 'top' || from === 'left' ? '20deg' : '-20deg';
   const isVertical = from === 'top' || from === 'bottom';
   const rotateAxis = isVertical ? 'rotateX' : 'rotateY';
+
+  // Use simple animations on mobile to prevent blur
+  const mobileAnimations = {
+    initial: { 
+      opacity: 0, 
+      scale: 0.95,
+      y: 20 
+    },
+    animate: { 
+      opacity: 1, 
+      scale: 1,
+      y: 0 
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.95,
+      y: 20 
+    }
+  };
+
+  const desktopAnimations = {
+    initial: {
+      opacity: 0,
+      filter: 'blur(4px)',
+      transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
+    },
+    animate: {
+      opacity: 1,
+      filter: 'blur(0px)',
+      transform: `perspective(500px) ${rotateAxis}(0deg) scale(1)`,
+    },
+    exit: {
+      opacity: 0,
+      filter: 'blur(4px)',
+      transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -122,9 +161,9 @@ function DialogContent({
           <DialogOverlay asChild forceMount>
             <motion.div
               key='dialog-overlay'
-              initial={{ opacity: 0, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, filter: 'blur(0px)' }}
-              exit={{ opacity: 0, filter: 'blur(4px)' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeInOut' }}
             />
           </DialogOverlay>
@@ -132,24 +171,13 @@ function DialogContent({
             <motion.div
               key='dialog-content'
               data-slot='dialog-content'
-              initial={{
-                opacity: 0,
-                filter: 'blur(4px)',
-                transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-              }}
-              animate={{
-                opacity: 1,
-                filter: 'blur(0px)',
-                transform: `perspective(500px) ${rotateAxis}(0deg) scale(1)`,
-              }}
-              exit={{
-                opacity: 0,
-                filter: 'blur(4px)',
-                transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-              }}
+              initial={isMobile ? mobileAnimations.initial : desktopAnimations.initial}
+              animate={isMobile ? mobileAnimations.animate : desktopAnimations.animate}
+              exit={isMobile ? mobileAnimations.exit : desktopAnimations.exit}
               transition={transition}
               className={cn(
                 'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-xl',
+                isMobile && 'transform-gpu will-change-auto',
                 className
               )}
               {...props}

@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Eye, Clock, Share2, AlertTriangle } from 'lucide-react';
+import { Checkbox } from '@/components/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
@@ -24,6 +25,7 @@ interface LinkCardMobileProps {
   formattedDate: string;
   isMultiSelected?: boolean | undefined;
   onOpenDetails: () => void;
+  onMultiSelect?: ((linkId: string) => void) | undefined;
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
@@ -37,6 +39,7 @@ export const LinkCardMobile = memo(
     formattedDate,
     isMultiSelected,
     onOpenDetails,
+    onMultiSelect,
     actions,
     quickActions,
     searchQuery,
@@ -66,6 +69,17 @@ export const LinkCardMobile = memo(
           {/* Header Row: Title + Status */}
           <div className='flex items-start justify-between gap-3'>
             <div className='flex items-center gap-3 min-w-0 flex-1'>
+              {/* Selection checkbox - Only show for custom links */}
+              {onMultiSelect && !isBaseLink && (
+                <div onClick={e => e.stopPropagation()}>
+                  <Checkbox
+                    checked={isMultiSelected || false}
+                    onCheckedChange={checked => onMultiSelect(link.id)}
+                    className='w-4 h-4 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
+                  />
+                </div>
+              )}
+
               {/* Icon */}
               <LinkTypeIcon isBaseLink={isBaseLink} size='md' />
 
@@ -90,24 +104,6 @@ export const LinkCardMobile = memo(
             <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
           </div>
 
-          {/* Info Row: Metrics + Date */}
-          <div className='flex items-center justify-between text-sm text-gray-500'>
-            <div className='flex items-center gap-4'>
-              <span className='flex items-center gap-1'>
-                <FileText className='w-4 h-4' />
-                {link.stats?.fileCount ?? 0}
-              </span>
-              <span className='flex items-center gap-1'>
-                <Eye className='w-4 h-4' />
-                {link.stats?.totalViewCount ?? 0}
-              </span>
-            </div>
-
-            <div className='flex items-center gap-1'>
-              <Clock className='w-4 h-4' />
-              <span>{formattedDate}</span>
-            </div>
-          </div>
 
           {/* Expiry Date Row */}
           {link.expiresAt && (
@@ -121,70 +117,14 @@ export const LinkCardMobile = memo(
 
           {/* Bottom Row: Quick Actions + Visibility + Dropdown */}
           <div className='flex items-center justify-between'>
-            {/* Left: Quick Actions (Copy & Share) */}
-            <div
-              className='flex items-center gap-2'
-              onClick={e => e.stopPropagation()}
-            >
-              {quickActions.map(action => {
-                const IconComponent = action.icon;
-
-                // Use AnimatedCopyButton for copy action
-                if (action.id === 'copy') {
-                  return (
-                    <AnimatedCopyButton
-                      key={action.id}
-                      onCopy={async () => {
-                        action.onClick();
-                      }}
-                      variant='ghost'
-                      size='sm'
-                      title={action.label}
-                      className='text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                      iconSize='w-4 h-4'
-                    />
-                  );
-                }
-
-                // Regular action button for other actions (like share)
-                return (
-                  <motion.div
-                    key={action.id}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-                  >
-                    <ActionButton
-                      onClick={e => {
-                        e.stopPropagation();
-                        action.onClick();
-                      }}
-                      variant='ghost'
-                      size='sm'
-                      title={action.label}
-                      className='text-gray-500 hover:text-gray-700 hover:bg-gray-100'
-                    >
-                      <motion.div
-                        whileHover={{
-                          scale: action.id === 'share' ? [1, 1.1, 1] : 1,
-                        }}
-                        transition={{
-                          duration: 0.3,
-                          ease: 'easeInOut',
-                        }}
-                      >
-                        <IconComponent className='w-4 h-4' />
-                      </motion.div>
-                    </ActionButton>
-                  </motion.div>
-                );
-              })}
+            {/* Left: Date */}
+            <div className='flex items-center gap-1 text-sm text-gray-500'>
+              <Clock className='w-4 h-4' />
+              <span>{formattedDate}</span>
             </div>
 
-            {/* Right: Visibility + Dropdown Menu */}
+            {/* Right: Dropdown Menu */}
             <div className='flex items-center gap-3'>
-              <LinkVisibilityIndicator isPublic={link.isPublic} />
-
               <div onClick={e => e.stopPropagation()}>
                 <CardActionsMenu
                   actions={actions}

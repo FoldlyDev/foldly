@@ -117,7 +117,7 @@ export function DeleteConfirmationModal() {
           </div>
 
           {/* Action buttons */}
-          <div className='flex flex-col-reverse sm:flex-row gap-3'>
+          <div className='flex flex-col-reverse sm:flex-row gap-3 sm:justify-end'>
             <button
               onClick={handleCancel}
               disabled={isDeleting}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Fragment } from 'react';
+import { motion } from 'framer-motion';
 import {
   dragAndDropFeature,
   hotkeysCoreFeature,
@@ -37,7 +38,6 @@ import {
   type WorkspaceTreeItem,
 } from '../../lib/tree-data';
 import { useQueryClient } from '@tanstack/react-query';
-import { ContentLoader } from '@/components/ui';
 import { BatchOperationModal } from '../modals/batch-operation-modal';
 import { DragPreview, useDragPreview } from './DragPreview';
 import '../../styles/workspace-tree.css';
@@ -98,7 +98,7 @@ export default function WorkspaceTree({
   onRootClick,
   onSelectionChange,
 }: WorkspaceTreeProps) {
-  const { data: workspaceData, isLoading, error } = useWorkspaceTree();
+  const { data: workspaceData, error } = useWorkspaceTree();
 
   // Get the actual workspace root ID
   const rootId = workspaceData?.workspace?.id;
@@ -247,42 +247,49 @@ export default function WorkspaceTree({
     }
   }, [tree, onTreeReady, handlers]);
 
-  // Loading state
-  if (isLoading || !workspaceData) {
-    return (
-      <div className='flex h-full items-center justify-center'>
-        <ContentLoader className='w-6 h-6' />
-        <span className='ml-2 text-sm text-muted-foreground'>
-          Loading workspace...
-        </span>
-      </div>
-    );
+  // Early return if no data (handled by progressive loader)
+  if (!workspaceData) {
+    return null;
   }
 
   // Error state
   if (error) {
     return (
-      <div className='flex h-full items-center justify-center'>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className='flex h-full items-center justify-center'
+      >
         <span className='text-sm text-destructive'>
           Failed to load workspace
         </span>
-      </div>
+      </motion.div>
     );
   }
 
   // Empty state
   if (!workspaceData.folders?.length && !workspaceData.files?.length) {
     return (
-      <div className='flex h-full items-center justify-center'>
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+        className='flex h-full items-center justify-center'
+      >
         <span className='text-sm text-muted-foreground'>
           No files or folders found. Create some to get started.
         </span>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className='h-full flex flex-col'>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
+      className='h-full flex flex-col'>
       <div
         {...tree.getContainerProps()}
         className='tree flex-1 overflow-auto relative'
@@ -412,6 +419,6 @@ export default function WorkspaceTree({
         progress={batchOperations.batchMoveModal.progress}
         isProcessing={batchOperations.batchMoveModal.isProcessing}
       />
-    </div>
+    </motion.div>
   );
 }

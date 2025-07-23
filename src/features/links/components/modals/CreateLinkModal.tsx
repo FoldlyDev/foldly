@@ -60,8 +60,8 @@ export const CreateLinkModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className='max-w-2xl max-h-[90vh] overflow-y-auto'>
-        <div className='space-y-6'>
+      <DialogContent className='w-[calc(100vw-2rem)] max-w-sm sm:max-w-lg lg:max-w-2xl max-h-[90vh] overflow-y-auto'>
+        <div className='space-y-4 md:space-y-6'>
           {/* Progress indicator */}
           <CreateLinkStepperHeader
             currentStep={currentStep}

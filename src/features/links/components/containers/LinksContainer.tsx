@@ -59,7 +59,8 @@ export function LinksContainer({
   });
 
   // Use prop loading/error state if provided, otherwise use query state
-  const isComponentLoading = propLoading || allLinksLoading || filteredLoading;
+  // Only show loading if we don't have any data and are actually loading
+  const isComponentLoading = propLoading || (allLinksLoading && allLinks.length === 0) || (filteredLoading && filteredLinks.length === 0);
   const componentError =
     propError ||
     (allLinksError ? allLinksQueryError?.message : null) ||

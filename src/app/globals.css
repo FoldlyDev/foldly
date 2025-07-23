@@ -146,17 +146,16 @@
 /* 🔐 Auth Feature Styles */
 @import '../features/auth/styles/auth-pages.css';
 
-/* 📋 Links Feature Styles */
-@import '../features/links/styles/links-page.css';
-
-/* 📊 Analytics Feature Styles */
-@import '../features/analytics/styles/home-container.css';
-
 /* 🌐 Global UI Component Styles */
 @import '../styles/components/ui/content-loader.css';
 
 /* 🏗️ Dashboard Feature Styles */
 @import '../styles/components/layout/dashboard-navigation.css';
+@import '../styles/features/dashboard-container.css';
+@import '../features/links/styles/links-page.css';
+
+/* 📁 Workspace Feature Styles */
+@import '../features/workspace/styles/workspace-responsive.css';
 
 /* =============================================================================
    CSS VARIABLES
@@ -573,7 +572,6 @@ input[type='checkbox'],
   }
 }
 
-
 /* Workspace Tree Styles */
 .tree {
   position: relative;
@@ -587,7 +585,7 @@ input[type='checkbox'],
 }
 
 .dragline::before {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: -3px;

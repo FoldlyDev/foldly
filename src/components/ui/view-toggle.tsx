@@ -60,7 +60,7 @@ export function ViewToggle({
             key={view.key}
             onClick={() => onChange(view.key)}
             className={cn(
-              'relative rounded-md transition-all duration-300 font-medium flex items-center gap-2 cursor-pointer border-0 bg-transparent',
+              'relative rounded-md transition-all duration-300 font-medium flex items-center justify-center gap-2 cursor-pointer border-0 bg-transparent flex-1',
               buttonSizeClasses[size],
               isActive
                 ? 'text-[var(--quaternary)] z-10'
@@ -85,7 +85,7 @@ export function ViewToggle({
             )}
 
             {/* Content */}
-            <div className='relative flex items-center gap-1.5'>
+            <div className='relative flex items-center justify-center gap-1.5 w-full'>
               <IconComponent
                 className={cn(
                   iconSizeClasses[size],

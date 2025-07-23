@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import {
@@ -261,77 +262,79 @@ export function WorkspaceToolbar({
   };
 
   return (
-    <div className={`workspace-toolbar ${className}`}>
+    <motion.div 
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
+      className={`${className}`}>
       {/* Main toolbar */}
-      <div className='flex items-center justify-between px-6 py-3 border-b border-[var(--neutral-200)]'>
+      <div className='workspace-toolbar-main'>
         {/* Left side - Main actions */}
-        <div className='flex items-center gap-2'>
+        <div className='workspace-toolbar-left'>
           {/* Create folder */}
           {isCreatingFolder ? (
-                <div className='flex items-center gap-2'>
-                  <div className="flex flex-col gap-1">
-                    <Input
-                      type='text'
-                      placeholder='Folder name'
-                      value={newFolderName}
-                      onChange={(e) => setNewFolderName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleCreateFolder();
-                        } else if (e.key === 'Escape') {
-                          setIsCreatingFolder(false);
-                          setNewFolderName('');
-                        }
-                      }}
-                      className='h-8 w-48'
-                      autoFocus
-                    />
-                    <span className="text-xs text-muted-foreground">
-                      Creating in: {getTargetFolderName()}
-                    </span>
-                  </div>
-                  <Button
-                    size='sm'
-                    onClick={handleCreateFolder}
-                    disabled={!newFolderName.trim() || createFolderMutation.isPending}
-                  >
-                    Create
-                  </Button>
-                  <Button
-                    size='sm'
-                    variant='ghost'
-                    onClick={() => {
+            <div className='workspace-folder-creation'>
+              <div className='workspace-folder-input-group'>
+                <Input
+                  type='text'
+                  placeholder='Folder name'
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateFolder();
+                    } else if (e.key === 'Escape') {
                       setIsCreatingFolder(false);
                       setNewFolderName('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                    }
+                  }}
+                  className='workspace-folder-input h-8'
+                  autoFocus
+                />
+                <Button
+                  size='sm'
+                  onClick={handleCreateFolder}
+                  disabled={!newFolderName.trim() || createFolderMutation.isPending}
+                >
+                  Create
+                </Button>
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  onClick={() => {
+                    setIsCreatingFolder(false);
+                    setNewFolderName('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Creating in: {getTargetFolderName()}
+              </span>
+            </div>
           ) : (
-            <>
-              <Button
-                size='sm'
-                variant='ghost'
-                onClick={() => setIsCreatingFolder(true)}
-              >
-                <FolderPlus className='h-4 w-4 mr-2' />
-                New Folder
-              </Button>
-            </>
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => setIsCreatingFolder(true)}
+            >
+              <FolderPlus className='h-4 w-4 mr-2' />
+              New Folder
+            </Button>
           )}
         </div>
 
         {/* Right side - Search and menu */}
-        <div className='flex items-center gap-2'>
+        <div className='workspace-toolbar-right'>
           {/* Search - always visible */}
-          <div className='relative'>
+          <div className='workspace-search-container'>
             <Input
               type='text'
               placeholder='Search files and folders...'
               value={searchQuery}
               onChange={(e) => setSearchQuery?.(e.target.value)}
-              className='h-8 w-64 pl-8'
+              className='h-8 w-full pl-8'
             />
             <Search className='absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
           </div>
@@ -404,6 +407,6 @@ export function WorkspaceToolbar({
         progress={batchProgress}
         isProcessing={batchDeleteMutation.isPending}
       />
-    </div>
+    </motion.div>
   );
 }

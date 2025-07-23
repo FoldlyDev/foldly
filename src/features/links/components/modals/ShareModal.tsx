@@ -70,7 +70,7 @@ export function ShareModal() {
   return (
     <Dialog open={isOpen} onOpenChange={closeModal}>
       <DialogContent
-        className='max-w-2xl bg-white border border-[var(--neutral-200)]'
+        className='w-[calc(100vw-2rem)] max-w-sm sm:max-w-lg lg:max-w-2xl bg-white border border-[var(--neutral-200)]'
         from='bottom'
         transition={{ type: 'spring', stiffness: 180, damping: 25 }}
       >
@@ -136,7 +136,7 @@ export function ShareModal() {
             <label className='text-sm font-medium text-[var(--quaternary)]'>
               Share on Social Media
             </label>
-            <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3'>
               {socialShareLinks.map(social => {
                 const IconComponent = social.icon;
                 return (

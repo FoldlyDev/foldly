@@ -17,6 +17,8 @@ interface LinkCardProps {
   onSettings: () => void;
   onDelete: () => void;
   searchQuery?: string;
+  isMultiSelected?: boolean;
+  onMultiSelect?: (linkId: string) => void;
 }
 
 const LinkCardComponent = ({
@@ -27,6 +29,8 @@ const LinkCardComponent = ({
   onSettings,
   onDelete,
   searchQuery = '',
+  isMultiSelected = false,
+  onMultiSelect,
 }: LinkCardProps) => {
   const isMobile = useIsMobile();
 
@@ -112,9 +116,9 @@ const LinkCardComponent = ({
         index={0}
         isBaseLink={isBaseLink}
         formattedDate={formattedDate}
-        isMultiSelected={false}
+        isMultiSelected={isMultiSelected}
         onOpenDetails={onDetails}
-        onMultiSelect={() => {}}
+        onMultiSelect={onMultiSelect || (() => {})}
         searchQuery={searchQuery}
         actions={dropdownActions}
         quickActions={quickActions}
@@ -130,8 +134,9 @@ const LinkCardComponent = ({
         index={0}
         isBaseLink={isBaseLink}
         formattedDate={formattedDate}
-        isMultiSelected={false}
+        isMultiSelected={isMultiSelected}
         onOpenDetails={onDetails}
+        onMultiSelect={onMultiSelect || (() => {})}
         actions={dropdownActions}
         quickActions={quickActions}
         searchQuery={searchQuery}
@@ -145,12 +150,12 @@ const LinkCardComponent = ({
       index={0}
       isBaseLink={isBaseLink}
       formattedDate={formattedDate}
-      isMultiSelectMode={false}
-      isMultiSelected={false}
+      isMultiSelectMode={true}
+      isMultiSelected={isMultiSelected}
       onOpenDetails={onDetails}
       onCopyLink={handleCopyLink}
       onShare={onShare}
-      onSelectionChange={() => {}}
+      onSelectionChange={onMultiSelect || (() => {})}
       searchQuery={searchQuery}
       actions={dropdownActions}
       quickActions={quickActions}

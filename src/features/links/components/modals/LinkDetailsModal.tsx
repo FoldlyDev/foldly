@@ -90,51 +90,54 @@ export function LinkDetailsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={closeModal}>
       <DialogContent
-        className='max-w-4xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
+        className='w-[calc(100vw-2rem)] max-w-md sm:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
         from='left'
         transition={{ type: 'spring', stiffness: 160, damping: 20 }}
       >
         <DialogHeader>
-          <div className='flex items-start justify-between gap-4'>
-            <div className='flex items-center gap-4 flex-1 min-w-0'>
-              <div className='w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0'>
-                <Link2 className='w-6 h-6 text-blue-600' />
-              </div>
-              <div className='flex-1 min-w-0'>
-                <div className='flex items-center gap-3 mb-2'>
-                  <DialogTitle className='text-xl font-bold text-[var(--quaternary)] truncate'>
-                    {link.title}
-                  </DialogTitle>
-                  <div
-                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border flex-shrink-0 ${statusConfig.color}`}
-                  >
-                    <div
-                      className={`w-2 h-2 rounded-full ${statusConfig.dotColor}`}
-                    />
-                    {statusConfig.text}
-                  </div>
-                </div>
-                <div className='text-[var(--neutral-600)] flex items-center gap-2 min-w-0'>
-                  <span className='truncate'>{linkUrl}</span>
-                  <AnimatedCopyButton
-                    onCopy={async () => {
-                      await navigator.clipboard.writeText(`https://${linkUrl}`);
-                    }}
-                    variant='ghost'
-                    size='sm'
-                    className='text-gray-500 hover:text-gray-700 flex-shrink-0'
-                    iconSize='w-4 h-4'
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <DialogTitle className='text-xl font-bold text-[var(--quaternary)] flex items-center gap-2'>
+            <Link2 className='w-5 h-5' />
+            {link.title}
+          </DialogTitle>
+          <DialogDescription className='text-[var(--neutral-600)]'>
+            View detailed information and statistics for this link
+          </DialogDescription>
         </DialogHeader>
 
-        <div className='pt-6 space-y-6'>
+        {/* Link Status and URL Section */}
+        <div className='space-y-3 pb-4 border-b border-[var(--neutral-200)]'>
+          <div className='flex items-center justify-between'>
+            <span className='text-sm font-medium text-[var(--neutral-700)]'>Status</span>
+            <div
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${statusConfig.color}`}
+            >
+              <div
+                className={`w-2 h-2 rounded-full ${statusConfig.dotColor}`}
+              />
+              {statusConfig.text}
+            </div>
+          </div>
+          <div className='flex items-center justify-between gap-4'>
+            <span className='text-sm font-medium text-[var(--neutral-700)]'>Link URL</span>
+            <div className='flex items-center gap-2 min-w-0'>
+              <span className='truncate text-sm text-[var(--neutral-600)]'>{linkUrl}</span>
+              <AnimatedCopyButton
+                onCopy={async () => {
+                  await navigator.clipboard.writeText(`https://${linkUrl}`);
+                }}
+                variant='ghost'
+                size='sm'
+                className='text-gray-500 hover:text-gray-700 flex-shrink-0'
+                iconSize='w-4 h-4'
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className='pt-4 md:pt-6 space-y-4 md:space-y-6'>
           {/* Statistics */}
-          <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
-            <div className='text-center p-4 bg-[var(--neutral-50)] rounded-lg'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4'>
+            <div className='text-center p-3 md:p-4 bg-[var(--neutral-50)] rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <FileText className='w-4 h-4 text-[var(--neutral-500)]' />
                 <span className='text-2xl font-bold text-[var(--quaternary)]'>
@@ -146,7 +149,7 @@ export function LinkDetailsModal() {
               </div>
             </div>
 
-            <div className='text-center p-4 bg-[var(--neutral-50)] rounded-lg'>
+            <div className='text-center p-3 md:p-4 bg-[var(--neutral-50)] rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <Users className='w-4 h-4 text-[var(--neutral-500)]' />
                 <span className='text-2xl font-bold text-[var(--quaternary)]'>
@@ -158,7 +161,7 @@ export function LinkDetailsModal() {
               </div>
             </div>
 
-            <div className='text-center p-4 bg-[var(--neutral-50)] rounded-lg'>
+            <div className='text-center p-3 md:p-4 bg-[var(--neutral-50)] rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <HardDrive className='w-4 h-4 text-[var(--neutral-500)]' />
                 <span className='text-2xl font-bold text-[var(--quaternary)]'>
@@ -170,7 +173,7 @@ export function LinkDetailsModal() {
               </div>
             </div>
 
-            <div className='text-center p-4 bg-[var(--neutral-50)] rounded-lg'>
+            <div className='text-center p-3 md:p-4 bg-[var(--neutral-50)] rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <TrendingUp className='w-4 h-4 text-green-600' />
                 <span className='text-2xl font-bold text-green-600'>
@@ -184,9 +187,9 @@ export function LinkDetailsModal() {
           </div>
 
           {/* Link Information */}
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6'>
             {/* Basic Information */}
-            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-6'>
+            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-4 md:p-6'>
               <h3 className='font-bold text-[var(--quaternary)] mb-4 flex items-center gap-2'>
                 <Calendar className='w-5 h-5 text-[var(--neutral-500)]' />
                 Basic Information
@@ -247,7 +250,7 @@ export function LinkDetailsModal() {
             </div>
 
             {/* Security & Settings */}
-            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-6'>
+            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-4 md:p-6'>
               <h3 className='font-bold text-[var(--quaternary)] mb-4 flex items-center gap-2'>
                 <Shield className='w-5 h-5 text-[var(--neutral-500)]' />
                 Security & Settings
@@ -328,7 +331,7 @@ export function LinkDetailsModal() {
 
           {/* Branding (if enabled) */}
           {link.brandEnabled && (
-            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-6'>
+            <div className='bg-white border border-[var(--neutral-200)] rounded-xl p-4 md:p-6'>
               <h3 className='font-bold text-[var(--quaternary)] mb-4 flex items-center gap-2'>
                 <Hash className='w-5 h-5 text-[var(--neutral-500)]' />
                 Branding

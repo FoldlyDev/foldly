@@ -141,7 +141,7 @@ export function SettingsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className='max-w-3xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
+        className='w-[calc(100vw-2rem)] max-w-md sm:max-w-xl lg:max-w-3xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
         from='left'
         transition={{ type: 'spring', stiffness: 160, damping: 20 }}
       >

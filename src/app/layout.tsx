@@ -86,9 +86,7 @@ export default function RootLayout({
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
           <QueryProvider>{children}</QueryProvider>
-          <div className='fixed top-0 right-0 z-999'>
-            <Toaster />
-          </div>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>

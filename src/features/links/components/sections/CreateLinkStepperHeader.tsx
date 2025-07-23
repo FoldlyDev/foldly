@@ -77,10 +77,10 @@ export const CreateLinkStepperHeader = ({
 
               return (
                 <div key={step.key} className='flex items-center'>
-                  {/* Icon container with fixed width for alignment */}
-                  <div className='flex justify-center w-10'>
+                  {/* Icon container with responsive width for alignment */}
+                  <div className='flex justify-center w-8 sm:w-10'>
                     <motion.div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                         isCompleted
                           ? 'bg-green-500 text-white'
                           : isCurrent
@@ -99,15 +99,15 @@ export const CreateLinkStepperHeader = ({
                       transition={{ duration: 0.2 }}
                     >
                       {isCompleted ? (
-                        <CheckCircle className='w-5 h-5' />
+                        <CheckCircle className='w-4 h-4 sm:w-5 sm:h-5' />
                       ) : (
-                        <Icon className='w-5 h-5' />
+                        <Icon className='w-4 h-4 sm:w-5 sm:h-5' />
                       )}
                     </motion.div>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`w-20 h-0.5 mx-6 ${
+                      className={`w-12 sm:w-20 h-0.5 mx-3 sm:mx-6 ${
                         isCompleted ? 'bg-green-500' : 'bg-gray-200'
                       }`}
                     />
@@ -124,8 +124,8 @@ export const CreateLinkStepperHeader = ({
 
               return (
                 <div key={`${step.key}-label`} className='flex items-center'>
-                  {/* Label container with matching width for perfect alignment */}
-                  <div className='flex justify-center w-10'>
+                  {/* Label container with matching responsive width for perfect alignment */}
+                  <div className='flex justify-center w-8 sm:w-10'>
                     <span
                       className={`text-xs whitespace-nowrap ${
                         isCurrent
@@ -136,7 +136,7 @@ export const CreateLinkStepperHeader = ({
                       {step.label}
                     </span>
                   </div>
-                  {index < steps.length - 1 && <div className='w-20 mx-6' />}
+                  {index < steps.length - 1 && <div className='w-12 sm:w-20 mx-3 sm:mx-6' />}
                 </div>
               );
             })}

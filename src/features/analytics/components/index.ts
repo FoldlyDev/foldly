@@ -3,3 +3,6 @@
 
 // Views
 export * from './views';
+
+// Skeletons
+export * from './skeletons';

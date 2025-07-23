@@ -24,6 +24,9 @@ export * from './sections';
 // View components
 export * from './views';
 
+// Skeleton components
+export * from './skeletons';
+
 // Constants - Re-exported for easy access from components
 export {
   FILE_TYPE_OPTIONS,

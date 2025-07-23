@@ -34,30 +34,37 @@ export function WorkspaceContainer() {
   };
 
   return (
-    <div className='dashboard-container w-full h-screen mx-auto bg-[var(--neutral-50)] flex flex-col'>
-      <WorkspaceHeader />
-      <WorkspaceToolbar
-        treeInstance={treeInstance}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedItems={selectedItems}
-        onClearSelection={handleClearSelection}
-      />
+    <div className='dashboard-container workspace-layout'>
+      <div className='workspace-header'>
+        <WorkspaceHeader />
+      </div>
+      
+      <div className='workspace-toolbar'>
+        <WorkspaceToolbar
+          treeInstance={treeInstance}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedItems={selectedItems}
+          onClearSelection={handleClearSelection}
+        />
+      </div>
 
-      {/* Tree container */}
-      <div className='flex-1 w-full max-w-md p-6 overflow-hidden flex flex-col'>
-        <div className='flex-1 min-h-0 bg-white rounded-lg border border-[var(--neutral-200)] shadow-sm p-4'>
-          <WorkspaceTree
-            onTreeReady={setTreeInstance}
-            searchQuery={searchQuery}
-            selectedItems={selectedItems}
-            onSelectionChange={setSelectedItems}
-          />
-        </div>
-
-        {/* Root drop zone indicator */}
-        <div className='mt-2 text-xs text-muted-foreground text-center'>
-          Drag items to workspace root or between folders
+      <div className='workspace-tree-container'>
+        <div className='workspace-tree-wrapper'>
+          <div className='workspace-tree-content'>
+            <WorkspaceTree
+              onTreeReady={setTreeInstance}
+              searchQuery={searchQuery}
+              selectedItems={selectedItems}
+              onSelectionChange={setSelectedItems}
+            />
+          </div>
+          
+          <div className='workspace-tree-footer'>
+            <p className='workspace-tree-footer-text'>
+              Drag items to workspace root or between folders
+            </p>
+          </div>
         </div>
       </div>
     </div>

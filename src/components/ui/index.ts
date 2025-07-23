@@ -40,3 +40,5 @@ export * from './shadcn';
 export { HelpPopover } from './help-popover';
 export { AnimatedSelect } from './animated-select';
 export { Tree, TreeItem, TreeItemLabel, TreeDragLine } from './tree';
+export { Skeleton } from './skeleton-loader';
+export { default as DynamicDashboardSkeleton } from './dynamic-dashboard-skeleton';

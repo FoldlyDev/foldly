@@ -12,3 +12,6 @@ export * from './lists';
 
 // Modals
 export * from './modals';
+
+// Skeletons
+export * from './skeletons';

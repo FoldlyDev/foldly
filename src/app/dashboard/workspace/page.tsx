@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 
 // Force dynamic rendering for authenticated pages
 export const dynamic = 'force-dynamic';
@@ -53,22 +52,7 @@ export default async function WorkspacePage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <Suspense fallback={<WorkspaceLoadingFallback />}>
-        <WorkspaceContainer />
-      </Suspense>
+      <WorkspaceContainer />
     </HydrationBoundary>
-  );
-}
-
-// Loading fallback component for better UX
-function WorkspaceLoadingFallback() {
-  return (
-    <div className='workspace-loading'>
-      <div className='animate-pulse space-y-4'>
-        <div className='h-8 bg-gray-200 rounded-md w-1/4'></div>
-        <div className='h-32 bg-gray-200 rounded-md'></div>
-        <div className='h-64 bg-gray-200 rounded-md'></div>
-      </div>
-    </div>
   );
 }
