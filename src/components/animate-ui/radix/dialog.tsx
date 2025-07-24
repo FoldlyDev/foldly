@@ -86,7 +86,7 @@ function DialogOverlay({ className, ...props }: DialogOverlayProps) {
     <DialogPrimitive.Overlay
       data-slot='dialog-overlay'
       className={cn(
-        'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'fixed inset-0 z-50 modal-backdrop data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         className
       )}
       {...props}
@@ -176,15 +176,15 @@ function DialogContent({
               exit={isMobile ? mobileAnimations.exit : desktopAnimations.exit}
               transition={transition}
               className={cn(
-                'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg rounded-xl',
+                'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-container modal-float rounded-2xl p-0 overflow-hidden',
                 isMobile && 'transform-gpu will-change-auto',
                 className
               )}
               {...props}
             >
               {children}
-              <DialogPrimitive.Close className='absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground cursor-pointer'>
-                <X size={16} animation='default' />
+              <DialogPrimitive.Close className='absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/20 opacity-70 transition-all duration-200 hover:opacity-100 hover:scale-110 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none cursor-pointer icon-hover'>
+                <X size={16} className="text-gray-600 hover:text-gray-800" />
                 <span className='sr-only'>Close</span>
               </DialogPrimitive.Close>
             </motion.div>

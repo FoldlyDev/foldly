@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { EmptyLinksState, PopulatedLinksState } from '@/features/links';
-import { ContentLoader } from '@/components/ui';
+import { LinksSkeleton } from '../skeletons/links-skeleton';
 import { LinksModalManager } from '../managers/LinksModalManager';
 import { useFilteredLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useUIStore } from '../../store/ui-store';
@@ -70,15 +70,7 @@ export function LinksContainer({
   const hasNoLinksAtAll = allLinks.length === 0;
 
   if (isComponentLoading) {
-    return (
-      <div className='min-h-screen bg-[var(--neutral-50)]'>
-        <div className='home-container w-full mx-auto'>
-          <div className='loading-container'>
-            <ContentLoader />
-          </div>
-        </div>
-      </div>
-    );
+    return <LinksSkeleton />;
   }
 
   if (componentError) {
@@ -145,7 +137,6 @@ export function LinksContainer({
           ) : (
             <PopulatedLinksState
               links={filteredLinks}
-              isLoading={filteredLoading}
             />
           )}
         </div>

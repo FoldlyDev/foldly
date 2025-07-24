@@ -74,6 +74,8 @@ import {
   validateTopicName,
   generateTopicUrl,
 } from '../../lib/utils';
+import { useSlugValidation } from '../../hooks/use-slug-validation';
+import { useSlugNormalization } from '../../lib/utils/slug-normalization';
 
 interface LinkInformationSectionProps {
   readonly linkType: 'base' | 'topic';
@@ -114,15 +116,25 @@ export function LinkInformationSection({
   errors,
   isLoading = false,
 }: LinkInformationSectionProps) {
+  // Slug normalization utilities
+  const { normalizeSlug, normalizeTopic } = useSlugNormalization();
+
+  // Real-time slug validation for base links (Calendly-style)
+  const slugValidation = useSlugValidation(formData.slug || '', {
+    enabled: linkType === 'base',
+    debounceMs: 500,
+  });
+
   // Real-time URL generation with validation
   // Use 'topic' field from database schema, fallback to 'name' for compatibility
   const topicValue = formData.topic || formData.name || '';
 
   const urlData = useMemo(() => {
     if (linkType === 'base') {
+      const slug = formData.slug || username;
       return {
-        displayUrl: `foldly.io/${username}`,
-        slug: '',
+        displayUrl: `foldly.io/${slug}`,
+        slug: formData.slug || '',
         isValidTopic: true,
         topicError: null,
       };
@@ -140,7 +152,7 @@ export function LinkInformationSection({
       isValidTopic: validation.isValid,
       topicError: validation.error || null,
     };
-  }, [linkType, username, topicValue]);
+  }, [linkType, username, topicValue, formData.slug]);
 
   return (
     <div className='space-y-6'>
@@ -180,6 +192,96 @@ export function LinkInformationSection({
 
       {/* Form Fields */}
       <div className='space-y-4 sm:space-y-6'>
+        {/* Base Link Slug Field - Only for base links */}
+        {linkType === 'base' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className='p-4 bg-card rounded-lg border border-border space-y-4'>
+              <div className='flex items-center gap-3'>
+                <div className='p-2 bg-primary/10 rounded-lg'>
+                  <Hash className='w-4 h-4 text-primary' />
+                </div>
+                <div>
+                  <h3 className='font-medium text-foreground'>Custom Slug</h3>
+                  <p className='text-sm text-muted-foreground'>
+                    Customize your base link URL (optional)
+                  </p>
+                </div>
+              </div>
+
+              <div className='space-y-3'>
+                <div className='relative'>
+                  <input
+                    type='text'
+                    value={formData.slug || ''}
+                    onChange={e => {
+                      // Normalize slug input for consistent case handling
+                      const normalizedSlug = normalizeSlug(e.target.value);
+                      onDataChange({
+                        slug: normalizedSlug,
+                      });
+                    }}
+                    placeholder={`Leave empty to use: ${username}`}
+                    disabled={isLoading}
+                    className={`w-full px-3 py-2 pr-10 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+                      formData.slug
+                        ? slugValidation.isAvailable
+                          ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
+                          : slugValidation.isUnavailable
+                            ? 'border-destructive focus:ring-destructive/20 focus:border-destructive'
+                            : 'border-border focus:ring-ring focus:border-ring'
+                        : 'border-border focus:ring-ring focus:border-ring'
+                    }`}
+                  />
+                  {/* Validation icon */}
+                  {formData.slug && (
+                    <div className='absolute right-3 top-1/2 -translate-y-1/2'>
+                      {slugValidation.isChecking ? (
+                        <div className='w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
+                      ) : slugValidation.isAvailable ? (
+                        <CheckCircle className='w-4 h-4 text-green-500' />
+                      ) : slugValidation.isUnavailable ? (
+                        <AlertCircle className='w-4 h-4 text-destructive' />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Error feedback for unavailable slugs */}
+                {formData.slug && slugValidation.isUnavailable && (
+                  <div className='flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
+                    <AlertCircle className='w-4 h-4 text-destructive flex-shrink-0' />
+                    <p className='text-sm text-destructive'>
+                      {slugValidation.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Success feedback for available slugs */}
+                {formData.slug && slugValidation.isAvailable && (
+                  <div className='flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
+                    <CheckCircle className='w-4 h-4 text-green-600 flex-shrink-0' />
+                    <p className='text-sm text-green-800'>
+                      {slugValidation.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Help text */}
+                <div className='space-y-1'>
+                  <p className='text-xs text-muted-foreground'>
+                    <strong>Allowed characters:</strong> Letters, numbers,
+                    hyphens, and underscores
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Collection Name / Topic Field - Only for topic links */}
         {linkType === 'topic' && (
           <motion.div
@@ -206,10 +308,12 @@ export function LinkInformationSection({
                     type='text'
                     value={topicValue}
                     onChange={e => {
+                      // Normalize topic input for consistent case handling
+                      const normalizedTopic = normalizeTopic(e.target.value);
                       // Update both topic (database field) and name (for compatibility)
                       onDataChange({
-                        topic: e.target.value,
-                        name: e.target.value,
+                        topic: normalizedTopic,
+                        name: normalizedTopic,
                       });
                     }}
                     placeholder='e.g., resumes, portfolios, feedback'
@@ -236,9 +340,9 @@ export function LinkInformationSection({
 
                 {/* Error message from real-time validation */}
                 {topicValue && urlData.topicError && (
-                  <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
-                    <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
-                    <p className='text-sm text-destructive'>
+                  <div className='flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
+                    <AlertCircle className='w-4 h-4 text-destructive flex-shrink-0' />
+                    <p className='text-sm text-destructive leading-4 m-0'>
                       {urlData.topicError}
                     </p>
                   </div>
@@ -246,9 +350,9 @@ export function LinkInformationSection({
 
                 {/* Schema validation error (from form validation) */}
                 {(errors?.topic || errors?.name) && (
-                  <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
-                    <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
-                    <p className='text-sm text-destructive'>
+                  <div className='flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
+                    <AlertCircle className='w-4 h-4 text-destructive flex-shrink-0' />
+                    <p className='text-sm text-destructive leading-4 m-0'>
                       {errors?.topic || errors?.name}
                     </p>
                   </div>
@@ -256,14 +360,11 @@ export function LinkInformationSection({
 
                 {/* Success message for valid topics */}
                 {topicValue && urlData.isValidTopic && urlData.slug && (
-                  <div className='flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
-                    <CheckCircle className='w-4 h-4 text-green-600 mt-0.5 flex-shrink-0' />
+                  <div className='flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
+                    <CheckCircle className='w-4 h-4 text-green-600 flex-shrink-0' />
                     <div className='flex-1'>
-                      <p className='text-sm text-green-800'>
-                        Great! Your topic URL will be:{' '}
-                        <span className='font-mono font-medium'>
-                          {urlData.displayUrl}
-                        </span>
+                      <p className='text-sm text-green-800 leading-4 m-0'>
+                        Topic name is valid and ready to use!
                       </p>
                     </div>
                   </div>

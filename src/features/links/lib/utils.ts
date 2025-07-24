@@ -5,6 +5,15 @@
 
 import type { LinkWithStats, DatabaseId, LinkType } from '@/lib/supabase/types';
 
+// Re-export slug normalization utilities for convenience
+export {
+  normalizeSlug,
+  normalizeTopic,
+  useSlugNormalization,
+  isValidNormalizedSlug,
+  isValidNormalizedTopic,
+} from './utils/slug-normalization';
+
 /**
  * Generate full URL for link
  */

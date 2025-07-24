@@ -22,13 +22,11 @@ import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface PopulatedLinksStateProps {
   links: LinkWithStats[];
-  isLoading?: boolean;
 }
 
 export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
   function PopulatedLinksState({
     links = [],
-    isLoading = false,
   }: PopulatedLinksStateProps) {
     // Single store subscription instead of multiple selectors to prevent cascading re-renders
     const {

@@ -50,20 +50,22 @@ export function DeleteConfirmationModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
-      <DialogContent className='max-w-md bg-white'>
+      <DialogContent className='w-[calc(100vw-1rem)] max-w-md h-auto max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-4rem)] bg-white'>
         <DialogHeader className='text-center'>
           <div className='mx-auto mb-4 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center'>
             <AlertTriangle className='w-6 h-6 text-red-600' />
           </div>
 
-          <DialogTitle className='text-xl font-semibold text-gray-900'>
+          <DialogTitle className='text-lg sm:text-xl font-semibold leading-normal text-gray-900'>
             Delete Link
           </DialogTitle>
 
-          <DialogDescription className='text-gray-600 mt-2'>
-            Are you sure you want to delete "{link.title}"? This action cannot
-            be undone.
-          </DialogDescription>
+          <div className="flex justify-center mt-2">
+            <DialogDescription className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
+              Are you sure you want to delete "{link.title}"? This action cannot
+              be undone.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         <div className='mt-6'>

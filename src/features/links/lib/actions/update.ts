@@ -59,6 +59,7 @@ export async function updateLinkAction(
     // 5. Prepare update data - filter out undefined values
     const linkUpdate: Record<string, any> = {};
 
+    if (updateData.slug !== undefined) linkUpdate.slug = updateData.slug;
     if (updateData.title !== undefined) linkUpdate.title = updateData.title;
     if (updateData.description !== undefined)
       linkUpdate.description = updateData.description || null;

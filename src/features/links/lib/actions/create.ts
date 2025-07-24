@@ -63,7 +63,7 @@ export async function createLinkAction(
     const linkData: LinkInsert = {
       userId: user.id,
       workspaceId: workspaceResult.data.id,
-      slug: user.username || user.id, // Use username or fallback to ID
+      slug: validatedData.slug || user.username || user.id, // Use provided slug, fallback to username or ID
       topic: validatedData.topic || null,
       linkType,
       title: validatedData.title,

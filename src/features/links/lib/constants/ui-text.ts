@@ -9,9 +9,9 @@
  */
 export const LINK_TYPE_LABELS = {
   base: {
-    name: 'Personal Collection',
+    name: 'Base link',
     description: 'Your main file collection link',
-    title: 'Personal Collection',
+    title: 'Base link',
   },
   topic: {
     name: 'Topic Link',

@@ -9,6 +9,7 @@ import { z } from 'zod';
 import {
   titleSchema,
   topicSchema,
+  slugSchema,
   descriptionSchema,
   hexColorSchema,
   fileTypesSchema,
@@ -30,6 +31,7 @@ export const createLinkFormSchema = z
     // === DATABASE FIELDS ONLY (aligned with database schema) ===
 
     // Basic information
+    slug: slugSchema,
     title: titleSchema,
     topic: z.string().optional(), // Simplified to avoid ZodEffects nesting
     description: descriptionSchema,
@@ -122,6 +124,7 @@ export const generalSettingsSchema = z
     // === DATABASE FIELDS ===
 
     // Basic information
+    slug: slugSchema,
     description: descriptionSchema,
 
     // General settings (all optional for partial updates)

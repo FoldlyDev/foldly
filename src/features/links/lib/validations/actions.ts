@@ -9,6 +9,7 @@ import { z } from 'zod';
 import {
   titleSchema,
   topicSchema,
+  slugSchema,
   descriptionSchema,
   uuidSchema,
   maxFilesSchema,
@@ -33,6 +34,7 @@ export const createLinkActionSchema = withPasswordRequirement(
     // workspaceId removed - will be resolved internally in server action
 
     // Optional fields (with database defaults)
+    slug: slugSchema,
     topic: topicSchema.optional(),
     description: descriptionSchema.optional(),
     requireEmail: z.boolean().default(false),
@@ -61,6 +63,7 @@ export const createLinkActionSchema = withPasswordRequirement(
 export const updateLinkActionSchema = withPasswordRequirement(
   z.object({
     id: uuidSchema,
+    slug: slugSchema,
     title: titleSchema.optional(),
     topic: topicSchema.optional(),
     description: descriptionSchema.optional(),
@@ -149,6 +152,7 @@ export const updateSettingsActionSchema = withPasswordRequirement(
  * Allows partial updates with type safety - aligned with database schema
  */
 export type FlexibleLinkUpdate = Partial<{
+  slug: string;
   title: string;
   topic: string;
   description: string | null;

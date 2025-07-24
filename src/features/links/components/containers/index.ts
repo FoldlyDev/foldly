@@ -4,4 +4,3 @@
  */
 
 export { LinksContainer } from './LinksContainer';
-export { ModalContainer } from './ModalContainer';

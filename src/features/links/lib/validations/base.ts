@@ -78,6 +78,23 @@ export const titleSchema = z
   .max(100, 'Title must be less than 100 characters');
 
 /**
+ * Slug validation schema for base links
+ */
+export const slugSchema = z
+  .string()
+  .max(100, 'Slug must be less than 100 characters')
+  .refine(
+    slug => {
+      if (!slug) return true; // Empty slug is allowed (will use username)
+      return /^[a-zA-Z0-9_-]+$/.test(slug);
+    },
+    {
+      message: 'Slug can only contain letters, numbers, hyphens, and underscores',
+    }
+  )
+  .optional();
+
+/**
  * Description validation schema
  */
 export const descriptionSchema = z

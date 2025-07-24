@@ -88,6 +88,7 @@ export const links = pgTable(
     linksUserIdIdx: index('links_user_id_idx').on(table.userId),
     linksWorkspaceIdIdx: index('links_workspace_id_idx').on(table.workspaceId),
     linksSlugTopicIdx: uniqueIndex('links_slug_topic_idx').on(
+      table.userId,
       table.slug,
       table.topic
     ),

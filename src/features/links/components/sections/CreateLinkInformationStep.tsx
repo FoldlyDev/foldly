@@ -11,6 +11,7 @@ import {
 import { LinkInformationSection } from '../sections/LinkInformationSection';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
+import { useSlugValidation } from '../../hooks/use-slug-validation';
 
 /**
  * Information step for create link modal
@@ -28,6 +29,15 @@ export const CreateLinkInformationStep = () => {
     createLinkFormSelectors.isSubmitting
   );
   const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canProceed);
+  
+  // Add slug validation for base links
+  const slugValidation = useSlugValidation(
+    formData.slug || '', 
+    { 
+      enabled: linkType === 'base',
+      debounceMs: 500 
+    }
+  );
 
   // Form actions
   const updateFormField = useCreateLinkFormStore(
@@ -39,7 +49,7 @@ export const CreateLinkInformationStep = () => {
   const linkInformationData = useMemo(
     () => ({
       // Required fields from LinkCreateForm (with defaults for missing fields)
-      slug: '', // Will be generated on submit
+      slug: formData.slug || '', // Allow editing the slug
       topic: formData.topic || '',
       linkType: linkType, // Use actual linkType from store
       title: formData.title || '',
@@ -80,11 +90,20 @@ export const CreateLinkInformationStep = () => {
       // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
 
+      // Handle the slug field for base links
+      if (updates.slug !== undefined) {
+        convertedUpdates.slug = String(updates.slug);
+        console.log(
+          '📝 INFORMATION STEP: Base link - setting slug =',
+          updates.slug
+        );
+      }
+
       // Handle the name field which maps to different fields based on link type
       if (updates.name !== undefined) {
         if (linkType === 'base') {
           // Base links get auto-assigned titles - set a default title
-          convertedUpdates.title = `${user?.username || 'user'}'s Collection`;
+          convertedUpdates.title = 'Base link';
           console.log(
             '📝 INFORMATION STEP: Base link - auto-setting title =',
             convertedUpdates.title
@@ -182,28 +201,41 @@ export const CreateLinkInformationStep = () => {
     [updateFormField, linkType]
   );
 
+  // Enhanced validation logic including slug validation
+  const canProceedToNext = useMemo(() => {
+    // Basic form validation
+    if (!canGoNext) return false;
+    
+    // For base links, also check slug validation
+    if (linkType === 'base') {
+      // If slug is provided, it must be available
+      if (formData.slug) {
+        return slugValidation.isAvailable && !slugValidation.isChecking;
+      }
+      // If no slug provided, it's OK (will use username)
+      return true;
+    }
+    
+    // For topic links, use basic validation
+    return true;
+  }, [canGoNext, linkType, formData.slug, slugValidation.isAvailable, slugValidation.isChecking]);
+
   // Handle next step
   const handleNext = useCallback(() => {
     console.log('📝 INFORMATION STEP: handleNext called');
     console.log('📝 INFORMATION STEP: canGoNext =', canGoNext);
+    console.log('📝 INFORMATION STEP: canProceedToNext =', canProceedToNext);
     console.log('📝 INFORMATION STEP: linkType =', linkType);
     console.log('📝 INFORMATION STEP: formData =', formData);
-    console.log(
-      '📝 INFORMATION STEP: title length =',
-      formData.title?.length || 0
-    );
-    console.log(
-      '📝 INFORMATION STEP: topic length =',
-      formData.topic?.length || 0
-    );
+    console.log('📝 INFORMATION STEP: slugValidation =', slugValidation);
 
-    if (canGoNext) {
+    if (canProceedToNext) {
       console.log('📝 INFORMATION STEP: Calling nextStep()');
       nextStep();
     } else {
       console.log('📝 INFORMATION STEP: Cannot go next - validation failed');
     }
-  }, [canGoNext, nextStep, linkType, formData]);
+  }, [canProceedToNext, nextStep, linkType, formData, slugValidation]);
 
   return (
     <motion.div
@@ -224,7 +256,7 @@ export const CreateLinkInformationStep = () => {
       />
 
       <CreateLinkFormButtons
-        canGoNext={canGoNext}
+        canGoNext={canProceedToNext}
         canGoPrevious={false}
         isSubmitting={isSubmitting}
         onNext={handleNext}

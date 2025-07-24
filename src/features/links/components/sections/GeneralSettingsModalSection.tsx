@@ -31,7 +31,7 @@ export function GeneralSettingsModalSection({
     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
       {/* Left Column - Basic Info & Visibility */}
       <div className='space-y-6'>
-        <BasicInformationSection form={form} linkTitle={link.title} />
+        <BasicInformationSection form={form} link={link} />
         <VisibilitySecuritySection form={form} />
         {!isBaseLink && link.isActive && (
           <ExpirationDateSection link={link} form={form} />

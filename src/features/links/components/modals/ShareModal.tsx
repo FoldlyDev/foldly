@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import {
   Facebook,
   Twitter,
@@ -7,13 +8,17 @@ import {
   MessageCircle,
   QrCode,
   Mail,
+  Share2,
+  Copy,
+  ExternalLink,
+  Smartphone,
+  Monitor,
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ActionButton } from '@/components/ui/action-button';
@@ -70,111 +75,200 @@ export function ShareModal() {
   return (
     <Dialog open={isOpen} onOpenChange={closeModal}>
       <DialogContent
-        className='w-[calc(100vw-2rem)] max-w-sm sm:max-w-lg lg:max-w-2xl bg-white border border-[var(--neutral-200)]'
+        className='w-[calc(100vw-2rem)] max-w-sm sm:max-w-lg lg:max-w-3xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'
         from='bottom'
         transition={{ type: 'spring', stiffness: 180, damping: 25 }}
       >
-        <DialogHeader className='text-center'>
-          <DialogTitle className='text-xl font-bold text-[var(--quaternary)]'>
-            Share &quot;{link.title}&quot;
-          </DialogTitle>
-          <DialogDescription className='text-[var(--neutral-600)]'>
-            Share this link with others to let them upload files
-          </DialogDescription>
-        </DialogHeader>
+        {/* Accessibility Labels */}
+        <DialogTitle className="sr-only">
+          Share Link: {link.title}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Get your link in front of the right people by sharing on social media or copying the URL
+        </DialogDescription>
 
-        <div className='space-y-6 pt-4'>
-          {/* URL Section */}
-          <div className='space-y-3'>
-            <label className='text-sm font-medium text-[var(--quaternary)]'>
-              Link URL
-            </label>
-            <div className='flex items-center gap-2 p-3 bg-[var(--neutral-50)] border border-[var(--neutral-200)] rounded-lg'>
-              <span className='flex-1 text-sm text-[var(--neutral-700)] break-all'>
+        {/* Premium Header */}
+        <div className="relative overflow-hidden modal-gradient-indigo border-b border-gray-200/50">
+          {/* Animated Background */}
+          <div className="modal-decoration-overlay" />
+          <div className="absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-indigo-400/10 to-transparent rounded-full -translate-x-16 -translate-y-16" />
+          <div className="absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl from-purple-400/10 to-transparent rounded-full translate-x-12 translate-y-12" />
+          
+          <div className="relative p-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 rounded-2xl modal-icon-indigo">
+                <Share2 className="w-7 h-7 text-white" />
+              </div>
+            </div>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-indigo mb-2">
+              Share "{link.title}"
+            </h1>
+            <div className="flex justify-center">
+              <p className="text-sm sm:text-base text-gray-600 text-center max-w-md">
+                Get your link in front of the right people
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-8 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto pb-20 sm:pb-12">
+          {/* URL Copy Section */}
+          <motion.div 
+            className="display-card bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-gray-500/10">
+                <Copy className="w-5 h-5 text-gray-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Quick Copy</h3>
+            </div>
+            
+            <div className="flex items-center gap-3 p-4 bg-gray-50/80 rounded-xl border border-gray-200/50">
+              <code className="flex-1 text-sm font-mono text-gray-800 break-all">
                 {fullUrl}
-              </span>
+              </code>
               <CopyButton
                 value={fullUrl}
                 size='sm'
                 showText
-                variant='outline'
-                className='flex-shrink-0'
+                variant='default'
+                className='premium-button text-white border-0 px-4 py-2 flex-shrink-0'
               />
             </div>
-          </div>
-
-          {/* Link Type Info */}
-          <div className='text-center p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-            <p className='text-sm text-blue-700'>
-              <span className='font-medium'>Type:</span>{' '}
-              {link.linkType === 'base'
-                ? 'Personal Collection'
-                : 'Topic Collection'}
-              {link.topic && (
-                <span className='block mt-1'>Topic: {link.topic}</span>
-              )}
-            </p>
-          </div>
-
-          {/* QR Code Section */}
-          <div className='space-y-3'>
-            <label className='text-sm font-medium text-[var(--quaternary)]'>
-              QR Code
-            </label>
-            <div className='flex items-center justify-center p-6 bg-[var(--neutral-50)] border border-[var(--neutral-200)] rounded-lg'>
-              <div className='text-center'>
-                <QrCode className='w-16 h-16 text-[var(--neutral-400)] mx-auto mb-2' />
-                <p className='text-sm text-[var(--neutral-500)]'>
-                  QR code will be generated here
-                </p>
+            
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-200/50">
+              <button 
+                onClick={() => window.open(fullUrl, '_blank')}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium text-gray-700"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open Link
+              </button>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Monitor className="w-4 h-4" />
+                <span>Works on all devices</span>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Social Share Section */}
-          <div className='space-y-3'>
-            <label className='text-sm font-medium text-[var(--quaternary)]'>
-              Share on Social Media
-            </label>
-            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3'>
-              {socialShareLinks.map(social => {
-                const IconComponent = social.icon;
-                return (
-                  <ActionButton
-                    key={social.name}
-                    variant='outline'
-                    size='default'
-                    motionType='subtle'
-                    onClick={() => handleSocialShare(social.url)}
-                    className={`flex flex-col items-center gap-2 p-4 h-auto ${social.bgColor}`}
-                  >
-                    <IconComponent className={`w-5 h-5 ${social.color}`} />
-                    <span className='text-xs font-medium'>{social.name}</span>
-                  </ActionButton>
-                );
-              })}
+          {/* Social Media Sharing Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 rounded-xl bg-blue-500/10">
+                <Smartphone className="w-5 h-5 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Share on Social</h3>
             </div>
-          </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {socialShareLinks.map((social, index) => (
+                <motion.button
+                  key={social.name}
+                  onClick={() => handleSocialShare(social.url)}
+                  className="interactive-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:shadow-lg transition-all duration-300"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + index * 0.1 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className={`p-3 rounded-2xl ${social.bgColor} group-hover:scale-110 transition-transform duration-200`}>
+                      <social.icon className={`w-6 h-6 ${social.color}`} />
+                    </div>
+                    <span className="font-medium text-gray-900 text-sm">{social.name}</span>
+                  </div>
+                </motion.button>
+              ))}
+              
+              {/* Email Share */}
+              <motion.button
+                onClick={() => {
+                  const emailSubject = encodeURIComponent(`File Collection: ${link.title}`);
+                  const emailBody = encodeURIComponent(`Hi there!\n\nI'd like to share this file collection with you: ${link.title}\n\nYou can upload files here: ${fullUrl}\n\nThanks!`);
+                  window.location.href = `mailto:?subject=${emailSubject}&body=${emailBody}`;
+                }}
+                className="interactive-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:shadow-lg transition-all duration-300"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="p-3 rounded-2xl bg-red-50 hover:bg-red-100 group-hover:scale-110 transition-all duration-200">
+                    <Mail className="w-6 h-6 text-red-600" />
+                  </div>
+                  <span className="font-medium text-gray-900 text-sm">Email</span>
+                </div>
+              </motion.button>
+              
+              {/* QR Code Placeholder */}
+              <motion.div
+                className="display-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl cursor-not-allowed opacity-75"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                <div className="flex flex-col items-center space-y-3">
+                  <div className="p-3 rounded-2xl bg-purple-50">
+                    <QrCode className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <span className="font-medium text-gray-600 text-sm">QR Code</span>
+                  <span className="text-xs text-gray-500">Coming Soon</span>
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
 
-          {/* Email Section */}
-          <div className='space-y-3'>
-            <label className='text-sm font-medium text-[var(--quaternary)]'>
-              Share via Email
-            </label>
-            <ActionButton
-              variant='outline'
-              size='default'
-              motionType='subtle'
-              onClick={() => {
-                const mailtoUrl = `mailto:?subject=${encodeURIComponent(`File Collection: ${link.title}`)}&body=${encodeURIComponent(`${shareText}\n\n${fullUrl}`)}`;
-                window.location.href = mailtoUrl;
-              }}
-              className='w-full flex items-center justify-center gap-2'
-            >
-              <Mail className='w-4 h-4' />
-              Open Email Client
-            </ActionButton>
-          </div>
+          {/* Link Information */}
+          <motion.div 
+            className="display-card bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-200/50 rounded-2xl p-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Type:</span>
+                <span className="font-semibold text-gray-900 capitalize px-3 py-1 bg-white/80 rounded-lg">
+                  {link.linkType === 'base' ? 'Base link' : 'Topic Collection'}
+                </span>
+              </div>
+              
+              {link.topic && (
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Topic:</span>
+                  <span className="font-semibold text-gray-900 px-3 py-1 bg-white/80 rounded-lg">{link.topic}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Status:</span>
+                <span className={`font-semibold px-3 py-1 rounded-lg ${
+                  link.isActive ? 'text-green-700 bg-green-100' : 'text-orange-700 bg-orange-100'
+                }`}>
+                  {link.isActive ? 'Active' : 'Paused'}
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <span className="text-gray-600">Access:</span>
+                <span className={`font-semibold px-3 py-1 rounded-lg ${
+                  link.isPublic ? 'text-blue-700 bg-blue-100' : 'text-gray-700 bg-gray-100'
+                }`}>
+                  {link.isPublic ? 'Public' : 'Private'}
+                </span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </DialogContent>
     </Dialog>
