@@ -20,6 +20,11 @@ export interface ActionResult<T = any> {
   data?: T;
   error?: string;
   fieldErrors?: Record<string, string[]>;
+  meta?: {
+    isCascadeUpdate?: boolean;
+    affectedLinksCount?: number;
+    affectedLinkIds?: string[];
+  };
 }
 
 /**
@@ -47,7 +52,7 @@ export function handleFieldErrors(error: z.ZodError): Record<string, string[]> {
  */
 export const hexColorSchema = z
   .string()
-  .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Must be a valid hex color')
+  .regex(/^#[A-Fa-f0-9]{6}$/, 'Must be a valid 6-digit hex color (e.g., #FF5733)')
   .or(z.literal(''));
 
 /**
@@ -61,7 +66,7 @@ export const fileTypesSchema = z.array(z.string());
 export const topicSchema = z
   .string()
   .min(1, 'Topic is required')
-  .max(50, 'Topic must be less than 50 characters')
+  .max(100, 'Topic must be less than 100 characters')
   .refine(
     topic => validateTopicName(topic).isValid,
     topic => ({
@@ -75,7 +80,7 @@ export const topicSchema = z
 export const titleSchema = z
   .string()
   .min(1, 'Title is required')
-  .max(100, 'Title must be less than 100 characters');
+  .max(255, 'Title must be less than 255 characters');
 
 /**
  * Slug validation schema for base links

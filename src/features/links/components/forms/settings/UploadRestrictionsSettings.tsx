@@ -7,11 +7,11 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../../lib/constants';
 
-interface UploadLimitsSectionProps {
+interface UploadRestrictionsSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function UploadLimitsSection({ form }: UploadLimitsSectionProps) {
+export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsProps) {
   const {
     watch,
     setValue,

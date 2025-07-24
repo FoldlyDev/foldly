@@ -8,39 +8,39 @@ import type { GeneralSettingsFormData } from '../../lib/validations';
 
 // Sub-components
 import {
-  BasicInformationSection,
-  VisibilitySecuritySection,
-  WelcomeMessageSection,
-  ExpirationDateSection,
-  UploadLimitsSection,
+  LinkIdentitySettings,
+  LinkAccessSettings,
+  LinkWelcomeMessageSettings,
+  LinkExpirationSettings,
+  UploadRestrictionsSettings,
   FileOrganizationSection,
-} from './modal-settings-sections';
+} from '../forms/settings';
 
-interface GeneralSettingsModalSectionProps {
+interface LinkSettingsFormProps {
   link: LinkWithStats;
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function GeneralSettingsModalSection({
+export function LinkSettingsForm({
   link,
   form,
-}: GeneralSettingsModalSectionProps) {
+}: LinkSettingsFormProps) {
   const isBaseLink = link.linkType === 'base';
 
   return (
     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
       {/* Left Column - Basic Info & Visibility */}
       <div className='space-y-6'>
-        <BasicInformationSection form={form} link={link} />
-        <VisibilitySecuritySection form={form} />
+        <LinkIdentitySettings form={form} link={link} />
+        <LinkAccessSettings form={form} />
         {!isBaseLink && link.isActive && (
-          <ExpirationDateSection link={link} form={form} />
+          <LinkExpirationSettings link={link} form={form} />
         )}
       </div>
 
       {/* Right Column - Upload Limits & File Management */}
       <div className='space-y-6'>
-        <UploadLimitsSection form={form} />
+        <UploadRestrictionsSettings form={form} />
         <FileOrganizationSection form={form} />
       </div>
     </div>

@@ -1,18 +1,12 @@
 /**
  * Section Components - Barrel Exports
- * Form sections and step components for the links feature
+ * Main section components for the links feature
  */
 
-// Create link form steps
-export { CreateLinkInformationStep } from './CreateLinkInformationStep';
-export { CreateLinkBrandingStep } from './CreateLinkBrandingStep';
-export { CreateLinkStepperHeader } from './CreateLinkStepperHeader';
-export { CreateLinkSuccessStep } from './CreateLinkSuccessStep';
-
-// Reusable form sections
+// Main section components
 export { LinkBrandingSection } from './LinkBrandingSection';
-export { LinkInformationSection } from './LinkInformationSection';
-export { GeneralSettingsModalSection } from './GeneralSettingsModalSection';
+export { LinkCreationForm } from './LinkCreationForm';
+export { LinkSettingsForm } from './LinkSettingsForm';
 export { BrandingSettingsSection } from './BrandingSettingsModalSection';
 
 // Types are exported from the main types folder: @/features/links/types

@@ -51,8 +51,8 @@ export async function deleteLinkAction(
       };
     }
 
-    // 5. Delete link from database (using soft delete)
-    const result = await linksDbService.softDelete(validatedId);
+    // 5. Delete link from database (using hard delete)
+    const result = await linksDbService.hardDelete(validatedId);
 
     if (!result.success) {
       return {
@@ -146,7 +146,7 @@ export async function bulkDeleteLinksAction(
 
     // 5. Delete all links
     const deletionResults = await Promise.all(
-      validatedIds.map(id => linksDbService.softDelete(id))
+      validatedIds.map(id => linksDbService.hardDelete(id))
     );
 
     const failedDeletions = deletionResults.filter(result => !result.success);

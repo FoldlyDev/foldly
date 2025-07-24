@@ -9,7 +9,7 @@ export {
 } from './components/modals';
 
 // 🔧 Section Components - Modular & Reusable
-export { LinkInformationSection } from './components/sections/LinkInformationSection';
+export { LinkCreationForm } from './components/sections/LinkCreationForm';
 export { LinkBrandingSection } from './components/sections/LinkBrandingSection';
 
 // 🎴 Card Components - Data Display

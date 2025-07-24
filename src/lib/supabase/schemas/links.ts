@@ -93,5 +93,7 @@ export const links = pgTable(
       table.topic
     ),
     linksActiveIdx: index('links_active_idx').on(table.isActive),
+    // Note: Slug consistency is enforced at the application level in the database service
+    // PostgreSQL check constraints cannot use subqueries, so this is handled in the service layer
   })
 );

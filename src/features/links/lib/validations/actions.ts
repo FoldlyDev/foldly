@@ -35,7 +35,7 @@ export const createLinkActionSchema = withPasswordRequirement(
 
     // Optional fields (with database defaults)
     slug: slugSchema,
-    topic: topicSchema.optional(),
+    topic: z.string().nullable().optional(), // null for base links, string for custom links
     description: descriptionSchema.optional(),
     requireEmail: z.boolean().default(false),
     requirePassword: z.boolean().default(false),
@@ -45,7 +45,7 @@ export const createLinkActionSchema = withPasswordRequirement(
 
     // Upload constraints - aligned with database fields
     maxFiles: maxFilesSchema.default(100),
-    maxFileSize: maxFileSizeSchema.default(104857600), // 100MB in bytes
+    maxFileSize: maxFileSizeSchema.default(100), // 100MB (will be converted to bytes in action)
     allowedFileTypes: fileTypesSchema.optional(),
 
     // Expiration

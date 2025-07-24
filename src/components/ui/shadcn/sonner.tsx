@@ -57,6 +57,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       visibleToasts={4}
       closeButton
       richColors
+      offset={16}
       {...props}
     />
   );

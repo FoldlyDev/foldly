@@ -96,10 +96,10 @@ export function LinkDetailsModal() {
       >
         {/* Accessibility Labels */}
         <DialogTitle className="sr-only">
-          Link Details: {link.title}
+          Collection Link Details: {link.title}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Comprehensive analytics and link management for {link.title}
+          View analytics and manage your collection link for {link.title}
         </DialogDescription>
 
         {/* Premium Header with Glass Effect - Standardized Layout */}
@@ -132,31 +132,31 @@ export function LinkDetailsModal() {
                 </div>
               </div>
             </div>
-            
-            {/* URL Section with Copy - Compact Mobile Layout */}
-            <div className="display-card p-3 sm:p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
-                  <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-gray-600 mb-1">Live URL</p>
-                    <code className="text-sm sm:text-base lg:text-lg font-mono font-semibold text-gray-900 break-all">{linkUrl}</code>
-                  </div>
-                </div>
-                <CopyButton
-                  value={`https://${linkUrl}`}
-                  size='sm'
-                  showText
-                  variant='default'
-                  className='premium-button text-white border-0 px-3 sm:px-4 py-2 flex-shrink-0'
-                />
-              </div>
-            </div>
           </div>
         </div>
 
         {/* Premium Analytics Dashboard - Mobile Responsive */}
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 max-h-[70vh] sm:max-h-[75vh] lg:max-h-[80vh] overflow-y-auto pb-20 sm:pb-12">
+          {/* URL Section with Copy - Moved from header */}
+          <div className="display-card p-3 sm:p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm text-gray-600 mb-1">Live URL</p>
+                  <code className="text-sm sm:text-base lg:text-lg font-mono font-semibold text-gray-900 break-all">{linkUrl}</code>
+                </div>
+              </div>
+              <CopyButton
+                value={`https://${linkUrl}`}
+                size='sm'
+                showText
+                variant='default'
+                className='premium-button text-white border-0 px-3 sm:px-4 py-2 flex-shrink-0'
+              />
+            </div>
+          </div>
+
           {/* Key Metrics Grid - Mobile Responsive */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {/* Total Files Card */}
@@ -273,14 +273,14 @@ export function LinkDetailsModal() {
                 <div className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10">
                   <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
                 </div>
-                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Link Details</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900">Collection Link Details</h3>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <span className="text-sm font-medium text-gray-600">Type</span>
-                  <span className="text-sm font-semibold text-gray-900 capitalize px-3 py-1 bg-gray-100 rounded-lg">
-                    {link.linkType}
+                  <span className="text-sm font-semibold text-gray-900 px-3 py-1 bg-gray-100 rounded-lg">
+                    {link.linkType === 'base' ? 'Personal Collection Link' : 'Custom Topic Link'}
                   </span>
                 </div>
                 

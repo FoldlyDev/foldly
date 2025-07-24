@@ -174,19 +174,19 @@ export function generateUrlSlug(input: string): string {
 /**
  * Generates a complete URL preview for a topic link
  */
-export function generateTopicUrl(username: string, topic: string): string {
-  const slug = generateUrlSlug(topic);
-  if (!slug) return `foldly.io/${username}`;
-  return `foldly.io/${username}/${slug}`;
+export function generateTopicUrl(baseSlug: string, topic: string): string {
+  const topicSlug = generateUrlSlug(topic);
+  if (!topicSlug) return `foldly.io/${baseSlug}`;
+  return `foldly.io/${baseSlug}/${topicSlug}`;
 }
 
 /**
  * Hook for real-time URL generation with validation
  */
-export function useUrlGeneration(username: string) {
+export function useUrlGeneration(baseSlug: string) {
   return {
     generateSlug: generateUrlSlug,
     validateTopic: validateTopicName,
-    generateUrl: (topic: string) => generateTopicUrl(username, topic),
+    generateUrl: (topic: string) => generateTopicUrl(baseSlug, topic),
   };
 }

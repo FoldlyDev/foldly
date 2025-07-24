@@ -620,20 +620,46 @@ button[data-state],
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Floating animation for modals - container only */
-@keyframes modalFloat {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-4px); }
-}
-
+/* Modal containers - static positioning for optimal UX */
 .modal-float {
-  animation: modalFloat 6s ease-in-out infinite;
+  /* No animation - keep modals perfectly stable */
+  animation: none;
+  transform: none;
+  
+  /* Preserve sharp text rendering and visual quality */
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Static content within floating modals */
-.modal-float .modal-content {
-  animation: none !important;
-  transform: none !important;
+/* Enhanced text rendering classes for modal content */
+.subpixel-antialiased {
+  -webkit-font-smoothing: subpixel-antialiased;
+  -moz-osx-font-smoothing: auto;
+}
+
+.text-rendering-optimized {
+  text-rendering: geometricPrecision;
+  font-feature-settings: "kern" 1;
+  font-kerning: normal;
+}
+
+.transform-3d-fix {
+  /* Force hardware acceleration while preserving text quality */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Ensure all content within modals renders sharply */
+.modal-float *,
+.modal-float input,
+.modal-float textarea,
+.modal-float button {
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Premium gradient borders */
@@ -737,7 +763,8 @@ button[data-state],
     rgba(59, 130, 246, 0.05) 0%, 
     rgba(147, 51, 234, 0.05) 100%);
   border: 1px solid rgba(59, 130, 246, 0.1);
-  backdrop-filter: blur(10px);
+  /* Remove backdrop-filter to prevent text blur */
+  /* backdrop-filter: blur(10px); */
 }
 
 .stats-number {
@@ -869,6 +896,38 @@ button[data-state],
 }
 
 /* ===================================================================== */
+/* SONNER TOASTER FIX - Prevent space below pages */
+/* ===================================================================== */
+
+/* Fix Sonner toaster positioning to prevent layout issues */
+[data-sonner-toaster] {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+[data-sonner-toaster] > * {
+  pointer-events: auto !important;
+}
+
+/* Ensure notifications section doesn't create layout space */
+section[aria-label*="Notifications"] {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+section[aria-label*="Notifications"] > * {
+  pointer-events: auto !important;
+}
+
+/* ===================================================================== */
 /* MODAL UTILITY CLASSES - Tailwind v4+ CSS-First Approach (Hybrid) */
 /* ===================================================================== */
 
@@ -887,6 +946,10 @@ button[data-state],
 
 @utility modal-gradient-slate {
   background: linear-gradient(to bottom right, rgb(248 250 252), rgb(243 244 246));
+}
+
+@utility modal-gradient-red {
+  background: linear-gradient(to bottom right, rgb(254 242 242), rgb(252 231 243), rgb(255 241 242));
 }
 
 /* Common decorative overlay pattern */
@@ -930,6 +993,11 @@ button[data-state],
   box-shadow: 0 25px 50px -12px rgb(99 102 241 / 0.25);
 }
 
+@utility modal-icon-red {
+  background: linear-gradient(to bottom right, rgb(239 68 68), rgb(220 38 38));
+  box-shadow: 0 25px 50px -12px rgb(239 68 68 / 0.25);
+}
+
 /* Common title gradients */
 @utility modal-title-gradient-blue {
   background: linear-gradient(to right, rgb(17 24 39), rgb(30 58 138), rgb(107 33 168));
@@ -949,6 +1017,14 @@ button[data-state],
 
 @utility modal-title-gradient-indigo {
   background: linear-gradient(to right, rgb(17 24 39), rgb(99 102 241), rgb(107 33 168));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  line-height: 1.5; /* Better spacing for gradient text */
+}
+
+@utility modal-title-gradient-red {
+  background: linear-gradient(to right, rgb(17 24 39), rgb(220 38 38), rgb(239 68 68));
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;

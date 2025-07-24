@@ -21,6 +21,12 @@ export * from './modals';
 // Section components
 export * from './sections';
 
+// Form components
+export * from './forms';
+
+// Step components
+export * from './steps';
+
 // View components
 export * from './views';
 

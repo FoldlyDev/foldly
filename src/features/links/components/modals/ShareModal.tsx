@@ -81,10 +81,10 @@ export function ShareModal() {
       >
         {/* Accessibility Labels */}
         <DialogTitle className="sr-only">
-          Share Link: {link.title}
+          Share Collection Link: {link.title}
         </DialogTitle>
         <DialogDescription className="sr-only">
-          Get your link in front of the right people by sharing on social media or copying the URL
+          Share your collection link with others so they can upload files to {link.title}
         </DialogDescription>
 
         {/* Premium Header */}
@@ -101,7 +101,7 @@ export function ShareModal() {
               </div>
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-indigo mb-2">
-              Share "{link.title}"
+              Share Collection Link
             </h1>
             <div className="flex justify-center">
               <p className="text-sm sm:text-base text-gray-600 text-center max-w-md">
@@ -239,7 +239,7 @@ export function ShareModal() {
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Type:</span>
                 <span className="font-semibold text-gray-900 capitalize px-3 py-1 bg-white/80 rounded-lg">
-                  {link.linkType === 'base' ? 'Base link' : 'Topic Collection'}
+                  {link.linkType === 'base' ? 'Personal Collection Link' : 'Custom Topic Link'}
                 </span>
               </div>
               

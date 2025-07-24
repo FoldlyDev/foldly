@@ -44,22 +44,100 @@ export async function updateLinkAction(
       };
     }
 
-    // 4. Prevent modification of base link names/titles
-    if (
-      existingLink.data.linkType === 'base' &&
-      updateData.title !== undefined
-    ) {
-      return {
-        success: false,
-        error:
-          'Base link names cannot be modified. They are automatically assigned.',
-      };
+    // 4. Allow title updates for all link types (including base links)
+
+    // 5. Handle cascade updates for base link slug changes
+    if (updateData.slug !== undefined && existingLink.data.linkType === 'base') {
+      const oldSlug = existingLink.data.slug;
+      const newSlug = updateData.slug;
+      
+      if (oldSlug !== newSlug) {
+        // Cascade update all user's links to use the new base slug
+        const cascadeResult = await linksDbService.cascadeUpdateBaseSlug(
+          user.id,
+          oldSlug,
+          newSlug
+        );
+        
+        if (!cascadeResult.success) {
+          return {
+            success: false,
+            error: cascadeResult.error || 'Failed to update base link and related links',
+          };
+        }
+        
+        // Get the updated base link from cascade operation
+        let updatedBaseLink = cascadeResult.data.updatedLinks.find(
+          link => link.id === id && link.linkType === 'base'
+        );
+        
+        if (!updatedBaseLink) {
+          return {
+            success: false,
+            error: 'Failed to find updated base link',
+          };
+        }
+
+        // Apply other non-slug updates to the base link if present
+        const otherUpdates: Record<string, any> = {};
+        if (updateData.title !== undefined) otherUpdates.title = updateData.title;
+        if (updateData.description !== undefined) otherUpdates.description = updateData.description || null;
+        if (updateData.requireEmail !== undefined) otherUpdates.requireEmail = updateData.requireEmail;
+        if (updateData.requirePassword !== undefined) otherUpdates.requirePassword = updateData.requirePassword;
+        if (updateData.password !== undefined) otherUpdates.passwordHash = updateData.password ? Buffer.from(updateData.password).toString('base64') : null;
+        if (updateData.isPublic !== undefined) otherUpdates.isPublic = updateData.isPublic;
+        if (updateData.isActive !== undefined) otherUpdates.isActive = updateData.isActive;
+        if (updateData.maxFiles !== undefined) otherUpdates.maxFiles = updateData.maxFiles;
+        if (updateData.maxFileSize !== undefined) otherUpdates.maxFileSize = updateData.maxFileSize * 1024 * 1024;
+        if (updateData.allowedFileTypes !== undefined) otherUpdates.allowedFileTypes = updateData.allowedFileTypes || null;
+        if (updateData.expiresAt !== undefined) otherUpdates.expiresAt = updateData.expiresAt ? new Date(updateData.expiresAt) : null;
+
+        // If there are other updates, apply them to the base link
+        if (Object.keys(otherUpdates).length > 0) {
+          const additionalUpdateResult = await linksDbService.update(id, otherUpdates);
+          if (additionalUpdateResult.success && additionalUpdateResult.data) {
+            updatedBaseLink = additionalUpdateResult.data;
+          }
+        }
+        
+        // Audit log for cascade update
+        await logAudit({
+          userId: user.id,
+          action: 'cascade_updated',
+          resource: 'link',
+          resourceId: id,
+          timestamp: new Date(),
+          details: { 
+            oldSlug, 
+            newSlug, 
+            updatedLinksCount: cascadeResult.data.updatedCount,
+            additionalUpdates: Object.keys(otherUpdates)
+          },
+        });
+        
+        return {
+          success: true,
+          data: updatedBaseLink,
+          meta: {
+            isCascadeUpdate: true,
+            affectedLinksCount: cascadeResult.data.updatedCount,
+            affectedLinkIds: cascadeResult.data.updatedLinks.map(l => l.id),
+          },
+        };
+      }
     }
 
-    // 5. Prepare update data - filter out undefined values
+    // 6. Prepare update data for non-cascade updates
     const linkUpdate: Record<string, any> = {};
 
     if (updateData.slug !== undefined) linkUpdate.slug = updateData.slug;
+    if (updateData.topic !== undefined) {
+      linkUpdate.topic = updateData.topic || null;
+      // For custom/topic links, sync title with topic
+      if (existingLink.data.linkType === 'custom' && updateData.topic) {
+        linkUpdate.title = updateData.topic;
+      }
+    }
     if (updateData.title !== undefined) linkUpdate.title = updateData.title;
     if (updateData.description !== undefined)
       linkUpdate.description = updateData.description || null;
@@ -86,7 +164,7 @@ export async function updateLinkAction(
         ? new Date(updateData.expiresAt)
         : null;
 
-    // 5. Update link in database
+    // 7. Update link in database
     const result = await linksDbService.update(id, linkUpdate as any);
 
     if (!result.success) {
@@ -96,7 +174,7 @@ export async function updateLinkAction(
       };
     }
 
-    // 6. Audit log
+    // 8. Audit log
     await logAudit({
       userId: user.id,
       action: 'updated',

@@ -8,19 +8,30 @@ import {
   createLinkFormSelectors,
   type CreateLinkFormData,
 } from '../../hooks/use-create-link-form';
-import { LinkInformationSection } from '../sections/LinkInformationSection';
+import { LinkCreationForm } from '../sections/LinkCreationForm';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
 import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
+import { useTopicValidation } from '../../hooks/use-topic-validation';
+import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 
 /**
  * Information step for create link modal
- * Uses the existing LinkInformationSection component with form store integration
+ * Uses the existing LinkCreationForm component with form store integration
  * Identical layout and design for both base and topic links - only field behavior differs
  * ALIGNED WITH DATABASE SCHEMA - Only uses database fields
  */
 export const CreateLinkInformationStep = () => {
   const { user } = useUser();
+  
+  // Get user's links to find their base link slug
+  const { data: links } = useLinksQuery();
+  
+  // Find the user's base link slug
+  const userBaseSlug = useMemo(() => {
+    const baseLink = links?.find(link => link.linkType === 'base' && !link.topic);
+    return baseLink?.slug || user?.username?.toLowerCase() || 'username';
+  }, [links, user?.username]);
 
   // Form store subscriptions
   const formData = useCreateLinkFormStore(createLinkFormSelectors.formData);
@@ -39,13 +50,24 @@ export const CreateLinkInformationStep = () => {
     }
   );
 
+  // Add topic validation for topic links
+  const topicValidation = useTopicValidation(
+    formData.topic || '',
+    {
+      enabled: linkType === 'custom' || linkType === 'generated',
+      ...(user?.id && { userId: user.id }),
+      slug: userBaseSlug,
+      debounceMs: 500
+    }
+  );
+
   // Form actions
   const updateFormField = useCreateLinkFormStore(
     state => state.updateFormField
   );
   const nextStep = useCreateLinkFormStore(state => state.nextStep);
 
-  // Convert form data to the format expected by LinkInformationSection (using database types)
+  // Convert form data to the format expected by LinkCreationForm (using database types)
   const linkInformationData = useMemo(
     () => ({
       // Required fields from LinkCreateForm (with defaults for missing fields)
@@ -82,10 +104,6 @@ export const CreateLinkInformationStep = () => {
   // Handle form changes with proper typing
   const handleFormChange = useCallback(
     (updates: Record<string, any>) => {
-      console.log('📝 INFORMATION STEP: handleFormChange called');
-      console.log('📝 INFORMATION STEP: updates =', updates);
-      console.log('📝 INFORMATION STEP: linkType =', linkType);
-      console.log('📝 INFORMATION STEP: current formData =', formData);
 
       // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
@@ -93,10 +111,6 @@ export const CreateLinkInformationStep = () => {
       // Handle the slug field for base links
       if (updates.slug !== undefined) {
         convertedUpdates.slug = String(updates.slug);
-        console.log(
-          '📝 INFORMATION STEP: Base link - setting slug =',
-          updates.slug
-        );
       }
 
       // Handle the name field which maps to different fields based on link type
@@ -104,18 +118,10 @@ export const CreateLinkInformationStep = () => {
         if (linkType === 'base') {
           // Base links get auto-assigned titles - set a default title
           convertedUpdates.title = 'Base link';
-          console.log(
-            '📝 INFORMATION STEP: Base link - auto-setting title =',
-            convertedUpdates.title
-          );
         } else {
           // For topic links, set both topic and title fields
           convertedUpdates.topic = String(updates.name);
           convertedUpdates.title = String(updates.name);
-          console.log(
-            '📝 INFORMATION STEP: Topic link - setting topic and title =',
-            updates.name
-          );
         }
       }
 
@@ -191,7 +197,6 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.brandColor = String(updates.brandColor);
       }
 
-      console.log('📝 INFORMATION STEP: convertedUpdates =', convertedUpdates);
 
       // Update form fields individually since updateMultipleFields doesn't exist
       Object.entries(convertedUpdates).forEach(([field, value]) => {
@@ -201,10 +206,15 @@ export const CreateLinkInformationStep = () => {
     [updateFormField, linkType]
   );
 
-  // Enhanced validation logic including slug validation
+  // Enhanced validation logic including slug and topic validation
   const canProceedToNext = useMemo(() => {
     // Basic form validation
     if (!canGoNext) return false;
+    
+    // Password validation - if password protection is enabled, password must be 8+ characters
+    if (formData.requirePassword && (!formData.password || formData.password.length < 8)) {
+      return false;
+    }
     
     // For base links, also check slug validation
     if (linkType === 'base') {
@@ -216,26 +226,27 @@ export const CreateLinkInformationStep = () => {
       return true;
     }
     
-    // For topic links, use basic validation
+    // For topic links, check topic validation
+    if (linkType === 'custom' || linkType === 'generated') {
+      // If topic is provided, it must be available
+      if (formData.topic) {
+        return topicValidation.isAvailable && !topicValidation.isChecking;
+      }
+      // Topic is required for topic links
+      return false;
+    }
+    
     return true;
-  }, [canGoNext, linkType, formData.slug, slugValidation.isAvailable, slugValidation.isChecking]);
+  }, [canGoNext, linkType, formData.slug, formData.topic, formData.requirePassword, formData.password,
+      slugValidation.isAvailable, slugValidation.isChecking,
+      topicValidation.isAvailable, topicValidation.isChecking]);
 
   // Handle next step
   const handleNext = useCallback(() => {
-    console.log('📝 INFORMATION STEP: handleNext called');
-    console.log('📝 INFORMATION STEP: canGoNext =', canGoNext);
-    console.log('📝 INFORMATION STEP: canProceedToNext =', canProceedToNext);
-    console.log('📝 INFORMATION STEP: linkType =', linkType);
-    console.log('📝 INFORMATION STEP: formData =', formData);
-    console.log('📝 INFORMATION STEP: slugValidation =', slugValidation);
-
     if (canProceedToNext) {
-      console.log('📝 INFORMATION STEP: Calling nextStep()');
       nextStep();
-    } else {
-      console.log('📝 INFORMATION STEP: Cannot go next - validation failed');
     }
-  }, [canProceedToNext, nextStep, linkType, formData, slugValidation]);
+  }, [canProceedToNext, nextStep]);
 
   return (
     <motion.div
@@ -245,14 +256,14 @@ export const CreateLinkInformationStep = () => {
       transition={{ duration: 0.3 }}
       className='space-y-6'
     >
-      <LinkInformationSection
+      <LinkCreationForm
         linkType={
           linkType === 'custom' || linkType === 'generated' ? 'topic' : 'base'
         }
         formData={linkInformationData}
         onDataChange={handleFormChange}
         errors={{}}
-        username={user?.username?.toLowerCase() || 'username'}
+        username={userBaseSlug}
       />
 
       <CreateLinkFormButtons

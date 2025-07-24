@@ -3,24 +3,23 @@
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Settings, Save, Sliders } from 'lucide-react';
+import { Save, Sliders } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
 import { ActionButton } from '@/components/ui/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
-import { GeneralSettingsModalSection } from '../sections/GeneralSettingsModalSection';
+import { LinkSettingsForm } from '../sections/LinkSettingsForm';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
 } from '../../lib/validations';
-import type { Link } from '@/lib/supabase/types';
 import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
+import { useTopicValidation } from '../../hooks/use-topic-validation';
 
 export function SettingsModal() {
   const currentModal = useCurrentModal();
@@ -38,6 +37,8 @@ export function SettingsModal() {
     mode: 'onChange', // 2025 best practice for real-time validation
     defaultValues: {
       slug: '',
+      topic: '',
+      title: '',
       description: '',
       isPublic: true,
       isActive: true,
@@ -49,6 +50,7 @@ export function SettingsModal() {
       allowedFileTypes: [],
       brandEnabled: false,
       brandColor: '',
+      expiresAt: undefined,
     },
   });
 
@@ -72,17 +74,68 @@ export function SettingsModal() {
     }
   );
 
+  // Add topic validation for topic/custom links
+  const topicValidation = useTopicValidation(
+    watchedValues.topic || '',
+    {
+      enabled: link?.linkType === 'custom',
+      ...(link?.id && { excludeId: link.id }),
+      ...(link?.userId && { userId: link.userId }),
+      ...(link?.slug && { slug: link.slug }),
+      debounceMs: 500
+    }
+  );
+
   // Enhanced validation that includes slug availability
   const canSubmit = useMemo(() => {
+    console.log('🔧 SETTINGS MODAL: Checking canSubmit', {
+      isDirty,
+      isValid,
+      isSubmitting,
+      linkType: link?.linkType,
+      slug: watchedValues.slug,
+      topic: watchedValues.topic,
+      slugValidation: {
+        isAvailable: slugValidation.isAvailable,
+        isChecking: slugValidation.isChecking
+      },
+      topicValidation: {
+        isAvailable: topicValidation.isAvailable,
+        isChecking: topicValidation.isChecking
+      }
+    });
+    
     if (!isDirty || !isValid || isSubmitting) return false;
     
-    // For base links, also check slug validation
-    if (link?.linkType === 'base' && watchedValues.slug) {
-      return slugValidation.isAvailable && !slugValidation.isChecking;
+    // For base links, check slug validation if slug is provided
+    if (link?.linkType === 'base') {
+      // If slug is provided, it must be available
+      if (watchedValues.slug) {
+        const result = slugValidation.isAvailable && !slugValidation.isChecking;
+        console.log('🔧 SETTINGS MODAL: Base link with slug validation result:', result);
+        return result;
+      }
+      // If no slug (empty), it's valid (will use username)
+      console.log('🔧 SETTINGS MODAL: Base link with empty slug - valid');
+      return true;
     }
     
+    // For topic/custom links, check topic validation if topic is provided
+    if (link?.linkType === 'custom') {
+      // If topic is provided, it must be available
+      if (watchedValues.topic) {
+        const result = topicValidation.isAvailable && !topicValidation.isChecking;
+        console.log('🔧 SETTINGS MODAL: Custom link with topic validation result:', result);
+        return result;
+      }
+      // Topic is required for custom links, so empty is not valid
+      console.log('🔧 SETTINGS MODAL: Custom link with empty topic - invalid');
+      return false;
+    }
+    
+    console.log('🔧 SETTINGS MODAL: Default case - valid');
     return true;
-  }, [isDirty, isValid, isSubmitting, link?.linkType, watchedValues.slug, slugValidation.isAvailable, slugValidation.isChecking]);
+  }, [isDirty, isValid, isSubmitting, link?.linkType, watchedValues.slug, slugValidation.isAvailable, slugValidation.isChecking, watchedValues.topic, topicValidation.isAvailable, topicValidation.isChecking]);
 
   // Initialize form with real link data when modal opens
   // Following 2025 React Hook Form best practices for async data loading
@@ -94,20 +147,20 @@ export function SettingsModal() {
       // This is the recommended pattern from React Hook Form documentation
       reset({
         slug: link.slug || '',
+        topic: link.topic || '',
+        title: link.title || '',
         description: link.description || '',
         isPublic: link.isPublic,
         isActive: link.isActive,
         requireEmail: link.requireEmail,
         requirePassword: link.requirePassword,
-        password: '', // Never pre-fill passwords for security
+        password: link.passwordHash ? Buffer.from(link.passwordHash, 'base64').toString() : '', // Decode password for editing
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
         brandEnabled: link.brandEnabled,
         brandColor: link.brandColor || '',
-        expiresAt: link.expiresAt
-          ? new Date(link.expiresAt).toISOString().slice(0, 16)
-          : '',
+        expiresAt: link.expiresAt ? new Date(link.expiresAt) : undefined,
       });
 
       console.log('✅ SETTINGS MODAL: Form initialized with link data');
@@ -122,6 +175,8 @@ export function SettingsModal() {
     try {
       const updates = {
         slug: data.slug || undefined,
+        topic: data.topic || undefined,
+        title: data.title || undefined,
         description: data.description || undefined,
         isPublic: data.isPublic ?? true,
         isActive: data.isActive ?? true,
@@ -134,7 +189,7 @@ export function SettingsModal() {
         allowedFileTypes: data.allowedFileTypes?.length
           ? data.allowedFileTypes
           : undefined,
-        expiresAt: data.expiresAt || undefined,
+        expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
         brandEnabled: data.brandEnabled ?? false,
         brandColor:
           data.brandEnabled && data.brandColor ? data.brandColor : undefined,
@@ -211,7 +266,7 @@ export function SettingsModal() {
         <div className="p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12">
           <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 max-w-2xl mx-auto'>
           {/* General Settings Section */}
-          <GeneralSettingsModalSection
+          <LinkSettingsForm
             link={{
               ...link,
               stats: {

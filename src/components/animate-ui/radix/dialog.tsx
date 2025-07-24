@@ -139,18 +139,18 @@ function DialogContent({
   const desktopAnimations = {
     initial: {
       opacity: 0,
-      filter: 'blur(4px)',
-      transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
+      // Remove filter blur entirely to prevent text blur
+      transform: `translateY(20px) scale(0.95)`,
     },
     animate: {
       opacity: 1,
-      filter: 'blur(0px)',
-      transform: `perspective(500px) ${rotateAxis}(0deg) scale(1)`,
+      // Use simple transforms that preserve text sharpness
+      transform: `translateY(0px) scale(1)`,
     },
     exit: {
       opacity: 0,
-      filter: 'blur(4px)',
-      transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
+      // Consistent exit animation without blur
+      transform: `translateY(20px) scale(0.95)`,
     }
   };
 
@@ -177,6 +177,8 @@ function DialogContent({
               transition={transition}
               className={cn(
                 'fixed left-[50%] top-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-container modal-float rounded-2xl p-0 overflow-hidden',
+                // Enhanced text rendering optimizations
+                'subpixel-antialiased text-rendering-optimized transform-3d-fix',
                 isMobile && 'transform-gpu will-change-auto',
                 className
               )}
