@@ -61,7 +61,10 @@
   - _Integration_: Works seamlessly with Clerk JWT authentication
 - **ORM**: Drizzle ORM (lightweight, type-safe)
 - **Email**: Resend (modern, developer-friendly)
-- **Payments**: Stripe (industry standard)
+- **Payments**: Clerk Billing + Stripe (zero-integration billing)
+  - _Why_: Instant setup, built-in UI, feature-based access control
+  - _Benefits_: -60% code complexity, real-time feature updates, simplified architecture
+  - _Cost_: 3.6% + 30¢ per transaction (includes 0.7% Clerk fee)
 - **Real-time**: Socket.io + Supabase Realtime subscriptions
 
 ### Infrastructure & DevOps
@@ -122,124 +125,216 @@
 ### Core Tables with Multi-Link Support
 
 ```sql
--- Enhanced upload links with multi-type support
-CREATE TABLE upload_links (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL, -- References Clerk user ID
-  slug VARCHAR(100) UNIQUE NOT NULL, -- username part
-  topic VARCHAR(100), -- NULL for base links, topic for custom links
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  link_type VARCHAR(20) DEFAULT 'base' CHECK (link_type IN ('base', 'custom')),
+-- Users table with SaaS subscription management
+CREATE TABLE users (
+  id UUID PRIMARY KEY,              -- Clerk user ID
+  email VARCHAR(255) UNIQUE NOT NULL,
+  username VARCHAR(100) UNIQUE NOT NULL,
+  first_name VARCHAR(100),
+  last_name VARCHAR(100),
+  avatar_url TEXT,
+  subscription_tier VARCHAR(20) DEFAULT 'free'
+    CHECK (subscription_tier IN ('free', 'pro', 'business', 'enterprise')),
+  storage_used BIGINT DEFAULT 0,
+  storage_limit BIGINT DEFAULT 2147483648, -- 2GB
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
 
-  -- Advanced organization settings
-  auto_create_folders BOOLEAN DEFAULT TRUE,
-  default_folder_id UUID REFERENCES folders(id),
+-- Workspaces (1:1 with users for MVP)
+CREATE TABLE workspaces (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL DEFAULT 'My Files',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enhanced links with multi-type support
+CREATE TABLE links (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+
+  -- URL Components
+  slug VARCHAR(100) NOT NULL,      -- always the username
+  topic VARCHAR(100),              -- NULL for base links
+  link_type VARCHAR(20) NOT NULL DEFAULT 'base'
+    CHECK (link_type IN ('base','custom','generated')),
+
+  -- Display
+  title VARCHAR(255) NOT NULL DEFAULT (COALESCE(topic, 'Personal base link')),
+  description TEXT,
 
   -- Security controls
   require_email BOOLEAN DEFAULT FALSE,
   require_password BOOLEAN DEFAULT FALSE,
   password_hash TEXT, -- bcrypt hash if password required
-  is_public BOOLEAN DEFAULT TRUE, -- visibility control
+  is_public BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT TRUE,
 
   -- Limits and expiration
   max_files INTEGER DEFAULT 100,
   max_file_size BIGINT DEFAULT 104857600, -- 100MB default
+  allowed_file_types TEXT[] DEFAULT ARRAY['*']::TEXT[],
   expires_at TIMESTAMP WITH TIME ZONE,
+
+  -- Branding (Pro+ features)
+  brand_enabled BOOLEAN DEFAULT FALSE,
+  brand_color VARCHAR(7),                   -- e.g. #6c47ff
+  accent_color VARCHAR(7),                  -- optional secondary
+  brand_logo_url TEXT,
+  brand_banner_url TEXT,
+
+  -- Usage Stats
+  total_uploads INT DEFAULT 0,
+  total_files INT DEFAULT 0,
+  total_size BIGINT DEFAULT 0,
+  last_upload_at TIMESTAMP WITH TIME ZONE,
+
+  -- Audit
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- Uniqueness
+  UNIQUE (user_id, slug, topic)
+);
+
+-- Simplified hierarchical folder system
+CREATE TABLE folders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  parent_folder_id UUID REFERENCES folders(id) ON DELETE CASCADE,
+  link_id UUID REFERENCES links(id) ON DELETE SET NULL,  -- for generated links
+
+  name VARCHAR(255) NOT NULL,
+  path TEXT NOT NULL,              -- materialized full path
+  depth SMALLINT NOT NULL DEFAULT 0,   -- 0 = root
+
+  is_archived BOOLEAN DEFAULT FALSE,
+  is_public BOOLEAN DEFAULT FALSE,
+  sort_order INT DEFAULT 0,
+
+  file_count INT DEFAULT 0,
+  total_size BIGINT DEFAULT 0,     -- bytes
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Hierarchical folder system
-CREATE TABLE folders (
+-- Upload batches for organization
+CREATE TABLE batches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL, -- References Clerk user ID
-  parent_folder_id UUID REFERENCES folders(id), -- NULL for root folders
-  name VARCHAR(255) NOT NULL,
-  path TEXT GENERATED ALWAYS AS (
-    CASE
-      WHEN parent_folder_id IS NULL THEN name
-      ELSE (SELECT path FROM folders WHERE id = parent_folder_id) || '/' || name
-    END
-  ) STORED,
-  upload_link_id UUID REFERENCES upload_links(id), -- Associated upload link
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+  link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
 
--- Enhanced file uploads with batch support
-CREATE TABLE file_uploads (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  upload_link_id UUID REFERENCES upload_links(id) ON DELETE CASCADE,
-  folder_id UUID REFERENCES folders(id), -- Organization destination
-  batch_id UUID NOT NULL, -- Groups files uploaded together
-
-  -- Uploader information
-  uploader_name VARCHAR(255) NOT NULL, -- Mandatory field
-  uploader_email VARCHAR(255), -- Optional, required if link requires it
-  batch_name VARCHAR(255), -- Optional batch naming
-
-  -- File metadata
-  file_name VARCHAR(255) NOT NULL,
-  original_file_name VARCHAR(255) NOT NULL,
-  file_size BIGINT NOT NULL,
-  file_type VARCHAR(100) NOT NULL,
-  mime_type VARCHAR(100) NOT NULL,
-  storage_path TEXT NOT NULL,
-
-  -- Security and processing
-  is_processed BOOLEAN DEFAULT FALSE,
-  is_safe BOOLEAN DEFAULT TRUE, -- Virus scan result
-  security_warnings JSONB, -- File type warnings
-
-  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Batch metadata for organization
-CREATE TABLE upload_batches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  upload_link_id UUID REFERENCES upload_links(id),
   uploader_name VARCHAR(255) NOT NULL,
-  uploader_email VARCHAR(255),
-  batch_name VARCHAR(255),
-  total_files INTEGER DEFAULT 0,
-  total_size BIGINT DEFAULT 0,
+  uploader_email VARCHAR(255) CHECK (uploader_email ~
+    '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'),
+  uploader_message TEXT,
+
+  name VARCHAR(255),                      -- user-chosen
+  display_name VARCHAR(255),              -- `[Uploader] (name) [date]`
+
+  status VARCHAR(12) NOT NULL DEFAULT 'uploading'
+    CHECK (status IN ('uploading','processing','completed','failed')),
+
+  total_files INT DEFAULT 0,
+  processed_files INT DEFAULT 0,
+  total_size BIGINT DEFAULT 0,            -- bytes
+
   upload_completed_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enhanced files with comprehensive metadata
+CREATE TABLE files (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
+  batch_id UUID NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
+
+  file_name VARCHAR(255) NOT NULL,             -- safe, unique in batch
+  original_name VARCHAR(255) NOT NULL,
+  file_size BIGINT NOT NULL,                   -- bytes
+  mime_type VARCHAR(100) NOT NULL,
+  extension VARCHAR(20),
+
+  storage_path TEXT NOT NULL,                  -- S3/Supabase key
+  storage_provider VARCHAR(50) DEFAULT 'supabase',
+  checksum VARCHAR(64),                        -- SHA-256, etc.
+
+  is_safe BOOLEAN DEFAULT TRUE,
+  virus_scan_result VARCHAR(20) DEFAULT 'pending'
+    CHECK (virus_scan_result IN ('clean','infected','suspicious','pending')),
+  security_warnings JSONB,
+
+  processing_status VARCHAR(20) DEFAULT 'pending'
+    CHECK (processing_status IN ('pending','processing','completed','failed')),
+  thumbnail_path TEXT,
+
+  is_organized BOOLEAN DEFAULT FALSE,
+  needs_review BOOLEAN DEFAULT TRUE,
+
+  download_count INT DEFAULT 0,
+  last_accessed_at TIMESTAMP WITH TIME ZONE,
+
+  uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
 ### Row Level Security Policies
 
 ```sql
--- Upload links RLS
-CREATE POLICY "Users can manage their own upload links"
-  ON upload_links
-  FOR ALL
-  USING (auth.jwt()->>'sub' = user_id::text);
+-- Users RLS (own data only)
+CREATE POLICY "Users manage own data" ON users FOR ALL USING (id = auth.jwt()->>'sub'::uuid);
 
--- Public links are viewable for uploads
-CREATE POLICY "Public upload links are accessible"
-  ON upload_links
-  FOR SELECT
-  USING (is_public = TRUE);
+-- Workspaces RLS
+CREATE POLICY "Users manage own workspaces" ON workspaces FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+
+-- Links RLS
+CREATE POLICY "Users manage own links" ON links FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+CREATE POLICY "Public links viewable for uploads" ON links FOR SELECT USING (is_public = TRUE);
 
 -- Folders RLS
-CREATE POLICY "Users can manage their own folders"
-  ON folders
-  FOR ALL
-  USING (auth.jwt()->>'sub' = user_id::text);
+CREATE POLICY "Users manage own folders" ON folders FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
 
--- File uploads RLS with batch support
-CREATE POLICY "Users can access files from their links"
-  ON file_uploads
-  FOR ALL
-  USING (
-    upload_link_id IN (
-      SELECT id FROM upload_links
-      WHERE auth.jwt()->>'sub' = user_id::text
-    )
-  );
+-- Files RLS
+CREATE POLICY "Users access files from their links" ON files FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+
+-- Batches RLS
+CREATE POLICY "Users manage own batches" ON batches FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+```
+
+### Essential Indexes for Performance
+
+```sql
+-- Users indexes
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_subscription ON users(subscription_tier);
+
+-- Links indexes
+CREATE INDEX idx_links_user_workspace ON links(user_id, workspace_id);
+CREATE INDEX idx_links_slug_topic ON links(slug, topic);
+CREATE INDEX idx_links_active ON links(is_active) WHERE is_active = TRUE;
+
+-- Folders indexes
+CREATE INDEX idx_folders_workspace_parent ON folders(workspace_id, parent_folder_id);
+CREATE INDEX idx_folders_link ON folders(link_id) WHERE link_id IS NOT NULL;
+
+-- Files indexes
+CREATE INDEX idx_files_batch_folder ON files(batch_id, folder_id);
+CREATE INDEX idx_files_link_user ON files(link_id, user_id);
+CREATE INDEX idx_files_processing ON files(processing_status);
+
+-- Batches indexes
+CREATE INDEX idx_batches_link_status ON batches(link_id, status);
+CREATE INDEX idx_batches_user_link ON batches(user_id, link_id);
 ```
 
 ## 🎨 Advanced UI/UX Architecture
@@ -435,6 +530,43 @@ describe('Multi-Link System', () => {
 - **75 users @ $25/month** (advanced organization): $1,875/month
 - **25 users @ $40/month** (enterprise security): $1,000/month
 - **Total Revenue**: $4,075/month (target by month 6)
+
+### **Clerk Billing Implementation Benefits**
+
+#### **Development Advantages**
+
+- **Zero Integration Time**: No custom Stripe code required - Clerk handles everything
+- **Built-in Components**: Pre-built `<PricingTable />`, `<BillingPortal />`, and subscription management
+- **Feature Gates**: Automatic access control based on subscription status
+- **Real-time Updates**: Instant feature access changes on subscription events
+
+#### **Business Advantages**
+
+- **Faster Time to Market**: Launch billing in days, not weeks
+- **Reduced Development Cost**: 60% less code complexity vs traditional Stripe integration
+- **Better User Experience**: Seamless authentication + billing flow
+- **Simplified Maintenance**: Clerk manages webhooks, edge cases, and compliance
+
+#### **Technical Implementation**
+
+```typescript
+// Feature-based access control with Clerk
+const { user } = useUser();
+const hasFeature = (feature: string) => user?.publicMetadata?.features?.includes(feature);
+
+// Usage in components
+<CustomLinkCreator
+  disabled={!hasFeature('custom_links')}
+  upgradePrompt={!hasFeature('custom_links')}
+/>
+```
+
+#### **Cost-Benefit Analysis**
+
+- **Additional Cost**: +0.7% Clerk fee (~$29/month at $4,075 revenue)
+- **Development Savings**: -40 hours @ $100/hr = $4,000 saved
+- **Maintenance Savings**: -10 hours/month @ $100/hr = $1,000/month saved
+- **ROI**: 3,400%+ return on additional fees through development efficiency
 
 ## 🎯 Enhanced Feature Prioritization
 

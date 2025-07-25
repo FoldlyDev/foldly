@@ -14,7 +14,7 @@ import {
 
 // Use centralized types from the types folder
 import type { HexColor } from '@/types';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../schemas';
 

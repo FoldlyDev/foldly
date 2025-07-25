@@ -1,58 +1,125 @@
-// Files Modal Store - Modal State Management
-// Zustand store for modal coordination and data
-// Following 2025 TypeScript best practices with pure reducers
+'use client';
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { devtools } from 'zustand/middleware';
-import type {
-  FileData,
-  FolderData,
-  FileId,
-  FolderId,
-  CreateFolderFormData,
-  FileUploadData,
-  MoveFileData,
-  OrganizeFilesData,
-} from '../types';
+import { useMemo, useCallback } from 'react';
 import {
   convertReducersToActions,
   createReducers,
 } from './utils/convert-reducers-to-actions';
+import type { FileId, FolderId } from '@/types';
+import type { FileUpload, Folder } from '../types/database';
 
-// =============================================================================
-// MODAL TYPES
-// =============================================================================
+// Type aliases for consistency
+export type FileData = FileUpload;
+export type FolderData = Folder;
 
-export type ModalType =
-  | 'upload'
-  | 'createFolder'
-  | 'fileDetails'
-  | 'folderDetails'
-  | 'share'
-  | 'move'
-  | 'copy'
-  | 'rename'
-  | 'delete'
-  | 'organize'
-  | 'settings'
-  | 'preview'
-  | 'bulkActions'
+// ===== 2025 ZUSTAND BEST PRACTICES =====
+// ✅ Pure reducers pattern for modal state only
+// ✅ No destructuring in selectors (prevents unnecessary re-renders)
+// ✅ Use useShallow for multiple values
+// ✅ Branded types for type safety
+// ✅ Focused on modal concerns only
+
+// ===== CONSTANTS =====
+export const MODAL_TYPE = {
+  UPLOAD: 'upload',
+  CREATE_FOLDER: 'createFolder',
+  FILE_DETAILS: 'fileDetails',
+  FOLDER_DETAILS: 'folderDetails',
+  SHARE: 'share',
+  MOVE: 'move',
+  COPY: 'copy',
+  RENAME: 'rename',
+  DELETE: 'delete',
+  ORGANIZE: 'organize',
+  SETTINGS: 'settings',
+  PREVIEW: 'preview',
+  BULK_ACTIONS: 'bulkActions',
+} as const satisfies Record<string, string>;
+
+export type ModalType = (typeof MODAL_TYPE)[keyof typeof MODAL_TYPE] | null;
+
+export const UPLOAD_STATUS = {
+  PENDING: 'pending',
+  UPLOADING: 'uploading',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+} as const satisfies Record<string, string>;
+
+export type UploadStatus = (typeof UPLOAD_STATUS)[keyof typeof UPLOAD_STATUS];
+
+export const BULK_ACTION_TYPE = {
+  MOVE: 'move',
+  COPY: 'copy',
+  DELETE: 'delete',
+  TAG: 'tag',
+  SHARE: 'share',
+} as const satisfies Record<string, string>;
+
+export type BulkActionType =
+  | (typeof BULK_ACTION_TYPE)[keyof typeof BULK_ACTION_TYPE]
   | null;
+
+// Folder colors removed for MVP simplification
+
+export const OPERATION_TYPE = {
+  MOVE: 'move',
+  COPY: 'copy',
+} as const satisfies Record<string, string>;
+
+export type OperationType =
+  (typeof OPERATION_TYPE)[keyof typeof OPERATION_TYPE];
+
+// ===== FORM DATA TYPES - Simplified for MVP =====
+export interface CreateFolderFormData {
+  readonly name: string;
+  readonly parentId: FolderId | null;
+}
+
+export interface FileUploadData {
+  readonly files: File[];
+  readonly targetFolderId: FolderId | null;
+  readonly overwriteExisting: boolean;
+}
+
+export interface MoveFileData {
+  readonly itemIds: string[];
+  readonly targetFolderId: FolderId | null;
+  readonly operation: OperationType;
+  readonly createCopy: boolean;
+  readonly overwriteExisting: boolean;
+}
+
+export interface SharePermissions {
+  readonly canView: boolean;
+  readonly canEdit: boolean;
+  readonly canDownload: boolean;
+  readonly expiresAt: Date | null;
+}
+
+export interface OrganizeFilesData {
+  readonly files: FileData[];
+  readonly folders: FolderData[];
+  readonly operations: Array<{
+    readonly type: 'move' | 'copy' | 'delete';
+    readonly itemId: string;
+    readonly targetId?: string;
+  }>;
+}
 
 export interface ModalData {
   readonly fileData?: FileData | null;
   readonly folderData?: FolderData | null;
-  readonly selectedFileIds?: FileId[];
-  readonly selectedFolderIds?: FolderId[];
+  readonly selectedFileIds?: readonly FileId[];
+  readonly selectedFolderIds?: readonly FolderId[];
   readonly targetFolderId?: FolderId | null;
   readonly formData?: Record<string, any>;
   readonly metadata?: Record<string, any>;
 }
 
-// =============================================================================
-// STATE INTERFACE
-// =============================================================================
-
+// ===== STORE STATE =====
 export interface FilesModalState {
   // Current modal
   readonly activeModal: ModalType;
@@ -60,7 +127,7 @@ export interface FilesModalState {
   readonly isModalOpen: boolean;
 
   // Modal stack for nested modals
-  readonly modalStack: Array<{ type: ModalType; data: ModalData }>;
+  modalStack: Array<{ type: ModalType; data: ModalData }>;
 
   // Form states
   readonly isSubmitting: boolean;
@@ -69,11 +136,9 @@ export interface FilesModalState {
 
   // Upload modal specific
   readonly uploadProgress: Record<string, number>;
-  readonly uploadStatus: Record<
-    string,
-    'pending' | 'uploading' | 'completed' | 'failed'
-  >;
+  readonly uploadStatus: Record<string, UploadStatus>;
   readonly uploadErrors: Record<string, string>;
+  readonly uploadFormData: FileUploadData;
 
   // Create folder modal specific
   readonly createFolderFormData: CreateFolderFormData;
@@ -84,16 +149,11 @@ export interface FilesModalState {
 
   // Share modal specific
   readonly shareLink: string | null;
-  readonly sharePermissions: {
-    readonly canView: boolean;
-    readonly canEdit: boolean;
-    readonly canDownload: boolean;
-    readonly expiresAt: Date | null;
-  };
+  readonly sharePermissions: SharePermissions;
 
   // Move/Copy modal specific
   readonly moveFormData: MoveFileData;
-  readonly availableFolders: FolderData[];
+  readonly availableFolders: readonly FolderData[];
 
   // Organize modal specific
   readonly organizeFormData: OrganizeFilesData;
@@ -102,18 +162,86 @@ export interface FilesModalState {
   // Preview modal specific
   readonly previewFile: FileData | null;
   readonly previewIndex: number;
-  readonly previewFiles: FileData[];
+  readonly previewFiles: readonly FileData[];
 
   // Bulk actions modal specific
-  readonly bulkActionType: 'move' | 'copy' | 'delete' | 'tag' | 'share' | null;
+  readonly bulkActionType: BulkActionType;
   readonly bulkActionProgress: number;
-  readonly bulkActionErrors: string[];
+  readonly bulkActionErrors: readonly string[];
 }
 
-// =============================================================================
-// INITIAL STATE
-// =============================================================================
+// ===== STORE ACTIONS =====
+export interface FilesModalActions {
+  // Modal management
+  readonly openModal: (type: ModalType, data?: ModalData) => void;
+  readonly closeModal: () => void;
+  readonly closeAllModals: () => void;
+  readonly pushModal: (type: ModalType, data?: ModalData) => void;
+  readonly popModal: () => void;
+  readonly updateModalData: (data: Partial<ModalData>) => void;
 
+  // Form states
+  readonly setSubmitting: (submitting: boolean) => void;
+  readonly setSubmitError: (error: string | null) => void;
+  readonly setValidationErrors: (errors: Record<string, string>) => void;
+  readonly clearValidationErrors: () => void;
+
+  // Upload modal
+  readonly updateUploadFormData: (data: Partial<FileUploadData>) => void;
+  readonly setUploadProgress: (fileId: string, progress: number) => void;
+  readonly setUploadStatus: (fileId: string, status: UploadStatus) => void;
+  readonly setUploadError: (fileId: string, error: string) => void;
+  readonly clearUploadData: () => void;
+
+  // Create folder modal
+  readonly updateCreateFolderForm: (
+    data: Partial<CreateFolderFormData>
+  ) => void;
+  readonly resetCreateFolderForm: () => void;
+
+  // File details modal
+  readonly setEditingDetails: (editing: boolean) => void;
+  readonly updateDetailsForm: (data: Partial<FileData>) => void;
+  readonly resetDetailsForm: () => void;
+
+  // Share modal
+  readonly setShareLink: (link: string | null) => void;
+  readonly updateSharePermissions: (
+    permissions: Partial<SharePermissions>
+  ) => void;
+  readonly resetShareData: () => void;
+
+  // Move/Copy modal
+  readonly updateMoveForm: (data: Partial<MoveFileData>) => void;
+  readonly setAvailableFolders: (folders: readonly FolderData[]) => void;
+  readonly resetMoveForm: () => void;
+
+  // Organize modal
+  readonly updateOrganizeForm: (data: Partial<OrganizeFilesData>) => void;
+  readonly setPreviewChanges: (preview: boolean) => void;
+  readonly resetOrganizeForm: () => void;
+
+  // Preview modal
+  readonly setPreviewFile: (
+    file: FileData | null,
+    files?: readonly FileData[],
+    index?: number
+  ) => void;
+  readonly setPreviewIndex: (index: number) => void;
+  readonly navigatePreview: (direction: 'next' | 'prev') => void;
+
+  // Bulk actions modal
+  readonly setBulkActionType: (type: BulkActionType) => void;
+  readonly setBulkActionProgress: (progress: number) => void;
+  readonly addBulkActionError: (error: string) => void;
+  readonly clearBulkActionErrors: () => void;
+  readonly resetBulkAction: () => void;
+
+  // Utility
+  readonly reset: () => void;
+}
+
+// ===== INITIAL STATE =====
 const initialState: FilesModalState = {
   // Current modal
   activeModal: null,
@@ -132,11 +260,16 @@ const initialState: FilesModalState = {
   uploadProgress: {},
   uploadStatus: {},
   uploadErrors: {},
+  uploadFormData: {
+    files: [],
+    targetFolderId: null,
+    overwriteExisting: false,
+  },
 
   // Create folder modal specific
   createFolderFormData: {
     name: '',
-    color: 'blue',
+    color: FOLDER_COLOR.BLUE,
     description: '',
     parentId: null,
   },
@@ -158,7 +291,7 @@ const initialState: FilesModalState = {
   moveFormData: {
     itemIds: [],
     targetFolderId: null,
-    operation: 'move',
+    operation: OPERATION_TYPE.MOVE,
     createCopy: false,
     overwriteExisting: false,
   },
@@ -183,14 +316,10 @@ const initialState: FilesModalState = {
   bulkActionErrors: [],
 };
 
-// =============================================================================
-// PURE REDUCERS
-// =============================================================================
-
+// ===== PURE REDUCERS =====
 const modalReducers = createReducers<
   FilesModalState,
   {
-    // Modal management
     openModal: (
       state: FilesModalState,
       type: ModalType,
@@ -209,7 +338,6 @@ const modalReducers = createReducers<
       data: Partial<ModalData>
     ) => FilesModalState;
 
-    // Form states
     setSubmitting: (
       state: FilesModalState,
       submitting: boolean
@@ -224,7 +352,10 @@ const modalReducers = createReducers<
     ) => FilesModalState;
     clearValidationErrors: (state: FilesModalState) => FilesModalState;
 
-    // Upload modal
+    updateUploadFormData: (
+      state: FilesModalState,
+      data: Partial<FileUploadData>
+    ) => FilesModalState;
     setUploadProgress: (
       state: FilesModalState,
       fileId: string,
@@ -233,7 +364,7 @@ const modalReducers = createReducers<
     setUploadStatus: (
       state: FilesModalState,
       fileId: string,
-      status: 'pending' | 'uploading' | 'completed' | 'failed'
+      status: UploadStatus
     ) => FilesModalState;
     setUploadError: (
       state: FilesModalState,
@@ -242,14 +373,12 @@ const modalReducers = createReducers<
     ) => FilesModalState;
     clearUploadData: (state: FilesModalState) => FilesModalState;
 
-    // Create folder modal
     updateCreateFolderForm: (
       state: FilesModalState,
       data: Partial<CreateFolderFormData>
     ) => FilesModalState;
     resetCreateFolderForm: (state: FilesModalState) => FilesModalState;
 
-    // File details modal
     setEditingDetails: (
       state: FilesModalState,
       editing: boolean
@@ -260,29 +389,26 @@ const modalReducers = createReducers<
     ) => FilesModalState;
     resetDetailsForm: (state: FilesModalState) => FilesModalState;
 
-    // Share modal
     setShareLink: (
       state: FilesModalState,
       link: string | null
     ) => FilesModalState;
     updateSharePermissions: (
       state: FilesModalState,
-      permissions: Partial<FilesModalState['sharePermissions']>
+      permissions: Partial<SharePermissions>
     ) => FilesModalState;
     resetShareData: (state: FilesModalState) => FilesModalState;
 
-    // Move/Copy modal
     updateMoveForm: (
       state: FilesModalState,
       data: Partial<MoveFileData>
     ) => FilesModalState;
     setAvailableFolders: (
       state: FilesModalState,
-      folders: FolderData[]
+      folders: readonly FolderData[]
     ) => FilesModalState;
     resetMoveForm: (state: FilesModalState) => FilesModalState;
 
-    // Organize modal
     updateOrganizeForm: (
       state: FilesModalState,
       data: Partial<OrganizeFilesData>
@@ -293,11 +419,10 @@ const modalReducers = createReducers<
     ) => FilesModalState;
     resetOrganizeForm: (state: FilesModalState) => FilesModalState;
 
-    // Preview modal
     setPreviewFile: (
       state: FilesModalState,
       file: FileData | null,
-      files?: FileData[],
+      files?: readonly FileData[],
       index?: number
     ) => FilesModalState;
     setPreviewIndex: (state: FilesModalState, index: number) => FilesModalState;
@@ -306,10 +431,9 @@ const modalReducers = createReducers<
       direction: 'next' | 'prev'
     ) => FilesModalState;
 
-    // Bulk actions modal
     setBulkActionType: (
       state: FilesModalState,
-      type: 'move' | 'copy' | 'delete' | 'tag' | 'share' | null
+      type: BulkActionType
     ) => FilesModalState;
     setBulkActionProgress: (
       state: FilesModalState,
@@ -421,11 +545,19 @@ const modalReducers = createReducers<
   }),
 
   // Upload modal
+  updateUploadFormData: (state, data) => ({
+    ...state,
+    uploadFormData: {
+      ...state.uploadFormData,
+      ...data,
+    },
+  }),
+
   setUploadProgress: (state, fileId, progress) => ({
     ...state,
     uploadProgress: {
       ...state.uploadProgress,
-      [fileId]: progress,
+      [fileId]: Math.max(0, Math.min(100, progress)),
     },
   }),
 
@@ -450,6 +582,11 @@ const modalReducers = createReducers<
     uploadProgress: {},
     uploadStatus: {},
     uploadErrors: {},
+    uploadFormData: {
+      files: [],
+      targetFolderId: null,
+      overwriteExisting: false,
+    },
   }),
 
   // Create folder modal
@@ -465,7 +602,7 @@ const modalReducers = createReducers<
     ...state,
     createFolderFormData: {
       name: '',
-      color: 'blue',
+      color: FOLDER_COLOR.BLUE,
       description: '',
       parentId: null,
     },
@@ -535,7 +672,7 @@ const modalReducers = createReducers<
     moveFormData: {
       itemIds: [],
       targetFolderId: null,
-      operation: 'move',
+      operation: OPERATION_TYPE.MOVE,
       createCopy: false,
       overwriteExisting: false,
     },
@@ -624,145 +761,283 @@ const modalReducers = createReducers<
   }),
 });
 
-// =============================================================================
-// STORE IMPLEMENTATION
-// =============================================================================
+// ===== STORE DEFINITION =====
+export type FilesModalStore = FilesModalState & FilesModalActions;
 
-export const useFilesModalStore = create<
-  FilesModalState &
-    ReturnType<
-      typeof convertReducersToActions<FilesModalState, typeof modalReducers>
-    >
->()(
+export const useFilesModalStore = create<FilesModalStore>()(
   devtools(
     set => ({
       ...initialState,
-      ...convertReducersToActions(set, modalReducers),
+      ...convertReducersToActions(set as any, modalReducers),
+
+      // Additional utility reset method
+      reset: () => set(() => ({ ...initialState })),
     }),
-    {
-      name: 'files-modal-store',
-    }
+    { name: 'FilesModalStore' }
   )
 );
 
-// =============================================================================
-// COMPUTED SELECTORS
-// =============================================================================
+// ===== 2025 HOOKS - FOLLOWING BEST PRACTICES =====
 
-/**
- * Check if a specific modal is open
- */
-export const isModalOpen = (
-  state: FilesModalState,
-  type: ModalType
-): boolean => {
-  return state.isModalOpen && state.activeModal === type;
-};
+// ✅ CORRECT: Select single values to avoid unnecessary re-renders
+export const useFilesActiveModal = () =>
+  useFilesModalStore(state => state.activeModal);
+export const useFilesModalOpen = () =>
+  useFilesModalStore(state => state.isModalOpen);
+export const useFilesModalSubmitting = () =>
+  useFilesModalStore(state => state.isSubmitting);
+export const useFilesModalError = () =>
+  useFilesModalStore(state => state.submitError);
 
-/**
- * Check if any modal is open
- */
-export const isAnyModalOpen = (state: FilesModalState): boolean => {
-  return state.isModalOpen && state.activeModal !== null;
-};
+// ✅ CORRECT: Use useShallow for multiple values when needed
+export const useFilesModalState = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      activeModal: state.activeModal,
+      isModalOpen: state.isModalOpen,
+      isSubmitting: state.isSubmitting,
+      submitError: state.submitError,
+      hasValidationErrors: Object.keys(state.validationErrors).length > 0,
+    }))
+  );
 
-/**
- * Get total upload progress (average of all files)
- */
-export const getTotalUploadProgress = (state: FilesModalState): number => {
-  const progressValues = Object.values(state.uploadProgress);
-  if (progressValues.length === 0) return 0;
+export const useFilesUploadState = () =>
+  useFilesModalStore(
+    useShallow(state => {
+      const progressValues = Object.values(state.uploadProgress);
+      const statuses = Object.values(state.uploadStatus);
+      const errors = Object.values(state.uploadErrors);
 
-  const total = progressValues.reduce((sum, progress) => sum + progress, 0);
-  return Math.round(total / progressValues.length);
-};
+      return {
+        uploadProgress: state.uploadProgress,
+        uploadStatus: state.uploadStatus,
+        uploadErrors: state.uploadErrors,
+        uploadFormData: state.uploadFormData,
+        totalProgress:
+          progressValues.length > 0
+            ? Math.round(
+                progressValues.reduce((sum, p) => sum + p, 0) /
+                  progressValues.length
+              )
+            : 0,
+        isUploading: statuses.some(s => s === UPLOAD_STATUS.UPLOADING),
+        isCompleted:
+          statuses.length > 0 &&
+          statuses.every(
+            s => s === UPLOAD_STATUS.COMPLETED || s === UPLOAD_STATUS.FAILED
+          ),
+        hasErrors: errors.length > 0,
+        totalFiles: statuses.length,
+        completedFiles: statuses.filter(s => s === UPLOAD_STATUS.COMPLETED)
+          .length,
+        failedFiles: statuses.filter(s => s === UPLOAD_STATUS.FAILED).length,
+      };
+    })
+  );
 
-/**
- * Get upload status summary
- */
-export const getUploadStatusSummary = (state: FilesModalState) => {
-  const statuses = Object.values(state.uploadStatus);
-  const total = statuses.length;
+export const useFilesCreateFolderForm = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      formData: state.createFolderFormData,
+      isValid: state.createFolderFormData.name.trim() !== '',
+    }))
+  );
 
-  return {
-    total,
-    pending: statuses.filter(s => s === 'pending').length,
-    uploading: statuses.filter(s => s === 'uploading').length,
-    completed: statuses.filter(s => s === 'completed').length,
-    failed: statuses.filter(s => s === 'failed').length,
-  };
-};
+export const useFilesDetailsForm = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      formData: state.detailsFormData,
+      isEditing: state.isEditingDetails,
+    }))
+  );
 
-/**
- * Check if upload is in progress
- */
-export const isUploadInProgress = (state: FilesModalState): boolean => {
-  return Object.values(state.uploadStatus).some(
-    status => status === 'uploading'
+export const useFilesShareState = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      shareLink: state.shareLink,
+      permissions: state.sharePermissions,
+      hasLink: state.shareLink !== null,
+    }))
+  );
+
+export const useFilesMoveForm = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      formData: state.moveFormData,
+      availableFolders: state.availableFolders,
+      isValid:
+        state.moveFormData.itemIds.length > 0 &&
+        state.moveFormData.targetFolderId !== null,
+    }))
+  );
+
+export const useFilesOrganizeForm = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      formData: state.organizeFormData,
+      previewChanges: state.previewChanges,
+      hasOperations: state.organizeFormData.operations.length > 0,
+    }))
+  );
+
+export const useFilesPreviewState = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      previewFile: state.previewFile,
+      previewIndex: state.previewIndex,
+      previewFiles: state.previewFiles,
+      canGoPrev: state.previewIndex > 0,
+      canGoNext: state.previewIndex < state.previewFiles.length - 1,
+      totalFiles: state.previewFiles.length,
+      currentPosition: state.previewIndex + 1,
+    }))
+  );
+
+export const useFilesBulkActionState = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      bulkActionType: state.bulkActionType,
+      progress: state.bulkActionProgress,
+      errors: state.bulkActionErrors,
+      isInProgress:
+        state.bulkActionType !== null &&
+        state.bulkActionProgress > 0 &&
+        state.bulkActionProgress < 100,
+      isCompleted: state.bulkActionProgress === 100,
+      hasErrors: state.bulkActionErrors.length > 0,
+    }))
+  );
+
+export const useFilesValidationErrors = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      errors: state.validationErrors,
+      hasErrors: Object.keys(state.validationErrors).length > 0,
+    }))
+  );
+
+// ✅ CORRECT: Action selectors to avoid passing entire store
+export const useFilesModalActions = () =>
+  useFilesModalStore(
+    useShallow(state => ({
+      // Modal management
+      openModal: state.openModal,
+      closeModal: state.closeModal,
+      closeAllModals: state.closeAllModals,
+      pushModal: state.pushModal,
+      popModal: state.popModal,
+      updateModalData: state.updateModalData,
+
+      // Form states
+      setSubmitting: state.setSubmitting,
+      setSubmitError: state.setSubmitError,
+      setValidationErrors: state.setValidationErrors,
+      clearValidationErrors: state.clearValidationErrors,
+
+      // Upload
+      updateUploadFormData: state.updateUploadFormData,
+      setUploadProgress: state.setUploadProgress,
+      setUploadStatus: state.setUploadStatus,
+      setUploadError: state.setUploadError,
+      clearUploadData: state.clearUploadData,
+
+      // Create folder
+      updateCreateFolderForm: state.updateCreateFolderForm,
+      resetCreateFolderForm: state.resetCreateFolderForm,
+
+      // Details
+      setEditingDetails: state.setEditingDetails,
+      updateDetailsForm: state.updateDetailsForm,
+      resetDetailsForm: state.resetDetailsForm,
+
+      // Share
+      setShareLink: state.setShareLink,
+      updateSharePermissions: state.updateSharePermissions,
+      resetShareData: state.resetShareData,
+
+      // Move/Copy
+      updateMoveForm: state.updateMoveForm,
+      setAvailableFolders: state.setAvailableFolders,
+      resetMoveForm: state.resetMoveForm,
+
+      // Organize
+      updateOrganizeForm: state.updateOrganizeForm,
+      setPreviewChanges: state.setPreviewChanges,
+      resetOrganizeForm: state.resetOrganizeForm,
+
+      // Preview
+      setPreviewFile: state.setPreviewFile,
+      setPreviewIndex: state.setPreviewIndex,
+      navigatePreview: state.navigatePreview,
+
+      // Bulk actions
+      setBulkActionType: state.setBulkActionType,
+      setBulkActionProgress: state.setBulkActionProgress,
+      addBulkActionError: state.addBulkActionError,
+      clearBulkActionErrors: state.clearBulkActionErrors,
+      resetBulkAction: state.resetBulkAction,
+
+      // Utility
+      reset: state.reset,
+    }))
+  );
+
+// ===== COMPUTED SELECTORS =====
+export const useIsModalOpen = (modalType: ModalType) => {
+  return useFilesModalStore(
+    useCallback(
+      state => state.isModalOpen && state.activeModal === modalType,
+      [modalType]
+    )
   );
 };
 
-/**
- * Check if upload is completed
- */
-export const isUploadCompleted = (state: FilesModalState): boolean => {
-  const statuses = Object.values(state.uploadStatus);
-  return (
-    statuses.length > 0 &&
-    statuses.every(status => status === 'completed' || status === 'failed')
+export const useIsAnyModalOpen = () => {
+  return useFilesModalStore(
+    state => state.isModalOpen && state.activeModal !== null
   );
 };
 
-/**
- * Check if form has validation errors
- */
-export const hasValidationErrors = (state: FilesModalState): boolean => {
-  return Object.keys(state.validationErrors).length > 0;
+export const useModalData = <T = ModalData>() => {
+  return useFilesModalStore(state => state.modalData as T);
 };
 
-/**
- * Get validation error for specific field
- */
-export const getValidationError = (
-  state: FilesModalState,
-  field: string
-): string | null => {
-  return state.validationErrors[field] || null;
-};
-
-/**
- * Check if can navigate preview
- */
-export const canNavigatePreview = (state: FilesModalState) => {
-  return {
-    canGoPrev: state.previewIndex > 0,
-    canGoNext: state.previewIndex < state.previewFiles.length - 1,
-    total: state.previewFiles.length,
-    current: state.previewIndex + 1,
-  };
-};
-
-/**
- * Check if bulk action is in progress
- */
-export const isBulkActionInProgress = (state: FilesModalState): boolean => {
-  return (
-    state.bulkActionType !== null &&
-    state.bulkActionProgress > 0 &&
-    state.bulkActionProgress < 100
+export const useValidationError = (field: string) => {
+  return useFilesModalStore(
+    useCallback(state => state.validationErrors[field] || null, [field])
   );
 };
 
-/**
- * Check if bulk action is completed
- */
-export const isBulkActionCompleted = (state: FilesModalState): boolean => {
-  return state.bulkActionProgress === 100;
+export const useUploadProgress = (fileId: string) => {
+  return useFilesModalStore(
+    useCallback(state => state.uploadProgress[fileId] || 0, [fileId])
+  );
 };
 
-/**
- * Check if bulk action has errors
- */
-export const hasBulkActionErrors = (state: FilesModalState): boolean => {
-  return state.bulkActionErrors.length > 0;
+export const useUploadStatus = (fileId: string) => {
+  return useFilesModalStore(
+    useCallback(
+      state => state.uploadStatus[fileId] || UPLOAD_STATUS.PENDING,
+      [fileId]
+    )
+  );
+};
+
+export const useUploadError = (fileId: string) => {
+  return useFilesModalStore(
+    useCallback(state => state.uploadErrors[fileId] || null, [fileId])
+  );
+};
+
+export const useFilesModalStack = () => {
+  return useFilesModalStore(
+    useMemo(
+      () => state => ({
+        stack: state.modalStack,
+        depth: state.modalStack.length,
+        canPop: state.modalStack.length > 0,
+      }),
+      []
+    )
+  );
 };

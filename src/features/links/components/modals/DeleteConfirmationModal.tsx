@@ -11,58 +11,59 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/animate-ui/radix/dialog';
-import { useLinksListStore } from '../../hooks/use-links-composite';
-import type { LinkData } from '../../types';
+import { useCurrentModal, useModalData, useModalStore } from '../../store';
+import { deleteLinkAction } from '../../lib/actions'; // Assuming server action exists
 
-interface DeleteConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  link: LinkData;
-}
-
-export function DeleteConfirmationModal({
-  isOpen,
-  onClose,
-  link,
-}: DeleteConfirmationModalProps) {
+export function DeleteConfirmationModal() {
+  const currentModal = useCurrentModal();
+  const { link } = useModalData();
+  const { closeModal, setLoading } = useModalStore();
   const [isDeleting, setIsDeleting] = useState(false);
-  const { removeLink, links } = useLinksListStore();
 
-  // Check if link still exists in store (real-time sync)
-  const linkExists = links.find(l => l.id === link.id);
+  const isOpen = currentModal === 'delete-confirmation';
+
+  if (!isOpen || !link) return null;
 
   const handleDelete = async () => {
     setIsDeleting(true);
+    setLoading(true);
 
     try {
-      // Remove link from store
-      removeLink(link.id);
+      // Call server action to delete link
+      const result = await deleteLinkAction(link.id);
 
-      // Show success message
-      toast.success(`${link.name} has been deleted successfully`);
+      if (result.success) {
+        // Show success message
+        toast.success(`${link.title} has been deleted successfully`);
 
-      // Close modal
-      onClose();
+        // Close modal
+        closeModal();
+
+        // 2025 React best practice: Update UI state immediately after successful mutation
+        if ((window as any).refreshLinksData) {
+          console.log(
+            '🗑️ DELETE MODAL: Triggering immediate links data refresh...'
+          );
+          (window as any).refreshLinksData();
+        }
+      } else {
+        throw new Error(result.error || 'Failed to delete link');
+      }
     } catch (error) {
       console.error('Failed to delete link:', error);
       toast.error('Failed to delete link. Please try again.');
     } finally {
       setIsDeleting(false);
+      setLoading(false);
     }
   };
 
   const handleCancel = () => {
     if (isDeleting) return; // Prevent closing while deleting
-    onClose();
+    closeModal();
   };
 
-  // Auto-close if link no longer exists (deleted elsewhere)
-  React.useEffect(() => {
-    if (isOpen && !linkExists && !isDeleting) {
-      console.log('🗑️ Link no longer exists, auto-closing delete modal');
-      onClose();
-    }
-  }, [isOpen, linkExists, isDeleting, onClose]);
+  const linkUrl = `foldly.com/${link.slug}${link.topic ? `/${link.topic}` : ''}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
@@ -77,8 +78,8 @@ export function DeleteConfirmationModal({
           </DialogTitle>
 
           <DialogDescription className='text-gray-600 mt-2'>
-            Are you sure you want to delete "{link.name}"? This action cannot be
-            undone.
+            Are you sure you want to delete "{link.title}"? This action cannot
+            be undone.
           </DialogDescription>
         </DialogHeader>
 
@@ -91,16 +92,28 @@ export function DeleteConfirmationModal({
               </div>
               <div className='flex-1 min-w-0'>
                 <p className='font-medium text-gray-900 truncate'>
-                  {link.name}
+                  {link.title}
                 </p>
-                <p className='text-sm text-gray-500 truncate'>{link.url}</p>
+                <p className='text-sm text-gray-500 truncate'>{linkUrl}</p>
               </div>
             </div>
 
-            {/* Stats that will be lost */}
+            {/* Stats from database */}
             <div className='mt-3 flex items-center gap-4 text-sm text-gray-600'>
-              <span>{link.uploads} uploads</span>
-              <span>{link.views} views</span>
+              <span>{link.totalUploads} uploads</span>
+              <span>{link.totalFiles} files</span>
+              <span>
+                {(link.totalSize / (1024 * 1024)).toFixed(1)}MB stored
+              </span>
+            </div>
+
+            {/* Link type */}
+            <div className='mt-2'>
+              <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
+                {link.linkType === 'base'
+                  ? 'Personal Collection'
+                  : 'Topic Collection'}
+              </span>
             </div>
           </div>
 
@@ -112,8 +125,9 @@ export function DeleteConfirmationModal({
                 <p className='font-medium'>This will permanently delete:</p>
                 <ul className='mt-1 list-disc list-inside space-y-1'>
                   <li>The upload link and its settings</li>
-                  <li>All upload statistics and analytics</li>
-                  <li>Any shared link URLs will stop working</li>
+                  <li>All uploaded files and folders</li>
+                  <li>Upload statistics and file metadata</li>
+                  <li>Shared link URLs will stop working</li>
                 </ul>
               </div>
             </div>

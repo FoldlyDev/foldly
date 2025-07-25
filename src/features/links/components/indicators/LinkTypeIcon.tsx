@@ -6,7 +6,7 @@ import {
   COMPONENT_SIZES,
   LINK_TYPE_STYLING,
   COMPONENT_DEFAULTS,
-} from '../../constants';
+} from '../../lib/constants';
 
 interface LinkTypeIconProps {
   isBaseLink: boolean;

@@ -156,7 +156,7 @@
 @import '../styles/components/ui/content-loader.css';
 
 /* 🏗️ Dashboard Feature Styles */
-@import '../features/dashboard/styles/dashboard-navigation.css';
+@import '../styles/components/layout/dashboard-navigation.css';
 
 /* =============================================================================
    CSS VARIABLES

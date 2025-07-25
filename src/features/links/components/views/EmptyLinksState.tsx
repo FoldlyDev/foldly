@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui';
-import { useLinksModalStore } from '../../store/links-modal-store';
+import { useModalStore } from '../../store';
 import {
   Link2,
   Plus,
@@ -22,9 +22,7 @@ interface EmptyLinksStateProps {
 
 export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
   const { user } = useUser();
-  const openCreateLinkModal = useLinksModalStore(
-    state => state.openCreateLinkModal
-  );
+  const { openCreateModal } = useModalStore();
 
   // Get username from Clerk user data (username is obligatory in Clerk, always lowercase)
   const username = user?.username?.toLowerCase() || 'your-username';
@@ -193,8 +191,8 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           size='lg'
           onClick={() => {
             console.log('🔥 EMPTY STATE: Set Up Base Link button clicked');
-            openCreateLinkModal('base');
-            console.log('🔥 EMPTY STATE: openCreateLinkModal("base") called');
+            openCreateModal('base');
+            console.log('🔥 EMPTY STATE: openCreateModal("base") called');
           }}
           className='group shadow-brand text-lg px-8 py-4'
         >

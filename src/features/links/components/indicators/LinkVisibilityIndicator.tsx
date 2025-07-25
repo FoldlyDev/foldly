@@ -8,7 +8,7 @@ import {
   STATUS_MESSAGES,
   HELP_TEXT,
   COMPONENT_DEFAULTS,
-} from '../../constants';
+} from '../../lib/constants';
 
 interface LinkVisibilityIndicatorProps {
   isPublic: boolean;

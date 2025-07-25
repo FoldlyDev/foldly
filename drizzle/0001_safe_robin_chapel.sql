@@ -1,0 +1,1 @@
+ALTER TABLE "links" ADD COLUMN "allowed_file_types" json;

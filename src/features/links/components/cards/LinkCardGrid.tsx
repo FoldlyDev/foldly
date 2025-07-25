@@ -21,11 +21,11 @@ import {
   ActionButton,
   AnimatedCopyButton,
 } from '@/components/ui';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import type { ActionItem } from '@/components/ui/types';
 
 interface LinkCardGridProps {
-  link: LinkData;
+  link: LinkWithStats;
   index: number;
   isBaseLink: boolean;
   formattedDate: string;
@@ -84,7 +84,9 @@ export const LinkCardGrid = memo(
               <div className='flex items-center gap-3 mb-2'>
                 <LinkTypeIcon isBaseLink={isBaseLink} size='lg' />
                 <div className='flex items-center gap-2'>
-                  <LinkStatusIndicator status={link.status} />
+                  <LinkStatusIndicator
+                    status={link.isActive ? 'active' : 'paused'}
+                  />
                   <LinkVisibilityIndicator isPublic={link.isPublic} />
                 </div>
               </div>
@@ -105,14 +107,17 @@ export const LinkCardGrid = memo(
                 )}
                 <h3 className='font-bold text-slate-900 text-lg truncate flex-1 min-w-0'>
                   <SearchHighlight
-                    text={link.name}
+                    text={link.title}
                     searchQuery={searchQuery || ''}
                   />
                 </h3>
               </div>
 
               <div className='flex items-center gap-1 text-slate-500 text-sm'>
-                <span className='truncate'>{link.url}</span>
+                <span className='truncate'>
+                  foldly.io/{link.slug}
+                  {link.topic ? `/${link.topic}` : ''}
+                </span>
                 <ExternalLink className='w-3 h-3 flex-shrink-0' />
               </div>
             </div>
@@ -126,17 +131,17 @@ export const LinkCardGrid = memo(
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <FileText className='w-4 h-4 text-slate-500' />
                 <span className='text-2xl font-bold text-slate-900'>
-                  {link.uploads}
+                  {link.stats.fileCount}
                 </span>
               </div>
-              <div className='text-xs text-slate-500'>Uploads</div>
+              <div className='text-xs text-slate-500'>Files</div>
             </div>
 
             <div className='text-center p-3 bg-gray-50 rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <Eye className='w-4 h-4 text-slate-500' />
                 <span className='text-2xl font-bold text-slate-900'>
-                  {link.views}
+                  {link.stats.totalViewCount}
                 </span>
               </div>
               <div className='text-xs text-slate-500'>Views</div>
@@ -217,7 +222,7 @@ export const LinkCardGrid = memo(
                 <div className='flex items-center gap-1 text-xs'>
                   <AlertTriangle className='w-3 h-3 text-amber-500' />
                   <span className='text-amber-600 font-medium'>
-                    Expires {link.expiresAt}
+                    Expires {new Date(link.expiresAt).toLocaleDateString()}
                   </span>
                 </div>
               )}

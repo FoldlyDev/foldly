@@ -8,6 +8,6 @@ export {
   useFolderCardStore,
   useFilesListStore,
   useFilesModalsStore,
-  useFilesDragDropStore,
-  useFilesWorkspaceComposite,
+  useFilesUploadStore,
+  useFilesWorkspaceCompositeStore,
 } from './use-files-composite';

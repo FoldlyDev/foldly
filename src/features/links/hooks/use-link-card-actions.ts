@@ -11,8 +11,9 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ActionItem } from '@/components/ui/types';
-import type { LinkData } from '../types';
-import { useLinksModalsStore } from './use-links-composite';
+import type { LinkWithStats } from '@/lib/supabase/types';
+import { generateFullUrl } from '../lib/utils';
+import { useModalStore } from '../store';
 
 /**
  * Hook that provides standardized link card actions with modal connections
@@ -27,7 +28,7 @@ import { useLinksModalsStore } from './use-links-composite';
  */
 
 interface UseLinkCardActionsOptions {
-  link: LinkData;
+  link: LinkWithStats;
   isBaseLink?: boolean;
   showDeleteAction?: boolean;
   showSettingsAction?: boolean;
@@ -54,51 +55,49 @@ export const useLinkCardActions = ({
   showDeleteAction = true,
   showSettingsAction = true,
 }: UseLinkCardActionsOptions): UseLinkCardActionsReturn => {
-  const modalStore = useLinksModalsStore();
-
   const {
-    openLinkDetailsModal,
-    openShareLinkModal,
-    openLinkSettingsModal,
-    openDeleteConfirmationModal,
-  } = modalStore;
+    openDetailsModal,
+    openShareModal,
+    openSettingsModal,
+    openDeleteModal,
+  } = useModalStore();
 
   // Individual action handlers
   const handleCopyLink = useCallback(async () => {
     try {
-      const linkUrl = link.url.startsWith('http')
-        ? link.url
-        : `https://${link.url}`;
+      // Generate the full URL from slug and topic
+      const baseUrl = window.location.origin; // or use your app's base URL
+      const linkUrl = generateFullUrl(baseUrl, link.slug, link.topic);
       await navigator.clipboard.writeText(linkUrl);
       toast.success('Link copied to clipboard!');
     } catch (error) {
       console.error('❌ Failed to copy link:', error);
       toast.error('Failed to copy link');
     }
-  }, [link.url, link.id]);
+  }, [link.slug, link.topic, link.id]);
 
   const handleShare = useCallback(() => {
-    openShareLinkModal(link);
-  }, [openShareLinkModal, link]);
+    openShareModal(link);
+  }, [openShareModal, link]);
 
   const handleViewDetails = useCallback(() => {
-    openLinkDetailsModal(link);
-  }, [openLinkDetailsModal, link]);
+    openDetailsModal(link);
+  }, [openDetailsModal, link]);
 
   const handleSettings = useCallback(() => {
-    openLinkSettingsModal(link);
-  }, [openLinkSettingsModal, link]);
+    openSettingsModal(link);
+  }, [openSettingsModal, link]);
 
   const handleDelete = useCallback(() => {
-    openDeleteConfirmationModal(link);
-  }, [openDeleteConfirmationModal, link]);
+    openDeleteModal(link);
+  }, [openDeleteModal, link]);
 
   const handleOpenExternal = useCallback(() => {
-    const linkUrl = link.url.startsWith('http')
-      ? link.url
-      : `https://${link.url}`;
+    // Generate the full URL from slug and topic
+    const baseUrl = window.location.origin; // or use your app's base URL
+    const linkUrl = generateFullUrl(baseUrl, link.slug, link.topic);
     window.open(linkUrl, '_blank', 'noopener,noreferrer');
-  }, [link.url, link.id]);
+  }, [link.slug, link.topic, link.id]);
 
   // Memoized action arrays for different contexts - REMOVED copy and share from dropdown
   const dropdownActions = useMemo((): ActionItem[] => {

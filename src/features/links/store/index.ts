@@ -1,20 +1,31 @@
 /**
- * Links Feature Store Exports
- * Multiple focused stores following 2025 Zustand architecture patterns
+ * Links Store Index - 2025 Refactored Architecture
+ * Exports simplified stores and hooks for links feature
  */
 
-// Store exports
-export { useLinksDataStore, linksDataSelectors } from './links-data-store';
-export { useLinksUIStore, linksUISelectors } from './links-ui-store';
-export { useLinksModalStore, linksModalSelectors } from './links-modal-store';
+// Core stores
+export { useModalStore } from './modal-store';
+export { useUIStore } from './ui-store';
 
-// Utility exports
+// Modal selectors
+export { useCurrentModal, useModalData, useModalLoading } from './modal-store';
+
+// UI selectors - Individual properties to prevent infinite loops
 export {
-  convertReducersToActions,
-  createReducers,
-} from './utils/convert-reducers-to-actions';
-export type { Reducer } from './utils/convert-reducers-to-actions';
+  useViewMode,
+  useSearchQuery,
+  useFilterType,
+  useFilterStatus,
+  useSortBy,
+  useSortDirection,
+} from './ui-store';
 
-// Re-export types for convenience
-export type { LinkData } from '../types';
-export type { LinkId } from '@/types';
+// Re-export database types for convenience
+export type {
+  Link,
+  LinkInsert,
+  LinkUpdate,
+  LinkType,
+  LinkSortField,
+  DatabaseId,
+} from '@/lib/supabase/types';

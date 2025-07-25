@@ -98,7 +98,7 @@ src/features/
 - **Authentication**: Clerk (enterprise-grade, RBAC)
 - **Database**: Supabase PostgreSQL with Row Level Security
 - **File Storage**: Supabase Storage with CDN delivery
-- **Payments**: Stripe with subscription management
+- **Payments**: Clerk Billing + Stripe (zero-integration SaaS billing)
 - **Email**: Resend for transactional communications
 - **Real-time**: Supabase Realtime + Socket.io
 
@@ -141,12 +141,36 @@ src/features/
 
 ### **Freemium SaaS Strategy**
 
+#### **Modern Billing Architecture (Clerk + Stripe)**
+
+**Foldly implements Clerk Billing**, a revolutionary zero-integration billing solution that combines Clerk's authentication with Stripe's payment processing. This approach provides:
+
+- **Instant Setup**: No custom payment code required
+- **Feature-Based Access Control**: Automatic feature gating based on subscription
+- **Built-in UI Components**: Pre-built pricing tables and billing portals
+- **Real-time Feature Updates**: Immediate access changes on subscription events
+- **Simplified Development**: 60% less code complexity vs traditional Stripe integration
+
 #### **Pricing Tiers**
 
 - **Free**: $0/month - Basic link, 2GB storage, community support
 - **Pro**: $8/month - Multiple links, 10GB storage, email support
 - **Business**: $25/month - Team features, 100GB storage, priority support
 - **Enterprise**: $40/month - White-label, unlimited storage, dedicated support
+
+#### **Feature-Based Access Implementation**
+
+Each subscription tier automatically grants access to specific features through Clerk's feature management:
+
+```typescript
+// Automatic feature access based on subscription
+const features = {
+  free: ['basic_links', 'public_uploads'],
+  pro: ['custom_links', 'branding', 'analytics'],
+  business: ['team_features', 'advanced_security', 'api_access'],
+  enterprise: ['white_label', 'custom_domains', 'dedicated_support'],
+};
+```
 
 #### **Target Markets**
 

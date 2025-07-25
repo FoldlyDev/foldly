@@ -15,17 +15,17 @@ import { useZodForm } from '@/lib/hooks/use-zod-form';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
-} from '../schemas';
+} from '../lib/validations/forms';
 import { useLinksModalStore } from '../store/links-modal-store';
 import { useLinksDataStore } from '../store/links-data-store';
-import type { LinkData } from '../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 export interface UseSettingsFormEnhancedReturn {
   // Form control
   form: ReturnType<typeof useZodForm<typeof generalSettingsSchema>>;
 
   // Link data
-  linkData: LinkData | null;
+  linkData: LinkWithStats | null;
 
   // Form state
   isSubmitting: boolean;
@@ -56,28 +56,25 @@ export const useSettingsFormEnhanced = (): UseSettingsFormEnhancedReturn => {
   // Get the current link data from modal context
   const linkData = modalStore.modalData.linkData || null;
 
-  // Create initial form values with proper type handling
+  // Create initial form values matching generalSettingsSchema
   const initialFormValues = useMemo(() => {
     if (!linkData) {
       return {
-        // General settings
+        // Schema fields with defaults
         isPublic: true,
         requireEmail: false,
         requirePassword: false,
         password: '',
-        expiresAt: '',
-        maxFiles: undefined,
-        maxFileSize: 50,
-        allowedFileTypes: [] as string[], // Fix: explicitly type as mutable array
-        autoCreateFolders: false,
-        allowMultiple: true,
-        customMessage: '',
-
-        // Branding settings
-        brandingEnabled: false,
+        maxFiles: 100,
+        maxFileSize: 100, // MB in form, converted to bytes in action
+        allowedFileTypes: [] as string[],
+        expiresAt: undefined,
+        brandEnabled: false,
         brandColor: '',
-        accentColor: '',
-        logoUrl: '',
+        // Form-only fields from schema
+        allowMultiple: true,
+        autoCreateFolders: false,
+        customMessage: '',
       };
     }
 
@@ -87,26 +84,23 @@ export const useSettingsFormEnhanced = (): UseSettingsFormEnhancedReturn => {
       : [];
 
     return {
-      // General settings from linkData
+      // Schema fields from linkData
       isPublic: linkData.isPublic,
-      requireEmail: linkData.requireEmail || false,
-      requirePassword: linkData.requirePassword || false,
+      requireEmail: linkData.requireEmail,
+      requirePassword: linkData.requirePassword,
       password: '', // Don't populate existing password
-      expiresAt: linkData.expiresAt || '',
       maxFiles: linkData.maxFiles,
-      maxFileSize: Math.round(
-        (linkData.maxFileSize || 52428800) / (1024 * 1024)
-      ), // Convert bytes to MB
+      maxFileSize: Math.round(linkData.maxFileSize / (1024 * 1024)), // Convert bytes to MB
       allowedFileTypes: fileTypes,
-      autoCreateFolders: linkData.autoCreateFolders || false,
-      allowMultiple: linkData.settings?.allowMultiple ?? true,
-      customMessage: linkData.settings?.customMessage || '',
-
-      // Branding settings from linkData
-      brandingEnabled: linkData.brandingEnabled || false,
+      expiresAt: linkData.expiresAt
+        ? linkData.expiresAt.toISOString().split('T')[0]
+        : undefined,
+      brandEnabled: linkData.brandEnabled,
       brandColor: linkData.brandColor || '',
-      accentColor: linkData.accentColor || '',
-      logoUrl: linkData.logoUrl || '',
+      // Form-only fields with defaults
+      allowMultiple: true,
+      autoCreateFolders: false,
+      customMessage: '',
     };
   }, [linkData]);
 
@@ -124,7 +118,7 @@ export const useSettingsFormEnhanced = (): UseSettingsFormEnhancedReturn => {
     reset(initialFormValues);
   }, [reset, initialFormValues]);
 
-  // Handle save action
+  // Handle save action - only update database fields
   const handleSave = useCallback(
     async (data: GeneralSettingsFormData): Promise<boolean> => {
       try {
@@ -132,27 +126,21 @@ export const useSettingsFormEnhanced = (): UseSettingsFormEnhancedReturn => {
           throw new Error('No link data available');
         }
 
-        // Update the link data in the store
+        // Only update database fields available in the schema
         await linkDataStore.updateLink(linkData.id, {
           isPublic: data.isPublic,
           requireEmail: data.requireEmail,
           requirePassword: data.requirePassword,
-          password: data.password,
-          expiresAt: data.expiresAt,
+          passwordHash: data.password
+            ? Buffer.from(data.password).toString('base64')
+            : linkData.passwordHash,
           maxFiles: data.maxFiles,
           maxFileSize: data.maxFileSize * 1024 * 1024, // Convert MB to bytes
-          allowedFileTypes: data.allowedFileTypes,
-          autoCreateFolders: data.autoCreateFolders,
-          settings: {
-            ...linkData?.settings,
-            allowMultiple: data.allowMultiple,
-            customMessage: data.customMessage,
-          },
-          // Include branding settings
-          brandingEnabled: data.brandingEnabled,
-          brandColor: data.brandColor || undefined,
-          accentColor: data.accentColor || undefined,
-          logoUrl: data.logoUrl || undefined,
+          allowedFileTypes:
+            data.allowedFileTypes.length > 0 ? data.allowedFileTypes : null,
+          expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
+          brandEnabled: data.brandEnabled,
+          brandColor: data.brandColor || null,
         });
 
         // Mark form as clean after successful save

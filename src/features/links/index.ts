@@ -1,7 +1,7 @@
 // ===== 2025 FEATURE-BASED COMPONENT ARCHITECTURE =====
 
 // 📋 Modal Components - User Interactions
-export { CreateLinkModalContainer } from './components/containers/CreateLinkModalContainer';
+export { CreateLinkModal } from './components/modals/CreateLinkModal';
 export {
   LinkDetailsModal,
   ShareModal,
@@ -35,11 +35,24 @@ export { LinksModalManager } from './components/managers/LinksModalManager';
 // 🪝 Hooks - State Management
 // Legacy hooks removed - replaced by store-based composite hooks
 
-// 🏪 Store - Zustand State Management
-export { useLinksStore } from './store/links-store';
+// 🏪 Store - Zustand State Management (Simplified)
+export { useModalStore, useUIStore } from './store';
 
-// 🔧 Services - Business Logic & API
-export * from './services';
+// 🔧 Client-Safe Utilities Only - NO server-only database services
 
-// 📝 Types - TypeScript Interfaces
-export * from './types';
+// Client-safe constants (all constants are client-safe)
+export * from './lib/constants';
+
+// Note: Server-only services (db-service, actions) should be imported directly
+// in server components/actions, not exported from main feature index
+// Client-side utilities can be imported directly from './lib/utils' when needed
+
+// 📝 Types - Re-export database types as single source of truth
+export type {
+  Link,
+  LinkWithStats,
+  LinkInsert,
+  LinkUpdate,
+  LinkType,
+  DatabaseId,
+} from '@/lib/supabase/types';

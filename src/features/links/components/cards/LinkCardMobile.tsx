@@ -15,10 +15,10 @@ import {
   AnimatedCopyButton,
 } from '@/components/ui';
 import type { ActionItem } from '@/components/ui/types';
-import type { LinkData } from '../../types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface LinkCardMobileProps {
-  link: LinkData;
+  link: LinkWithStats;
   index: number;
   isBaseLink: boolean;
   formattedDate: string;
@@ -72,31 +72,22 @@ export const LinkCardMobile = memo(
               {/* Title & URL */}
               <div className='min-w-0 flex-1'>
                 <div className='flex items-center gap-2'>
-                  {/* Show logo if available */}
-                  {link.logoUrl && (
-                    <img
-                      src={link.logoUrl}
-                      alt={`${link.name} logo`}
-                      className='w-4 h-4 rounded object-cover flex-shrink-0'
-                      onError={e => {
-                        // Hide logo if it fails to load
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  )}
                   <h3 className='font-semibold text-gray-900 text-base truncate'>
                     <SearchHighlight
-                      text={link.name}
+                      text={link.title}
                       searchQuery={searchQuery || ''}
                     />
                   </h3>
                 </div>
-                <p className='text-sm text-gray-500 truncate'>{link.url}</p>
+                <p className='text-sm text-gray-500 truncate'>
+                  foldly.io/{link.slug}
+                  {link.topic ? `/${link.topic}` : ''}
+                </p>
               </div>
             </div>
 
             {/* Status Badge */}
-            <LinkStatusIndicator status={link.status} />
+            <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
           </div>
 
           {/* Info Row: Metrics + Date */}
@@ -104,11 +95,11 @@ export const LinkCardMobile = memo(
             <div className='flex items-center gap-4'>
               <span className='flex items-center gap-1'>
                 <FileText className='w-4 h-4' />
-                {link.uploads}
+                {link.stats.fileCount}
               </span>
               <span className='flex items-center gap-1'>
                 <Eye className='w-4 h-4' />
-                {link.views}
+                {link.stats.totalViewCount}
               </span>
             </div>
 
@@ -122,7 +113,9 @@ export const LinkCardMobile = memo(
           {link.expiresAt && (
             <div className='flex items-center justify-center gap-1 text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full'>
               <AlertTriangle className='w-3 h-3' />
-              <span className='font-medium'>Expires {link.expiresAt}</span>
+              <span className='font-medium'>
+                Expires {new Date(link.expiresAt).toLocaleDateString()}
+              </span>
             </div>
           )}
 

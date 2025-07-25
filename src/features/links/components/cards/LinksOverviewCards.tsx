@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Link2, Eye, FileText, TrendingUp } from 'lucide-react';
-import { METRICS_LABELS } from '../../constants';
+import { METRICS_LABELS } from '../../lib/constants';
 
 interface LinksOverviewCardsProps {
   data?: {

@@ -14,7 +14,6 @@ import {
   Power,
   Calendar,
   CalendarIcon,
-  FolderOpen,
   HardDrive,
   FileType,
   AlertCircle,
@@ -51,19 +50,30 @@ import {
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils/utils';
 
-// Use centralized types from the types folder
+// Use existing database types as single source of truth
 import type {
-  ValidationError,
-  LinkInformationFormData,
-  FieldValidationErrors,
-} from '../../types';
+  LinkCreateForm,
+  LinkUpdateForm,
+} from '@/lib/supabase/types/links';
+import type { LinkType } from '@/lib/supabase/types/enums';
+
+// Local form types
+type ValidationError = string;
+
+// Use existing database types - no custom redefinition
+interface LinkInformationFormData extends LinkCreateForm {
+  // Additional fields from LinkUpdateForm that we need
+  isActive?: boolean;
+  // Backwards compatibility field (maps to topic)
+  name?: string;
+}
 
 // Import URL utility functions
 import {
   generateUrlSlug,
   validateTopicName,
   generateTopicUrl,
-} from '../../utils';
+} from '../../lib/utils';
 
 interface LinkInformationSectionProps {
   readonly linkType: 'base' | 'topic';
@@ -82,7 +92,7 @@ import {
   FILE_SIZE_OPTIONS,
   DEFAULT_FILE_TYPES,
   DEFAULT_FILE_SIZES,
-} from '../../constants';
+} from '../../lib/constants';
 
 // Transform centralized constants for local use
 const fileOptions = [5, 10, 25, 50, 100];
@@ -91,6 +101,10 @@ const fileSizeOptions = FILE_SIZE_OPTIONS.map(option => ({
   label: option.label,
 }));
 const fileTypeOptions = FILE_TYPE_OPTIONS;
+
+// Default values from constants
+const defaultMaxFileSize = parseInt(DEFAULT_FILE_SIZES); // 10 MB
+const defaultFileTypes = DEFAULT_FILE_TYPES === '*' ? [] : [DEFAULT_FILE_TYPES];
 
 export function LinkInformationSection({
   linkType,
@@ -101,6 +115,9 @@ export function LinkInformationSection({
   isLoading = false,
 }: LinkInformationSectionProps) {
   // Real-time URL generation with validation
+  // Use 'topic' field from database schema, fallback to 'name' for compatibility
+  const topicValue = formData.topic || formData.name || '';
+
   const urlData = useMemo(() => {
     if (linkType === 'base') {
       return {
@@ -111,10 +128,10 @@ export function LinkInformationSection({
       };
     }
 
-    const validation = validateTopicName(formData.name || '');
-    const slug = formData.name ? generateUrlSlug(formData.name) : '';
-    const displayUrl = formData.name
-      ? generateTopicUrl(username, formData.name)
+    const validation = validateTopicName(topicValue);
+    const slug = topicValue ? generateUrlSlug(topicValue) : '';
+    const displayUrl = topicValue
+      ? generateTopicUrl(username, topicValue)
       : `foldly.io/${username}/[topic-name]`;
 
     return {
@@ -123,7 +140,7 @@ export function LinkInformationSection({
       isValidTopic: validation.isValid,
       topicError: validation.error || null,
     };
-  }, [linkType, username, formData.name]);
+  }, [linkType, username, topicValue]);
 
   return (
     <div className='space-y-6'>
@@ -142,7 +159,7 @@ export function LinkInformationSection({
             <div className='flex-1 min-w-0'>
               <div
                 className={`font-mono text-sm sm:text-base bg-background px-3 py-2 rounded border truncate transition-colors ${
-                  linkType === 'topic' && formData.name && !urlData.isValidTopic
+                  linkType === 'topic' && topicValue && !urlData.isValidTopic
                     ? 'text-destructive border-destructive/50'
                     : 'text-primary'
                 }`}
@@ -150,7 +167,7 @@ export function LinkInformationSection({
                 {urlData.displayUrl}
               </div>
               {/* Show generated slug for topic links */}
-              {linkType === 'topic' && formData.name && urlData.slug && (
+              {linkType === 'topic' && topicValue && urlData.slug && (
                 <div className='mt-2 text-xs text-muted-foreground'>
                   Generated slug:{' '}
                   <span className='font-mono text-primary'>{urlData.slug}</span>
@@ -187,12 +204,18 @@ export function LinkInformationSection({
                 <div className='relative'>
                   <input
                     type='text'
-                    value={formData.name}
-                    onChange={e => onDataChange({ name: e.target.value })}
+                    value={topicValue}
+                    onChange={e => {
+                      // Update both topic (database field) and name (for compatibility)
+                      onDataChange({
+                        topic: e.target.value,
+                        name: e.target.value,
+                      });
+                    }}
                     placeholder='e.g., resumes, portfolios, feedback'
                     disabled={isLoading}
                     className={`w-full px-3 py-2 pr-10 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
-                      formData.name
+                      topicValue
                         ? urlData.isValidTopic
                           ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
                           : 'border-destructive focus:ring-destructive/20 focus:border-destructive'
@@ -200,7 +223,7 @@ export function LinkInformationSection({
                     }`}
                   />
                   {/* Validation icon */}
-                  {formData.name && (
+                  {topicValue && (
                     <div className='absolute right-3 top-1/2 -translate-y-1/2'>
                       {urlData.isValidTopic ? (
                         <CheckCircle className='w-4 h-4 text-green-500' />
@@ -212,7 +235,7 @@ export function LinkInformationSection({
                 </div>
 
                 {/* Error message from real-time validation */}
-                {formData.name && urlData.topicError && (
+                {topicValue && urlData.topicError && (
                   <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
                     <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
                     <p className='text-sm text-destructive'>
@@ -222,15 +245,17 @@ export function LinkInformationSection({
                 )}
 
                 {/* Schema validation error (from form validation) */}
-                {errors?.name && (
+                {(errors?.topic || errors?.name) && (
                   <div className='flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
                     <AlertCircle className='w-4 h-4 text-destructive mt-0.5 flex-shrink-0' />
-                    <p className='text-sm text-destructive'>{errors.name}</p>
+                    <p className='text-sm text-destructive'>
+                      {errors?.topic || errors?.name}
+                    </p>
                   </div>
                 )}
 
                 {/* Success message for valid topics */}
-                {formData.name && urlData.isValidTopic && urlData.slug && (
+                {topicValue && urlData.isValidTopic && urlData.slug && (
                   <div className='flex items-start gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
                     <CheckCircle className='w-4 h-4 text-green-600 mt-0.5 flex-shrink-0' />
                     <div className='flex-1'>
@@ -281,7 +306,7 @@ export function LinkInformationSection({
 
             <div className='space-y-2'>
               <textarea
-                value={formData.description}
+                value={formData.description || ''}
                 onChange={e => onDataChange({ description: e.target.value })}
                 placeholder={
                   linkType === 'base'
@@ -382,7 +407,7 @@ export function LinkInformationSection({
                 </p>
               </div>
               <Switch
-                checked={formData.isActive}
+                checked={formData.isActive || false}
                 onCheckedChange={checked => onDataChange({ isActive: checked })}
                 disabled={isLoading}
                 className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
@@ -409,7 +434,7 @@ export function LinkInformationSection({
                 </p>
               </div>
               <Switch
-                checked={formData.isPublic}
+                checked={formData.isPublic || false}
                 onCheckedChange={checked => onDataChange({ isPublic: checked })}
                 disabled={isLoading}
                 className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
@@ -431,7 +456,7 @@ export function LinkInformationSection({
                   </p>
                 </div>
                 <Switch
-                  checked={formData.requirePassword}
+                  checked={formData.requirePassword || false}
                   onCheckedChange={checked =>
                     onDataChange({ requirePassword: checked })
                   }
@@ -478,7 +503,7 @@ export function LinkInformationSection({
                 </p>
               </div>
               <Switch
-                checked={formData.requireEmail}
+                checked={formData.requireEmail || false}
                 onCheckedChange={checked =>
                   onDataChange({ requireEmail: checked })
                 }
@@ -498,7 +523,7 @@ export function LinkInformationSection({
                   disabled={isLoading}
                   className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 >
-                  <span>{formData.maxFiles} files</span>
+                  <span>{formData.maxFiles || 100} files</span>
                   <svg
                     className='w-4 h-4 text-muted-foreground'
                     fill='none'
@@ -541,7 +566,7 @@ export function LinkInformationSection({
                   disabled={isLoading}
                   className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
                 >
-                  <span>{formData.maxFileSize} MB</span>
+                  <span>{formData.maxFileSize || defaultMaxFileSize} MB</span>
                   <svg
                     className='w-4 h-4 text-muted-foreground'
                     fill='none'
@@ -590,7 +615,8 @@ export function LinkInformationSection({
                     className='w-full justify-between h-auto min-h-[40px] p-3'
                   >
                     <div className='flex flex-wrap gap-1'>
-                      {formData.allowedFileTypes.length === 0 ? (
+                      {!formData.allowedFileTypes ||
+                      formData.allowedFileTypes.length === 0 ? (
                         <span className='text-muted-foreground'>
                           All file types
                         </span>
@@ -640,12 +666,11 @@ export function LinkInformationSection({
                       <CommandEmpty>No file types found.</CommandEmpty>
                       <CommandGroup>
                         {fileTypeOptions.map(option => {
+                          const allowedTypes = formData.allowedFileTypes || [];
                           const isSelected =
                             option.value === 'all'
-                              ? formData.allowedFileTypes.length === 0
-                              : formData.allowedFileTypes.includes(
-                                  option.value
-                                );
+                              ? allowedTypes.length === 0
+                              : allowedTypes.includes(option.value);
 
                           return (
                             <CommandItem
@@ -659,14 +684,13 @@ export function LinkInformationSection({
                                 } else {
                                   if (isSelected) {
                                     // Remove from selection
-                                    newSelection =
-                                      formData.allowedFileTypes.filter(
-                                        type => type !== option.value
-                                      );
+                                    newSelection = allowedTypes.filter(
+                                      (type: string) => type !== option.value
+                                    );
                                   } else {
                                     // Add to selection and remove "all" if present
                                     newSelection = [
-                                      ...formData.allowedFileTypes,
+                                      ...allowedTypes,
                                       option.value,
                                     ];
                                   }
@@ -705,21 +729,22 @@ export function LinkInformationSection({
                           );
                         })}
                       </CommandGroup>
-                      {formData.allowedFileTypes.length > 0 && (
-                        <>
-                          <CommandSeparator />
-                          <CommandGroup>
-                            <CommandItem
-                              onSelect={() =>
-                                onDataChange({ allowedFileTypes: [] })
-                              }
-                              className='justify-center text-center cursor-pointer'
-                            >
-                              Clear all
-                            </CommandItem>
-                          </CommandGroup>
-                        </>
-                      )}
+                      {formData.allowedFileTypes &&
+                        formData.allowedFileTypes.length > 0 && (
+                          <>
+                            <CommandSeparator />
+                            <CommandGroup>
+                              <CommandItem
+                                onSelect={() =>
+                                  onDataChange({ allowedFileTypes: [] })
+                                }
+                                className='justify-center text-center cursor-pointer'
+                              >
+                                Clear all
+                              </CommandItem>
+                            </CommandGroup>
+                          </>
+                        )}
                     </CommandList>
                   </Command>
                 </PopoverContent>
@@ -736,30 +761,6 @@ export function LinkInformationSection({
                 </a>
                 )
               </p>
-            </div>
-
-            {/* Auto-create Folders Toggle */}
-            <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
-              <div className='space-y-1'>
-                <div className='flex items-center gap-2'>
-                  <FolderOpen className='h-4 w-4 text-amber-600' />
-                  <p className='text-sm font-medium text-foreground'>
-                    Auto-organize Uploads
-                  </p>
-                </div>
-                <p className='text-xs text-muted-foreground'>
-                  Automatically organize uploads into folders by date (e.g.,
-                  2024-01-15)
-                </p>
-              </div>
-              <Switch
-                checked={formData.autoCreateFolders}
-                onCheckedChange={checked =>
-                  onDataChange({ autoCreateFolders: checked })
-                }
-                disabled={isLoading}
-                className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
-              />
             </div>
           </div>
         </motion.div>

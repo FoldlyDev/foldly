@@ -1,61 +1,189 @@
-// Files Workspace Store - Workspace and Folder Management
-// Zustand store for workspace-specific operations and folder hierarchies
-// Following 2025 TypeScript best practices with pure reducers
+'use client';
 
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { devtools, subscribeWithSelector } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import type {
-  WorkspaceData,
-  FolderData,
-  FileData,
-  FileTreeNode,
-  WorkspaceId,
   FolderId,
+  UserId,
+  WorkspaceId,
   FileId,
-  FolderColor,
-} from '../types';
-import {
-  convertReducersToActions,
-  createReducers,
-} from './utils/convert-reducers-to-actions';
-import {
-  createFileTree,
-  createEnhancedTree,
-  expandNode,
-  collapseNode,
-  toggleNode,
-  selectNode,
-  deselectAllNodes,
-  validateTree,
-  calculateTreeStats,
-} from '../utils';
+  BatchId,
+} from '@/types/ids';
+import type { FileData, FolderData } from '../types';
+import type { Workspace } from '@/lib/supabase/types';
 
-// =============================================================================
-// STATE INTERFACE
-// =============================================================================
+// Enhanced color support with modern CSS color system
+export const FOLDER_COLOR = {
+  DEFAULT: '#64748b',
+  RED: '#ef4444',
+  ORANGE: '#f97316',
+  YELLOW: '#eab308',
+  GREEN: '#22c55e',
+  BLUE: '#3b82f6',
+  INDIGO: '#6366f1',
+  PURPLE: '#a855f7',
+  PINK: '#ec4899',
+  GRAY: '#6b7280',
+  EMERALD: '#10b981',
+  ROSE: '#f43f5e',
+  CYAN: '#06b6d4',
+  LIME: '#84cc16',
+} as const;
 
+export type FolderColor = (typeof FOLDER_COLOR)[keyof typeof FOLDER_COLOR];
+
+// Modern view modes for 2025 UX standards
+export const VIEW_MODE = {
+  GRID: 'grid',
+  LIST: 'list',
+  CARD: 'card',
+} as const;
+
+export type ViewMode = (typeof VIEW_MODE)[keyof typeof VIEW_MODE];
+
+// Comprehensive sorting options
+export const SORT_BY = {
+  NAME: 'name',
+  DATE_CREATED: 'dateCreated',
+  DATE_MODIFIED: 'dateModified',
+  SIZE: 'size',
+  TYPE: 'type',
+} as const;
+
+export type SortBy = (typeof SORT_BY)[keyof typeof SORT_BY];
+
+export const SORT_ORDER = {
+  ASC: 'asc',
+  DESC: 'desc',
+} as const;
+
+export type SortOrder = (typeof SORT_ORDER)[keyof typeof SORT_ORDER];
+
+export const THUMBNAIL_SIZE = {
+  SMALL: 'small',
+  MEDIUM: 'medium',
+  LARGE: 'large',
+} as const;
+
+export type ThumbnailSize =
+  (typeof THUMBNAIL_SIZE)[keyof typeof THUMBNAIL_SIZE];
+
+export const OPERATION_STATUS = {
+  IDLE: 'idle',
+  LOADING: 'loading',
+  SUCCESS: 'success',
+  ERROR: 'error',
+} as const;
+
+export type OperationStatus =
+  (typeof OPERATION_STATUS)[keyof typeof OPERATION_STATUS];
+
+// ===== WORKSPACE TYPES =====
+/**
+ * Extended workspace data with additional UI-specific properties for files feature
+ * Based on canonical Workspace type from single source of truth
+ */
+export interface WorkspaceData extends Workspace {
+  // Additional computed properties for files feature
+  readonly settings: WorkspaceSettings;
+  readonly rootFolderId: FolderId | null;
+  readonly totalFiles: number;
+  readonly totalFolders: number;
+  readonly totalSize: number;
+  readonly lastSyncAt: Date | null;
+}
+
+export interface WorkspaceSettings {
+  readonly defaultView: ViewMode;
+  readonly sortBy: SortBy;
+  readonly sortOrder: SortOrder;
+  readonly showHiddenFiles: boolean;
+  readonly autoBackup: boolean;
+  readonly thumbnailSize: ThumbnailSize;
+  readonly enableVersioning: boolean;
+  readonly maxVersions: number;
+  readonly compressionLevel: number;
+  readonly enableAutoSync: boolean;
+  readonly syncInterval: number;
+}
+
+export interface FileTreeNode {
+  readonly id: string;
+  readonly name: string;
+  readonly type: 'file' | 'folder';
+  readonly path: string;
+  readonly size?: number;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly isExpanded: boolean;
+  readonly isSelected: boolean;
+  readonly children: readonly FileTreeNode[];
+  readonly parentId: string | null;
+  readonly color?: FolderColor;
+  readonly icon?: string;
+  readonly tags?: readonly string[];
+}
+
+export interface TreeStats {
+  readonly totalFiles: number;
+  readonly totalFolders: number;
+  readonly totalSize: number;
+  readonly maxDepth: number;
+  readonly averageDepth: number;
+}
+
+export interface NavigationSegment {
+  readonly id: FolderId | null;
+  readonly name: string;
+  readonly path: string;
+}
+
+export interface FolderTemplate {
+  readonly id: string;
+  readonly name: string;
+  readonly color: FolderColor;
+  readonly icon: string;
+  readonly description: string;
+  readonly predefinedTags: readonly string[];
+  readonly isBuiltIn: boolean;
+}
+
+// ===== STORE STATE =====
 export interface FilesWorkspaceState {
   // Workspace data
   readonly currentWorkspace: WorkspaceData | null;
-  readonly workspaceSettings: {
-    readonly defaultView: 'grid' | 'list' | 'card';
-    readonly sortBy: 'name' | 'size' | 'type' | 'createdAt' | 'updatedAt';
-    readonly sortOrder: 'asc' | 'desc';
-    readonly showHiddenFiles: boolean;
-    readonly autoBackup: boolean;
-    readonly thumbnailSize: 'small' | 'medium' | 'large';
-    readonly enableVersioning: boolean;
-    readonly maxVersions: number;
-    readonly compressionLevel: number;
-  };
+  readonly workspaceSettings: WorkspaceSettings;
 
   // File tree state
-  readonly fileTree: FileTreeNode[];
-  readonly treeStats: ReturnType<typeof calculateTreeStats> | null;
-  readonly isTreeLoading: boolean;
+  readonly fileTree: readonly FileTreeNode[];
+  readonly treeStats: TreeStats | null;
+  readonly treeOperationStatus: OperationStatus;
   readonly treeError: string | null;
 
-  // Folder operations
+  // Navigation state
+  readonly currentFolderId: FolderId | null;
+  readonly currentPath: string;
+  readonly parentFolderId: FolderId | null;
+  readonly rootFolderId: FolderId | null;
+  readonly navigationPath: readonly NavigationSegment[];
+
+  // Tree view state
+  readonly expandedNodes: readonly string[];
+  readonly selectedNodes: readonly string[];
+  readonly focusedNodeId: string | null;
+  readonly showTreeView: boolean;
+  readonly treeWidth: number;
+
+  // Operations status
+  readonly workspaceOperations: {
+    readonly isLoading: boolean;
+    readonly isSaving: boolean;
+    readonly isSyncing: boolean;
+    readonly lastSyncAt: Date | null;
+    readonly syncError: string | null;
+  };
+
   readonly folderOperations: {
     readonly isCreating: boolean;
     readonly isDeleting: boolean;
@@ -64,82 +192,150 @@ export interface FilesWorkspaceState {
     readonly operationError: string | null;
   };
 
-  // Workspace operations
-  readonly workspaceOperations: {
-    readonly isSaving: boolean;
-    readonly isLoading: boolean;
-    readonly isSyncing: boolean;
-    readonly lastSyncAt: Date | null;
-    readonly syncError: string | null;
-  };
-
-  // Navigation state
-  readonly navigationState: {
-    readonly currentPath: string;
-    readonly currentFolderId: FolderId | null;
-    readonly parentFolderId: FolderId | null;
-    readonly rootFolderId: FolderId | null;
-    readonly pathSegments: Array<{
-      id: FolderId | null;
-      name: string;
-      path: string;
-    }>;
-  };
-
-  // Tree view state
-  readonly treeViewState: {
-    readonly expandedNodes: string[];
-    readonly selectedNodes: string[];
-    readonly collapsedNodes: string[];
-    readonly focusedNodeId: string | null;
-    readonly showTreeView: boolean;
-    readonly treeWidth: number;
-  };
+  // Quick access
+  readonly recentFolders: readonly FolderId[];
+  readonly favoriteFolders: readonly FolderId[];
+  readonly pinnedFolders: readonly FolderId[];
 
   // Folder templates
-  readonly folderTemplates: Array<{
-    readonly id: string;
-    readonly name: string;
-    readonly color: FolderColor;
-    readonly icon: string;
-    readonly description: string;
-    readonly predefinedTags: string[];
-  }>;
+  readonly folderTemplates: readonly FolderTemplate[];
 
-  // Quick access
-  readonly quickAccess: {
-    readonly recentFolders: FolderId[];
-    readonly favoriteFolders: FolderId[];
-    readonly pinnedFolders: FolderId[];
+  // Preferences
+  readonly preferences: {
+    readonly autoExpandTree: boolean;
+    readonly showTreeLineNumbers: boolean;
+    readonly enableKeyboardNavigation: boolean;
+    readonly rememberExpandedNodes: boolean;
+    readonly showFolderSizes: boolean;
+    readonly enableDragAndDrop: boolean;
   };
 }
 
-// =============================================================================
-// INITIAL STATE
-// =============================================================================
+// ===== STORE ACTIONS =====
+export interface FilesWorkspaceActions {
+  // Workspace management
+  readonly setCurrentWorkspace: (workspace: WorkspaceData | null) => void;
+  readonly updateWorkspaceSettings: (
+    settings: Partial<WorkspaceSettings>
+  ) => void;
+  readonly setWorkspaceLoading: (loading: boolean) => void;
+  readonly setWorkspaceSaving: (saving: boolean) => void;
+  readonly setWorkspaceSyncing: (syncing: boolean) => void;
+  readonly setSyncCompleted: (timestamp: Date) => void;
+  readonly setSyncError: (error: string | null) => void;
+
+  // File tree management
+  readonly setFileTree: (tree: readonly FileTreeNode[]) => void;
+  readonly updateTreeStats: (stats: TreeStats) => void;
+  readonly setTreeOperationStatus: (status: OperationStatus) => void;
+  readonly setTreeError: (error: string | null) => void;
+  readonly refreshTree: () => void;
+
+  // Tree view operations
+  readonly expandTreeNode: (nodeId: string) => void;
+  readonly collapseTreeNode: (nodeId: string) => void;
+  readonly toggleTreeNode: (nodeId: string) => void;
+  readonly selectTreeNode: (nodeId: string, multiSelect?: boolean) => void;
+  readonly deselectAllTreeNodes: () => void;
+  readonly setFocusedTreeNode: (nodeId: string | null) => void;
+  readonly setTreeViewVisible: (visible: boolean) => void;
+  readonly setTreeWidth: (width: number) => void;
+
+  // Navigation operations
+  readonly navigateToFolder: (folderId: FolderId | null, path: string) => void;
+  readonly updateNavigationPath: (
+    segments: readonly NavigationSegment[]
+  ) => void;
+  readonly setCurrentFolder: (folderId: FolderId | null) => void;
+  readonly goBack: () => void;
+  readonly goForward: () => void;
+  readonly goToRoot: () => void;
+
+  // Folder operations
+  readonly setFolderCreating: (creating: boolean) => void;
+  readonly setFolderDeleting: (deleting: boolean) => void;
+  readonly setFolderMoving: (moving: boolean) => void;
+  readonly setFolderRenaming: (renaming: boolean) => void;
+  readonly setFolderOperationError: (error: string | null) => void;
+  readonly clearFolderOperationStates: () => void;
+
+  // Quick access operations
+  readonly addRecentFolder: (folderId: FolderId) => void;
+  readonly addFavoriteFolder: (folderId: FolderId) => void;
+  readonly removeFavoriteFolder: (folderId: FolderId) => void;
+  readonly toggleFavoriteFolder: (folderId: FolderId) => void;
+  readonly addPinnedFolder: (folderId: FolderId) => void;
+  readonly removePinnedFolder: (folderId: FolderId) => void;
+  readonly togglePinnedFolder: (folderId: FolderId) => void;
+
+  // Template operations
+  readonly addFolderTemplate: (template: FolderTemplate) => void;
+  readonly removeFolderTemplate: (templateId: string) => void;
+  readonly updateFolderTemplate: (
+    templateId: string,
+    updates: Partial<FolderTemplate>
+  ) => void;
+
+  // Preferences
+  readonly updatePreferences: (
+    preferences: Partial<FilesWorkspaceState['preferences']>
+  ) => void;
+
+  // Utility
+  readonly reset: () => void;
+}
+
+export type FilesWorkspaceStore = FilesWorkspaceState & FilesWorkspaceActions;
+
+// ===== DEFAULT STATE =====
+const defaultWorkspaceSettings: WorkspaceSettings = {
+  defaultView: VIEW_MODE.GRID,
+  sortBy: SORT_BY.NAME,
+  sortOrder: SORT_ORDER.ASC,
+  showHiddenFiles: false,
+  autoBackup: true,
+  thumbnailSize: THUMBNAIL_SIZE.MEDIUM,
+  enableVersioning: false,
+  maxVersions: 5,
+  compressionLevel: 6,
+  enableAutoSync: false,
+  syncInterval: 300000, // 5 minutes
+};
 
 const initialState: FilesWorkspaceState = {
   // Workspace data
   currentWorkspace: null,
-  workspaceSettings: {
-    defaultView: 'grid',
-    sortBy: 'name',
-    sortOrder: 'asc',
-    showHiddenFiles: false,
-    autoBackup: true,
-    thumbnailSize: 'medium',
-    enableVersioning: true,
-    maxVersions: 10,
-    compressionLevel: 6,
-  },
+  workspaceSettings: defaultWorkspaceSettings,
 
   // File tree state
   fileTree: [],
   treeStats: null,
-  isTreeLoading: false,
+  treeOperationStatus: OPERATION_STATUS.IDLE,
   treeError: null,
 
-  // Folder operations
+  // Navigation state
+  currentFolderId: null,
+  currentPath: '/',
+  parentFolderId: null,
+  rootFolderId: null,
+  navigationPath: [],
+
+  // Tree view state
+  expandedNodes: [],
+  selectedNodes: [],
+  focusedNodeId: null,
+  showTreeView: true,
+  treeWidth: 280,
+
+  // Operations status
+  workspaceOperations: {
+    isLoading: false,
+    isSaving: false,
+    isSyncing: false,
+    lastSyncAt: null,
+    syncError: null,
+  },
+
   folderOperations: {
     isCreating: false,
     isDeleting: false,
@@ -148,708 +344,530 @@ const initialState: FilesWorkspaceState = {
     operationError: null,
   },
 
-  // Workspace operations
-  workspaceOperations: {
-    isSaving: false,
-    isLoading: false,
-    isSyncing: false,
-    lastSyncAt: null,
-    syncError: null,
-  },
-
-  // Navigation state
-  navigationState: {
-    currentPath: '/',
-    currentFolderId: null,
-    parentFolderId: null,
-    rootFolderId: null,
-    pathSegments: [{ id: null, name: 'Home', path: '/' }],
-  },
-
-  // Tree view state
-  treeViewState: {
-    expandedNodes: [],
-    selectedNodes: [],
-    collapsedNodes: [],
-    focusedNodeId: null,
-    showTreeView: true,
-    treeWidth: 280,
-  },
+  // Quick access
+  recentFolders: [],
+  favoriteFolders: [],
+  pinnedFolders: [],
 
   // Folder templates
-  folderTemplates: [
-    {
-      id: 'documents',
-      name: 'Documents',
-      color: 'blue',
-      icon: '📁',
-      description: 'For storing documents and reports',
-      predefinedTags: ['documents', 'official'],
-    },
-    {
-      id: 'projects',
-      name: 'Projects',
-      color: 'green',
-      icon: '📊',
-      description: 'For project files and deliverables',
-      predefinedTags: ['projects', 'work'],
-    },
-    {
-      id: 'media',
-      name: 'Media',
-      color: 'purple',
-      icon: '🎬',
-      description: 'For videos, images, and audio files',
-      predefinedTags: ['media', 'content'],
-    },
-    {
-      id: 'archive',
-      name: 'Archive',
-      color: 'gray',
-      icon: '📦',
-      description: 'For archived and old files',
-      predefinedTags: ['archive', 'backup'],
-    },
-  ],
+  folderTemplates: [],
 
-  // Quick access
-  quickAccess: {
-    recentFolders: [],
-    favoriteFolders: [],
-    pinnedFolders: [],
+  // Preferences
+  preferences: {
+    autoExpandTree: false,
+    showTreeLineNumbers: false,
+    enableKeyboardNavigation: true,
+    rememberExpandedNodes: true,
+    showFolderSizes: true,
+    enableDragAndDrop: true,
   },
 };
 
-// =============================================================================
-// PURE REDUCERS
-// =============================================================================
-
-const workspaceReducers = createReducers<
-  FilesWorkspaceState,
-  {
-    // Workspace operations
-    setCurrentWorkspace: (
-      state: FilesWorkspaceState,
-      workspace: WorkspaceData | null
-    ) => FilesWorkspaceState;
-    updateWorkspaceSettings: (
-      state: FilesWorkspaceState,
-      settings: Partial<FilesWorkspaceState['workspaceSettings']>
-    ) => FilesWorkspaceState;
-    setWorkspaceLoading: (
-      state: FilesWorkspaceState,
-      loading: boolean
-    ) => FilesWorkspaceState;
-    setWorkspaceSaving: (
-      state: FilesWorkspaceState,
-      saving: boolean
-    ) => FilesWorkspaceState;
-    setWorkspaceSyncing: (
-      state: FilesWorkspaceState,
-      syncing: boolean
-    ) => FilesWorkspaceState;
-    setSyncCompleted: (
-      state: FilesWorkspaceState,
-      timestamp: Date
-    ) => FilesWorkspaceState;
-    setSyncError: (
-      state: FilesWorkspaceState,
-      error: string | null
-    ) => FilesWorkspaceState;
-
-    // File tree operations
-    setFileTree: (
-      state: FilesWorkspaceState,
-      tree: FileTreeNode[]
-    ) => FilesWorkspaceState;
-    updateFileTree: (
-      state: FilesWorkspaceState,
-      files: FileData[],
-      folders: FolderData[]
-    ) => FilesWorkspaceState;
-    setTreeLoading: (
-      state: FilesWorkspaceState,
-      loading: boolean
-    ) => FilesWorkspaceState;
-    setTreeError: (
-      state: FilesWorkspaceState,
-      error: string | null
-    ) => FilesWorkspaceState;
-    refreshTreeStats: (state: FilesWorkspaceState) => FilesWorkspaceState;
-
-    // Tree view operations
-    expandTreeNode: (
-      state: FilesWorkspaceState,
-      nodeId: string
-    ) => FilesWorkspaceState;
-    collapseTreeNode: (
-      state: FilesWorkspaceState,
-      nodeId: string
-    ) => FilesWorkspaceState;
-    toggleTreeNode: (
-      state: FilesWorkspaceState,
-      nodeId: string
-    ) => FilesWorkspaceState;
-    selectTreeNode: (
-      state: FilesWorkspaceState,
-      nodeId: string,
-      multiSelect?: boolean
-    ) => FilesWorkspaceState;
-    deselectAllTreeNodes: (state: FilesWorkspaceState) => FilesWorkspaceState;
-    setFocusedTreeNode: (
-      state: FilesWorkspaceState,
-      nodeId: string | null
-    ) => FilesWorkspaceState;
-    setTreeViewVisible: (
-      state: FilesWorkspaceState,
-      visible: boolean
-    ) => FilesWorkspaceState;
-    setTreeWidth: (
-      state: FilesWorkspaceState,
-      width: number
-    ) => FilesWorkspaceState;
-
-    // Navigation operations
-    navigateToFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId | null,
-      path: string
-    ) => FilesWorkspaceState;
-    updateNavigationPath: (
-      state: FilesWorkspaceState,
-      segments: Array<{ id: FolderId | null; name: string; path: string }>
-    ) => FilesWorkspaceState;
-    setCurrentFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId | null
-    ) => FilesWorkspaceState;
-
-    // Folder operations
-    setFolderCreating: (
-      state: FilesWorkspaceState,
-      creating: boolean
-    ) => FilesWorkspaceState;
-    setFolderDeleting: (
-      state: FilesWorkspaceState,
-      deleting: boolean
-    ) => FilesWorkspaceState;
-    setFolderMoving: (
-      state: FilesWorkspaceState,
-      moving: boolean
-    ) => FilesWorkspaceState;
-    setFolderRenaming: (
-      state: FilesWorkspaceState,
-      renaming: boolean
-    ) => FilesWorkspaceState;
-    setFolderOperationError: (
-      state: FilesWorkspaceState,
-      error: string | null
-    ) => FilesWorkspaceState;
-    clearFolderOperationStates: (
-      state: FilesWorkspaceState
-    ) => FilesWorkspaceState;
-
-    // Quick access operations
-    addRecentFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId
-    ) => FilesWorkspaceState;
-    addFavoriteFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId
-    ) => FilesWorkspaceState;
-    removeFavoriteFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId
-    ) => FilesWorkspaceState;
-    addPinnedFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId
-    ) => FilesWorkspaceState;
-    removePinnedFolder: (
-      state: FilesWorkspaceState,
-      folderId: FolderId
-    ) => FilesWorkspaceState;
-
-    // Template operations
-    addFolderTemplate: (
-      state: FilesWorkspaceState,
-      template: FilesWorkspaceState['folderTemplates'][0]
-    ) => FilesWorkspaceState;
-    removeFolderTemplate: (
-      state: FilesWorkspaceState,
-      templateId: string
-    ) => FilesWorkspaceState;
-    updateFolderTemplate: (
-      state: FilesWorkspaceState,
-      templateId: string,
-      updates: Partial<FilesWorkspaceState['folderTemplates'][0]>
-    ) => FilesWorkspaceState;
-
-    // Reset operations
-    resetWorkspaceState: (state: FilesWorkspaceState) => FilesWorkspaceState;
-  }
->({
-  // Workspace operations
-  setCurrentWorkspace: (state, workspace) => ({
-    ...state,
-    currentWorkspace: workspace,
-  }),
-
-  updateWorkspaceSettings: (state, settings) => ({
-    ...state,
-    workspaceSettings: {
-      ...state.workspaceSettings,
-      ...settings,
-    },
-  }),
-
-  setWorkspaceLoading: (state, loading) => ({
-    ...state,
-    workspaceOperations: {
-      ...state.workspaceOperations,
-      isLoading: loading,
-    },
-  }),
-
-  setWorkspaceSaving: (state, saving) => ({
-    ...state,
-    workspaceOperations: {
-      ...state.workspaceOperations,
-      isSaving: saving,
-    },
-  }),
-
-  setWorkspaceSyncing: (state, syncing) => ({
-    ...state,
-    workspaceOperations: {
-      ...state.workspaceOperations,
-      isSyncing: syncing,
-    },
-  }),
-
-  setSyncCompleted: (state, timestamp) => ({
-    ...state,
-    workspaceOperations: {
-      ...state.workspaceOperations,
-      isSyncing: false,
-      lastSyncAt: timestamp,
-      syncError: null,
-    },
-  }),
-
-  setSyncError: (state, error) => ({
-    ...state,
-    workspaceOperations: {
-      ...state.workspaceOperations,
-      isSyncing: false,
-      syncError: error,
-    },
-  }),
-
-  // File tree operations
-  setFileTree: (state, tree) => ({
-    ...state,
-    fileTree: tree,
-    treeStats: calculateTreeStats(tree),
-  }),
-
-  updateFileTree: (state, files, folders) => {
-    const newTree = createFileTree(
-      files,
-      folders,
-      state.navigationState.rootFolderId
-    );
-    return {
-      ...state,
-      fileTree: newTree,
-      treeStats: calculateTreeStats(newTree),
-    };
-  },
-
-  setTreeLoading: (state, loading) => ({
-    ...state,
-    isTreeLoading: loading,
-  }),
-
-  setTreeError: (state, error) => ({
-    ...state,
-    treeError: error,
-    isTreeLoading: false,
-  }),
-
-  refreshTreeStats: state => ({
-    ...state,
-    treeStats: calculateTreeStats(state.fileTree),
-  }),
-
-  // Tree view operations
-  expandTreeNode: (state, nodeId) => ({
-    ...state,
-    fileTree: expandNode(state.fileTree, nodeId),
-    treeViewState: {
-      ...state.treeViewState,
-      expandedNodes: state.treeViewState.expandedNodes.includes(nodeId)
-        ? state.treeViewState.expandedNodes
-        : [...state.treeViewState.expandedNodes, nodeId],
-      collapsedNodes: state.treeViewState.collapsedNodes.filter(
-        id => id !== nodeId
-      ),
-    },
-  }),
-
-  collapseTreeNode: (state, nodeId) => ({
-    ...state,
-    fileTree: collapseNode(state.fileTree, nodeId),
-    treeViewState: {
-      ...state.treeViewState,
-      collapsedNodes: state.treeViewState.collapsedNodes.includes(nodeId)
-        ? state.treeViewState.collapsedNodes
-        : [...state.treeViewState.collapsedNodes, nodeId],
-      expandedNodes: state.treeViewState.expandedNodes.filter(
-        id => id !== nodeId
-      ),
-    },
-  }),
-
-  toggleTreeNode: (state, nodeId) => ({
-    ...state,
-    fileTree: toggleNode(state.fileTree, nodeId),
-    treeViewState: {
-      ...state.treeViewState,
-      expandedNodes: state.treeViewState.expandedNodes.includes(nodeId)
-        ? state.treeViewState.expandedNodes.filter(id => id !== nodeId)
-        : [...state.treeViewState.expandedNodes, nodeId],
-      collapsedNodes: state.treeViewState.collapsedNodes.includes(nodeId)
-        ? state.treeViewState.collapsedNodes.filter(id => id !== nodeId)
-        : [...state.treeViewState.collapsedNodes, nodeId],
-    },
-  }),
-
-  selectTreeNode: (state, nodeId, multiSelect = false) => ({
-    ...state,
-    fileTree: selectNode(state.fileTree, nodeId, multiSelect),
-    treeViewState: {
-      ...state.treeViewState,
-      selectedNodes: multiSelect
-        ? state.treeViewState.selectedNodes.includes(nodeId)
-          ? state.treeViewState.selectedNodes.filter(id => id !== nodeId)
-          : [...state.treeViewState.selectedNodes, nodeId]
-        : [nodeId],
-    },
-  }),
-
-  deselectAllTreeNodes: state => ({
-    ...state,
-    fileTree: deselectAllNodes(state.fileTree),
-    treeViewState: {
-      ...state.treeViewState,
-      selectedNodes: [],
-    },
-  }),
-
-  setFocusedTreeNode: (state, nodeId) => ({
-    ...state,
-    treeViewState: {
-      ...state.treeViewState,
-      focusedNodeId: nodeId,
-    },
-  }),
-
-  setTreeViewVisible: (state, visible) => ({
-    ...state,
-    treeViewState: {
-      ...state.treeViewState,
-      showTreeView: visible,
-    },
-  }),
-
-  setTreeWidth: (state, width) => ({
-    ...state,
-    treeViewState: {
-      ...state.treeViewState,
-      treeWidth: Math.max(200, Math.min(600, width)),
-    },
-  }),
-
-  // Navigation operations
-  navigateToFolder: (state, folderId, path) => ({
-    ...state,
-    navigationState: {
-      ...state.navigationState,
-      currentFolderId: folderId,
-      currentPath: path,
-    },
-  }),
-
-  updateNavigationPath: (state, segments) => ({
-    ...state,
-    navigationState: {
-      ...state.navigationState,
-      pathSegments: segments,
-    },
-  }),
-
-  setCurrentFolder: (state, folderId) => ({
-    ...state,
-    navigationState: {
-      ...state.navigationState,
-      currentFolderId: folderId,
-    },
-  }),
-
-  // Folder operations
-  setFolderCreating: (state, creating) => ({
-    ...state,
-    folderOperations: {
-      ...state.folderOperations,
-      isCreating: creating,
-    },
-  }),
-
-  setFolderDeleting: (state, deleting) => ({
-    ...state,
-    folderOperations: {
-      ...state.folderOperations,
-      isDeleting: deleting,
-    },
-  }),
-
-  setFolderMoving: (state, moving) => ({
-    ...state,
-    folderOperations: {
-      ...state.folderOperations,
-      isMoving: moving,
-    },
-  }),
-
-  setFolderRenaming: (state, renaming) => ({
-    ...state,
-    folderOperations: {
-      ...state.folderOperations,
-      isRenaming: renaming,
-    },
-  }),
-
-  setFolderOperationError: (state, error) => ({
-    ...state,
-    folderOperations: {
-      ...state.folderOperations,
-      operationError: error,
-    },
-  }),
-
-  clearFolderOperationStates: state => ({
-    ...state,
-    folderOperations: {
-      isCreating: false,
-      isDeleting: false,
-      isMoving: false,
-      isRenaming: false,
-      operationError: null,
-    },
-  }),
-
-  // Quick access operations
-  addRecentFolder: (state, folderId) => ({
-    ...state,
-    quickAccess: {
-      ...state.quickAccess,
-      recentFolders: [
-        folderId,
-        ...state.quickAccess.recentFolders.filter(id => id !== folderId),
-      ].slice(0, 10), // Keep only last 10
-    },
-  }),
-
-  addFavoriteFolder: (state, folderId) => ({
-    ...state,
-    quickAccess: {
-      ...state.quickAccess,
-      favoriteFolders: state.quickAccess.favoriteFolders.includes(folderId)
-        ? state.quickAccess.favoriteFolders
-        : [...state.quickAccess.favoriteFolders, folderId],
-    },
-  }),
-
-  removeFavoriteFolder: (state, folderId) => ({
-    ...state,
-    quickAccess: {
-      ...state.quickAccess,
-      favoriteFolders: state.quickAccess.favoriteFolders.filter(
-        id => id !== folderId
-      ),
-    },
-  }),
-
-  addPinnedFolder: (state, folderId) => ({
-    ...state,
-    quickAccess: {
-      ...state.quickAccess,
-      pinnedFolders: state.quickAccess.pinnedFolders.includes(folderId)
-        ? state.quickAccess.pinnedFolders
-        : [...state.quickAccess.pinnedFolders, folderId],
-    },
-  }),
-
-  removePinnedFolder: (state, folderId) => ({
-    ...state,
-    quickAccess: {
-      ...state.quickAccess,
-      pinnedFolders: state.quickAccess.pinnedFolders.filter(
-        id => id !== folderId
-      ),
-    },
-  }),
-
-  // Template operations
-  addFolderTemplate: (state, template) => ({
-    ...state,
-    folderTemplates: [...state.folderTemplates, template],
-  }),
-
-  removeFolderTemplate: (state, templateId) => ({
-    ...state,
-    folderTemplates: state.folderTemplates.filter(
-      template => template.id !== templateId
-    ),
-  }),
-
-  updateFolderTemplate: (state, templateId, updates) => ({
-    ...state,
-    folderTemplates: state.folderTemplates.map(template =>
-      template.id === templateId ? { ...template, ...updates } : template
-    ),
-  }),
-
-  // Reset operations
-  resetWorkspaceState: state => ({
-    ...initialState,
-    folderTemplates: state.folderTemplates, // Keep user templates
-  }),
-});
-
-// =============================================================================
-// STORE IMPLEMENTATION
-// =============================================================================
-
-export const useFilesWorkspaceStore = create<
-  FilesWorkspaceState &
-    ReturnType<
-      typeof convertReducersToActions<
-        FilesWorkspaceState,
-        typeof workspaceReducers
-      >
-    >
->()(
-  devtools(
-    persist(
-      set => ({
+// ===== ZUSTAND STORE =====
+export const useFilesWorkspaceStore = create<FilesWorkspaceStore>()(
+  subscribeWithSelector(
+    devtools(
+      immer((set, get) => ({
         ...initialState,
-        ...convertReducersToActions(set, workspaceReducers),
-      }),
-      {
-        name: 'files-workspace-store',
-        partialize: state => ({
-          workspaceSettings: state.workspaceSettings,
-          treeViewState: state.treeViewState,
-          folderTemplates: state.folderTemplates,
-          quickAccess: state.quickAccess,
-        }),
-      }
-    ),
-    {
-      name: 'files-workspace-store',
-    }
+
+        // Workspace management
+        setCurrentWorkspace: (workspace: WorkspaceData | null) => {
+          set(state => {
+            state.currentWorkspace = workspace;
+          });
+        },
+
+        updateWorkspaceSettings: (settings: Partial<WorkspaceSettings>) => {
+          set(state => {
+            Object.assign(state.workspaceSettings, settings);
+          });
+        },
+
+        setWorkspaceLoading: (loading: boolean) => {
+          set(state => {
+            state.workspaceOperations.isLoading = loading;
+          });
+        },
+
+        setWorkspaceSaving: (saving: boolean) => {
+          set(state => {
+            state.workspaceOperations.isSaving = saving;
+          });
+        },
+
+        setWorkspaceSyncing: (syncing: boolean) => {
+          set(state => {
+            state.workspaceOperations.isSyncing = syncing;
+          });
+        },
+
+        setSyncCompleted: (timestamp: Date) => {
+          set(state => {
+            state.workspaceOperations.lastSyncAt = timestamp;
+            state.workspaceOperations.syncError = null;
+            state.workspaceOperations.isSyncing = false;
+          });
+        },
+
+        setSyncError: (error: string | null) => {
+          set(state => {
+            state.workspaceOperations.syncError = error;
+            state.workspaceOperations.isSyncing = false;
+          });
+        },
+
+        // File tree management
+        setFileTree: (tree: readonly FileTreeNode[]) => {
+          set(state => {
+            state.fileTree = tree as any;
+          });
+        },
+
+        updateTreeStats: (stats: TreeStats) => {
+          set(state => {
+            state.treeStats = stats;
+          });
+        },
+
+        setTreeOperationStatus: (status: OperationStatus) => {
+          set(state => {
+            state.treeOperationStatus = status;
+          });
+        },
+
+        setTreeError: (error: string | null) => {
+          set(state => {
+            state.treeError = error;
+          });
+        },
+
+        refreshTree: () => {
+          set(state => {
+            state.treeOperationStatus = OPERATION_STATUS.LOADING;
+          });
+        },
+
+        // Tree view operations
+        expandTreeNode: (nodeId: string) => {
+          set(state => {
+            if (!state.expandedNodes.includes(nodeId)) {
+              state.expandedNodes.push(nodeId);
+            }
+          });
+        },
+
+        collapseTreeNode: (nodeId: string) => {
+          set(state => {
+            const index = state.expandedNodes.indexOf(nodeId);
+            if (index > -1) {
+              state.expandedNodes.splice(index, 1);
+            }
+          });
+        },
+
+        toggleTreeNode: (nodeId: string) => {
+          const isExpanded = get().expandedNodes.includes(nodeId);
+          if (isExpanded) {
+            get().collapseTreeNode(nodeId);
+          } else {
+            get().expandTreeNode(nodeId);
+          }
+        },
+
+        selectTreeNode: (nodeId: string, multiSelect = false) => {
+          set(state => {
+            if (multiSelect) {
+              if (!state.selectedNodes.includes(nodeId)) {
+                state.selectedNodes.push(nodeId);
+              }
+            } else {
+              state.selectedNodes = [nodeId];
+            }
+          });
+        },
+
+        deselectAllTreeNodes: () => {
+          set(state => {
+            state.selectedNodes = [];
+          });
+        },
+
+        setFocusedTreeNode: (nodeId: string | null) => {
+          set(state => {
+            state.focusedNodeId = nodeId;
+          });
+        },
+
+        setTreeViewVisible: (visible: boolean) => {
+          set(state => {
+            state.showTreeView = visible;
+          });
+        },
+
+        setTreeWidth: (width: number) => {
+          set(state => {
+            state.treeWidth = Math.max(200, Math.min(600, width));
+          });
+        },
+
+        // Navigation operations
+        navigateToFolder: (folderId: FolderId | null, path: string) => {
+          set(state => {
+            state.currentFolderId = folderId;
+            state.currentPath = path;
+          });
+        },
+
+        updateNavigationPath: (segments: readonly NavigationSegment[]) => {
+          set(state => {
+            state.navigationPath = segments as any;
+          });
+        },
+
+        setCurrentFolder: (folderId: FolderId | null) => {
+          set(state => {
+            state.currentFolderId = folderId;
+          });
+        },
+
+        goBack: () => {
+          const { navigationPath } = get();
+          if (navigationPath.length > 1) {
+            const previousSegment = navigationPath[navigationPath.length - 2];
+            if (previousSegment) {
+              get().navigateToFolder(previousSegment.id, previousSegment.path);
+            }
+          }
+        },
+
+        goForward: () => {
+          // Implementation depends on navigation history
+        },
+
+        goToRoot: () => {
+          get().navigateToFolder(null, '/');
+        },
+
+        // Folder operations
+        setFolderCreating: (creating: boolean) => {
+          set(state => {
+            state.folderOperations.isCreating = creating;
+          });
+        },
+
+        setFolderDeleting: (deleting: boolean) => {
+          set(state => {
+            state.folderOperations.isDeleting = deleting;
+          });
+        },
+
+        setFolderMoving: (moving: boolean) => {
+          set(state => {
+            state.folderOperations.isMoving = moving;
+          });
+        },
+
+        setFolderRenaming: (renaming: boolean) => {
+          set(state => {
+            state.folderOperations.isRenaming = renaming;
+          });
+        },
+
+        setFolderOperationError: (error: string | null) => {
+          set(state => {
+            state.folderOperations.operationError = error;
+          });
+        },
+
+        clearFolderOperationStates: () => {
+          set(state => {
+            state.folderOperations.isCreating = false;
+            state.folderOperations.isDeleting = false;
+            state.folderOperations.isMoving = false;
+            state.folderOperations.isRenaming = false;
+            state.folderOperations.operationError = null;
+          });
+        },
+
+        // Quick access operations
+        addRecentFolder: (folderId: FolderId) => {
+          set(state => {
+            const recentFolders = state.recentFolders.filter(
+              id => id !== folderId
+            );
+            recentFolders.unshift(folderId);
+            state.recentFolders = recentFolders.slice(0, 10); // Keep last 10
+          });
+        },
+
+        addFavoriteFolder: (folderId: FolderId) => {
+          set(state => {
+            if (!state.favoriteFolders.includes(folderId)) {
+              state.favoriteFolders.push(folderId);
+            }
+          });
+        },
+
+        removeFavoriteFolder: (folderId: FolderId) => {
+          set(state => {
+            const index = state.favoriteFolders.indexOf(folderId);
+            if (index > -1) {
+              state.favoriteFolders.splice(index, 1);
+            }
+          });
+        },
+
+        toggleFavoriteFolder: (folderId: FolderId) => {
+          const isFavorite = get().favoriteFolders.includes(folderId);
+          if (isFavorite) {
+            get().removeFavoriteFolder(folderId);
+          } else {
+            get().addFavoriteFolder(folderId);
+          }
+        },
+
+        addPinnedFolder: (folderId: FolderId) => {
+          set(state => {
+            if (!state.pinnedFolders.includes(folderId)) {
+              state.pinnedFolders.push(folderId);
+            }
+          });
+        },
+
+        removePinnedFolder: (folderId: FolderId) => {
+          set(state => {
+            const index = state.pinnedFolders.indexOf(folderId);
+            if (index > -1) {
+              state.pinnedFolders.splice(index, 1);
+            }
+          });
+        },
+
+        togglePinnedFolder: (folderId: FolderId) => {
+          const isPinned = get().pinnedFolders.includes(folderId);
+          if (isPinned) {
+            get().removePinnedFolder(folderId);
+          } else {
+            get().addPinnedFolder(folderId);
+          }
+        },
+
+        // Template operations
+        addFolderTemplate: (template: FolderTemplate) => {
+          set(state => {
+            state.folderTemplates.push(template as any);
+          });
+        },
+
+        removeFolderTemplate: (templateId: string) => {
+          set(state => {
+            const index = state.folderTemplates.findIndex(
+              t => t.id === templateId
+            );
+            if (index > -1) {
+              state.folderTemplates.splice(index, 1);
+            }
+          });
+        },
+
+        updateFolderTemplate: (
+          templateId: string,
+          updates: Partial<FolderTemplate>
+        ) => {
+          set(state => {
+            const template = state.folderTemplates.find(
+              t => t.id === templateId
+            );
+            if (template) {
+              Object.assign(template, updates);
+            }
+          });
+        },
+
+        // Preferences
+        updatePreferences: (
+          preferences: Partial<FilesWorkspaceState['preferences']>
+        ) => {
+          set(state => {
+            Object.assign(state.preferences, preferences);
+          });
+        },
+
+        // Utility
+        reset: () => {
+          set(initialState);
+        },
+      })),
+      { name: 'files-workspace-store' }
+    )
   )
 );
 
-// =============================================================================
-// COMPUTED SELECTORS
-// =============================================================================
+// ===== SELECTORS =====
+export const useFilesCurrentWorkspace = () =>
+  useFilesWorkspaceStore(state => state.currentWorkspace);
 
-/**
- * Check if any folder operation is in progress
- */
-export const isAnyFolderOperationInProgress = (
-  state: FilesWorkspaceState
-): boolean => {
-  const ops = state.folderOperations;
-  return ops.isCreating || ops.isDeleting || ops.isMoving || ops.isRenaming;
+export const useFilesCurrentFolder = () =>
+  useFilesWorkspaceStore(state => state.currentFolderId);
+
+export const useFilesCurrentPath = () =>
+  useFilesWorkspaceStore(state => state.currentPath);
+
+export const useFilesTreeView = () =>
+  useFilesWorkspaceStore(state => state.showTreeView);
+
+export const useFilesTreeWidth = () =>
+  useFilesWorkspaceStore(state => state.treeWidth);
+
+// Complex selectors
+export const useFilesWorkspaceSettings = () =>
+  useFilesWorkspaceStore(state => state.workspaceSettings);
+
+export const useFilesTreeState = () =>
+  useFilesWorkspaceStore(state => ({
+    tree: state.fileTree,
+    stats: state.treeStats,
+    status: state.treeOperationStatus,
+    error: state.treeError,
+  }));
+
+export const useFilesNavigation = () =>
+  useFilesWorkspaceStore(state => ({
+    currentFolderId: state.currentFolderId,
+    currentPath: state.currentPath,
+    navigationPath: state.navigationPath,
+  }));
+
+export const useFilesTreeViewState = () =>
+  useFilesWorkspaceStore(state => ({
+    expandedNodes: state.expandedNodes,
+    selectedNodes: state.selectedNodes,
+    focusedNodeId: state.focusedNodeId,
+    showTreeView: state.showTreeView,
+    treeWidth: state.treeWidth,
+  }));
+
+export const useFilesOperationStatus = () =>
+  useFilesWorkspaceStore(state => ({
+    workspace: state.workspaceOperations,
+    folder: state.folderOperations,
+  }));
+
+export const useFilesQuickAccess = () =>
+  useFilesWorkspaceStore(state => ({
+    recentFolders: state.recentFolders,
+    favoriteFolders: state.favoriteFolders,
+    pinnedFolders: state.pinnedFolders,
+  }));
+
+export const useFilesFolderTemplates = () =>
+  useFilesWorkspaceStore(state => state.folderTemplates);
+
+export const useFilesPreferences = () =>
+  useFilesWorkspaceStore(state => state.preferences);
+
+// Actions selector
+export const useFilesWorkspaceActions = () =>
+  useFilesWorkspaceStore(state => ({
+    setCurrentWorkspace: state.setCurrentWorkspace,
+    updateWorkspaceSettings: state.updateWorkspaceSettings,
+    setWorkspaceLoading: state.setWorkspaceLoading,
+    setWorkspaceSaving: state.setWorkspaceSaving,
+    setWorkspaceSyncing: state.setWorkspaceSyncing,
+    setSyncCompleted: state.setSyncCompleted,
+    setSyncError: state.setSyncError,
+    setFileTree: state.setFileTree,
+    updateTreeStats: state.updateTreeStats,
+    setTreeOperationStatus: state.setTreeOperationStatus,
+    setTreeError: state.setTreeError,
+    refreshTree: state.refreshTree,
+    expandTreeNode: state.expandTreeNode,
+    collapseTreeNode: state.collapseTreeNode,
+    toggleTreeNode: state.toggleTreeNode,
+    selectTreeNode: state.selectTreeNode,
+    deselectAllTreeNodes: state.deselectAllTreeNodes,
+    setFocusedTreeNode: state.setFocusedTreeNode,
+    setTreeViewVisible: state.setTreeViewVisible,
+    setTreeWidth: state.setTreeWidth,
+    navigateToFolder: state.navigateToFolder,
+    updateNavigationPath: state.updateNavigationPath,
+    setCurrentFolder: state.setCurrentFolder,
+    goBack: state.goBack,
+    goForward: state.goForward,
+    goToRoot: state.goToRoot,
+    setFolderCreating: state.setFolderCreating,
+    setFolderDeleting: state.setFolderDeleting,
+    setFolderMoving: state.setFolderMoving,
+    setFolderRenaming: state.setFolderRenaming,
+    setFolderOperationError: state.setFolderOperationError,
+    clearFolderOperationStates: state.clearFolderOperationStates,
+    addRecentFolder: state.addRecentFolder,
+    addFavoriteFolder: state.addFavoriteFolder,
+    removeFavoriteFolder: state.removeFavoriteFolder,
+    toggleFavoriteFolder: state.toggleFavoriteFolder,
+    addPinnedFolder: state.addPinnedFolder,
+    removePinnedFolder: state.removePinnedFolder,
+    togglePinnedFolder: state.togglePinnedFolder,
+    addFolderTemplate: state.addFolderTemplate,
+    removeFolderTemplate: state.removeFolderTemplate,
+    updateFolderTemplate: state.updateFolderTemplate,
+    updatePreferences: state.updatePreferences,
+    reset: state.reset,
+  }));
+
+// Computed selectors with memoization
+export const useIsTreeNodeExpanded = (nodeId: string) => {
+  return useFilesWorkspaceStore(state => state.expandedNodes.includes(nodeId));
 };
 
-/**
- * Check if any workspace operation is in progress
- */
-export const isAnyWorkspaceOperationInProgress = (
-  state: FilesWorkspaceState
-): boolean => {
-  const ops = state.workspaceOperations;
-  return ops.isLoading || ops.isSaving || ops.isSyncing;
+export const useIsTreeNodeSelected = (nodeId: string) => {
+  return useFilesWorkspaceStore(state => state.selectedNodes.includes(nodeId));
 };
 
-/**
- * Get current folder breadcrumbs
- */
-export const getCurrentBreadcrumbs = (state: FilesWorkspaceState) => {
-  return state.navigationState.pathSegments;
+export const useIsTreeNodeFocused = (nodeId: string) => {
+  return useFilesWorkspaceStore(state => state.focusedNodeId === nodeId);
 };
 
-/**
- * Check if folder is in favorites
- */
-export const isFolderFavorite = (
-  state: FilesWorkspaceState,
-  folderId: FolderId
-): boolean => {
-  return state.quickAccess.favoriteFolders.includes(folderId);
-};
-
-/**
- * Check if folder is pinned
- */
-export const isFolderPinned = (
-  state: FilesWorkspaceState,
-  folderId: FolderId
-): boolean => {
-  return state.quickAccess.pinnedFolders.includes(folderId);
-};
-
-/**
- * Check if tree node is expanded
- */
-export const isTreeNodeExpanded = (
-  state: FilesWorkspaceState,
-  nodeId: string
-): boolean => {
-  return state.treeViewState.expandedNodes.includes(nodeId);
-};
-
-/**
- * Check if tree node is selected
- */
-export const isTreeNodeSelected = (
-  state: FilesWorkspaceState,
-  nodeId: string
-): boolean => {
-  return state.treeViewState.selectedNodes.includes(nodeId);
-};
-
-/**
- * Get tree validation result
- */
-export const getTreeValidation = (state: FilesWorkspaceState) => {
-  return validateTree(state.fileTree);
-};
-
-/**
- * Get folder template by ID
- */
-export const getFolderTemplateById = (
-  state: FilesWorkspaceState,
-  templateId: string
-) => {
-  return (
-    state.folderTemplates.find(template => template.id === templateId) || null
+export const useIsFolderFavorite = (folderId: FolderId) => {
+  return useFilesWorkspaceStore(state =>
+    state.favoriteFolders.includes(folderId)
   );
+};
+
+export const useIsFolderPinned = (folderId: FolderId) => {
+  return useFilesWorkspaceStore(state =>
+    state.pinnedFolders.includes(folderId)
+  );
+};
+
+export const useIsFolderRecent = (folderId: FolderId) => {
+  return useFilesWorkspaceStore(state =>
+    state.recentFolders.includes(folderId)
+  );
+};
+
+export const useFolderTemplate = (templateId: string) => {
+  return useFilesWorkspaceStore(state =>
+    state.folderTemplates.find(t => t.id === templateId)
+  );
+};
+
+// Advanced computed state
+export const useFilesWorkspaceComputedState = () => {
+  return useFilesWorkspaceStore(state => ({
+    hasWorkspace: !!state.currentWorkspace,
+    isAtRoot: state.currentFolderId === null,
+    hasSelectedNodes: state.selectedNodes.length > 0,
+    treeOperationInProgress:
+      state.treeOperationStatus === OPERATION_STATUS.LOADING,
+    anyFolderOperation:
+      state.folderOperations.isCreating ||
+      state.folderOperations.isDeleting ||
+      state.folderOperations.isMoving ||
+      state.folderOperations.isRenaming,
+    workspaceOperationInProgress:
+      state.workspaceOperations.isLoading ||
+      state.workspaceOperations.isSaving ||
+      state.workspaceOperations.isSyncing,
+  }));
 };

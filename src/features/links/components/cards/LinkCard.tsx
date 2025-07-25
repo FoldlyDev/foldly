@@ -1,57 +1,124 @@
 'use client';
 
 import { memo } from 'react';
-import { Copy, Share2, Trash2 } from 'lucide-react';
 import { useIsMobile } from '@/lib/hooks/use-mobile';
-import { useLinkCardStore } from '../../hooks/use-links-composite';
+import { useModalStore } from '../../store';
 import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
-import { COMPONENT_DEFAULTS } from '../../constants';
-import type { LinkId } from '@/types';
+import { toast } from 'sonner';
+import type { Link } from '@/lib/supabase/types';
+import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
 
 interface LinkCardProps {
-  linkId: LinkId;
-  view: 'grid' | 'list';
-  index: number;
+  link: Link;
+  viewMode: 'grid' | 'list';
+  onDetails: () => void;
+  onShare: () => void;
+  onSettings: () => void;
+  onDelete: () => void;
   searchQuery?: string;
 }
 
 const LinkCardComponent = ({
-  linkId,
-  view,
-  index,
+  link,
+  viewMode,
+  onDetails,
+  onShare,
+  onSettings,
+  onDelete,
   searchQuery = '',
 }: LinkCardProps) => {
   const isMobile = useIsMobile();
-  const { link, isLoading, isSelected, isMultiSelectMode, computed } =
-    useLinkCardStore(linkId);
 
-  // Handle loading state
-  if (isLoading || !link || !computed) {
-    const skeleton = COMPONENT_DEFAULTS.loading.skeleton;
-    return (
-      <div className={skeleton.container}>
-        <div className={skeleton.primaryLine}></div>
-        <div className={skeleton.secondaryLine}></div>
-      </div>
-    );
-  }
+  // Computed values
+  const isBaseLink = link.linkType === 'base';
+  const formattedDate = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(link.createdAt));
+
+  // Action handlers
+  const handleCopyLink = async () => {
+    try {
+      const url = `https://foldly.com/${link.slug}`;
+      await navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard');
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleOpenExternal = () => {
+    const url = `https://foldly.com/${link.slug}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  // Define dropdown actions with actual icon components (actions not in quick actions)
+  const dropdownActions = [
+    {
+      id: 'details',
+      label: 'View Details',
+      icon: Eye,
+      onClick: onDetails,
+    },
+    {
+      id: 'external',
+      label: 'Open External',
+      icon: ExternalLink,
+      onClick: handleOpenExternal,
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      onClick: onSettings,
+    },
+    ...(isBaseLink
+      ? []
+      : [
+          {
+            id: 'delete',
+            label: 'Delete',
+            icon: Trash2,
+            onClick: onDelete,
+            variant: 'destructive' as const,
+          },
+        ]),
+  ];
+
+  // Define quick actions with actual icon components (only most essential actions)
+  const quickActions = [
+    {
+      id: 'copy',
+      label: 'Copy',
+      icon: Copy,
+      onClick: handleCopyLink,
+    },
+    {
+      id: 'share',
+      label: 'Share',
+      icon: Share,
+      onClick: onShare,
+    },
+  ];
 
   // Grid view - same for mobile and desktop
-  if (view === 'grid') {
+  if (viewMode === 'grid') {
     return (
       <LinkCardGrid
         link={link}
-        index={index}
-        isBaseLink={computed.isBaseLink}
-        formattedDate={computed.formattedDate}
-        isMultiSelected={isSelected}
-        onOpenDetails={computed.handleViewDetails}
-        onMultiSelect={computed.handleToggleSelection}
+        index={0}
+        isBaseLink={isBaseLink}
+        formattedDate={formattedDate}
+        isMultiSelected={false}
+        onOpenDetails={onDetails}
+        onMultiSelect={() => {}}
         searchQuery={searchQuery}
-        actions={computed.dropdownActions}
-        quickActions={computed.quickActions}
+        actions={dropdownActions}
+        quickActions={quickActions}
       />
     );
   }
@@ -61,13 +128,13 @@ const LinkCardComponent = ({
     return (
       <LinkCardMobile
         link={link}
-        index={index}
-        isBaseLink={computed.isBaseLink}
-        formattedDate={computed.formattedDate}
-        isMultiSelected={isSelected}
-        onOpenDetails={computed.handleViewDetails}
-        actions={computed.dropdownActions}
-        quickActions={computed.quickActions}
+        index={0}
+        isBaseLink={isBaseLink}
+        formattedDate={formattedDate}
+        isMultiSelected={false}
+        onOpenDetails={onDetails}
+        actions={dropdownActions}
+        quickActions={quickActions}
         searchQuery={searchQuery}
       />
     );
@@ -76,26 +143,22 @@ const LinkCardComponent = ({
   return (
     <LinkCardDesktop
       link={link}
-      index={index}
-      isBaseLink={computed.isBaseLink}
-      formattedDate={computed.formattedDate}
-      isMultiSelectMode={isMultiSelectMode}
-      isMultiSelected={isSelected}
-      onOpenDetails={computed.handleViewDetails}
-      onCopyLink={computed.handleCopyLink}
-      onShare={computed.handleShare}
-      onSelectionChange={(linkId: string, checked: boolean) => {
-        if (checked) {
-          computed.handleToggleSelection();
-        }
-      }}
+      index={0}
+      isBaseLink={isBaseLink}
+      formattedDate={formattedDate}
+      isMultiSelectMode={false}
+      isMultiSelected={false}
+      onOpenDetails={onDetails}
+      onCopyLink={handleCopyLink}
+      onShare={onShare}
+      onSelectionChange={() => {}}
       searchQuery={searchQuery}
-      actions={computed.dropdownActions}
-      quickActions={computed.quickActions}
+      actions={dropdownActions}
+      quickActions={quickActions}
     />
   );
 };
 
 // ✅ Memoized component to prevent unnecessary re-renders
-// Only re-renders when linkId, view, or index change
+// Only re-renders when link, viewMode, or action handlers change
 export const LinkCard = memo(LinkCardComponent);

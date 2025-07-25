@@ -25,11 +25,11 @@
 
 Foldly implements a **state-of-the-art 2025 TypeScript type system** with modern patterns that provide unprecedented type safety across all layers. Our architecture leverages the latest TypeScript 5.x features including:
 
-- ✅ **Branded Types**: Enhanced type safety for IDs and sensitive values
-- ✅ **Const Assertions with Satisfies**: Type-safe constants without enums
-- ✅ **Template Literal Types**: Dynamic string patterns for routes and validation
-- ✅ **Discriminated Unions**: Type-safe error handling with Result<T, E>
-- ✅ **Deep Readonly Patterns**: Immutable data structures throughout
+- ✅ **Database Foundation**: Complete PostgreSQL schema with comprehensive type definitions
+- ✅ **Centralized Type System**: Organized in `src/lib/supabase/types/` with modular structure
+- ✅ **Result Pattern**: Type-safe error handling with `DatabaseResult<T>`
+- ✅ **Async State Management**: Consistent loading states and error handling
+- ✅ **Pagination & Filtering**: Reusable patterns for data queries
 - ✅ **Comprehensive Type Guards**: Runtime validation with compile-time guarantees
 - ✅ **Strict TypeScript 5.x Configuration**: ES2022 target with all strict flags
 
@@ -138,26 +138,40 @@ if (result.success) {
 
 ## 🗂️ Type Organization
 
-Our 2025 type system follows a **hybrid feature-based architecture** with global types for cross-cutting concerns:
+Our 2025 type system follows a **centralized database-first architecture** with modular organization:
 
-### **Global Types** (src/types/)
+### **✅ Database Types** (src/lib/supabase/types/) - **COMPLETED**
 
 ```
-src/types/
-├── index.ts                 # Centralized barrel exports
-├── global/                  # Foundation types with brands
-│   └── index.ts            # Core constants, utilities, branded types
-├── database/               # Supabase schema with branded IDs
-│   └── index.ts           # All database entities and relations
-├── api/                   # Request/response with discriminated unions
-│   └── index.ts          # API contracts and error handling
-├── auth/                  # Clerk integration with branded types
-│   └── index.ts          # User, session, permission types
-└── features/            # General UI component types (cross-feature)
-    └── index.ts        # Shared component types and patterns
+src/lib/supabase/types/
+├── index.ts                 # ✅ Centralized barrel exports
+├── enums.ts                 # ✅ Database enum type definitions
+├── common.ts                # ✅ Shared patterns and utilities
+├── api.ts                   # ✅ API request/response types
+├── users.ts                 # ✅ User entity types
+├── workspaces.ts            # ✅ Workspace entity types
+├── links.ts                 # ✅ Link entity types
+├── folders.ts               # ✅ Folder entity types
+├── batches.ts               # ✅ Batch entity types
+└── files.ts                 # ✅ File entity types
 ```
 
-### **Domain-Specific Types** (src/features/)
+### **✅ Database Schema** (src/lib/supabase/schemas/) - **COMPLETED**
+
+```
+src/lib/supabase/schemas/
+├── index.ts                 # ✅ Schema exports
+├── enums.ts                 # ✅ PostgreSQL enum definitions
+├── users.ts                 # ✅ User schema
+├── workspaces.ts            # ✅ Workspace schema
+├── links.ts                 # ✅ Link schema
+├── folders.ts               # ✅ Folder schema
+├── batches.ts               # ✅ Batch schema
+├── files.ts                 # ✅ File schema
+└── relations.ts             # ✅ Database relationships
+```
+
+### **📋 Feature Types** (src/features/) - **READY FOR IMPLEMENTATION**
 
 ```
 src/features/
@@ -188,13 +202,27 @@ src/features/
 - **Clear Boundaries**: Domain-specific types stay within their features
 - **Import Clarity**: Global imports for shared concerns, local imports for feature logic
 
-### Import Strategy (2025 Domain-Driven Best Practice)
+### Import Strategy (2025 Database-First Best Practice)
 
 ```typescript
-// ✅ GLOBAL TYPES: Import from centralized barrel with type modifier
-import type { UserId, LinkId, UploadLink, ApiResult, Result } from '@/types';
+// ✅ DATABASE TYPES: Import from centralized database type system
+import type {
+  User,
+  Link,
+  File,
+  Folder,
+  Batch,
+  DatabaseResult,
+  AsyncState,
+} from '@/lib/supabase/types';
 
-// ✅ DOMAIN TYPES: Import from domain-specific types
+// ✅ DATABASE SCHEMA: Import schema definitions for queries
+import { links, files, folders, batches } from '@/lib/supabase/schemas';
+
+// ✅ DATABASE CONNECTION: Import database instance
+import { db } from '@/lib/db/db';
+
+// ✅ FEATURE TYPES: Import domain-specific types from features
 import type { LinkFormData, LinkValidationError } from '@/features/links/types';
 import type {
   UploadProgress,
@@ -205,22 +233,18 @@ import type {
 import type { ComponentProps } from 'react';
 import { useState, useCallback } from 'react';
 
-// ✅ DOMAIN COMPONENT: Import related domain types and components together
-import { LinkCard } from '@/features/links/components/cards/LinkCard';
-import type { LinkCardProps } from '@/features/links/types';
-
-// ✅ DOMAIN EXPORTS: Use domain barrel exports for clean imports
+// ✅ FEATURE EXPORTS: Use feature barrel exports for clean imports
 import { LinksContainer, useLinksStore } from '@/features/links';
 import { UploadService, type UploadState } from '@/features/upload';
 
-// ❌ NEVER: Import from individual global type files
-import type { UploadLink } from '@/types/database';
+// ❌ NEVER: Import from individual type files
+import type { User } from '@/lib/supabase/types/users';
 
-// ❌ NEVER: Import global types from domain directories
-import type { UserId } from '@/features/auth/types';
+// ❌ NEVER: Import database types from features
+import type { Link } from '@/features/links/types';
 
-// ❌ NEVER: Skip domain barrel exports
-import { LinkCard } from '@/features/links/components/cards/LinkCard';
+// ❌ NEVER: Skip centralized type system
+import type { DatabaseResult } from '@/lib/supabase/types/common';
 ```
 
 ---
@@ -374,38 +398,170 @@ export const isValidUserRole = (value: unknown): value is UserRole => {
 
 ---
 
-## 💾 Database Schema Types
+## 💾 Database Schema Types - **✅ DATABASE-FIRST IMPLEMENTATION COMPLETED**
 
-**Location**: `src/types/database/index.ts`
+**Location**: `src/lib/supabase/types/` and `src/lib/supabase/schemas/` - **✅ COMPLETED**
 
-### Enhanced Upload Links
+**Architecture**: Database-first approach with centralized type generation from PostgreSQL schema. All types are generated from the database schema, ensuring single source of truth.
+
+**Key Updates**:
+
+- ✅ Added `allowedFileTypes` field to links table for MIME type restrictions
+- ✅ Database schemas in `src/lib/supabase/schemas/` define PostgreSQL structure
+- ✅ Generated types in `src/lib/supabase/types/` provide TypeScript definitions
+- ✅ All feature types will be adapted from database types using adapter functions
+
+### Core Database Entities
 
 ```typescript
-export interface UploadLink extends BaseEntity {
+// ✅ IMPLEMENTED: User entity with subscription management
+export interface User {
+  id: string;
+  email: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string;
+  subscriptionTier: SubscriptionTier;
+  storageUsed: number;
+  storageLimit: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ✅ IMPLEMENTED: Workspace entity for multi-tenancy
+export interface Workspace {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ✅ IMPLEMENTED: Multi-link system with three types
+export interface Link {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  slug: string;
+  topic?: string;
+  linkType: LinkType;
+  title: string;
+  description?: string;
+  requireEmail: boolean;
+  requirePassword: boolean;
+  password?: string;
+  isPublic: boolean;
+  isActive: boolean;
+  maxFiles: number;
+  maxFileSize: number;
+  expiresAt?: Date;
+  brandEnabled: boolean;
+  brandColor?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ✅ IMPLEMENTED: Hierarchical folder system
+export interface Folder {
+  id: string;
+  userId: string;
+  workspaceId: string;
+  linkId: string;
+  parentFolderId?: string;
+  name: string;
+  path: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ✅ IMPLEMENTED: Upload batch management
+export interface Batch {
+  id: string;
+  linkId: string;
+  userId: string;
+  uploaderName?: string;
+  uploaderEmail?: string;
+  totalFiles: number;
+  totalSize: number;
+  status: BatchStatus;
+  completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ✅ IMPLEMENTED: File storage with metadata
+export interface File {
+  id: string;
+  linkId: string;
+  batchId: string;
+  folderId?: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  filePath: string;
+  uploadedBy?: string;
+  uploadedEmail?: string;
+  status: FileProcessingStatus;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+### Enhanced Types for UI Components
+
+```typescript
+// ✅ IMPLEMENTED: Link with computed stats
+export interface LinkWithStats extends Link {
+  fileCount: number;
+  batchCount: number;
+  totalSize: number;
+  fullUrl: string;
+}
+
+// ✅ IMPLEMENTED: File with folder path
+export interface FileWithFolder extends File {
+  folderPath?: string;
+  folderName?: string;
+}
+
+// ✅ IMPLEMENTED: Batch with progress tracking
+export interface BatchWithProgress extends Batch {
+  completedFiles: number;
+  failedFiles: number;
+  progress: number;
+}
+```
+
+```typescript
+export interface Link extends BaseEntity {
+  readonly workspaceId: WorkspaceId;
+
   // Link identification with branded types
   readonly slug: SlugString;
   readonly topic?: string;
   readonly title: string;
   readonly description?: string;
-  readonly instructions?: string;
 
   // Link behavior configuration
   readonly linkType: LinkType;
-  readonly autoCreateFolders: boolean;
-  readonly defaultFolderId?: FolderId;
 
   // Security controls with branded types
   readonly requireEmail: boolean;
   readonly requirePassword: boolean;
   readonly passwordHash?: string;
   readonly isPublic: boolean;
-  readonly allowFolderCreation: boolean;
+  readonly isActive: boolean;
 
   // File and upload limits
   readonly maxFiles: number;
   readonly maxFileSize: number;
-  readonly allowedFileTypes?: DeepReadonly<string[]>;
+  readonly allowedFileTypes: string[] | null; // ✅ IMPLEMENTED: MIME type restrictions stored in database
   readonly expiresAt?: Date;
+
+  // Branding (Pro+ features)
+  readonly brandEnabled: boolean;
+  readonly brandColor?: HexColor; // ✅ IMPLEMENTED: Stored as database field
 
   // Usage tracking
   readonly totalUploads: number;
@@ -415,38 +571,32 @@ export interface UploadLink extends BaseEntity {
 }
 
 // Database operation types
-export type UploadLinkRow = UploadLink;
-export type UploadLinkInsert = Omit<
-  UploadLink,
-  'id' | 'createdAt' | 'updatedAt'
->;
-export type UploadLinkUpdate = Partial<
-  Omit<UploadLink, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+export type LinkRow = Link;
+export type LinkInsert = Omit<Link, 'id' | 'createdAt' | 'updatedAt'>;
+export type LinkUpdate = Partial<
+  Omit<Link, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 >;
 ```
 
-### Hierarchical Folder System
+### Simplified Folder System
 
 ```typescript
 export interface Folder extends BaseEntity {
+  readonly workspaceId: WorkspaceId;
   readonly parentFolderId?: FolderId;
-  readonly uploadLinkId?: LinkId;
+  readonly linkId?: LinkId; // for generated links only
   readonly name: string;
-  readonly description?: string;
-  readonly color?: HexColor;
   readonly path: string;
+  readonly depth: number;
   readonly isArchived: boolean;
-  readonly sortOrder: number;
   readonly isPublic: boolean;
-  readonly classification: DataClassification;
+  readonly sortOrder: number;
   readonly fileCount: number;
   readonly totalSize: number;
-  readonly lastActivity?: Date;
 }
 
 export interface FolderTree extends Folder {
   readonly children: DeepReadonly<FolderTree[]>;
-  readonly depth: number;
   readonly hasChildren: boolean;
 }
 
@@ -458,55 +608,88 @@ export type FolderUpdate = Partial<
 >;
 ```
 
-### Enhanced File Uploads
+### Upload Batch System
 
 ```typescript
-export interface FileUpload extends BaseEntity {
-  readonly uploadLinkId: LinkId;
+export interface Batch extends BaseEntity {
+  readonly linkId: LinkId;
   readonly folderId?: FolderId;
-  readonly batchId: BatchId;
 
-  // Uploader information with branded types
+  // Uploader information
   readonly uploaderName: string;
   readonly uploaderEmail?: EmailAddress;
   readonly uploaderMessage?: string;
 
+  // Batch metadata
+  readonly name?: string;
+  readonly displayName: string;
+  readonly status: BatchStatus;
+
+  // Progress tracking
+  readonly totalFiles: number;
+  readonly processedFiles: number;
+  readonly totalSize: number;
+
+  readonly uploadCompletedAt?: Date;
+}
+
+export type BatchStatus = 'uploading' | 'processing' | 'completed' | 'failed';
+
+// Database operation types
+export type BatchRow = Batch;
+export type BatchInsert = Omit<Batch, 'id' | 'createdAt' | 'updatedAt'>;
+export type BatchUpdate = Partial<
+  Omit<Batch, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+>;
+```
+
+### Enhanced File System
+
+```typescript
+export interface File extends BaseEntity {
+  readonly linkId: LinkId;
+  readonly batchId: BatchId;
+  readonly folderId?: FolderId;
+
   // File metadata with branded types
   readonly fileName: SafeFileName;
-  readonly originalFileName: string;
+  readonly originalName: string;
   readonly fileSize: number;
-  readonly fileType: string;
   readonly mimeType: string;
+  readonly extension?: string;
   readonly storagePath: string;
+  readonly storageProvider: 'supabase' | 's3' | 'cloudflare';
 
   // Security and integrity
-  readonly md5Hash?: string;
-  readonly sha256Hash?: string;
-  readonly virusScanResult?: 'clean' | 'infected' | 'suspicious' | 'pending';
+  readonly checksum?: string;
+  readonly virusScanResult: 'clean' | 'infected' | 'suspicious' | 'pending';
   readonly securityWarnings?: DeepReadonly<SecurityWarning[]>;
 
-  // Processing status with branded types
+  // Processing status
   readonly processingStatus: FileProcessingStatus;
-  readonly isProcessed: boolean;
   readonly isSafe: boolean;
-  readonly thumbnailPath?: StaticAssetPath;
+  readonly thumbnailPath?: string;
+  readonly isOrganized: boolean;
+  readonly needsReview: boolean;
 
   // Access tracking
   readonly downloadCount: number;
-  readonly lastDownloadAt?: Date;
-  readonly classification: DataClassification;
-  readonly tags?: DeepReadonly<string[]>;
-  readonly isArchived: boolean;
+  readonly lastAccessedAt?: Date;
+
+  readonly uploadedAt: Date;
 }
 
-// Database operation types with branded types
-export type FileUploadRow = FileUpload;
-export type FileUploadInsert = Omit<
-  FileUpload,
-  'id' | 'createdAt' | 'updatedAt'
->;
-export type FileUploadUpdate = Partial<
-  Omit<FileUpload, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+export type FileProcessingStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
+// Database operation types
+export type FileRow = File;
+export type FileInsert = Omit<File, 'id' | 'createdAt' | 'updatedAt'>;
+export type FileUpdate = Partial<
+  Omit<File, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 >;
 ```
 

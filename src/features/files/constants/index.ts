@@ -225,54 +225,21 @@ export const GLOBAL_FILE_LIMITS = {
 } as const;
 
 // =============================================================================
-// FOLDER CONFIGURATION
+// FOLDER CONFIGURATION - Simplified for MVP
 // =============================================================================
 
 /**
- * Default folder colors
+ * Default folder icon for all folders
  */
-export const DEFAULT_FOLDER_COLORS: readonly FolderColor[] = [
-  'blue',
-  'green',
-  'purple',
-  'orange',
-  'red',
-  'yellow',
-  'pink',
-  'gray',
-] as const;
+export const DEFAULT_FOLDER_ICON = '📁';
 
 /**
- * Folder colors array for selection
+ * Folder configuration constants
  */
-export const FOLDER_COLORS = DEFAULT_FOLDER_COLORS;
-
-/**
- * Folder color values mapping
- */
-export const FOLDER_COLOR_VALUES: Record<FolderColor, string> = {
-  blue: '#3B82F6',
-  green: '#10B981',
-  purple: '#8B5CF6',
-  orange: '#F59E0B',
-  red: '#EF4444',
-  yellow: '#F59E0B',
-  pink: '#EC4899',
-  gray: '#6B7280',
-} as const;
-
-/**
- * Folder icons mapping
- */
-export const FOLDER_ICONS: Record<FolderColor, string> = {
-  blue: '📁',
-  green: '💚',
-  purple: '💜',
-  orange: '🧡',
-  red: '❤️',
-  yellow: '💛',
-  pink: '💗',
-  gray: '🩶',
+export const FOLDER_CONFIG = {
+  DEFAULT_ICON: DEFAULT_FOLDER_ICON,
+  MAX_DEPTH: 10,
+  MAX_NAME_LENGTH: 255,
 } as const;
 
 // =============================================================================
@@ -531,7 +498,6 @@ export const DEFAULT_VALUES = {
   FOLDER_NAME: 'New Folder',
   FILE_NAME: 'Untitled',
   WORKSPACE_NAME: 'My Workspace',
-  FOLDER_COLOR: 'blue' as FolderColor,
   VIEW_MODE: 'grid' as const,
   SORT_BY: 'name' as const,
   SORT_ORDER: 'asc' as const,
@@ -542,14 +508,13 @@ export const DEFAULT_VALUES = {
 // =============================================================================
 
 /**
- * Feature flags for conditional functionality
+ * Feature flags for conditional functionality - MVP Configuration
  */
 export const FEATURE_FLAGS = {
   ENABLE_DRAG_DROP: true,
   ENABLE_FILE_PREVIEW: true,
   ENABLE_BULK_OPERATIONS: true,
   ENABLE_FILE_SHARING: true,
-  ENABLE_FOLDER_COLORS: true,
   ENABLE_SEARCH: true,
   ENABLE_FILTERS: true,
   ENABLE_THUMBNAILS: true,
@@ -653,17 +618,10 @@ export const getFileIcon = (fileType: FileType): string => {
 };
 
 /**
- * Get folder icon based on color
+ * Get default folder icon
  */
-export const getFolderIcon = (color: FolderColor): string => {
-  return FOLDER_ICONS[color];
-};
-
-/**
- * Get folder color value (hex) based on color name
- */
-export const getFolderColorValue = (color: FolderColor): string => {
-  return FOLDER_COLOR_VALUES[color];
+export const getFolderIcon = (): string => {
+  return DEFAULT_FOLDER_ICON;
 };
 
 /**

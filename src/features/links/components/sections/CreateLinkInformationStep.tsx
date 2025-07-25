@@ -6,16 +6,17 @@ import { useUser } from '@clerk/nextjs';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
+  type CreateLinkFormData,
 } from '../../hooks/use-create-link-form';
 import { LinkInformationSection } from '../sections/LinkInformationSection';
-import type { LinkInformationFormData } from '../../types';
 import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
-import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../constants';
+import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 
 /**
  * Information step for create link modal
  * Uses the existing LinkInformationSection component with form store integration
  * Identical layout and design for both base and topic links - only field behavior differs
+ * ALIGNED WITH DATABASE SCHEMA - Only uses database fields
  */
 export const CreateLinkInformationStep = () => {
   const { user } = useUser();
@@ -23,69 +24,75 @@ export const CreateLinkInformationStep = () => {
   // Form store subscriptions
   const formData = useCreateLinkFormStore(createLinkFormSelectors.formData);
   const linkType = useCreateLinkFormStore(createLinkFormSelectors.linkType);
-  const fieldErrors = useCreateLinkFormStore(
-    createLinkFormSelectors.fieldErrors
-  );
   const isSubmitting = useCreateLinkFormStore(
     createLinkFormSelectors.isSubmitting
   );
-  const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canGoNext);
+  const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canProceed);
 
   // Form actions
   const updateFormField = useCreateLinkFormStore(
     state => state.updateFormField
   );
-  const updateMultipleFields = useCreateLinkFormStore(
-    state => state.updateMultipleFields
-  );
   const nextStep = useCreateLinkFormStore(state => state.nextStep);
 
-  // Convert form data to LinkInformationSection format - identical structure for both link types
+  // Convert form data to the format expected by LinkInformationSection (using database types)
   const linkInformationData = useMemo(
-    (): LinkInformationFormData => ({
-      // Use constant instead of hardcoded string
-      name:
-        linkType === 'base' ? LINK_TYPE_LABELS.base.name : formData.topic || '',
-      description: formData.description,
+    () => ({
+      // Required fields from LinkCreateForm (with defaults for missing fields)
+      slug: '', // Will be generated on submit
+      topic: formData.topic || '',
+      linkType: linkType, // Use actual linkType from store
+      title: formData.title || '',
+      description: formData.description || '',
+
+      // Optional fields from LinkCreateForm
       requireEmail: formData.requireEmail,
-      maxFiles: formData.maxFiles,
-      // Use constant instead of hardcoded value
-      maxFileSize: formData.maxFileSize || FORM_DEFAULTS.maxFileSize,
-      // Pass array directly to UI component for multi-select
-      allowedFileTypes: formData.allowedFileTypes || [],
-      // Use constant instead of hardcoded value
-      autoCreateFolders:
-        formData.autoCreateFolders || FORM_DEFAULTS.autoCreateFolders,
-      isPublic: formData.isPublic,
       requirePassword: formData.requirePassword,
-      password: formData.password,
-      isActive: true, // Default to active
+      password: formData.password || '', // Convert undefined to empty string
+      isPublic: formData.isPublic,
+      maxFiles: formData.maxFiles,
+      maxFileSize: formData.maxFileSize,
+      allowedFileTypes: formData.allowedFileTypes,
       ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
+      brandEnabled: formData.brandEnabled,
+      ...(formData.brandColor && { brandColor: formData.brandColor }),
+
+      // Additional field for UI (now included in CreateLinkFormData)
+      isActive: formData.isActive,
+
+      // Backwards compatibility field (maps to topic)
+      name:
+        linkType === 'base'
+          ? LINK_TYPE_LABELS.base.name
+          : formData.topic || formData.title || '',
     }),
     [formData, linkType]
   );
 
-  // Handle form changes
+  // Handle form changes with proper typing
   const handleFormChange = useCallback(
-    (updates: Partial<LinkInformationFormData>) => {
+    (updates: Record<string, any>) => {
       console.log('📝 INFORMATION STEP: handleFormChange called');
       console.log('📝 INFORMATION STEP: updates =', updates);
       console.log('📝 INFORMATION STEP: linkType =', linkType);
+      console.log('📝 INFORMATION STEP: current formData =', formData);
 
-      // Convert LinkInformationFormData updates to CreateLinkFormData format
+      // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
 
-      if ('name' in updates) {
+      // Handle the name field which maps to different fields based on link type
+      if (updates.name !== undefined) {
         if (linkType === 'base') {
-          convertedUpdates.title = updates.name;
+          // Base links get auto-assigned titles - set a default title
+          convertedUpdates.title = `${user?.username || 'user'}'s Collection`;
           console.log(
-            '📝 INFORMATION STEP: Base link - setting title =',
-            updates.name
+            '📝 INFORMATION STEP: Base link - auto-setting title =',
+            convertedUpdates.title
           );
         } else {
           // For topic links, set both topic and title fields
-          convertedUpdates.topic = updates.name;
-          convertedUpdates.title = updates.name; // Ensure title is also set for consistency
+          convertedUpdates.topic = String(updates.name);
+          convertedUpdates.title = String(updates.name);
           console.log(
             '📝 INFORMATION STEP: Topic link - setting topic and title =',
             updates.name
@@ -93,23 +100,24 @@ export const CreateLinkInformationStep = () => {
         }
       }
 
-      if ('description' in updates) {
-        convertedUpdates.description = updates.description;
+      // Handle other fields
+      if (updates.description !== undefined) {
+        convertedUpdates.description = String(updates.description);
       }
 
-      if ('requireEmail' in updates) {
-        convertedUpdates.requireEmail = updates.requireEmail;
+      if (updates.requireEmail !== undefined) {
+        convertedUpdates.requireEmail = Boolean(updates.requireEmail);
       }
 
-      if ('requirePassword' in updates) {
-        convertedUpdates.requirePassword = updates.requirePassword;
+      if (updates.requirePassword !== undefined) {
+        convertedUpdates.requirePassword = Boolean(updates.requirePassword);
         console.log(
           '📝 INFORMATION STEP: Password protection toggled to:',
           updates.requirePassword
         );
 
-        // Only clear password if explicitly disabling protection AND we're not also updating the password in the same change
-        if (!updates.requirePassword && !('password' in updates)) {
+        // Only clear password if explicitly disabling protection
+        if (!updates.requirePassword && updates.password === undefined) {
           convertedUpdates.password = '';
           console.log(
             '📝 INFORMATION STEP: Password cleared because protection disabled'
@@ -117,43 +125,61 @@ export const CreateLinkInformationStep = () => {
         }
       }
 
-      if ('password' in updates) {
-        convertedUpdates.password = updates.password;
+      if (updates.password !== undefined) {
+        convertedUpdates.password = String(updates.password);
         console.log(
           '📝 INFORMATION STEP: Password updated to:',
           updates.password ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
         );
       }
 
-      if ('isPublic' in updates) {
-        convertedUpdates.isPublic = updates.isPublic;
+      if (updates.isPublic !== undefined) {
+        convertedUpdates.isPublic = Boolean(updates.isPublic);
       }
 
-      if ('maxFiles' in updates) {
-        convertedUpdates.maxFiles = updates.maxFiles;
+      if (updates.isActive !== undefined) {
+        convertedUpdates.isActive = Boolean(updates.isActive);
       }
 
-      if ('maxFileSize' in updates) {
-        convertedUpdates.maxFileSize = updates.maxFileSize;
+      if (updates.maxFiles !== undefined) {
+        convertedUpdates.maxFiles = Number(updates.maxFiles);
       }
 
-      if ('allowedFileTypes' in updates) {
-        // Pass array directly to store - no conversion needed
-        convertedUpdates.allowedFileTypes = updates.allowedFileTypes;
+      if (updates.maxFileSize !== undefined) {
+        convertedUpdates.maxFileSize = Number(updates.maxFileSize);
       }
 
-      if ('autoCreateFolders' in updates) {
-        convertedUpdates.autoCreateFolders = updates.autoCreateFolders;
+      if (updates.allowedFileTypes !== undefined) {
+        convertedUpdates.allowedFileTypes = Array.isArray(
+          updates.allowedFileTypes
+        )
+          ? updates.allowedFileTypes
+          : [];
       }
 
-      if ('expiresAt' in updates && updates.expiresAt) {
-        convertedUpdates.expiresAt = updates.expiresAt.toISOString();
+      if (
+        updates.expiresAt !== undefined &&
+        updates.expiresAt instanceof Date
+      ) {
+        convertedUpdates.expiresAt = updates.expiresAt;
+      }
+
+      if (updates.brandEnabled !== undefined) {
+        convertedUpdates.brandEnabled = Boolean(updates.brandEnabled);
+      }
+
+      if (updates.brandColor !== undefined) {
+        convertedUpdates.brandColor = String(updates.brandColor);
       }
 
       console.log('📝 INFORMATION STEP: convertedUpdates =', convertedUpdates);
-      updateMultipleFields(convertedUpdates);
+
+      // Update form fields individually since updateMultipleFields doesn't exist
+      Object.entries(convertedUpdates).forEach(([field, value]) => {
+        updateFormField(field as keyof CreateLinkFormData, value);
+      });
     },
-    [updateMultipleFields, linkType]
+    [updateFormField, linkType]
   );
 
   // Handle next step
@@ -162,6 +188,14 @@ export const CreateLinkInformationStep = () => {
     console.log('📝 INFORMATION STEP: canGoNext =', canGoNext);
     console.log('📝 INFORMATION STEP: linkType =', linkType);
     console.log('📝 INFORMATION STEP: formData =', formData);
+    console.log(
+      '📝 INFORMATION STEP: title length =',
+      formData.title?.length || 0
+    );
+    console.log(
+      '📝 INFORMATION STEP: topic length =',
+      formData.topic?.length || 0
+    );
 
     if (canGoNext) {
       console.log('📝 INFORMATION STEP: Calling nextStep()');
@@ -185,12 +219,7 @@ export const CreateLinkInformationStep = () => {
         }
         formData={linkInformationData}
         onDataChange={handleFormChange}
-        errors={Object.fromEntries(
-          Object.entries(fieldErrors).map(([key, value]) => [
-            key,
-            value as string,
-          ])
-        )}
+        errors={{}}
         username={user?.username?.toLowerCase() || 'username'}
       />
 

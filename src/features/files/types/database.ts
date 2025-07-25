@@ -3,7 +3,6 @@
 
 import type {
   BaseEntity,
-  HexColor,
   EmailAddress,
   LinkId,
   FileId,
@@ -24,42 +23,36 @@ import type {
 // =============================================================================
 
 /**
- * Hierarchical folder system with advanced features
+ * Simplified folder system for MVP - No colors or descriptions
  */
 export interface Folder extends BaseEntity {
   readonly parentFolderId?: FolderId; // NULL for root folders
   readonly uploadLinkId?: LinkId; // Associated upload link
 
   readonly name: string;
-  readonly description?: string;
-  readonly color?: HexColor; // Hex color for organization
   readonly path: string; // e.g., "Projects/Client Work/Logo Design"
+  readonly depth: number; // 0 = root, 1 = first level, etc.
 
   // Organization and metadata
   readonly isArchived: boolean;
   readonly sortOrder: number; // Manual ordering within parent folder
 
-  // Security and permissions
+  // Security - Simplified for MVP
   readonly isPublic: boolean;
-  readonly inheritPermissions: boolean; // Inherit from parent folder
-  readonly classification: DataClassification;
 
   // Statistics
   readonly fileCount: number;
   readonly totalSize: number; // bytes
+
   readonly lastActivity?: Date;
 } /**
- * Input type for creating folders (Application Layer)
+ * Input type for creating folders (Application Layer) - Simplified for MVP
  */
 export interface CreateFolderInput {
   readonly name: string;
-  readonly description?: string;
-  readonly color?: HexColor;
   readonly parentFolderId?: FolderId;
   readonly uploadLinkId?: LinkId;
   readonly isPublic?: boolean;
-  readonly inheritPermissions?: boolean;
-  readonly classification?: DataClassification;
   readonly sortOrder?: number;
 }
 
@@ -147,5 +140,7 @@ export interface FileUploadInput {
   readonly tags?: readonly string[];
 }
 
-// Export all files database types
+// Export all files database types and aliases
+export type FileData = FileUpload;
+export type FolderData = Folder;
 export type * from './database';
