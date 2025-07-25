@@ -1,303 +1,69 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
-import { AnalyticsCards } from '../sections/analytics-cards';
-import { QuickActions } from '../sections/quick-actions';
-import { EmptyState } from './empty-state';
-import { ContentLoader } from '@/components/ui';
-import type { DashboardOverview } from '@/features/analytics/types';
+import { WorkspaceToolbar } from '../sections/workspace-toolbar';
+import WorkspaceTree from '../tree/WorkspaceTree';
+import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
+import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
+import { useSelectMode } from '@/features/workspace/hooks/use-select-mode';
+import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
+import type { WorkspaceTreeItem } from '@/features/workspace/types/tree';
 
-interface WorkspaceContainerProps {
-  readonly data?: DashboardOverview & {
-    readonly storageUsed: string; // UI-friendly formatted storage
-    readonly totalViews: number;
-    readonly avgFilesPerLink: number;
-    readonly recentUploads: number;
-  };
-  readonly isLoading?: boolean;
-  readonly error?: string | null;
-}
+export function WorkspaceContainer() {
+  // Get workspace data
+  const { data: workspaceData, isLoading } = useWorkspaceTree();
 
-export function WorkspaceContainer({
-  data,
-  isLoading = false,
-  error = null,
-}: WorkspaceContainerProps) {
-  // ✅ Always call hooks in the same order - no conditional logic
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  // Set up real-time subscription for workspace changes
+  const { isSubscribed } = useWorkspaceRealtime(workspaceData?.workspace?.id);
 
-  // ✅ Simple mounting effect
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Select mode state - shared between toolbar and tree
+  const selectMode = useSelectMode();
 
-  // ✅ Define data and handlers after hooks
-  const mockData: WorkspaceContainerProps['data'] = {
-    totalLinks: 0,
-    totalFiles: 0,
-    totalSize: 0,
-    activeLinks: 0,
-    totalUploads: 0,
-    recentActivity: [],
-    topLinks: [],
-    storageUsed: '0 MB',
-    totalViews: 0,
-    avgFilesPerLink: 0,
-    recentUploads: 0,
-  };
+  // UI state from workspace UI hook
+  const workspaceUI = useWorkspaceUI();
 
-  const dashboardData = data || mockData;
-  const hasData = dashboardData.totalLinks > 0 || dashboardData.totalFiles > 0;
+  // Tree instance state
+  const [treeInstance, setTreeInstance] = useState<any>(null);
 
-  // ✅ Define action handlers after hooks
-  const handleCreateBaseLink = () => {
-    router.push('/dashboard/links?action=create&type=base');
-  };
-
-  const handleCreateCustomLink = () => {
-    router.push('/dashboard/links?action=create&type=custom');
-  };
-
-  const handleViewLinks = () => {
-    router.push('/dashboard/links');
-  };
-
-  const handleManageFiles = () => {
-    router.push('/dashboard/files');
-  };
-
-  const handleViewAnalytics = () => {
-    router.push('/dashboard/analytics');
-  };
-
-  // ✅ Simple conditions to prevent hook violations
-  const showLoading = !mounted || !isLoaded || isLoading;
-  const showError = mounted && isLoaded && !isLoading && error;
-  const showContent = mounted && isLoaded && !isLoading && !error;
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <div className='min-h-screen bg-[var(--neutral-50)]'>
-      {showLoading && (
-        <div
-          className='home-container w-full mx-auto'
-          style={{
-            maxWidth: 'var(--container-max-width, 2000px)',
-            padding: 'var(--content-spacing) var(--container-padding)',
-          }}
-        >
-          <div className='loading-container'>
-            <ContentLoader />
-          </div>
+    <div className='home-container w-full h-screen mx-auto bg-[var(--neutral-50)] flex flex-col'>
+      <WorkspaceHeader />
+      <WorkspaceToolbar
+        selectMode={selectMode}
+        treeInstance={treeInstance}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        filterBy={workspaceUI.filterBy}
+        setFilterBy={workspaceUI.setFilterBy}
+        sortBy={workspaceUI.sortBy}
+        setSortBy={workspaceUI.setSortBy}
+        sortOrder={workspaceUI.sortOrder}
+        setSortOrder={workspaceUI.setSortOrder}
+      />
+
+      {/* Enhanced tree container with better space and accessibility */}
+      <div className='flex-1 w-full max-w-md p-6 overflow-hidden flex flex-col'>
+        <div className='flex-1 min-h-0 bg-white rounded-lg border border-[var(--neutral-200)] shadow-sm p-4'>
+          <WorkspaceTree
+            selectMode={selectMode}
+            onTreeReady={setTreeInstance}
+            searchQuery={searchQuery}
+            filterBy={workspaceUI.filterBy}
+            sortBy={workspaceUI.sortBy}
+            sortOrder={workspaceUI.sortOrder}
+          />
         </div>
-      )}
 
-      {showError && (
-        <div className='min-h-screen bg-[var(--neutral-50)] flex items-center justify-center'>
-          <div className='error-container'>
-            <div className='analytics-card w-full max-w-md mx-auto text-center'>
-              <div className='w-12 h-12 sm:w-16 sm:h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4'>
-                <svg
-                  className='w-6 h-6 sm:w-8 sm:h-8 text-red-500'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'
-                  />
-                </svg>
-              </div>
-              <h2 className='text-lg sm:text-xl font-semibold text-[var(--quaternary)] mb-2'>
-                Something went wrong
-              </h2>
-              <p className='text-sm sm:text-base text-[var(--neutral-600)] mb-4 px-2'>
-                {error}
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                className='w-full sm:w-auto px-6 py-2.5 bg-[var(--primary)] text-[var(--quaternary)] rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors text-sm sm:text-base'
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
+        {/* Root drop zone indicator for better UX */}
+        <div className='mt-2 text-xs text-muted-foreground text-center'>
+          Drag items to workspace root or between folders
         </div>
-      )}
-
-      {showContent && (
-        <div
-          className='home-container w-full mx-auto'
-          style={{
-            maxWidth: 'var(--container-max-width, 2000px)',
-            padding: 'var(--content-spacing) var(--container-padding)',
-          }}
-        >
-          <div
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 'var(--content-spacing)',
-            }}
-          >
-            {/* Header Section - Keep existing greeting, notifications, icons */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
-              <WorkspaceHeader
-                totalLinks={dashboardData.totalLinks}
-                totalFiles={dashboardData.totalFiles}
-              />
-            </motion.div>
-
-            {hasData ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                className='space-y-6 lg:space-y-8'
-              >
-                {/* Analytics Cards - Keep existing styling but with Foldly-specific metrics */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25, duration: 0.6 }}
-                >
-                  <AnalyticsCards data={dashboardData} />
-                </motion.div>
-
-                {/* Redesigned Action Center - Focus on Foldly's Multi-Link Value Prop */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6 }}
-                >
-                  <QuickActions
-                    onCreateLink={handleCreateBaseLink}
-                    onManageFiles={handleManageFiles}
-                    onViewLinks={handleViewLinks}
-                    onShareLink={handleViewAnalytics}
-                  />
-                </motion.div>
-
-                {/* Activity Overview - Replace redundant content with actionable insights */}
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className='recent-items-grid'
-                >
-                  {/* Recent File Collections - Most Important for Users */}
-                  <div className='analytics-card'>
-                    <div
-                      className='flex items-center justify-between'
-                      style={{ marginBottom: 'var(--content-spacing)' }}
-                    >
-                      <h3 className='card-title truncate'>
-                        Recent File Collections
-                      </h3>
-                      <div className='card-icon bg-blue-50 rounded-lg flex items-center justify-center'>
-                        <svg
-                          className='w-1/2 h-1/2 text-blue-600'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className='space-y-3'>
-                      <div className='text-center py-8 text-[var(--neutral-500)]'>
-                        <p className='text-sm'>
-                          Your recent file uploads will appear here once people
-                          start using your links
-                        </p>
-                        <button
-                          onClick={handleManageFiles}
-                          className='mt-3 text-[var(--primary)] hover:text-[var(--primary-dark)] text-sm font-medium'
-                        >
-                          View all files →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Link Performance - Key Business Metrics */}
-                  <div className='analytics-card'>
-                    <div
-                      className='flex items-center justify-between'
-                      style={{ marginBottom: 'var(--content-spacing)' }}
-                    >
-                      <h3 className='card-title truncate'>Link Performance</h3>
-                      <div className='card-icon bg-green-50 rounded-lg flex items-center justify-center'>
-                        <svg
-                          className='w-1/2 h-1/2 text-green-600'
-                          fill='none'
-                          stroke='currentColor'
-                          viewBox='0 0 24 24'
-                        >
-                          <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1'
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                    <div className='space-y-3'>
-                      <div className='text-center py-8 text-[var(--neutral-500)]'>
-                        <p className='text-sm'>
-                          Create your first upload link to start tracking
-                          performance
-                        </p>
-                        <button
-                          onClick={handleViewLinks}
-                          className='mt-3 text-[var(--primary)] hover:text-[var(--primary-dark)] text-sm font-medium'
-                        >
-                          Manage links →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
-                <EmptyState
-                  type='dashboard'
-                  onCreateLink={handleCreateBaseLink}
-                  onLearnMore={() => router.push('/dashboard/links')}
-                />
-                {/* <WorkspaceOverview /> */}
-              </motion.div>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

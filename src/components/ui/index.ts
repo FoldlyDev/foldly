@@ -39,3 +39,4 @@ export * from './shadcn';
 // New components
 export { HelpPopover } from './help-popover';
 export { AnimatedSelect } from './animated-select';
+export { Tree, TreeItem, TreeItemLabel, TreeDragLine } from './tree';

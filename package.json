@@ -24,9 +24,8 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^6.23.1",
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
+    "@headless-tree/core": "^0.0.0-20250630160730",
+    "@headless-tree/react": "^0.0.0-20250630160730",
     "@heroui/react": "^2.7.11",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
@@ -57,6 +56,8 @@
     "@radix-ui/react-toggle-group": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/supabase-js": "^2.50.0",
+    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query-devtools": "^5.83.0",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.0.0",
@@ -90,6 +91,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tanstack/eslint-plugin-query": "^5.81.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

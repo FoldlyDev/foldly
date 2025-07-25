@@ -1,0 +1,126 @@
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/shadcn/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/shadcn/dialog';
+import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
+import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
+import { toast } from 'sonner';
+import type { DatabaseId } from '@/lib/supabase/types';
+
+interface DeleteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  item: {
+    id: DatabaseId;
+    name: string;
+    type: 'file' | 'folder';
+  } | null;
+}
+
+export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!item) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const result =
+        item.type === 'folder'
+          ? await deleteFolderAction(item.id)
+          : await deleteFileAction(item.id);
+
+      if (result.success) {
+        onClose();
+        toast.success(
+          `${item.type === 'folder' ? 'Folder' : 'File'} deleted successfully`
+        );
+      } else {
+        toast.error(result.error || `Failed to delete ${item.type}`);
+      }
+    } catch (error) {
+      toast.error(
+        `Failed to delete ${item.type}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    onClose();
+  };
+
+  if (!item) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className='sm:max-w-[425px]'>
+        <DialogHeader>
+          <DialogTitle className='flex items-center gap-2'>
+            <AlertTriangle className='w-5 h-5 text-red-500' />
+            Delete {item.type === 'folder' ? 'Folder' : 'File'}
+          </DialogTitle>
+          <DialogDescription>
+            This action cannot be undone. This will permanently delete the{' '}
+            {item.type}.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className='py-4'>
+          <div className='flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg'>
+            {item.type === 'folder' ? (
+              <Folder className='w-8 h-8 text-blue-500 flex-shrink-0' />
+            ) : (
+              <FileText className='w-8 h-8 text-gray-500 flex-shrink-0' />
+            )}
+            <div className='min-w-0 flex-1'>
+              <p className='font-medium text-gray-900 truncate'>{item.name}</p>
+              <p className='text-sm text-gray-500 capitalize'>{item.type}</p>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type='button'
+            variant='outline'
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button
+            type='button'
+            variant='destructive'
+            onClick={handleDelete}
+            disabled={isSubmitting}
+            className='gap-2'
+          >
+            {isSubmitting ? (
+              <>
+                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <Trash2 className='w-4 h-4' />
+                Delete
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

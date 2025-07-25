@@ -49,6 +49,8 @@ export const createLinkFormSchema = z
     // Branding (aligned with database field names)
     brandEnabled: z.boolean().default(false),
     brandColor: hexColorSchema.optional(),
+    logoUrl: z.string().optional(),
+    logoFile: z.any().optional(), // File type for form handling
   })
   .refine(
     data => {
@@ -138,6 +140,8 @@ export const generalSettingsSchema = z
     // Branding settings (aligned with database field names)
     brandEnabled: z.boolean().optional(),
     brandColor: z.string().optional(),
+    logoUrl: z.string().optional(),
+    logoFile: z.any().optional(), // File type for form handling
   })
   .refine(
     data => {

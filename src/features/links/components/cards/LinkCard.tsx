@@ -2,16 +2,15 @@
 
 import { memo } from 'react';
 import { useIsMobile } from '@/lib/hooks/use-mobile';
-import { useModalStore } from '../../store';
 import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
 import { toast } from 'sonner';
-import type { Link } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/supabase/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
 
 interface LinkCardProps {
-  link: Link;
+  link: LinkWithStats;
   viewMode: 'grid' | 'list';
   onDetails: () => void;
   onShare: () => void;

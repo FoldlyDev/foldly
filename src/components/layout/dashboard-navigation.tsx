@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { UserButton } from '@clerk/nextjs';
+import ClientOnlyUserButton from '@/components/ui/client-only-user-button';
 import { useNavigationContext } from '@/components/shared/dashboard-layout-wrapper';
 import {
   LayoutDashboard,
@@ -13,8 +13,6 @@ import {
   FileText,
   Settings,
   BarChart3,
-  Users,
-  HelpCircle,
   Menu,
   X,
   ChevronRight,
@@ -73,13 +71,6 @@ const navigationData: NavSection[] = [
         icon: FileText,
         color: 'tertiary',
       },
-      {
-        id: 'collaborators',
-        label: 'Collaborators',
-        href: '/dashboard/collaborators',
-        icon: Users,
-        color: 'success',
-      },
     ],
   },
   {
@@ -91,13 +82,6 @@ const navigationData: NavSection[] = [
         href: '/dashboard/settings',
         icon: Settings,
         color: 'tertiary',
-      },
-      {
-        id: 'help',
-        label: 'Help & Support',
-        href: '/dashboard/help',
-        icon: HelpCircle,
-        color: 'secondary',
       },
     ],
   },
@@ -225,7 +209,7 @@ export function DashboardNavigation() {
               ${shouldExpand ? '' : 'justify-center'}
             `}
           >
-            <UserButton
+            <ClientOnlyUserButton
               appearance={{
                 elements: {
                   avatarBox: 'w-8 h-8',

@@ -8,6 +8,8 @@ import {
   SignedOut,
   UserButton,
 } from '@clerk/nextjs';
+import { QueryProvider } from '@/lib/providers/query-client-provider';
+import { Toaster } from '@/components/ui/shadcn/sonner';
 import './globals.css';
 
 const geistSans = Geist({
@@ -83,7 +85,10 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          {children}
+          <QueryProvider>{children}</QueryProvider>
+          <div className='fixed top-0 right-0 z-999'>
+            <Toaster />
+          </div>
         </body>
       </html>
     </ClerkProvider>

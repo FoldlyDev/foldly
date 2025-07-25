@@ -34,6 +34,8 @@ Welcome to Foldly's comprehensive documentation hub. This documentation is organ
 
 - **[Migrations Index](./migrations/README.md)** - Complete migration history and documentation
 - **[01 - Feature-Based Architecture](./migrations/01-feature-based-architecture/)** - Technical to feature-based architecture migration (January 2025)
+- **[02 - Zustand Store Architecture](./migrations/02-zustand-store-architecture/)** - State management modernization (January 2025)
+- **[03 - React Query + Server Actions](./migrations/03-react-query-server-actions-hybrid/)** - Enterprise-grade state management (January 2025)
 
 ### ⚙️ **Setup** - Configuration & Deployment
 

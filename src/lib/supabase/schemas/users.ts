@@ -8,6 +8,7 @@ import {
   varchar,
   text,
   bigint,
+  integer,
   timestamp,
   index,
   uniqueIndex,
@@ -35,8 +36,12 @@ export const users = pgTable(
       .default(0)
       .notNull(),
     storageLimit: bigint('storage_limit', { mode: 'number' })
-      .default(2147483648)
-      .notNull(), // 2GB
+      .default(1073741824)
+      .notNull(), // 1GB for free tier
+    filesUploaded: integer('files_uploaded').default(0).notNull(),
+    lastQuotaWarningAt: timestamp('last_quota_warning_at', {
+      withTimezone: true,
+    }),
 
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
