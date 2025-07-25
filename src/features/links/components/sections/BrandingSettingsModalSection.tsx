@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/shadcn/switch';
-import { FileUpload } from '@/components/ui/file-upload';
 import type { LinkWithStats } from '@/lib/supabase/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
@@ -25,40 +24,7 @@ export function BrandingSettingsSection({
 
   const watchedValues = watch();
 
-  const handleFileChange = (files: File[]) => {
-    const file = files[0];
-    if (file) {
-      // Create blob URL and store both file and URL in form
-      const logoUrl = URL.createObjectURL(file);
-      setValue('logoUrl', logoUrl, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      // Store file reference for potential upload
-      setValue('logoFile', file, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    } else {
-      // Clear logo if no file selected
-      setValue('logoUrl', '', {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-      setValue('logoFile', null, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  };
-
-  // Helper to get logo preview URL - from form data
-  const logoUrl = watchedValues.logoUrl;
-
-  // Convert logoFile to array for FileUpload component
-  const logoFiles: File[] = watchedValues.logoFile
-    ? [watchedValues.logoFile]
-    : [];
+  // Logo functionality removed - not in current database schema
 
   return (
     <div className='space-y-6'>
@@ -79,9 +45,9 @@ export function BrandingSettingsSection({
             </div>
           </div>
           <Switch
-            checked={watchedValues.brandingEnabled}
+            checked={watchedValues.brandEnabled || false}
             onCheckedChange={checked =>
-              setValue('brandingEnabled', checked, {
+              setValue('brandEnabled', checked, {
                 shouldDirty: true,
                 shouldValidate: true,
               })
@@ -91,7 +57,7 @@ export function BrandingSettingsSection({
         </div>
 
         {/* Branding Options */}
-        {watchedValues.brandingEnabled && (
+        {watchedValues.brandEnabled && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -99,8 +65,8 @@ export function BrandingSettingsSection({
             transition={{ duration: 0.2 }}
             className='space-y-4'
           >
-            {/* Color Selection */}
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            {/* Brand Color Selection */}
+            <div className='space-y-4'>
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-foreground'>
                   Brand Color
@@ -108,18 +74,18 @@ export function BrandingSettingsSection({
                 <div className='flex items-center gap-3'>
                   <input
                     type='color'
-                    value={watchedValues.brandColor}
+                    value={watchedValues.brandColor || '#6c47ff'}
                     onChange={e =>
                       setValue('brandColor', e.target.value, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
                     }
-                    className='w-12 h-10 rounded-lg cursor-pointer'
+                    className='w-12 h-10 rounded-lg cursor-pointer border border-border'
                   />
                   <input
                     type='text'
-                    value={watchedValues.brandColor}
+                    value={watchedValues.brandColor || ''}
                     onChange={e =>
                       setValue('brandColor', e.target.value, {
                         shouldDirty: true,
@@ -135,60 +101,13 @@ export function BrandingSettingsSection({
                     {errors.brandColor.message}
                   </p>
                 )}
-              </div>
-
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-foreground'>
-                  Accent Color
-                </label>
-                <div className='flex items-center gap-3'>
-                  <input
-                    type='color'
-                    value={watchedValues.accentColor}
-                    onChange={e =>
-                      setValue('accentColor', e.target.value, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    className='w-12 h-10 rounded-lg cursor-pointer'
-                  />
-                  <input
-                    type='text'
-                    value={watchedValues.accentColor}
-                    onChange={e =>
-                      setValue('accentColor', e.target.value, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
-                    }
-                    placeholder='#4ade80'
-                    className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring'
-                  />
-                </div>
-                {errors.accentColor && (
-                  <p className='text-sm text-destructive'>
-                    {errors.accentColor.message}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Logo Upload */}
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-foreground'>
-                Logo (Optional)
-              </label>
-
-              <FileUpload onChange={handleFileChange} files={logoFiles} />
-              {errors.logoUrl && (
-                <p className='text-sm text-destructive'>
-                  {errors.logoUrl.message}
+                <p className='text-xs text-muted-foreground'>
+                  Choose your brand color that will be used throughout your upload page
                 </p>
-              )}
+              </div>
             </div>
 
-            {/* Preview Section - moved to bottom and only shown when branding is enabled */}
+            {/* Brand Preview Section */}
             <div className='space-y-3 pt-2'>
               <div className='flex items-center gap-2'>
                 <Eye className='w-4 h-4 text-muted-foreground' />
@@ -199,40 +118,34 @@ export function BrandingSettingsSection({
               <div
                 className='w-full p-6 rounded-xl border border-gray-200/50 bg-gradient-to-br from-white to-gray-50/30'
                 style={{
-                  background: `linear-gradient(135deg, ${watchedValues.brandColor}03 0%, ${watchedValues.brandColor}08 100%)`,
-                  borderColor: `${watchedValues.brandColor}20`,
+                  background: `linear-gradient(135deg, ${watchedValues.brandColor || '#6c47ff'}03 0%, ${watchedValues.brandColor || '#6c47ff'}08 100%)`,
+                  borderColor: `${watchedValues.brandColor || '#6c47ff'}20`,
                 }}
               >
-                {/* Title with logo on the left if uploaded */}
+                {/* Title with brand color */}
                 <div className='flex items-center gap-3 mb-4'>
-                  {logoUrl && (
-                    <img
-                      src={logoUrl}
-                      alt='Logo'
-                      className='w-6 h-6 rounded object-cover'
-                    />
-                  )}
                   <h3
                     className='text-xl font-semibold leading-tight'
-                    style={{ color: watchedValues.brandColor }}
+                    style={{ color: watchedValues.brandColor || '#6c47ff' }}
                   >
-                    {link.name}
+                    {link.title}
                   </h3>
                 </div>
 
                 {/* Description - gray */}
                 <p className='text-gray-600 text-sm mb-8 leading-relaxed'>
-                  {watchedValues.customMessage ||
-                    link.settings?.customMessage ||
-                    'Your description will appear here'}
+                  {watchedValues.description ||
+                    link.description ||
+                    'Your description will appear here to guide uploaders'}
                 </p>
 
-                {/* Choose Files button - compact, not full width */}
+                {/* Upload button with brand color */}
                 <button
-                  className='inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:scale-[1.02]'
+                  className='inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:scale-[1.02] disabled:cursor-not-allowed'
                   style={{
-                    backgroundColor: watchedValues.accentColor,
+                    backgroundColor: watchedValues.brandColor || '#6c47ff',
                   }}
+                  disabled
                 >
                   Choose Files
                 </button>

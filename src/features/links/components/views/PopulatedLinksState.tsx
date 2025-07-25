@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Plus, Filter, SlidersHorizontal } from 'lucide-react';
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo, useCallback, useState } from 'react';
 import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
@@ -22,13 +22,11 @@ import type { LinkWithStats } from '@/lib/supabase/types';
 
 interface PopulatedLinksStateProps {
   links: LinkWithStats[];
-  isLoading?: boolean;
 }
 
 export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
   function PopulatedLinksState({
     links = [],
-    isLoading = false,
   }: PopulatedLinksStateProps) {
     // Single store subscription instead of multiple selectors to prevent cascading re-renders
     const {
@@ -50,6 +48,9 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
       setFilterStatus,
       setViewMode,
     } = useUIStore();
+
+    // Selection state for checkboxes
+    const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(new Set());
 
     // Memoize stats calculation using the passed-in links (already filtered)
     const overviewData = useMemo(() => {
@@ -152,11 +153,26 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
       [openDeleteModal]
     );
 
+    // Handle multiselect checkbox changes
+    const handleMultiSelect = useCallback((linkId: string) => {
+      setSelectedLinkIds(prev => {
+        const newSelected = new Set(prev);
+        if (newSelected.has(linkId)) {
+          newSelected.delete(linkId);
+        } else {
+          newSelected.add(linkId);
+        }
+        return newSelected;
+      });
+    }, []);
+
     // Show no results message if there are no links and there's a search query
     if (links.length === 0 && searchQuery) {
       return (
         <div className='space-y-6'>
-          <LinksOverviewCards data={overviewData} />
+          <div className='mt-6'>
+            <LinksOverviewCards data={overviewData} />
+          </div>
 
           {/* Search Header */}
           <div className='flex flex-col sm:flex-row gap-4'>
@@ -189,7 +205,9 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     return (
       <div className='space-y-6'>
         {/* Overview Cards */}
-        <LinksOverviewCards data={overviewData} />
+        <div className='mt-6'>
+          <LinksOverviewCards data={overviewData} />
+        </div>
 
         {/* Header with Search and Filters */}
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
@@ -242,9 +260,9 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         </div>
 
         {/* Search and Filter Controls */}
-        <div className='flex flex-col sm:flex-row gap-4'>
+        <div className='flex flex-col lg:flex-row gap-4 lg:items-center'>
           {/* Search */}
-          <div className='flex-1'>
+          <div className='flex-1 lg:flex-none lg:w-80'>
             <SearchInput
               value={searchQuery}
               onChange={handleSearchChange}
@@ -253,72 +271,69 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             />
           </div>
 
-          {/* Filters */}
-          <div className='flex items-center gap-3'>
-            {/* Type Filter */}
-            <div className='min-w-[120px]'>
-              <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                <SelectTrigger
-                  size='sm'
-                  className='border-[var(--neutral-200)]'
-                >
-                  <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                  <SelectValue placeholder='Type' />
-                </SelectTrigger>
-                <SelectContent className='bg-white border-[var(--neutral-200)]'>
-                  <SelectItem value='all'>All Types</SelectItem>
-                  <SelectItem value='base'>Base</SelectItem>
-                  <SelectItem value='custom'>Custom</SelectItem>
-                  <SelectItem value='generated'>Generated</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Desktop: Inline Filters | Mobile: Stacked */}
+          <div className='flex flex-col lg:flex-row gap-3 lg:items-center'>
+            {/* Filter Buttons Row */}
+            <div className='flex gap-2 lg:gap-3'>
+              {/* Type Filter */}
+              <div className='flex-1 lg:w-36'>
+                <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                  <SelectTrigger
+                    size='sm'
+                    className='border-[var(--neutral-200)] w-full justify-between'
+                  >
+                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
+                    <SelectValue placeholder='Type' />
+                  </SelectTrigger>
+                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
+                    <SelectItem value='all'>All Types</SelectItem>
+                    <SelectItem value='base'>Base</SelectItem>
+                    <SelectItem value='custom'>Custom</SelectItem>
+                    <SelectItem value='generated'>Generated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Status Filter */}
-            <div className='min-w-[120px]'>
-              <Select
-                value={filterStatus}
-                onValueChange={handleFilterStatusChange}
-              >
-                <SelectTrigger
-                  size='sm'
-                  className='border-[var(--neutral-200)]'
+              {/* Status Filter */}
+              <div className='flex-1 lg:w-36'>
+                <Select
+                  value={filterStatus}
+                  onValueChange={handleFilterStatusChange}
                 >
-                  <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                  <SelectValue placeholder='Status' />
-                </SelectTrigger>
-                <SelectContent className='bg-white border-[var(--neutral-200)]'>
-                  <SelectItem value='all'>All Status</SelectItem>
-                  <SelectItem value='active'>Active</SelectItem>
-                  <SelectItem value='paused'>Paused</SelectItem>
-                  <SelectItem value='expired'>Expired</SelectItem>
-                </SelectContent>
-              </Select>
+                  <SelectTrigger
+                    size='sm'
+                    className='border-[var(--neutral-200)] w-full justify-between'
+                  >
+                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
+                    <SelectValue placeholder='Status' />
+                  </SelectTrigger>
+                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
+                    <SelectItem value='all'>All Status</SelectItem>
+                    <SelectItem value='active'>Active</SelectItem>
+                    <SelectItem value='paused'>Paused</SelectItem>
+                    <SelectItem value='expired'>Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* View Toggle */}
-            <ViewToggle
-              value={viewMode}
-              onChange={handleViewModeChange}
-              className='border-[var(--neutral-200)]'
-            />
+            <div className='lg:ml-2'>
+              <ViewToggle
+                value={viewMode}
+                onChange={handleViewModeChange}
+                className='border-[var(--neutral-200)] w-full lg:w-auto'
+              />
+            </div>
           </div>
         </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='w-8 h-8 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin' />
-          </div>
-        )}
-
         {/* Links Grid/List */}
-        {!isLoading && (
-          <motion.div
+        <motion.div
             className={
               viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
-                : 'space-y-4'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
+                : 'space-y-3 md:space-y-4'
             }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -326,23 +341,36 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
           >
             {links.map((link, index) => (
               <motion.div
-                key={link.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
+                key={`${link.id}-${viewMode}`}
+                initial={
+                  viewMode === 'grid'
+                    ? { opacity: 0, y: 20 }
+                    : { opacity: 0, y: -10 }
+                }
+                animate={
+                  viewMode === 'grid'
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 1, y: 0 }
+                }
+                transition={
+                  viewMode === 'grid'
+                    ? { duration: 0.3, delay: index * 0.05 }
+                    : { duration: 0.25, delay: index * 0.04, ease: 'easeOut' }
+                }
               >
                 <LinkCard
                   link={link}
                   viewMode={viewMode}
-                  onDetails={() => handleDetailsModal(link)}
+                  onDetails={() => handleDetailsModal(link)} 
                   onShare={() => handleShareModal(link)}
                   onSettings={() => handleSettingsModal(link)}
                   onDelete={() => handleDeleteModal(link)}
+                  isMultiSelected={selectedLinkIds.has(link.id)}
+                  onMultiSelect={handleMultiSelect}
                 />
               </motion.div>
             ))}
           </motion.div>
-        )}
       </div>
     );
   }

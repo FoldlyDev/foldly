@@ -1,37 +1,20 @@
-// =============================================================================
-// WORKSPACE ACTIONS - Consolidated re-exports
-// =============================================================================
-
-// Workspace management
-export {
-  getWorkspaceByUserId,
-  updateWorkspaceAction,
-} from './workspace-actions';
+// Workspace actions exports
 
 // Tree operations
 export {
-  updateItemOrderAction,
-  moveItemAction,
   fetchWorkspaceTreeAction,
-  fetchWorkspaceStatsAction,
-  type WorkspaceTreeData,
+  moveItemAction,
+  updateItemOrderAction,
+  type ActionResult,
 } from './tree-actions';
 
-// Folder operations
-export {
-  createFolderAction,
-  renameFolderAction,
-  deleteFolderAction,
-} from './folder-actions';
-
-// File operations
-export {
-  renameFileAction,
-  deleteFileAction,
-  moveFileAction,
-  downloadFileAction,
-  uploadFileAction,
-} from './file-actions';
-
 // Batch operations
-export { batchMoveItemsAction, batchDeleteItemsAction } from './batch-actions';
+export { 
+  batchMoveItemsAction, 
+  batchDeleteItemsAction 
+} from './batch-actions';
+
+// Other actions
+export * from './folder-actions';
+export * from './file-actions';
+export * from './workspace-actions';

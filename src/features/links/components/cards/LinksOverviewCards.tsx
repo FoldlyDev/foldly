@@ -102,7 +102,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
       variants={containerVariants}
       initial='hidden'
       animate='visible'
-      className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8'
+      className='grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 lg:gap-6 mb-4 md:mb-8'
     >
       {cards.map((card, index) => {
         const colors = colorClasses[card.color];
@@ -114,7 +114,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
             variants={cardVariants}
             whileHover={{ y: -4, transition: { duration: 0.2 } }}
             className={`
-              group relative bg-white rounded-2xl p-6 
+              group relative bg-white rounded-lg md:rounded-2xl p-3 md:p-6 
               border border-[var(--neutral-200)] shadow-sm hover:shadow-lg
               transition-all duration-300
               border-l-4 ${colors.accent}
@@ -130,11 +130,11 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
               {/* Icon */}
               <div
                 className={`
-                inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4
+                inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-lg md:rounded-xl mb-3 md:mb-4
                 ${colors.icon} transition-all duration-300 group-hover:scale-110
               `}
               >
-                <IconComponent className='w-6 h-6' />
+                <IconComponent className='w-5 h-5 md:w-6 md:h-6' />
               </div>
 
               {/* Value */}
@@ -143,27 +143,27 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
-                  className='text-3xl font-bold text-[var(--quaternary)] leading-none'
+                  className='text-2xl md:text-3xl font-bold text-[var(--quaternary)] leading-none'
                 >
                   {(isNaN(card.value) ? 0 : card.value).toLocaleString()}
                 </motion.div>
               </div>
 
               {/* Title and Subtitle */}
-              <div className='space-y-1'>
-                <h3 className='font-semibold text-[var(--quaternary)] text-sm'>
+              <div className='space-y-0.5 md:space-y-1'>
+                <h3 className='font-semibold text-[var(--quaternary)] text-xs md:text-sm leading-tight'>
                   {card.title}
                 </h3>
-                <p className='text-[var(--neutral-500)] text-xs'>
+                <p className='text-[var(--neutral-500)] text-xs leading-tight hidden md:block'>
                   {card.subtitle}
                 </p>
               </div>
 
-              {/* Trend Indicator */}
+              {/* Trend Indicator - Desktop only */}
               {card.trend && (
                 <div
                   className={`
-                  flex items-center gap-1 mt-3 pt-3 border-t border-[var(--neutral-100)]
+                  hidden md:flex items-center gap-1 mt-2 md:mt-3 pt-2 md:pt-3 border-t border-[var(--neutral-100)]
                   ${colors.trend}
                 `}
                 >

@@ -32,9 +32,9 @@ export function WorkspaceHeader({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-0 mb-8'
+      className='workspace-header-content'
     >
-      <div className='flex-1'>
+      <div className='workspace-header-text'>
         <motion.h1
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -51,7 +51,7 @@ export function WorkspaceHeader({
           className='text-[var(--neutral-600)] text-base sm:text-lg'
         >
           {totalLinks === 0 && totalFiles === 0
-            ? 'Ready to collect your first files?'
+            ? 'Organize and manage your collected files in one place'
             : `You've collected ${totalFiles} files across ${totalLinks} links. Keep going!`}
         </motion.p>
       </div>
@@ -60,7 +60,7 @@ export function WorkspaceHeader({
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
-        className='flex items-center justify-between sm:justify-start gap-2 sm:gap-3'
+        className='workspace-header-actions'
       >
         {/* Notification Bell - Always visible */}
         <motion.button
@@ -68,7 +68,8 @@ export function WorkspaceHeader({
           whileTap={{ scale: 0.95 }}
           className='relative p-2.5 sm:p-3 rounded-xl bg-white border border-[var(--neutral-200)] 
                    shadow-sm hover:shadow-md transition-all duration-200 
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0'
+                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0
+                   flex items-center justify-center'
         >
           <Bell className='w-4 h-4 sm:w-5 sm:h-5 text-[var(--neutral-600)]' />
           {/* Notification dot */}
@@ -96,7 +97,7 @@ export function WorkspaceHeader({
           className='shadow-brand flex-shrink-0 px-4 sm:px-6'
         >
           <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
-          <span className='text-sm sm:text-base'>Create Link</span>
+          <span className='text-sm sm:text-base'>Upload File</span>
         </GradientButton>
 
         {/* Mobile Settings Button - Only show on mobile */}
@@ -105,7 +106,8 @@ export function WorkspaceHeader({
           whileTap={{ scale: 0.95 }}
           className='sm:hidden p-2.5 rounded-xl bg-white border border-[var(--neutral-200)] 
                    shadow-sm hover:shadow-md transition-all duration-200 
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0'
+                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0
+                   flex items-center justify-center'
         >
           <Settings className='w-4 h-4 text-[var(--neutral-600)]' />
         </motion.button>

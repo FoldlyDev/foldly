@@ -23,6 +23,7 @@ export {
   hexColorSchema,
   fileTypesSchema,
   topicSchema,
+  slugSchema,
   titleSchema,
   descriptionSchema,
   passwordSchema,

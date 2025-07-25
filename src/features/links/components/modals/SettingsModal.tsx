@@ -1,25 +1,25 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Settings, Save } from 'lucide-react';
+import { Save, Sliders } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from '@/components/animate-ui/radix/dialog';
 import { ActionButton } from '@/components/ui/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
-import { GeneralSettingsModalSection } from '../sections/GeneralSettingsModalSection';
+import { LinkSettingsForm } from '../sections/LinkSettingsForm';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
 } from '../../lib/validations';
-import type { Link } from '@/lib/supabase/types';
 import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
+import { useSlugValidation } from '../../hooks/use-slug-validation';
+import { useTopicValidation } from '../../hooks/use-topic-validation';
 
 export function SettingsModal() {
   const currentModal = useCurrentModal();
@@ -36,6 +36,9 @@ export function SettingsModal() {
     resolver: zodResolver(generalSettingsSchema),
     mode: 'onChange', // 2025 best practice for real-time validation
     defaultValues: {
+      slug: '',
+      topic: '',
+      title: '',
       description: '',
       isPublic: true,
       isActive: true,
@@ -47,16 +50,92 @@ export function SettingsModal() {
       allowedFileTypes: [],
       brandEnabled: false,
       brandColor: '',
+      expiresAt: undefined,
     },
   });
 
   const {
     handleSubmit,
     reset,
+    watch,
     formState: { isDirty, isValid },
   } = form;
 
+  const watchedValues = watch();
   const isSubmitting = updateLink.isPending;
+
+  // Add slug validation for base links
+  const slugValidation = useSlugValidation(
+    watchedValues.slug || '', 
+    { 
+      enabled: link?.linkType === 'base',
+      ...(link?.id && { excludeId: link.id }),
+      debounceMs: 500 
+    }
+  );
+
+  // Add topic validation for topic/custom links
+  const topicValidation = useTopicValidation(
+    watchedValues.topic || '',
+    {
+      enabled: link?.linkType === 'custom',
+      ...(link?.id && { excludeId: link.id }),
+      ...(link?.userId && { userId: link.userId }),
+      ...(link?.slug && { slug: link.slug }),
+      debounceMs: 500
+    }
+  );
+
+  // Enhanced validation that includes slug availability
+  const canSubmit = useMemo(() => {
+    console.log('🔧 SETTINGS MODAL: Checking canSubmit', {
+      isDirty,
+      isValid,
+      isSubmitting,
+      linkType: link?.linkType,
+      slug: watchedValues.slug,
+      topic: watchedValues.topic,
+      slugValidation: {
+        isAvailable: slugValidation.isAvailable,
+        isChecking: slugValidation.isChecking
+      },
+      topicValidation: {
+        isAvailable: topicValidation.isAvailable,
+        isChecking: topicValidation.isChecking
+      }
+    });
+    
+    if (!isDirty || !isValid || isSubmitting) return false;
+    
+    // For base links, check slug validation if slug is provided
+    if (link?.linkType === 'base') {
+      // If slug is provided, it must be available
+      if (watchedValues.slug) {
+        const result = slugValidation.isAvailable && !slugValidation.isChecking;
+        console.log('🔧 SETTINGS MODAL: Base link with slug validation result:', result);
+        return result;
+      }
+      // If no slug (empty), it's valid (will use username)
+      console.log('🔧 SETTINGS MODAL: Base link with empty slug - valid');
+      return true;
+    }
+    
+    // For topic/custom links, check topic validation if topic is provided
+    if (link?.linkType === 'custom') {
+      // If topic is provided, it must be available
+      if (watchedValues.topic) {
+        const result = topicValidation.isAvailable && !topicValidation.isChecking;
+        console.log('🔧 SETTINGS MODAL: Custom link with topic validation result:', result);
+        return result;
+      }
+      // Topic is required for custom links, so empty is not valid
+      console.log('🔧 SETTINGS MODAL: Custom link with empty topic - invalid');
+      return false;
+    }
+    
+    console.log('🔧 SETTINGS MODAL: Default case - valid');
+    return true;
+  }, [isDirty, isValid, isSubmitting, link?.linkType, watchedValues.slug, slugValidation.isAvailable, slugValidation.isChecking, watchedValues.topic, topicValidation.isAvailable, topicValidation.isChecking]);
 
   // Initialize form with real link data when modal opens
   // Following 2025 React Hook Form best practices for async data loading
@@ -67,20 +146,21 @@ export function SettingsModal() {
       // Use reset() to properly set form values after async data load
       // This is the recommended pattern from React Hook Form documentation
       reset({
+        slug: link.slug || '',
+        topic: link.topic || '',
+        title: link.title || '',
         description: link.description || '',
         isPublic: link.isPublic,
         isActive: link.isActive,
         requireEmail: link.requireEmail,
         requirePassword: link.requirePassword,
-        password: '', // Never pre-fill passwords for security
+        password: link.passwordHash ? Buffer.from(link.passwordHash, 'base64').toString() : '', // Decode password for editing
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
         brandEnabled: link.brandEnabled,
         brandColor: link.brandColor || '',
-        expiresAt: link.expiresAt
-          ? new Date(link.expiresAt).toISOString().slice(0, 16)
-          : '',
+        expiresAt: link.expiresAt ? new Date(link.expiresAt) : undefined,
       });
 
       console.log('✅ SETTINGS MODAL: Form initialized with link data');
@@ -94,6 +174,9 @@ export function SettingsModal() {
 
     try {
       const updates = {
+        slug: data.slug || undefined,
+        topic: data.topic || undefined,
+        title: data.title || undefined,
         description: data.description || undefined,
         isPublic: data.isPublic ?? true,
         isActive: data.isActive ?? true,
@@ -106,7 +189,7 @@ export function SettingsModal() {
         allowedFileTypes: data.allowedFileTypes?.length
           ? data.allowedFileTypes
           : undefined,
-        expiresAt: data.expiresAt || undefined,
+        expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
         brandEnabled: data.brandEnabled ?? false,
         brandColor:
           data.brandEnabled && data.brandColor ? data.brandColor : undefined,
@@ -141,23 +224,49 @@ export function SettingsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className='max-w-3xl max-h-[90vh] overflow-y-auto bg-white border border-[var(--neutral-200)]'
-        from='left'
+        className='w-[calc(100vw-1rem)] max-w-sm sm:max-w-lg lg:max-w-4xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'
+        from='right'
         transition={{ type: 'spring', stiffness: 160, damping: 20 }}
       >
-        <DialogHeader>
-          <DialogTitle className='text-xl font-bold text-[var(--quaternary)] flex items-center gap-2'>
-            <Settings className='w-5 h-5' />
-            Link Settings
-          </DialogTitle>
-          <DialogDescription className='text-[var(--neutral-600)]'>
-            Configure how &quot;{link.title}&quot; works for uploaders
-          </DialogDescription>
-        </DialogHeader>
+        {/* Accessibility Labels */}
+        <DialogTitle className="sr-only">
+          Link Settings: {link.title}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Configure how "{link.title}" works for uploaders including privacy, security, and upload restrictions
+        </DialogDescription>
+        {/* Premium Header with Gradient Background */}
+        <div className="relative overflow-hidden modal-gradient-purple border-b border-gray-200/50">
+          {/* Decorative Background */}
+          <div className="modal-decoration-overlay" />
+          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-transparent rounded-full -translate-y-32 -translate-x-32" />
+          
+          <div className="relative p-4 sm:p-6 pb-4">
+            <div className="text-center mb-4">
+              <div className="flex justify-center mb-4">
+                <div className="p-3 sm:p-4 rounded-2xl modal-icon-purple">
+                  <Sliders className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
+                </div>
+              </div>
+              <div className="text-center">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-purple mb-2">
+                  Link Settings
+                </h1>
+                <div className="flex justify-center">
+                  <p className="text-sm sm:text-base text-gray-600 text-center max-w-md">
+                    Configure how "{link.title}" works for uploaders
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className='pt-6 space-y-6'>
+        {/* Premium Form Content */}
+        <div className="p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12">
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 max-w-2xl mx-auto'>
           {/* General Settings Section */}
-          <GeneralSettingsModalSection
+          <LinkSettingsForm
             link={{
               ...link,
               stats: {
@@ -177,38 +286,39 @@ export function SettingsModal() {
             form={form}
           />
 
-          {/* Action Buttons */}
-          <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-[var(--neutral-200)]'>
-            <ActionButton
-              type='button'
-              variant='outline'
-              onClick={handleCancel}
-              disabled={isSubmitting}
-              className='flex-1'
-            >
-              Cancel
-            </ActionButton>
+            {/* Premium Action Buttons */}
+            <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200/50'>
+              <ActionButton
+                type='button'
+                variant='outline'
+                onClick={handleCancel}
+                disabled={isSubmitting}
+                className='flex-1 bg-white hover:bg-gray-50 border-gray-300 text-gray-700 transition-colors duration-200'
+              >
+                Cancel
+              </ActionButton>
 
-            <ActionButton
-              type='submit'
-              variant='default'
-              disabled={isSubmitting || !isDirty || !isValid}
-              className='flex-1 flex items-center justify-center gap-2'
-            >
-              {isSubmitting ? (
-                <>
-                  <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className='w-4 h-4' />
-                  Save Settings
-                </>
-              )}
-            </ActionButton>
-          </div>
-        </form>
+              <ActionButton
+                type='submit'
+                variant='default'
+                disabled={!canSubmit}
+                className='flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border-0 shadow-lg transition-all duration-200 disabled:opacity-50'
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className='w-4 h-4' />
+                    Save Settings
+                  </>
+                )}
+              </ActionButton>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

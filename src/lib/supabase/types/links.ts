@@ -54,6 +54,10 @@ export interface Link extends TimestampFields {
   totalFiles: number;
   totalSize: number;
   lastUploadAt: Date | null;
+
+  // Storage Quota Management
+  storageUsed: number;
+  storageLimit: number;
 }
 
 /**

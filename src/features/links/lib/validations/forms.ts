@@ -9,6 +9,7 @@ import { z } from 'zod';
 import {
   titleSchema,
   topicSchema,
+  slugSchema,
   descriptionSchema,
   hexColorSchema,
   fileTypesSchema,
@@ -30,6 +31,7 @@ export const createLinkFormSchema = z
     // === DATABASE FIELDS ONLY (aligned with database schema) ===
 
     // Basic information
+    slug: slugSchema,
     title: titleSchema,
     topic: z.string().optional(), // Simplified to avoid ZodEffects nesting
     description: descriptionSchema,
@@ -39,18 +41,18 @@ export const createLinkFormSchema = z
     requirePassword: z.boolean().default(false),
     password: z.string().optional(),
     isPublic: z.boolean().default(true),
+    isActive: z.boolean().default(true),
 
     // Upload settings (database fields)
     maxFiles: maxFilesSchema.default(100),
     maxFileSize: maxFileSizeSchema.default(100), // Form shows MB, converted to bytes in action
     allowedFileTypes: fileTypesSchema.default([]),
-    expiresAt: z.string().optional(),
+    expiresAt: z.date().optional(),
 
     // Branding (aligned with database field names)
     brandEnabled: z.boolean().default(false),
     brandColor: hexColorSchema.optional(),
-    logoUrl: z.string().optional(),
-    logoFile: z.any().optional(), // File type for form handling
+    // Note: logoUrl and logoFile removed - not in current database schema
   })
   .refine(
     data => {
@@ -122,6 +124,9 @@ export const generalSettingsSchema = z
     // === DATABASE FIELDS ===
 
     // Basic information
+    slug: slugSchema,
+    topic: z.string().optional(),
+    title: titleSchema.optional(),
     description: descriptionSchema,
 
     // General settings (all optional for partial updates)
@@ -130,7 +135,7 @@ export const generalSettingsSchema = z
     requireEmail: z.boolean().optional(),
     requirePassword: z.boolean().optional(),
     password: z.string().optional(),
-    expiresAt: z.string().optional(),
+    expiresAt: z.date().optional(),
 
     // Upload constraints (database fields)
     maxFiles: z.number().min(1).max(1000).optional(),
@@ -140,8 +145,7 @@ export const generalSettingsSchema = z
     // Branding settings (aligned with database field names)
     brandEnabled: z.boolean().optional(),
     brandColor: z.string().optional(),
-    logoUrl: z.string().optional(),
-    logoFile: z.any().optional(), // File type for form handling
+    // Note: logoUrl and logoFile removed - not in current database schema
   })
   .refine(
     data => {

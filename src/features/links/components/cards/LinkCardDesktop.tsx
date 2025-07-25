@@ -73,7 +73,7 @@ export const LinkCardDesktop = memo(
       >
         <div className='flex items-center gap-4 px-4 py-3 min-h-[72px]'>
           {/* Selection checkbox (desktop only) */}
-          {isMultiSelectMode && !isBaseLink && (
+          {!isBaseLink && onSelectionChange && (
             <div className='flex-shrink-0'>
               <Checkbox
                 checked={isMultiSelected || false}

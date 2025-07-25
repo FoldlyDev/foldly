@@ -1,0 +1,139 @@
+/* Workspace tree styles - Following headless-tree library patterns */
+
+:root {
+  --tree-selected-color: #f0f2f5;
+  --tree-primary-blue: #0366d6;
+  --tree-drop-target-color: #e1f1f8;
+  --tree-search-match-color: #e1f8ff;
+}
+
+.tree {
+  user-select: none;
+  position: relative;
+  min-height: 100px;
+}
+
+.tree button[role='treeitem'] {
+  display: flex;
+  background: transparent;
+  border: none;
+  width: 100%;
+  padding: 0 0 2px 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.treeitem {
+  width: 100%;
+  text-align: left;
+  background-color: transparent;
+  padding: 6px 10px;
+  position: relative;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.treeitem:hover {
+  background-color: var(--tree-selected-color);
+}
+
+.treeitem.focused {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
+
+.treeitem.selected {
+  background-color: #eee;
+}
+
+/* Selection indicator - blue left border */
+.treeitem.selected::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: -2px;
+  height: calc(100% - 10px);
+  width: 4px;
+  background-color: var(--tree-primary-blue);
+  border-radius: 2px;
+}
+
+.treeitem.folder {
+  font-weight: 500;
+}
+
+.treeitem.drop {
+  background-color: var(--tree-drop-target-color);
+  border-color: var(--tree-primary-blue);
+  border-style: dashed;
+}
+
+.treeitem.searchmatch {
+  background-color: var(--tree-search-match-color);
+}
+
+/* Focus visible for keyboard navigation */
+.tree button:focus-visible .treeitem.focused,
+.treeitem.searchmatch.focused {
+  outline: 2px solid var(--tree-primary-blue);
+  outline-offset: 1px;
+}
+
+.renaming-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+}
+
+.dragline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--tree-primary-blue);
+  pointer-events: none;
+  margin-top: -1px;
+}
+
+/* Drag line indicator circle */
+.dragline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  height: 4px;
+  width: 4px;
+  background: #fff;
+  border: 2px solid var(--tree-primary-blue);
+  border-radius: 99px;
+}
+
+/* Enhanced reordering feedback - top drop indicator */
+.treeitem.drop-above {
+  border-top: 0.5px solid var(--tree-primary-blue);
+}
+
+/* Enhanced reordering feedback - bottom drop indicator */
+.treeitem.drop-below {
+  border-bottom: 0.5px solid var(--tree-primary-blue);
+}
+
+/* Drag preview element - positioned off-screen */
+.drag-preview {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.searchbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}

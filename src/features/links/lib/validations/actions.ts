@@ -9,6 +9,7 @@ import { z } from 'zod';
 import {
   titleSchema,
   topicSchema,
+  slugSchema,
   descriptionSchema,
   uuidSchema,
   maxFilesSchema,
@@ -33,7 +34,8 @@ export const createLinkActionSchema = withPasswordRequirement(
     // workspaceId removed - will be resolved internally in server action
 
     // Optional fields (with database defaults)
-    topic: topicSchema.optional(),
+    slug: slugSchema,
+    topic: z.string().nullable().optional(), // null for base links, string for custom links
     description: descriptionSchema.optional(),
     requireEmail: z.boolean().default(false),
     requirePassword: z.boolean().default(false),
@@ -43,7 +45,7 @@ export const createLinkActionSchema = withPasswordRequirement(
 
     // Upload constraints - aligned with database fields
     maxFiles: maxFilesSchema.default(100),
-    maxFileSize: maxFileSizeSchema.default(104857600), // 100MB in bytes
+    maxFileSize: maxFileSizeSchema.default(100), // 100MB (will be converted to bytes in action)
     allowedFileTypes: fileTypesSchema.optional(),
 
     // Expiration
@@ -61,6 +63,7 @@ export const createLinkActionSchema = withPasswordRequirement(
 export const updateLinkActionSchema = withPasswordRequirement(
   z.object({
     id: uuidSchema,
+    slug: slugSchema,
     title: titleSchema.optional(),
     topic: topicSchema.optional(),
     description: descriptionSchema.optional(),
@@ -149,6 +152,7 @@ export const updateSettingsActionSchema = withPasswordRequirement(
  * Allows partial updates with type safety - aligned with database schema
  */
 export type FlexibleLinkUpdate = Partial<{
+  slug: string;
   title: string;
   topic: string;
   description: string | null;

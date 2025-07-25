@@ -21,8 +21,17 @@ export * from './modals';
 // Section components
 export * from './sections';
 
+// Form components
+export * from './forms';
+
+// Step components
+export * from './steps';
+
 // View components
 export * from './views';
+
+// Skeleton components
+export * from './skeletons';
 
 // Constants - Re-exported for easy access from components
 export {

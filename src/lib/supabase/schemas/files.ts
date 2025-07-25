@@ -19,6 +19,7 @@ import { links } from './links';
 import { batches } from './batches';
 import { users } from './users';
 import { folders } from './folders';
+import { workspaces } from './workspaces';
 
 /**
  * Files table - Complete file metadata with processing status and root folder support
@@ -29,14 +30,14 @@ export const files = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
     linkId: uuid('link_id')
-      .references(() => links.id, { onDelete: 'cascade' })
-      .notNull(),
+      .references(() => links.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
     batchId: uuid('batch_id')
-      .references(() => batches.id, { onDelete: 'cascade' })
-      .notNull(),
+      .references(() => batches.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspaces.id, { onDelete: 'cascade' }), // Optional - null for link-only files
     folderId: uuid('folder_id').references(() => folders.id, {
       onDelete: 'set null',
     }), // NULL for root folder files
@@ -70,6 +71,7 @@ export const files = pgTable(
     // Organization flags
     isOrganized: boolean('is_organized').default(false).notNull(),
     needsReview: boolean('needs_review').default(false).notNull(),
+    sortOrder: integer('sort_order').default(0).notNull(),
 
     // Access tracking
     downloadCount: integer('download_count').default(0).notNull(),
@@ -92,6 +94,7 @@ export const files = pgTable(
     filesLinkIdIdx: index('files_link_id_idx').on(table.linkId),
     filesBatchIdIdx: index('files_batch_id_idx').on(table.batchId),
     filesUserIdIdx: index('files_user_id_idx').on(table.userId),
+    filesWorkspaceIdIdx: index('files_workspace_id_idx').on(table.workspaceId),
     filesFolderIdIdx: index('files_folder_id_idx').on(table.folderId),
     filesFileNameIdx: index('files_file_name_idx').on(table.fileName),
     filesMimeTypeIdx: index('files_mime_type_idx').on(table.mimeType),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getRealtimeClient } from '@/lib/config/supabase-client';
 import { workspaceQueryKeys } from '../lib/query-keys';
@@ -11,15 +11,33 @@ import type {
 
 /**
  * Realtime hook that subscribes to workspace, files, and folders changes
- * and invalidates React Query cache for immediate UI updates
+ * and invalidates React Query cache with debounced updates to prevent race conditions
  */
 export function useWorkspaceRealtime(workspaceId?: string) {
   const queryClient = useQueryClient();
   const supabase = getRealtimeClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const invalidationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [connectionState, setConnectionState] = useState<
     'connecting' | 'connected' | 'disconnected'
   >('disconnected');
+
+  // Debounced invalidation to batch multiple rapid changes
+  const debouncedInvalidation = useCallback(() => {
+    if (invalidationTimeoutRef.current) {
+      clearTimeout(invalidationTimeoutRef.current);
+    }
+    
+    invalidationTimeoutRef.current = setTimeout(() => {
+      console.log('🔄 Processing batched realtime update');
+      queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.tree(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.stats(),
+      });
+    }, 200); // Reduced from 500ms to 200ms for better responsiveness
+  }, [queryClient]);
 
   useEffect(() => {
     if (!workspaceId) {
@@ -62,14 +80,22 @@ export function useWorkspaceRealtime(workspaceId?: string) {
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
           console.log('Folder change detected:', payload);
-
-          // Invalidate workspace tree and stats for immediate UI updates
-          queryClient.invalidateQueries({
-            queryKey: workspaceQueryKeys.tree(),
-          });
-          queryClient.invalidateQueries({
-            queryKey: workspaceQueryKeys.stats(),
-          });
+          // Use debounced invalidation to batch multiple rapid changes
+          debouncedInvalidation();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'files',
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          console.log('File change detected:', payload);
+          // Use debounced invalidation to batch multiple rapid changes
+          debouncedInvalidation();
         }
       )
       .subscribe(status => {
@@ -96,6 +122,12 @@ export function useWorkspaceRealtime(workspaceId?: string) {
 
     // Cleanup function
     return () => {
+      // Clear any pending invalidation
+      if (invalidationTimeoutRef.current) {
+        clearTimeout(invalidationTimeoutRef.current);
+        invalidationTimeoutRef.current = null;
+      }
+      
       if (channelRef.current) {
         console.log('Unsubscribing from workspace realtime');
         supabase.removeChannel(channelRef.current);
@@ -103,7 +135,7 @@ export function useWorkspaceRealtime(workspaceId?: string) {
         setConnectionState('disconnected');
       }
     };
-  }, [workspaceId, queryClient, supabase]);
+  }, [workspaceId, queryClient, supabase, debouncedInvalidation]);
 
   return {
     isSubscribed: connectionState === 'connected',

@@ -1,7 +1,6 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
 import { workspaceService } from '@/lib/services/workspace';
 import { FolderService } from '@/lib/services/shared/folder-service';
 import type { DatabaseId } from '@/lib/supabase/types';

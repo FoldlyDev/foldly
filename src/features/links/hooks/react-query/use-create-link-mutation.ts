@@ -68,7 +68,7 @@ export function useCreateLinkMutation(
           id: `temp-${Date.now()}`, // Temporary ID
           userId: 'temp-user-id',
           workspaceId: 'temp-workspace-id',
-          slug: 'temp-slug',
+          slug: input.slug || 'username', // Use input slug or default fallback
           linkType: input.topic ? 'custom' : 'base',
           passwordHash: null,
           ...input,

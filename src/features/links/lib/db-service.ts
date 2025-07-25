@@ -4,9 +4,7 @@ import {
   links,
   files,
   batches,
-  folders,
   users,
-  workspaces,
 } from '@/lib/supabase/schemas';
 import type {
   Link,
@@ -15,6 +13,11 @@ import type {
   LinkWithStats,
 } from '@/lib/supabase/types/links';
 import type { DatabaseResult } from '@/lib/supabase/types/common';
+import { 
+  DATABASE_ERROR_CODES, 
+  detectConstraintViolation,
+  getErrorMessage
+} from './constants/database-errors';
 
 // =============================================================================
 // SERVICE-SPECIFIC TYPES - Match Database Service Returns
@@ -133,11 +136,24 @@ export class LinksDbService {
       };
     } catch (error) {
       console.error('Failed to create link:', error);
+      
+      // Handle known constraint violations
+      if (error instanceof Error) {
+        const constraintCode = detectConstraintViolation(error);
+        if (constraintCode) {
+          return {
+            success: false,
+            error: getErrorMessage(constraintCode),
+            code: constraintCode,
+          };
+        }
+      }
+      
       return {
         success: false,
         error:
           error instanceof Error ? error.message : 'Unknown error occurred',
-        code: 'DATABASE_ERROR',
+        code: DATABASE_ERROR_CODES.DATABASE_ERROR,
       };
     }
   }
@@ -416,6 +432,38 @@ export class LinksDbService {
     }
   }
 
+  /**
+   * Get link by user ID, slug and topic (for topic availability validation)
+   */
+  async getByUserSlugAndTopic(
+    userId: string,
+    slug: string,
+    topic: string
+  ): Promise<DatabaseResult<Link | null>> {
+    try {
+      const result = await db.query.links.findFirst({
+        where: and(
+          eq(links.userId, userId),
+          eq(links.slug, slug),
+          eq(links.topic, topic)
+        ),
+      });
+
+      return {
+        success: true,
+        data: result || null,
+      };
+    } catch (error) {
+      console.error('Failed to get link by user, slug and topic:', error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'DATABASE_ERROR',
+      };
+    }
+  }
+
   // ===================================
   // UPDATE OPERATIONS
   // ===================================
@@ -489,6 +537,62 @@ export class LinksDbService {
       };
     } catch (error) {
       console.error('Failed to update link:', error);
+      
+      // Handle known constraint violations
+      if (error instanceof Error) {
+        const constraintCode = detectConstraintViolation(error);
+        if (constraintCode) {
+          return {
+            success: false,
+            error: getErrorMessage(constraintCode),
+            code: constraintCode,
+          };
+        }
+      }
+      
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        code: DATABASE_ERROR_CODES.DATABASE_ERROR,
+      };
+    }
+  }
+
+  /**
+   * Cascade update all links when base link slug changes
+   * Updates ALL links (custom and generated) to use the new base slug
+   */
+  async cascadeUpdateBaseSlug(
+    userId: string,
+    oldSlug: string,
+    newSlug: string
+  ): Promise<DatabaseResult<{ updatedCount: number; updatedLinks: Link[] }>> {
+    try {
+      // Update ALL links for this user (base, custom, and generated)
+      const updatedLinks = await db
+        .update(links)
+        .set({
+          slug: newSlug,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(links.userId, userId),
+            eq(links.slug, oldSlug) // All links with the old slug
+          )
+        )
+        .returning();
+
+      return {
+        success: true,
+        data: {
+          updatedCount: updatedLinks.length,
+          updatedLinks,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to cascade update base slug:', error);
       return {
         success: false,
         error:

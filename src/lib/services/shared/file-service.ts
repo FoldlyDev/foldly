@@ -11,25 +11,25 @@ type DbFolder = typeof folders.$inferSelect;
 
 export class FileService {
   /**
-   * Get all files for a workspace
+   * Get all personal workspace files (excludes link-uploaded files)
    */
   async getFilesByWorkspace(
     workspaceId: string
   ): Promise<DatabaseResult<DbFile[]>> {
     try {
-      // Get files that belong to a workspace through folders
+      // Get only personal workspace files (linkId IS NULL)
       const workspaceFiles = await db
-        .select({
-          file: files,
-        })
+        .select()
         .from(files)
-        .leftJoin(folders, eq(files.folderId, folders.id))
-        .where(eq(folders.workspaceId, workspaceId))
-        .orderBy(files.createdAt);
+        .where(
+          and(
+            eq(files.workspaceId, workspaceId),
+            isNull(files.linkId) // Only personal files, not link-uploaded
+          )
+        )
+        .orderBy(files.sortOrder, files.createdAt);
 
-      const flatFiles = workspaceFiles.map(({ file }) => file);
-
-      return { success: true, data: flatFiles };
+      return { success: true, data: workspaceFiles };
     } catch (error) {
       console.error(
         `❌ FILES_BY_WORKSPACE_FETCH_FAILED: ${workspaceId}`,
@@ -54,7 +54,7 @@ export class FileService {
         .from(files)
         .leftJoin(folders, eq(files.folderId, folders.id))
         .where(eq(folders.workspaceId, workspaceId))
-        .orderBy(files.fileName); // Files don't have sortOrder yet, so order by name
+        .orderBy(files.sortOrder, files.fileName); // Order by sortOrder first, then fileName
 
       const flatFiles = workspaceFiles.map(({ file }) => file);
 

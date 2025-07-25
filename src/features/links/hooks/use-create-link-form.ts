@@ -14,6 +14,7 @@ export type CreateLinkStep = 'information' | 'branding' | 'success';
 
 export interface CreateLinkFormData {
   linkType: LinkType;
+  slug: string;
   title: string;
   topic: string;
   description: string;
@@ -55,6 +56,7 @@ interface CreateLinkFormState {
 
 const initialFormData: CreateLinkFormData = {
   linkType: 'base',
+  slug: '',
   title: '',
   topic: '',
   description: '',
@@ -91,7 +93,7 @@ export const useCreateLinkFormStore = create<CreateLinkFormState>()(
 
         // Auto-populate title based on link type
         if (linkType === 'base') {
-          formData.title = 'My Collection'; // Default title for base links
+          formData.title = 'Base link'; // Default title for base links
         }
 
         set({

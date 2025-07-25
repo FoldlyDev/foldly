@@ -37,13 +37,15 @@ export async function createLinkAction(
       };
     }
 
-    // 4. Determine link type and validate base link restrictions
+    // 4. Determine link type and get base link slug for topic links
     const linkType = validatedData.topic ? 'custom' : 'base';
+    
+    // Get user's existing links to find base link slug
+    const existingLinksResult = await linksDbService.getByUserId(user.id);
+    let baseSlug = validatedData.slug || user.username || user.id;
 
-    // Check if user already has a base link (only one allowed per user)
     if (linkType === 'base') {
-      const existingLinksResult = await linksDbService.getByUserId(user.id);
-
+      // Check if user already has a base link (only one allowed per user)
       if (existingLinksResult.success && existingLinksResult.data) {
         const hasBaseLink = existingLinksResult.data.some(
           (link: Link) => link.linkType === 'base'
@@ -57,13 +59,34 @@ export async function createLinkAction(
           };
         }
       }
+    } else {
+      // For topic/custom links, use the existing base link's slug
+      if (existingLinksResult.success && existingLinksResult.data) {
+        const userBaseLink = existingLinksResult.data.find(
+          (link: Link) => link.linkType === 'base' && !link.topic
+        );
+        
+        if (userBaseLink) {
+          baseSlug = userBaseLink.slug;
+        } else {
+          return {
+            success: false,
+            error: 'You must create a base link before creating topic links.',
+          };
+        }
+      } else {
+        return {
+          success: false,
+          error: 'You must create a base link before creating topic links.',
+        };
+      }
     }
 
     // 5. Prepare link data for database
     const linkData: LinkInsert = {
       userId: user.id,
       workspaceId: workspaceResult.data.id,
-      slug: user.username || user.id, // Use username or fallback to ID
+      slug: baseSlug, // Use base link slug for all links
       topic: validatedData.topic || null,
       linkType,
       title: validatedData.title,

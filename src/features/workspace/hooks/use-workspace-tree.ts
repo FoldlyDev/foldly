@@ -3,35 +3,30 @@
 import { useQuery } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../lib/query-keys';
 import { fetchWorkspaceTreeAction } from '../lib/actions';
-import type { WorkspaceTreeData } from '../lib/actions/tree-actions';
 
+/**
+ * Hook to fetch workspace tree data
+ */
 export function useWorkspaceTree() {
   return useQuery({
     queryKey: workspaceQueryKeys.tree(),
     queryFn: async () => {
-      console.log('🔍 useWorkspaceTree: Fetching workspace tree data...');
+      console.log('🔍 React Query: Fetching workspace tree data...');
       const result = await fetchWorkspaceTreeAction();
-      console.log('📊 useWorkspaceTree: Fetch result:', {
-        success: result.success,
-        foldersCount: result.data?.folders?.length || 0,
-        filesCount: result.data?.files?.length || 0,
-        error: result.error,
-      });
-
       if (!result.success) {
+        console.log('❌ React Query: Failed to fetch workspace tree:', result.error);
         throw new Error(result.error || 'Failed to fetch workspace tree');
       }
+      console.log('✅ React Query: Successfully fetched workspace tree data:', {
+        workspace: result.data?.workspace?.id,
+        folderCount: result.data?.folders?.length || 0,
+        fileCount: result.data?.files?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      console.log('📋 React Query: Full data structure:', result.data);
       return result.data;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false, // Prevent refetch on window focus
-    refetchOnReconnect: true, // Refetch when reconnecting
-    refetchOnMount: true, // ✅ Changed from false to true - allows refetch when cache is invalidated
-    refetchInterval: false, // Disable automatic refetch interval
-    retry: 1, // Reduce retry attempts to prevent duplicate calls
-    networkMode: 'online', // Only fetch when online
   });
 }
-
-export type { WorkspaceTreeData };

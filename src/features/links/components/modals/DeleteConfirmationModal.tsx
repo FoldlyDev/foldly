@@ -50,101 +50,96 @@ export function DeleteConfirmationModal() {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
-      <DialogContent className='max-w-md bg-white'>
-        <DialogHeader className='text-center'>
-          <div className='mx-auto mb-4 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center'>
-            <AlertTriangle className='w-6 h-6 text-red-600' />
+      <DialogContent
+        className='w-[calc(100vw-2rem)] max-w-md h-auto max-h-[calc(100vh-2rem)] p-0 overflow-hidden'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
+      >
+        {/* Accessibility Labels */}
+        <DialogTitle className="sr-only">
+          Delete {link.linkType === 'base' ? 'Personal Collection Link' : 'Custom Topic Link'}: {link.title}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          Permanently delete your link and all associated files and data
+        </DialogDescription>
+
+        {/* Header - Consistent with other modals */}
+        <div className="relative bg-gradient-to-r from-red-50 to-rose-50 border-b border-red-100">
+          <div className="px-6 py-6 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+            </div>
+            <h1 className="text-xl font-bold text-gray-900 leading-tight mb-2">
+              Delete {link.linkType === 'base' ? 'Personal Collection' : 'Custom Topic'}
+            </h1>
+            <div className="flex justify-center">
+              <p className="text-sm text-gray-600 text-center max-w-sm">
+                "{link.title}" will be permanently removed
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Compact Link Info */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 truncate">{link.title}</p>
+                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  <code className="truncate">{linkUrl}</code>
+                  <span>•</span>
+                  <span>{link.totalFiles} files</span>
+                  <span>•</span>
+                  <span>{(link.totalSize / (1024 * 1024)).toFixed(1)}MB</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <DialogTitle className='text-xl font-semibold text-gray-900'>
-            Delete Link
-          </DialogTitle>
-
-          <DialogDescription className='text-gray-600 mt-2'>
-            Are you sure you want to delete "{link.title}"? This action cannot
-            be undone.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className='mt-6'>
-          {/* Link preview */}
-          <div className='bg-gray-50 rounded-lg p-4 mb-6'>
-            <div className='flex items-center gap-3'>
-              <div className='w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center'>
-                <Trash2 className='w-4 h-4 text-red-600' />
-              </div>
-              <div className='flex-1 min-w-0'>
-                <p className='font-medium text-gray-900 truncate'>
-                  {link.title}
+          {/* Compact Warning */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-amber-900">
+                  All files, settings, and statistics will be permanently deleted. This cannot be undone.
                 </p>
-                <p className='text-sm text-gray-500 truncate'>{linkUrl}</p>
-              </div>
-            </div>
-
-            {/* Stats from database */}
-            <div className='mt-3 flex items-center gap-4 text-sm text-gray-600'>
-              <span>{link.totalUploads} uploads</span>
-              <span>{link.totalFiles} files</span>
-              <span>
-                {(link.totalSize / (1024 * 1024)).toFixed(1)}MB stored
-              </span>
-            </div>
-
-            {/* Link type */}
-            <div className='mt-2'>
-              <span className='inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'>
-                {link.linkType === 'base'
-                  ? 'Personal Collection'
-                  : 'Topic Collection'}
-              </span>
-            </div>
-          </div>
-
-          {/* Warning message */}
-          <div className='bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6'>
-            <div className='flex items-start gap-2'>
-              <AlertTriangle className='w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0' />
-              <div className='text-sm text-amber-800'>
-                <p className='font-medium'>This will permanently delete:</p>
-                <ul className='mt-1 list-disc list-inside space-y-1'>
-                  <li>The upload link and its settings</li>
-                  <li>All uploaded files and folders</li>
-                  <li>Upload statistics and file metadata</li>
-                  <li>Shared link URLs will stop working</li>
-                </ul>
               </div>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className='flex flex-col-reverse sm:flex-row gap-3'>
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
             <button
               onClick={handleCancel}
               disabled={isDeleting}
-              className='flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               Cancel
             </button>
-
-            <motion.button
+            <button
               onClick={handleDelete}
               disabled={isDeleting}
-              whileHover={{ scale: isDeleting ? 1 : 1.02 }}
-              whileTap={{ scale: isDeleting ? 1 : 0.98 }}
-              className='flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
             >
               {isDeleting ? (
                 <>
-                  <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Deleting...
                 </>
               ) : (
                 <>
-                  <Trash2 className='w-4 h-4' />
-                  Delete Link
+                  <Trash2 className="w-4 h-4" />
+                  Delete
                 </>
               )}
-            </motion.button>
+            </button>
           </div>
         </div>
       </DialogContent>

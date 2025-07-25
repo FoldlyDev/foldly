@@ -1,0 +1,1 @@
+export { FilesSkeleton } from './files-skeleton';

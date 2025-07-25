@@ -21,6 +21,12 @@ export { toggleLinkActiveAction } from './toggle';
 // Duplicate actions
 export { duplicateLinkAction } from './duplicate';
 
+// Validation actions
+export { checkSlugAvailabilityAction } from './check-slug-availability';
+export type { CheckSlugAvailabilityInput, SlugAvailabilityResult } from './check-slug-availability';
+export { checkTopicAvailabilityAction } from './check-topic-availability';
+export type { CheckTopicAvailabilityInput, TopicAvailabilityResult } from './check-topic-availability';
+
 // Shared utilities and types
 export type { AuditEntry } from './shared';
 export { requireAuth, logAudit } from './shared';
