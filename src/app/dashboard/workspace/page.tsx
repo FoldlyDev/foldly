@@ -1,7 +1,4 @@
 import type { Metadata } from 'next';
-
-// Force dynamic rendering for authenticated pages
-export const dynamic = 'force-dynamic';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { WorkspaceContainer } from '@/features/workspace/components/views/workspace-container';
 import {
