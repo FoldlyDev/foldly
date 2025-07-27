@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { EmptyLinksState, PopulatedLinksState } from '@/features/links';
 import { LinksSkeleton } from '../skeletons/links-skeleton';
@@ -28,15 +26,6 @@ export function LinksContainer({
   isLoading: propLoading = false,
   error: propError = null,
 }: LinksContainerProps) {
-  const queryClient = useQueryClient();
-  const [isClientReady, setIsClientReady] = useState(false);
-
-  // Ensure QueryClient is available before calling hooks
-  useEffect(() => {
-    if (queryClient) {
-      setIsClientReady(true);
-    }
-  }, [queryClient]);
 
   // Get UI state from store
   const searchQuery = useUIStore(state => state.searchQuery);
@@ -81,8 +70,7 @@ export function LinksContainer({
   // Check if user has any links at all (before filtering)
   const hasNoLinksAtAll = allLinks.length === 0;
 
-  // Show skeleton loader until QueryClient is ready
-  if (!isClientReady || isComponentLoading) {
+  if (isComponentLoading) {
     return <LinksSkeleton />;
   }
 
