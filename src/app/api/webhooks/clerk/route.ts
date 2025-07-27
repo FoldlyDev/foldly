@@ -268,8 +268,18 @@ export async function POST(req: NextRequest) {
           }
 
           const subscriptionData = transformSubscriptionEventData(evt.data, eventType);
+          if (!subscriptionData.userId) {
+            console.error(`No user ID in subscription data for ${eventType}`);
+            break;
+          }
           
-          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(subscriptionData);
+          // Ensure userId is properly typed for the service
+          const validatedSubscriptionData = {
+            ...subscriptionData,
+            userId: userId // Use the already validated userId
+          };
+          
+          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(validatedSubscriptionData);
           
           if (result.success) {
             console.log(`✅ SUBSCRIPTION_PROCESSED: ${eventType} for user ${userId}`);
@@ -305,8 +315,18 @@ export async function POST(req: NextRequest) {
           }
 
           const subscriptionData = transformSubscriptionEventData(evt.data, eventType);
+          if (!subscriptionData.userId) {
+            console.error(`No user ID in subscription data for ${eventType}`);
+            break;
+          }
           
-          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(subscriptionData);
+          // Ensure userId is properly typed for the service
+          const validatedSubscriptionData = {
+            ...subscriptionData,
+            userId: userId // Use the already validated userId
+          };
+          
+          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(validatedSubscriptionData);
           
           if (result.success) {
             console.log(`✅ SUBSCRIPTION_ITEM_PROCESSED: ${eventType} for user ${userId}`);

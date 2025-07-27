@@ -2,17 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToLinkAction, validateLinkForUploadAction } from '@/features/upload/lib/actions/upload-to-link';
 import { linkUploadValidationService } from '@/features/upload/lib/services/link-validation';
 
+// Force dynamic rendering to prevent build-time execution
+export const dynamic = 'force-dynamic';
+
 // =============================================================================
 // TYPES
 // =============================================================================
-
-interface UploadRequestBody {
-  uploaderName: string;
-  uploaderEmail?: string;
-  uploaderMessage?: string;
-  folderId?: string;
-  password?: string;
-}
 
 // =============================================================================
 // UPLOAD API ENDPOINT - Public uploads to shared links
@@ -109,8 +104,8 @@ export async function POST(
     
     const uploaderInfo = {
       name: uploaderName.trim(),
-      email: uploaderEmail?.trim() || undefined,
-      message: uploaderMessage?.trim() || undefined,
+      ...(uploaderEmail?.trim() && { email: uploaderEmail.trim() }),
+      ...(uploaderMessage?.trim() && { message: uploaderMessage.trim() }),
     };
 
     const uploadResult = await uploadFileToLinkAction(
