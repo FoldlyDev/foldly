@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
 

@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { Clock } from 'lucide-react';
-import { HelpPopover } from '@/components/ui';
+import { HelpPopover } from '@/components/ui/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 
 interface LinkExpirationSettingsProps {

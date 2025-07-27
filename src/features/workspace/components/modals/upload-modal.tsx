@@ -2,22 +2,22 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { Input } from '@/components/ui/core/shadcn/input';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
-import { Progress } from '@/components/ui/shadcn/progress';
+} from '@/components/ui/core/shadcn/dialog';
+import { Progress } from '@/components/ui/core/shadcn/progress';
 import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { uploadFileAction } from '../../lib/actions';
 import { useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { toast } from 'sonner';
-import type { DatabaseId } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/database/types';
 
 interface UploadModalProps {
   isOpen: boolean;

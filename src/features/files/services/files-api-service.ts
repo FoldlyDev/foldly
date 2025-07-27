@@ -2,9 +2,9 @@
 // Service for file CRUD operations and data fetching
 // Following 2025 TypeScript best practices
 
-import { FileService } from '@/lib/services/shared/file-service';
-import { FolderService } from '@/lib/services/shared/folder-service';
-import { files, folders } from '@/lib/supabase/schemas';
+import { FileService } from '@/lib/services/files/file-service';
+import { FolderService } from '@/lib/services/files/folder-service';
+import { files, folders } from '@/lib/database/schemas';
 
 // Use the correct types from src/lib/supabase (single source of truth)
 type DbFile = typeof files.$inferSelect;

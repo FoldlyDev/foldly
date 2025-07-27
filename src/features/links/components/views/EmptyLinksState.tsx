@@ -3,8 +3,8 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { GradientButton } from '@/components/ui';
-import { ActionButton } from '@/components/ui/action-button';
+import { GradientButton } from '@/components/ui/core/gradient-button';
+import { ActionButton } from '@/components/ui/core/action-button';
 import { useModalStore } from '../../store';
 import { useQuickStart } from '../../hooks/use-quick-start';
 import {

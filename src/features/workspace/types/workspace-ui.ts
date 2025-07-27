@@ -1,4 +1,4 @@
-import type { Workspace } from '@/lib/supabase/types';
+import type { Workspace } from '@/lib/database/types';
 
 // UI-specific workspace types for dashboard feature
 
@@ -16,10 +16,9 @@ export interface WorkspaceStatsData {
   totalLinks: number;
   totalFolders: number;
   totalFiles: number;
-  storageUsed: number;
-  storageLimit: number;
   lastActivity: Date | null;
   recentActivity: string;
+  // Storage stats are now calculated real-time via storage tracking service
 }
 
 export interface WorkspaceQuickAction {

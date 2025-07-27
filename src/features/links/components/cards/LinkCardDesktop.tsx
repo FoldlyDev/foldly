@@ -3,19 +3,17 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
-import { Checkbox } from '@/components/animate-ui/radix/checkbox';
+import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
-import {
-  SearchHighlight,
-  ActionButton,
-  AnimatedCopyButton,
-  CardActionsMenu,
-} from '@/components/ui';
-import type { Link, LinkWithStats } from '@/lib/supabase/types';
+import { SearchHighlight } from '@/components/ui/core/search-highlight';
+import { ActionButton } from '@/components/ui/core/action-button';
+import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
+import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
+import type { Link, LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/types';
 
 interface LinkCardDesktopProps {

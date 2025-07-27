@@ -55,4 +55,4 @@ export type {
   LinkUpdate,
   LinkType,
   DatabaseId,
-} from '@/lib/supabase/types';
+} from '@/lib/database/types';

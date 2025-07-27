@@ -1,18 +1,18 @@
 import { eq, and, desc, count, sql } from 'drizzle-orm';
-import { db } from '@/lib/db/db';
+import { db } from '@/lib/database/connection';
 import {
   links,
   files,
   batches,
   users,
-} from '@/lib/supabase/schemas';
+} from '@/lib/database/schemas';
 import type {
   Link,
   LinkInsert,
   LinkUpdate,
   LinkWithStats,
-} from '@/lib/supabase/types/links';
-import type { DatabaseResult } from '@/lib/supabase/types/common';
+} from '@/lib/database/types/links';
+import type { DatabaseResult } from '@/lib/database/types/common';
 import { 
   DATABASE_ERROR_CODES, 
   detectConstraintViolation,

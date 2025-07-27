@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { LinkSortField, LinkType } from '@/lib/supabase/types';
+import type { LinkSortField, LinkType } from '@/lib/database/types';
 
 interface UIState {
   // View preferences - persisted for user convenience

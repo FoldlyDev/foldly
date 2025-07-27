@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
+} from '@/components/ui/core/shadcn/dialog';
 import { 
   AlertTriangle, 
   Folder, 
@@ -19,7 +19,7 @@ import {
   CheckCircle2,
   XCircle 
 } from 'lucide-react';
-import { Progress } from '@/components/ui/shadcn/progress';
+import { Progress } from '@/components/ui/core/shadcn/progress';
 
 export type BatchOperationType = 'delete' | 'move';
 

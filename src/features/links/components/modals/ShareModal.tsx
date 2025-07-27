@@ -19,9 +19,9 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/animate-ui/radix/dialog';
-import { CopyButton } from '@/components/ui/copy-button';
-import { ActionButton } from '@/components/ui/action-button';
+} from '@/components/marketing/animate-ui/radix/dialog';
+import { CopyButton } from '@/components/ui/core/copy-button';
+import { ActionButton } from '@/components/ui/core/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 
 export function ShareModal() {

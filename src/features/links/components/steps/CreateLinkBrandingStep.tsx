@@ -10,7 +10,7 @@ import {
 import { useModalStore } from '../../store';
 import { useCreateLinkMutation } from '../../hooks/react-query/use-create-link-mutation';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
-import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
+import { CreateLinkFormButtons } from '@/components/ui/core/create-link-form-buttons';
 
 /**
  * Branding step for create link modal

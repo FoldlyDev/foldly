@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
-import { Switch } from '@/components/ui/shadcn/switch';
-import { FileUpload } from '@/components/ui/file-upload';
+import { Switch } from '@/components/ui/core/shadcn/switch';
+import { FileUpload } from '@/components/ui/composite/file-upload';
 
 interface LinkBrandingFormData {
   brandEnabled: boolean;

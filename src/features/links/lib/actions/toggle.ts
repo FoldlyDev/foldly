@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { linksDbService } from '../db-service';
 import { requireAuth, logAudit } from './shared';
 import { type ActionResult, toggleLinkActionSchema } from '../validations';
-import type { Link } from '@/lib/supabase/types/links';
+import type { Link } from '@/lib/database/types/links';
 
 /**
  * Toggle link active status

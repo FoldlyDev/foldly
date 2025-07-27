@@ -3,7 +3,7 @@
 import { linksDbService } from '../db-service';
 import { requireAuth } from './shared';
 import type { ActionResult } from '../validations';
-import type { LinkWithStats } from '@/lib/supabase/types/links';
+import type { LinkWithStats } from '@/lib/database/types/links';
 
 /**
  * Fetch all links for the current user

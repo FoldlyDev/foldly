@@ -1,7 +1,7 @@
 'use client';
 
 import { Power, Eye, EyeOff } from 'lucide-react';
-import { Switch } from '@/components/ui/shadcn/switch';
+import { Switch } from '@/components/ui/core/shadcn/switch';
 
 interface LinkStatusControlsProps {
   formData: {

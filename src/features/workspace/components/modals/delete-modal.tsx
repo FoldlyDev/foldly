@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Dialog,
   DialogContent,
@@ -9,11 +9,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
+} from '@/components/ui/core/shadcn/dialog';
 import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
 import { toast } from 'sonner';
-import type { DatabaseId } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/database/types';
 
 interface DeleteModalProps {
   isOpen: boolean;

@@ -4,8 +4,9 @@ import { useRef } from 'react';
 import { HeroSection } from '../sections/hero-section';
 import { AboutSection } from '../sections/about-section';
 import { FeaturesSection } from '../sections/features-section';
+import { PricingSection } from '../sections/pricing-section';
 import { OutroSection } from '../sections/outro-section';
-import { Navigation } from '@/components/layout/navigation';
+import { Navigation } from '@/components/ui/layout/navigation';
 import { useGSAPLandingAnimations } from '../../hooks/useGSAPLandingAnimations';
 
 /**
@@ -73,6 +74,7 @@ export function LandingPageContainer() {
       <HeroSection ref={heroSectionRefs} />
       <AboutSection />
       <FeaturesSection ref={featuresSectionRefs} />
+      <PricingSection />
       <OutroSection />
     </div>
   );

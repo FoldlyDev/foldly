@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import { FolderPlus } from 'lucide-react';
-import { Checkbox } from '@/components/ui/shadcn/checkbox';
-import { HelpPopover } from '@/components/ui';
+import { Checkbox } from '@/components/ui/core/shadcn/checkbox';
+import { HelpPopover } from '@/components/ui/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 

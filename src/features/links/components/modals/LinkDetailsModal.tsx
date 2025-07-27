@@ -24,10 +24,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/animate-ui/radix/dialog';
-import { CopyButton } from '@/components/ui';
+} from '@/components/marketing/animate-ui/radix/dialog';
+import { CopyButton } from '@/components/ui/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
-import type { Link } from '@/lib/supabase/types';
+import type { Link } from '@/lib/database/types';
 
 export function LinkDetailsModal() {
   const currentModal = useCurrentModal();

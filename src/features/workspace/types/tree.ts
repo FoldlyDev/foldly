@@ -2,9 +2,9 @@
 // WORKSPACE TREE TYPES - Types for workspace tree implementation
 // =============================================================================
 
-import type { DatabaseId } from '@/lib/supabase/types/common';
-import type { File } from '@/lib/supabase/types/files';
-import type { Folder } from '@/lib/supabase/types/folders';
+import type { DatabaseId } from '@/lib/database/types/common';
+import type { File } from '@/lib/database/types/files';
+import type { Folder } from '@/lib/database/types/folders';
 
 // =============================================================================
 // TREE ITEM TYPES

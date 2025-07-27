@@ -1,13 +1,13 @@
 'use client';
 
 import { Calendar, CalendarIcon } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
-import { Calendar as CalendarComponent } from '@/components/ui/shadcn/calendar';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { Calendar as CalendarComponent } from '@/components/ui/core/shadcn/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/shadcn/popover';
+} from '@/components/ui/core/shadcn/popover';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils/utils';
 

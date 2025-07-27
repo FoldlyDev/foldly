@@ -11,7 +11,7 @@ import type {
   BatchId,
 } from '@/types/ids';
 import type { FileData, FolderData } from '../types';
-import type { Workspace } from '@/lib/supabase/types';
+import type { Workspace } from '@/lib/database/types';
 
 // Enhanced color support with modern CSS color system
 export const FOLDER_COLOR = {

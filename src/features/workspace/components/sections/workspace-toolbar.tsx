@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { Input } from '@/components/ui/core/shadcn/input';
 import {
   FolderPlus,
   Upload,
@@ -19,7 +19,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/shadcn/dropdown-menu';
+} from '@/components/ui/core/shadcn/dropdown-menu';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';

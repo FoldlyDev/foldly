@@ -18,7 +18,7 @@ import {
   Save,
   ArrowRight,
 } from 'lucide-react';
-import { ContentLoader } from '@/components/ui';
+import { ContentLoader } from '@/components/ui/feedback/content-loader';
 
 interface SettingsContainerProps {
   initialData?: any;

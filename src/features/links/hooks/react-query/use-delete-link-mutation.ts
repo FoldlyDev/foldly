@@ -8,7 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteLinkAction } from '../../lib/actions/delete';
 import { linksQueryKeys } from '../../lib/query-keys';
-import type { Link, DatabaseId } from '@/lib/supabase/types';
+import type { Link, DatabaseId } from '@/lib/database/types';
 import { toast } from 'sonner';
 
 interface UseDeleteLinkMutationOptions {

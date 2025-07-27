@@ -8,7 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchLinkByIdAction } from '../../lib/actions/fetch';
 import { linksQueryKeys } from '../../lib/query-keys';
-import type { LinkWithStats, DatabaseId } from '@/lib/supabase/types';
+import type { LinkWithStats, DatabaseId } from '@/lib/database/types';
 
 interface UseLinkQueryOptions {
   enabled?: boolean;

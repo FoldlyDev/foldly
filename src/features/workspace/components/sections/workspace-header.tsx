@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
-import { GradientButton } from '@/components/ui';
+import { GradientButton } from '@/components/ui/core/gradient-button';
 import { Plus, Settings, Bell } from 'lucide-react';
 
 interface WorkspaceHeaderProps {

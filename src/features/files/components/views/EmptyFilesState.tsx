@@ -8,7 +8,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, FolderPlus, Files } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import { useFilesListStore } from '../../hooks/use-files-composite';
 
 // =============================================================================

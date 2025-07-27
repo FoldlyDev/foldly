@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Link, LinkType, DatabaseId } from '@/lib/supabase/types';
+import type { Link, LinkType, DatabaseId } from '@/lib/database/types';
 
 // Simple modal types - focused only on what modals we can open
 type ModalType =

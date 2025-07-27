@@ -4,16 +4,16 @@
 'use client';
 
 import { memo } from 'react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/shadcn/card';
-import { Badge } from '@/components/ui/shadcn/badge';
-import { Separator } from '@/components/ui/shadcn/separator';
+} from '@/components/ui/core/shadcn/card';
+import { Badge } from '@/components/ui/core/shadcn/badge';
+import { Separator } from '@/components/ui/core/shadcn/separator';
 import { FileText, Folder, Database, Trash2, RefreshCw } from 'lucide-react';
 import { useFilesDataStore } from '../../store/files-data-store';
 import {

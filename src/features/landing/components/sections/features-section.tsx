@@ -1,8 +1,8 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { FlipCard } from '@/components/ui/flip-card';
-import { BubbleBackground } from '@/components/ui/bubble';
+import { FlipCard } from '@/components/marketing/flip-card';
+import { BubbleBackground } from '@/components/ui/core/bubble';
 
 const cardData = [
   {

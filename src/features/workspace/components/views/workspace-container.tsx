@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
-import WorkspaceTree from '../tree/WorkspaceTree';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
+
+// Lazy load the heavy WorkspaceTree component
+const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 
 export function WorkspaceContainer() {
   // Get workspace data
@@ -52,12 +54,18 @@ export function WorkspaceContainer() {
       <div className='workspace-tree-container'>
         <div className='workspace-tree-wrapper'>
           <div className='workspace-tree-content'>
-            <WorkspaceTree
-              onTreeReady={setTreeInstance}
-              searchQuery={searchQuery}
-              selectedItems={selectedItems}
-              onSelectionChange={setSelectedItems}
-            />
+            <Suspense fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              </div>
+            }>
+              <WorkspaceTree
+                onTreeReady={setTreeInstance}
+                searchQuery={searchQuery}
+                selectedItems={selectedItems}
+                onSelectionChange={setSelectedItems}
+              />
+            </Suspense>
           </div>
           
           <div className='workspace-tree-footer'>

@@ -25,8 +25,8 @@ export async function batchMoveItemsAction(
 
     // Get workspace to determine root handling
     const { WorkspaceService } = await import('@/lib/services/workspace');
-    const { FileService } = await import('@/lib/services/shared/file-service');
-    const { FolderService } = await import('@/lib/services/shared/folder-service');
+    const { FileService } = await import('@/lib/services/files/file-service');
+    const { FolderService } = await import('@/lib/services/files/folder-service');
     
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
@@ -157,8 +157,8 @@ export async function batchDeleteItemsAction(
 
     // Import services
     const { WorkspaceService } = await import('@/lib/services/workspace');
-    const { FileService } = await import('@/lib/services/shared/file-service');
-    const { FolderService } = await import('@/lib/services/shared/folder-service');
+    const { FileService } = await import('@/lib/services/files/file-service');
+    const { FolderService } = await import('@/lib/services/files/folder-service');
     
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();

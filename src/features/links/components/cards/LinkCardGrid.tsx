@@ -9,19 +9,17 @@ import {
   ExternalLink,
   AlertTriangle,
 } from 'lucide-react';
-import { Checkbox } from '@/components/animate-ui/radix/checkbox';
+import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
-import {
-  CardActionsMenu,
-  SearchHighlight,
-  ActionButton,
-  AnimatedCopyButton,
-} from '@/components/ui';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
+import { SearchHighlight } from '@/components/ui/core/search-highlight';
+import { ActionButton } from '@/components/ui/core/action-button';
+import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/types';
 
 interface LinkCardGridProps {

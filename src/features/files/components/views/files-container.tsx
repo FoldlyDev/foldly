@@ -19,17 +19,17 @@ import {
   SortDesc,
   RefreshCw,
 } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { Input } from '@/components/ui/core/shadcn/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/shadcn/select';
-import { Badge } from '@/components/ui/shadcn/badge';
-import { Separator } from '@/components/ui/shadcn/separator';
+} from '@/components/ui/core/shadcn/select';
+import { Badge } from '@/components/ui/core/shadcn/badge';
+import { Separator } from '@/components/ui/core/shadcn/separator';
 import { cn } from '@/lib/utils';
 import { useFilesListStore } from '../../hooks/use-files-composite';
 import FileCard from '../cards/FileCard';

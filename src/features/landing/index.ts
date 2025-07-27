@@ -1,10 +1,17 @@
-// ===== 2025 FEATURE-BASED LANDING ARCHITECTURE =====
+// Landing Feature Exports
+// Export landing components, hooks, and types
 
-// 🔧 Section Components - Landing Page Sections
-export { HeroSection } from './components/sections/hero-section';
-export { FeaturesSection } from './components/sections/features-section';
-export { AboutSection } from './components/sections/about-section';
-export { OutroSection } from './components/sections/outro-section';
+// Landing components
+export * from './components';
 
-// 👁️ View Components - Page Container
-export { LandingPageContainer } from './components/views/landing-page-container';
+// Landing hooks  
+export * from './hooks';
+
+// Landing store
+export * from './store';
+
+// Landing types
+export * from './types';
+
+// Landing utilities
+export * from './utils';

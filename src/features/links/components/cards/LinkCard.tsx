@@ -6,7 +6,7 @@ import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
 import { toast } from 'sonner';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
 
 interface LinkCardProps {

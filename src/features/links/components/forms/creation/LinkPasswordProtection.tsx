@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
-import { Switch } from '@/components/ui/shadcn/switch';
+import { Switch } from '@/components/ui/core/shadcn/switch';
 
 interface LinkPasswordProtectionProps {
   formData: {

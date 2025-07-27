@@ -2,12 +2,12 @@
 
 import * as React from 'react';
 import { Info, Hash, CheckCircle, AlertCircle } from 'lucide-react';
-import { Textarea } from '@/components/ui/shadcn/textarea';
-import { Input } from '@/components/ui/shadcn/input';
-import { HelpPopover } from '@/components/ui';
+import { Textarea } from '@/components/ui/core/shadcn/textarea';
+import { Input } from '@/components/ui/core/shadcn/input';
+import { HelpPopover } from '@/components/ui/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import { useSlugValidation } from '../../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../../hooks/use-topic-validation';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';

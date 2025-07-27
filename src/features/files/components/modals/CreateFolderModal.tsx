@@ -6,16 +6,16 @@
 
 import { memo, useCallback, useState } from 'react';
 import { FolderPlus } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
-import { Input } from '@/components/ui/shadcn/input';
-import { Label } from '@/components/ui/shadcn/label';
+} from '@/components/ui/core/shadcn/dialog';
+import { Input } from '@/components/ui/core/shadcn/input';
+import { Label } from '@/components/ui/core/shadcn/label';
 import { useFilesModalsStore } from '../../hooks/use-files-composite';
 import { useFilesDataStore } from '../../store';
 

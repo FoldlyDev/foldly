@@ -3,7 +3,7 @@
  * Simple data structure with direct mutations
  */
 
-import type { File, Folder } from '@/lib/supabase/types';
+import type { File, Folder } from '@/lib/database/types';
 
 export type WorkspaceTreeItem = {
   name: string;

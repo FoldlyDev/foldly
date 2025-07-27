@@ -1,13 +1,13 @@
 'use client';
 
 import { FileType } from 'lucide-react';
-import { Button } from '@/components/ui/shadcn/button';
-import { Badge } from '@/components/ui/shadcn/badge';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { Badge } from '@/components/ui/core/shadcn/badge';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/shadcn/popover';
+} from '@/components/ui/core/shadcn/popover';
 import {
   Command,
   CommandEmpty,
@@ -16,7 +16,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/components/ui/shadcn/command';
+} from '@/components/ui/core/shadcn/command';
 import { cn } from '@/lib/utils/utils';
 
 interface UploadFileTypeRestrictionsProps {

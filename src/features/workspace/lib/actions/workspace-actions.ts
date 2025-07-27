@@ -3,7 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { workspaceService } from '@/lib/services/workspace';
-import type { Workspace, WorkspaceUpdate } from '@/lib/supabase/types';
+import type { Workspace, WorkspaceUpdate } from '@/lib/database/types';
 
 // =============================================================================
 // TYPES

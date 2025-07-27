@@ -2,8 +2,8 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { workspaceService } from '@/lib/services/workspace';
-import { FolderService } from '@/lib/services/shared/folder-service';
-import type { DatabaseId } from '@/lib/supabase/types';
+import { FolderService } from '@/lib/services/files/folder-service';
+import type { DatabaseId } from '@/lib/database/types';
 
 // =============================================================================
 // TYPES

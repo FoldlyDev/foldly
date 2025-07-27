@@ -10,7 +10,7 @@ import {
   type ActionResult,
   createLinkActionSchema,
 } from '../validations';
-import type { LinkInsert, Link } from '@/lib/supabase/types/links';
+import type { LinkInsert, Link } from '@/lib/database/types/links';
 import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
 
 /**

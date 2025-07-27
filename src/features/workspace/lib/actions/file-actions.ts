@@ -1,8 +1,8 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { FileService } from '@/lib/services/shared/file-service';
-import type { DatabaseId } from '@/lib/supabase/types';
+import { FileService } from '@/lib/services/files/file-service';
+import type { DatabaseId } from '@/lib/database/types';
 
 // =============================================================================
 // TYPES
@@ -65,7 +65,7 @@ export async function deleteFileAction(
     }
 
     const { storageService } = await import(
-      '@/lib/services/shared/storage-service'
+      '@/lib/services/files/storage-service'
     );
     const fileService = new FileService();
 
@@ -256,7 +256,7 @@ export async function downloadFileAction(
     }
 
     const { storageService } = await import(
-      '@/lib/services/shared/storage-service'
+      '@/lib/services/files/storage-service'
     );
     const fileService = new FileService();
 
@@ -318,7 +318,7 @@ export async function uploadFileAction(
     }
 
     const { storageService } = await import(
-      '@/lib/services/shared/storage-service'
+      '@/lib/services/files/storage-service'
     );
     const fileService = new FileService();
 
@@ -452,7 +452,7 @@ export async function uploadFileToLinkAction(
     }
 
     const { storageService } = await import(
-      '@/lib/services/shared/storage-service'
+      '@/lib/services/files/storage-service'
     );
     const fileService = new FileService();
 
@@ -503,8 +503,8 @@ export async function uploadFileToLinkAction(
       }
     } else {
       // For link root files, check existing root files for this link
-      const { db } = await import('@/lib/db/db');
-      const { files } = await import('@/lib/supabase/schemas');
+      const { db } = await import('@/lib/database/connection');
+      const { files } = await import('@/lib/database/schemas');
       const { and, isNull, eq } = await import('drizzle-orm');
 
       const existingRootFilesResult = await db

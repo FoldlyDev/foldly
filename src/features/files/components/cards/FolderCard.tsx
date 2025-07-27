@@ -21,16 +21,16 @@ import {
   Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/shadcn/dropdown-menu';
-import { Badge } from '@/components/ui/shadcn/badge';
-import { Checkbox } from '@/components/ui/shadcn/checkbox';
+} from '@/components/ui/core/shadcn/dropdown-menu';
+import { Badge } from '@/components/ui/core/shadcn/badge';
+import { Checkbox } from '@/components/ui/core/shadcn/checkbox';
 import { useFolderCardStore } from '../../hooks/use-files-composite';
 import type { FolderId } from '@/types';
 

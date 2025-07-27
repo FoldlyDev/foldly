@@ -9,8 +9,8 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/animate-ui/radix/dialog';
-import { ActionButton } from '@/components/ui/action-button';
+} from '@/components/marketing/animate-ui/radix/dialog';
+import { ActionButton } from '@/components/ui/core/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { LinkSettingsForm } from '../sections/LinkSettingsForm';
 import {

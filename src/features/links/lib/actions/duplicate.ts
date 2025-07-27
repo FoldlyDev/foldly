@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { linksDbService } from '../db-service';
 import { requireAuth, logAudit } from './shared';
 import { type ActionResult, duplicateLinkActionSchema } from '../validations';
-import type { LinkInsert, Link } from '@/lib/supabase/types/links';
+import type { LinkInsert, Link } from '@/lib/database/types/links';
 
 /**
  * Duplicate a link

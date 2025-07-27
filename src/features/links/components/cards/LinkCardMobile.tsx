@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Eye, Clock, Share2, AlertTriangle } from 'lucide-react';
-import { Checkbox } from '@/components/animate-ui/radix/checkbox';
+import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
   LinkVisibilityIndicator,
@@ -14,9 +14,9 @@ import {
   CardActionsMenu,
   ActionButton,
   AnimatedCopyButton,
-} from '@/components/ui';
-import type { ActionItem } from '@/components/ui/types';
-import type { LinkWithStats } from '@/lib/supabase/types';
+} from '@/components/ui/core';
+import type { ActionItem } from '@/components/ui/core/types';
+import type { LinkWithStats } from '@/lib/database/types';
 
 interface LinkCardMobileProps {
   link: LinkWithStats;

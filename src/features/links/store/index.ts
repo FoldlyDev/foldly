@@ -28,4 +28,4 @@ export type {
   LinkType,
   LinkSortField,
   DatabaseId,
-} from '@/lib/supabase/types';
+} from '@/lib/database/types';

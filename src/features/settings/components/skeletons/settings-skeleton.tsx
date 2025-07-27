@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton-loader';
+import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 
 export function SettingsSkeleton() {
   return (

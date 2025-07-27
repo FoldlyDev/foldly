@@ -13,7 +13,7 @@ import type {
   UserId,
 } from '@/types/ids';
 
-import type { DeepReadonly } from '@/types/utils';
+import type { DeepReadonly, ValidationError, Result } from '@/types/utils';
 
 import type { LinkType } from '@/features/links/types';
 
@@ -45,9 +45,9 @@ export interface UploadRequirements {
  */
 export interface UploaderInfo {
   readonly name: string;
-  readonly email?: EmailAddress;
-  readonly message?: string;
-  readonly batchName?: string;
+  readonly email?: EmailAddress | undefined;
+  readonly message?: string | undefined;
+  readonly batchName?: string | undefined;
 }
 
 // =============================================================================
@@ -81,6 +81,59 @@ export const isValidUploadFlowStep = (
   );
 };
 
+// Upload service types
+export type UploadProgressCallback = (fileId: FileId, progress: number) => void;
+
+export interface FileValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  fileSize: number;
+  fileType: string;
+  fileName: string;
+}
+
+export interface UploadServiceInterface {
+  uploadFile(
+    file: File,
+    batchId: BatchId,
+    onProgress?: UploadProgressCallback
+  ): Promise<Result<FileId, ValidationError>>;
+
+  uploadBatch(
+    files: File[],
+    batchId: BatchId,
+    onProgress?: UploadProgressCallback
+  ): Promise<Result<FileId[], ValidationError>>;
+
+  createUploadBatch(
+    linkId: string,
+    uploaderInfo?: any
+  ): Promise<Result<BatchId, ValidationError>>;
+  completeBatch(batchId: BatchId): Promise<Result<boolean, ValidationError>>;
+  cancelBatch(batchId: BatchId): Promise<Result<boolean, ValidationError>>;
+
+  getUploadProgress(
+    batchId: BatchId
+  ): Promise<Result<Record<FileId, number>, ValidationError>>;
+}
+
+export interface FileValidationInterface {
+  validateFile(file: File, constraints?: FileConstraints): FileValidationResult;
+  validateFiles(
+    files: File[],
+    constraints?: FileConstraints
+  ): FileValidationResult[];
+  checkFileSize(file: File, maxSize: number): boolean;
+  checkFileType(file: File, allowedTypes: string[]): boolean;
+  checkFileName(fileName: string): boolean;
+}
+
+export interface FileConstraints {
+  maxFileSize?: number;
+  allowedFileTypes?: string[];
+  maxFiles?: number;
+  allowDuplicates?: boolean;
+}
+
 // Export all upload types
 export * from './database';
-export type * from './index';

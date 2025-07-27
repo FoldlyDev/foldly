@@ -4,7 +4,7 @@ import { useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/animate-ui/radix/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/marketing/animate-ui/radix/dialog';
 import { useModalStore } from '../../store';
 import {
   useCreateLinkFormStore,

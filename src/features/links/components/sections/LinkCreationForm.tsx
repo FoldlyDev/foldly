@@ -7,8 +7,8 @@ import { useMemo } from 'react';
 import type {
   LinkCreateForm,
   LinkUpdateForm,
-} from '@/lib/supabase/types/links';
-import type { LinkType } from '@/lib/supabase/types/enums';
+} from '@/lib/database/types/links';
+import type { LinkType } from '@/lib/database/types/enums';
 
 // Local form types
 type ValidationError = string;

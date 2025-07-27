@@ -9,7 +9,8 @@ import {
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
 import { useModalStore } from '../../store';
-import { GradientButton, AnimatedCopyButton } from '@/components/ui';
+import { GradientButton } from '@/components/ui/core/gradient-button';
+import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 
 /**
  * Success step for create link modal

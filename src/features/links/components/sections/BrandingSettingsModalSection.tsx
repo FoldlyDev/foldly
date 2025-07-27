@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
-import { Switch } from '@/components/ui/shadcn/switch';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import { Switch } from '@/components/ui/core/shadcn/switch';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
 

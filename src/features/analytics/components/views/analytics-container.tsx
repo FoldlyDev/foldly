@@ -15,7 +15,8 @@ import {
   FileText,
   Link2,
 } from 'lucide-react';
-import { GradientButton, ContentLoader } from '@/components/ui';
+import { GradientButton } from '@/components/ui/core/gradient-button';
+import { ContentLoader } from '@/components/ui/feedback/content-loader';
 import type { DashboardOverview } from '../../types';
 
 // Simple interface that works without complex type extensions

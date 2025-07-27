@@ -6,8 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/animate-ui/radix/dialog';
-import type { LinkType } from '@/lib/supabase/types';
+} from '@/components/marketing/animate-ui/radix/dialog';
+import type { LinkType } from '@/lib/database/types';
 
 // Local form step type
 type CreateLinkStep = 'information' | 'branding' | 'success';

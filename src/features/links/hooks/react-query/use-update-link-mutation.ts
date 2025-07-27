@@ -8,7 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLinkAction } from '../../lib/actions/update';
 import { linksQueryKeys } from '../../lib/query-keys';
-import type { Link, DatabaseId } from '@/lib/supabase/types';
+import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
 import { toast } from 'sonner';
 

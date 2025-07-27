@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { HardDrive } from 'lucide-react';
-import { HelpPopover, AnimatedSelect } from '@/components/ui';
+import { HelpPopover } from '@/components/ui/core/help-popover';
+import { AnimatedSelect } from '@/components/ui/core/animated-select';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../../lib/constants';

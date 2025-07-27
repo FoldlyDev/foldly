@@ -1,10 +1,10 @@
 'use server';
 
 import { LinksDbService } from '@/features/links/lib/db-service';
-import { FileService } from '@/lib/services/shared/file-service';
-import { storageService } from '@/lib/services/shared/storage-service';
-import { canAcceptUploads, isLinkExpired } from '@/lib/supabase/types/links';
-import type { DatabaseResult } from '@/lib/supabase/types/common';
+import { FileService } from '@/lib/services/files/file-service';
+import { storageService } from '@/lib/services/files/storage-service';
+import { canAcceptUploads, isLinkExpired } from '@/lib/database/types/links';
+import type { DatabaseResult } from '@/lib/database/types/common';
 
 // =============================================================================
 // TYPES
@@ -191,8 +191,8 @@ export async function uploadFileToLinkAction(
       }
     } else {
       // For root files, check existing root files for this link
-      const { db } = await import('@/lib/db');
-      const { files } = await import('@/lib/supabase/schemas');
+      const { db } = await import('@/lib/database/connection');
+      const { files } = await import('@/lib/database/schemas');
       const { and, isNull, eq } = await import('drizzle-orm');
 
       const existingRootFilesResult = await db

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { GradientButton } from '@/components/ui';
+import { GradientButton } from '@/components/ui/core/gradient-button';
 
 export function OutroSection() {
   return (

@@ -12,7 +12,7 @@ import {
   updateLinkActionSchema,
   updateSettingsActionSchema,
 } from '../validations';
-import type { Link } from '@/lib/supabase/types/links';
+import type { Link } from '@/lib/database/types/links';
 
 /**
  * Update an existing link

@@ -1,10 +1,10 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { Diamond } from '@/components/ui/diamond';
-import { FlipCard } from '@/components/ui/flip-card';
-import { BubbleBackground } from '@/components/ui/bubble';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { Diamond } from '@/components/ui/core/diamond';
+import { FlipCard } from '@/components/marketing/flip-card';
+import { BubbleBackground } from '@/components/ui/core/bubble';
+import { GradientButton } from '@/components/ui/core/gradient-button';
 import { SignUpButton, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 

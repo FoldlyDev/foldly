@@ -8,16 +8,16 @@ import { memo, useCallback, useRef } from 'react';
 import { Upload, X, FileText, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
-import { Progress } from '@/components/ui/shadcn/progress';
-import { Badge } from '@/components/ui/shadcn/badge';
+} from '@/components/ui/core/shadcn/dialog';
+import { Progress } from '@/components/ui/core/shadcn/progress';
+import { Badge } from '@/components/ui/core/shadcn/badge';
 import {
   useFilesModalsStore,
   useFilesUploadStore,

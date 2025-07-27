@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { useEffect } from 'react';
-import type { LinkType } from '@/lib/supabase/types';
+import type { LinkType } from '@/lib/database/types';
 import { DEFAULT_FILE_SIZES, DEFAULT_FILE_TYPES } from '../lib/constants';
 
 // Simplified form state types

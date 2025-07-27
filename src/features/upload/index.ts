@@ -1,9 +1,17 @@
 // Upload Feature Exports
-// Export upload components, hooks, services, and types
-// Following 2025 feature-based architecture principles
+// Export upload components, hooks, and types
 
-// Upload services
-export * from './services';
+// Upload components
+export * from './components';
+
+// Upload hooks  
+export * from './hooks';
+
+// Upload store
+export * from './store';
 
 // Upload types
 export * from './types';
+
+// Upload utilities
+export * from './utils';

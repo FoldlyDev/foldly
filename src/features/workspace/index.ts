@@ -1,6 +1,7 @@
-// Workspace feature public API
+// Workspace Feature Exports
+// Export workspace components, hooks, and types
 
-// Actions
+// Workspace actions
 export {
   fetchWorkspaceTreeAction,
   moveItemAction,
@@ -16,15 +17,18 @@ export {
   type ActionResult,
 } from './lib/actions';
 
-// Hooks
+// Workspace components
+export {
+  WorkspaceTree,
+  WorkspaceContainer,
+} from './components';
+
+// Workspace hooks
 export {
   useWorkspaceTree,
   useWorkspaceRealtime,
   useWorkspaceUI,
 } from './hooks';
 
-// Components
-export {
-  WorkspaceTree,
-  WorkspaceContainer,
-} from './components';
+// Workspace services
+export * from './services';

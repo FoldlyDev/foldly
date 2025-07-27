@@ -7,18 +7,18 @@ import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import { useModalStore, useUIStore } from '../../store';
-import { ActionButton } from '@/components/ui/action-button';
-import { SearchInput } from '@/components/ui/search-input';
-import { ViewToggle } from '@/components/ui/view-toggle';
+import { ActionButton } from '@/components/ui/core/action-button';
+import { SearchInput } from '@/components/ui/core/search-input';
+import { ViewToggle } from '@/components/ui/core/view-toggle';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/shadcn/select';
+} from '@/components/ui/core/shadcn/select';
 import { toast } from 'sonner';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 
 interface PopulatedLinksStateProps {
   links: LinkWithStats[];

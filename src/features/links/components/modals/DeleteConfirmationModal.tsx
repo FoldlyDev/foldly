@@ -9,7 +9,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/animate-ui/radix/dialog';
+} from '@/components/marketing/animate-ui/radix/dialog';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useDeleteLinkMutation } from '../../hooks/react-query/use-delete-link-mutation';
 
