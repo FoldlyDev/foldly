@@ -11,9 +11,6 @@ import {
 } from '@/lib/webhooks/clerk-webhook-handler';
 import { ClerkBillingIntegrationService } from '@/lib/services/billing/clerk-billing-integration';
 
-// Force dynamic rendering to prevent build-time execution
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   // Security headers for webhook endpoint (Clerk 2025 best practices)
   const securityHeaders = {

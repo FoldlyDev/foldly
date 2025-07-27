@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFileToLinkAction, validateLinkForUploadAction } from '@/features/upload/lib/actions/upload-to-link';
 import { linkUploadValidationService } from '@/features/upload/lib/services/link-validation';
 
-// Force dynamic rendering to prevent build-time execution
-export const dynamic = 'force-dynamic';
-
 // =============================================================================
 // TYPES
 // =============================================================================
