@@ -1,17 +1,7 @@
-// Settings Feature Exports
-// Export settings components, hooks, and types
+// =============================================================================
+// SETTINGS FEATURE - Simplified Index (Clerk UserProfile Only)
+// =============================================================================
+// 🎯 Settings feature exports - Clerk handles all settings functionality
 
-// Settings components
+// Components
 export * from './components';
-
-// Settings hooks  
-export * from './hooks';
-
-// Settings store
-export * from './store';
-
-// Settings types
-export * from './types';
-
-// Settings utilities
-export * from './utils';

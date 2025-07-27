@@ -97,10 +97,10 @@ export function useBillingDataQuery(
     enabled: enabled && isLoaded && !!user?.id,
     staleTime,
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    refetchInterval,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false, // Keep disabled to prevent aggressive refetching
+    refetchInterval, // Only when explicitly set
+    retry: 2, // Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // Reduced max delay
   });
 
   // Calculate derived values - using any type to fix TS issues temporarily
@@ -154,7 +154,7 @@ export function useStorageMonitorQuery(
 } {
   const { data, isLoading, isError, refetch } = useBillingDataQuery({
     ...options,
-    staleTime: 2 * 60 * 1000, // 2 minutes for storage monitoring
+    staleTime: 5 * 60 * 1000, // FIXED: Increased from 2 to 5 minutes for less aggressive monitoring
   });
 
   const storageData = useMemo(() => {
@@ -222,8 +222,8 @@ export function useUserPlanDetailsQuery(
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes (plan details change less frequently)
     refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2, // FIXED: Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // FIXED: Reduced max delay
   });
 }
 
@@ -265,12 +265,12 @@ export function useRealTimeStorageQuery(
       return result.data;
     },
     enabled: enabled && isLoaded && !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minute (more frequent for storage monitoring)
+    staleTime: 3 * 60 * 1000, // FIXED: Increased from 1 to 3 minutes for less aggressive monitoring
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true, // Refetch when user returns to app
-    refetchInterval: 2 * 60 * 1000, // Auto-refresh every 2 minutes
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false, // FIXED: Disabled to prevent aggressive refetching
+    refetchInterval: undefined, // FIXED: Disabled auto-refresh to reduce aggressive behavior
+    retry: 2, // FIXED: Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // FIXED: Reduced max delay
   });
 }
 
@@ -314,8 +314,8 @@ export function useBillingIntegrationQuery(
     staleTime: 3 * 60 * 1000, // 3 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2, // FIXED: Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // FIXED: Reduced max delay
   });
 }
 
@@ -356,12 +356,12 @@ export function useUserStorageStatusQuery(
       return result.data;
     },
     enabled: enabled && isLoaded && !!user?.id,
-    staleTime: 1 * 60 * 1000, // 1 minute for storage monitoring
+    staleTime: 5 * 60 * 1000, // FIXED: Increased from 1 to 5 minutes for storage monitoring
     gcTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: true,
-    refetchInterval: 90 * 1000, // Auto-refresh every 90 seconds
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false, // FIXED: Disabled to prevent aggressive refetching
+    refetchInterval: undefined, // FIXED: Disabled aggressive 90-second auto-refresh
+    retry: 2, // FIXED: Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // FIXED: Reduced max delay
   });
 }
 
@@ -406,8 +406,8 @@ export function usePlanSyncQuery(
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
-    retry: 2, // Less retries since this is sync operation
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+    retry: 1, // FIXED: Reduced from 2 to 1 for sync operations
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000), // FIXED: Reduced for sync ops
   });
 }
 
@@ -455,7 +455,7 @@ export function usePlanConfig(
     staleTime: 5 * 60 * 1000, // 5 minutes - plan config changes infrequently
     gcTime: 15 * 60 * 1000, // 15 minutes
     refetchOnWindowFocus: false,
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: 2, // FIXED: Reduced from 3 to 2
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 15000), // FIXED: Reduced max delay
   });
 }

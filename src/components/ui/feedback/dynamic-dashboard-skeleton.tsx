@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { AnalyticsSkeleton } from '@/features/analytics/components/skeletons/analytics-skeleton';
 import { LinksSkeleton } from '@/features/links/components/skeletons/links-skeleton';
 import { FilesSkeleton } from '@/features/files/components/skeletons/files-skeleton';
-import { SettingsSkeleton } from '@/features/settings/components/skeletons/settings-skeleton';
+import { ClerkUserProfileSkeleton } from '@/features/settings/components/skeletons';
 import { WorkspaceSkeleton } from '@/features/workspace/components/skeletons/workspace-skeleton';
 
 // Dashboard feature route mapping
@@ -12,7 +12,7 @@ const DASHBOARD_FEATURES = {
   '/dashboard/analytics': AnalyticsSkeleton,
   '/dashboard/links': LinksSkeleton,
   '/dashboard/files': FilesSkeleton,
-  '/dashboard/settings': SettingsSkeleton,
+  '/dashboard/settings': ClerkUserProfileSkeleton,
   '/dashboard/workspace': WorkspaceSkeleton,
   '/dashboard': WorkspaceSkeleton, // Default dashboard route
 } as const;
@@ -53,7 +53,7 @@ export function SmartDashboardSkeleton() {
     case 'files':
       return <FilesSkeleton />;
     case 'settings':
-      return <SettingsSkeleton />;
+      return <ClerkUserProfileSkeleton />;
     case 'workspace':
     default:
       return <WorkspaceSkeleton />;

@@ -9,6 +9,7 @@
 
 import React from 'react';
 import { Protect, useAuth, useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/core/shadcn/card';
 import { Button } from '@/components/ui/core/shadcn/button';
 import { Lock, Crown, Zap, Shield, Loader2 } from 'lucide-react';
@@ -146,10 +147,11 @@ interface UpgradePromptProps {
 const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, className }) => {
   const metadata = FEATURE_METADATA[feature];
   const Icon = metadata.icon;
+  const router = useRouter();
   
   const handleUpgrade = () => {
-    // Redirect to billing page
-    window.location.href = '/dashboard/billing';
+    // FIXED: Use Next.js router instead of window.location.href
+    router.push('/dashboard/billing');
   };
 
   const getTierColor = (tier: FeatureTier) => {

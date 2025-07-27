@@ -5,6 +5,7 @@
 
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import type { FeatureKey } from '../components/access-control/FeatureGate';
 
 // =============================================================================
@@ -295,30 +296,32 @@ export const useMultipleFeatures = (features: FeatureKey[]): Record<FeatureKey, 
 
 /**
  * Hook to get billing-related navigation utilities
+ * FIXED: Now uses Next.js router navigation instead of window.location.href
  */
 export const useBillingNavigation = () => {
+  const router = useRouter();
+  
   return useMemo(() => ({
-    // Navigate to billing page
+    // Navigate to billing page - use Next.js router for smooth navigation
     goToBilling: () => {
-      window.location.href = '/dashboard/billing';
+      router.push('/dashboard/billing');
     },
     
-    // Navigate to pricing page
+    // Navigate to pricing page - use Next.js router for smooth navigation
     goToPricing: () => {
-      window.location.href = '/pricing';
+      router.push('/pricing');
     },
     
-    // Open Clerk's user profile with billing tab
+    // Open Clerk's user profile with billing tab - use Next.js router for smooth navigation
     openUserProfile: () => {
-      // This would open the UserProfile modal if implemented
-      window.location.href = '/dashboard/billing?tab=profile';
+      router.push('/dashboard/billing?tab=profile');
     },
     
-    // Direct links
+    // Direct links - for use with Next.js Link components
     billingUrl: '/dashboard/billing',
     pricingUrl: '/pricing',
     profileUrl: '/dashboard/billing?tab=profile',
-  }), []);
+  }), [router]);
 };
 
 // =============================================================================
