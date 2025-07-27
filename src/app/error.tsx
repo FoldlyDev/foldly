@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui/shadcn/button';
+import { Button } from '@/components/ui/core/shadcn/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/shadcn/card';
+} from '@/components/ui/core/shadcn/card';
 
 export default function Error({
   error,

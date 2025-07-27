@@ -26,7 +26,7 @@
 Foldly implements a **state-of-the-art 2025 TypeScript type system** with modern patterns that provide unprecedented type safety across all layers. Our architecture leverages the latest TypeScript 5.x features including:
 
 - ✅ **Database Foundation**: Complete PostgreSQL schema with comprehensive type definitions
-- ✅ **Centralized Type System**: Organized in `src/lib/supabase/types/` with modular structure
+- ✅ **Centralized Type System**: Organized in `src/lib/database/types/` with modular structure
 - ✅ **Result Pattern**: Type-safe error handling with `DatabaseResult<T>`
 - ✅ **Async State Management**: Consistent loading states and error handling
 - ✅ **Pagination & Filtering**: Reusable patterns for data queries
@@ -140,10 +140,10 @@ if (result.success) {
 
 Our 2025 type system follows a **centralized database-first architecture** with modular organization:
 
-### **✅ Database Types** (src/lib/supabase/types/) - **COMPLETED**
+### **✅ Database Types** (src/lib/database/types/) - **COMPLETED**
 
 ```
-src/lib/supabase/types/
+src/lib/database/types/
 ├── index.ts                 # ✅ Centralized barrel exports
 ├── enums.ts                 # ✅ Database enum type definitions
 ├── common.ts                # ✅ Shared patterns and utilities
@@ -156,10 +156,10 @@ src/lib/supabase/types/
 └── files.ts                 # ✅ File entity types
 ```
 
-### **✅ Database Schema** (src/lib/supabase/schemas/) - **COMPLETED**
+### **✅ Database Schema** (src/lib/database/schemas/) - **COMPLETED**
 
 ```
-src/lib/supabase/schemas/
+src/lib/database/schemas/
 ├── index.ts                 # ✅ Schema exports
 ├── enums.ts                 # ✅ PostgreSQL enum definitions
 ├── users.ts                 # ✅ User schema
@@ -168,6 +168,8 @@ src/lib/supabase/schemas/
 ├── folders.ts               # ✅ Folder schema
 ├── batches.ts               # ✅ Batch schema
 ├── files.ts                 # ✅ File schema
+├── subscription-tiers.ts    # ✅ Subscription tier schema
+├── user-subscriptions.ts    # ✅ User subscription schema
 └── relations.ts             # ✅ Database relationships
 ```
 
@@ -214,13 +216,13 @@ import type {
   Batch,
   DatabaseResult,
   AsyncState,
-} from '@/lib/supabase/types';
+} from '@/lib/database/types';
 
 // ✅ DATABASE SCHEMA: Import schema definitions for queries
-import { links, files, folders, batches } from '@/lib/supabase/schemas';
+import { links, files, folders, batches } from '@/lib/database/schemas';
 
 // ✅ DATABASE CONNECTION: Import database instance
-import { db } from '@/lib/db/db';
+import { db } from '@/lib/database';
 
 // ✅ FEATURE TYPES: Import domain-specific types from features
 import type { LinkFormData, LinkValidationError } from '@/features/links/types';
@@ -238,13 +240,13 @@ import { LinksContainer, useLinksStore } from '@/features/links';
 import { UploadService, type UploadState } from '@/features/upload';
 
 // ❌ NEVER: Import from individual type files
-import type { User } from '@/lib/supabase/types/users';
+import type { User } from '@/lib/database/types/users';
 
 // ❌ NEVER: Import database types from features
 import type { Link } from '@/features/links/types';
 
 // ❌ NEVER: Skip centralized type system
-import type { DatabaseResult } from '@/lib/supabase/types/common';
+import type { DatabaseResult } from '@/lib/database/types/common';
 ```
 
 ---
@@ -400,7 +402,7 @@ export const isValidUserRole = (value: unknown): value is UserRole => {
 
 ## 💾 Database Schema Types - **✅ DATABASE-FIRST IMPLEMENTATION COMPLETED**
 
-**Location**: `src/lib/supabase/types/` and `src/lib/supabase/schemas/` - **✅ COMPLETED**
+**Location**: `src/lib/database/types/` and `src/lib/database/schemas/` - **✅ COMPLETED**
 
 **Architecture**: Database-first approach with centralized type generation from PostgreSQL schema. All types are generated from the database schema, ensuring single source of truth.
 

@@ -1,4 +1,4 @@
-import { ContentLoader } from '@/components/ui/content-loader';
+import { ContentLoader } from '@/components/ui/feedback/content-loader';
 
 export default function Loading() {
   return (

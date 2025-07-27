@@ -1,4 +1,13 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_tables",
+      "mcp__ide__getDiagnostics",
+      "WebFetch(domain:clerk.com)",
+      "Bash(npm run type-check:*)",
+      "Bash(git commit:*)"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "supabase"

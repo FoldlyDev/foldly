@@ -78,10 +78,10 @@
 
 This project follows documentation-first development with comprehensive planning:
 
-- **[📋 PLANNING.md](docs/PLANNING.md)** - Complete development strategy, multi-link architecture, and security requirements
-- **[📝 TASK.md](docs/TASK.md)** - Task management, sprint planning, and advanced feature development roadmap
-- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, simplified database schemas, and multi-link system design
-- **[📖 PROJECT_OVERVIEW.md](docs/project_overview.md)** - Business requirements, advanced features, and UX specifications
+- **[📚 Documentation Hub](docs/README.md)** - Organized documentation with clear navigation
+- **[🗄️ Database Documentation](docs/database/README.md)** - Complete database schema and operations
+- **[🛠️ Implementation Guides](docs/implementation/README.md)** - Consolidated technical implementation guides
+- **[💼 Business Documentation](docs/business/README.md)** - Strategy, planning, and market analysis
 
 ## 🚀 Getting Started
 

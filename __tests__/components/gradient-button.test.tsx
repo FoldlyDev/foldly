@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { GradientButton } from '@/components/ui/core/gradient-button';
 
 describe('GradientButton Component', () => {
   // Normal behavior tests

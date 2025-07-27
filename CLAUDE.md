@@ -61,8 +61,8 @@ npm run check
 # Run pending migrations
 npm run up
 
-# Execute migration script
-npm run migrate
+# Execute migration script (Legacy - path needs update)
+# npm run migrate  # Note: migration.ts file does not exist, update package.json
 ```
 
 ## Architecture Overview
@@ -85,20 +85,50 @@ The project follows a **feature-based architecture** with domain-driven design:
 src/
 ├── app/                    # Next.js App Router pages
 ├── features/              # Domain-driven features
-│   ├── links/            # Multi-link system (base, custom, generated)
-│   ├── upload/           # File upload processing
-│   ├── files/            # File management
-│   ├── workspace/        # Workspace and folder management
-│   ├── dashboard/        # Analytics dashboard
-│   ├── landing/          # Landing page
-│   └── settings/         # User settings
-├── components/           # Shared UI components
-│   ├── ui/              # Base UI components
-│   └── layout/          # Layout components
+│   ├── analytics/        # Analytics dashboard
+│   ├── auth/            # Authentication domain (minimal)
+│   ├── billing/         # Subscription and billing management
+│   ├── files/           # File management
+│   ├── landing/         # Landing page marketing
+│   ├── links/           # Multi-link system (base, custom, generated)
+│   ├── notifications/   # Internal and external notifications
+│   ├── settings/        # User settings
+│   ├── upload/          # File upload processing
+│   └── workspace/       # Workspace and folder management
+├── components/          # Shared UI components
+│   ├── marketing/       # Marketing page components
+│   │   ├── animate-ui/  # Custom animated components
+│   │   └── flip-card.tsx # Flip card component
+│   ├── origin-ui/       # Origin UI components
+│   │   ├── comp-569.tsx # Component 569
+│   │   └── tree.tsx     # Tree component
+│   └── ui/              # Reorganized UI system
+│       ├── core/        # Core UI components (includes shadcn/)
+│       ├── composite/   # Complex composite components
+│       ├── feedback/    # Loading and feedback components
+│       └── layout/      # Layout components
 ├── lib/                 # Global utilities
-│   ├── supabase/        # Database schemas and client
+│   ├── database/        # Database schemas and connection (NEW)
+│   │   ├── connection.ts # Centralized database connection
+│   │   ├── schemas/     # Modular database schemas
+│   │   │   ├── users.ts, workspaces.ts, links.ts, folders.ts
+│   │   │   ├── batches.ts, files.ts, subscription-tiers.ts
+│   │   │   ├── user-subscriptions.ts, enums.ts, relations.ts
+│   │   │   └── index.ts # Clean export interface
+│   │   └── types/       # Database type definitions
+│   ├── db/              # Legacy database connection (DEPRECATED)
+│   │   └── db.ts        # Use database/connection.ts instead
+│   ├── services/        # Service layer
+│   │   ├── billing/     # Subscription services
+│   │   ├── files/       # File management services
+│   │   ├── users/       # User management services
+│   │   └── workspace/   # Workspace services
+│   ├── webhooks/        # Webhook handlers
+│   │   ├── clerk-webhook-handler.ts
+│   │   └── error-recovery.ts
 │   ├── hooks/           # Global hooks
-│   └── services/        # Shared services
+│   ├── config/          # Configuration files
+│   └── utils/           # Global utilities
 └── types/               # Global TypeScript types
 ```
 
@@ -112,24 +142,38 @@ src/
    - Automatic cache invalidation on mutations
 
 3. **Type-Safe Database Schema**:
-   - Modular schema organization in `src/lib/supabase/schemas/`
+   - Modular schema organization in `src/lib/database/schemas/`
+   - Centralized connection in `src/lib/database/connection.ts`
    - Drizzle ORM for type-safe database operations
+   - Schema exports through `drizzle/schema.ts` → `@/lib/database/schemas`
    - Row Level Security (RLS) policies for multi-tenancy
 
 4. **State Management Hybrid**:
    - React Query for server state (data fetching, caching)
    - Zustand for UI state (modals, filters, selections)
 
-### Database Schema
+### Database Schema & Migration System
 
-The application uses a 6-table PostgreSQL schema:
+**Schema Organization:**
+- **Location**: `src/lib/database/schemas/` (modular organization)
+- **Main Export**: `drizzle/schema.ts` exports from `@/lib/database/schemas`
+- **Connection**: `src/lib/database/connection.ts` (centralized)
+- **Legacy**: `src/lib/db/db.ts` (deprecated, use database/connection.ts)
 
-1. **users**: User accounts with Clerk integration
+**Migration Files** (in `drizzle/` directory):
+- `0000_sad_vanisher.sql` through `0008_calm_black_widow.sql`
+- `0009_flexible_subscription_system.sql` (latest)
+- Migration metadata in `drizzle/meta/` directory
+
+**8-Table PostgreSQL Schema:**
+1. **users**: User accounts with Clerk integration, storage quotas, and usage tracking
 2. **workspaces**: User workspaces for file organization
-3. **links**: Multi-link types (base/custom/generated) for file collection
-4. **folders**: Hierarchical folder structure
-5. **batches**: Upload batch tracking
-6. **files**: File metadata and storage paths
+3. **links**: Multi-link types (base/custom/generated) with usage stats and storage limits
+4. **folders**: Hierarchical folder structure with materialized paths
+5. **batches**: Upload batch tracking with progress status
+6. **files**: File metadata, storage paths, and processing status
+7. **subscriptionTiers**: Available subscription plans and feature limits
+8. **userSubscriptions**: User subscription state and billing management
 
 ### Authentication Flow
 
@@ -175,18 +219,91 @@ The application uses a 6-table PostgreSQL schema:
 
 ## Current Development Phase
 
-The project is in **Phase 2: Service Layer Integration** with the database foundation complete. Current focus:
+The project is in **Phase 3: Service Layer Integration** with all major architectural migrations complete. Current status:
 
-1. Fix database service imports and type alignments
-2. Update links feature to use database-first types
-3. Create UI adapter functions for type conversion
-4. Complete multi-link service layer implementation
+**✅ Completed Migrations:**
+1. Feature-Based Architecture Migration (January 2025) - Complete project reorganization
+2. Zustand Store Architecture Migration (January 2025) - Modern state management
+3. React Query + Server Actions Hybrid (January 2025) - Enterprise server state
+4. Optimal Project Organization & Architecture Restructure (January 2025) - Performance optimization
+
+**🚀 Current Focus:**
+- Service layer integration and type alignment
+- Multi-link system implementation  
+- Database service integration completion
+
+## Database Configuration
+
+### Current Setup (Drizzle ORM)
+
+```typescript
+// Primary connection: src/lib/database/connection.ts
+import { db } from '@/lib/database/connection';
+
+// Schema imports: src/lib/database/schemas/index.ts
+import { users, links, workspaces } from '@/lib/database/schemas';
+
+// Migration configuration: drizzle.config.ts
+// Schema export: drizzle/schema.ts → exports from @/lib/database/schemas
+```
+
+### Legacy Files (Do Not Use)
+
+- `src/lib/db/db.ts` - Deprecated, use `database/connection.ts`
+- `src/lib/supabase/schemas/` - Removed, migrated to `database/schemas/`
+- `src/lib/supabase/types/` - Removed, migrated to `database/types/` 
+- `npm run migrate` script references non-existent `migration.ts`
+
+## Component Architecture Updates
+
+### UI System Reorganization
+
+**New Structure:**
+```
+src/components/ui/
+├── core/          # shadcn + base components
+├── composite/     # Complex multi-component compositions  
+├── feedback/      # Loading, skeletons, error states
+└── layout/        # Layout-specific components
+```
+
+**Migration Status:**
+- ✅ Components moved to new structure
+- ✅ Core exports updated in `src/components/ui/core/index.ts`
+- 🚧 Feature imports need updating to new paths
+
+## Import Path Guidelines
+
+### Database
+```typescript
+// ✅ Correct
+import { db } from '@/lib/database/connection';
+import { users, links } from '@/lib/database/schemas';
+
+// ❌ Deprecated  
+import { db } from '@/lib/db/db';
+import { users } from '@/lib/supabase/schemas';
+```
+
+### UI Components
+```typescript
+// ✅ Correct
+import { Button } from '@/components/ui/core/shadcn';
+import { ConfigurableModal } from '@/components/ui/composite';
+import { ContentLoader } from '@/components/ui/feedback';
+
+// ❌ Old paths (being phased out)
+import { Button } from '@/components/ui/shadcn';
+import { ConfigurableModal } from '@/components/ui';
+```
 
 ## Important Notes
 
-- Always check for existing patterns in nearby files before implementing new features
-- Follow the feature-based architecture when adding new domains
-- Use React Query for all data fetching operations
-- Implement proper error handling with Result patterns
-- Maintain type safety throughout the stack
-- Test new features with appropriate unit and integration tests
+- **Database**: Always use `@/lib/database/connection` for db access
+- **Schemas**: Import from `@/lib/database/schemas` (not supabase paths)
+- **UI Components**: Use new organized structure (core/composite/feedback/layout)
+- **Services**: Domain-specific services in `@/lib/services/{domain}/`
+- **Migration Scripts**: Update package.json migrate script path if needed
+- **Testing**: Maintain co-located test files with updated import paths
+- **Type Safety**: Ensure all database operations use Drizzle types
+- **Feature Architecture**: Follow feature-based organization for new domains
