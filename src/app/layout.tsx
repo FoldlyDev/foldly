@@ -75,17 +75,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang='en'>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <QueryProvider>{children}</QueryProvider>
-          <Toaster />
-          <SpeedInsights />
-          <PerformanceMonitor />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang='en'>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <QueryProvider>
+          <ClerkProvider>
+            {children}
+          </ClerkProvider>
+        </QueryProvider>
+        <Toaster />
+        <SpeedInsights />
+        <PerformanceMonitor />
+      </body>
+    </html>
   );
 }
