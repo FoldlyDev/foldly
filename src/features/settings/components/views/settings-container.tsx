@@ -7,7 +7,10 @@
 
 import { useState, useEffect } from 'react';
 import { UserProfile, ClerkLoading, ClerkLoaded } from '@clerk/nextjs';
-import { MotionDiv, AnimatePresenceWrapper } from '@/components/ui/core/motion-wrappers';
+import {
+  MotionDiv,
+  AnimatePresenceWrapper,
+} from '@/components/ui/core/motion-wrappers';
 import { ClerkUserProfileSkeleton } from '../skeletons';
 
 // =============================================================================
@@ -31,9 +34,9 @@ export function SettingsContainer({}: SettingsContainerProps) {
   }, []);
 
   return (
-    <div className='dashboard-container !px-0 sm:!px-6'>
+    <div className='dashboard-container'>
       {/* Header Section */}
-      <div className='workspace-header !px-4 sm:!px-0'>
+      <div className='workspace-header'>
         <AnimatePresenceWrapper>
           {showContent && (
             <MotionDiv
@@ -54,7 +57,7 @@ export function SettingsContainer({}: SettingsContainerProps) {
       </div>
 
       {/* Main Content - Clerk UserProfile Only */}
-      <div className='space-y-6 mt-6 !px-0 !mx-0 sm:!px-6'>
+      <div className='space-y-6 mt-6 px-0 sm:px-6'>
         <AnimatePresenceWrapper>
           {showContent && (
             <MotionDiv
@@ -64,14 +67,12 @@ export function SettingsContainer({}: SettingsContainerProps) {
               transition={{ duration: 0.5 }}
             >
               <ClerkLoading>
-                <ClerkUserProfileSkeleton 
-                  loadingMessage="Loading your profile settings..."
-                />
+                <ClerkUserProfileSkeleton loadingMessage='Loading your profile settings...' />
               </ClerkLoading>
-              
+
               <ClerkLoaded>
-                <div className="w-full !px-0 !mx-0">
-                  <UserProfile routing="hash" />
+                <div className='w-full'>
+                  <UserProfile routing='hash' />
                 </div>
               </ClerkLoaded>
             </MotionDiv>

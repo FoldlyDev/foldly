@@ -4,6 +4,9 @@
 // 🎯 Admin endpoint for monitoring billing service performance and health
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Force dynamic rendering to prevent build-time execution
+export const dynamic = 'force-dynamic';
 import { auth } from '@clerk/nextjs/server';
 // TODO: Implement these services or remove this admin endpoint
 // import { optimizedBillingService } from '@/lib/services/billing/optimized-billing-service';

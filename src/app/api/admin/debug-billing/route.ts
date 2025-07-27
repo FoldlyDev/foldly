@@ -4,6 +4,9 @@
 // 🎯 API endpoint to debug and test the corrected billing plan detection
 
 import { NextRequest, NextResponse } from 'next/server';
+
+// Force dynamic rendering to prevent build-time execution
+export const dynamic = 'force-dynamic';
 import { auth } from '@clerk/nextjs/server';
 import { debugPlanDetection, isUserOnProPlan, testFeatureAccess, billingSystemHealthCheck } from '@/lib/debug-plan-detection';
 
