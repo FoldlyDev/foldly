@@ -1,12 +1,45 @@
+'use client';
+
 import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs';
-import { ArrowLeft } from '@/components/animate-ui/icons/arrow-left';
-import { AnimateIcon } from '@/components/animate-ui/icons/icon';
-import { ContentLoader } from '@/components/ui/content-loader';
-import { BubbleBackground } from '@/components/ui/bubble';
+import { ArrowLeft } from '@/components/marketing/animate-ui/icons/arrow-left';
+import { AnimateIcon } from '@/components/marketing/animate-ui/icons/icon';
+import { ContentLoader } from '@/components/ui/feedback/content-loader';
+import { BubbleBackground } from '@/components/ui/core/bubble';
+import { useEffect, useState } from 'react';
 
 import '@/features/auth/styles/auth-pages.css';
 
 export default function SignUpPage() {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return (
+      <div className='auth-page flex flex-col items-center justify-center'>
+        <BubbleBackground />
+        
+        {/* Back button */}
+        <a href='/' className='auth-back-button' aria-label='Back to home'>
+          <AnimateIcon>
+            <ArrowLeft />
+          </AnimateIcon>
+          Back
+        </a>
+
+        {/* Loading state for SSR */}
+        <div className='flex flex-col items-center justify-center gap-6 p-8 bg-neutral-50 border border-neutral-200 rounded-2xl shadow-xl max-w-md w-full relative z-10'>
+          <ContentLoader size='lg' />
+          <p className='text-neutral-600 text-sm font-medium text-center m-0'>
+            Loading authentication...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='auth-page flex flex-col items-center justify-center'>
       <BubbleBackground />
@@ -21,9 +54,11 @@ export default function SignUpPage() {
 
       {/* Loading state */}
       <ClerkLoading>
-        <div className='auth-loading-state'>
+        <div className='flex flex-col items-center justify-center gap-6 p-8 bg-neutral-50 border border-neutral-200 rounded-2xl shadow-xl max-w-md w-full relative z-10'>
           <ContentLoader size='lg' />
-          <p className='auth-loading-text'>Loading authentication...</p>
+          <p className='text-neutral-600 text-sm font-medium text-center m-0'>
+            Loading authentication...
+          </p>
         </div>
       </ClerkLoading>
 

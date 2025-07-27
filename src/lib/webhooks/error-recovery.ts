@@ -1,5 +1,5 @@
-import { userWorkspaceService } from '@/lib/services/user/user-workspace-service';
-import type { DatabaseResult } from '@/lib/supabase/types';
+import { userWorkspaceService } from '@/lib/services/users/user-workspace-service';
+import type { DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
 
 /**
