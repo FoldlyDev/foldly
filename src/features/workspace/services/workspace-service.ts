@@ -3,7 +3,6 @@ import { workspaces } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import type {
   Workspace,
-  WorkspaceInsert,
   WorkspaceUpdate,
   DatabaseResult,
 } from '@/lib/database/types';
@@ -49,7 +48,7 @@ export class WorkspaceService {
       console.log(`✅ WORKSPACE_CREATED: ${workspace.id} for user ${userId}`);
       return {
         success: true,
-        data: { ...workspace, updatedAt: workspace.createdAt },
+        data: workspace,
       };
     } catch (error) {
       console.error(`❌ WORKSPACE_CREATE_FAILED: User ${userId}`, error);
@@ -68,9 +67,7 @@ export class WorkspaceService {
         .where(eq(workspaces.userId, userId))
         .limit(1);
 
-      return workspace
-        ? { ...workspace, updatedAt: workspace.createdAt }
-        : null;
+      return workspace || null;
     } catch (error) {
       console.error(`❌ WORKSPACE_FETCH_FAILED: User ${userId}`, error);
       return null;
@@ -98,7 +95,7 @@ export class WorkspaceService {
       console.log(`✅ WORKSPACE_UPDATED: ${workspaceId}`);
       return {
         success: true,
-        data: { ...updatedWorkspace, updatedAt: updatedWorkspace.createdAt },
+        data: updatedWorkspace,
       };
     } catch (error) {
       console.error(`❌ WORKSPACE_UPDATE_FAILED: ${workspaceId}`, error);
@@ -135,9 +132,7 @@ export class WorkspaceService {
         .where(eq(workspaces.id, workspaceId))
         .limit(1);
 
-      return workspace
-        ? { ...workspace, updatedAt: workspace.createdAt }
-        : null;
+      return workspace || null;
     } catch (error) {
       console.error(`❌ WORKSPACE_FETCH_BY_ID_FAILED: ${workspaceId}`, error);
       return null;
