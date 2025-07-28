@@ -1,4 +1,4 @@
-import { userWorkspaceService } from '@/lib/services/users/user-workspace-service';
+import { userWorkspaceService } from '@/features/users/services/user-workspace-service';
 import type { DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
 
