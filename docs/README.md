@@ -2,7 +2,7 @@
 
 > **Project Status**: 🚀 **Database Foundation Complete** - Service Layer Integration Ready  
 > **Documentation Version**: 2025.1  
-> **Last Updated**: January 2025
+> **Last Updated**: January 28, 2025
 
 Welcome to Foldly's comprehensive documentation hub. This documentation is organized following 2025 best practices with clear separation of concerns across different aspects of the project.
 
@@ -42,6 +42,7 @@ Welcome to Foldly's comprehensive documentation hub. This documentation is organ
 ### 🔧 **Development** - Development Processes & Guidelines
 
 - **[FEATURES.md](./development/FEATURES.md)** - Feature specifications and implementation details
+- **[TYPESCRIPT_ERROR_RESOLUTION.md](./development/TYPESCRIPT_ERROR_RESOLUTION.md)** - TypeScript error resolution and webhook improvements
 - **[SECURITY_POLICY.md](./development/SECURITY_POLICY.md)** - Security guidelines and compliance standards
 - **[CHANGELOG.md](./CHANGELOG.md)** - Unified changelog with all project updates
 
@@ -64,6 +65,7 @@ Welcome to Foldly's comprehensive documentation hub. This documentation is organ
 - **Architecture**: Review [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) for technical architecture details
 - **Project Structure**: See [Migrations Index](./migrations/README.md) for architectural evolution history
 - **Type System**: Check [TYPE_ARCHITECTURE.md](./architecture/TYPE_ARCHITECTURE.md) for TypeScript patterns
+- **Error Resolution**: See [TYPESCRIPT_ERROR_RESOLUTION.md](./development/TYPESCRIPT_ERROR_RESOLUTION.md) for error fixes
 - **Current Features**: See [FEATURES.md](./development/FEATURES.md) for feature specifications
 
 ### **For Business Stakeholders**
