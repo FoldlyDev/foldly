@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { Webhook } from 'svix';
-import { userDeletionService } from '@/lib/services/users/user-deletion-service';
-import { userWorkspaceService } from '@/lib/services/users/user-workspace-service';
+import { userDeletionService } from '@/features/users/services/user-deletion-service';
+import { userWorkspaceService } from '@/features/users/services/user-workspace-service';
 import { 
   transformClerkUserData,
   transformSubscriptionEventData,
