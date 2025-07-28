@@ -5,7 +5,6 @@
 
 import type {
   DatabaseId,
-  TimestampFields,
   WithoutSystemFields,
 } from './common';
 
@@ -16,10 +15,11 @@ import type {
 /**
  * Workspace entity - exact match to database schema
  */
-export interface Workspace extends TimestampFields {
+export interface Workspace {
   id: DatabaseId;
   userId: DatabaseId;
   name: string;
+  createdAt: Date;
 }
 
 /**
@@ -31,7 +31,7 @@ export type WorkspaceInsert = WithoutSystemFields<Workspace>;
  * Workspace update type - for updating existing workspaces
  */
 export type WorkspaceUpdate = Partial<
-  Omit<Workspace, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
+  Omit<Workspace, 'id' | 'userId' | 'createdAt'>
 >;
 
 // =============================================================================
@@ -163,7 +163,6 @@ export interface WorkspaceFilterOptions {
 export type WorkspaceSortField =
   | 'name'
   | 'createdAt'
-  | 'updatedAt'
   | 'lastActivity'
   | 'totalItems'
   | 'storageUsed';

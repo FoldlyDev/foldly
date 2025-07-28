@@ -42,17 +42,31 @@ interface ClerkSubscriptionItemEvent {
   organization_id?: string;
 }
 
-interface ClerkPaymentAttemptEvent {
+
+// Clerk email address structure
+interface ClerkEmailAddress {
   id: string;
-  object: 'payment_attempt';
-  status: 'succeeded' | 'failed' | 'pending' | 'canceled';
-  amount: number;
-  currency: string;
-  subscription_id?: string;
+  email_address: string;
+  verification?: {
+    status: string;
+    strategy?: string;
+  };
+  linked_to?: any[];
+  object: 'email_address';
+}
+
+// Clerk user data structure from webhooks
+interface ClerkUserData {
+  id: string;
+  email_addresses: ClerkEmailAddress[];
+  primary_email_address_id: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image_url?: string;
   created_at: number;
-  failure_reason?: string;
-  user_id?: string;
-  organization_id?: string;
+  updated_at: number;
+  object: 'user';
 }
 
 // Webhook user data includes the ID from Clerk
@@ -90,11 +104,31 @@ export async function validateClerkWebhook(
   }
 }
 
-export function transformClerkUserData(clerkUser: any): WebhookUserData {
-  // Handle missing email gracefully
-  const primaryEmail =
-    clerkUser.email_addresses?.find((email: any) => email.primary)
-      ?.email_address || clerkUser.email_addresses?.[0]?.email_address;
+export function transformClerkUserData(clerkUser: ClerkUserData): WebhookUserData {
+  // Log multi-email scenarios for debugging
+  if (clerkUser.email_addresses?.length > 1) {
+    console.log(`📧 MULTI_EMAIL_USER: User ${clerkUser.id} has ${clerkUser.email_addresses.length} email addresses`, {
+      emails: clerkUser.email_addresses.map(e => e.email_address),
+      primaryId: clerkUser.primary_email_address_id
+    });
+  }
+  
+  // Handle missing email gracefully - use Clerk's primary_email_address_id to find primary email
+  let primaryEmail: string | undefined;
+  
+  if (clerkUser.primary_email_address_id && clerkUser.email_addresses) {
+    // Find the primary email using the primary_email_address_id (Clerk's official method)
+    const primaryEmailObj = clerkUser.email_addresses.find(
+      (email: ClerkEmailAddress) => email.id === clerkUser.primary_email_address_id
+    );
+    primaryEmail = primaryEmailObj?.email_address;
+  }
+  
+  // Fallback to first available email if primary not found
+  if (!primaryEmail && clerkUser.email_addresses?.length > 0) {
+    console.log(`⚠️ PRIMARY_EMAIL_FALLBACK: Using first email for user ${clerkUser.id}`);
+    primaryEmail = clerkUser.email_addresses[0]?.email_address;
+  }
 
   if (!primaryEmail) {
     throw new Error('User must have a valid email address');
@@ -110,10 +144,25 @@ export function transformClerkUserData(clerkUser: any): WebhookUserData {
   };
 }
 
-function generateUsername(clerkUser: any): string {
-  // Generate username from email or ID as fallback
-  const emailPrefix =
-    clerkUser.email_addresses?.[0]?.email_address?.split('@')[0];
+function generateUsername(clerkUser: ClerkUserData): string {
+  // Generate username from primary email first, then fallback to first email, then ID
+  let email: string | undefined;
+  
+  // Try to get primary email first
+  if (clerkUser.primary_email_address_id && clerkUser.email_addresses) {
+    const primaryEmailObj = clerkUser.email_addresses.find(
+      (emailObj: any) => emailObj.id === clerkUser.primary_email_address_id
+    );
+    email = primaryEmailObj?.email_address;
+  }
+  
+  // Fallback to first email
+  if (!email && clerkUser.email_addresses?.length > 0) {
+    email = clerkUser.email_addresses[0]?.email_address;
+  }
+  
+  // Extract username from email or use ID as last resort
+  const emailPrefix = email?.split('@')[0];
   return emailPrefix || `user_${clerkUser.id.slice(-8)}`;
 }
 

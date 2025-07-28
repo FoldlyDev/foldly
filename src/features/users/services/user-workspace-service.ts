@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import { workspaceService } from '@/features/workspace/services/workspace-service';
 import type {
   User,
-  UserInsert,
   Workspace,
   DatabaseResult,
 } from '@/lib/database/types';
@@ -53,29 +52,35 @@ export class UserWorkspaceService {
             );
             user = existingUser;
           } else {
-            // Different Clerk ID - use cascade deletion to clean up old user and create new one
+            // Different Clerk ID - UPDATE existing user instead of deleting (prevents webhook race condition)
             console.log(
-              `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email} but different Clerk ID. Deleting old user ${existingUser.id} and creating new user ${userData.id}`
+              `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email} but different Clerk ID. Updating existing user ${existingUser.id} with new Clerk ID ${userData.id}`
             );
 
-            // Delete the old user - this will cascade delete all related records (workspaces, files, links, etc.)
-            await tx.delete(users).where(eq(users.id, existingUser.id));
-
-            // Create the new user with the new Clerk ID
+            // Update the existing user with the new Clerk ID - preserves all relationships and workspace
             [user] = await tx
-              .insert(users)
-              .values({
-                id: userData.id,
+              .update(users)
+              .set({
+                id: userData.id, // Update to new Clerk ID
                 email: userData.email,
                 username: userData.username,
                 firstName: userData.firstName,
                 lastName: userData.lastName,
                 avatarUrl: userData.avatarUrl,
                 // Storage tracking now handled by real-time calculation
-                createdAt: new Date(),
                 updatedAt: new Date(),
+                // Keep original createdAt to preserve user history
               })
+              .where(eq(users.id, existingUser.id))
               .returning();
+
+            // Update workspace to maintain user connection with new Clerk ID
+            await tx
+              .update(workspaces)
+              .set({
+                userId: userData.id, // Update workspace to reference new user ID
+              })
+              .where(eq(workspaces.userId, existingUser.id));
 
             if (!user) {
               throw new Error(
@@ -126,24 +131,30 @@ export class UserWorkspaceService {
                 .limit(1);
 
               if (existingUser) {
-                // Delete the existing user (cascade delete all related records)
-                await tx.delete(users).where(eq(users.id, existingUser.id));
-
-                // Create the new user
+                // Update the existing user instead of deleting (prevents webhook race condition)
                 [user] = await tx
-                  .insert(users)
-                  .values({
-                    id: userData.id,
+                  .update(users)
+                  .set({
+                    id: userData.id, // Update to new Clerk ID
                     email: userData.email,
                     username: userData.username,
                     firstName: userData.firstName,
                     lastName: userData.lastName,
                     avatarUrl: userData.avatarUrl,
                     // Storage tracking now handled by real-time calculation
-                    createdAt: new Date(),
                     updatedAt: new Date(),
+                    // Keep original createdAt to preserve user history
                   })
+                  .where(eq(users.id, existingUser.id))
                   .returning();
+
+                // Update workspace to maintain user connection with new Clerk ID
+                await tx
+                  .update(workspaces)
+                  .set({
+                    userId: userData.id, // Update workspace to reference new user ID
+                  })
+                  .where(eq(workspaces.userId, existingUser.id));
               } else {
                 // This should rarely happen, but handle gracefully
                 throw new Error(
@@ -190,10 +201,7 @@ export class UserWorkspaceService {
             success: true,
             data: {
               user,
-              workspace: {
-                ...existingWorkspace,
-                updatedAt: existingWorkspace.createdAt,
-              },
+              workspace: existingWorkspace,
             },
           };
         }
@@ -205,7 +213,7 @@ export class UserWorkspaceService {
           success: true,
           data: {
             user,
-            workspace: { ...workspace, updatedAt: workspace.createdAt },
+            workspace,
           },
         };
       });
@@ -268,15 +276,41 @@ export class UserWorkspaceService {
     try {
       let user;
 
-      // Strategy: Check for existing user first, then handle conflicts gracefully
-      const existingUserByEmail = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, userData.email))
-        .limit(1);
+      // Strategy: Check for existing user by Clerk ID first, then by email
+      // This handles cases where users have multiple emails or changed their primary email
+      const [existingUserById, existingUserByEmail] = await Promise.all([
+        // Check by Clerk ID first (most reliable)
+        db.select().from(users).where(eq(users.id, userData.id)).limit(1),
+        // Check by email (for conflict resolution)
+        db.select().from(users).where(eq(users.email, userData.email)).limit(1)
+      ]);
 
-      if (existingUserByEmail.length > 0) {
-        // User exists with this email - update with new Clerk ID
+      if (existingUserById.length > 0) {
+        // User exists with same Clerk ID - simple update (user might have changed primary email)
+        console.log(
+          `✅ EXISTING_USER_UPDATE: User ${userData.id} exists, updating profile data`
+        );
+        
+        [user] = await db
+          .update(users)
+          .set({
+            email: userData.email, // Update to current primary email
+            username: userData.username,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            avatarUrl: userData.avatarUrl,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userData.id))
+          .returning();
+          
+      } else if (existingUserByEmail.length > 0) {
+        // Different Clerk ID but same email - potential conflict or email change
+        const existingUser = existingUserByEmail[0];
+        if (!existingUser) {
+          throw new Error('Unexpected: existing user by email not found');
+        }
+        
         console.log(
           `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email}, updating with new Clerk ID ${userData.id}`
         );
@@ -294,6 +328,14 @@ export class UserWorkspaceService {
           })
           .where(eq(users.email, userData.email))
           .returning();
+
+        // Update workspace to maintain user connection with new Clerk ID
+        await db
+          .update(workspaces)
+          .set({
+            userId: userData.id, // Update workspace to reference new user ID
+          })
+          .where(eq(workspaces.userId, existingUser.id));
       } else {
         // No existing user - create new one
         [user] = await db
@@ -407,7 +449,7 @@ export class UserWorkspaceService {
         success: true,
         data: {
           user,
-          workspace: { ...workspace, updatedAt: workspace.createdAt },
+          workspace,
         },
       };
     } catch (error) {
