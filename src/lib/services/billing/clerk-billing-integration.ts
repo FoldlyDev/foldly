@@ -80,10 +80,13 @@ export class ClerkBillingIntegrationService {
         ) {
           currentPlan = 'business';
           planFeatures = [
-            'unlimited_storage',
-            'advanced_branding',
+            'storage_limits',
             'priority_support',
-            'team_collaboration',
+            'custom_branding',
+            'password_protected_links',
+            'file_restrictions',
+            'premium_short_links',
+            'qr_code_generation',
           ];
         } else if (
           has({ plan: 'pro' }) ||
@@ -93,24 +96,31 @@ export class ClerkBillingIntegrationService {
           currentPlan = 'pro';
           planFeatures = [
             'custom_branding',
-            'password_protection',
-            'extended_storage',
-            'analytics',
+            'password_protected_links',
+            'storage_limits',
+            'file_restrictions',
+            'premium_short_links',
+            'qr_code_generation',
           ];
         } else {
           // Default to free plan
           currentPlan = 'free';
-          planFeatures = ['basic_sharing', 'limited_storage'];
+          planFeatures = [
+            'storage_limits',
+            'custom_username',
+            'unlimited_links',
+            'email_notifications',
+            'file_preview_thumbnails',
+            'cloud_integrations',
+          ];
         }
 
         // Check for additional features
+        // Additional features that might be granted separately
         const additionalFeatures = [
           'widgets',
-          'advanced_analytics',
           'custom_domains',
-          'api_access',
           'bulk_upload',
-          'file_previews',
           'version_control',
         ];
 
