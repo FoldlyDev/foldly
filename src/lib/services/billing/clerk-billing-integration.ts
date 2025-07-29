@@ -8,7 +8,6 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
 import { subscriptionPlans, type PlanUIMetadata } from '@/lib/database/schemas';
 import { SubscriptionAnalyticsService } from './subscription-analytics-service';
-import { BillingCacheInvalidationService } from '@/features/billing/services';
 import type { DatabaseResult } from '@/lib/database/types';
 
 // =============================================================================
@@ -352,22 +351,6 @@ export class ClerkBillingIntegrationService {
           break;
         default:
           console.log(`No specific handler for event type: ${data.eventType}`);
-      }
-
-      // 🔥 CACHE INVALIDATION: Trigger cache refresh after successful processing
-      const cacheInvalidationResult = await BillingCacheInvalidationService.invalidateBillingCache({
-        userId: data.userId,
-        eventType: data.eventType,
-        planChanged: data.fromPlan !== data.toPlan,
-        timestamp: new Date().toISOString(),
-      });
-
-      if (!cacheInvalidationResult.success) {
-        console.error(
-          `⚠️ CACHE_INVALIDATION_WARNING: Failed for user ${data.userId}:`,
-          cacheInvalidationResult.error
-        );
-        // Don't fail the whole operation if cache invalidation fails
       }
 
       return { success: true, data: undefined };

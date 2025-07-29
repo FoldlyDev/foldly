@@ -4,10 +4,10 @@
 // 🎯 Catch-all route for Clerk UserProfile component with proper routing support
 
 import React from 'react';
-import { Metadata } from 'next';
+import { type Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { BillingPageClient } from '@/features/billing/components/views/BillingPageClient';
+import { BillingContainer } from '@/features/billing';
 
 export const metadata: Metadata = {
   title: 'Billing & Subscription | Foldly',
@@ -15,15 +15,7 @@ export const metadata: Metadata = {
     'Manage your subscription, view billing history, and update payment methods.',
 };
 
-interface BillingCatchAllPageProps {
-  params: {
-    rest?: string[];
-  };
-}
-
-export default async function BillingCatchAllPage({
-  params,
-}: BillingCatchAllPageProps) {
+export default async function BillingPage() {
   const { userId } = await auth();
 
   if (!userId) {
@@ -31,5 +23,5 @@ export default async function BillingCatchAllPage({
   }
 
   // Pass the route parameters to the client component
-  return <BillingPageClient params={params} />;
+  return <BillingContainer />;
 }

@@ -11,5 +11,4 @@ export * from '@/features/workspace/services'; // WorkspaceService
 // Note: Billing services are maintained in @/lib/services/billing
 
 // Local services (maintained here for core functionality)
-export * from './billing';
 export * from './storage';
