@@ -60,7 +60,7 @@ export async function debugPlanDetection(): Promise<PlanDetectionDebugInfo> {
   try {
     // Test Clerk authentication
     const { userId, has } = await auth();
-    
+
     debugInfo.clerkAuthStatus = {
       isAuthenticated: !!userId,
       userId: userId || null,
@@ -69,18 +69,23 @@ export async function debugPlanDetection(): Promise<PlanDetectionDebugInfo> {
     };
 
     if (!userId) {
-      debugInfo.recommendations.push('User is not authenticated - sign in required');
+      debugInfo.recommendations.push(
+        'User is not authenticated - sign in required'
+      );
       return debugInfo;
     }
 
     if (!has) {
-      debugInfo.recommendations.push('Clerk has() method not available - check Clerk configuration');
+      debugInfo.recommendations.push(
+        'Clerk has() method not available - check Clerk configuration'
+      );
       return debugInfo;
     }
 
     // Test plan detection using new billing service
     const planResult = await billing.getCurrentPlan();
-    const integratedDataResult = await billing.integration.getIntegratedPlanData();
+    const integratedDataResult =
+      await billing.integration.getIntegratedPlanData();
 
     if (integratedDataResult.success) {
       const data = integratedDataResult.data;
@@ -100,21 +105,33 @@ export async function debugPlanDetection(): Promise<PlanDetectionDebugInfo> {
 
       // Add recommendations based on plan status
       if (data.clerkPlan.currentPlan === 'free') {
-        debugInfo.recommendations.push('User is on free plan - consider upgrade options');
+        debugInfo.recommendations.push(
+          'User is on free plan - consider upgrade options'
+        );
       } else {
-        debugInfo.recommendations.push(`User is on ${data.clerkPlan.currentPlan} plan - billing integration working correctly`);
+        debugInfo.recommendations.push(
+          `User is on ${data.clerkPlan.currentPlan} plan - billing integration working correctly`
+        );
       }
 
-      if (!data.clerkPlan.hasActiveBilling && data.clerkPlan.currentPlan !== 'free') {
-        debugInfo.recommendations.push('Plan detected but no active billing found - check Clerk billing configuration');
+      if (
+        !data.clerkPlan.hasActiveBilling &&
+        data.clerkPlan.currentPlan !== 'free'
+      ) {
+        debugInfo.recommendations.push(
+          'Plan detected but no active billing found - check Clerk billing configuration'
+        );
       }
     } else {
-      debugInfo.planDetection.planDetectionError = integratedDataResult.error || 'Unknown error getting plan data';
-      debugInfo.recommendations.push('Plan detection failed - check billing service configuration');
+      debugInfo.planDetection.planDetectionError =
+        integratedDataResult.error || 'Unknown error getting plan data';
+      debugInfo.recommendations.push(
+        'Plan detection failed - check billing service configuration'
+      );
     }
-
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     debugInfo.clerkAuthStatus.authError = errorMessage;
     debugInfo.planDetection.planDetectionError = errorMessage;
     debugInfo.recommendations.push(`Critical error: ${errorMessage}`);
@@ -129,7 +146,7 @@ export async function debugPlanDetection(): Promise<PlanDetectionDebugInfo> {
 export async function isUserOnProPlan(): Promise<ProPlanCheckResult> {
   try {
     const { userId } = await auth();
-    
+
     if (!userId) {
       return {
         isPro: false,
@@ -200,7 +217,7 @@ export async function billingSystemHealthCheck(): Promise<{
     // Test Clerk authentication
     const { userId } = await auth();
     services.clerkAuth = !!userId;
-    
+
     if (!userId) {
       issues.push('Clerk authentication failed');
     }
@@ -240,7 +257,10 @@ export async function billingSystemHealthCheck(): Promise<{
   } catch (error) {
     return {
       isHealthy: false,
-      issues: ['Critical system error: ' + (error instanceof Error ? error.message : 'Unknown error')],
+      issues: [
+        'Critical system error: ' +
+          (error instanceof Error ? error.message : 'Unknown error'),
+      ],
       services,
     };
   }

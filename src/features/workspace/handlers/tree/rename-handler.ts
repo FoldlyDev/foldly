@@ -29,7 +29,7 @@ export async function handleRename(
   }
 
   const originalName = itemData.name;
-  
+
   // Update data immediately (optimistic update)
   itemData.name = value;
 
@@ -40,7 +40,7 @@ export async function handleRename(
     const action = isFile ? renameFileAction : renameFolderAction;
 
     const result = await action(itemId, value);
-    
+
     if (result.success) {
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
       toast.success(`Renamed to ${value}`);

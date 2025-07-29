@@ -26,17 +26,23 @@ import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { setDragOperationActive } from '../../lib/tree-data';
 import { toast } from 'sonner';
-import { 
-  BatchOperationModal, 
+import {
+  BatchOperationModal,
   type BatchOperationItem,
-  type BatchOperationProgress 
+  type BatchOperationProgress,
 } from '../modals/batch-operation-modal';
 
 interface WorkspaceToolbarProps {
   className?: string;
   treeInstance?: {
-    getSelectedItems?: () => Array<{ getId: () => string; getItemName: () => string; isFolder: () => boolean }>;
-    getItemInstance?: (id: string) => { expand: () => void; isExpanded: () => boolean } | null;
+    getSelectedItems?: () => Array<{
+      getId: () => string;
+      getItemName: () => string;
+      isFolder: () => boolean;
+    }>;
+    getItemInstance?: (
+      id: string
+    ) => { expand: () => void; isExpanded: () => boolean } | null;
     addFolder?: (name: string, parentId?: string) => string | null;
     deleteItems?: (itemIds: string[]) => void;
     expandAll?: () => void;
@@ -59,7 +65,9 @@ export function WorkspaceToolbar({
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<BatchOperationProgress | undefined>();
+  const [batchProgress, setBatchProgress] = useState<
+    BatchOperationProgress | undefined
+  >();
   const queryClient = useQueryClient();
 
   const { openUploadModal } = useWorkspaceUI();
@@ -88,10 +96,10 @@ export function WorkspaceToolbar({
       }
 
       const totalItems = selectedItems.length;
-      
+
       // Set operation active to prevent data rebuilds during batch operation
       setDragOperationActive(true);
-      
+
       try {
         // Initialize progress
         setBatchProgress({
@@ -106,16 +114,22 @@ export function WorkspaceToolbar({
         }
 
         // Track progress
-        setBatchProgress(prev => prev ? { ...prev, currentItem: 'Processing items...' } : undefined);
+        setBatchProgress(prev =>
+          prev ? { ...prev, currentItem: 'Processing items...' } : undefined
+        );
 
         const result = await batchDeleteItemsAction(selectedItems);
-        
+
         if (!result.success) {
-          setBatchProgress(prev => prev ? { 
-            ...prev, 
-            failed: [result.error || 'Unknown error'],
-            completed: totalItems 
-          } : undefined);
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  failed: [result.error || 'Unknown error'],
+                  completed: totalItems,
+                }
+              : undefined
+          );
           throw new Error(result.error || 'Failed to delete items');
         }
 
@@ -125,7 +139,7 @@ export function WorkspaceToolbar({
           const { currentItem, ...rest } = prev;
           return {
             ...rest,
-            completed: totalItems
+            completed: totalItems,
           };
         });
 
@@ -137,13 +151,13 @@ export function WorkspaceToolbar({
     },
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
-        refetchType: 'none'
+        refetchType: 'none',
       });
       onClearSelection?.();
     },
-    onError: (error) => {
+    onError: error => {
       // If database deletion fails, restore the tree state with immediate refetch
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
     },
@@ -158,7 +172,6 @@ export function WorkspaceToolbar({
     },
   });
 
-
   // Create folder mutation - simplified
   const createFolderMutation = useMutation({
     mutationFn: async (folderName: string) => {
@@ -169,7 +182,8 @@ export function WorkspaceToolbar({
 
       // Get selected folder from tree if available
       const selectedItems = treeInstance?.getSelectedItems?.() || [];
-      const parentFolderId = selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
+      const parentFolderId =
+        selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
 
       // Add to tree UI immediately
       if (treeInstance?.addFolder) {
@@ -188,9 +202,11 @@ export function WorkspaceToolbar({
       setNewFolderName('');
       setIsCreatingFolder(false);
     },
-    onError: (error) => {
+    onError: error => {
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.error(error instanceof Error ? error.message : 'Failed to create folder');
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create folder'
+      );
     },
   });
 
@@ -204,32 +220,34 @@ export function WorkspaceToolbar({
   const getBatchOperationItems = (): BatchOperationItem[] => {
     try {
       const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
-      return selectedItems.map(id => {
-        const treeItem = selectedTreeItems.find(item => {
+      return selectedItems
+        .map(id => {
+          const treeItem = selectedTreeItems.find(item => {
+            try {
+              return item?.getId?.() === id;
+            } catch {
+              return false;
+            }
+          });
+
+          let name = 'Unknown';
+          let type: 'file' | 'folder' = 'file';
+
           try {
-            return item?.getId?.() === id;
+            name = treeItem?.getItemName?.() || 'Unknown';
           } catch {
-            return false;
+            name = 'Unknown';
           }
-        });
-        
-        let name = 'Unknown';
-        let type: 'file' | 'folder' = 'file';
-        
-        try {
-          name = treeItem?.getItemName?.() || 'Unknown';
-        } catch {
-          name = 'Unknown';
-        }
-        
-        try {
-          type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
-        } catch {
-          type = 'file';
-        }
-        
-        return { id, name, type };
-      }).filter(item => item.name !== 'Unknown'); // Filter out invalid items
+
+          try {
+            type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
+          } catch {
+            type = 'file';
+          }
+
+          return { id, name, type };
+        })
+        .filter(item => item.name !== 'Unknown'); // Filter out invalid items
     } catch (error) {
       console.warn('Error in getBatchOperationItems:', error);
       return [];
@@ -238,7 +256,7 @@ export function WorkspaceToolbar({
 
   const handleDelete = () => {
     if (selectedItems.length === 0) return;
-    
+
     // Always show the modal for confirmation (both single and multiple items)
     setShowBatchModal(true);
   };
@@ -251,7 +269,7 @@ export function WorkspaceToolbar({
   const getTargetFolderName = () => {
     const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
     const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
-    
+
     if (selectedFolders.length === 1) {
       return selectedFolders[0]?.getItemName?.() || 'Selected Folder';
     } else if (selectedFolders.length > 1) {
@@ -262,11 +280,12 @@ export function WorkspaceToolbar({
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
-      className={`${className}`}>
+      className={`${className}`}
+    >
       {/* Main toolbar */}
       <div className='workspace-toolbar-main'>
         {/* Left side - Main actions */}
@@ -279,8 +298,8 @@ export function WorkspaceToolbar({
                   type='text'
                   placeholder='Folder name'
                   value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === 'Enter') {
                       handleCreateFolder();
                     } else if (e.key === 'Escape') {
@@ -294,7 +313,9 @@ export function WorkspaceToolbar({
                 <Button
                   size='sm'
                   onClick={handleCreateFolder}
-                  disabled={!newFolderName.trim() || createFolderMutation.isPending}
+                  disabled={
+                    !newFolderName.trim() || createFolderMutation.isPending
+                  }
                 >
                   Create
                 </Button>
@@ -309,7 +330,7 @@ export function WorkspaceToolbar({
                   Cancel
                 </Button>
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className='text-xs text-muted-foreground'>
                 Creating in: {getTargetFolderName()}
               </span>
             </div>
@@ -333,7 +354,7 @@ export function WorkspaceToolbar({
               type='text'
               placeholder='Search files and folders...'
               value={searchQuery}
-              onChange={(e) => setSearchQuery?.(e.target.value)}
+              onChange={e => setSearchQuery?.(e.target.value)}
               className='h-8 w-full pl-8'
             />
             <Search className='absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
@@ -362,32 +383,33 @@ export function WorkspaceToolbar({
 
       {/* Mini-actions toolbar - shows when items are selected */}
       {selectedItems.length > 0 && (
-        <div className="flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-blue-700">
-              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+        <div className='flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]'>
+          <div className='flex items-center gap-3'>
+            <span className='text-sm font-medium text-blue-700'>
+              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}
+              selected
             </span>
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          <div className='flex items-center gap-2'>
             <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              size='sm'
+              variant='ghost'
+              className='h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50'
               onClick={handleDelete}
               disabled={batchDeleteMutation.isPending}
             >
-              <Trash2 className="h-4 w-4 mr-2" />
+              <Trash2 className='h-4 w-4 mr-2' />
               Delete
             </Button>
 
             <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-3"
+              size='sm'
+              variant='ghost'
+              className='h-8 px-3'
               onClick={onClearSelection}
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className='h-4 w-4 mr-2' />
               Clear
             </Button>
           </div>
@@ -401,7 +423,7 @@ export function WorkspaceToolbar({
           setShowBatchModal(false);
           setBatchProgress(undefined);
         }}
-        operation="delete"
+        operation='delete'
         items={getBatchOperationItems()}
         onConfirm={handleBatchDeleteConfirm}
         progress={batchProgress}

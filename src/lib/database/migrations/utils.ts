@@ -43,7 +43,10 @@ export const columnExists = async (
     `;
     return result[0]?.exists || false;
   } catch (error) {
-    console.error(`Error checking if column ${columnName} exists in ${tableName}:`, error);
+    console.error(
+      `Error checking if column ${columnName} exists in ${tableName}:`,
+      error
+    );
     return false;
   }
 };
@@ -87,7 +90,7 @@ export const getCurrentSchemaVersion = async (): Promise<string | null> => {
   try {
     // Check if migrations table exists first
     const migrationsTableExists = await tableExists('__drizzle_migrations');
-    
+
     if (!migrationsTableExists) {
       return null;
     }
@@ -97,7 +100,7 @@ export const getCurrentSchemaVersion = async (): Promise<string | null> => {
       ORDER BY created_at DESC 
       LIMIT 1
     `;
-    
+
     return result[0]?.hash || null;
   } catch (error) {
     console.error('Error getting schema version:', error);
@@ -110,7 +113,7 @@ export const getCurrentSchemaVersion = async (): Promise<string | null> => {
  */
 export const backupTableData = async (tableName: string): Promise<void> => {
   const backupTableName = `${tableName}_backup_${Date.now()}`;
-  
+
   try {
     await postgresClient`
       CREATE TABLE ${postgresClient(backupTableName)} AS 
@@ -126,7 +129,9 @@ export const backupTableData = async (tableName: string): Promise<void> => {
 /**
  * Drop backup table
  */
-export const dropBackupTable = async (backupTableName: string): Promise<void> => {
+export const dropBackupTable = async (
+  backupTableName: string
+): Promise<void> => {
   try {
     await postgresClient`DROP TABLE IF EXISTS ${postgresClient(backupTableName)}`;
     console.log(`Backup table dropped: ${backupTableName}`);
@@ -174,7 +179,7 @@ export const runMigrationSafetyChecks = async (): Promise<{
       SELECT count(*) as count FROM pg_stat_activity 
       WHERE state = 'active' AND pid != pg_backend_pid()
     `;
-    
+
     const connectionCount = parseInt(activeConnections[0]?.count || '0');
     if (connectionCount > 50) {
       warnings.push(`High number of active connections: ${connectionCount}`);

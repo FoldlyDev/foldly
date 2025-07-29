@@ -40,7 +40,7 @@ LIMIT $2 OFFSET $3;
 
 ```sql
 -- Resolve link by URL components (public access)
-SELECT 
+SELECT
   l.*,
   u.username,
   u.avatar_url,
@@ -95,27 +95,27 @@ RETURNING *;
 -- Recursive CTE for folder hierarchy
 WITH RECURSIVE folder_tree AS (
   -- Root folders
-  SELECT 
-    id, 
-    name, 
-    path, 
-    depth, 
-    parent_folder_id, 
+  SELECT
+    id,
+    name,
+    path,
+    depth,
+    parent_folder_id,
     0 as level,
     ARRAY[name] as name_path
   FROM folders
-  WHERE workspace_id = $1 
+  WHERE workspace_id = $1
     AND parent_folder_id IS NULL
-  
+
   UNION ALL
-  
+
   -- Child folders recursively
-  SELECT 
-    f.id, 
-    f.name, 
-    f.path, 
-    f.depth, 
-    f.parent_folder_id, 
+  SELECT
+    f.id,
+    f.name,
+    f.path,
+    f.depth,
+    f.parent_folder_id,
     ft.level + 1,
     ft.name_path || f.name
   FROM folders f
@@ -123,12 +123,12 @@ WITH RECURSIVE folder_tree AS (
   WHERE f.workspace_id = $1
     AND ft.level < 20 -- Prevent infinite recursion
 )
-SELECT 
+SELECT
   ft.*,
   COUNT(files.id) as file_count,
   COALESCE(SUM(files.file_size), 0) as total_size
 FROM folder_tree ft
-LEFT JOIN files ON ft.id = files.folder_id 
+LEFT JOIN files ON ft.id = files.folder_id
   AND files.processing_status = 'completed'
 GROUP BY ft.id, ft.name, ft.path, ft.depth, ft.parent_folder_id, ft.level, ft.name_path
 ORDER BY ft.path;
@@ -169,7 +169,7 @@ WHERE f.link_id = $1
   AND f.processing_status = 'completed'
   -- Optional folder filter
   AND ($2 IS NULL OR f.folder_id = $2)
-ORDER BY 
+ORDER BY
   fo.path NULLS FIRST,  -- Root files first
   f.uploaded_at DESC
 LIMIT $3 OFFSET $4;
@@ -270,8 +270,8 @@ SELECT
   -- Folder organization
   COUNT(DISTINCT fo.id) as folder_count,
   -- Average upload session size
-  CASE 
-    WHEN COUNT(DISTINCT b.id) > 0 THEN 
+  CASE
+    WHEN COUNT(DISTINCT b.id) > 0 THEN
       ROUND(COUNT(DISTINCT f.id)::numeric / COUNT(DISTINCT b.id), 2)
     ELSE 0
   END as avg_files_per_session,
@@ -526,12 +526,12 @@ new_workspace AS (
   RETURNING *
 )
 INSERT INTO links (user_id, workspace_id, slug, topic, link_type, title)
-SELECT 
-  nu.id, 
-  nw.id, 
-  nu.username, 
-  NULL, 
-  'base', 
+SELECT
+  nu.id,
+  nw.id,
+  nu.username,
+  NULL,
+  'base',
   'Test Base Link'
 FROM new_user nu, new_workspace nw
 RETURNING *;

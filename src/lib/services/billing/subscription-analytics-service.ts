@@ -64,9 +64,9 @@ export class SubscriptionAnalyticsService {
   }): Promise<DatabaseResult<SubscriptionAnalyticsData>> {
     try {
       if (!data.userId) {
-        return { 
-          success: false, 
-          error: 'User ID is required for subscription analytics' 
+        return {
+          success: false,
+          error: 'User ID is required for subscription analytics',
         };
       }
 
@@ -85,19 +85,22 @@ export class SubscriptionAnalyticsService {
 
       const event = result[0];
       if (!event) {
-        return { 
-          success: false, 
-          error: 'Failed to insert subscription analytics event' 
+        return {
+          success: false,
+          error: 'Failed to insert subscription analytics event',
         };
       }
 
-      console.log(`📊 SUBSCRIPTION_ANALYTICS: Recorded ${data.eventType} event for user ${data.userId}`, {
-        eventType: data.eventType,
-        fromPlan: data.fromPlan,
-        toPlan: data.toPlan,
-        source: data.source,
-        occurredAt: data.occurredAt.toISOString(),
-      });
+      console.log(
+        `📊 SUBSCRIPTION_ANALYTICS: Recorded ${data.eventType} event for user ${data.userId}`,
+        {
+          eventType: data.eventType,
+          fromPlan: data.fromPlan,
+          toPlan: data.toPlan,
+          source: data.source,
+          occurredAt: data.occurredAt.toISOString(),
+        }
+      );
 
       return {
         success: true,
@@ -115,9 +118,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error recording subscription event:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -149,17 +152,19 @@ export class SubscriptionAnalyticsService {
 
       // Analyze the history
       const currentPlan = eventData[0]?.toPlan || 'free';
-      const subscriptionStartDate = eventData.length > 0 
-        ? eventData[eventData.length - 1]?.occurredAt 
-        : null;
-      
-      const hasEverUpgraded = eventData.some(e => 
-        e.eventType === 'upgrade' || 
-        (e.toPlan !== 'free' && e.fromPlan === 'free')
+      const subscriptionStartDate =
+        eventData.length > 0
+          ? eventData[eventData.length - 1]?.occurredAt
+          : null;
+
+      const hasEverUpgraded = eventData.some(
+        e =>
+          e.eventType === 'upgrade' ||
+          (e.toPlan !== 'free' && e.fromPlan === 'free')
       );
-      
-      const hasEverCanceled = eventData.some(e => 
-        e.eventType === 'cancel' || e.toPlan === 'free'
+
+      const hasEverCanceled = eventData.some(
+        e => e.eventType === 'cancel' || e.toPlan === 'free'
       );
 
       return {
@@ -176,9 +181,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error fetching user subscription history:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -186,12 +191,13 @@ export class SubscriptionAnalyticsService {
   /**
    * Get overall subscription metrics for admin dashboard
    */
-  static async getSubscriptionMetrics(
-    timeRange?: { start: Date; end: Date }
-  ): Promise<DatabaseResult<SubscriptionMetrics>> {
+  static async getSubscriptionMetrics(timeRange?: {
+    start: Date;
+    end: Date;
+  }): Promise<DatabaseResult<SubscriptionMetrics>> {
     try {
       let baseQuery = db.select().from(subscriptionAnalytics);
-      
+
       if (timeRange) {
         baseQuery = baseQuery.where(
           sql`${subscriptionAnalytics.occurredAt} BETWEEN ${timeRange.start} AND ${timeRange.end}`
@@ -202,34 +208,49 @@ export class SubscriptionAnalyticsService {
 
       // Calculate metrics
       const totalEvents = allEvents.length;
-      const upgradeEvents = allEvents.filter(e => e.eventType === 'upgrade').length;
-      const downgradeEvents = allEvents.filter(e => e.eventType === 'downgrade').length;
-      const cancelEvents = allEvents.filter(e => e.eventType === 'cancel').length;
-      const reactivateEvents = allEvents.filter(e => e.eventType === 'reactivate').length;
+      const upgradeEvents = allEvents.filter(
+        e => e.eventType === 'upgrade'
+      ).length;
+      const downgradeEvents = allEvents.filter(
+        e => e.eventType === 'downgrade'
+      ).length;
+      const cancelEvents = allEvents.filter(
+        e => e.eventType === 'cancel'
+      ).length;
+      const reactivateEvents = allEvents.filter(
+        e => e.eventType === 'reactivate'
+      ).length;
 
       // Plan distribution (current state)
-      const planCounts = allEvents.reduce((acc, event) => {
-        if (event.toPlan) {
-          acc[event.toPlan] = (acc[event.toPlan] || 0) + 1;
-        }
-        return acc;
-      }, {} as Record<string, number>);
+      const planCounts = allEvents.reduce(
+        (acc, event) => {
+          if (event.toPlan) {
+            acc[event.toPlan] = (acc[event.toPlan] || 0) + 1;
+          }
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
-      const planDistribution = Object.entries(planCounts).map(([plan, count]) => ({
-        plan,
-        count,
-      }));
+      const planDistribution = Object.entries(planCounts).map(
+        ([plan, count]) => ({
+          plan,
+          count,
+        })
+      );
 
       // Calculate conversion and churn rates
-      const totalUpgradeOpportunities = allEvents.filter(e => e.fromPlan === 'free').length;
-      const conversionRate = totalUpgradeOpportunities > 0 
-        ? (upgradeEvents / totalUpgradeOpportunities) * 100 
-        : 0;
+      const totalUpgradeOpportunities = allEvents.filter(
+        e => e.fromPlan === 'free'
+      ).length;
+      const conversionRate =
+        totalUpgradeOpportunities > 0
+          ? (upgradeEvents / totalUpgradeOpportunities) * 100
+          : 0;
 
       const totalPaidUsers = allEvents.filter(e => e.toPlan !== 'free').length;
-      const churnRate = totalPaidUsers > 0 
-        ? (cancelEvents / totalPaidUsers) * 100 
-        : 0;
+      const churnRate =
+        totalPaidUsers > 0 ? (cancelEvents / totalPaidUsers) * 100 : 0;
 
       return {
         success: true,
@@ -246,9 +267,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error fetching subscription metrics:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -284,9 +305,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error fetching recent subscription events:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -307,10 +328,13 @@ export class SubscriptionAnalyticsService {
         .where(eq(subscriptionAnalytics.userId, userId))
         .groupBy(subscriptionAnalytics.eventType);
 
-      const eventCounts = events.reduce((acc, event) => {
-        acc[event.eventType] = Number(event.count);
-        return acc;
-      }, {} as Record<string, number>);
+      const eventCounts = events.reduce(
+        (acc, event) => {
+          acc[event.eventType] = Number(event.count);
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         success: true,
@@ -318,9 +342,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error fetching user event counts:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -337,12 +361,12 @@ export class SubscriptionAnalyticsService {
 
       const result = await db
         .delete(subscriptionAnalytics)
-        .where(
-          sql`${subscriptionAnalytics.occurredAt} < ${cutoffDate}`
-        )
+        .where(sql`${subscriptionAnalytics.occurredAt} < ${cutoffDate}`)
         .returning({ id: subscriptionAnalytics.id });
 
-      console.log(`🧹 SUBSCRIPTION_ANALYTICS: Cleaned up ${result.length} old events older than ${olderThanDays} days`);
+      console.log(
+        `🧹 SUBSCRIPTION_ANALYTICS: Cleaned up ${result.length} old events older than ${olderThanDays} days`
+      );
 
       return {
         success: true,
@@ -350,9 +374,9 @@ export class SubscriptionAnalyticsService {
       };
     } catch (error) {
       console.error('Error cleaning up old subscription events:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -360,13 +384,15 @@ export class SubscriptionAnalyticsService {
   /**
    * Get subscription funnel metrics (free -> pro -> business)
    */
-  static async getSubscriptionFunnel(): Promise<DatabaseResult<{
-    freeUsers: number;
-    proUpgrades: number;
-    businessUpgrades: number;
-    freeToProConversion: number;
-    proToBusinessConversion: number;
-  }>> {
+  static async getSubscriptionFunnel(): Promise<
+    DatabaseResult<{
+      freeUsers: number;
+      proUpgrades: number;
+      businessUpgrades: number;
+      freeToProConversion: number;
+      proToBusinessConversion: number;
+    }>
+  > {
     try {
       // Get latest event for each user to determine current state
       const latestEvents = await db
@@ -387,10 +413,13 @@ export class SubscriptionAnalyticsService {
       });
 
       // Count users by plan
-      const planCounts = Array.from(userPlans.values()).reduce((acc, plan) => {
-        acc[plan] = (acc[plan] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const planCounts = Array.from(userPlans.values()).reduce(
+        (acc, plan) => {
+          acc[plan] = (acc[plan] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       const freeUsers = planCounts.free || 0;
       const proUsers = planCounts.pro || 0;
@@ -398,10 +427,12 @@ export class SubscriptionAnalyticsService {
 
       // Calculate conversion rates
       const totalUsers = freeUsers + proUsers + businessUsers;
-      const freeToProConversion = totalUsers > 0 ? (proUsers / totalUsers) * 100 : 0;
-      const proToBusinessConversion = (proUsers + businessUsers) > 0 
-        ? (businessUsers / (proUsers + businessUsers)) * 100 
-        : 0;
+      const freeToProConversion =
+        totalUsers > 0 ? (proUsers / totalUsers) * 100 : 0;
+      const proToBusinessConversion =
+        proUsers + businessUsers > 0
+          ? (businessUsers / (proUsers + businessUsers)) * 100
+          : 0;
 
       return {
         success: true,
@@ -410,14 +441,15 @@ export class SubscriptionAnalyticsService {
           proUpgrades: proUsers,
           businessUpgrades: businessUsers,
           freeToProConversion: Math.round(freeToProConversion * 100) / 100,
-          proToBusinessConversion: Math.round(proToBusinessConversion * 100) / 100,
+          proToBusinessConversion:
+            Math.round(proToBusinessConversion * 100) / 100,
         },
       };
     } catch (error) {
       console.error('Error fetching subscription funnel metrics:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }

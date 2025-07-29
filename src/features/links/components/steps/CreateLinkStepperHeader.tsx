@@ -136,7 +136,9 @@ export const CreateLinkStepperHeader = ({
                       {step.label}
                     </span>
                   </div>
-                  {index < steps.length - 1 && <div className='w-12 sm:w-20 mx-3 sm:mx-6' />}
+                  {index < steps.length - 1 && (
+                    <div className='w-12 sm:w-20 mx-3 sm:mx-6' />
+                  )}
                 </div>
               );
             })}

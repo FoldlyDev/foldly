@@ -6,14 +6,34 @@
 'use client';
 
 import React from 'react';
-import { useStorageDashboard, useStorageBreakdown, useStorageWarnings } from '@/lib/hooks/use-storage-tracking';
+import {
+  useStorageDashboard,
+  useStorageBreakdown,
+  useStorageWarnings,
+} from '@/lib/hooks/use-storage-tracking';
 import { useUser } from '@clerk/nextjs';
 import { formatBytes } from '@/lib/services/storage';
 import { Progress } from '@/components/ui/core/shadcn/progress';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/core/shadcn/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/core/shadcn/alert';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/core/shadcn/card';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/core/shadcn/alert';
 import { Badge } from '@/components/ui/core/shadcn/badge';
-import { AlertTriangle, HardDrive, FileText, Shield, CheckCircle2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  HardDrive,
+  FileText,
+  Shield,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface StorageDashboardProps {
   className?: string;
@@ -36,8 +56,10 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
   if (!user) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">Please sign in to view storage information.</p>
+        <CardContent className='p-6'>
+          <p className='text-muted-foreground'>
+            Please sign in to view storage information.
+          </p>
         </CardContent>
       </Card>
     );
@@ -46,11 +68,11 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
   if (isLoading) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-1/4"></div>
-            <div className="h-2 bg-muted rounded"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
+        <CardContent className='p-6'>
+          <div className='animate-pulse space-y-4'>
+            <div className='h-4 bg-muted rounded w-1/4'></div>
+            <div className='h-2 bg-muted rounded'></div>
+            <div className='h-4 bg-muted rounded w-1/2'></div>
           </div>
         </CardContent>
       </Card>
@@ -60,12 +82,13 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
   if (error) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
+        <CardContent className='p-6'>
+          <Alert variant='destructive'>
+            <AlertTriangle className='h-4 w-4' />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              Failed to load storage information. Please try refreshing the page.
+              Failed to load storage information. Please try refreshing the
+              page.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -79,9 +102,12 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
 
   const getWarningColor = () => {
     switch (warnings.warningLevel) {
-      case 'critical': return 'destructive';
-      case 'warning': return 'warning';
-      default: return 'default';
+      case 'critical':
+        return 'destructive';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'default';
     }
   };
 
@@ -94,22 +120,20 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
   if (compact) {
     return (
       <Card className={className}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">Storage</span>
+        <CardContent className='p-4'>
+          <div className='flex items-center justify-between mb-2'>
+            <div className='flex items-center gap-2'>
+              <HardDrive className='h-4 w-4 text-muted-foreground' />
+              <span className='font-medium'>Storage</span>
             </div>
             <Badge variant={getWarningColor()}>
               {storageInfo.usagePercentage.toFixed(1)}%
             </Badge>
           </div>
-          <Progress 
-            value={storageInfo.usagePercentage} 
-            className="h-2 mb-2"
-          />
-          <p className="text-xs text-muted-foreground">
-            {formatBytes(storageInfo.storageUsedBytes)} of {formatBytes(storageInfo.storageLimitBytes)} used
+          <Progress value={storageInfo.usagePercentage} className='h-2 mb-2' />
+          <p className='text-xs text-muted-foreground'>
+            {formatBytes(storageInfo.storageUsedBytes)} of{' '}
+            {formatBytes(storageInfo.storageLimitBytes)} used
           </p>
         </CardContent>
       </Card>
@@ -120,16 +144,21 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Warning Alert */}
       {warnings.warningLevel !== 'normal' && (
-        <Alert variant={warnings.warningLevel === 'critical' ? 'destructive' : 'default'}>
-          <AlertTriangle className="h-4 w-4" />
+        <Alert
+          variant={
+            warnings.warningLevel === 'critical' ? 'destructive' : 'default'
+          }
+        >
+          <AlertTriangle className='h-4 w-4' />
           <AlertTitle>
-            {warnings.warningLevel === 'critical' ? 'Storage Full' : 'Storage Warning'}
+            {warnings.warningLevel === 'critical'
+              ? 'Storage Full'
+              : 'Storage Warning'}
           </AlertTitle>
           <AlertDescription>
-            {warnings.warningLevel === 'critical' 
+            {warnings.warningLevel === 'critical'
               ? 'Your storage is full. Please delete some files or upgrade your plan to continue uploading.'
-              : 'You\'re approaching your storage limit. Consider upgrading your plan or removing unused files.'
-            }
+              : "You're approaching your storage limit. Consider upgrading your plan or removing unused files."}
           </AlertDescription>
         </Alert>
       )}
@@ -137,61 +166,60 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
       {/* Main Storage Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HardDrive className="h-5 w-5" />
+          <CardTitle className='flex items-center gap-2'>
+            <HardDrive className='h-5 w-5' />
             Storage Usage
           </CardTitle>
           <CardDescription>
             Real-time storage tracking for your {planKey} plan
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className='space-y-4'>
           {/* Usage Progress */}
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium">
+            <div className='flex justify-between items-center mb-2'>
+              <span className='text-sm font-medium'>
                 {formatBytes(storageInfo.storageUsedBytes)} used
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className='text-sm text-muted-foreground'>
                 {formatBytes(storageInfo.storageLimitBytes)} total
               </span>
             </div>
-            <Progress 
-              value={storageInfo.usagePercentage} 
-              className="h-3"
-            />
-            <div className="flex justify-between items-center mt-1">
-              <span className="text-xs text-muted-foreground">
+            <Progress value={storageInfo.usagePercentage} className='h-3' />
+            <div className='flex justify-between items-center mt-1'>
+              <span className='text-xs text-muted-foreground'>
                 {storageInfo.usagePercentage.toFixed(1)}% used
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className='text-xs text-muted-foreground'>
                 {formatBytes(storageInfo.remainingBytes)} remaining
               </span>
             </div>
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='flex items-center gap-2'>
+              <FileText className='h-4 w-4 text-muted-foreground' />
               <div>
-                <p className="text-sm font-medium">{storageInfo.filesCount}</p>
-                <p className="text-xs text-muted-foreground">Files stored</p>
+                <p className='text-sm font-medium'>{storageInfo.filesCount}</p>
+                <p className='text-xs text-muted-foreground'>Files stored</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4 text-muted-foreground" />
+            <div className='flex items-center gap-2'>
+              <Shield className='h-4 w-4 text-muted-foreground' />
               <div>
-                <p className="text-sm font-medium capitalize">{storageInfo.planKey}</p>
-                <p className="text-xs text-muted-foreground">Plan type</p>
+                <p className='text-sm font-medium capitalize'>
+                  {storageInfo.planKey}
+                </p>
+                <p className='text-xs text-muted-foreground'>Plan type</p>
               </div>
             </div>
           </div>
 
           {/* Health Status */}
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <span className="text-sm">
+          <div className='flex items-center gap-2 p-3 bg-muted/50 rounded-lg'>
+            <CheckCircle2 className='h-4 w-4 text-green-500' />
+            <span className='text-sm'>
               Storage tracking is active and synchronized
             </span>
           </div>
@@ -208,26 +236,29 @@ export const StorageDashboard: React.FC<StorageDashboardProps> = ({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className='space-y-3'>
               {Object.entries(breakdown)
-                .sort(([,a], [,b]) => b.totalSize - a.totalSize)
+                .sort(([, a], [, b]) => b.totalSize - a.totalSize)
                 .slice(0, 5)
                 .map(([mimeType, data]) => (
-                  <div key={mimeType} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      <span className="text-sm">
+                  <div
+                    key={mimeType}
+                    className='flex items-center justify-between'
+                  >
+                    <div className='flex items-center gap-2'>
+                      <div className='w-3 h-3 rounded-full bg-blue-500'></div>
+                      <span className='text-sm'>
                         {mimeType.split('/')[1]?.toUpperCase() || mimeType}
                       </span>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant='outline' className='text-xs'>
                         {data.count} files
                       </Badge>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
+                    <div className='text-right'>
+                      <p className='text-sm font-medium'>
                         {formatBytes(data.totalSize)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className='text-xs text-muted-foreground'>
                         {data.percentage.toFixed(1)}%
                       </p>
                     </div>

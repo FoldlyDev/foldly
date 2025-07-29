@@ -4,7 +4,7 @@
 // Upload components
 export * from './components';
 
-// Upload hooks  
+// Upload hooks
 export * from './hooks';
 
 // Upload store

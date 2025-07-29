@@ -60,7 +60,7 @@ export function useBillingDataQuery(
   options: UseBillingDataOptions = {}
 ): BillingDataResult {
   const { user, isLoaded } = useUser();
-  
+
   const {
     enabled = true,
     staleTime = 5 * 60 * 1000, // 5 minutes
@@ -75,13 +75,16 @@ export function useBillingDataQuery(
       }
 
       console.log('🔍 React Query: Fetching user billing data...');
-      
+
       // Dynamic import to avoid client/server boundary issues
       const { getUserBillingDataAction } = await import('../../lib/actions');
       const result = await getUserBillingDataAction();
-      
+
       if (!result.success) {
-        console.log('❌ React Query: Failed to fetch billing data:', result.error);
+        console.log(
+          '❌ React Query: Failed to fetch billing data:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch billing data');
       }
 
@@ -89,7 +92,7 @@ export function useBillingDataQuery(
         storageUsed: result.data?.storageUsedGB || 0,
         filesUploaded: result.data?.filesUploaded || 0,
         linksCreated: result.data?.linksCreated || 0,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -108,13 +111,23 @@ export function useBillingDataQuery(
     if (!query.data) return null;
 
     const data = query.data as any;
-    const storageUsedGB = Math.round((data.storageUsed || 0) / (1024 ** 3));
-    const daysActive = data.accountCreated ? Math.floor(
-      (Date.now() - new Date(data.accountCreated).getTime()) / (24 * 60 * 60 * 1000)
-    ) : 0;
-    const averageUploadsPerDay = daysActive > 0 ? Math.round((data.totalUploads || 0) / daysActive) : 0;
-    const successRate = (data.totalBatches || 0) > 0 ? Math.round(((data.successfulBatches || 0) / data.totalBatches) * 100) : 100;
-    const storagePercentage = (data.storageLimit || 0) > 0 ? Math.round(((data.storageUsed || 0) / data.storageLimit) * 100) : 0;
+    const storageUsedGB = Math.round((data.storageUsed || 0) / 1024 ** 3);
+    const daysActive = data.accountCreated
+      ? Math.floor(
+          (Date.now() - new Date(data.accountCreated).getTime()) /
+            (24 * 60 * 60 * 1000)
+        )
+      : 0;
+    const averageUploadsPerDay =
+      daysActive > 0 ? Math.round((data.totalUploads || 0) / daysActive) : 0;
+    const successRate =
+      (data.totalBatches || 0) > 0
+        ? Math.round(((data.successfulBatches || 0) / data.totalBatches) * 100)
+        : 100;
+    const storagePercentage =
+      (data.storageLimit || 0) > 0
+        ? Math.round(((data.storageUsed || 0) / data.storageLimit) * 100)
+        : 0;
 
     return {
       storageUsedGB,
@@ -160,8 +173,11 @@ export function useStorageMonitorQuery(
   const storageData = useMemo(() => {
     if (!data) return null;
 
-    const usedGB = Math.round(data.storageUsed / (1024 ** 3));
-    const percentage = data.storageLimit > 0 ? Math.round((data.storageUsed / data.storageLimit) * 100) : 0;
+    const usedGB = Math.round(data.storageUsed / 1024 ** 3);
+    const percentage =
+      data.storageLimit > 0
+        ? Math.round((data.storageUsed / data.storageLimit) * 100)
+        : 0;
 
     return {
       used: data.storageUsed,
@@ -200,20 +216,25 @@ export function useUserPlanDetailsQuery(
       }
 
       console.log('🔍 React Query: Fetching user plan details...');
-      
+
       // Dynamic import to avoid client/server boundary issues
       const { getUserPlanDetailsAction } = await import('../../lib/actions');
       const result = await getUserPlanDetailsAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to fetch plan details:', result.error);
+        console.error(
+          '❌ React Query: Failed to fetch plan details:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch plan details');
       }
 
       console.log('✅ React Query: Successfully fetched plan details:', {
         currentPlan: result.data?.currentPlan,
-        features: Object.keys((result.data as any)?.uiMetadata?.featureDescriptions || {}),
-        timestamp: new Date().toISOString()
+        features: Object.keys(
+          (result.data as any)?.uiMetadata?.featureDescriptions || {}
+        ),
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -245,21 +266,26 @@ export function useRealTimeStorageQuery(
       }
 
       console.log('🔍 React Query: Fetching real-time storage usage...');
-      
+
       // Dynamic import to avoid client/server boundary issues
-      const { getRealTimeStorageUsageAction } = await import('../../lib/actions');
+      const { getRealTimeStorageUsageAction } = await import(
+        '../../lib/actions'
+      );
       const result = await getRealTimeStorageUsageAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to fetch storage usage:', result.error);
+        console.error(
+          '❌ React Query: Failed to fetch storage usage:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch storage usage');
       }
 
       console.log('✅ React Query: Successfully fetched storage usage:', {
-        usedGB: Math.round((result.data?.storageUsage || 0) / (1024 ** 3)),
+        usedGB: Math.round((result.data?.storageUsage || 0) / 1024 ** 3),
         percentage: result.data?.percentage,
         isNearLimit: result.data?.isNearLimit,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -292,20 +318,25 @@ export function useBillingIntegrationQuery(
       }
 
       console.log('🔍 React Query: Fetching billing integration status...');
-      
+
       // Dynamic import to avoid client/server boundary issues
-      const { getBillingIntegrationStatusAction } = await import('../../lib/actions');
+      const { getBillingIntegrationStatusAction } = await import(
+        '../../lib/actions'
+      );
       const result = await getBillingIntegrationStatusAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to fetch billing integration:', result.error);
+        console.error(
+          '❌ React Query: Failed to fetch billing integration:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch billing integration');
       }
 
       console.log('✅ React Query: Successfully fetched billing integration:', {
         currentPlan: (result.data as any)?.userPlan?.currentPlan,
         isHealthy: result.data?.isHealthy,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -337,20 +368,23 @@ export function useUserStorageStatusQuery(
       }
 
       console.log('🔍 React Query: Fetching user storage status...');
-      
+
       // Dynamic import to avoid client/server boundary issues
       const { getUserStorageStatusAction } = await import('../../lib/actions');
       const result = await getUserStorageStatusAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to fetch storage status:', result.error);
+        console.error(
+          '❌ React Query: Failed to fetch storage status:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch storage status');
       }
 
       console.log('✅ React Query: Successfully fetched storage status:', {
         limitFormatted: result.data?.limitFormatted,
         percentage: result.data?.percentage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -383,13 +417,16 @@ export function usePlanSyncQuery(
       }
 
       console.log('🔍 React Query: Syncing plan data...');
-      
+
       // Dynamic import to avoid client/server boundary issues
       const { syncUserPlanDataAction } = await import('../../lib/actions');
       const result = await syncUserPlanDataAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to sync plan data:', result.error);
+        console.error(
+          '❌ React Query: Failed to sync plan data:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to sync plan data');
       }
 
@@ -397,7 +434,7 @@ export function usePlanSyncQuery(
         clerkPlan: result.data?.clerkPlan,
         planName: result.data?.planConfig?.planName,
         isSubscribed: result.data?.isSubscribed,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;
@@ -429,14 +466,21 @@ export function usePlanConfig(
         throw new Error('User not authenticated');
       }
 
-      console.log('🔍 React Query: Fetching plan configuration from database...');
-      
+      console.log(
+        '🔍 React Query: Fetching plan configuration from database...'
+      );
+
       // Dynamic import to avoid client/server boundary issues
-      const { getCurrentUserPlanConfigAction } = await import('../../lib/actions');
+      const { getCurrentUserPlanConfigAction } = await import(
+        '../../lib/actions'
+      );
       const result = await getCurrentUserPlanConfigAction();
-      
+
       if (!result.success) {
-        console.error('❌ React Query: Failed to fetch plan config:', result.error);
+        console.error(
+          '❌ React Query: Failed to fetch plan config:',
+          result.error
+        );
         throw new Error(result.error || 'Failed to fetch plan configuration');
       }
 
@@ -446,7 +490,7 @@ export function usePlanConfig(
         storageLimit: result.data?.storageLimit || 'Unknown',
         storageLimitGb: result.data?.storageLimitGb || 0,
         monthlyPrice: `$${result.data?.monthlyPrice || '0.00'}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return result.data;

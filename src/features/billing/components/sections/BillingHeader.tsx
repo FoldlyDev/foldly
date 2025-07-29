@@ -23,9 +23,12 @@ export function BillingHeader({
   // ✅ Dynamic subtitle based on database plan configuration - NO conditional logic
   const getSubtitle = () => {
     if (!planConfig) return 'Loading your subscription details...';
-    
+
     // Use plan description directly from database
-    return planConfig.planDescription || 'Manage your subscription and billing preferences.';
+    return (
+      planConfig.planDescription ||
+      'Manage your subscription and billing preferences.'
+    );
   };
 
   const handleManageSubscription = () => {
@@ -52,19 +55,20 @@ export function BillingHeader({
 
         {/* Subscription Status Badge */}
         <div className='mt-3'>
-          <div className={`
+          <div
+            className={`
             inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium border
-            ${planConfig?.planKey === 'business'
-              ? 'bg-orange-50 text-orange-700 border-orange-200' 
-              : planConfig?.planKey === 'pro'
-                ? 'bg-purple-50 text-purple-700 border-purple-200'
-                : 'bg-blue-50 text-blue-700 border-blue-200'
+            ${
+              planConfig?.planKey === 'business'
+                ? 'bg-orange-50 text-orange-700 border-orange-200'
+                : planConfig?.planKey === 'pro'
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : 'bg-blue-50 text-blue-700 border-blue-200'
             }
-          `}>
+          `}
+          >
             <CreditCard className='w-4 h-4' />
-            <span>
-              {planConfig?.planName || 'Loading...'} Plan
-            </span>
+            <span>{planConfig?.planName || 'Loading...'} Plan</span>
           </div>
         </div>
       </div>
@@ -72,8 +76,8 @@ export function BillingHeader({
       <div className='workspace-header-actions'>
         {/* Settings Button */}
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={onViewProfile}
           className='hidden sm:flex'
         >
@@ -82,19 +86,17 @@ export function BillingHeader({
         </Button>
 
         {/* Primary CTA */}
-        <Button
-          variant="default"
-          size="sm"
-          onClick={handleManageSubscription}
-        >
+        <Button variant='default' size='sm' onClick={handleManageSubscription}>
           <CreditCard className='w-4 h-4 mr-2' />
-          {planConfig?.planKey !== 'business' ? 'Upgrade Plan' : 'Manage Billing'}
+          {planConfig?.planKey !== 'business'
+            ? 'Upgrade Plan'
+            : 'Manage Billing'}
         </Button>
 
         {/* Mobile Settings Button */}
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onClick={onViewProfile}
           className='sm:hidden'
         >

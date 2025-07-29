@@ -1,5 +1,9 @@
 import { LinksDbService } from '@/features/links/lib/db-service';
-import { canAcceptUploads, isLinkExpired, isLinkNearExpiry } from '@/lib/database/types/links';
+import {
+  canAcceptUploads,
+  isLinkExpired,
+  isLinkNearExpiry,
+} from '@/lib/database/types/links';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import type { Link } from '@/lib/database/types/links';
 
@@ -65,11 +69,11 @@ export class LinkUploadValidationService {
     try {
       // Get link data
       const linkResult = await this.linksService.getById(linkId);
-      
+
       if (!linkResult.success || !linkResult.data) {
-        return { 
-          success: false, 
-          error: 'Upload link not found' 
+        return {
+          success: false,
+          error: 'Upload link not found',
         };
       }
 
@@ -83,11 +87,15 @@ export class LinkUploadValidationService {
       // Determine specific validation errors
       if (!canUpload) {
         if (isLinkExpired(link)) {
-          errors.push('This upload link has expired and can no longer accept files.');
+          errors.push(
+            'This upload link has expired and can no longer accept files.'
+          );
         } else if (!link.isActive) {
           errors.push('This upload link is currently disabled.');
         } else if (link.totalFiles >= link.maxFiles) {
-          errors.push(`This upload link has reached its maximum file limit (${link.maxFiles} files).`);
+          errors.push(
+            `This upload link has reached its maximum file limit (${link.maxFiles} files).`
+          );
         } else {
           errors.push('This upload link cannot accept files at this time.');
         }
@@ -101,7 +109,9 @@ export class LinkUploadValidationService {
 
       if (link.totalFiles > link.maxFiles * 0.8) {
         const remaining = link.maxFiles - link.totalFiles;
-        warnings.push(`This upload link is near its file limit. Only ${remaining} more files can be uploaded.`);
+        warnings.push(
+          `This upload link is near its file limit. Only ${remaining} more files can be uploaded.`
+        );
       }
 
       // Password validation
@@ -136,12 +146,12 @@ export class LinkUploadValidationService {
           },
         },
       };
-
     } catch (error) {
       console.error('Failed to validate link for upload:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Link validation failed' 
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Link validation failed',
       };
     }
   }
@@ -156,7 +166,7 @@ export class LinkUploadValidationService {
     try {
       // First validate the link
       const linkValidation = await this.validateLinkForUpload(linkId);
-      
+
       if (!linkValidation.success) {
         return linkValidation as any;
       }
@@ -170,7 +180,9 @@ export class LinkUploadValidationService {
       if (exceedsMaxSize) {
         const maxSizeMB = Math.round(link.maxFileSize / (1024 * 1024));
         const fileSizeMB = Math.round(file.size / (1024 * 1024));
-        errors.push(`File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit.`);
+        errors.push(
+          `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit.`
+        );
       }
 
       // File type validation
@@ -178,28 +190,37 @@ export class LinkUploadValidationService {
       if (link.allowedFileTypes && link.allowedFileTypes.length > 0) {
         const fileExtension = file.name.split('.').pop()?.toLowerCase();
         const mimeType = file.type.toLowerCase();
-        
+
         isAllowedType = link.allowedFileTypes.some(allowedType => {
-          return mimeType.includes(allowedType.toLowerCase()) || 
-                 (fileExtension && allowedType.toLowerCase().includes(fileExtension));
+          return (
+            mimeType.includes(allowedType.toLowerCase()) ||
+            (fileExtension && allowedType.toLowerCase().includes(fileExtension))
+          );
         });
-        
+
         if (!isAllowedType) {
-          errors.push(`File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`);
+          errors.push(
+            `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`
+          );
         }
       }
 
       // File name validation
       if (file.name.length > 255) {
-        errors.push('File name is too long. Please rename the file to be under 255 characters.');
+        errors.push(
+          'File name is too long. Please rename the file to be under 255 characters.'
+        );
       }
 
       if (!/^[^<>:"/\\|?*]+$/.test(file.name)) {
-        warnings.push('File name contains special characters that may cause issues.');
+        warnings.push(
+          'File name contains special characters that may cause issues.'
+        );
       }
 
       // Size warnings
-      if (file.size > 100 * 1024 * 1024) { // 100MB
+      if (file.size > 100 * 1024 * 1024) {
+        // 100MB
         warnings.push('This is a large file and may take some time to upload.');
       }
 
@@ -218,12 +239,12 @@ export class LinkUploadValidationService {
           },
         },
       };
-
     } catch (error) {
       console.error('Failed to validate file for upload:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'File validation failed' 
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'File validation failed',
       };
     }
   }
@@ -234,20 +255,22 @@ export class LinkUploadValidationService {
   async validateFilesForUpload(
     files: File[],
     linkId: string
-  ): Promise<DatabaseResult<{
-    canUploadAny: boolean;
-    canUploadAll: boolean;
-    totalFiles: number;
-    totalSize: number;
-    validFiles: File[];
-    invalidFiles: Array<{ file: File; errors: string[] }>;
-    globalErrors: string[];
-    globalWarnings: string[];
-  }>> {
+  ): Promise<
+    DatabaseResult<{
+      canUploadAny: boolean;
+      canUploadAll: boolean;
+      totalFiles: number;
+      totalSize: number;
+      validFiles: File[];
+      invalidFiles: Array<{ file: File; errors: string[] }>;
+      globalErrors: string[];
+      globalWarnings: string[];
+    }>
+  > {
     try {
       // First validate the link
       const linkValidation = await this.validateLinkForUpload(linkId);
-      
+
       if (!linkValidation.success) {
         return linkValidation as any;
       }
@@ -259,24 +282,31 @@ export class LinkUploadValidationService {
       const invalidFiles: Array<{ file: File; errors: string[] }> = [];
 
       // Check if total files would exceed limit
-      const totalFilesAfterUpload = link.maxFiles - link.remainingUploads + files.length;
+      const totalFilesAfterUpload =
+        link.maxFiles - link.remainingUploads + files.length;
       if (totalFilesAfterUpload > link.maxFiles) {
         const allowedCount = link.remainingUploads;
-        globalErrors.push(`Too many files. This upload link can only accept ${allowedCount} more files.`);
+        globalErrors.push(
+          `Too many files. This upload link can only accept ${allowedCount} more files.`
+        );
       }
 
       // Check total size
       const totalSize = files.reduce((sum, file) => sum + file.size, 0);
       if (totalSize > link.maxFileSize * files.length) {
-        const maxTotalMB = Math.round((link.maxFileSize * files.length) / (1024 * 1024));
+        const maxTotalMB = Math.round(
+          (link.maxFileSize * files.length) / (1024 * 1024)
+        );
         const totalSizeMB = Math.round(totalSize / (1024 * 1024));
-        globalWarnings.push(`Large batch upload (${totalSizeMB}MB). Individual file limit is enforced per file.`);
+        globalWarnings.push(
+          `Large batch upload (${totalSizeMB}MB). Individual file limit is enforced per file.`
+        );
       }
 
       // Validate each file individually
       for (const file of files) {
         const fileValidation = await this.validateFileForUpload(file, linkId);
-        
+
         if (fileValidation.success && fileValidation.data.canUpload) {
           validFiles.push(file);
         } else if (fileValidation.success) {
@@ -305,12 +335,12 @@ export class LinkUploadValidationService {
           globalWarnings,
         },
       };
-
     } catch (error) {
       console.error('Failed to validate files for upload:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Batch validation failed' 
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Batch validation failed',
       };
     }
   }
@@ -318,30 +348,33 @@ export class LinkUploadValidationService {
   /**
    * Get upload link status for real-time monitoring
    */
-  async getLinkStatus(linkId: string): Promise<DatabaseResult<{
-    isActive: boolean;
-    isExpired: boolean;
-    isNearExpiry: boolean;
-    canAcceptUploads: boolean;
-    remainingUploads: number;
-    storageUsedPercentage: number;
-    lastUploadAt: Date | null;
-    expiresAt: Date | null;
-  }>> {
+  async getLinkStatus(linkId: string): Promise<
+    DatabaseResult<{
+      isActive: boolean;
+      isExpired: boolean;
+      isNearExpiry: boolean;
+      canAcceptUploads: boolean;
+      remainingUploads: number;
+      storageUsedPercentage: number;
+      lastUploadAt: Date | null;
+      expiresAt: Date | null;
+    }>
+  > {
     try {
       const linkResult = await this.linksService.getById(linkId);
-      
+
       if (!linkResult.success || !linkResult.data) {
-        return { 
-          success: false, 
-          error: 'Link not found' 
+        return {
+          success: false,
+          error: 'Link not found',
         };
       }
 
       const link = linkResult.data;
-      const storageUsedPercentage = link.storageLimit > 0 
-        ? (link.storageUsed / link.storageLimit) * 100 
-        : 0;
+      const storageUsedPercentage =
+        link.storageLimit > 0
+          ? (link.storageUsed / link.storageLimit) * 100
+          : 0;
 
       return {
         success: true,
@@ -356,12 +389,11 @@ export class LinkUploadValidationService {
           expiresAt: link.expiresAt,
         },
       };
-
     } catch (error) {
       console.error('Failed to get link status:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Status check failed' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Status check failed',
       };
     }
   }

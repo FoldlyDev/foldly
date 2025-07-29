@@ -80,9 +80,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <ClerkProvider>
-            {children}
-          </ClerkProvider>
+          <ClerkProvider>{children}</ClerkProvider>
         </QueryProvider>
         <Toaster />
         <SpeedInsights />

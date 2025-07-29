@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { 
+import {
   createOnDropHandler,
   type TreeInstance,
   type ItemInstance,
@@ -48,9 +48,15 @@ export function useTreeHandlers({ tree, rootId }: UseTreeHandlersParams) {
 
   // Memoize drop handler with dependencies
   const onDrop = React.useMemo(
-    () => createOnDropHandler((parentItem: ItemInstance<WorkspaceTreeItem>, newChildren: string[]) => {
-      return handleDrop({ parentItem, newChildren }, { tree });
-    }),
+    () =>
+      createOnDropHandler(
+        (
+          parentItem: ItemInstance<WorkspaceTreeItem>,
+          newChildren: string[]
+        ) => {
+          return handleDrop({ parentItem, newChildren }, { tree });
+        }
+      ),
     [tree]
   );
 
@@ -101,7 +107,7 @@ export function useTreeHandlers({ tree, rootId }: UseTreeHandlersParams) {
     onCompleteForeignDrop,
     createForeignDragObject,
     canDropForeignDragObject,
-    
+
     // Item manipulation handlers
     addItem,
     deleteItems,

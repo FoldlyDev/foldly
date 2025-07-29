@@ -39,7 +39,7 @@ export async function createLinkAction(
 
     // 4. Determine link type and get base link slug for topic links
     const linkType = validatedData.topic ? 'custom' : 'base';
-    
+
     // Get user's existing links to find base link slug
     const existingLinksResult = await linksDbService.getByUserId(user.id);
     let baseSlug = validatedData.slug || user.username || user.id;
@@ -65,7 +65,7 @@ export async function createLinkAction(
         const userBaseLink = existingLinksResult.data.find(
           (link: Link) => link.linkType === 'base' && !link.topic
         );
-        
+
         if (userBaseLink) {
           baseSlug = userBaseLink.slug;
         } else {

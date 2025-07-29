@@ -73,8 +73,8 @@ export const CreateLinkBrandingStep = () => {
           linkType === 'base'
             ? formData.title || 'Personal Collection' // Use form title, fallback to default
             : formData.title || formData.topic || 'Untitled Link',
-        slug: linkType === 'base' ? (formData.topic || '') : undefined, // For base links, topic field is actually the slug
-        topic: linkType === 'base' ? null : (formData.topic || undefined), // Base links have no topic
+        slug: linkType === 'base' ? formData.topic || '' : undefined, // For base links, topic field is actually the slug
+        topic: linkType === 'base' ? null : formData.topic || undefined, // Base links have no topic
         description: formData.description || undefined,
         requireEmail: formData.requireEmail,
         requirePassword: formData.requirePassword,

@@ -12,7 +12,9 @@ interface UploadRestrictionsSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsProps) {
+export function UploadRestrictionsSettings({
+  form,
+}: UploadRestrictionsSettingsProps) {
   const {
     watch,
     setValue,

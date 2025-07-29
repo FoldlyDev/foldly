@@ -144,7 +144,7 @@ export async function updateItemOrderAction(
     });
 
     const results = await Promise.all(updates);
-    
+
     // Check if any updates failed
     const failedUpdates = results.filter(result => !result.success);
     if (failedUpdates.length > 0) {
@@ -153,7 +153,7 @@ export async function updateItemOrderAction(
     }
 
     revalidatePath('/dashboard/workspace');
-    
+
     return { success: true };
   } catch (error) {
     console.error('Failed to update order:', error);

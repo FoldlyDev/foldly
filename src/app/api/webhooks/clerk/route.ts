@@ -3,11 +3,11 @@ import { headers } from 'next/headers';
 import { Webhook } from 'svix';
 import { userDeletionService } from '@/features/users/services/user-deletion-service';
 import { userWorkspaceService } from '@/features/users/services/user-workspace-service';
-import { 
+import {
   transformClerkUserData,
   transformSubscriptionEventData,
   validateSubscriptionEvent,
-  extractUserIdentifier
+  extractUserIdentifier,
 } from '@/lib/webhooks/clerk-webhook-handler';
 import { ClerkBillingIntegrationService } from '@/lib/services/billing/clerk-billing-integration';
 
@@ -59,33 +59,33 @@ export async function POST(req: NextRequest) {
       'svix-timestamp': svix_timestamp,
       'svix-signature': svix_signature,
     });
-    
+
     // Enhanced security: Multiple timestamp validations
     const timestamp = parseInt(svix_timestamp, 10);
     const now = Math.floor(Date.now() / 1000);
     const fiveMinutesAgo = now - 300; // 5 minutes in seconds
     const thirtySecondsInFuture = now + 30; // Allow small clock skew
-    
+
     // Reject webhooks that are too old or too far in the future
     if (timestamp < fiveMinutesAgo) {
-      console.error('Webhook timestamp too old:', { 
-        timestamp, 
-        now, 
+      console.error('Webhook timestamp too old:', {
+        timestamp,
+        now,
         diff: now - timestamp,
-        eventType: evt?.type || 'unknown'
+        eventType: evt?.type || 'unknown',
       });
       return NextResponse.json(
         { error: 'Webhook timestamp too old', code: 'TIMESTAMP_EXPIRED' },
         { status: 400, headers: securityHeaders }
       );
     }
-    
+
     if (timestamp > thirtySecondsInFuture) {
-      console.error('Webhook timestamp too far in future:', { 
-        timestamp, 
-        now, 
+      console.error('Webhook timestamp too far in future:', {
+        timestamp,
+        now,
         diff: timestamp - now,
-        eventType: evt?.type || 'unknown'
+        eventType: evt?.type || 'unknown',
       });
       return NextResponse.json(
         { error: 'Webhook timestamp invalid', code: 'TIMESTAMP_FUTURE' },
@@ -95,22 +95,21 @@ export async function POST(req: NextRequest) {
 
     // Additional security: Validate payload structure
     if (!evt || !evt.type || !evt.data) {
-      console.error('Invalid webhook payload structure:', { 
-        hasEvt: !!evt, 
-        hasType: !!(evt?.type), 
-        hasData: !!(evt?.data) 
+      console.error('Invalid webhook payload structure:', {
+        hasEvt: !!evt,
+        hasType: !!evt?.type,
+        hasData: !!evt?.data,
       });
       return NextResponse.json(
         { error: 'Invalid webhook payload', code: 'PAYLOAD_INVALID' },
         { status: 400, headers: securityHeaders }
       );
     }
-
   } catch (err) {
-    console.error('Error verifying webhook:', { 
+    console.error('Error verifying webhook:', {
       error: err instanceof Error ? err.message : String(err),
       svixId: svix_id,
-      timestamp: svix_timestamp
+      timestamp: svix_timestamp,
     });
     return NextResponse.json(
       { error: 'Error verifying webhook', code: 'VERIFICATION_FAILED' },
@@ -132,7 +131,7 @@ export async function POST(req: NextRequest) {
   };
 
   console.log(`🔔 WEBHOOK_RECEIVED:`, webhookContext);
-  
+
   // Only log webhook body in development for security
   if (process.env.NODE_ENV === 'development') {
     console.log('Webhook body:', body);
@@ -243,48 +242,64 @@ export async function POST(req: NextRequest) {
           );
         }
         break;
-        
+
       // =============================================================================
       // SUBSCRIPTION BILLING EVENTS (2025 Clerk Billing)
       // =============================================================================
-      
+
       case 'subscription.created':
       case 'subscription.updated':
       case 'subscription.active':
       case 'subscription.past_due':
       case 'subscription.canceled':
         console.log(`💳 SUBSCRIPTION_WEBHOOK: Processing ${eventType} event`);
-        
+
         try {
           if (!validateSubscriptionEvent(evt.data)) {
-            console.error(`Invalid subscription event data for ${eventType}:`, evt.data);
+            console.error(
+              `Invalid subscription event data for ${eventType}:`,
+              evt.data
+            );
             break;
           }
 
           const userId = extractUserIdentifier(evt.data);
           if (!userId) {
-            console.error(`No user identifier found in subscription event ${eventType}`);
+            console.error(
+              `No user identifier found in subscription event ${eventType}`
+            );
             break;
           }
 
-          const subscriptionData = transformSubscriptionEventData(evt.data, eventType);
+          const subscriptionData = transformSubscriptionEventData(
+            evt.data,
+            eventType
+          );
           if (!subscriptionData.userId) {
             console.error(`No user ID in subscription data for ${eventType}`);
             break;
           }
-          
+
           // Ensure userId is properly typed for the service
           const validatedSubscriptionData = {
             ...subscriptionData,
-            userId: userId // Use the already validated userId
+            userId: userId, // Use the already validated userId
           };
-          
-          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(validatedSubscriptionData);
-          
+
+          const result =
+            await ClerkBillingIntegrationService.handleSubscriptionChange(
+              validatedSubscriptionData
+            );
+
           if (result.success) {
-            console.log(`✅ SUBSCRIPTION_PROCESSED: ${eventType} for user ${userId}`);
+            console.log(
+              `✅ SUBSCRIPTION_PROCESSED: ${eventType} for user ${userId}`
+            );
           } else {
-            console.error(`❌ SUBSCRIPTION_PROCESSING_FAILED: ${eventType} for user ${userId}:`, result.error);
+            console.error(
+              `❌ SUBSCRIPTION_PROCESSING_FAILED: ${eventType} for user ${userId}:`,
+              result.error
+            );
           }
         } catch (error) {
           console.error(`❌ SUBSCRIPTION_EVENT_ERROR: ${eventType}`, error);
@@ -300,61 +315,88 @@ export async function POST(req: NextRequest) {
       case 'subscriptionItem.abandoned':
       case 'subscriptionItem.incomplete':
       case 'subscriptionItem.past_due':
-        console.log(`💳 SUBSCRIPTION_ITEM_WEBHOOK: Processing ${eventType} event`);
-        
+        console.log(
+          `💳 SUBSCRIPTION_ITEM_WEBHOOK: Processing ${eventType} event`
+        );
+
         try {
           if (!validateSubscriptionEvent(evt.data)) {
-            console.error(`Invalid subscription item event data for ${eventType}:`, evt.data);
+            console.error(
+              `Invalid subscription item event data for ${eventType}:`,
+              evt.data
+            );
             break;
           }
 
           const userId = extractUserIdentifier(evt.data);
           if (!userId) {
-            console.error(`No user identifier found in subscription item event ${eventType}`);
+            console.error(
+              `No user identifier found in subscription item event ${eventType}`
+            );
             break;
           }
 
-          const subscriptionData = transformSubscriptionEventData(evt.data, eventType);
+          const subscriptionData = transformSubscriptionEventData(
+            evt.data,
+            eventType
+          );
           if (!subscriptionData.userId) {
             console.error(`No user ID in subscription data for ${eventType}`);
             break;
           }
-          
+
           // Ensure userId is properly typed for the service
           const validatedSubscriptionData = {
             ...subscriptionData,
-            userId: userId // Use the already validated userId
+            userId: userId, // Use the already validated userId
           };
-          
-          const result = await ClerkBillingIntegrationService.handleSubscriptionChange(validatedSubscriptionData);
-          
+
+          const result =
+            await ClerkBillingIntegrationService.handleSubscriptionChange(
+              validatedSubscriptionData
+            );
+
           if (result.success) {
-            console.log(`✅ SUBSCRIPTION_ITEM_PROCESSED: ${eventType} for user ${userId}`);
+            console.log(
+              `✅ SUBSCRIPTION_ITEM_PROCESSED: ${eventType} for user ${userId}`
+            );
           } else {
-            console.error(`❌ SUBSCRIPTION_ITEM_PROCESSING_FAILED: ${eventType} for user ${userId}:`, result.error);
+            console.error(
+              `❌ SUBSCRIPTION_ITEM_PROCESSING_FAILED: ${eventType} for user ${userId}:`,
+              result.error
+            );
           }
         } catch (error) {
-          console.error(`❌ SUBSCRIPTION_ITEM_EVENT_ERROR: ${eventType}`, error);
+          console.error(
+            `❌ SUBSCRIPTION_ITEM_EVENT_ERROR: ${eventType}`,
+            error
+          );
         }
         break;
 
       case 'paymentAttempt.created':
       case 'paymentAttempt.updated':
         console.log(`💰 PAYMENT_WEBHOOK: Processing ${eventType} event`);
-        
+
         try {
           const paymentData = evt.data;
           const userId = paymentData.user_id || paymentData.organization_id;
-          
+
           if (userId) {
-            console.log(`💰 PAYMENT_EVENT: ${eventType} for user ${userId}, status: ${paymentData.status}`);
-            
+            console.log(
+              `💰 PAYMENT_EVENT: ${eventType} for user ${userId}, status: ${paymentData.status}`
+            );
+
             // For payment events, we primarily log them for monitoring
             // The actual subscription state changes will come via subscription webhooks
             if (paymentData.status === 'failed') {
-              console.warn(`💰 PAYMENT_FAILED: User ${userId}, reason: ${paymentData.failure_reason || 'Unknown'}`);
+              console.warn(
+                `💰 PAYMENT_FAILED: User ${userId}, reason: ${paymentData.failure_reason || 'Unknown'}`
+              );
             } else if (paymentData.status === 'succeeded') {
-              console.log(`💰 PAYMENT_SUCCESS: User ${userId}, amount: ${paymentData.amount} ${paymentData.currency}`);
+              console.log(
+                `💰 PAYMENT_SUCCESS: User ${userId}, amount: ${paymentData.amount} ${paymentData.currency}`
+              );
             }
           }
         } catch (error) {
@@ -373,117 +415,128 @@ export async function POST(req: NextRequest) {
       stack: error instanceof Error ? error.stack : undefined,
       timestamp: new Date().toISOString(),
     });
-    
+
     // Enhanced error recovery for Clerk 2025 with improved categorization
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     // Categorize errors for better handling
-    const isTransientError = error instanceof Error && (
-      error.message.includes('timeout') ||
-      error.message.includes('connection') ||
-      error.message.includes('ECONNRESET') ||
-      error.message.includes('ENOTFOUND') ||
-      error.message.includes('ETIMEDOUT') ||
-      error.message.includes('database temporarily unavailable') ||
-      error.message.includes('temporary failure') ||
-      error.message.includes('rate limit')
-    );
-    
-    const isDatabaseError = error instanceof Error && (
-      error.message.includes('database') ||
-      error.message.includes('connection pool') ||
-      error.message.includes('query timeout') ||
-      error.message.includes('constraint violation')
-    );
-    
-    const isAuthError = error instanceof Error && (
-      error.message.includes('unauthorized') ||
-      error.message.includes('forbidden') ||
-      error.message.includes('authentication')
-    );
-    
+    const isTransientError =
+      error instanceof Error &&
+      (error.message.includes('timeout') ||
+        error.message.includes('connection') ||
+        error.message.includes('ECONNRESET') ||
+        error.message.includes('ENOTFOUND') ||
+        error.message.includes('ETIMEDOUT') ||
+        error.message.includes('database temporarily unavailable') ||
+        error.message.includes('temporary failure') ||
+        error.message.includes('rate limit'));
+
+    const isDatabaseError =
+      error instanceof Error &&
+      (error.message.includes('database') ||
+        error.message.includes('connection pool') ||
+        error.message.includes('query timeout') ||
+        error.message.includes('constraint violation'));
+
+    const isAuthError =
+      error instanceof Error &&
+      (error.message.includes('unauthorized') ||
+        error.message.includes('forbidden') ||
+        error.message.includes('authentication'));
+
     // Enhanced logging with error categories
     console.error('🔥 WEBHOOK_ERROR_DETAILED:', {
       eventType,
       eventId: id,
       errorMessage,
-      errorCategory: isTransientError ? 'transient' : 
-                    isDatabaseError ? 'database' : 
-                    isAuthError ? 'auth' : 'unknown',
+      errorCategory: isTransientError
+        ? 'transient'
+        : isDatabaseError
+          ? 'database'
+          : isAuthError
+            ? 'auth'
+            : 'unknown',
       isTransient: isTransientError,
       timestamp: new Date().toISOString(),
       userAgent: req.headers.get('user-agent'),
-      stackTrace: process.env.NODE_ENV === 'development' ? errorStack : undefined,
+      stackTrace:
+        process.env.NODE_ENV === 'development' ? errorStack : undefined,
     });
-    
+
     // Handle transient errors gracefully
     if (isTransientError) {
-      console.log('🔄 TRANSIENT_ERROR_RECOVERY: Marking as success to prevent retry storm', {
-        eventType,
-        eventId: id,
-        willRetryNaturally: true
-      });
+      console.log(
+        '🔄 TRANSIENT_ERROR_RECOVERY: Marking as success to prevent retry storm',
+        {
+          eventType,
+          eventId: id,
+          willRetryNaturally: true,
+        }
+      );
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Transient error, will retry naturally',
           code: 'TRANSIENT_ERROR',
           eventProcessed: false,
-          willRetry: true
+          willRetry: true,
         },
         { status: 200, headers: securityHeaders }
       );
     }
-    
+
     // Handle database errors with specific response
     if (isDatabaseError) {
       console.log('💾 DATABASE_ERROR_RECOVERY: Database issue detected', {
         eventType,
         eventId: id,
-        requiresInvestigation: true
+        requiresInvestigation: true,
       });
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Database error occurred',
           code: 'DATABASE_ERROR',
           eventProcessed: false,
-          requiresInvestigation: true
+          requiresInvestigation: true,
         },
         { status: 200, headers: securityHeaders }
       );
     }
-    
+
     // Return 200 for all webhook errors to prevent Clerk retry storms
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error processing webhook', 
+      {
+        success: false,
+        error: 'Error processing webhook',
         code: 'PROCESSING_ERROR',
         eventProcessed: false,
         handled: true,
         eventType,
-        eventId: id
+        eventId: id,
       },
       { status: 200, headers: securityHeaders }
     );
   }
 
   // Enhanced success response with event confirmation
-  return NextResponse.json({ 
-    success: true, 
-    eventType,
-    eventId: id,
-    processedAt: new Date().toISOString(),
-    message: 'Webhook processed successfully'
-  }, { 
-    status: 200,
-    headers: {
-      ...securityHeaders,
-      'X-Webhook-Processed': 'true',
-      'X-Event-Type': eventType,
-      'X-Event-ID': id || 'unknown'
+  return NextResponse.json(
+    {
+      success: true,
+      eventType,
+      eventId: id,
+      processedAt: new Date().toISOString(),
+      message: 'Webhook processed successfully',
+    },
+    {
+      status: 200,
+      headers: {
+        ...securityHeaders,
+        'X-Webhook-Processed': 'true',
+        'X-Event-Type': eventType,
+        'X-Event-ID': id || 'unknown',
+      },
     }
-  });
+  );
 }

@@ -14,9 +14,12 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
     // Use non-pooling URL for Drizzle Kit operations to avoid pooler SSL issues
-    url: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL!,
+    url:
+      process.env.POSTGRES_URL_NON_POOLING ||
+      process.env.POSTGRES_URL ||
+      process.env.DATABASE_URL!,
     // Dynamic SSL configuration based on environment
-    ssl: isProduction 
+    ssl: isProduction
       ? 'require' // ✅ Secure SSL validation for production
       : { rejectUnauthorized: false }, // ✅ Allow self-signed certs for development
     connectionTimeoutMillis: 30000, // Increased for Supabase pooler latency

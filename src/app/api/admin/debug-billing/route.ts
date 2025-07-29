@@ -5,7 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { debugPlanDetection, isUserOnProPlan, testFeatureAccess, billingSystemHealthCheck } from '@/lib/debug-plan-detection';
+import {
+  debugPlanDetection,
+  isUserOnProPlan,
+  testFeatureAccess,
+  billingSystemHealthCheck,
+} from '@/lib/debug-plan-detection';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,12 +24,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get comprehensive debug information
-    const [debugInfo, proCheck, featureAccess, healthCheck] = await Promise.all([
-      debugPlanDetection(),
-      isUserOnProPlan(),
-      testFeatureAccess(),
-      billingSystemHealthCheck(),
-    ]);
+    const [debugInfo, proCheck, featureAccess, healthCheck] = await Promise.all(
+      [
+        debugPlanDetection(),
+        isUserOnProPlan(),
+        testFeatureAccess(),
+        billingSystemHealthCheck(),
+      ]
+    );
 
     const response = {
       userId,
@@ -37,7 +44,10 @@ export async function GET(request: NextRequest) {
         hasClerkBilling: debugInfo.clerkAuthStatus.hasHasMethod,
         detectedPlan: debugInfo.planDetection.detectedPlan,
         isOnProPlan: proCheck.isPro,
-        hasErrors: !!(debugInfo.clerkAuthStatus.authError || debugInfo.planDetection.planDetectionError),
+        hasErrors: !!(
+          debugInfo.clerkAuthStatus.authError ||
+          debugInfo.planDetection.planDetectionError
+        ),
         systemHealthy: healthCheck.isHealthy,
         recommendations: debugInfo.recommendations,
       },
@@ -47,13 +57,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
+        Pragma: 'no-cache',
+        Expires: '0',
       },
     });
   } catch (error) {
     console.error('Debug billing endpoint error:', error);
-    
+
     return NextResponse.json(
       {
         error: 'Failed to debug billing',
@@ -70,10 +80,7 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
@@ -89,7 +96,7 @@ export async function POST(request: NextRequest) {
     // This would be used to test different plan scenarios
     // For now, just return the current state
     const debugInfo = await debugPlanDetection();
-    
+
     return NextResponse.json({
       message: `Testing plan detection for: ${testPlan}`,
       currentDetection: debugInfo.planDetection.detectedPlan,

@@ -7,10 +7,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from '@/components/ui/core/shadcn/avatar';
-import {
-  AvatarGroup,
-  AvatarGroupTooltip,
-} from '../components/avatar-group';
+import { AvatarGroup, AvatarGroupTooltip } from '../components/avatar-group';
 import { cn } from '@/lib/utils/utils';
 
 const USERS = [

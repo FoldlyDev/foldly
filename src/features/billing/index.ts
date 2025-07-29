@@ -13,15 +13,15 @@ export * from './hooks';
 export * from './lib/actions';
 
 // Types (for external usage)
-export type { 
-  FeatureKey, 
-  FeatureTier, 
-  FeatureGateProps 
+export type {
+  FeatureKey,
+  FeatureTier,
+  FeatureGateProps,
 } from './components/access-control/FeatureGate';
 
 export type {
   ClerkBillingFeatures,
-  ClerkSubscriptionStatus
+  ClerkSubscriptionStatus,
 } from './hooks/use-clerk-billing';
 
 // Integration utilities (database types)

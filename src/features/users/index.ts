@@ -4,7 +4,7 @@
 // Users components
 export * from './components';
 
-// Users hooks  
+// Users hooks
 export * from './hooks';
 
 // Users services

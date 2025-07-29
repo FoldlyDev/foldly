@@ -40,7 +40,9 @@ export function LinkSlugField({
             <Hash className='w-4 h-4 text-primary' />
           </div>
           <div>
-            <h3 className='font-medium text-foreground'>Personal Collection Link URL</h3>
+            <h3 className='font-medium text-foreground'>
+              Personal Collection Link URL
+            </h3>
             <p className='text-sm text-muted-foreground'>
               Customize your Personal Collection Link URL (optional)
             </p>

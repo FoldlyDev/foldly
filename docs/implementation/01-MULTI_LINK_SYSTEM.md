@@ -11,6 +11,7 @@ Foldly's **Multi-Link System** is the core innovation that differentiates it fro
 ### **The Three Link Types**
 
 #### **1. Base Links**
+
 - **Format**: `foldly.com/{username}`
 - **Purpose**: General file collection area for any uploads
 - **Use Case**: Primary collection point for diverse file types
@@ -18,6 +19,7 @@ Foldly's **Multi-Link System** is the core innovation that differentiates it fro
 - **Limit**: One per user (enforced by unique constraint)
 
 #### **2. Custom Topic Links**
+
 - **Format**: `foldly.com/{username}/{topic}`
 - **Purpose**: Project-specific file collection with context
 - **Use Case**: Targeted uploads like "portfolio", "wedding-photos", "project-files"
@@ -25,6 +27,7 @@ Foldly's **Multi-Link System** is the core innovation that differentiates it fro
 - **Limit**: Multiple allowed (subject to subscription tier)
 
 #### **3. Generated Links**
+
 - **Format**: `foldly.com/{username}/{folder_name}`
 - **Purpose**: Automatic link creation when sharing folders
 - **Use Case**: Right-click folder → "Generate Upload Link"
@@ -43,46 +46,46 @@ CREATE TABLE links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-  
+
   -- Multi-Link URL Components
   slug VARCHAR(100) NOT NULL,              -- Username for all types
   topic VARCHAR(100),                      -- NULL for base, name for custom/generated
   link_type link_type_enum DEFAULT 'base' NOT NULL,
-  
+
   -- Link Metadata
   title VARCHAR(255) NOT NULL,
   description TEXT,
-  
+
   -- Security Controls
   require_email BOOLEAN DEFAULT FALSE NOT NULL,
   require_password BOOLEAN DEFAULT FALSE NOT NULL,
   password_hash TEXT,
   is_public BOOLEAN DEFAULT TRUE NOT NULL,
   is_active BOOLEAN DEFAULT TRUE NOT NULL,
-  
+
   -- Upload Constraints
   max_files INTEGER DEFAULT 100 NOT NULL,
   max_file_size BIGINT DEFAULT 104857600 NOT NULL, -- 100MB
   allowed_file_types JSON,                 -- MIME types array
   expires_at TIMESTAMP WITH TIME ZONE,
-  
+
   -- Branding (Pro+ features)
   brand_enabled BOOLEAN DEFAULT FALSE NOT NULL,
   brand_color VARCHAR(7),
-  
+
   -- Usage Statistics
   total_uploads INTEGER DEFAULT 0 NOT NULL,
   total_files INTEGER DEFAULT 0 NOT NULL,
   total_size BIGINT DEFAULT 0 NOT NULL,
   last_upload_at TIMESTAMP WITH TIME ZONE,
-  
+
   -- Storage Management
   storage_used BIGINT DEFAULT 0 NOT NULL,
   storage_limit BIGINT DEFAULT 524288000 NOT NULL, -- 500MB per link
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  
+
   -- Unique constraint ensures URL uniqueness
   UNIQUE (user_id, slug, topic)
 );
@@ -102,7 +105,10 @@ export const LINK_PATTERNS = {
 } as const;
 
 // URL resolution function
-export async function resolveLinkUrl(slug: string, topic?: string): Promise<ResolvedLink | null> {
+export async function resolveLinkUrl(
+  slug: string,
+  topic?: string
+): Promise<ResolvedLink | null> {
   try {
     const link = await db
       .select({
@@ -122,10 +128,7 @@ export async function resolveLinkUrl(slug: string, topic?: string): Promise<Reso
           topic ? eq(links.topic, topic) : isNull(links.topic),
           eq(links.isActive, true),
           eq(links.isPublic, true),
-          or(
-            isNull(links.expiresAt),
-            gt(links.expiresAt, new Date())
-          )
+          or(isNull(links.expiresAt), gt(links.expiresAt, new Date()))
         )
       )
       .limit(1);
@@ -137,7 +140,9 @@ export async function resolveLinkUrl(slug: string, topic?: string): Promise<Reso
       user: link[0].user,
       fullUrl: topic ? `foldly.com/${slug}/${topic}` : `foldly.com/${slug}`,
       requiresPassword: !!link[0].link.passwordHash,
-      isExpired: link[0].link.expiresAt ? link[0].link.expiresAt < new Date() : false,
+      isExpired: link[0].link.expiresAt
+        ? link[0].link.expiresAt < new Date()
+        : false,
     };
   } catch (error) {
     console.error('Link resolution failed:', error);
@@ -157,7 +162,11 @@ export async function resolveLinkUrl(slug: string, topic?: string): Promise<Reso
 import { db } from '@/lib/database/connection';
 import { links, users, workspaces } from '@/lib/database/schemas';
 import { eq, and, desc, count, sum } from 'drizzle-orm';
-import type { LinkInsert, LinkSelect, LinkWithStats } from '@/features/links/types';
+import type {
+  LinkInsert,
+  LinkSelect,
+  LinkWithStats,
+} from '@/features/links/types';
 
 export class LinkDatabaseService {
   /**
@@ -175,10 +184,7 @@ export class LinkDatabaseService {
         .from(links)
         .leftJoin(files, eq(files.linkId, links.id))
         .leftJoin(batches, eq(batches.linkId, links.id))
-        .where(and(
-          eq(links.userId, userId),
-          eq(links.isActive, true)
-        ))
+        .where(and(eq(links.userId, userId), eq(links.isActive, true)))
         .groupBy(links.id)
         .orderBy(desc(links.lastUploadAt), desc(links.createdAt));
 
@@ -188,8 +194,8 @@ export class LinkDatabaseService {
         batchCount: Number(batchCount) || 0,
         totalSize: Number(totalSize) || 0,
         fullUrl: this.buildFullUrl(link.slug, link.topic),
-        hasRecentActivity: link.lastUploadAt 
-          ? (Date.now() - link.lastUploadAt.getTime()) < 7 * 24 * 60 * 60 * 1000
+        hasRecentActivity: link.lastUploadAt
+          ? Date.now() - link.lastUploadAt.getTime() < 7 * 24 * 60 * 60 * 1000
           : false,
       }));
     } catch (error) {
@@ -204,7 +210,11 @@ export class LinkDatabaseService {
   async createLink(linkData: LinkInsert): Promise<LinkSelect> {
     try {
       // Check for existing link with same slug/topic combination
-      const existing = await this.checkLinkExists(linkData.userId, linkData.slug, linkData.topic);
+      const existing = await this.checkLinkExists(
+        linkData.userId,
+        linkData.slug,
+        linkData.topic
+      );
       if (existing) {
         throw new Error('A link with this URL already exists');
       }
@@ -217,7 +227,9 @@ export class LinkDatabaseService {
         .insert(links)
         .values({
           ...linkData,
-          title: linkData.title || this.generateDefaultTitle(linkData.linkType, linkData.topic),
+          title:
+            linkData.title ||
+            this.generateDefaultTitle(linkData.linkType, linkData.topic),
           createdAt: new Date(),
           updatedAt: new Date(),
         })
@@ -233,7 +245,10 @@ export class LinkDatabaseService {
   /**
    * Update an existing link
    */
-  async updateLink(linkId: string, updates: Partial<LinkInsert>): Promise<LinkSelect> {
+  async updateLink(
+    linkId: string,
+    updates: Partial<LinkInsert>
+  ): Promise<LinkSelect> {
     try {
       const [updatedLink] = await db
         .update(links)
@@ -266,10 +281,7 @@ export class LinkDatabaseService {
           isActive: false,
           updatedAt: new Date(),
         })
-        .where(and(
-          eq(links.id, linkId),
-          eq(links.userId, userId)
-        ));
+        .where(and(eq(links.id, linkId), eq(links.userId, userId)));
 
       if (result.rowCount === 0) {
         throw new Error('Link not found or unauthorized');
@@ -289,10 +301,7 @@ export class LinkDatabaseService {
       const [currentLink] = await db
         .select({ isActive: links.isActive })
         .from(links)
-        .where(and(
-          eq(links.id, linkId),
-          eq(links.userId, userId)
-        ))
+        .where(and(eq(links.id, linkId), eq(links.userId, userId)))
         .limit(1);
 
       if (!currentLink) {
@@ -325,10 +334,7 @@ export class LinkDatabaseService {
       const [originalLink] = await db
         .select()
         .from(links)
-        .where(and(
-          eq(links.id, linkId),
-          eq(links.userId, userId)
-        ))
+        .where(and(eq(links.id, linkId), eq(links.userId, userId)))
         .limit(1);
 
       if (!originalLink) {
@@ -336,7 +342,10 @@ export class LinkDatabaseService {
       }
 
       // Generate unique topic for duplicate
-      const newTopic = await this.generateUniqueTopic(originalLink.slug, originalLink.topic);
+      const newTopic = await this.generateUniqueTopic(
+        originalLink.slug,
+        originalLink.topic
+      );
 
       // Create duplicate
       const duplicateData: LinkInsert = {
@@ -370,15 +379,21 @@ export class LinkDatabaseService {
   /**
    * Check if link exists with given slug/topic combination
    */
-  private async checkLinkExists(userId: string, slug: string, topic: string | null): Promise<boolean> {
+  private async checkLinkExists(
+    userId: string,
+    slug: string,
+    topic: string | null
+  ): Promise<boolean> {
     const [existing] = await db
       .select({ id: links.id })
       .from(links)
-      .where(and(
-        eq(links.userId, userId),
-        eq(links.slug, slug),
-        topic ? eq(links.topic, topic) : isNull(links.topic)
-      ))
+      .where(
+        and(
+          eq(links.userId, userId),
+          eq(links.slug, slug),
+          topic ? eq(links.topic, topic) : isNull(links.topic)
+        )
+      )
       .limit(1);
 
     return !!existing;
@@ -387,7 +402,10 @@ export class LinkDatabaseService {
   /**
    * Validate subscription limits for link creation
    */
-  private async validateSubscriptionLimits(userId: string, linkType: 'base' | 'custom' | 'generated'): Promise<void> {
+  private async validateSubscriptionLimits(
+    userId: string,
+    linkType: 'base' | 'custom' | 'generated'
+  ): Promise<void> {
     // Get user's current subscription tier and link count
     const [userWithLinks] = await db
       .select({
@@ -395,10 +413,10 @@ export class LinkDatabaseService {
         linkCount: count(links.id),
       })
       .from(users)
-      .leftJoin(links, and(
-        eq(links.userId, users.id),
-        eq(links.isActive, true)
-      ))
+      .leftJoin(
+        links,
+        and(eq(links.userId, users.id), eq(links.isActive, true))
+      )
       .where(eq(users.id, userId))
       .groupBy(users.id, users.subscriptionTier);
 
@@ -414,18 +432,24 @@ export class LinkDatabaseService {
       enterprise: -1, // Unlimited
     };
 
-    const currentLimit = limits[userWithLinks.subscriptionTier as keyof typeof limits];
+    const currentLimit =
+      limits[userWithLinks.subscriptionTier as keyof typeof limits];
     const currentCount = Number(userWithLinks.linkCount) || 0;
 
     if (currentLimit !== -1 && currentCount >= currentLimit) {
-      throw new Error(`Link limit reached for ${userWithLinks.subscriptionTier} tier`);
+      throw new Error(
+        `Link limit reached for ${userWithLinks.subscriptionTier} tier`
+      );
     }
   }
 
   /**
    * Generate default title based on link type and topic
    */
-  private generateDefaultTitle(linkType: 'base' | 'custom' | 'generated', topic: string | null): string {
+  private generateDefaultTitle(
+    linkType: 'base' | 'custom' | 'generated',
+    topic: string | null
+  ): string {
     switch (linkType) {
       case 'base':
         return 'Personal Collection';
@@ -441,7 +465,10 @@ export class LinkDatabaseService {
   /**
    * Generate unique topic for duplicated links
    */
-  private async generateUniqueTopic(slug: string, originalTopic: string | null): Promise<string> {
+  private async generateUniqueTopic(
+    slug: string,
+    originalTopic: string | null
+  ): Promise<string> {
     const baseTopic = originalTopic || 'copy';
     let counter = 1;
     let candidateTopic = `${baseTopic}-${counter}`;
@@ -480,20 +507,26 @@ import { revalidateTag } from 'next/cache';
 import { linkDbService } from '../db-service';
 import { linkValidationSchemas } from '../validations';
 import type { ActionResult } from '@/types/actions';
-import type { LinkInsert, LinkSelect, LinkWithStats } from '@/features/links/types';
+import type {
+  LinkInsert,
+  LinkSelect,
+  LinkWithStats,
+} from '@/features/links/types';
 
 /**
  * Get all links for the current user
  */
-export async function fetchUserLinks(userId: string): Promise<ActionResult<LinkWithStats[]>> {
+export async function fetchUserLinks(
+  userId: string
+): Promise<ActionResult<LinkWithStats[]>> {
   try {
     const links = await linkDbService.getUserLinks(userId);
     return { success: true, data: links };
   } catch (error) {
     console.error('Fetch user links failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to fetch links' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch links',
     };
   }
 }
@@ -501,23 +534,25 @@ export async function fetchUserLinks(userId: string): Promise<ActionResult<LinkW
 /**
  * Create a new link
  */
-export async function createLinkAction(linkData: LinkInsert): Promise<ActionResult<LinkSelect>> {
+export async function createLinkAction(
+  linkData: LinkInsert
+): Promise<ActionResult<LinkSelect>> {
   try {
     // Validate input data
     const validatedData = linkValidationSchemas.create.parse(linkData);
-    
+
     // Create link
     const newLink = await linkDbService.createLink(validatedData);
-    
+
     // Revalidate cache
     revalidateTag(`user-links-${linkData.userId}`);
-    
+
     return { success: true, data: newLink };
   } catch (error) {
     console.error('Create link failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to create link' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create link',
     };
   }
 }
@@ -526,26 +561,26 @@ export async function createLinkAction(linkData: LinkInsert): Promise<ActionResu
  * Update an existing link
  */
 export async function updateLinkAction(
-  linkId: string, 
+  linkId: string,
   updates: Partial<LinkInsert>
 ): Promise<ActionResult<LinkSelect>> {
   try {
     // Validate update data
     const validatedData = linkValidationSchemas.update.parse(updates);
-    
+
     // Update link
     const updatedLink = await linkDbService.updateLink(linkId, validatedData);
-    
+
     // Revalidate cache
     revalidateTag(`user-links-${updatedLink.userId}`);
     revalidateTag(`link-${linkId}`);
-    
+
     return { success: true, data: updatedLink };
   } catch (error) {
     console.error('Update link failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to update link' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update link',
     };
   }
 }
@@ -553,20 +588,23 @@ export async function updateLinkAction(
 /**
  * Delete a link
  */
-export async function deleteLinkAction(linkId: string, userId: string): Promise<ActionResult<void>> {
+export async function deleteLinkAction(
+  linkId: string,
+  userId: string
+): Promise<ActionResult<void>> {
   try {
     await linkDbService.deleteLink(linkId, userId);
-    
+
     // Revalidate cache
     revalidateTag(`user-links-${userId}`);
     revalidateTag(`link-${linkId}`);
-    
+
     return { success: true, data: undefined };
   } catch (error) {
     console.error('Delete link failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to delete link' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to delete link',
     };
   }
 }
@@ -575,22 +613,23 @@ export async function deleteLinkAction(linkId: string, userId: string): Promise<
  * Toggle link active status
  */
 export async function toggleLinkStatusAction(
-  linkId: string, 
+  linkId: string,
   userId: string
 ): Promise<ActionResult<LinkSelect>> {
   try {
     const updatedLink = await linkDbService.toggleLinkStatus(linkId, userId);
-    
+
     // Revalidate cache
     revalidateTag(`user-links-${userId}`);
     revalidateTag(`link-${linkId}`);
-    
+
     return { success: true, data: updatedLink };
   } catch (error) {
     console.error('Toggle link status failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to toggle link status' 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to toggle link status',
     };
   }
 }
@@ -599,21 +638,22 @@ export async function toggleLinkStatusAction(
  * Duplicate a link
  */
 export async function duplicateLinkAction(
-  linkId: string, 
+  linkId: string,
   userId: string
 ): Promise<ActionResult<LinkSelect>> {
   try {
     const duplicatedLink = await linkDbService.duplicateLink(linkId, userId);
-    
+
     // Revalidate cache
     revalidateTag(`user-links-${userId}`);
-    
+
     return { success: true, data: duplicatedLink };
   } catch (error) {
     console.error('Duplicate link failed:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to duplicate link' 
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : 'Failed to duplicate link',
     };
   }
 }
@@ -622,18 +662,22 @@ export async function duplicateLinkAction(
  * Check slug availability
  */
 export async function checkSlugAvailability(
-  userId: string, 
-  slug: string, 
+  userId: string,
+  slug: string,
   topic?: string
 ): Promise<ActionResult<{ available: boolean }>> {
   try {
-    const exists = await linkDbService.checkLinkExists(userId, slug, topic || null);
+    const exists = await linkDbService.checkLinkExists(
+      userId,
+      slug,
+      topic || null
+    );
     return { success: true, data: { available: !exists } };
   } catch (error) {
     console.error('Check slug availability failed:', error);
-    return { 
-      success: false, 
-      error: 'Failed to check availability' 
+    return {
+      success: false,
+      error: 'Failed to check availability',
     };
   }
 }
@@ -642,7 +686,7 @@ export async function checkSlugAvailability(
  * Resolve link by URL components (public)
  */
 export async function resolveLinkAction(
-  slug: string, 
+  slug: string,
   topic?: string
 ): Promise<ActionResult<ResolvedLink | null>> {
   try {
@@ -650,9 +694,9 @@ export async function resolveLinkAction(
     return { success: true, data: resolvedLink };
   } catch (error) {
     console.error('Resolve link failed:', error);
-    return { 
-      success: false, 
-      error: 'Failed to resolve link' 
+    return {
+      success: false,
+      error: 'Failed to resolve link',
     };
   }
 }
@@ -683,7 +727,7 @@ export function useLinksQuery(userId: string) {
     },
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,   // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 }
 
@@ -705,24 +749,28 @@ export function useCreateLinkMutation(userId: string) {
       }
       return result.data;
     },
-    onSuccess: (newLink) => {
+    onSuccess: newLink => {
       // Invalidate and refetch user links
       queryClient.invalidateQueries({
         queryKey: linkQueryKeys.userLinks(userId),
       });
-      
+
       // Add the new link to cache optimistically
       queryClient.setQueryData<LinkWithStats[]>(
         linkQueryKeys.userLinks(userId),
-        (old) => {
-          if (!old) return [{ ...newLink, fileCount: 0, batchCount: 0, totalSize: 0 }];
-          return [{ ...newLink, fileCount: 0, batchCount: 0, totalSize: 0 }, ...old];
+        old => {
+          if (!old)
+            return [{ ...newLink, fileCount: 0, batchCount: 0, totalSize: 0 }];
+          return [
+            { ...newLink, fileCount: 0, batchCount: 0, totalSize: 0 },
+            ...old,
+          ];
         }
       );
-      
+
       toast.success('Link created successfully!');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error(error.message || 'Failed to create link');
     },
   });
@@ -746,19 +794,22 @@ interface LinksUIState {
   isDeleteModalOpen: boolean;
   isShareModalOpen: boolean;
   selectedLinkId: string | null;
-  
+
   // View states
   viewMode: 'grid' | 'list';
   sortBy: 'created' | 'updated' | 'name' | 'uploads';
   sortOrder: 'asc' | 'desc';
   filterBy: 'all' | 'active' | 'inactive' | 'base' | 'custom' | 'generated';
   searchQuery: string;
-  
+
   // Selection states
   selectedLinks: Set<string>;
-  
+
   // Actions
-  openModal: (modal: 'create' | 'settings' | 'delete' | 'share', linkId?: string) => void;
+  openModal: (
+    modal: 'create' | 'settings' | 'delete' | 'share',
+    linkId?: string
+  ) => void;
   closeModal: (modal: 'create' | 'settings' | 'delete' | 'share') => void;
   closeAllModals: () => void;
   setViewMode: (mode: 'grid' | 'list') => void;
@@ -788,47 +839,53 @@ export const useLinksUIStore = create<LinksUIState>()(
       selectedLinks: new Set(),
 
       // Actions
-      openModal: (modal, linkId) => set((state) => ({
-        [`is${modal.charAt(0).toUpperCase() + modal.slice(1)}ModalOpen`]: true,
-        selectedLinkId: linkId || null,
-      })),
+      openModal: (modal, linkId) =>
+        set(state => ({
+          [`is${modal.charAt(0).toUpperCase() + modal.slice(1)}ModalOpen`]: true,
+          selectedLinkId: linkId || null,
+        })),
 
-      closeModal: (modal) => set((state) => ({
-        [`is${modal.charAt(0).toUpperCase() + modal.slice(1)}ModalOpen`]: false,
-        selectedLinkId: modal === 'settings' || modal === 'delete' || modal === 'share' 
-          ? null 
-          : state.selectedLinkId,
-      })),
+      closeModal: modal =>
+        set(state => ({
+          [`is${modal.charAt(0).toUpperCase() + modal.slice(1)}ModalOpen`]: false,
+          selectedLinkId:
+            modal === 'settings' || modal === 'delete' || modal === 'share'
+              ? null
+              : state.selectedLinkId,
+        })),
 
-      closeAllModals: () => set({
-        isCreateModalOpen: false,
-        isSettingsModalOpen: false,
-        isDeleteModalOpen: false,
-        isShareModalOpen: false,
-        selectedLinkId: null,
-      }),
+      closeAllModals: () =>
+        set({
+          isCreateModalOpen: false,
+          isSettingsModalOpen: false,
+          isDeleteModalOpen: false,
+          isShareModalOpen: false,
+          selectedLinkId: null,
+        }),
 
-      setViewMode: (mode) => set({ viewMode: mode }),
+      setViewMode: mode => set({ viewMode: mode }),
 
       setSorting: (sortBy, sortOrder) => set({ sortBy, sortOrder }),
 
-      setFilter: (filter) => set({ filterBy: filter }),
+      setFilter: filter => set({ filterBy: filter }),
 
-      setSearchQuery: (query) => set({ searchQuery: query }),
+      setSearchQuery: query => set({ searchQuery: query }),
 
-      selectLink: (linkId) => set((state) => ({
-        selectedLinks: new Set([...state.selectedLinks, linkId]),
-      })),
+      selectLink: linkId =>
+        set(state => ({
+          selectedLinks: new Set([...state.selectedLinks, linkId]),
+        })),
 
-      deselectLink: (linkId) => set((state) => {
-        const newSet = new Set(state.selectedLinks);
-        newSet.delete(linkId);
-        return { selectedLinks: newSet };
-      }),
+      deselectLink: linkId =>
+        set(state => {
+          const newSet = new Set(state.selectedLinks);
+          newSet.delete(linkId);
+          return { selectedLinks: newSet };
+        }),
 
       clearSelection: () => set({ selectedLinks: new Set() }),
 
-      selectAll: (linkIds) => set({ selectedLinks: new Set(linkIds) }),
+      selectAll: linkIds => set({ selectedLinks: new Set(linkIds) }),
     }),
     { name: 'links-ui-store' }
   )
@@ -861,7 +918,7 @@ export class LinkAccessValidator {
     try {
       // Resolve the link
       const link = await resolveLinkUrl(slug, topic);
-      
+
       if (!link) {
         return {
           success: false,
@@ -907,11 +964,17 @@ export class LinkAccessValidator {
           };
         }
 
-        const isValidPassword = await bcrypt.compare(password, link.passwordHash!);
+        const isValidPassword = await bcrypt.compare(
+          password,
+          link.passwordHash!
+        );
         if (!isValidPassword) {
           // Log failed attempt
-          await this.logAccessAttempt(link.id, 'password_failed', { userAgent, ipAddress });
-          
+          await this.logAccessAttempt(link.id, 'password_failed', {
+            userAgent,
+            ipAddress,
+          });
+
           return {
             success: false,
             error: 'Invalid password',
@@ -921,7 +984,10 @@ export class LinkAccessValidator {
       }
 
       // Log successful access
-      await this.logAccessAttempt(link.id, 'access_granted', { userAgent, ipAddress });
+      await this.logAccessAttempt(link.id, 'access_granted', {
+        userAgent,
+        ipAddress,
+      });
 
       return {
         success: true,
@@ -943,7 +1009,7 @@ export class LinkAccessValidator {
   async setLinkPassword(linkId: string, password: string): Promise<void> {
     const saltRounds = 12;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    
+
     await linkDbService.updateLink(linkId, {
       requirePassword: true,
       passwordHash: hashedPassword,
@@ -994,11 +1060,14 @@ export class LinkUsageTracker {
   /**
    * Track link view/access
    */
-  async trackLinkView(linkId: string, metadata?: {
-    userAgent?: string;
-    ipAddress?: string;
-    referrer?: string;
-  }): Promise<void> {
+  async trackLinkView(
+    linkId: string,
+    metadata?: {
+      userAgent?: string;
+      ipAddress?: string;
+      referrer?: string;
+    }
+  ): Promise<void> {
     try {
       // Update link statistics
       await db
@@ -1019,7 +1088,11 @@ export class LinkUsageTracker {
   /**
    * Track file upload to link
    */
-  async trackLinkUpload(linkId: string, fileCount: number, totalSize: number): Promise<void> {
+  async trackLinkUpload(
+    linkId: string,
+    fileCount: number,
+    totalSize: number
+  ): Promise<void> {
     try {
       await db
         .update(links)
@@ -1039,23 +1112,31 @@ export class LinkUsageTracker {
   /**
    * Get link analytics
    */
-  async getLinkAnalytics(linkId: string, userId: string): Promise<LinkAnalytics> {
+  async getLinkAnalytics(
+    linkId: string,
+    userId: string
+  ): Promise<LinkAnalytics> {
     try {
       const [linkStats] = await db
         .select({
           link: links,
           recentUploads: count(batches.id).as('recentUploads'),
-          uniqueUploaders: countDistinct(batches.uploaderName).as('uniqueUploaders'),
+          uniqueUploaders: countDistinct(batches.uploaderName).as(
+            'uniqueUploaders'
+          ),
         })
         .from(links)
-        .leftJoin(batches, and(
-          eq(batches.linkId, links.id),
-          gte(batches.createdAt, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)) // Last 30 days
-        ))
-        .where(and(
-          eq(links.id, linkId),
-          eq(links.userId, userId)
-        ))
+        .leftJoin(
+          batches,
+          and(
+            eq(batches.linkId, links.id),
+            gte(
+              batches.createdAt,
+              new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+            ) // Last 30 days
+          )
+        )
+        .where(and(eq(links.id, linkId), eq(links.userId, userId)))
         .groupBy(links.id)
         .limit(1);
 
@@ -1067,9 +1148,10 @@ export class LinkUsageTracker {
         ...linkStats.link,
         recentUploads: Number(linkStats.recentUploads) || 0,
         uniqueUploaders: Number(linkStats.uniqueUploaders) || 0,
-        conversionRate: linkStats.link.totalViews > 0 
-          ? (linkStats.link.totalUploads / linkStats.link.totalViews) * 100 
-          : 0,
+        conversionRate:
+          linkStats.link.totalViews > 0
+            ? (linkStats.link.totalUploads / linkStats.link.totalViews) * 100
+            : 0,
       };
     } catch (error) {
       console.error('Failed to get link analytics:', error);
@@ -1159,8 +1241,9 @@ describe('LinkDatabaseService', () => {
       await linkDbService.createLink(linkData);
 
       // Attempt to create duplicate
-      await expect(linkDbService.createLink(linkData))
-        .rejects.toThrow('A link with this URL already exists');
+      await expect(linkDbService.createLink(linkData)).rejects.toThrow(
+        'A link with this URL already exists'
+      );
     });
 
     it('should enforce subscription limits', async () => {
@@ -1186,8 +1269,9 @@ describe('LinkDatabaseService', () => {
         title: 'Second Link',
       };
 
-      await expect(linkDbService.createLink(secondLink))
-        .rejects.toThrow('Link limit reached for free tier');
+      await expect(linkDbService.createLink(secondLink)).rejects.toThrow(
+        'Link limit reached for free tier'
+      );
     });
   });
 
@@ -1222,7 +1306,10 @@ describe('LinkDatabaseService', () => {
       expect(toggled.isActive).toBe(false);
 
       // Toggle again (should become active)
-      const toggledAgain = await linkDbService.toggleLinkStatus(link.id, mockUserId);
+      const toggledAgain = await linkDbService.toggleLinkStatus(
+        link.id,
+        mockUserId
+      );
       expect(toggledAgain.isActive).toBe(true);
     });
   });
@@ -1280,9 +1367,15 @@ export class LinkCache {
   /**
    * Cache resolved link for public access
    */
-  async cacheResolvedLink(slug: string, topic: string | null, link: ResolvedLink): Promise<void> {
+  async cacheResolvedLink(
+    slug: string,
+    topic: string | null,
+    link: ResolvedLink
+  ): Promise<void> {
     try {
-      const key = topic ? `resolved-link:${slug}:${topic}` : `resolved-link:${slug}`;
+      const key = topic
+        ? `resolved-link:${slug}:${topic}`
+        : `resolved-link:${slug}`;
       await redis.setex(key, this.TTL.RESOLVED_LINK, JSON.stringify(link));
     } catch (error) {
       console.error('Failed to cache resolved link:', error);
@@ -1292,9 +1385,14 @@ export class LinkCache {
   /**
    * Get cached resolved link
    */
-  async getCachedResolvedLink(slug: string, topic: string | null): Promise<ResolvedLink | null> {
+  async getCachedResolvedLink(
+    slug: string,
+    topic: string | null
+  ): Promise<ResolvedLink | null> {
     try {
-      const key = topic ? `resolved-link:${slug}:${topic}` : `resolved-link:${slug}`;
+      const key = topic
+        ? `resolved-link:${slug}:${topic}`
+        : `resolved-link:${slug}`;
       const cached = await redis.get(key);
       return cached ? JSON.parse(cached as string) : null;
     } catch (error) {
@@ -1317,9 +1415,14 @@ export class LinkCache {
   /**
    * Invalidate resolved link cache
    */
-  async invalidateResolvedLink(slug: string, topic: string | null): Promise<void> {
+  async invalidateResolvedLink(
+    slug: string,
+    topic: string | null
+  ): Promise<void> {
     try {
-      const key = topic ? `resolved-link:${slug}:${topic}` : `resolved-link:${slug}`;
+      const key = topic
+        ? `resolved-link:${slug}:${topic}`
+        : `resolved-link:${slug}`;
       await redis.del(key);
     } catch (error) {
       console.error('Failed to invalidate resolved link cache:', error);
@@ -1337,7 +1440,7 @@ export const linkCache = new LinkCache();
 ### **Completed Components (95%)**
 
 - ✅ **Database Schema**: Complete 8-table schema with multi-link support
-- ✅ **Service Layer**: Full CRUD operations with validation and error handling  
+- ✅ **Service Layer**: Full CRUD operations with validation and error handling
 - ✅ **Server Actions**: Type-safe mutations with cache revalidation
 - ✅ **React Query Integration**: Hooks for all link operations
 - ✅ **Security System**: Password protection, access validation, audit logging

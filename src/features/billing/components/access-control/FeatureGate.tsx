@@ -10,7 +10,12 @@
 import React from 'react';
 import { Protect, useAuth, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/core/shadcn/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/core/shadcn/card';
 import { Button } from '@/components/ui/core/shadcn/button';
 import { Lock, Crown, Zap, Shield, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,10 +24,10 @@ import { cn } from '@/lib/utils';
 // FEATURE GATE TYPES
 // =============================================================================
 
-export type FeatureKey = 
-  | 'storage_limits' 
-  | 'custom_username' 
-  | 'unlimited_links' 
+export type FeatureKey =
+  | 'storage_limits'
+  | 'custom_username'
+  | 'unlimited_links'
   | 'email_notifications'
   | 'file_preview_thumbnails'
   | 'cloud_integrations'
@@ -49,12 +54,15 @@ interface FeatureGateProps {
 // FEATURE METADATA
 // =============================================================================
 
-const FEATURE_METADATA: Record<FeatureKey, {
-  name: string;
-  description: string;
-  tier: FeatureTier;
-  icon: React.ComponentType<{ className?: string }>;
-}> = {
+const FEATURE_METADATA: Record<
+  FeatureKey,
+  {
+    name: string;
+    description: string;
+    tier: FeatureTier;
+    icon: React.ComponentType<{ className?: string }>;
+  }
+> = {
   storage_limits: {
     name: 'Storage Limits',
     description: 'Generous storage space for your files and uploads',
@@ -144,11 +152,14 @@ interface UpgradePromptProps {
   className?: string | undefined;
 }
 
-const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, className }) => {
+const UpgradePrompt: React.FC<UpgradePromptProps> = ({
+  feature,
+  className,
+}) => {
   const metadata = FEATURE_METADATA[feature];
   const Icon = metadata.icon;
   const router = useRouter();
-  
+
   const handleUpgrade = () => {
     // FIXED: Use Next.js router instead of window.location.href
     router.push('/dashboard/billing');
@@ -166,28 +177,35 @@ const UpgradePrompt: React.FC<UpgradePromptProps> = ({ feature, className }) => 
   };
 
   return (
-    <Card className={cn('border-dashed opacity-75 hover:opacity-100 transition-opacity', className)}>
-      <CardHeader className="text-center pb-2">
-        <div className={cn(
-          'inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 mx-auto',
-          getTierColor(metadata.tier)
-        )}>
-          <Icon className="h-6 w-6" />
+    <Card
+      className={cn(
+        'border-dashed opacity-75 hover:opacity-100 transition-opacity',
+        className
+      )}
+    >
+      <CardHeader className='text-center pb-2'>
+        <div
+          className={cn(
+            'inline-flex items-center justify-center w-12 h-12 rounded-full mb-3 mx-auto',
+            getTierColor(metadata.tier)
+          )}
+        >
+          <Icon className='h-6 w-6' />
         </div>
-        <CardTitle className="text-lg">{metadata.name}</CardTitle>
+        <CardTitle className='text-lg'>{metadata.name}</CardTitle>
       </CardHeader>
-      <CardContent className="text-center space-y-4">
-        <p className="text-sm text-muted-foreground">
-          {metadata.description}
-        </p>
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Requires {metadata.tier.charAt(0).toUpperCase() + metadata.tier.slice(1)} plan
+      <CardContent className='text-center space-y-4'>
+        <p className='text-sm text-muted-foreground'>{metadata.description}</p>
+        <div className='space-y-2'>
+          <p className='text-xs text-muted-foreground'>
+            Requires{' '}
+            {metadata.tier.charAt(0).toUpperCase() + metadata.tier.slice(1)}{' '}
+            plan
           </p>
-          <Button 
+          <Button
             onClick={handleUpgrade}
-            size="sm"
-            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+            size='sm'
+            className='w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700'
           >
             Upgrade Now
           </Button>
@@ -211,16 +229,16 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
 }) => {
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
-  
+
   // Show loading state while Clerk is initializing
   if (!isLoaded) {
     return (
       <div className={cn('flex items-center justify-center p-4', className)}>
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
       </div>
     );
   }
-  
+
   // If not signed in, show upgrade prompt or fallback
   if (!isSignedIn) {
     if (fallback) {
@@ -231,12 +249,12 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     }
     return null;
   }
-  
+
   // ✅ UPDATED: Use Clerk's 2025 Protect component pattern for feature checking
   // This integrates directly with Clerk Billing and subscription features
   const metadata = FEATURE_METADATA[feature];
   const requiredTier = tier || metadata.tier;
-  
+
   // Use Clerk's Protect component for proper authorization
   return (
     <Protect
@@ -258,16 +276,19 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
 // FEATURE ACCESS LOGIC
 // =============================================================================
 
-function checkFeatureAccess(userPlan: string, requiredTier: FeatureTier): boolean {
+function checkFeatureAccess(
+  userPlan: string,
+  requiredTier: FeatureTier
+): boolean {
   const tierHierarchy: Record<FeatureTier, number> = {
     free: 0,
     pro: 1,
     business: 2,
   };
-  
+
   const userTierLevel = tierHierarchy[userPlan as FeatureTier] ?? 0;
   const requiredTierLevel = tierHierarchy[requiredTier];
-  
+
   return userTierLevel >= requiredTierLevel;
 }
 
@@ -276,14 +297,14 @@ function checkFeatureAccess(userPlan: string, requiredTier: FeatureTier): boolea
 // =============================================================================
 
 /**
- * @deprecated DEPRECATED: Use FeatureGate component instead. 
+ * @deprecated DEPRECATED: Use FeatureGate component instead.
  * This component will be removed in the next major version.
- * 
+ *
  * Migration Guide:
  * - Replace ClerkProtectWrapper with FeatureGate
  * - Update to use modern Clerk 2025 has() helper patterns
  * - FeatureGate now uses Clerk Billing integration directly
- * 
+ *
  * OLD: <ClerkProtectWrapper feature="custom_branding">...</ClerkProtectWrapper>
  * NEW: <FeatureGate feature="custom_branding">...</FeatureGate>
  */
@@ -309,11 +330,11 @@ export const ClerkProtectWrapper: React.FC<ClerkProtectWrapperProps> = ({
   if (process.env.NODE_ENV === 'development') {
     console.warn(
       '⚠️ ClerkProtectWrapper is deprecated. Use FeatureGate instead. ' +
-      'This component will be removed in the next major version. ' +
-      'See migration guide in component documentation.'
+        'This component will be removed in the next major version. ' +
+        'See migration guide in component documentation.'
     );
   }
-  
+
   // Forward to FeatureGate for compatibility
   return (
     <FeatureGate
@@ -331,22 +352,27 @@ export const ClerkProtectWrapper: React.FC<ClerkProtectWrapperProps> = ({
 // FEATURE HOOK
 // =============================================================================
 
-export const useFeatureAccess = (feature: FeatureKey, requiredTier?: FeatureTier) => {
+export const useFeatureAccess = (
+  feature: FeatureKey,
+  requiredTier?: FeatureTier
+) => {
   const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
-  
+
   // Get feature metadata
   const metadata = FEATURE_METADATA[feature];
   const tier = requiredTier || metadata.tier;
-  
+
   // ✅ UPDATED: Use legacy user metadata for now since has() is server-side only
   let hasFeature = false;
   let userPlan = 'free'; // Default
-  
+
   if (isSignedIn && isLoaded && user) {
     try {
       // Use legacy metadata checking for client-side compatibility
-      const publicMetadata = user.publicMetadata as { plan?: string } | undefined;
+      const publicMetadata = user.publicMetadata as
+        | { plan?: string }
+        | undefined;
       userPlan = publicMetadata?.plan || 'free';
       hasFeature = checkFeatureAccess(userPlan, tier);
     } catch (error) {
@@ -355,7 +381,7 @@ export const useFeatureAccess = (feature: FeatureKey, requiredTier?: FeatureTier
       hasFeature = false;
     }
   }
-  
+
   return {
     hasFeature,
     metadata,

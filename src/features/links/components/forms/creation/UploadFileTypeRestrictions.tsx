@@ -51,20 +51,14 @@ export function UploadFileTypeRestrictions({
             <div className='flex flex-wrap gap-1'>
               {!formData.allowedFileTypes ||
               formData.allowedFileTypes.length === 0 ? (
-                <span className='text-muted-foreground'>
-                  All file types
-                </span>
+                <span className='text-muted-foreground'>All file types</span>
               ) : formData.allowedFileTypes.length <= 3 ? (
                 formData.allowedFileTypes.map(type => {
                   const option = fileTypeOptions.find(
                     opt => opt.value === type
                   );
                   return (
-                    <Badge
-                      key={type}
-                      variant='secondary'
-                      className='text-xs'
-                    >
+                    <Badge key={type} variant='secondary' className='text-xs'>
                       {option?.label?.split(' ')[0] || type}
                     </Badge>
                   );
@@ -90,10 +84,7 @@ export function UploadFileTypeRestrictions({
             </svg>
           </Button>
         </PopoverTrigger>
-        <PopoverContent
-          className='w-full min-w-[320px] p-0'
-          align='start'
-        >
+        <PopoverContent className='w-full min-w-[320px] p-0' align='start'>
           <Command>
             <CommandInput placeholder='Search file types...' />
             <CommandList>
@@ -123,10 +114,7 @@ export function UploadFileTypeRestrictions({
                             );
                           } else {
                             // Add to selection and remove "all" if present
-                            newSelection = [
-                              ...allowedTypes,
-                              option.value,
-                            ];
+                            newSelection = [...allowedTypes, option.value];
                           }
                         }
 
@@ -169,9 +157,7 @@ export function UploadFileTypeRestrictions({
                     <CommandSeparator />
                     <CommandGroup>
                       <CommandItem
-                        onSelect={() =>
-                          onDataChange({ allowedFileTypes: [] })
-                        }
+                        onSelect={() => onDataChange({ allowedFileTypes: [] })}
                         className='justify-center text-center cursor-pointer'
                       >
                         Clear all

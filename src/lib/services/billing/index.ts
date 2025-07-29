@@ -13,10 +13,11 @@ export { BillingAnalyticsService } from './billing-analytics-service';
 export { BillingErrorRecoveryService } from './billing-error-recovery';
 
 // Import for the billing object
-import { ClerkBillingIntegrationService, 
+import {
+  ClerkBillingIntegrationService,
   isUserSubscribed,
   hasFeature,
-  getCurrentPlan 
+  getCurrentPlan,
 } from './clerk-billing-integration';
 import { SubscriptionAnalyticsService } from './subscription-analytics-service';
 import { BillingAnalyticsService } from './billing-analytics-service';
@@ -85,11 +86,11 @@ export type {
 
 /**
  * Quick access to most commonly used billing functions
- * 
+ *
  * @example
  * ```typescript
  * import { billing } from '@/lib/services/billing';
- * 
+ *
  * const currentPlan = await billing.getCurrentPlan();
  * const hasCustomBranding = await billing.hasFeature('custom_branding');
  * const isSubscribed = await billing.isSubscribed();
@@ -100,7 +101,7 @@ export const billing = {
   getCurrentPlan,
   hasFeature,
   isUserSubscribed,
-  
+
   // Core services
   integration: ClerkBillingIntegrationService,
   analytics: SubscriptionAnalyticsService,

@@ -9,7 +9,8 @@ import { PricingPage } from '@/features/billing/components/pricing/PricingPage';
 
 export const metadata: Metadata = {
   title: 'Pricing Plans | Foldly',
-  description: 'Choose the perfect plan for your file sharing needs. Free, Pro, and Business plans available.',
+  description:
+    'Choose the perfect plan for your file sharing needs. Free, Pro, and Business plans available.',
   keywords: 'pricing, plans, subscription, file sharing, storage, foldly',
 };
 

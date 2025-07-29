@@ -6,7 +6,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { 
+import {
   getActivePlansAction,
   getMvpPlansAction,
   getPlanByKeyAction,
@@ -21,8 +21,10 @@ export const subscriptionPlansQueryKeys = {
   all: ['subscription-plans'] as const,
   active: () => [...subscriptionPlansQueryKeys.all, 'active'] as const,
   mvp: () => [...subscriptionPlansQueryKeys.all, 'mvp'] as const,
-  byKey: (planKey: string) => [...subscriptionPlansQueryKeys.all, 'by-key', planKey] as const,
-  features: (planKey: string) => [...subscriptionPlansQueryKeys.all, 'features', planKey] as const,
+  byKey: (planKey: string) =>
+    [...subscriptionPlansQueryKeys.all, 'by-key', planKey] as const,
+  features: (planKey: string) =>
+    [...subscriptionPlansQueryKeys.all, 'features', planKey] as const,
 };
 
 // =============================================================================
@@ -117,10 +119,11 @@ export function usePlanUIMetadata(planKey: string | null) {
       }
       const plan = result.data;
       if (!plan) return null;
-      
+
       return {
         highlightFeatures: (plan.highlightFeatures as string[]) || [],
-        featureDescriptions: (plan.featureDescriptions as Record<string, string>) || {},
+        featureDescriptions:
+          (plan.featureDescriptions as Record<string, string>) || {},
       };
     },
     enabled: !!planKey,
@@ -147,7 +150,12 @@ export function usePlansForDisplay() {
     yearlyPrice: parseFloat(plan.yearlyPriceUsd || '0'),
     features: [], // Derived from feature flags, not stored as array
     isPopular: plan.planKey === 'pro', // Pro plan is popular
-    color: plan.planKey === 'free' ? '#10B981' : plan.planKey === 'pro' ? '#3B82F6' : '#8B5CF6',
+    color:
+      plan.planKey === 'free'
+        ? '#10B981'
+        : plan.planKey === 'pro'
+          ? '#3B82F6'
+          : '#8B5CF6',
     icon: plan.planKey === 'free' ? '📦' : plan.planKey === 'pro' ? '⭐' : '🚀',
     tier: plan.planKey as 'free' | 'pro' | 'business',
     planData: plan,
@@ -163,9 +171,12 @@ export function usePlansForDisplay() {
 /**
  * Hook to check if a specific plan has a highlight feature (simplified)
  */
-export function usePlanHasHighlightFeature(planKey: string | null, featureName: string) {
+export function usePlanHasHighlightFeature(
+  planKey: string | null,
+  featureName: string
+) {
   const { data: plan } = usePlanByKey(planKey);
-  
+
   if (!plan || !featureName) {
     return false;
   }
@@ -186,10 +197,17 @@ export function usePlanComparison() {
     monthlyPrice: parseFloat(plan.monthlyPriceUsd),
     yearlyPrice: parseFloat(plan.yearlyPriceUsd || '0'),
     highlightFeatures: (plan.highlightFeatures as string[]) || [],
-    featureDescriptions: (plan.featureDescriptions as Record<string, string>) || {},
-    storageLimit: plan.storageLimitGb === -1 ? 'Unlimited' : `${plan.storageLimitGb}GB`,
+    featureDescriptions:
+      (plan.featureDescriptions as Record<string, string>) || {},
+    storageLimit:
+      plan.storageLimitGb === -1 ? 'Unlimited' : `${plan.storageLimitGb}GB`,
     isPopular: plan.isPopular || false,
-    color: plan.planKey === 'free' ? '#10B981' : plan.planKey === 'pro' ? '#3B82F6' : '#8B5CF6',
+    color:
+      plan.planKey === 'free'
+        ? '#10B981'
+        : plan.planKey === 'pro'
+          ? '#3B82F6'
+          : '#8B5CF6',
   }));
 
   return {

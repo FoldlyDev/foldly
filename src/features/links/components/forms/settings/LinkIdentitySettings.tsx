@@ -34,26 +34,20 @@ export function LinkIdentitySettings({
   const { normalizeSlug } = useSlugNormalization();
 
   // Real-time slug validation for base links (exclude current link ID when editing)
-  const slugValidation = useSlugValidation(
-    watchedValues.slug || '', 
-    { 
-      enabled: isBaseLink,
-      excludeId: link.id,
-      debounceMs: 500 
-    }
-  );
+  const slugValidation = useSlugValidation(watchedValues.slug || '', {
+    enabled: isBaseLink,
+    excludeId: link.id,
+    debounceMs: 500,
+  });
 
   // Real-time topic validation for topic/custom links
-  const topicValidation = useTopicValidation(
-    watchedValues.topic || '',
-    {
-      enabled: isTopicLink,
-      excludeId: link.id,
-      userId: link.userId,
-      slug: link.slug,
-      debounceMs: 500
-    }
-  );
+  const topicValidation = useTopicValidation(watchedValues.topic || '', {
+    enabled: isTopicLink,
+    excludeId: link.id,
+    userId: link.userId,
+    slug: link.slug,
+    debounceMs: 500,
+  });
 
   return (
     <div className='space-y-4'>
@@ -72,7 +66,7 @@ export function LinkIdentitySettings({
               </label>
               <HelpPopover
                 title='Custom URL'
-                description="Customize your personal collection URL. Leave empty to use your username."
+                description='Customize your personal collection URL. Leave empty to use your username.'
               />
             </div>
             <div className='relative'>
@@ -90,14 +84,14 @@ export function LinkIdentitySettings({
                       shouldValidate: true,
                     });
                   }}
-                  placeholder="your-name"
+                  placeholder='your-name'
                   className={`rounded-l-none pr-10 bg-white text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)] ${
                     watchedValues.slug
                       ? slugValidation.isAvailable
                         ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
                         : slugValidation.isUnavailable
-                        ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                        : 'border-[var(--neutral-200)]'
+                          ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                          : 'border-[var(--neutral-200)]'
                       : 'border-[var(--neutral-200)]'
                   }`}
                 />
@@ -122,7 +116,7 @@ export function LinkIdentitySettings({
                 <p className='text-red-700'>{slugValidation.message}</p>
               </div>
             )}
-            
+
             {/* Success feedback for available URLs */}
             {watchedValues.slug && slugValidation.isAvailable && (
               <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-xs'>
@@ -149,7 +143,7 @@ export function LinkIdentitySettings({
               </label>
               <HelpPopover
                 title='Collection URL'
-                description="The URL path for this specific collection. Must be unique within your links."
+                description='The URL path for this specific collection. Must be unique within your links.'
               />
             </div>
             <div className='relative'>
@@ -165,14 +159,14 @@ export function LinkIdentitySettings({
                       shouldValidate: true,
                     });
                   }}
-                  placeholder="collection-name"
+                  placeholder='collection-name'
                   className={`rounded-l-none pr-10 bg-white text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)] ${
                     watchedValues.topic
                       ? topicValidation.isAvailable
                         ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
                         : topicValidation.isUnavailable
-                        ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                        : 'border-[var(--neutral-200)]'
+                          ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
+                          : 'border-[var(--neutral-200)]'
                       : 'border-[var(--neutral-200)]'
                   }`}
                 />
@@ -197,12 +191,14 @@ export function LinkIdentitySettings({
                 <p className='text-red-700'>{topicValidation.message}</p>
               </div>
             )}
-            
+
             {/* Success feedback for available collection names */}
             {watchedValues.topic && topicValidation.isAvailable && (
               <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-xs'>
                 <CheckCircle className='w-3 h-3 text-green-600 flex-shrink-0' />
-                <p className='text-green-700'>This collection name is available!</p>
+                <p className='text-green-700'>
+                  This collection name is available!
+                </p>
               </div>
             )}
 
@@ -223,7 +219,7 @@ export function LinkIdentitySettings({
             </label>
             <HelpPopover
               title='Display Name'
-              description="The name that appears on your collection page and in the browser tab."
+              description='The name that appears on your collection page and in the browser tab.'
             />
           </div>
           <Input

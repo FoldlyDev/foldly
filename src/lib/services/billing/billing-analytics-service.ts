@@ -5,12 +5,12 @@
 
 import { eq, sql, sum, count } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import { 
-  links, 
-  files, 
-  batches, 
+import {
+  links,
+  files,
+  batches,
   workspaces,
-  subscriptionPlans 
+  subscriptionPlans,
 } from '@/lib/database/schemas';
 import { calculateUserStorageUsage } from '@/lib/services/storage/storage-tracking-service';
 import { ClerkBillingIntegrationService } from './clerk-billing-integration';
@@ -24,27 +24,27 @@ export interface UserBillingData {
   storageUsed: number;
   storageLimit: number;
   storageUsedGB: number;
-  
+
   // File statistics
   filesUploaded: number;
   totalFileSize: number;
-  
+
   // Link statistics
   linksCreated: number;
   activeLinks: number;
   totalUploads: number;
-  
+
   // Usage statistics
   totalBatches: number;
   successfulBatches: number;
   totalDownloads: number;
-  
+
   // Time-based metrics
   accountCreated: Date;
   lastActivity: Date;
   daysActive: number;
   subscriptionStartDate: Date;
-  
+
   // Current plan data (simplified)
   currentPlan: 'free' | 'pro' | 'business';
   planFeatures: {
@@ -81,46 +81,47 @@ export class BillingAnalyticsService {
       // Get real-time storage usage and plan details with error handling
       const [planDataResult, storageUsage] = await Promise.allSettled([
         ClerkBillingIntegrationService.getIntegratedPlanData(),
-        calculateUserStorageUsage(userId)
+        calculateUserStorageUsage(userId),
       ]);
 
-      const planData = planDataResult.status === 'fulfilled' && planDataResult.value.success
-        ? planDataResult.value.data
-        : {
-            clerkPlan: {
-              currentPlan: 'free',
-              hasActiveBilling: false,
-              subscriptionStatus: null,
-              planFeatures: ['basic_sharing', 'limited_storage'],
-              metadata: {},
-            },
-            uiMetadata: {
-              planKey: 'free',
-              planName: 'Free',
-              planDescription: null,
-              monthlyPrice: '0.00',
-              yearlyPrice: '0.00',
-              storageLimit: '50 GB',
-              storageLimitGb: 50,
-              highlightFeatures: ['File sharing', 'Basic storage'],
-              featureDescriptions: {
-                'basic_sharing': 'Simple file sharing links',
-                'limited_storage': '50GB storage space'
+      const planData =
+        planDataResult.status === 'fulfilled' && planDataResult.value.success
+          ? planDataResult.value.data
+          : {
+              clerkPlan: {
+                currentPlan: 'free',
+                hasActiveBilling: false,
+                subscriptionStatus: null,
+                planFeatures: ['basic_sharing', 'limited_storage'],
+                metadata: {},
               },
-              isPopular: false,
-            },
-            hasFeatureAccess: (feature: string) => ['basic_sharing', 'limited_storage'].includes(feature),
-            storageLimit: 50 * 1024 * 1024 * 1024,
-            storageUsed: 0,
-            isSubscribed: false,
-            canUpgrade: true,
-            upgradeOptions: ['pro', 'business'],
-          };
+              uiMetadata: {
+                planKey: 'free',
+                planName: 'Free',
+                planDescription: null,
+                monthlyPrice: '0.00',
+                yearlyPrice: '0.00',
+                storageLimit: '50 GB',
+                storageLimitGb: 50,
+                highlightFeatures: ['File sharing', 'Basic storage'],
+                featureDescriptions: {
+                  basic_sharing: 'Simple file sharing links',
+                  limited_storage: '50GB storage space',
+                },
+                isPopular: false,
+              },
+              hasFeatureAccess: (feature: string) =>
+                ['basic_sharing', 'limited_storage'].includes(feature),
+              storageLimit: 50 * 1024 * 1024 * 1024,
+              storageUsed: 0,
+              isSubscribed: false,
+              canUpgrade: true,
+              upgradeOptions: ['pro', 'business'],
+            };
 
-      const actualStorageUsage = storageUsage.status === 'fulfilled' 
-        ? storageUsage.value 
-        : 0;
-      
+      const actualStorageUsage =
+        storageUsage.status === 'fulfilled' ? storageUsage.value : 0;
+
       // For user creation date, we'll need to get it from a different source
       // since we're removing users table dependency
       const accountCreated = new Date(); // Placeholder - get from Clerk or user creation tracking
@@ -173,9 +174,11 @@ export class BillingAnalyticsService {
 
       // Calculate derived metrics
       const storageLimitStr = planData.uiMetadata.storageLimit;
-      const storageLimit = storageLimitStr === 'Unlimited' ? Infinity : 
-        parseInt(storageLimitStr.replace(' GB', '')) * 1024 * 1024 * 1024;
-      const storageUsedGB = Math.round(actualStorageUsage / (1024 ** 3));
+      const storageLimit =
+        storageLimitStr === 'Unlimited'
+          ? Infinity
+          : parseInt(storageLimitStr.replace(' GB', '')) * 1024 * 1024 * 1024;
+      const storageUsedGB = Math.round(actualStorageUsage / 1024 ** 3);
       const daysActive = Math.floor(
         (Date.now() - accountCreated.getTime()) / (24 * 60 * 60 * 1000)
       );
@@ -185,34 +188,37 @@ export class BillingAnalyticsService {
         storageUsed: actualStorageUsage,
         storageLimit: storageLimit,
         storageUsedGB,
-        
+
         // File statistics
         filesUploaded: Number(fileStats[0]?.fileCount) || 0,
         totalFileSize: Number(fileStats[0]?.totalFileSize) || 0,
-        
+
         // Link statistics
         linksCreated: Number(linkStats[0]?.totalLinks) || 0,
         activeLinks: Number(linkStats[0]?.activeLinks) || 0,
         totalUploads: Number(uploadStats[0]?.totalUploads) || 0,
-        
+
         // Usage statistics
         totalBatches: Number(batchStats[0]?.totalBatches) || 0,
         successfulBatches: Number(batchStats[0]?.successfulBatches) || 0,
         totalDownloads: Number(uploadStats[0]?.totalDownloads) || 0,
-        
+
         // Time-based metrics
         accountCreated: accountCreated,
         lastActivity: uploadStats[0]?.lastActivity || accountCreated,
         daysActive,
         subscriptionStartDate: accountCreated, // For now, use account creation date
-        
+
         // Current plan data (simplified)
-        currentPlan: planData.clerkPlan.currentPlan as 'free' | 'pro' | 'business',
+        currentPlan: planData.clerkPlan.currentPlan as
+          | 'free'
+          | 'pro'
+          | 'business',
         planFeatures: {
           highlightFeatures: planData.uiMetadata?.highlightFeatures || [],
           featureDescriptions: planData.uiMetadata?.featureDescriptions || {},
           totalFeatures: Math.max(
-            (planData.uiMetadata?.highlightFeatures?.length || 0),
+            planData.uiMetadata?.highlightFeatures?.length || 0,
             Object.keys(planData.uiMetadata?.featureDescriptions || {}).length
           ),
         },
@@ -226,7 +232,10 @@ export class BillingAnalyticsService {
   /**
    * Get storage usage statistics for a user
    */
-  static async getStorageUsage(userId: string, currentPlan: string = 'free'): Promise<{
+  static async getStorageUsage(
+    userId: string,
+    currentPlan: string = 'free'
+  ): Promise<{
     used: number;
     limit: number;
     percentage: number;
@@ -239,7 +248,7 @@ export class BillingAnalyticsService {
       // Use real-time storage calculation and plan details
       const [storageUsed, planDataResult] = await Promise.all([
         calculateUserStorageUsage(userId),
-        ClerkBillingIntegrationService.getIntegratedPlanData()
+        ClerkBillingIntegrationService.getIntegratedPlanData(),
       ]);
 
       if (!planDataResult.success) {
@@ -250,10 +259,15 @@ export class BillingAnalyticsService {
 
       // Parse storage limit from UI metadata
       const storageLimitStr = planData.uiMetadata.storageLimit;
-      const actualLimit = storageLimitStr === 'Unlimited' ? Infinity : 
-        parseInt(storageLimitStr.replace(' GB', '')) * 1024 ** 3; // Convert GB to bytes
-      const percentage = actualLimit === Infinity ? 0 : Math.round((storageUsed / actualLimit) * 100);
-      
+      const actualLimit =
+        storageLimitStr === 'Unlimited'
+          ? Infinity
+          : parseInt(storageLimitStr.replace(' GB', '')) * 1024 ** 3; // Convert GB to bytes
+      const percentage =
+        actualLimit === Infinity
+          ? 0
+          : Math.round((storageUsed / actualLimit) * 100);
+
       return {
         used: storageUsed,
         limit: actualLimit,
@@ -261,7 +275,10 @@ export class BillingAnalyticsService {
         isNearLimit: percentage > 80,
         isOverLimit: percentage > 100,
         formattedUsed: this.formatBytes(storageUsed),
-        formattedLimit: actualLimit === Infinity ? 'Unlimited' : this.formatBytes(actualLimit),
+        formattedLimit:
+          actualLimit === Infinity
+            ? 'Unlimited'
+            : this.formatBytes(actualLimit),
       };
     } catch (error) {
       console.error('Error fetching storage usage:', error);
@@ -272,7 +289,10 @@ export class BillingAnalyticsService {
   /**
    * Get billing overview data for dashboard cards
    */
-  static async getBillingOverview(userId: string, currentPlan: string = 'free'): Promise<BillingOverviewData> {
+  static async getBillingOverview(
+    userId: string,
+    currentPlan: string = 'free'
+  ): Promise<BillingOverviewData> {
     try {
       const [billingData, storageUsage, planData] = await Promise.all([
         this.getUserBillingData(userId),
@@ -285,11 +305,12 @@ export class BillingAnalyticsService {
       ]);
 
       const plan = planData[0];
-      
+
       // Calculate features active from highlight features (simplified approach)
-      const featuresActive = plan ? 
-        (plan.highlightFeatures as string[])?.length || 0 : 0;
-      
+      const featuresActive = plan
+        ? (plan.highlightFeatures as string[])?.length || 0
+        : 0;
+
       const monthlySpend = plan ? parseFloat(plan.monthlyPriceUsd) : 0;
 
       return {
@@ -346,11 +367,11 @@ export class BillingAnalyticsService {
   private static formatBytes(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
     if (bytes === Infinity) return 'Unlimited';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
@@ -414,7 +435,7 @@ export class BillingAnalyticsService {
       const [billingData, storageData, planDataResult] = await Promise.all([
         this.getUserBillingData(userId),
         this.getStorageUsage(userId),
-        ClerkBillingIntegrationService.getIntegratedPlanData()
+        ClerkBillingIntegrationService.getIntegratedPlanData(),
       ]);
 
       if (!planDataResult.success) {

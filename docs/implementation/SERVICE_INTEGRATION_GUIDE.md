@@ -15,6 +15,7 @@ This guide covers the modern service integration patterns implemented in Foldly'
 ### **1. Centralized Export Pattern**
 
 All services are accessed through centralized export objects that provide:
+
 - Single import statements for entire service domains
 - Intuitive API design with discoverable methods
 - Comprehensive error handling with fallback systems
@@ -63,6 +64,7 @@ const recovery = await billing.errorRecovery.handleBillingError(error);
 ### **Service Components**
 
 #### **Core Integration Service**
+
 ```typescript
 // clerk-billing-integration.ts
 export class ClerkBillingIntegrationService {
@@ -70,7 +72,7 @@ export class ClerkBillingIntegrationService {
     try {
       const user = await currentUser();
       if (!user) return 'free';
-      
+
       // Modern Clerk plan detection
       if (user.has({ plan: 'business' })) return 'business';
       if (user.has({ plan: 'pro' })) return 'pro';
@@ -94,28 +96,29 @@ export class ClerkBillingIntegrationService {
 ```
 
 #### **Analytics Service**
+
 ```typescript
 // subscription-analytics-service.ts
 export class SubscriptionAnalyticsService {
   static async getUserInsights(userId: string): Promise<UserInsights> {
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async tx => {
       const [planHistory, usage, behavior] = await Promise.all([
         this.getPlanHistory(tx, userId),
         this.getUsageMetrics(tx, userId),
-        this.getBehaviorAnalytics(tx, userId)
+        this.getBehaviorAnalytics(tx, userId),
       ]);
-      
+
       return {
         planHistory,
         usage: this.calculateRealTimeUsage(usage),
         behavior: this.analyzeBehaviorPatterns(behavior),
-        recommendations: this.generateRecommendations(planHistory, usage)
+        recommendations: this.generateRecommendations(planHistory, usage),
       };
     });
   }
-  
+
   static async trackPlanChange(
-    userId: string, 
+    userId: string,
     change: PlanChangeEvent
   ): Promise<void> {
     // Track subscription changes for business intelligence
@@ -124,6 +127,7 @@ export class SubscriptionAnalyticsService {
 ```
 
 #### **Error Recovery Service**
+
 ```typescript
 // billing-error-recovery.ts
 export class BillingErrorRecoveryService {
@@ -131,33 +135,35 @@ export class BillingErrorRecoveryService {
     error: BillingError
   ): Promise<FallbackPlanData> {
     console.error('Billing error:', error);
-    
+
     // Attempt recovery strategies
     const fallbackData = await this.getFallbackPlanData();
-    
+
     // Notify user appropriately
-    toast.warning('Billing data temporarily unavailable. Using cached information.');
-    
+    toast.warning(
+      'Billing data temporarily unavailable. Using cached information.'
+    );
+
     return fallbackData;
   }
-  
+
   static async healthCheck(): Promise<HealthStatus> {
     try {
       // Check billing service connectivity
       const user = await currentUser();
       const planCheck = user?.has({ plan: 'free' });
-      
+
       return {
         status: 'healthy',
         clerkConnectivity: true,
-        lastCheck: new Date()
+        lastCheck: new Date(),
       };
     } catch (error) {
       return {
         status: 'degraded',
         clerkConnectivity: false,
         error: error.message,
-        lastCheck: new Date()
+        lastCheck: new Date(),
       };
     }
   }
@@ -183,49 +189,55 @@ export function useBillingOverview() {
       if (error.status === 401) return false; // Don't retry auth errors
       return failureCount < 3;
     },
-    onError: (error) => {
+    onError: error => {
       // Use service-level error recovery
       billing.errorRecovery.handleBillingError(error);
-    }
+    },
   });
 }
 
 export function useSubscriptionMutations() {
   const queryClient = useQueryClient();
-  
+
   return {
     upgrade: useMutation({
-      mutationFn: (targetPlan: string) => billing.integration.upgradePlan(targetPlan),
-      onMutate: async (targetPlan) => {
+      mutationFn: (targetPlan: string) =>
+        billing.integration.upgradePlan(targetPlan),
+      onMutate: async targetPlan => {
         // Optimistic update
         await queryClient.cancelQueries(billingQueryKeys.overview());
-        const previousData = queryClient.getQueryData(billingQueryKeys.overview());
-        
+        const previousData = queryClient.getQueryData(
+          billingQueryKeys.overview()
+        );
+
         queryClient.setQueryData(billingQueryKeys.overview(), (old: any) => ({
           ...old,
-          currentPlan: targetPlan
+          currentPlan: targetPlan,
         }));
-        
+
         return { previousData };
       },
       onError: (err, variables, context) => {
         // Rollback on error
-        queryClient.setQueryData(billingQueryKeys.overview(), context?.previousData);
+        queryClient.setQueryData(
+          billingQueryKeys.overview(),
+          context?.previousData
+        );
         toast.error('Upgrade failed. Please try again.');
       },
       onSuccess: () => {
         queryClient.invalidateQueries(billingQueryKeys.all());
         toast.success('Plan upgraded successfully!');
-      }
+      },
     }),
-    
+
     cancel: useMutation({
       mutationFn: billing.integration.cancelSubscription,
       onSuccess: () => {
         queryClient.invalidateQueries(billingQueryKeys.all());
         toast.success('Subscription cancelled successfully');
-      }
-    })
+      },
+    }),
   };
 }
 ```
@@ -237,9 +249,12 @@ export function useSubscriptionMutations() {
 export const billingQueryKeys = {
   all: () => ['billing'] as const,
   overview: () => [...billingQueryKeys.all(), 'overview'] as const,
-  planData: (userId: string) => [...billingQueryKeys.all(), 'plan', userId] as const,
-  analytics: (userId: string) => [...billingQueryKeys.all(), 'analytics', userId] as const,
-  usage: (userId: string) => [...billingQueryKeys.all(), 'usage', userId] as const,
+  planData: (userId: string) =>
+    [...billingQueryKeys.all(), 'plan', userId] as const,
+  analytics: (userId: string) =>
+    [...billingQueryKeys.all(), 'analytics', userId] as const,
+  usage: (userId: string) =>
+    [...billingQueryKeys.all(), 'usage', userId] as const,
 } as const;
 ```
 
@@ -259,34 +274,34 @@ interface FeatureGateProps {
   upgradeAction?: boolean;
 }
 
-export async function FeatureGate({ 
-  feature, 
-  plan, 
-  children, 
+export async function FeatureGate({
+  feature,
+  plan,
+  children,
   fallback,
-  upgradeAction = false 
+  upgradeAction = false
 }: FeatureGateProps) {
   const hasAccess = await billing.hasFeature(feature);
   const currentPlan = await billing.getCurrentPlan();
-  
+
   // Plan-based access checking
   if (plan && currentPlan !== plan) {
     return fallback || <UpgradePrompt targetPlan={plan} />;
   }
-  
+
   // Feature-based access checking
   if (!hasAccess) {
     return fallback || (upgradeAction ? <UpgradeModal /> : <FeatureUnavailable />);
   }
-  
+
   return <>{children}</>;
 }
 
 // Usage examples
 export function CustomBrandingSection() {
   return (
-    <FeatureGate 
-      feature="custom_branding" 
+    <FeatureGate
+      feature="custom_branding"
       upgradeAction={true}
       fallback={<UpgradePrompt feature="custom_branding" />}
     >
@@ -303,20 +318,20 @@ export function CustomBrandingSection() {
 export function BillingDashboard() {
   const { data: billingData, isLoading, error } = useBillingOverview();
   const { upgrade, cancel } = useSubscriptionMutations();
-  
+
   if (isLoading) return <BillingDashboardSkeleton />;
   if (error) return <BillingErrorState error={error} />;
   if (!billingData) return <EmptyBillingState />;
-  
+
   return (
     <div className="space-y-6">
       <BillingOverviewCard data={billingData} />
       <SubscriptionDetailsCard subscription={billingData.subscription} />
       <UsageMetricsCard usage={billingData.usage} />
       <AnalyticsInsightsCard analytics={billingData.analytics} />
-      
+
       {billingData.recommendations.length > 0 && (
-        <RecommendationsCard 
+        <RecommendationsCard
           recommendations={billingData.recommendations}
           onUpgrade={upgrade}
           onCancel={cancel}
@@ -383,17 +398,19 @@ export async function safeServiceCall<T>(
     return await operation();
   } catch (error) {
     console.error(`${context} failed:`, error);
-    
+
     // Track error for monitoring
     await billing.errorRecovery.trackError(error, context);
-    
+
     // Return fallback value
     return fallback;
   }
 }
 
 // Usage in service methods
-export async function getCurrentPlanSafe(): Promise<'free' | 'pro' | 'business'> {
+export async function getCurrentPlanSafe(): Promise<
+  'free' | 'pro' | 'business'
+> {
   return safeServiceCall(
     () => billing.getCurrentPlan(),
     'free', // Safe fallback
@@ -427,7 +444,7 @@ export class BillingErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <BillingErrorFallback 
+        <BillingErrorFallback
           error={this.state.error}
           onRetry={() => this.setState({ hasError: false, error: null })}
         />
@@ -453,18 +470,18 @@ export const billingCacheConfig = {
     staleTime: 15 * 60 * 1000, // 15 minutes
     cacheTime: 30 * 60 * 1000, // 30 minutes
   },
-  
+
   // Usage data - changes more frequently
   usageData: {
     staleTime: 5 * 60 * 1000, // 5 minutes
     cacheTime: 10 * 60 * 1000, // 10 minutes
   },
-  
+
   // Analytics - can be stale for longer
   analytics: {
     staleTime: 30 * 60 * 1000, // 30 minutes
     cacheTime: 60 * 60 * 1000, // 1 hour
-  }
+  },
 };
 ```
 
@@ -472,21 +489,24 @@ export const billingCacheConfig = {
 
 ```typescript
 // Prefetch billing data for dashboard
-export async function prefetchBillingData(queryClient: QueryClient, userId: string) {
+export async function prefetchBillingData(
+  queryClient: QueryClient,
+  userId: string
+) {
   const prefetchPromises = [
     queryClient.prefetchQuery({
       queryKey: billingQueryKeys.overview(),
       queryFn: () => billing.billingData.getOverviewData(),
-      ...billingCacheConfig.planData
+      ...billingCacheConfig.planData,
     }),
-    
+
     queryClient.prefetchQuery({
       queryKey: billingQueryKeys.analytics(userId),
       queryFn: () => billing.analytics.getUserInsights(userId),
-      ...billingCacheConfig.analytics
-    })
+      ...billingCacheConfig.analytics,
+    }),
   ];
-  
+
   await Promise.allSettled(prefetchPromises);
 }
 ```
@@ -500,31 +520,33 @@ export async function prefetchBillingData(queryClient: QueryClient, userId: stri
 ```typescript
 // Consistent service method pattern
 export class ExampleService {
-  static async methodName(params: MethodParams): Promise<ServiceResult<ReturnType>> {
+  static async methodName(
+    params: MethodParams
+  ): Promise<ServiceResult<ReturnType>> {
     try {
       // Validate inputs
       const validatedParams = await this.validateParams(params);
-      
+
       // Execute operation with transaction if needed
-      const result = await db.transaction(async (tx) => {
+      const result = await db.transaction(async tx => {
         return await this.executeOperation(tx, validatedParams);
       });
-      
+
       // Process and return result
       return {
         success: true,
-        data: this.processResult(result)
+        data: this.processResult(result),
       };
     } catch (error) {
       console.error(`${this.name}.${methodName} failed:`, error);
-      
+
       // Use error recovery service
       const fallbackResult = await ErrorRecoveryService.handleError(error);
-      
+
       return {
         success: false,
         error: error.message,
-        fallback: fallbackResult
+        fallback: fallbackResult,
       };
     }
   }
@@ -590,13 +612,13 @@ describe('BillingService', () => {
 
 ### **Service Layer Improvements**
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Service Files | 12+ scattered | 6 focused | **50% reduction** |
-| Import Statements | Multiple imports | Single `billing` object | **80% simpler** |
-| Error Handling | Inconsistent | Comprehensive | **Complete coverage** |
-| Type Coverage | ~70% | 98% | **28% increase** |
-| Cache Efficiency | Basic | Optimized React Query | **60% faster loading** |
+| Metric            | Before           | After                   | Improvement            |
+| ----------------- | ---------------- | ----------------------- | ---------------------- |
+| Service Files     | 12+ scattered    | 6 focused               | **50% reduction**      |
+| Import Statements | Multiple imports | Single `billing` object | **80% simpler**        |
+| Error Handling    | Inconsistent     | Comprehensive           | **Complete coverage**  |
+| Type Coverage     | ~70%             | 98%                     | **28% increase**       |
+| Cache Efficiency  | Basic            | Optimized React Query   | **60% faster loading** |
 
 ### **Developer Experience Metrics**
 

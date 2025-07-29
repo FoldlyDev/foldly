@@ -7,13 +7,14 @@ interface SkeletonProps {
   children?: React.ReactNode;
 }
 
-export function Skeleton({ className, children, ...props }: SkeletonProps & React.HTMLAttributes<HTMLDivElement>) {
+export function Skeleton({
+  className,
+  children,
+  ...props
+}: SkeletonProps & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        "animate-pulse rounded-md bg-neutral-200/60",
-        className
-      )}
+      className={cn('animate-pulse rounded-md bg-neutral-200/60', className)}
       {...props}
     >
       {children}

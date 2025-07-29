@@ -19,6 +19,7 @@ Instead of fixing the complex system, we completely refactored to a simplified h
 ### 1. Files Removed (650+ lines eliminated)
 
 **Over-engineered files completely removed**:
+
 - `src/lib/billing-clerk-integration.ts` (349 lines of complex integration)
 - `src/lib/plan-utils.ts` (301 lines of over-engineered plan detection)
 - `src/lib/plan-actions.ts` (additional complexity)
@@ -29,15 +30,18 @@ Instead of fixing the complex system, we completely refactored to a simplified h
 
 ```typescript
 // Simple, direct plan detection from Clerk
-export async function getCurrentUserPlan(): Promise<'free' | 'pro' | 'business'> {
+export async function getCurrentUserPlan(): Promise<
+  'free' | 'pro' | 'business'
+> {
   try {
     const { has } = await auth();
-    
+
     if (has) {
-      if (has({ plan: 'business' }) || has({ plan: 'Business' })) return 'business';
+      if (has({ plan: 'business' }) || has({ plan: 'Business' }))
+        return 'business';
       if (has({ plan: 'pro' }) || has({ plan: 'Pro' })) return 'pro';
     }
-    
+
     return 'free';
   } catch (error) {
     console.error('Error getting current user plan:', error);
@@ -46,7 +50,9 @@ export async function getCurrentUserPlan(): Promise<'free' | 'pro' | 'business'>
 }
 
 // Simple UI metadata from database
-export async function getPlanUIMetadata(planKey: string): Promise<PlanUIMetadata> {
+export async function getPlanUIMetadata(
+  planKey: string
+): Promise<PlanUIMetadata> {
   // Clean database query for UI display data only
 }
 
@@ -64,6 +70,7 @@ export async function hasFeatureAccess(feature: string): Promise<boolean> {
 ### 3. Database Schema Simplification
 
 **BEFORE (Complex)**:
+
 ```sql
 -- 12+ individual feature boolean columns
 custom_branding BOOLEAN DEFAULT FALSE,
@@ -74,6 +81,7 @@ premium_short_links BOOLEAN DEFAULT FALSE,
 ```
 
 **AFTER (Simple)**:
+
 ```sql
 -- JSON-based feature storage for UI display only
 highlight_features JSONB,           -- ['Custom branding', 'Password protection']
@@ -83,21 +91,25 @@ feature_descriptions JSONB,         -- Detailed explanations for UI
 ## Key Benefits Achieved
 
 ### 1. Massive Code Reduction
+
 - **650+ lines eliminated**: Removed 3 over-engineered files
 - **Single source file**: `plan-config.ts` replaces multiple complex integrations
 - **Simplified database**: JSON-based features vs. 12+ boolean columns
 
 ### 2. Clear Architecture Separation
+
 - **Clerk**: Source of truth for subscription state and feature access
 - **Database**: UI metadata only (pricing, descriptions, storage limits)
 - **No complex integrations**: Simple function calls replace integration layers
 
 ### 3. Performance Improvements
+
 - **Faster queries**: JSON storage vs. multiple columns and joins
 - **Real-time storage**: Efficient calculation with database caching
 - **Reduced complexity**: Fewer moving parts mean better performance
 
 ### 4. Developer Experience
+
 - **Simple API**: Easy-to-understand function calls
 - **Type safety**: Maintained comprehensive TypeScript coverage
 - **Clear documentation**: Functions are self-documenting
@@ -106,6 +118,7 @@ feature_descriptions JSONB,         -- Detailed explanations for UI
 ## New Architecture Usage
 
 ### Plan Detection
+
 ```typescript
 import { getCurrentUserPlan } from '@/lib/plan-config';
 
@@ -113,6 +126,7 @@ const currentPlan = await getCurrentUserPlan(); // 'free' | 'pro' | 'business'
 ```
 
 ### Feature Access
+
 ```typescript
 import { hasFeatureAccess } from '@/lib/plan-config';
 
@@ -120,6 +134,7 @@ const hasCustomBranding = await hasFeatureAccess('custom_branding');
 ```
 
 ### UI Metadata
+
 ```typescript
 import { getPlanUIMetadata } from '@/lib/plan-config';
 
@@ -128,17 +143,24 @@ const planData = await getPlanUIMetadata('pro');
 ```
 
 ### Combined Usage
+
 ```typescript
 import { getUserPlanData } from '@/lib/plan-config';
 
-const { currentPlan, uiMetadata, features, isSubscribed } = await getUserPlanData();
+const { currentPlan, uiMetadata, features, isSubscribed } =
+  await getUserPlanData();
 ```
 
 ## Validation & Testing
 
 ### Simple Validation Commands:
+
 ```typescript
-import { getCurrentUserPlan, hasFeatureAccess, getUserPlanData } from '@/lib/plan-config';
+import {
+  getCurrentUserPlan,
+  hasFeatureAccess,
+  getUserPlanData,
+} from '@/lib/plan-config';
 
 // Test plan detection
 const plan = await getCurrentUserPlan();
@@ -156,18 +178,21 @@ console.log('User Plan Data:', userData);
 ## File Structure Impact
 
 ### Files Removed ❌
+
 ```
 src/lib/billing-clerk-integration.ts  (349 lines)
-src/lib/plan-utils.ts                 (301 lines)  
+src/lib/plan-utils.ts                 (301 lines)
 src/lib/plan-actions.ts               (50+ lines)
 ```
 
 ### Files Added ✅
+
 ```
 src/lib/plan-config.ts                (243 lines of clean code)
 ```
 
 ### Database Tables Simplified ✅
+
 ```
 subscription_plans                    (UI metadata only, JSON features)
 subscription_analytics               (Business metrics)
@@ -175,14 +200,14 @@ subscription_analytics               (Business metrics)
 
 ## Migration Impact Summary
 
-| Aspect | Before | After | Improvement |
-|--------|---------|-------|-------------|
-| **Lines of Code** | 650+ lines | 243 lines | **62% reduction** |
-| **Files** | 3 complex files | 1 simple file | **67% reduction** |
-| **Database Columns** | 12+ feature booleans | 2 JSON columns | **80% reduction** |
-| **Query Complexity** | Complex joins | Simple lookups | **70% simpler** |
-| **Maintainability** | Complex integration | Simple functions | **90% easier** |
-| **Performance** | Multiple DB calls | Single calls + caching | **30% faster** |
+| Aspect               | Before               | After                  | Improvement       |
+| -------------------- | -------------------- | ---------------------- | ----------------- |
+| **Lines of Code**    | 650+ lines           | 243 lines              | **62% reduction** |
+| **Files**            | 3 complex files      | 1 simple file          | **67% reduction** |
+| **Database Columns** | 12+ feature booleans | 2 JSON columns         | **80% reduction** |
+| **Query Complexity** | Complex joins        | Simple lookups         | **70% simpler**   |
+| **Maintainability**  | Complex integration  | Simple functions       | **90% easier**    |
+| **Performance**      | Multiple DB calls    | Single calls + caching | **30% faster**    |
 
 ## Developer Experience Improvements
 

@@ -3,10 +3,7 @@
 // =============================================================================
 // 🎯 Based on workspaces table in drizzle/schema.ts
 
-import type {
-  DatabaseId,
-  WithoutSystemFields,
-} from './common';
+import type { DatabaseId, WithoutSystemFields } from './common';
 
 // =============================================================================
 // BASE WORKSPACE TYPES - Direct from database schema

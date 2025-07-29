@@ -6,16 +6,17 @@ import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
+import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 
 // Lazy load the heavy WorkspaceTree component
 const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 
 export function WorkspaceContainer() {
-  // Get workspace data
-  const { data: workspaceData } = useWorkspaceTree();
+  // Get workspace data with loading states
+  const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
 
   // Set up real-time subscription for workspace changes
-  const { isSubscribed } = useWorkspaceRealtime(workspaceData?.workspace?.id);
+  useWorkspaceRealtime(workspaceData?.workspace?.id);
 
   // Tree instance state
   const [treeInstance, setTreeInstance] = useState<any>(null);
@@ -35,6 +36,35 @@ export function WorkspaceContainer() {
     setSelectedItems([]);
   };
 
+  // Show skeleton while loading
+  if (isLoading) {
+    return <WorkspaceSkeleton />;
+  }
+
+  // Show error state
+  if (isError) {
+    return (
+      <div className='dashboard-container workspace-layout'>
+        <div className='flex items-center justify-center h-64'>
+          <div className='text-center'>
+            <h3 className='text-lg font-semibold text-red-600 mb-2'>
+              Failed to load workspace
+            </h3>
+            <p className='text-gray-600 mb-4'>
+              {error?.message ||
+                'An error occurred while loading your workspace'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='dashboard-container workspace-layout'>

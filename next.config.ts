@@ -19,13 +19,13 @@ const nextConfig: NextConfig = {
 
   // Server configuration
   serverExternalPackages: ['postgres'],
-  
+
   // Compiler optimizations
   compiler: {
     // Remove console statements in production
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  
+
   // Turbopack configuration (replaces webpack configuration)
   // Note: Turbopack handles chunk optimization automatically and more efficiently
   turbopack: {
@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
     // Resolve extensions for TypeScript and JavaScript files
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
-  
+
   // Build configuration
   typescript: {
     // !! WARN !!

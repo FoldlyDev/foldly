@@ -1,11 +1,6 @@
 import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import {
-  links,
-  files,
-  batches,
-  users,
-} from '@/lib/database/schemas';
+import { links, files, batches, users } from '@/lib/database/schemas';
 import type {
   Link,
   LinkInsert,
@@ -13,10 +8,10 @@ import type {
   LinkWithStats,
 } from '@/lib/database/types/links';
 import type { DatabaseResult } from '@/lib/database/types/common';
-import { 
-  DATABASE_ERROR_CODES, 
+import {
+  DATABASE_ERROR_CODES,
   detectConstraintViolation,
-  getErrorMessage
+  getErrorMessage,
 } from './constants/database-errors';
 
 // =============================================================================
@@ -136,7 +131,7 @@ export class LinksDbService {
       };
     } catch (error) {
       console.error('Failed to create link:', error);
-      
+
       // Handle known constraint violations
       if (error instanceof Error) {
         const constraintCode = detectConstraintViolation(error);
@@ -148,7 +143,7 @@ export class LinksDbService {
           };
         }
       }
-      
+
       return {
         success: false,
         error:
@@ -537,7 +532,7 @@ export class LinksDbService {
       };
     } catch (error) {
       console.error('Failed to update link:', error);
-      
+
       // Handle known constraint violations
       if (error instanceof Error) {
         const constraintCode = detectConstraintViolation(error);
@@ -549,7 +544,7 @@ export class LinksDbService {
           };
         }
       }
-      
+
       return {
         success: false,
         error:

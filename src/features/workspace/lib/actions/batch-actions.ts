@@ -26,8 +26,10 @@ export async function batchMoveItemsAction(
     // Get workspace to determine root handling
     const { WorkspaceService } = await import('@/lib/services/workspace');
     const { FileService } = await import('@/lib/services/files/file-service');
-    const { FolderService } = await import('@/lib/services/files/folder-service');
-    
+    const { FolderService } = await import(
+      '@/lib/services/files/folder-service'
+    );
+
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
     const folderService = new FolderService();
@@ -38,7 +40,8 @@ export async function batchMoveItemsAction(
     }
 
     // Determine actual target ID (handle 'root' case)
-    const actualTargetId = targetId === 'root' || targetId === workspace.id ? null : targetId;
+    const actualTargetId =
+      targetId === 'root' || targetId === workspace.id ? null : targetId;
 
     // Get all folders and files to analyze hierarchy
     const [foldersResult, filesResult] = await Promise.all([
@@ -55,7 +58,7 @@ export async function batchMoveItemsAction(
 
     // Create hierarchy map for efficient lookup
     const hierarchyMap = new Map<string, string[]>(); // parentId -> childIds
-    
+
     // Build folder hierarchy
     allFolders.forEach(folder => {
       const parentId = folder.parentFolderId || workspace.id;
@@ -78,13 +81,13 @@ export async function batchMoveItemsAction(
     const getAllDescendants = (itemId: string): Set<string> => {
       const descendants = new Set<string>();
       const children = hierarchyMap.get(itemId) || [];
-      
+
       for (const childId of children) {
         descendants.add(childId);
         const childDescendants = getAllDescendants(childId);
         childDescendants.forEach(desc => descendants.add(desc));
       }
-      
+
       return descendants;
     };
 
@@ -97,8 +100,15 @@ export async function batchMoveItemsAction(
       });
     });
 
-    console.log(`🚚 Batch move: ${itemIds.length} items selected, ${topLevelItems.length} top-level items to move`);
-    console.log('📋 Items to move:', { itemIds, topLevelItems, targetId, actualTargetId });
+    console.log(
+      `🚚 Batch move: ${itemIds.length} items selected, ${topLevelItems.length} top-level items to move`
+    );
+    console.log('📋 Items to move:', {
+      itemIds,
+      topLevelItems,
+      targetId,
+      actualTargetId,
+    });
 
     // Move only the top-level items - their children will be moved automatically
     const results = await Promise.all(
@@ -121,16 +131,16 @@ export async function batchMoveItemsAction(
 
     console.log('✅ All moves completed successfully, revalidating path');
     revalidatePath('/dashboard/workspace');
-    
-    const result = { 
-      success: true, 
+
+    const result = {
+      success: true,
       data: {
         movedItems: topLevelItems.length,
         totalItems: itemIds.length,
-        results 
-      }
+        results,
+      },
     };
-    
+
     console.log('🎯 Batch move action completed:', result);
     return result;
   } catch (error) {
@@ -158,8 +168,10 @@ export async function batchDeleteItemsAction(
     // Import services
     const { WorkspaceService } = await import('@/lib/services/workspace');
     const { FileService } = await import('@/lib/services/files/file-service');
-    const { FolderService } = await import('@/lib/services/files/folder-service');
-    
+    const { FolderService } = await import(
+      '@/lib/services/files/folder-service'
+    );
+
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
     const folderService = new FolderService();
@@ -184,31 +196,36 @@ export async function batchDeleteItemsAction(
     const workspaceFolderIds = new Set(foldersResult.data.map(f => f.id));
 
     // Filter items to only those that belong to this user's workspace
-    const validItemIds = itemIds.filter(id => 
-      workspaceFileIds.has(id) || workspaceFolderIds.has(id)
+    const validItemIds = itemIds.filter(
+      id => workspaceFileIds.has(id) || workspaceFolderIds.has(id)
     );
 
     if (validItemIds.length === 0) {
-      return { success: false, error: 'No valid items to delete - items may not have workspaceId set' };
+      return {
+        success: false,
+        error: 'No valid items to delete - items may not have workspaceId set',
+      };
     }
 
     if (validItemIds.length < itemIds.length) {
-      console.warn(`⚠️ Filtered out ${itemIds.length - validItemIds.length} items not owned by user`);
+      console.warn(
+        `⚠️ Filtered out ${itemIds.length - validItemIds.length} items not owned by user`
+      );
     }
 
     // Delete each item (determine type first, then delete accordingly)
     const results = await Promise.all(
-      validItemIds.map(async (id) => {
+      validItemIds.map(async id => {
         // Check if it's a file first
         if (workspaceFileIds.has(id)) {
           return await fileService.deleteFile(id);
         }
-        
+
         // Otherwise it must be a folder
         if (workspaceFolderIds.has(id)) {
           return await folderService.deleteFolder(id);
         }
-        
+
         // This shouldn't happen since we validated, but just in case
         return { success: false, error: `Item ${id} not found` };
       })

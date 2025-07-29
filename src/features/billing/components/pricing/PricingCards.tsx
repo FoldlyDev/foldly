@@ -8,7 +8,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Zap, Crown, Shield } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/core/shadcn/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/core/shadcn/card';
 import { Button } from '@/components/ui/core/shadcn/button';
 import { cn } from '@/lib/utils';
 import { usePlansForDisplay } from '../../hooks/use-subscription-plans';
@@ -62,19 +69,21 @@ const PricingCard: React.FC<PricingCardProps> = ({
   index,
 }) => {
   const IconComponent = getPlanIcon(plan.tier);
-  const price = billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
-  const savingsPercentage = billingPeriod === 'yearly' && plan.yearlyPrice > 0 
-    ? Math.round((1 - (plan.yearlyPrice / 12) / plan.monthlyPrice) * 100)
-    : 0;
+  const price =
+    billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
+  const savingsPercentage =
+    billingPeriod === 'yearly' && plan.yearlyPrice > 0
+      ? Math.round((1 - plan.yearlyPrice / 12 / plan.monthlyPrice) * 100)
+      : 0;
 
   const cardVariants = {
-    hidden: { 
-      opacity: 0, 
+    hidden: {
+      opacity: 0,
       y: 50,
       scale: 0.9,
     },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
       scale: 1,
       transition: {
@@ -88,111 +97,114 @@ const PricingCard: React.FC<PricingCardProps> = ({
   return (
     <motion.div
       variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover={{ 
-        y: -8, 
+      initial='hidden'
+      animate='visible'
+      whileHover={{
+        y: -8,
         scale: 1.02,
-        transition: { duration: 0.3, ease: 'easeOut' }
+        transition: { duration: 0.3, ease: 'easeOut' },
       }}
-      className="relative"
+      className='relative'
     >
-      <Card className={cn(
-        'relative overflow-hidden transition-all duration-300',
-        'border-2 hover:shadow-2xl hover:shadow-primary/20',
-        plan.isPopular ? 'border-primary shadow-lg shadow-primary/10' : 'border-border',
-        isCurrentPlan && 'ring-2 ring-primary ring-offset-2',
-        'group'
-      )}>
+      <Card
+        className={cn(
+          'relative overflow-hidden transition-all duration-300',
+          'border-2 hover:shadow-2xl hover:shadow-primary/20',
+          plan.isPopular
+            ? 'border-primary shadow-lg shadow-primary/10'
+            : 'border-border',
+          isCurrentPlan && 'ring-2 ring-primary ring-offset-2',
+          'group'
+        )}
+      >
         {/* Popular Badge */}
         {plan.isPopular && (
-          <div className="absolute -top-px left-1/2 -translate-x-1/2">
-            <div className="bg-gradient-to-r from-primary via-purple-500 to-primary text-white text-xs font-semibold px-4 py-1 rounded-b-lg">
+          <div className='absolute -top-px left-1/2 -translate-x-1/2'>
+            <div className='bg-gradient-to-r from-primary via-purple-500 to-primary text-white text-xs font-semibold px-4 py-1 rounded-b-lg'>
               Most Popular
             </div>
           </div>
         )}
 
         {/* Background Gradient */}
-        <div 
-          className="absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300"
+        <div
+          className='absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300'
           style={{
             background: `linear-gradient(135deg, ${plan.color}20, transparent 50%, ${plan.color}10)`,
           }}
         />
 
-        <CardHeader className="text-center pb-8 pt-8 relative z-10">
+        <CardHeader className='text-center pb-8 pt-8 relative z-10'>
           {/* Plan Icon */}
-          <div className={cn(
-            'inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 mx-auto',
-            'transition-all duration-300 group-hover:scale-110 group-hover:rotate-3'
-          )} style={{ backgroundColor: `${plan.color}15` }}>
-            <IconComponent 
-              className="w-8 h-8" 
-              style={{ color: plan.color }}
-            />
+          <div
+            className={cn(
+              'inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 mx-auto',
+              'transition-all duration-300 group-hover:scale-110 group-hover:rotate-3'
+            )}
+            style={{ backgroundColor: `${plan.color}15` }}
+          >
+            <IconComponent className='w-8 h-8' style={{ color: plan.color }} />
           </div>
 
           {/* Plan Name */}
-          <CardTitle className="text-2xl font-bold mb-2">
-            {plan.name}
-          </CardTitle>
+          <CardTitle className='text-2xl font-bold mb-2'>{plan.name}</CardTitle>
 
           {/* Plan Description */}
-          <CardDescription className="text-muted-foreground mb-6">
+          <CardDescription className='text-muted-foreground mb-6'>
             {plan.description}
           </CardDescription>
 
           {/* Pricing */}
-          <div className="mb-2">
-            <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl font-bold text-foreground">
+          <div className='mb-2'>
+            <div className='flex items-baseline justify-center gap-1'>
+              <span className='text-4xl font-bold text-foreground'>
                 ${price}
               </span>
               {price > 0 && (
-                <span className="text-muted-foreground">
+                <span className='text-muted-foreground'>
                   /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                 </span>
               )}
             </div>
-            
+
             {/* Yearly Savings */}
             {billingPeriod === 'yearly' && savingsPercentage > 0 && (
-              <div className="text-sm text-green-600 font-medium mt-1">
+              <div className='text-sm text-green-600 font-medium mt-1'>
                 Save {savingsPercentage}% annually
               </div>
             )}
           </div>
         </CardHeader>
 
-        <CardContent className="px-6 pb-6">
+        <CardContent className='px-6 pb-6'>
           {/* Features List */}
-          <ul className="space-y-3">
+          <ul className='space-y-3'>
             {plan.features.map((feature, featureIndex) => (
               <motion.li
                 key={featureIndex}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ 
-                  delay: (index * 0.1) + (featureIndex * 0.05) + 0.3,
-                  duration: 0.4 
+                transition={{
+                  delay: index * 0.1 + featureIndex * 0.05 + 0.3,
+                  duration: 0.4,
                 }}
-                className="flex items-center gap-3"
+                className='flex items-center gap-3'
               >
-                <div className={cn(
-                  'flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center',
-                )} style={{ backgroundColor: `${plan.color}20` }}>
-                  <Check className="w-3 h-3" style={{ color: plan.color }} />
+                <div
+                  className={cn(
+                    'flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center'
+                  )}
+                  style={{ backgroundColor: `${plan.color}20` }}
+                >
+                  <Check className='w-3 h-3' style={{ color: plan.color }} />
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {feature}
-                </span>
+                <span className='text-sm text-muted-foreground'>{feature}</span>
               </motion.li>
             ))}
           </ul>
         </CardContent>
 
-        <CardFooter className="px-6 pb-6">
+        <CardFooter className='px-6 pb-6'>
           <Button
             onClick={() => onSelect?.(plan.id)}
             disabled={isCurrentPlan}
@@ -201,13 +213,17 @@ const PricingCard: React.FC<PricingCardProps> = ({
               isCurrentPlan
                 ? 'bg-muted text-muted-foreground cursor-default'
                 : plan.isPopular
-                ? 'bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl'
-                : 'bg-secondary hover:bg-secondary/80'
+                  ? 'bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl'
+                  : 'bg-secondary hover:bg-secondary/80'
             )}
-            style={!isCurrentPlan && !plan.isPopular ? {
-              backgroundColor: `${plan.color}15`,
-              color: plan.color,
-            } : {}}
+            style={
+              !isCurrentPlan && !plan.isPopular
+                ? {
+                    backgroundColor: `${plan.color}15`,
+                    color: plan.color,
+                  }
+                : {}
+            }
           >
             {isCurrentPlan ? 'Current Plan' : 'Choose Plan'}
           </Button>
@@ -233,24 +249,24 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   if (isLoading) {
     return (
       <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-8', className)}>
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader className="space-y-4">
-              <div className="w-16 h-16 bg-muted rounded-2xl mx-auto" />
-              <div className="h-6 bg-muted rounded w-24 mx-auto" />
-              <div className="h-4 bg-muted rounded w-32 mx-auto" />
-              <div className="h-8 bg-muted rounded w-20 mx-auto" />
+        {[1, 2, 3].map(i => (
+          <Card key={i} className='animate-pulse'>
+            <CardHeader className='space-y-4'>
+              <div className='w-16 h-16 bg-muted rounded-2xl mx-auto' />
+              <div className='h-6 bg-muted rounded w-24 mx-auto' />
+              <div className='h-4 bg-muted rounded w-32 mx-auto' />
+              <div className='h-8 bg-muted rounded w-20 mx-auto' />
             </CardHeader>
-            <CardContent className="space-y-3">
-              {[1, 2, 3, 4].map((j) => (
-                <div key={j} className="flex items-center gap-3">
-                  <div className="w-5 h-5 bg-muted rounded-full" />
-                  <div className="h-4 bg-muted rounded flex-1" />
+            <CardContent className='space-y-3'>
+              {[1, 2, 3, 4].map(j => (
+                <div key={j} className='flex items-center gap-3'>
+                  <div className='w-5 h-5 bg-muted rounded-full' />
+                  <div className='h-4 bg-muted rounded flex-1' />
                 </div>
               ))}
             </CardContent>
             <CardFooter>
-              <div className="h-10 bg-muted rounded w-full" />
+              <div className='h-10 bg-muted rounded w-full' />
             </CardFooter>
           </Card>
         ))}
@@ -262,12 +278,10 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   if (error) {
     return (
       <div className={cn('text-center py-12', className)}>
-        <div className="text-muted-foreground mb-4">
+        <div className='text-muted-foreground mb-4'>
           Failed to load pricing plans. Please try again later.
         </div>
-        <Button onClick={() => window.location.reload()}>
-          Retry
-        </Button>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
@@ -276,7 +290,7 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   if (!plans || plans.length === 0) {
     return (
       <div className={cn('text-center py-12', className)}>
-        <div className="text-muted-foreground">
+        <div className='text-muted-foreground'>
           No pricing plans available at this time.
         </div>
       </div>
@@ -300,8 +314,8 @@ export const PricingCards: React.FC<PricingCardsProps> = ({
   return (
     <motion.div
       variants={containerVariants}
-      initial="hidden"
-      animate="visible"
+      initial='hidden'
+      animate='visible'
       className={cn('grid grid-cols-1 md:grid-cols-3 gap-8', className)}
     >
       {plans.map((plan, index) => (

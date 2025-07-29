@@ -9,6 +9,7 @@
 This guide covers the complete database configuration setup, including SSL handling, connection optimization, and troubleshooting procedures for the Foldly project using Drizzle ORM with Supabase PostgreSQL.
 
 ### **Key Components**
+
 - **Connection Management**: Environment-aware SSL configuration
 - **SSL Handling**: Production vs development SSL requirements
 - **Performance Optimization**: Timeout and connection pooling settings
@@ -21,6 +22,7 @@ This guide covers the complete database configuration setup, including SSL handl
 ### **Problem: Drizzle Kit SSL Timeout Issues**
 
 **Symptoms Encountered**:
+
 ```bash
 # Common error messages
 Error: Connection timeout
@@ -29,6 +31,7 @@ Error: Connection refused during npm run push
 ```
 
 **Root Cause Analysis**:
+
 - **Supabase Infrastructure**: Uses self-signed certificates in pooler infrastructure
 - **Strict SSL Validation**: Default `ssl: true` fails on self-signed certificates
 - **Connection Timeouts**: Drizzle Kit operations timing out during schema introspection
@@ -37,6 +40,7 @@ Error: Connection refused during npm run push
 ### **Solution: Environment-Aware SSL Configuration**
 
 **Implementation in `drizzle.config.ts`**:
+
 ```typescript
 import { defineConfig } from 'drizzle-kit';
 import { loadEnvConfig } from '@next/env';
@@ -54,22 +58,25 @@ export default defineConfig({
   dialect: 'postgresql',
   dbCredentials: {
     // ✅ CRITICAL: Use non-pooling URL for Drizzle Kit operations
-    url: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL || process.env.DATABASE_URL!,
-    
+    url:
+      process.env.POSTGRES_URL_NON_POOLING ||
+      process.env.POSTGRES_URL ||
+      process.env.DATABASE_URL!,
+
     // ✅ CRITICAL: Environment-aware SSL configuration
-    ssl: isProduction 
+    ssl: isProduction
       ? 'require' // ✅ Secure SSL validation for production
       : { rejectUnauthorized: false }, // ✅ Allow self-signed certs for development
-    
+
     // ✅ CRITICAL: Increased timeouts for Supabase pooler latency
     connectionTimeoutMillis: 30000, // Was 5000ms → Now 30000ms (6x increase)
     queryTimeoutMillis: 60000, // Was 10000ms → Now 60000ms (6x increase)
   },
-  
+
   // Environment-specific settings
   verbose: isDevelopment,
   strict: isProduction,
-  
+
   // Additional optimizations
   introspect: {
     casing: 'snake_case',
@@ -83,17 +90,23 @@ export default defineConfig({
 #### **SSL Settings Explained**
 
 **Production Environment** (`NODE_ENV=production`):
+
 ```typescript
-ssl: 'require' // Enforces secure SSL validation
+ssl: 'require'; // Enforces secure SSL validation
 ```
+
 - **Security**: Full SSL certificate validation
 - **Use Case**: Production deployments with verified certificates
 - **Risk Level**: Low - secure connections only
 
 **Development Environment** (`NODE_ENV=development`):
+
 ```typescript
-ssl: { rejectUnauthorized: false } // Allows self-signed certificates
+ssl: {
+  rejectUnauthorized: false;
+} // Allows self-signed certificates
 ```
+
 - **Flexibility**: Accepts self-signed certificates from Supabase pooler
 - **Use Case**: Local development and testing environments
 - **Risk Level**: Acceptable for development (not production)
@@ -101,11 +114,13 @@ ssl: { rejectUnauthorized: false } // Allows self-signed certificates
 #### **Connection URL Priority**
 
 **URL Resolution Order**:
+
 1. `POSTGRES_URL_NON_POOLING` (preferred for Drizzle Kit)
 2. `POSTGRES_URL` (fallback for pooled connections)
 3. `DATABASE_URL` (legacy support)
 
 **Why Non-Pooling URL?**
+
 - **Direct Connection**: Bypasses connection pooler complexities
 - **SSL Compatibility**: Avoids pooler SSL certificate issues
 - **Performance**: Reduced latency for schema operations
@@ -114,18 +129,21 @@ ssl: { rejectUnauthorized: false } // Allows self-signed certificates
 #### **Timeout Configuration**
 
 **Before (Causing Timeouts)**:
+
 ```typescript
 connectionTimeoutMillis: 5000,  // 5 seconds - too short
 queryTimeoutMillis: 10000,      // 10 seconds - too short
 ```
 
 **After (Optimized for Supabase)**:
+
 ```typescript
 connectionTimeoutMillis: 30000, // 30 seconds - handles latency
 queryTimeoutMillis: 60000,      // 60 seconds - allows complex operations
 ```
 
 **Rationale for Increased Timeouts**:
+
 - **Supabase Latency**: Cloud database connections have inherent latency
 - **Schema Introspection**: Complex operations require more time
 - **Network Conditions**: Accounts for variable network performance
@@ -138,6 +156,7 @@ queryTimeoutMillis: 60000,      // 60 seconds - allows complex operations
 ### **Required Environment Variables**
 
 **Primary Database Connection**:
+
 ```bash
 # Supabase connection strings (all required for optimal operation)
 POSTGRES_URL="postgresql://postgres:[password]@db.[project].supabase.co:6543/postgres"
@@ -146,6 +165,7 @@ DATABASE_URL="postgresql://postgres:[password]@db.[project].supabase.co:5432/pos
 ```
 
 **Environment Detection**:
+
 ```bash
 # Environment configuration
 NODE_ENV="development" # or "production"
@@ -154,17 +174,21 @@ NODE_ENV="development" # or "production"
 ### **Connection String Formats**
 
 **Pooled Connection** (Port 6543):
+
 ```
 postgresql://postgres:[password]@db.[project].supabase.co:6543/postgres
 ```
+
 - **Use Case**: Application runtime connections
 - **Benefits**: Connection pooling, resource management
 - **Drawbacks**: SSL certificate complexities with Drizzle Kit
 
 **Non-Pooled Connection** (Port 5432):
+
 ```
 postgresql://postgres:[password]@db.[project].supabase.co:5432/postgres
 ```
+
 - **Use Case**: Drizzle Kit operations (migrations, introspection)
 - **Benefits**: Direct connection, simpler SSL handling
 - **Preferred**: For `npm run push`, `npm run pull`, `npm run generate`
@@ -172,6 +196,7 @@ postgresql://postgres:[password]@db.[project].supabase.co:5432/postgres
 ### **Environment-Specific Behavior**
 
 **Development Environment**:
+
 ```typescript
 // Features enabled in development
 verbose: true,           // Detailed logging
@@ -181,6 +206,7 @@ ssl: { rejectUnauthorized: false } // Permissive SSL
 ```
 
 **Production Environment**:
+
 ```typescript
 // Features enabled in production
 verbose: false,         // Minimal logging
@@ -196,6 +222,7 @@ ssl: 'require'         // Secure SSL only
 ### **Database Schema Management**
 
 **Push Schema Changes** (Most Common):
+
 ```bash
 # Applies schema changes to database without generating migration files
 npm run push
@@ -205,6 +232,7 @@ DRIZZLE_LOG_LEVEL=debug npm run push
 ```
 
 **Generate Migration Files**:
+
 ```bash
 # Creates migration files for schema changes
 npm run generate
@@ -214,6 +242,7 @@ npm run generate -- --name="add_user_settings"
 ```
 
 **Pull Schema from Database**:
+
 ```bash
 # Reverse-engineers schema from existing database
 npm run pull
@@ -222,6 +251,7 @@ npm run pull
 ```
 
 **Apply Migrations**:
+
 ```bash
 # Runs pending migrations
 npm run up
@@ -233,6 +263,7 @@ npm run up -- --to=20250126_add_subscriptions
 ### **Schema Introspection & Verification**
 
 **Check Schema Consistency**:
+
 ```bash
 # Verifies schema matches database
 npm run check
@@ -242,6 +273,7 @@ npm run check -- --verbose
 ```
 
 **Database Health Check**:
+
 ```bash
 # Verify database connection
 node -e "
@@ -263,6 +295,7 @@ sql.end();
 #### **Error: "SSL negotiation failed"**
 
 **Symptoms**:
+
 ```bash
 Error: SSL negotiation failed
 Error: unable to verify the first certificate
@@ -270,14 +303,16 @@ Error: self signed certificate in certificate chain
 ```
 
 **Solution**:
+
 ```typescript
 // Ensure proper SSL configuration in drizzle.config.ts
-ssl: process.env.NODE_ENV === 'production' 
-  ? 'require' 
-  : { rejectUnauthorized: false }
+ssl: process.env.NODE_ENV === 'production'
+  ? 'require'
+  : { rejectUnauthorized: false };
 ```
 
 **Verification**:
+
 ```bash
 # Test connection with SSL settings
 npm run check -- --verbose
@@ -286,17 +321,20 @@ npm run check -- --verbose
 #### **Error: "Connection timeout"**
 
 **Symptoms**:
+
 ```bash
 Error: Connection timeout
 Error: Operation timed out after 5000ms
 ```
 
 **Root Causes**:
+
 1. **Short Timeouts**: Default timeouts too short for Supabase
 2. **Network Latency**: Cloud database inherent latency
 3. **Complex Operations**: Schema introspection taking time
 
 **Solution**:
+
 ```typescript
 // Increase timeouts in drizzle.config.ts
 dbCredentials: {
@@ -310,6 +348,7 @@ dbCredentials: {
 #### **Error: "Connection refused"**
 
 **Symptoms**:
+
 ```bash
 Error: Connection refused
 Error: database does not exist
@@ -317,6 +356,7 @@ Error: password authentication failed
 ```
 
 **Diagnostic Steps**:
+
 ```bash
 # 1. Verify environment variables are loaded
 echo $POSTGRES_URL_NON_POOLING
@@ -329,6 +369,7 @@ node -e "console.log(process.env.POSTGRES_URL_NON_POOLING)"
 ```
 
 **Common Fixes**:
+
 1. **Missing Variables**: Ensure all environment variables are set
 2. **Wrong Format**: Verify connection string format matches Supabase requirements
 3. **Password Issues**: Check for special characters in password (URL encode if needed)
@@ -341,6 +382,7 @@ node -e "console.log(process.env.POSTGRES_URL_NON_POOLING)"
 **Reference**: See detailed resolution in [`DATABASE_MIGRATION_TROUBLESHOOTING.md`](./DATABASE_MIGRATION_TROUBLESHOOTING.md)
 
 **Quick Fix**:
+
 ```bash
 # Pull current schema and reconcile
 npm run pull
@@ -351,11 +393,13 @@ npm run push
 #### **Error: "Migration table not found"**
 
 **Symptoms**:
+
 ```bash
 Error: relation "__drizzle_migrations__" does not exist
 ```
 
 **Solution**:
+
 ```bash
 # Initialize migration table
 npm run up
@@ -367,11 +411,13 @@ npm run up
 #### **Slow Schema Operations**
 
 **Symptoms**:
+
 - `npm run push` takes >2 minutes
 - `npm run pull` operations timeout
 - Schema introspection very slow
 
 **Optimizations**:
+
 ```typescript
 // Add to drizzle.config.ts
 introspect: {
@@ -381,6 +427,7 @@ schemaFilter: ['public'], // Only introspect public schema
 ```
 
 **Network Optimizations**:
+
 ```bash
 # Use non-pooling URL for better performance
 export POSTGRES_URL_NON_POOLING="your-direct-connection-url"
@@ -394,22 +441,24 @@ npm run push
 ### **Connection Pool Settings**
 
 **Application Runtime** (uses pooled connections):
+
 ```typescript
 // In your application code
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
 const sql = postgres(process.env.POSTGRES_URL!, {
-  max: 20,                    // Maximum connections
-  idle_timeout: 20,           // Idle connection timeout (seconds)
-  connect_timeout: 10,        // Connection timeout (seconds)
-  ssl: 'require',             // Production SSL requirement
+  max: 20, // Maximum connections
+  idle_timeout: 20, // Idle connection timeout (seconds)
+  connect_timeout: 10, // Connection timeout (seconds)
+  ssl: 'require', // Production SSL requirement
 });
 
 export const db = drizzle(sql);
 ```
 
 **Drizzle Kit Operations** (uses direct connections):
+
 ```typescript
 // drizzle.config.ts already optimized for direct connections
 dbCredentials: {
@@ -422,12 +471,14 @@ dbCredentials: {
 ### **Schema Operation Performance**
 
 **Best Practices**:
+
 1. **Use Non-Pooling URL**: For all Drizzle Kit operations
 2. **Filter Schemas**: Only introspect necessary schemas
 3. **Batch Operations**: Group related schema changes
 4. **Regular Maintenance**: Keep migration history clean
 
 **Performance Monitoring**:
+
 ```bash
 # Time schema operations
 time npm run push
@@ -444,11 +495,13 @@ time npm run pull
 ### **SSL Configuration Security**
 
 **Production Requirements**:
+
 - **Always Use** `ssl: 'require'` in production
 - **Certificate Validation**: Full certificate chain validation
 - **Encrypted Connections**: All data transmission encrypted
 
 **Development Flexibility**:
+
 - **Self-Signed Certificates**: Acceptable for development only
 - **Relaxed Validation**: `rejectUnauthorized: false` for development
 - **Never in Production**: Don't use relaxed SSL in production
@@ -456,6 +509,7 @@ time npm run pull
 ### **Connection String Security**
 
 **Environment Variable Management**:
+
 ```bash
 # ✅ Good: Use environment variables
 POSTGRES_URL_NON_POOLING="postgresql://postgres:password@host:5432/db"
@@ -465,6 +519,7 @@ url: "postgresql://postgres:password@host:5432/db"
 ```
 
 **Access Control**:
+
 - **Least Privilege**: Database user should have minimal required permissions
 - **Connection Limits**: Monitor and limit concurrent connections
 - **Audit Logging**: Enable database audit logging for security monitoring
@@ -472,11 +527,13 @@ url: "postgresql://postgres:password@host:5432/db"
 ### **Network Security**
 
 **Firewall Configuration**:
+
 - **Allow List**: Only allow connections from known IP ranges
 - **Port Restrictions**: Use non-standard ports when possible
 - **VPN Access**: Consider VPN for database access
 
 **Monitoring & Alerting**:
+
 - **Connection Monitoring**: Alert on unusual connection patterns
 - **Failed Attempts**: Monitor and alert on authentication failures
 - **Performance Alerts**: Alert on connection timeout increases
@@ -488,6 +545,7 @@ url: "postgresql://postgres:password@host:5432/db"
 ### **Regular Health Checks**
 
 **Daily Monitoring**:
+
 ```bash
 #!/bin/bash
 # Database configuration health check script
@@ -520,6 +578,7 @@ echo "🎉 Database configuration health check completed"
 ```
 
 **Weekly Audits**:
+
 - **Performance Review**: Analyze connection timeout trends
 - **Security Audit**: Review SSL configuration and access patterns
 - **Migration Review**: Ensure all migrations properly documented
@@ -528,23 +587,25 @@ echo "🎉 Database configuration health check completed"
 ### **Performance Metrics**
 
 **Key Metrics to Monitor**:
+
 - **Connection Time**: Time to establish database connection
 - **Query Performance**: Average query execution time
 - **Migration Duration**: Time required for schema operations
 - **Error Rates**: Frequency of connection/SSL errors
 
 **Alerting Thresholds**:
+
 ```yaml
 # Example monitoring configuration
 database_config_alerts:
   connection_timeout:
     threshold: 10 seconds
     action: alert_team
-  
+
   migration_failure:
     threshold: 1 failure
     action: immediate_alert
-  
+
   ssl_errors:
     threshold: 5 errors/hour
     action: security_alert
@@ -569,11 +630,13 @@ database_config_alerts:
 ### **Team Resources**
 
 **Configuration Templates**:
+
 - **Development**: Use relaxed SSL for local development
 - **Staging**: Use production-like SSL configuration
 - **Production**: Use strict SSL requirements
 
 **Best Practices Checklist**:
+
 - [ ] Environment-specific SSL configuration implemented
 - [ ] Non-pooling URL configured for Drizzle Kit operations
 - [ ] Timeout values optimized for Supabase latency
@@ -588,11 +651,13 @@ database_config_alerts:
 ### **Configuration Effectiveness**
 
 **Before SSL Fix**:
+
 - ❌ `npm run push` failing with SSL timeouts
 - ❌ Schema operations unreliable
 - ❌ Development workflow blocked
 
 **After SSL Fix**:
+
 - ✅ `npm run push` consistently successful
 - ✅ Schema operations complete within 30 seconds
 - ✅ Development workflow unblocked
@@ -601,11 +666,13 @@ database_config_alerts:
 ### **Performance Improvements**
 
 **Operation Speed**:
+
 - **Schema Push**: 5-15 seconds (down from timeout failures)
 - **Schema Pull**: 10-20 seconds (consistent performance)
 - **Migration Generation**: 3-8 seconds (reliable execution)
 
 **Reliability Metrics**:
+
 - **Success Rate**: 99%+ for schema operations
 - **Error Rate**: <1% (down from 50%+ timeout failures)
 - **Development Velocity**: No database configuration blockers

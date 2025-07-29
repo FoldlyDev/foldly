@@ -18,10 +18,12 @@ interface LinkTopicNameFieldProps {
     topicError: string | null;
     slug: string;
   };
-  errors?: {
-    topic?: string;
-    name?: string;
-  } | undefined;
+  errors?:
+    | {
+        topic?: string;
+        name?: string;
+      }
+    | undefined;
   isLoading?: boolean;
 }
 
@@ -47,7 +49,9 @@ export function LinkTopicNameField({
             <Hash className='w-4 h-4 text-primary' />
           </div>
           <div>
-            <h3 className='font-medium text-foreground'>Custom Topic Link Name</h3>
+            <h3 className='font-medium text-foreground'>
+              Custom Topic Link Name
+            </h3>
             <p className='text-sm text-muted-foreground'>
               Choose a name for your Custom Topic Link
             </p>
@@ -125,8 +129,8 @@ export function LinkTopicNameField({
           {/* Help text */}
           <div className='space-y-2'>
             <p className='text-xs text-muted-foreground'>
-              <strong>Allowed characters:</strong> Letters, numbers,
-              spaces, hyphens, and underscores
+              <strong>Allowed characters:</strong> Letters, numbers, spaces,
+              hyphens, and underscores
             </p>
           </div>
         </div>

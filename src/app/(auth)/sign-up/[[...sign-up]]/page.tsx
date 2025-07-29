@@ -20,7 +20,7 @@ export default function SignUpPage() {
     return (
       <div className='auth-page flex flex-col items-center justify-center'>
         <BubbleBackground />
-        
+
         {/* Back button */}
         <a href='/' className='auth-back-button' aria-label='Back to home'>
           <AnimateIcon>

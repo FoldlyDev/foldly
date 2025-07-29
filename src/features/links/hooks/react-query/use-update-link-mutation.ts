@@ -20,11 +20,13 @@ interface UseUpdateLinkMutationOptions {
 
 interface UpdateLinkResult {
   data: Link;
-  meta?: {
-    isCascadeUpdate?: boolean;
-    affectedLinksCount?: number;
-    affectedLinkIds?: string[];
-  } | undefined;
+  meta?:
+    | {
+        isCascadeUpdate?: boolean;
+        affectedLinksCount?: number;
+        affectedLinkIds?: string[];
+      }
+    | undefined;
 }
 
 interface UseUpdateLinkMutationResult {
@@ -48,7 +50,9 @@ export function useUpdateLinkMutation(
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
-    mutationFn: async (input: UpdateLinkActionData): Promise<UpdateLinkResult> => {
+    mutationFn: async (
+      input: UpdateLinkActionData
+    ): Promise<UpdateLinkResult> => {
       const result = await updateLinkAction(input);
 
       if (!result.success) {
@@ -117,7 +121,10 @@ export function useUpdateLinkMutation(
       // Roll back optimistic updates (only if we made them)
       if (context && !context.skipOptimistic) {
         if (context.previousLinks) {
-          queryClient.setQueryData(linksQueryKeys.list(), context.previousLinks);
+          queryClient.setQueryData(
+            linksQueryKeys.list(),
+            context.previousLinks
+          );
         }
         if (context.previousLink) {
           queryClient.setQueryData(
@@ -135,20 +142,22 @@ export function useUpdateLinkMutation(
       // Handle cascade updates with comprehensive cache invalidation
       if (result.meta?.isCascadeUpdate) {
         // Invalidate all link queries for cascade updates
-        queryClient.invalidateQueries({ 
+        queryClient.invalidateQueries({
           queryKey: ['links'],
-          exact: false 
+          exact: false,
         });
-        
+
         const affectedCount = result.meta.affectedLinksCount || 0;
-        toast.success(`Base link updated - ${affectedCount} links updated successfully`);
+        toast.success(
+          `Base link updated - ${affectedCount} links updated successfully`
+        );
       } else {
         // Regular single link update
         queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
         queryClient.invalidateQueries({
           queryKey: linksQueryKeys.detail(variables.id),
         });
-        
+
         toast.success('Link updated successfully');
       }
 
@@ -159,9 +168,9 @@ export function useUpdateLinkMutation(
       // Handle settled state based on whether it was a cascade update
       if (result?.meta?.isCascadeUpdate) {
         // For cascade updates, invalidate all link-related queries
-        queryClient.invalidateQueries({ 
+        queryClient.invalidateQueries({
           queryKey: ['links'],
-          exact: false 
+          exact: false,
         });
       } else {
         // For regular updates, invalidate specific queries

@@ -47,10 +47,13 @@ export async function updateLinkAction(
     // 4. Allow title updates for all link types (including base links)
 
     // 5. Handle cascade updates for base link slug changes
-    if (updateData.slug !== undefined && existingLink.data.linkType === 'base') {
+    if (
+      updateData.slug !== undefined &&
+      existingLink.data.linkType === 'base'
+    ) {
       const oldSlug = existingLink.data.slug;
       const newSlug = updateData.slug;
-      
+
       if (oldSlug !== newSlug) {
         // Cascade update all user's links to use the new base slug
         const cascadeResult = await linksDbService.cascadeUpdateBaseSlug(
@@ -58,19 +61,21 @@ export async function updateLinkAction(
           oldSlug,
           newSlug
         );
-        
+
         if (!cascadeResult.success) {
           return {
             success: false,
-            error: cascadeResult.error || 'Failed to update base link and related links',
+            error:
+              cascadeResult.error ||
+              'Failed to update base link and related links',
           };
         }
-        
+
         // Get the updated base link from cascade operation
         let updatedBaseLink = cascadeResult.data.updatedLinks.find(
           link => link.id === id && link.linkType === 'base'
         );
-        
+
         if (!updatedBaseLink) {
           return {
             success: false,
@@ -80,26 +85,44 @@ export async function updateLinkAction(
 
         // Apply other non-slug updates to the base link if present
         const otherUpdates: Record<string, any> = {};
-        if (updateData.title !== undefined) otherUpdates.title = updateData.title;
-        if (updateData.description !== undefined) otherUpdates.description = updateData.description || null;
-        if (updateData.requireEmail !== undefined) otherUpdates.requireEmail = updateData.requireEmail;
-        if (updateData.requirePassword !== undefined) otherUpdates.requirePassword = updateData.requirePassword;
-        if (updateData.password !== undefined) otherUpdates.passwordHash = updateData.password ? Buffer.from(updateData.password).toString('base64') : null;
-        if (updateData.isPublic !== undefined) otherUpdates.isPublic = updateData.isPublic;
-        if (updateData.isActive !== undefined) otherUpdates.isActive = updateData.isActive;
-        if (updateData.maxFiles !== undefined) otherUpdates.maxFiles = updateData.maxFiles;
-        if (updateData.maxFileSize !== undefined) otherUpdates.maxFileSize = updateData.maxFileSize * 1024 * 1024;
-        if (updateData.allowedFileTypes !== undefined) otherUpdates.allowedFileTypes = updateData.allowedFileTypes || null;
-        if (updateData.expiresAt !== undefined) otherUpdates.expiresAt = updateData.expiresAt ? new Date(updateData.expiresAt) : null;
+        if (updateData.title !== undefined)
+          otherUpdates.title = updateData.title;
+        if (updateData.description !== undefined)
+          otherUpdates.description = updateData.description || null;
+        if (updateData.requireEmail !== undefined)
+          otherUpdates.requireEmail = updateData.requireEmail;
+        if (updateData.requirePassword !== undefined)
+          otherUpdates.requirePassword = updateData.requirePassword;
+        if (updateData.password !== undefined)
+          otherUpdates.passwordHash = updateData.password
+            ? Buffer.from(updateData.password).toString('base64')
+            : null;
+        if (updateData.isPublic !== undefined)
+          otherUpdates.isPublic = updateData.isPublic;
+        if (updateData.isActive !== undefined)
+          otherUpdates.isActive = updateData.isActive;
+        if (updateData.maxFiles !== undefined)
+          otherUpdates.maxFiles = updateData.maxFiles;
+        if (updateData.maxFileSize !== undefined)
+          otherUpdates.maxFileSize = updateData.maxFileSize * 1024 * 1024;
+        if (updateData.allowedFileTypes !== undefined)
+          otherUpdates.allowedFileTypes = updateData.allowedFileTypes || null;
+        if (updateData.expiresAt !== undefined)
+          otherUpdates.expiresAt = updateData.expiresAt
+            ? new Date(updateData.expiresAt)
+            : null;
 
         // If there are other updates, apply them to the base link
         if (Object.keys(otherUpdates).length > 0) {
-          const additionalUpdateResult = await linksDbService.update(id, otherUpdates);
+          const additionalUpdateResult = await linksDbService.update(
+            id,
+            otherUpdates
+          );
           if (additionalUpdateResult.success && additionalUpdateResult.data) {
             updatedBaseLink = additionalUpdateResult.data;
           }
         }
-        
+
         // Audit log for cascade update
         await logAudit({
           userId: user.id,
@@ -107,14 +130,14 @@ export async function updateLinkAction(
           resource: 'link',
           resourceId: id,
           timestamp: new Date(),
-          details: { 
-            oldSlug, 
-            newSlug, 
+          details: {
+            oldSlug,
+            newSlug,
             updatedLinksCount: cascadeResult.data.updatedCount,
-            additionalUpdates: Object.keys(otherUpdates)
+            additionalUpdates: Object.keys(otherUpdates),
           },
         });
-        
+
         return {
           success: true,
           data: updatedBaseLink,

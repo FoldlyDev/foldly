@@ -49,15 +49,15 @@ export async function uploadFileToLinkAction(
     // =============================================================================
     // 1. VALIDATE LINK EXISTS AND FETCH DATA
     // =============================================================================
-    
+
     const linksService = new LinksDbService();
     const linkResult = await linksService.getById(linkId);
-    
+
     if (!linkResult.success || !linkResult.data) {
       console.log(`❌ Link ${linkId} not found`);
-      return { 
-        success: false, 
-        error: 'Upload link not found. Please check the link and try again.' 
+      return {
+        success: false,
+        error: 'Upload link not found. Please check the link and try again.',
       };
     }
 
@@ -67,30 +67,33 @@ export async function uploadFileToLinkAction(
     // =============================================================================
     // 2. REAL-TIME EXPIRATION AND STATUS VALIDATION
     // =============================================================================
-    
+
     // Check if link can accept uploads (includes real-time expiration checking)
     if (!canAcceptUploads(link)) {
       console.log(`❌ Link ${linkId} cannot accept uploads`);
-      
+
       if (isLinkExpired(link)) {
-        return { 
-          success: false, 
-          error: 'This upload link has expired and can no longer accept files. Please contact the link owner for a new link.' 
+        return {
+          success: false,
+          error:
+            'This upload link has expired and can no longer accept files. Please contact the link owner for a new link.',
         };
       } else if (!link.isActive) {
-        return { 
-          success: false, 
-          error: 'This upload link is currently disabled. Please contact the link owner.' 
+        return {
+          success: false,
+          error:
+            'This upload link is currently disabled. Please contact the link owner.',
         };
       } else if (link.totalFiles >= link.maxFiles) {
-        return { 
-          success: false, 
-          error: `This upload link has reached its maximum file limit (${link.maxFiles} files). No more files can be uploaded.` 
+        return {
+          success: false,
+          error: `This upload link has reached its maximum file limit (${link.maxFiles} files). No more files can be uploaded.`,
         };
       } else {
-        return { 
-          success: false, 
-          error: 'This upload link cannot accept files at this time. Please try again later or contact the link owner.' 
+        return {
+          success: false,
+          error:
+            'This upload link cannot accept files at this time. Please try again later or contact the link owner.',
         };
       }
     }
@@ -98,42 +101,46 @@ export async function uploadFileToLinkAction(
     // =============================================================================
     // 3. PASSWORD VALIDATION (if required)
     // =============================================================================
-    
+
     if (link.requirePassword) {
       if (!password) {
-        return { 
-          success: false, 
-          error: 'This upload link requires a password. Please provide the password to continue.' 
+        return {
+          success: false,
+          error:
+            'This upload link requires a password. Please provide the password to continue.',
         };
       }
-      
+
       // TODO: Implement password verification against link.passwordHash
       // For now, we'll skip the actual hash check since it depends on the hashing method used
-      console.log(`🔐 Password required for link ${linkId} - validation needed`);
+      console.log(
+        `🔐 Password required for link ${linkId} - validation needed`
+      );
     }
 
     // =============================================================================
     // 4. EMAIL VALIDATION (if required)
     // =============================================================================
-    
+
     if (link.requireEmail && !uploaderInfo.email) {
-      return { 
-        success: false, 
-        error: 'This upload link requires an email address. Please provide your email to continue.' 
+      return {
+        success: false,
+        error:
+          'This upload link requires an email address. Please provide your email to continue.',
       };
     }
 
     // =============================================================================
     // 5. FILE SIZE AND TYPE VALIDATION
     // =============================================================================
-    
+
     // Check individual file size against link limits
     if (file.size > link.maxFileSize) {
       const maxSizeMB = Math.round(link.maxFileSize / (1024 * 1024));
       const fileSizeMB = Math.round(file.size / (1024 * 1024));
-      return { 
-        success: false, 
-        error: `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit for this upload link.` 
+      return {
+        success: false,
+        error: `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit for this upload link.`,
       };
     }
 
@@ -141,29 +148,33 @@ export async function uploadFileToLinkAction(
     if (link.allowedFileTypes && link.allowedFileTypes.length > 0) {
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       const mimeType = file.type.toLowerCase();
-      
+
       const isAllowed = link.allowedFileTypes.some(allowedType => {
         // Check both MIME type and extension patterns
-        return mimeType.includes(allowedType.toLowerCase()) || 
-               (fileExtension && allowedType.toLowerCase().includes(fileExtension));
+        return (
+          mimeType.includes(allowedType.toLowerCase()) ||
+          (fileExtension && allowedType.toLowerCase().includes(fileExtension))
+        );
       });
-      
+
       if (!isAllowed) {
-        return { 
-          success: false, 
-          error: `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}` 
+        return {
+          success: false,
+          error: `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`,
         };
       }
     }
 
-    console.log(`✅ File validation passed: ${file.name} (${Math.round(file.size / 1024)}KB)`);
+    console.log(
+      `✅ File validation passed: ${file.name} (${Math.round(file.size / 1024)}KB)`
+    );
 
     // =============================================================================
     // 6. INITIALIZE STORAGE AND CHECK NAME CONFLICTS
     // =============================================================================
-    
+
     const fileService = new FileService();
-    
+
     // Initialize storage buckets if they don't exist
     const bucketInit = await storageService.initializeBuckets();
     if (!bucketInit.success) {
@@ -176,13 +187,13 @@ export async function uploadFileToLinkAction(
 
     // Check for existing files and generate unique name if needed
     let uniqueFileName = file.name;
-    
+
     if (folderId) {
       // Get existing files in the target folder
       const existingFilesResult = await fileService.getFilesByFolder(folderId);
       if (existingFilesResult.success) {
         const existingFileNames = existingFilesResult.data.map(f => f.fileName);
-        
+
         // Generate unique name if duplicates exist
         const { generateUniqueName } = await import(
           '@/features/files/utils/file-operations'
@@ -207,7 +218,7 @@ export async function uploadFileToLinkAction(
 
       if (existingRootFilesResult && existingRootFilesResult.length > 0) {
         const existingFileNames = existingRootFilesResult.map(f => f.fileName);
-        
+
         const { generateUniqueName } = await import(
           '@/features/files/utils/file-operations'
         );
@@ -218,10 +229,10 @@ export async function uploadFileToLinkAction(
     // =============================================================================
     // 7. UPLOAD FILE TO STORAGE WITH QUOTA VALIDATION
     // =============================================================================
-    
+
     // Determine upload path for shared files
     const uploadPath = folderId ? `${linkId}/folders/${folderId}` : linkId;
-    
+
     // Upload file with quota validation (shared context for link files)
     const uploadResult = await storageService.uploadFileWithQuotaCheck(
       file,
@@ -244,7 +255,7 @@ export async function uploadFileToLinkAction(
     // =============================================================================
     // 8. CREATE DATABASE RECORD
     // =============================================================================
-    
+
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
 
@@ -288,20 +299,22 @@ export async function uploadFileToLinkAction(
       console.error(`❌ Database creation failed: ${createFileResult.error}`);
       // Clean up the uploaded file if database creation fails
       await storageService.deleteFile(uploadResult.data!.path, 'shared');
-      return { 
-        success: false, 
-        error: `Upload failed: ${createFileResult.error}` 
+      return {
+        success: false,
+        error: `Upload failed: ${createFileResult.error}`,
       };
     }
 
     // =============================================================================
     // 9. UPDATE LINK STATISTICS
     // =============================================================================
-    
+
     // Update link upload statistics
     await linksService.incrementUploadStats(linkId, file.size);
 
-    console.log(`✅ Upload completed successfully: ${uniqueFileName} to link ${linkId}`);
+    console.log(
+      `✅ Upload completed successfully: ${uniqueFileName} to link ${linkId}`
+    );
 
     return {
       success: true,
@@ -313,12 +326,14 @@ export async function uploadFileToLinkAction(
       },
       quotaInfo: uploadResult.data!.quotaInfo,
     };
-
   } catch (error) {
     console.error('❌ Upload to link failed:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Upload failed due to an unexpected error',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Upload failed due to an unexpected error',
     };
   }
 }
@@ -330,31 +345,33 @@ export async function uploadFileToLinkAction(
 export async function validateLinkForUploadAction(
   linkId: string,
   password?: string
-): Promise<DatabaseResult<{
-  canUpload: boolean;
-  requiresPassword: boolean;
-  requiresEmail: boolean;
-  maxFiles: number;
-  maxFileSize: number;
-  allowedFileTypes: string[] | null;
-  remainingUploads: number;
-  linkTitle: string;
-  linkType: string;
-}>> {
+): Promise<
+  DatabaseResult<{
+    canUpload: boolean;
+    requiresPassword: boolean;
+    requiresEmail: boolean;
+    maxFiles: number;
+    maxFileSize: number;
+    allowedFileTypes: string[] | null;
+    remainingUploads: number;
+    linkTitle: string;
+    linkType: string;
+  }>
+> {
   try {
     const linksService = new LinksDbService();
     const linkResult = await linksService.getById(linkId);
-    
+
     if (!linkResult.success || !linkResult.data) {
-      return { 
-        success: false, 
-        error: 'Upload link not found' 
+      return {
+        success: false,
+        error: 'Upload link not found',
       };
     }
 
     const link = linkResult.data;
     const canUpload = canAcceptUploads(link);
-    
+
     // Determine specific reason if cannot upload
     let uploadError: string | undefined;
     if (!canUpload) {
@@ -381,12 +398,11 @@ export async function validateLinkForUploadAction(
         linkType: link.linkType,
       },
     };
-
   } catch (error) {
     console.error('Failed to validate link for upload:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Validation failed' 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Validation failed',
     };
   }
 }

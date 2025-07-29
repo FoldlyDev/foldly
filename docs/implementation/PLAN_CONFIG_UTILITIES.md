@@ -11,11 +11,13 @@ The Plan Configuration utilities provide a simplified API for subscription manag
 ## Architecture Principles
 
 ### Separation of Concerns
+
 - **Clerk**: Source of truth for subscription state and feature access
 - **Database**: UI metadata only (pricing, descriptions, storage limits)
 - **No Complex Integrations**: Simple function calls replace complex integration layers
 
 ### Benefits
+
 - **Reduced Complexity**: 650+ lines of over-engineered code eliminated
 - **Better Performance**: Real-time storage calculation with database caching
 - **Easy Maintenance**: Simple functions replace complex integration layers
@@ -30,10 +32,13 @@ The Plan Configuration utilities provide a simplified API for subscription manag
 Gets the current user's subscription plan from Clerk (source of truth).
 
 ```typescript
-export async function getCurrentUserPlan(): Promise<'free' | 'pro' | 'business'>
+export async function getCurrentUserPlan(): Promise<
+  'free' | 'pro' | 'business'
+>;
 ```
 
 **Usage:**
+
 ```typescript
 import { getCurrentUserPlan } from '@/lib/plan-config';
 
@@ -47,6 +52,7 @@ if (currentPlan === 'pro') {
 ```
 
 **Error Handling:**
+
 - Returns `'free'` on any error or authentication failure
 - Graceful fallback ensures app continues to function
 
@@ -57,13 +63,17 @@ if (currentPlan === 'pro') {
 Retrieves UI metadata for a specific plan from the database.
 
 ```typescript
-export async function getPlanUIMetadata(planKey: string): Promise<PlanUIMetadata>
+export async function getPlanUIMetadata(
+  planKey: string
+): Promise<PlanUIMetadata>;
 ```
 
 **Parameters:**
+
 - `planKey`: Plan identifier ('free', 'pro', 'business')
 
 **Returns:**
+
 ```typescript
 interface PlanUIMetadata {
   planKey: string;
@@ -79,6 +89,7 @@ interface PlanUIMetadata {
 ```
 
 **Usage:**
+
 ```typescript
 import { getPlanUIMetadata } from '@/lib/plan-config';
 
@@ -94,13 +105,15 @@ console.log(proMetadata.highlightFeatures); // ["Custom branding", "Password pro
 Checks if the current user has access to a specific feature via Clerk.
 
 ```typescript
-export async function hasFeatureAccess(feature: string): Promise<boolean>
+export async function hasFeatureAccess(feature: string): Promise<boolean>;
 ```
 
 **Parameters:**
+
 - `feature`: Feature identifier (e.g., 'custom_branding', 'password_protection')
 
 **Usage:**
+
 ```typescript
 import { hasFeatureAccess } from '@/lib/plan-config';
 
@@ -124,10 +137,11 @@ const features = {
 Gets UI metadata for all active plans for comparison/pricing tables.
 
 ```typescript
-export async function getAllPlanMetadata(): Promise<PlanUIMetadata[]>
+export async function getAllPlanMetadata(): Promise<PlanUIMetadata[]>;
 ```
 
 **Usage:**
+
 ```typescript
 import { getAllPlanMetadata } from '@/lib/plan-config';
 
@@ -147,10 +161,11 @@ const allPlans = await getAllPlanMetadata();
 Combined function that gets current plan, UI metadata, and feature access in one call.
 
 ```typescript
-export async function getUserPlanData()
+export async function getUserPlanData();
 ```
 
 **Returns:**
+
 ```typescript
 {
   currentPlan: 'free' | 'pro' | 'business';
@@ -162,16 +177,18 @@ export async function getUserPlanData()
     premiumShortLinks: boolean;
     fileRestrictions: boolean;
     qrCodeGeneration: boolean;
-  };
+  }
   isSubscribed: boolean;
 }
 ```
 
 **Usage:**
+
 ```typescript
 import { getUserPlanData } from '@/lib/plan-config';
 
-const { currentPlan, uiMetadata, features, isSubscribed } = await getUserPlanData();
+const { currentPlan, uiMetadata, features, isSubscribed } =
+  await getUserPlanData();
 
 // Use plan data
 console.log(`User is on ${currentPlan} plan`);
@@ -189,15 +206,17 @@ console.log(`Is subscribed: ${isSubscribed}`);
 Gets storage limit in bytes based on plan key.
 
 ```typescript
-export function getStorageLimit(planKey: string): number
+export function getStorageLimit(planKey: string): number;
 ```
 
 **Returns:**
-- `free`: 50GB (50 * 1024 * 1024 * 1024 bytes)
-- `pro`: 500GB (500 * 1024 * 1024 * 1024 bytes)
+
+- `free`: 50GB (50 _ 1024 _ 1024 \* 1024 bytes)
+- `pro`: 500GB (500 _ 1024 _ 1024 \* 1024 bytes)
 - `business`: Infinity (unlimited)
 
 **Usage:**
+
 ```typescript
 import { getStorageLimit } from '@/lib/plan-config';
 
@@ -210,19 +229,21 @@ console.log(limit); // 536870912000 (500GB in bytes)
 Gets comprehensive storage information for the current user.
 
 ```typescript
-export async function getUserStorageInfo()
+export async function getUserStorageInfo();
 ```
 
 **Returns:**
+
 ```typescript
 {
-  limit: number;           // Storage limit in bytes
-  limitFormatted: string;  // "50 GB", "500 GB", "Unlimited"
-  isUnlimited: boolean;    // true for business plan
+  limit: number; // Storage limit in bytes
+  limitFormatted: string; // "50 GB", "500 GB", "Unlimited"
+  isUnlimited: boolean; // true for business plan
 }
 ```
 
 **Usage:**
+
 ```typescript
 import { getUserStorageInfo } from '@/lib/plan-config';
 
@@ -240,10 +261,13 @@ console.log(`Is unlimited: ${storage.isUnlimited}`);
 Checks if the current user can upgrade to a specific plan.
 
 ```typescript
-export async function canUpgradeTo(targetPlan: 'pro' | 'business'): Promise<boolean>
+export async function canUpgradeTo(
+  targetPlan: 'pro' | 'business'
+): Promise<boolean>;
 ```
 
 **Usage:**
+
 ```typescript
 import { canUpgradeTo } from '@/lib/plan-config';
 
@@ -258,15 +282,17 @@ if (canUpgradeToPro) {
 Gets available upgrade options for the current user.
 
 ```typescript
-export async function getUpgradeOptions(): Promise<string[]>
+export async function getUpgradeOptions(): Promise<string[]>;
 ```
 
 **Returns:**
+
 - Free users: `['pro', 'business']`
 - Pro users: `['business']`
 - Business users: `[]`
 
 **Usage:**
+
 ```typescript
 import { getUpgradeOptions } from '@/lib/plan-config';
 
@@ -289,13 +315,13 @@ import { getAllPlanMetadata, getCurrentUserPlan } from '@/lib/plan-config';
 export default async function PricingPage() {
   const plans = await getAllPlanMetadata();
   const currentPlan = await getCurrentUserPlan();
-  
+
   return (
     <div>
       {plans.map(plan => (
-        <PricingCard 
-          key={plan.planKey} 
-          plan={plan} 
+        <PricingCard
+          key={plan.planKey}
+          plan={plan}
           current={plan.planKey === currentPlan}
         />
       ))}
@@ -347,11 +373,11 @@ interface FeatureGateProps {
 
 export async function FeatureGate({ feature, children, fallback }: FeatureGateProps) {
   const hasAccess = await hasFeatureAccess(feature);
-  
+
   if (hasAccess) {
     return <>{children}</>;
   }
-  
+
   return <>{fallback || <div>Feature not available in your plan</div>}</>;
 }
 
@@ -385,11 +411,13 @@ try {
 ## Performance Considerations
 
 ### Caching Strategy
+
 - **Plan Detection**: Cache results appropriately with React Query
 - **UI Metadata**: Database queries are optimized with proper indexes
 - **Feature Access**: Clerk handles caching of authentication state
 
 ### Optimization Tips
+
 ```typescript
 // ✅ Good: Cache plan data with React Query
 const { data: planData } = useQuery({
@@ -412,6 +440,7 @@ const hasFeature2 = await hasFeatureAccess('feature2');
 ## Migration from Old System
 
 ### Before (Complex)
+
 ```typescript
 // Old complex integration
 import { getCurrentUserPlan } from '@/lib/plan-utils';
@@ -422,6 +451,7 @@ await syncPlanWithDatabase(userId, plan); // 200+ lines of integration
 ```
 
 ### After (Simple)
+
 ```typescript
 // New simplified approach
 import { getCurrentUserPlan } from '@/lib/plan-config';
@@ -500,19 +530,19 @@ export function useBillingOverview() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: (failureCount, error) => {
       return billing.errorRecovery.shouldRetry(error, failureCount);
-    }
+    },
   });
 }
 
 export function useSubscriptionMutations() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: billing.integration.upgradePlan,
     onSuccess: () => {
       queryClient.invalidateQueries(['billing']);
       toast.success('Plan upgraded successfully!');
-    }
+    },
   });
 }
 ```
@@ -525,8 +555,8 @@ import { FeatureGate } from '@/features/billing';
 
 export function CustomBrandingSection() {
   return (
-    <FeatureGate 
-      feature="custom_branding" 
+    <FeatureGate
+      feature="custom_branding"
       upgradeAction={true}
       fallback={<UpgradePrompt feature="custom_branding" />}
     >

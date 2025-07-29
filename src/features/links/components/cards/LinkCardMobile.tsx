@@ -104,7 +104,6 @@ export const LinkCardMobile = memo(
             <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
           </div>
 
-
           {/* Expiry Date Row */}
           {link.expiresAt && (
             <div className='flex items-center justify-center gap-1 text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full'>

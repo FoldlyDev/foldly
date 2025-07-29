@@ -37,11 +37,13 @@ export interface StorageValidationResult {
  * Calculate total storage used by a user
  * Real-time calculation from files table
  */
-export const calculateUserStorageUsage = async (userId: string): Promise<number> => {
+export const calculateUserStorageUsage = async (
+  userId: string
+): Promise<number> => {
   try {
     const result = await db
       .select({
-        totalSize: sum(files.fileSize)
+        totalSize: sum(files.fileSize),
       })
       .from(files)
       .where(eq(files.userId, userId));
@@ -58,11 +60,13 @@ export const calculateUserStorageUsage = async (userId: string): Promise<number>
  * Get user storage limits based on their plan
  * Defaults to Free plan limits if no plan found
  */
-export const getUserStorageLimit = async (userPlanKey: string = 'free'): Promise<number> => {
+export const getUserStorageLimit = async (
+  userPlanKey: string = 'free'
+): Promise<number> => {
   try {
     const planResult = await db
       .select({
-        storageLimitGb: subscriptionPlans.storageLimitGb
+        storageLimitGb: subscriptionPlans.storageLimitGb,
       })
       .from(subscriptionPlans)
       .where(eq(subscriptionPlans.planKey, userPlanKey))
@@ -85,7 +89,7 @@ export const getUserStorageLimit = async (userPlanKey: string = 'free'): Promise
  * Get comprehensive storage information for a user
  */
 export const getUserStorageDashboard = async (
-  userId: string, 
+  userId: string,
   userPlanKey: string = 'free'
 ): Promise<UserStorageInfo> => {
   try {
@@ -94,15 +98,16 @@ export const getUserStorageDashboard = async (
       getUserStorageLimit(userPlanKey),
       db
         .select({
-          count: sql<number>`count(*)`
+          count: sql<number>`count(*)`,
         })
         .from(files)
-        .where(eq(files.userId, userId))
+        .where(eq(files.userId, userId)),
     ]);
 
     const filesCount = Number(filesCountResult[0]?.count || 0);
     const remainingBytes = Math.max(0, storageLimit - storageUsed);
-    const usagePercentage = storageLimit > 0 ? (storageUsed / storageLimit) * 100 : 0;
+    const usagePercentage =
+      storageLimit > 0 ? (storageUsed / storageLimit) * 100 : 0;
 
     return {
       userId,
@@ -111,7 +116,7 @@ export const getUserStorageDashboard = async (
       filesCount,
       remainingBytes,
       usagePercentage: Math.min(100, usagePercentage), // Cap at 100%
-      planKey: userPlanKey
+      planKey: userPlanKey,
     };
   } catch (error) {
     console.error('Error getting user storage dashboard:', error);
@@ -130,7 +135,7 @@ export const canUserUpload = async (
   try {
     const [currentUsage, storageLimit] = await Promise.all([
       calculateUserStorageUsage(userId),
-      getUserStorageLimit(userPlanKey)
+      getUserStorageLimit(userPlanKey),
     ]);
 
     const newTotal = currentUsage + fileSizeBytes;
@@ -142,7 +147,7 @@ export const canUserUpload = async (
       wouldExceedLimit,
       currentUsage,
       newTotal,
-      limit: storageLimit
+      limit: storageLimit,
     } as StorageValidationResult;
   } catch (error) {
     console.error('Error checking upload permissions:', error);
@@ -152,7 +157,7 @@ export const canUserUpload = async (
       wouldExceedLimit: true,
       currentUsage: 0,
       newTotal: fileSizeBytes,
-      limit: 0
+      limit: 0,
     };
   }
 };
@@ -179,7 +184,7 @@ export const uploadFileWithTracking = async (
     if (!validation.canUpload) {
       return {
         success: false,
-        error: validation.reason || 'Upload not allowed'
+        error: validation.reason || 'Upload not allowed',
       };
     }
 
@@ -188,13 +193,13 @@ export const uploadFileWithTracking = async (
       .from('files')
       .upload(storagePath, file, {
         upsert: false,
-        cacheControl: '3600'
+        cacheControl: '3600',
       });
 
     if (uploadError) {
       return {
         success: false,
-        error: `Storage upload failed: ${uploadError.message}`
+        error: `Storage upload failed: ${uploadError.message}`,
       };
     }
 
@@ -216,7 +221,7 @@ export const uploadFileWithTracking = async (
         storageProvider: 'supabase',
         processingStatus: 'completed',
         isOrganized: false,
-        needsReview: false
+        needsReview: false,
       })
       .returning({ id: files.id });
 
@@ -224,19 +229,19 @@ export const uploadFileWithTracking = async (
     if (!fileId) {
       return {
         success: false,
-        error: 'Failed to create file record'
+        error: 'Failed to create file record',
       };
     }
 
     return {
       success: true,
-      fileId
+      fileId,
     };
   } catch (error) {
     console.error('Error uploading file with tracking:', error);
     return {
       success: false,
-      error: 'Upload processing failed'
+      error: 'Upload processing failed',
     };
   }
 };
@@ -254,7 +259,7 @@ export const deleteFileWithTracking = async (
     const fileRecord = await db
       .select({
         storagePath: files.storagePath,
-        userId: files.userId
+        userId: files.userId,
       })
       .from(files)
       .where(eq(files.id, fileId))
@@ -263,7 +268,7 @@ export const deleteFileWithTracking = async (
     if (fileRecord.length === 0) {
       return {
         success: false,
-        error: 'File not found'
+        error: 'File not found',
       };
     }
 
@@ -271,7 +276,7 @@ export const deleteFileWithTracking = async (
     if (fileRecord[0]?.userId !== userId) {
       return {
         success: false,
-        error: 'Unauthorized file access'
+        error: 'Unauthorized file access',
       };
     }
 
@@ -281,20 +286,21 @@ export const deleteFileWithTracking = async (
       .remove([fileRecord[0]?.storagePath || '']);
 
     if (storageError) {
-      console.warn('Storage deletion failed, proceeding with database cleanup:', storageError);
+      console.warn(
+        'Storage deletion failed, proceeding with database cleanup:',
+        storageError
+      );
     }
 
     // Delete from database
-    await db
-      .delete(files)
-      .where(eq(files.id, fileId));
+    await db.delete(files).where(eq(files.id, fileId));
 
     return { success: true };
   } catch (error) {
     console.error('Error deleting file with tracking:', error);
     return {
       success: false,
-      error: 'File deletion failed'
+      error: 'File deletion failed',
     };
   }
 };
@@ -303,7 +309,9 @@ export const deleteFileWithTracking = async (
  * Sync storage state with Supabase
  * Cleanup orphaned files and update database records
  */
-export const syncStorageWithSupabase = async (userId: string): Promise<{
+export const syncStorageWithSupabase = async (
+  userId: string
+): Promise<{
   orphanedFiles: number;
   missingFiles: number;
   syncedFiles: number;
@@ -313,7 +321,7 @@ export const syncStorageWithSupabase = async (userId: string): Promise<{
     const dbFiles = await db
       .select({
         id: files.id,
-        storagePath: files.storagePath
+        storagePath: files.storagePath,
       })
       .from(files)
       .where(eq(files.userId, userId));
@@ -323,7 +331,7 @@ export const syncStorageWithSupabase = async (userId: string): Promise<{
       .from('files')
       .list('', {
         limit: 1000,
-        search: userId // Assuming storage paths include userId
+        search: userId, // Assuming storage paths include userId
       });
 
     if (listError) {
@@ -334,30 +342,34 @@ export const syncStorageWithSupabase = async (userId: string): Promise<{
     const dbPathSet = new Set(dbFiles.map(f => f.storagePath));
 
     // Find orphaned database records (exist in DB but not in storage)
-    const orphanedDbRecords = dbFiles.filter(f => !storagePathSet.has(f.storagePath));
-    
+    const orphanedDbRecords = dbFiles.filter(
+      f => !storagePathSet.has(f.storagePath)
+    );
+
     // Find missing database records (exist in storage but not in DB)
-    const orphanedStorageFiles = (storageFiles || []).filter(f => !dbPathSet.has(f.name));
+    const orphanedStorageFiles = (storageFiles || []).filter(
+      f => !dbPathSet.has(f.name)
+    );
 
     // Clean up orphaned database records
     if (orphanedDbRecords.length > 0) {
       await db
         .delete(files)
-        .where(sql`${files.id} IN ${sql.raw(`(${orphanedDbRecords.map(f => `'${f.id}'`).join(',')})`)}`);
+        .where(
+          sql`${files.id} IN ${sql.raw(`(${orphanedDbRecords.map(f => `'${f.id}'`).join(',')})`)}`
+        );
     }
 
     // Optionally clean up orphaned storage files
     if (orphanedStorageFiles.length > 0) {
       const pathsToDelete = orphanedStorageFiles.map(f => f.name);
-      await supabase.storage
-        .from('files')
-        .remove(pathsToDelete);
+      await supabase.storage.from('files').remove(pathsToDelete);
     }
 
     return {
       orphanedFiles: orphanedDbRecords.length,
       missingFiles: orphanedStorageFiles.length,
-      syncedFiles: dbFiles.length - orphanedDbRecords.length
+      syncedFiles: dbFiles.length - orphanedDbRecords.length,
     };
   } catch (error) {
     console.error('Error syncing storage with Supabase:', error);
@@ -383,36 +395,39 @@ export const formatBytes = (bytes: number, decimals: number = 2): string => {
 /**
  * Get storage usage breakdown by file type
  */
-export const getStorageBreakdownByType = async (userId: string): Promise<{
+export const getStorageBreakdownByType = async (
+  userId: string
+): Promise<{
   [mimeType: string]: {
     count: number;
     totalSize: number;
     percentage: number;
-  }
+  };
 }> => {
   try {
     const breakdown = await db
       .select({
         mimeType: files.mimeType,
         count: sql<number>`count(*)`,
-        totalSize: sum(files.fileSize)
+        totalSize: sum(files.fileSize),
       })
       .from(files)
       .where(eq(files.userId, userId))
       .groupBy(files.mimeType);
 
-    const totalStorage = breakdown.reduce((sum, item) => 
-      sum + (Number(item.totalSize) || 0), 0
+    const totalStorage = breakdown.reduce(
+      (sum, item) => sum + (Number(item.totalSize) || 0),
+      0
     );
 
     const result: { [key: string]: any } = {};
-    
+
     breakdown.forEach(item => {
       const size = Number(item.totalSize) || 0;
       result[item.mimeType] = {
         count: Number(item.count),
         totalSize: size,
-        percentage: totalStorage > 0 ? (size / totalStorage) * 100 : 0
+        percentage: totalStorage > 0 ? (size / totalStorage) * 100 : 0,
       };
     });
 

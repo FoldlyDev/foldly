@@ -25,15 +25,15 @@ export interface ClerkPlanAccess {
 export interface IntegratedPlanData {
   // From Clerk (source of truth)
   clerkPlan: ClerkPlanAccess;
-  
+
   // From Database (UI metadata)
   uiMetadata: PlanUIMetadata;
-  
+
   // Combined features and access
   hasFeatureAccess: (feature: string) => boolean;
   storageLimit: number;
   storageUsed: number;
-  
+
   // Subscription details
   isSubscribed: boolean;
   canUpgrade: boolean;
@@ -58,11 +58,11 @@ export class ClerkBillingIntegrationService {
   static async getCurrentUserPlan(): Promise<DatabaseResult<ClerkPlanAccess>> {
     try {
       const { userId, has } = await auth();
-      
+
       if (!userId) {
-        return { 
-          success: false, 
-          error: 'User not authenticated' 
+        return {
+          success: false,
+          error: 'User not authenticated',
         };
       }
 
@@ -73,12 +73,30 @@ export class ClerkBillingIntegrationService {
 
       if (has) {
         // Check plans in order of hierarchy
-        if (has({ plan: 'business' }) || has({ plan: 'Business' }) || has({ plan: 'enterprise' })) {
+        if (
+          has({ plan: 'business' }) ||
+          has({ plan: 'Business' }) ||
+          has({ plan: 'enterprise' })
+        ) {
           currentPlan = 'business';
-          planFeatures = ['unlimited_storage', 'advanced_branding', 'priority_support', 'team_collaboration'];
-        } else if (has({ plan: 'pro' }) || has({ plan: 'Pro' }) || has({ plan: 'professional' })) {
+          planFeatures = [
+            'unlimited_storage',
+            'advanced_branding',
+            'priority_support',
+            'team_collaboration',
+          ];
+        } else if (
+          has({ plan: 'pro' }) ||
+          has({ plan: 'Pro' }) ||
+          has({ plan: 'professional' })
+        ) {
           currentPlan = 'pro';
-          planFeatures = ['custom_branding', 'password_protection', 'extended_storage', 'analytics'];
+          planFeatures = [
+            'custom_branding',
+            'password_protection',
+            'extended_storage',
+            'analytics',
+          ];
         } else {
           // Default to free plan
           currentPlan = 'free';
@@ -87,8 +105,13 @@ export class ClerkBillingIntegrationService {
 
         // Check for additional features
         const additionalFeatures = [
-          'widgets', 'advanced_analytics', 'custom_domains', 'api_access',
-          'bulk_upload', 'file_previews', 'version_control'
+          'widgets',
+          'advanced_analytics',
+          'custom_domains',
+          'api_access',
+          'bulk_upload',
+          'file_previews',
+          'version_control',
         ];
 
         additionalFeatures.forEach(feature => {
@@ -102,9 +125,13 @@ export class ClerkBillingIntegrationService {
       try {
         const client = await clerkClient();
         const user = await client.users.getUser(userId);
-        subscriptionStatus = user.publicMetadata?.subscriptionStatus as string || null;
+        subscriptionStatus =
+          (user.publicMetadata?.subscriptionStatus as string) || null;
       } catch (error) {
-        console.warn('Could not fetch user metadata for subscription status:', error);
+        console.warn(
+          'Could not fetch user metadata for subscription status:',
+          error
+        );
       }
 
       const hasActiveBilling = currentPlan !== 'free';
@@ -125,9 +152,9 @@ export class ClerkBillingIntegrationService {
       };
     } catch (error) {
       console.error('Error getting current user plan from Clerk:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -135,25 +162,29 @@ export class ClerkBillingIntegrationService {
   /**
    * Get integrated plan data (Clerk + Database)
    */
-  static async getIntegratedPlanData(): Promise<DatabaseResult<IntegratedPlanData>> {
+  static async getIntegratedPlanData(): Promise<
+    DatabaseResult<IntegratedPlanData>
+  > {
     try {
       // Get plan from Clerk (source of truth)
       const clerkPlanResult = await this.getCurrentUserPlan();
       if (!clerkPlanResult.success) {
-        return { 
-          success: false, 
-          error: clerkPlanResult.error 
+        return {
+          success: false,
+          error: clerkPlanResult.error,
         };
       }
 
       const clerkPlan = clerkPlanResult.data;
 
       // Get UI metadata from database
-      const uiMetadataResult = await this.getPlanUIMetadata(clerkPlan.currentPlan);
+      const uiMetadataResult = await this.getPlanUIMetadata(
+        clerkPlan.currentPlan
+      );
       if (!uiMetadataResult.success) {
-        return { 
-          success: false, 
-          error: uiMetadataResult.error 
+        return {
+          success: false,
+          error: uiMetadataResult.error,
         };
       }
 
@@ -163,17 +194,18 @@ export class ClerkBillingIntegrationService {
       const hasFeatureAccess = (feature: string): boolean => {
         // Check if feature is in Clerk's feature list (primary)
         const clerkHasFeature = clerkPlan.planFeatures.includes(feature);
-        
+
         // Check if feature is in plan's feature descriptions (secondary)
         const dbHasFeature = feature in (uiMetadata.featureDescriptions || {});
-        
+
         return clerkHasFeature || dbHasFeature;
       };
 
       // Calculate storage limit
-      const storageLimit = uiMetadata.storageLimitGb === -1 
-        ? Infinity 
-        : uiMetadata.storageLimitGb * 1024 * 1024 * 1024; // Convert GB to bytes
+      const storageLimit =
+        uiMetadata.storageLimitGb === -1
+          ? Infinity
+          : uiMetadata.storageLimitGb * 1024 * 1024 * 1024; // Convert GB to bytes
 
       // Determine upgrade options
       const upgradeOptions = this.getUpgradeOptions(clerkPlan.currentPlan);
@@ -193,9 +225,9 @@ export class ClerkBillingIntegrationService {
       };
     } catch (error) {
       console.error('Error getting integrated plan data:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -203,7 +235,9 @@ export class ClerkBillingIntegrationService {
   /**
    * Get plan UI metadata from database
    */
-  static async getPlanUIMetadata(planKey: string): Promise<DatabaseResult<PlanUIMetadata>> {
+  static async getPlanUIMetadata(
+    planKey: string
+  ): Promise<DatabaseResult<PlanUIMetadata>> {
     try {
       const result = await db
         .select()
@@ -214,7 +248,7 @@ export class ClerkBillingIntegrationService {
       const plan = result[0];
       if (!plan) {
         console.warn(`Plan ${planKey} not found in database, using defaults`);
-        
+
         // Return safe defaults for unknown plans
         return {
           success: true,
@@ -224,8 +258,14 @@ export class ClerkBillingIntegrationService {
             planDescription: null,
             monthlyPrice: '0.00',
             yearlyPrice: '0.00',
-            storageLimit: planKey === 'free' ? '50 GB' : planKey === 'pro' ? '500 GB' : 'Unlimited',
-            storageLimitGb: planKey === 'free' ? 50 : planKey === 'pro' ? 500 : -1,
+            storageLimit:
+              planKey === 'free'
+                ? '50 GB'
+                : planKey === 'pro'
+                  ? '500 GB'
+                  : 'Unlimited',
+            storageLimitGb:
+              planKey === 'free' ? 50 : planKey === 'pro' ? 500 : -1,
             highlightFeatures: [],
             featureDescriptions: {},
             isPopular: false,
@@ -241,18 +281,22 @@ export class ClerkBillingIntegrationService {
           planDescription: plan.planDescription || null,
           monthlyPrice: plan.monthlyPriceUsd,
           yearlyPrice: plan.yearlyPriceUsd || '0.00',
-          storageLimit: plan.storageLimitGb === -1 ? 'Unlimited' : `${plan.storageLimitGb} GB`,
+          storageLimit:
+            plan.storageLimitGb === -1
+              ? 'Unlimited'
+              : `${plan.storageLimitGb} GB`,
           storageLimitGb: plan.storageLimitGb,
           highlightFeatures: (plan.highlightFeatures as string[]) || [],
-          featureDescriptions: (plan.featureDescriptions as Record<string, string>) || {},
+          featureDescriptions:
+            (plan.featureDescriptions as Record<string, string>) || {},
           isPopular: plan.isPopular || false,
         },
       };
     } catch (error) {
       console.error(`Error getting plan UI metadata for ${planKey}:`, error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -270,17 +314,24 @@ export class ClerkBillingIntegrationService {
     occurredAt: Date;
   }): Promise<DatabaseResult<void>> {
     try {
-      console.log(`📋 SUBSCRIPTION_CHANGE: Processing ${data.eventType} for user ${data.userId}`, {
-        fromPlan: data.fromPlan,
-        toPlan: data.toPlan,
-        source: data.source,
-      });
+      console.log(
+        `📋 SUBSCRIPTION_CHANGE: Processing ${data.eventType} for user ${data.userId}`,
+        {
+          fromPlan: data.fromPlan,
+          toPlan: data.toPlan,
+          source: data.source,
+        }
+      );
 
       // Record the event in analytics
-      const analyticsResult = await SubscriptionAnalyticsService.recordSubscriptionEvent(data);
-      
+      const analyticsResult =
+        await SubscriptionAnalyticsService.recordSubscriptionEvent(data);
+
       if (!analyticsResult.success) {
-        console.error('Failed to record subscription analytics:', analyticsResult.error);
+        console.error(
+          'Failed to record subscription analytics:',
+          analyticsResult.error
+        );
         // Don't fail the whole operation if analytics fails
       }
 
@@ -305,9 +356,9 @@ export class ClerkBillingIntegrationService {
       return { success: true, data: undefined };
     } catch (error) {
       console.error('Error handling subscription change:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -315,10 +366,13 @@ export class ClerkBillingIntegrationService {
   /**
    * Check if user has access to a specific feature
    */
-  static async hasFeatureAccess(feature: string, userId?: string): Promise<boolean> {
+  static async hasFeatureAccess(
+    feature: string,
+    userId?: string
+  ): Promise<boolean> {
     try {
       const { has } = await auth();
-      
+
       if (!has) {
         return false;
       }
@@ -359,10 +413,14 @@ export class ClerkBillingIntegrationService {
         planDescription: plan.planDescription || null,
         monthlyPrice: plan.monthlyPriceUsd,
         yearlyPrice: plan.yearlyPriceUsd || '0.00',
-        storageLimit: plan.storageLimitGb === -1 ? 'Unlimited' : `${plan.storageLimitGb} GB`,
+        storageLimit:
+          plan.storageLimitGb === -1
+            ? 'Unlimited'
+            : `${plan.storageLimitGb} GB`,
         storageLimitGb: plan.storageLimitGb,
         highlightFeatures: (plan.highlightFeatures as string[]) || [],
-        featureDescriptions: (plan.featureDescriptions as Record<string, string>) || {},
+        featureDescriptions:
+          (plan.featureDescriptions as Record<string, string>) || {},
         isPopular: plan.isPopular || false,
       }));
 
@@ -372,9 +430,9 @@ export class ClerkBillingIntegrationService {
       };
     } catch (error) {
       console.error('Error getting all plans:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -397,22 +455,30 @@ export class ClerkBillingIntegrationService {
   }
 
   private static async handleUpgradeEvent(data: any): Promise<void> {
-    console.log(`⬆️ UPGRADE_EVENT: User ${data.userId} upgraded from ${data.fromPlan} to ${data.toPlan}`);
+    console.log(
+      `⬆️ UPGRADE_EVENT: User ${data.userId} upgraded from ${data.fromPlan} to ${data.toPlan}`
+    );
     // Add any upgrade-specific logic here (e.g., unlock features, send welcome email)
   }
 
   private static async handleDowngradeEvent(data: any): Promise<void> {
-    console.log(`⬇️ DOWNGRADE_EVENT: User ${data.userId} downgraded from ${data.fromPlan} to ${data.toPlan}`);
+    console.log(
+      `⬇️ DOWNGRADE_EVENT: User ${data.userId} downgraded from ${data.fromPlan} to ${data.toPlan}`
+    );
     // Add any downgrade-specific logic here (e.g., restrict features, send retention email)
   }
 
   private static async handleCancelEvent(data: any): Promise<void> {
-    console.log(`❌ CANCEL_EVENT: User ${data.userId} canceled subscription (${data.fromPlan} -> ${data.toPlan})`);
+    console.log(
+      `❌ CANCEL_EVENT: User ${data.userId} canceled subscription (${data.fromPlan} -> ${data.toPlan})`
+    );
     // Add any cancellation-specific logic here (e.g., schedule data retention, send exit survey)
   }
 
   private static async handleReactivateEvent(data: any): Promise<void> {
-    console.log(`🔄 REACTIVATE_EVENT: User ${data.userId} reactivated subscription (${data.fromPlan} -> ${data.toPlan})`);
+    console.log(
+      `🔄 REACTIVATE_EVENT: User ${data.userId} reactivated subscription (${data.fromPlan} -> ${data.toPlan})`
+    );
     // Add any reactivation-specific logic here (e.g., restore features, send welcome back email)
   }
 }

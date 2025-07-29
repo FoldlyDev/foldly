@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { checkSlugAvailabilityAction, type SlugAvailabilityResult } from '../lib/actions';
-import { normalizeSlug, isValidNormalizedSlug } from '../lib/utils/slug-normalization';
+import {
+  checkSlugAvailabilityAction,
+  type SlugAvailabilityResult,
+} from '../lib/actions';
+import {
+  normalizeSlug,
+  isValidNormalizedSlug,
+} from '../lib/utils/slug-normalization';
 
 export interface SlugValidationState {
   isChecking: boolean;
@@ -23,7 +29,7 @@ export function useSlugValidation(
   options: UseSlugValidationOptions = {}
 ) {
   const { debounceMs = 1000, excludeId, enabled = true } = options;
-  
+
   const [state, setState] = useState<SlugValidationState>({
     isChecking: false,
     result: null,
@@ -52,7 +58,8 @@ export function useSlugValidation(
           result: {
             available: false,
             slug: normalizedSlug, // Return normalized version
-            message: 'Slug can only contain letters, numbers, hyphens, and underscores',
+            message:
+              'Slug can only contain letters, numbers, hyphens, and underscores',
           },
           error: null,
         });

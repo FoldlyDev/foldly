@@ -21,12 +21,14 @@ This document provides comprehensive troubleshooting procedures for database mig
 #### Problem Description
 
 **Error Message**:
+
 ```
 ERROR: column "workspace_id" already exists
 CONTEXT: SQL statement in migration 0009_flexible_subscription_system.sql
 ```
 
 **Symptoms**:
+
 - Migration 0009 failed during execution
 - Database schema inconsistent with migration history
 - Subscription system implementation blocked
@@ -35,12 +37,14 @@ CONTEXT: SQL statement in migration 0009_flexible_subscription_system.sql
 #### Root Cause Analysis
 
 **Primary Cause**: Database Schema Drift
+
 - The `workspace_id` column existed in the database from migration 0006
 - Drizzle migration journal was not properly synchronized with actual database state
 - Migration 0009 attempted to create a column that already existed
 - Type casting issues in SQL prevented proper execution
 
 **Contributing Factors**:
+
 1. **Journal Inconsistency**: `__drizzle_migrations` table out of sync with actual schema
 2. **Development Database State**: Local development database had diverged from tracked state
 3. **Type Casting Issues**: Boolean values not properly cast in migration SQL
@@ -49,17 +53,19 @@ CONTEXT: SQL statement in migration 0009_flexible_subscription_system.sql
 #### Resolution Steps Applied
 
 **Step 1: Database State Analysis**
+
 ```bash
 # Checked current database schema
 npm run introspect
 
 # Verified existing tables and columns
-SELECT column_name, data_type 
-FROM information_schema.columns 
+SELECT column_name, data_type
+FROM information_schema.columns
 WHERE table_name = 'user_subscriptions';
 ```
 
 **Step 2: Schema Synchronization**
+
 ```bash
 # Pulled actual schema from database
 npm run pull
@@ -71,11 +77,13 @@ npm run generate
 ```
 
 **Step 3: Type Casting Correction**
+
 - Fixed boolean type casting in migration SQL
 - Corrected JSON type handling for features column
 - Ensured proper NULL handling in subscription columns
 
 **Step 4: Manual Migration Execution**
+
 ```bash
 # Applied migration with verbose logging
 npm run migrate -- --verbose
@@ -85,10 +93,11 @@ SELECT * FROM __drizzle_migrations ORDER BY created_at DESC;
 ```
 
 **Step 5: Data Validation**
+
 ```bash
 # Verified subscription tables creation
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name LIKE '%subscription%';
 
 # Checked user migration success
@@ -98,8 +107,9 @@ SELECT COUNT(*) FROM user_subscriptions;
 #### Final Resolution State
 
 **Database Status After Resolution**:
+
 - **Total Tables**: 9 (up from 6)
-- **New Tables Created**: 
+- **New Tables Created**:
   - `subscription_tiers` (3 default tiers)
   - `user_subscriptions` (5 users migrated)
   - `subscription_events` (audit trail)
@@ -107,6 +117,7 @@ SELECT COUNT(*) FROM user_subscriptions;
 - **System Status**: Subscription system fully operational
 
 **Verification Results**:
+
 ```sql
 -- Confirmed table creation
 subscription_tiers: 3 rows (free, pro, business)
@@ -126,11 +137,13 @@ All RLS policies: ENABLED
 ### 1. Schema Drift Detection
 
 **Symptoms**:
+
 - "Column already exists" errors
 - "Table does not exist" when it should
 - Migration shows as applied but changes missing
 
 **Diagnosis Commands**:
+
 ```bash
 # Check actual database schema
 npm run introspect
@@ -142,11 +155,12 @@ npm run pull
 SELECT * FROM __drizzle_migrations ORDER BY created_at;
 
 # Verify table existence
-SELECT table_name FROM information_schema.tables 
+SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public';
 ```
 
 **Resolution Process**:
+
 1. **Backup Database**: Always create backup before fixing drift
 2. **Schema Comparison**: Compare actual vs expected schema state
 3. **Journal Verification**: Check migration tracking consistency
@@ -156,6 +170,7 @@ WHERE table_schema = 'public';
 ### 2. Type Casting Issues
 
 **Common Errors**:
+
 ```sql
 -- Incorrect boolean casting
 DEFAULT 'false' NOT NULL  -- Wrong
@@ -171,6 +186,7 @@ DEFAULT now()              -- Correct (lowercase)
 ```
 
 **Prevention**:
+
 - Use Drizzle schema definitions for consistent types
 - Test SQL syntax in database console before migration
 - Validate JSON structures before insertion
@@ -178,19 +194,21 @@ DEFAULT now()              -- Correct (lowercase)
 ### 3. Foreign Key Constraint Violations
 
 **Symptoms**:
+
 - Migration fails on foreign key creation
 - Data insertion fails due to missing references
 - Constraint violations during data migration
 
 **Resolution**:
+
 ```bash
 # Check for orphaned records
-SELECT * FROM child_table c 
-LEFT JOIN parent_table p ON c.parent_id = p.id 
+SELECT * FROM child_table c
+LEFT JOIN parent_table p ON c.parent_id = p.id
 WHERE p.id IS NULL;
 
 # Fix data integrity before applying constraints
-UPDATE child_table SET parent_id = 'default_parent_id' 
+UPDATE child_table SET parent_id = 'default_parent_id'
 WHERE parent_id NOT IN (SELECT id FROM parent_table);
 
 # Apply migration after data cleanup
@@ -202,6 +220,7 @@ npm run migrate
 **Issue**: Migrations applied out of order or with missing dependencies
 
 **Prevention**:
+
 ```bash
 # Check migration order
 SELECT id, created_at FROM __drizzle_migrations ORDER BY created_at;
@@ -244,6 +263,7 @@ npm run migrate:validate
 ### Database State Monitoring
 
 **Daily Checks**:
+
 ```bash
 # Schema consistency check
 npm run verify:schema
@@ -252,11 +272,12 @@ npm run verify:schema
 SELECT COUNT(*) FROM __drizzle_migrations;
 
 # Table count verification
-SELECT COUNT(*) FROM information_schema.tables 
+SELECT COUNT(*) FROM information_schema.tables
 WHERE table_schema = 'public';
 ```
 
 **Weekly Audits**:
+
 - Compare development and production schema
 - Verify all migrations documented
 - Check for orphaned migration files
@@ -265,12 +286,14 @@ WHERE table_schema = 'public';
 ### Safe Migration Practices
 
 **Development Environment**:
+
 1. **Never Skip Testing**: Always test migrations on development database first
 2. **Use Transactions**: Wrap complex migrations in transactions when possible
 3. **Small Batches**: Break large migrations into smaller, reversible steps
 4. **Document Changes**: Record all manual interventions and fixes
 
 **Production Environment**:
+
 1. **Maintenance Windows**: Schedule migrations during low-traffic periods
 2. **Rollback Plans**: Prepare rollback procedures for each migration
 3. **Monitoring**: Monitor database performance during and after migrations
@@ -283,6 +306,7 @@ WHERE table_schema = 'public';
 ### Emergency Migration Rollback
 
 **Immediate Rollback** (if safe):
+
 ```bash
 # Stop application
 npm run stop
@@ -298,9 +322,10 @@ npm run health-check
 ```
 
 **Manual Recovery** (complex cases):
+
 ```sql
 -- Remove failed migration from journal
-DELETE FROM __drizzle_migrations 
+DELETE FROM __drizzle_migrations
 WHERE name = 'failed_migration_name';
 
 -- Revert schema changes manually
@@ -314,6 +339,7 @@ ALTER TABLE existing_table DROP COLUMN IF EXISTS new_column;
 ### Data Recovery After Failed Migration
 
 **Recovery Steps**:
+
 1. **Assess Damage**: Determine what data was affected
 2. **Restore from Backup**: Use most recent clean backup
 3. **Replay Transactions**: Apply necessary changes since backup
@@ -321,16 +347,17 @@ ALTER TABLE existing_table DROP COLUMN IF EXISTS new_column;
 5. **Monitor System**: Watch for cascading issues
 
 **Validation Queries**:
+
 ```sql
 -- Check table counts
-SELECT table_name, 
+SELECT table_name,
        (SELECT COUNT(*) FROM table_name) as row_count
-FROM information_schema.tables 
+FROM information_schema.tables
 WHERE table_schema = 'public';
 
 -- Verify foreign key relationships
 SELECT conname, conrelid::regclass, confrelid::regclass
-FROM pg_constraint 
+FROM pg_constraint
 WHERE contype = 'f';
 
 -- Check for data inconsistencies
@@ -344,6 +371,7 @@ WHERE contype = 'f';
 ### Migration Health Checks
 
 **Automated Monitoring**:
+
 ```bash
 # Daily health check script
 #!/bin/bash
@@ -365,6 +393,7 @@ echo "Database migration health check passed"
 ```
 
 **Alert Conditions**:
+
 - Migration failures
 - Schema drift detection
 - Performance degradation after migrations
@@ -374,6 +403,7 @@ echo "Database migration health check passed"
 ### Performance Monitoring
 
 **Key Metrics**:
+
 - Migration execution time
 - Query performance before/after migrations
 - Database size changes
@@ -381,6 +411,7 @@ echo "Database migration health check passed"
 - Connection pool utilization
 
 **Monitoring Tools**:
+
 ```bash
 # Migration performance tracking
 time npm run migrate
@@ -399,6 +430,7 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Migration Documentation Requirements
 
 **For Each Migration**:
+
 1. **Purpose**: Clear description of what the migration does
 2. **Dependencies**: List of required previous migrations
 3. **Breaking Changes**: Any backwards incompatible changes
@@ -407,6 +439,7 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 6. **Performance Impact**: Expected impact on database performance
 
 **Template**:
+
 ```sql
 -- Migration: [NUMBER]_[DESCRIPTIVE_NAME]
 -- Purpose: [Clear description of changes]
@@ -422,6 +455,7 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Incident Documentation
 
 **For Each Resolved Issue**:
+
 - **Problem Description**: Detailed error symptoms
 - **Root Cause**: Why the issue occurred
 - **Resolution Steps**: Exact steps taken to fix
@@ -435,18 +469,21 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Migration Communication Protocol
 
 **Before Major Migrations**:
+
 1. **Announce Intent**: Notify team 24-48 hours before
 2. **Review Changes**: Peer review of migration SQL
 3. **Plan Timing**: Coordinate with deployment schedule
 4. **Prepare Rollback**: Ensure rollback procedures ready
 
 **During Migration Issues**:
+
 1. **Immediate Notification**: Alert team to migration problems
 2. **Status Updates**: Regular progress updates during resolution
 3. **Documentation**: Record all troubleshooting steps
 4. **Post-Resolution**: Share lessons learned with team
 
 **Communication Channels**:
+
 - **Slack**: Immediate alerts and status updates
 - **Documentation**: Permanent record in this document
 - **Standup**: Discussion in daily team meetings
@@ -459,18 +496,21 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Planned Enhancements
 
 **Short Term** (Next 30 days):
+
 - Automated schema drift detection
 - Migration testing in CI/CD pipeline
 - Enhanced error reporting and logging
 - Database backup automation before migrations
 
 **Medium Term** (Next 90 days):
+
 - Migration performance profiling
 - Rollback automation tools
 - Schema versioning and tagging
 - Integration with monitoring systems
 
 **Long Term** (Next 6 months):
+
 - Zero-downtime migration strategies
 - Advanced data migration tools
 - Multi-environment migration orchestration
@@ -479,6 +519,7 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Process Improvements
 
 **Based on Migration 0009 Resolution**:
+
 1. **Mandatory Schema Verification**: Never skip pre-migration checks
 2. **Enhanced Documentation**: More detailed migration documentation
 3. **Automated Testing**: Test all migrations in isolated environments
@@ -505,11 +546,13 @@ SELECT pg_size_pretty(pg_database_size('database_name'));
 ### Emergency Contacts
 
 **Critical Migration Failures**:
+
 1. **Primary**: Database Administrator
 2. **Secondary**: Lead Developer
 3. **Escalation**: Technical Lead
 
 **Response Times**:
+
 - **Critical Issues**: 30 minutes
 - **High Priority**: 2 hours
 - **Medium Priority**: 8 hours

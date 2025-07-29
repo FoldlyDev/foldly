@@ -2,7 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { CreditCard, Shield, Zap, TrendingUp, Files, Link } from 'lucide-react';
-import { usePlanConfig, useUserStorageStatusQuery } from '../../hooks/react-query/use-billing-data-query';
+import {
+  usePlanConfig,
+  useUserStorageStatusQuery,
+} from '../../hooks/react-query/use-billing-data-query';
 import type { PlanUIMetadata } from '@/lib/database/schemas';
 import { useUser } from '@clerk/nextjs';
 import { useMemo } from 'react';
@@ -24,19 +27,25 @@ type ColorType = 'primary' | 'secondary' | 'tertiary' | 'success';
 
 export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
   const { user } = useUser();
-  
+
   // ✅ Clean database-driven hooks - NO conditional logic
   const { data: planConfig, isLoading: planLoading } = usePlanConfig();
-  const { data: storageData, isLoading: storageLoading } = useUserStorageStatusQuery();
+  const { data: storageData, isLoading: storageLoading } =
+    useUserStorageStatusQuery();
 
   // ✅ Calculate actual values directly from database - NO conditional logic
   const safeData = useMemo(() => {
     // Use direct database data with new JSON schema
     if (planConfig && data) {
       // Count features from new JSON schema: highlight_features + feature_descriptions
-      const highlightFeatures = (planConfig.highlightFeatures as string[]) || [];
-      const featureDescriptions = (planConfig.featureDescriptions as Record<string, string>) || {};
-      const activeFeatures = Math.max(highlightFeatures.length, Object.keys(featureDescriptions).length);
+      const highlightFeatures =
+        (planConfig.highlightFeatures as string[]) || [];
+      const featureDescriptions =
+        (planConfig.featureDescriptions as Record<string, string>) || {};
+      const activeFeatures = Math.max(
+        highlightFeatures.length,
+        Object.keys(featureDescriptions).length
+      );
 
       // Use the correct field name from the schema
       const parsedPrice = parseFloat(planConfig.monthlyPrice || '0.00');
@@ -44,14 +53,17 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
       return {
         currentPlan: planConfig.planName, // Direct from database: "Free", "Pro", "Business"
         storageUsed: data.storageUsed,
-        storageLimit: planConfig.storageLimitGb === -1 ? 'Unlimited' : `${planConfig.storageLimitGb}GB`,
+        storageLimit:
+          planConfig.storageLimitGb === -1
+            ? 'Unlimited'
+            : `${planConfig.storageLimitGb}GB`,
         featuresActive: activeFeatures, // Count from JSON arrays
         daysRemaining: null,
         monthlySpend: parsedPrice, // Fixed: Use correct field and parsing
         planData: planConfig,
       };
     }
-    
+
     // Fallback data while loading
     if (!planConfig || !data) {
       return {
@@ -71,16 +83,16 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
   // Show loading state if data is being fetched
   if ((planLoading || storageLoading) && !data) {
     return (
-      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8">
+      <div className='grid grid-cols-1 xs:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-6 md:mb-8'>
         {[...Array(4)].map((_, index) => (
           <div
             key={index}
-            className="rounded-xl md:rounded-2xl p-4 md:p-6 border border-white/20 bg-white/90 animate-pulse"
+            className='rounded-xl md:rounded-2xl p-4 md:p-6 border border-white/20 bg-white/90 animate-pulse'
           >
-            <div className="w-11 h-11 md:w-14 md:h-14 bg-gray-200 rounded-xl md:rounded-2xl mb-4 md:mb-5" />
-            <div className="h-8 bg-gray-200 rounded mb-2" />
-            <div className="h-4 bg-gray-200 rounded mb-1" />
-            <div className="h-3 bg-gray-200 rounded" />
+            <div className='w-11 h-11 md:w-14 md:h-14 bg-gray-200 rounded-xl md:rounded-2xl mb-4 md:mb-5' />
+            <div className='h-8 bg-gray-200 rounded mb-2' />
+            <div className='h-4 bg-gray-200 rounded mb-1' />
+            <div className='h-3 bg-gray-200 rounded' />
           </div>
         ))}
       </div>
@@ -94,23 +106,28 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
       subtitle: 'Active subscription tier',
       icon: CreditCard,
       color: 'primary' as ColorType,
-      trend: planConfig?.planKey !== 'business' ? { 
-        value: 'Upgrade', 
-        isPositive: true, 
-        label: 'available' 
-      } : null,
+      trend:
+        planConfig?.planKey !== 'business'
+          ? {
+              value: 'Upgrade',
+              isPositive: true,
+              label: 'available',
+            }
+          : null,
     },
     {
       title: 'Storage Used',
-      value: `${Math.round((safeData.storageUsed / (1024 ** 3)))}GB`,
+      value: `${Math.round(safeData.storageUsed / 1024 ** 3)}GB`,
       subtitle: `of ${safeData.storageLimit} available`,
       icon: Shield,
       color: 'success' as ColorType,
-      trend: storageData ? { 
-        value: storageData.percentage, 
-        isPositive: !storageData.isOverLimit, 
-        label: storageData.isNearLimit ? 'near limit' : 'used' 
-      } : null,
+      trend: storageData
+        ? {
+            value: storageData.percentage,
+            isPositive: !storageData.isOverLimit,
+            label: storageData.isNearLimit ? 'near limit' : 'used',
+          }
+        : null,
     },
     {
       title: 'Plan Features',
@@ -118,27 +135,33 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
       subtitle: 'Features included in your plan',
       icon: Zap,
       color: 'secondary' as ColorType,
-      trend: { 
-        value: 'All', 
-        isPositive: true, 
-        label: 'included' 
+      trend: {
+        value: 'All',
+        isPositive: true,
+        label: 'included',
       },
     },
     {
       title: 'Plan Price',
-      value: safeData.monthlySpend === 0 ? 'Free' : `$${(safeData.monthlySpend || 0).toFixed(2)}/mo`,
+      value:
+        safeData.monthlySpend === 0
+          ? 'Free'
+          : `$${(safeData.monthlySpend || 0).toFixed(2)}/mo`,
       subtitle: 'Current subscription cost',
       icon: CreditCard,
       color: 'tertiary' as ColorType,
-      trend: planConfig?.planKey === 'free' ? { 
-        value: 'Free', 
-        isPositive: true, 
-        label: 'forever' 
-      } : { 
-        value: `$${((safeData.monthlySpend || 0) * 12).toFixed(0)}`, 
-        isPositive: true, 
-        label: 'yearly' 
-      },
+      trend:
+        planConfig?.planKey === 'free'
+          ? {
+              value: 'Free',
+              isPositive: true,
+              label: 'forever',
+            }
+          : {
+              value: `$${((safeData.monthlySpend || 0) * 12).toFixed(0)}`,
+              isPositive: true,
+              label: 'yearly',
+            },
     },
   ];
 
@@ -146,22 +169,26 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
     primary: {
       icon: 'text-white bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] shadow-[var(--primary)]/25',
       trend: 'text-[var(--primary)] group-hover:text-[var(--primary-dark)]',
-      accent: 'border-l-[var(--primary)] group-hover:border-l-[var(--primary-dark)]',
+      accent:
+        'border-l-[var(--primary)] group-hover:border-l-[var(--primary-dark)]',
     },
     secondary: {
       icon: 'text-white bg-gradient-to-br from-[var(--secondary)] to-[var(--secondary-dark)] shadow-[var(--secondary)]/25',
       trend: 'text-[var(--secondary)] group-hover:text-[var(--secondary-dark)]',
-      accent: 'border-l-[var(--secondary)] group-hover:border-l-[var(--secondary-dark)]',
+      accent:
+        'border-l-[var(--secondary)] group-hover:border-l-[var(--secondary-dark)]',
     },
     tertiary: {
       icon: 'text-white bg-gradient-to-br from-[var(--tertiary)] to-[var(--tertiary-dark)] shadow-[var(--tertiary)]/25',
       trend: 'text-[var(--tertiary)] group-hover:text-[var(--tertiary-dark)]',
-      accent: 'border-l-[var(--tertiary)] group-hover:border-l-[var(--tertiary-dark)]',
+      accent:
+        'border-l-[var(--tertiary)] group-hover:border-l-[var(--tertiary-dark)]',
     },
     success: {
       icon: 'text-white bg-gradient-to-br from-[var(--success-green)] to-emerald-600 shadow-emerald-500/25',
       trend: 'text-[var(--success-green)] group-hover:text-emerald-600',
-      accent: 'border-l-[var(--success-green)] group-hover:border-l-emerald-600',
+      accent:
+        'border-l-[var(--success-green)] group-hover:border-l-emerald-600',
     },
   };
 
@@ -179,21 +206,21 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
   };
 
   const cardVariants = {
-    hidden: { 
-      opacity: 0, 
-      y: 30, 
+    hidden: {
+      opacity: 0,
+      y: 30,
       scale: 0.92,
       rotateX: -15,
     },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
+    visible: {
+      opacity: 1,
+      y: 0,
       scale: 1,
       rotateX: 0,
       transition: {
         duration: 0.7,
         ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-      }
+      },
     },
   };
 
@@ -212,14 +239,14 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
           <motion.div
             key={card.title}
             variants={cardVariants}
-            whileHover={{ 
-              y: -6, 
+            whileHover={{
+              y: -6,
               scale: 1.02,
               rotateY: 2,
-              transition: { 
-                duration: 0.4, 
-                ease: [0.22, 1, 0.36, 1] 
-              } 
+              transition: {
+                duration: 0.4,
+                ease: [0.22, 1, 0.36, 1],
+              },
             }}
             whileTap={{ scale: 0.98 }}
             className={`
@@ -237,10 +264,10 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
           >
             {/* Premium Glass Morphism Background */}
             <div className='absolute inset-0 bg-gradient-to-br from-[var(--primary)]/3 via-transparent to-[var(--secondary)]/3 rounded-xl md:rounded-2xl opacity-0 group-hover:opacity-100 transition-all duration-500' />
-            
+
             {/* Subtle shine effect */}
             <div className='absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-60' />
-            
+
             {/* Premium decorative elements */}
             <div className='absolute top-2 right-2 w-16 h-16 bg-gradient-to-br from-[var(--primary)]/10 to-[var(--secondary)]/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700' />
 
@@ -267,7 +294,9 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
                   transition={{ delay: 0.4 + index * 0.1, duration: 0.4 }}
                   className='text-2xl md:text-3xl font-bold bg-gradient-to-br from-[var(--quaternary)] via-[var(--tertiary)] to-[var(--quaternary)] bg-clip-text text-transparent leading-none group-hover:from-[var(--tertiary)] group-hover:to-[var(--quaternary)] transition-all duration-500'
                 >
-                  {typeof card.value === 'string' ? card.value : card.value.toLocaleString()}
+                  {typeof card.value === 'string'
+                    ? card.value
+                    : card.value.toLocaleString()}
                 </motion.div>
               </div>
 
@@ -293,8 +322,13 @@ export function BillingOverviewCards({ data }: BillingOverviewCardsProps) {
                 >
                   <TrendingUp className='w-3.5 h-3.5 group-hover:scale-110 transition-transform duration-300' />
                   <span className='text-xs font-medium'>
-                    {typeof card.trend.value === 'number' && card.trend.value > 0 ? '+' : ''}
-                    {card.trend.value}{typeof card.trend.value === 'number' ? '%' : ''} {card.trend.label}
+                    {typeof card.trend.value === 'number' &&
+                    card.trend.value > 0
+                      ? '+'
+                      : ''}
+                    {card.trend.value}
+                    {typeof card.trend.value === 'number' ? '%' : ''}{' '}
+                    {card.trend.label}
                   </span>
                 </div>
               )}

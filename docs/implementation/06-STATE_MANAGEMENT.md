@@ -41,7 +41,7 @@ export function createQueryClient(): QueryClient {
         gcTime: 10 * 60 * 1000,
         // Retry failed requests 3 times with exponential backoff
         retry: 3,
-        retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+        retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
         // Refetch on window focus for fresh data
         refetchOnWindowFocus: true,
         // Don't refetch on reconnect unless data is stale
@@ -110,10 +110,13 @@ import type { LinkWithStats } from '@/features/links/types';
 /**
  * Hook for fetching user links with automatic caching and background updates
  */
-export function useLinksQuery(userId: string, options?: {
-  enabled?: boolean;
-  refetchInterval?: number;
-}) {
+export function useLinksQuery(
+  userId: string,
+  options?: {
+    enabled?: boolean;
+    refetchInterval?: number;
+  }
+) {
   return useQuery({
     queryKey: linkQueryKeys.userLinks(userId),
     queryFn: async () => {
@@ -125,7 +128,7 @@ export function useLinksQuery(userId: string, options?: {
     },
     enabled: !!userId && (options?.enabled ?? true),
     staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,   // 10 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
     refetchInterval: options?.refetchInterval,
     meta: {
       // Add metadata for devtools and error handling
@@ -198,7 +201,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createLinkAction } from '@/features/links/lib/actions';
 import { linkQueryKeys } from '@/features/links/lib/query-keys';
 import { toast } from 'sonner';
-import type { LinkInsert, LinkSelect, LinkWithStats } from '@/features/links/types';
+import type {
+  LinkInsert,
+  LinkSelect,
+  LinkWithStats,
+} from '@/features/links/types';
 
 export function useCreateLinkMutation(userId: string) {
   const queryClient = useQueryClient();
@@ -213,7 +220,7 @@ export function useCreateLinkMutation(userId: string) {
     },
 
     // Optimistic update - immediately update UI before server response
-    onMutate: async (newLinkData) => {
+    onMutate: async newLinkData => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: linkQueryKeys.userLinks(userId),
@@ -227,9 +234,9 @@ export function useCreateLinkMutation(userId: string) {
       // Optimistically update the cache
       queryClient.setQueryData<LinkWithStats[]>(
         linkQueryKeys.userLinks(userId),
-        (old) => {
+        old => {
           if (!old) return [];
-          
+
           // Create optimistic link
           const optimisticLink: LinkWithStats = {
             id: `temp-${Date.now()}`, // Temporary ID
@@ -237,7 +244,7 @@ export function useCreateLinkMutation(userId: string) {
             fileCount: 0,
             batchCount: 0,
             totalSize: 0,
-            fullUrl: newLinkData.topic 
+            fullUrl: newLinkData.topic
               ? `foldly.com/${newLinkData.slug}/${newLinkData.topic}`
               : `foldly.com/${newLinkData.slug}`,
             hasRecentActivity: false,
@@ -258,22 +265,24 @@ export function useCreateLinkMutation(userId: string) {
       // Replace optimistic update with real data
       queryClient.setQueryData<LinkWithStats[]>(
         linkQueryKeys.userLinks(userId),
-        (old) => {
+        old => {
           if (!old) return [];
-          
+
           // Remove optimistic entry and add real one
-          const withoutOptimistic = old.filter(link => !link.id.startsWith('temp-'));
+          const withoutOptimistic = old.filter(
+            link => !link.id.startsWith('temp-')
+          );
           const realLink: LinkWithStats = {
             ...newLink,
             fileCount: 0,
             batchCount: 0,
             totalSize: 0,
-            fullUrl: newLink.topic 
+            fullUrl: newLink.topic
               ? `foldly.com/${newLink.slug}/${newLink.topic}`
               : `foldly.com/${newLink.slug}`,
             hasRecentActivity: false,
           };
-          
+
           return [realLink, ...withoutOptimistic];
         }
       );
@@ -318,7 +327,13 @@ export function useUpdateLinkMutation(userId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ linkId, updates }: { linkId: string; updates: Partial<LinkInsert> }) => {
+    mutationFn: async ({
+      linkId,
+      updates,
+    }: {
+      linkId: string;
+      updates: Partial<LinkInsert>;
+    }) => {
       const result = await updateLinkAction(linkId, updates);
       if (!result.success) {
         throw new Error(result.error);
@@ -346,10 +361,10 @@ export function useUpdateLinkMutation(userId: string) {
       // Optimistically update user links list
       queryClient.setQueryData<LinkWithStats[]>(
         linkQueryKeys.userLinks(userId),
-        (old) => {
+        old => {
           if (!old) return [];
-          return old.map(link => 
-            link.id === linkId 
+          return old.map(link =>
+            link.id === linkId
               ? { ...link, ...updates, updatedAt: new Date() }
               : link
           );
@@ -357,27 +372,22 @@ export function useUpdateLinkMutation(userId: string) {
       );
 
       // Optimistically update individual link
-      queryClient.setQueryData<LinkSelect>(
-        linkQueryKeys.link(linkId),
-        (old) => {
-          if (!old) return old;
-          return { ...old, ...updates, updatedAt: new Date() };
-        }
-      );
+      queryClient.setQueryData<LinkSelect>(linkQueryKeys.link(linkId), old => {
+        if (!old) return old;
+        return { ...old, ...updates, updatedAt: new Date() };
+      });
 
       return { previousLinks, previousLink };
     },
 
-    onSuccess: (updatedLink) => {
+    onSuccess: updatedLink => {
       // Update cache with server response
       queryClient.setQueryData<LinkWithStats[]>(
         linkQueryKeys.userLinks(userId),
-        (old) => {
+        old => {
           if (!old) return [];
-          return old.map(link => 
-            link.id === updatedLink.id 
-              ? { ...link, ...updatedLink }
-              : link
+          return old.map(link =>
+            link.id === updatedLink.id ? { ...link, ...updatedLink } : link
           );
         }
       );
@@ -428,24 +438,27 @@ export function useUpdateLinkMutation(userId: string) {
 export const linkQueryKeys = {
   // Base key for all link-related queries
   all: ['links'] as const,
-  
+
   // User-specific queries
-  userLinks: (userId: string) => [...linkQueryKeys.all, 'user', userId] as const,
-  
+  userLinks: (userId: string) =>
+    [...linkQueryKeys.all, 'user', userId] as const,
+
   // Individual link queries
   links: () => [...linkQueryKeys.all, 'link'] as const,
   link: (linkId: string) => [...linkQueryKeys.links(), linkId] as const,
-  
+
   // Analytics queries
-  analytics: (linkId: string) => [...linkQueryKeys.link(linkId), 'analytics'] as const,
-  
+  analytics: (linkId: string) =>
+    [...linkQueryKeys.link(linkId), 'analytics'] as const,
+
   // Upload-related queries
   uploads: () => [...linkQueryKeys.all, 'uploads'] as const,
-  linkUploads: (linkId: string) => [...linkQueryKeys.uploads(), linkId] as const,
-  
+  linkUploads: (linkId: string) =>
+    [...linkQueryKeys.uploads(), linkId] as const,
+
   // Search and filtering
   search: (query: string) => [...linkQueryKeys.all, 'search', query] as const,
-  filtered: (userId: string, filters: Record<string, any>) => 
+  filtered: (userId: string, filters: Record<string, any>) =>
     [...linkQueryKeys.userLinks(userId), 'filtered', filters] as const,
 } as const;
 
@@ -561,7 +574,10 @@ interface LinksUIActions {
 
   // View actions
   setViewMode: (mode: 'grid' | 'list') => void;
-  setSorting: (sortBy: LinksUIState['view']['sortBy'], sortOrder?: 'asc' | 'desc') => void;
+  setSorting: (
+    sortBy: LinksUIState['view']['sortBy'],
+    sortOrder?: 'asc' | 'desc'
+  ) => void;
   setFilter: (filter: LinksUIState['view']['filterBy']) => void;
   setSearchQuery: (query: string) => void;
   setPageSize: (size: number) => void;
@@ -578,7 +594,12 @@ interface LinksUIActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   setLastAction: (action: string) => void;
-  addNotification: (notification: Omit<LinksUIState['ui']['notifications'][0], 'id' | 'timestamp'>) => void;
+  addNotification: (
+    notification: Omit<
+      LinksUIState['ui']['notifications'][0],
+      'id' | 'timestamp'
+    >
+  ) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
 
@@ -619,181 +640,204 @@ export const useLinksUIStore = create<LinksUIState & LinksUIActions>()(
         },
 
         // Modal actions
-        openModal: (modal, data) => set((state) => {
-          state.modals[modal].isOpen = true;
-          if (data) {
-            if (modal === 'create') {
-              state.modals.create.data = data;
-            } else if ('linkId' in data) {
-              (state.modals[modal] as any).linkId = data.linkId;
+        openModal: (modal, data) =>
+          set(state => {
+            state.modals[modal].isOpen = true;
+            if (data) {
+              if (modal === 'create') {
+                state.modals.create.data = data;
+              } else if ('linkId' in data) {
+                (state.modals[modal] as any).linkId = data.linkId;
+              }
             }
-          }
-        }),
+          }),
 
-        closeModal: (modal) => set((state) => {
-          state.modals[modal].isOpen = false;
-          if (modal === 'create') {
-            state.modals.create.data = undefined;
-          } else {
-            (state.modals[modal] as any).linkId = undefined;
-          }
-        }),
-
-        closeAllModals: () => set((state) => {
-          Object.keys(state.modals).forEach((modal) => {
-            const modalKey = modal as keyof LinksUIState['modals'];
-            state.modals[modalKey].isOpen = false;
-            if (modalKey === 'create') {
+        closeModal: modal =>
+          set(state => {
+            state.modals[modal].isOpen = false;
+            if (modal === 'create') {
               state.modals.create.data = undefined;
             } else {
-              (state.modals[modalKey] as any).linkId = undefined;
+              (state.modals[modal] as any).linkId = undefined;
             }
-          });
-        }),
+          }),
+
+        closeAllModals: () =>
+          set(state => {
+            Object.keys(state.modals).forEach(modal => {
+              const modalKey = modal as keyof LinksUIState['modals'];
+              state.modals[modalKey].isOpen = false;
+              if (modalKey === 'create') {
+                state.modals.create.data = undefined;
+              } else {
+                (state.modals[modalKey] as any).linkId = undefined;
+              }
+            });
+          }),
 
         // View actions
-        setViewMode: (mode) => set((state) => {
-          state.view.mode = mode;
-        }),
+        setViewMode: mode =>
+          set(state => {
+            state.view.mode = mode;
+          }),
 
-        setSorting: (sortBy, sortOrder) => set((state) => {
-          state.view.sortBy = sortBy;
-          if (sortOrder) {
-            state.view.sortOrder = sortOrder;
-          } else {
-            // Toggle order if same field
-            state.view.sortOrder = 
-              state.view.sortBy === sortBy && state.view.sortOrder === 'asc' 
-                ? 'desc' 
-                : 'asc';
-          }
-        }),
+        setSorting: (sortBy, sortOrder) =>
+          set(state => {
+            state.view.sortBy = sortBy;
+            if (sortOrder) {
+              state.view.sortOrder = sortOrder;
+            } else {
+              // Toggle order if same field
+              state.view.sortOrder =
+                state.view.sortBy === sortBy && state.view.sortOrder === 'asc'
+                  ? 'desc'
+                  : 'asc';
+            }
+          }),
 
-        setFilter: (filter) => set((state) => {
-          state.view.filterBy = filter;
-          // Clear search when changing filter
-          state.view.searchQuery = '';
-        }),
+        setFilter: filter =>
+          set(state => {
+            state.view.filterBy = filter;
+            // Clear search when changing filter
+            state.view.searchQuery = '';
+          }),
 
-        setSearchQuery: (query) => set((state) => {
-          state.view.searchQuery = query;
-          // Clear filter when searching
-          if (query) {
-            state.view.filterBy = 'all';
-          }
-        }),
+        setSearchQuery: query =>
+          set(state => {
+            state.view.searchQuery = query;
+            // Clear filter when searching
+            if (query) {
+              state.view.filterBy = 'all';
+            }
+          }),
 
-        setPageSize: (size) => set((state) => {
-          state.view.pageSize = size;
-        }),
+        setPageSize: size =>
+          set(state => {
+            state.view.pageSize = size;
+          }),
 
         // Selection actions
-        toggleSelectMode: () => set((state) => {
-          state.selection.isSelectMode = !state.selection.isSelectMode;
-          if (!state.selection.isSelectMode) {
-            state.selection.selectedIds.clear();
-            state.selection.selectAll = false;
-          }
-        }),
+        toggleSelectMode: () =>
+          set(state => {
+            state.selection.isSelectMode = !state.selection.isSelectMode;
+            if (!state.selection.isSelectMode) {
+              state.selection.selectedIds.clear();
+              state.selection.selectAll = false;
+            }
+          }),
 
-        selectLink: (linkId) => set((state) => {
-          state.selection.selectedIds.add(linkId);
-        }),
+        selectLink: linkId =>
+          set(state => {
+            state.selection.selectedIds.add(linkId);
+          }),
 
-        deselectLink: (linkId) => set((state) => {
-          state.selection.selectedIds.delete(linkId);
-          state.selection.selectAll = false;
-        }),
-
-        toggleLinkSelection: (linkId) => set((state) => {
-          if (state.selection.selectedIds.has(linkId)) {
+        deselectLink: linkId =>
+          set(state => {
             state.selection.selectedIds.delete(linkId);
             state.selection.selectAll = false;
-          } else {
-            state.selection.selectedIds.add(linkId);
-          }
-        }),
+          }),
 
-        selectAll: (linkIds) => set((state) => {
-          if (state.selection.selectAll) {
+        toggleLinkSelection: linkId =>
+          set(state => {
+            if (state.selection.selectedIds.has(linkId)) {
+              state.selection.selectedIds.delete(linkId);
+              state.selection.selectAll = false;
+            } else {
+              state.selection.selectedIds.add(linkId);
+            }
+          }),
+
+        selectAll: linkIds =>
+          set(state => {
+            if (state.selection.selectAll) {
+              state.selection.selectedIds.clear();
+              state.selection.selectAll = false;
+            } else {
+              linkIds.forEach(id => state.selection.selectedIds.add(id));
+              state.selection.selectAll = true;
+            }
+          }),
+
+        clearSelection: () =>
+          set(state => {
             state.selection.selectedIds.clear();
             state.selection.selectAll = false;
-          } else {
-            linkIds.forEach(id => state.selection.selectedIds.add(id));
-            state.selection.selectAll = true;
-          }
-        }),
-
-        clearSelection: () => set((state) => {
-          state.selection.selectedIds.clear();
-          state.selection.selectAll = false;
-        }),
+          }),
 
         // UI state actions
-        setLoading: (loading) => set((state) => {
-          state.ui.isLoading = loading;
-        }),
+        setLoading: loading =>
+          set(state => {
+            state.ui.isLoading = loading;
+          }),
 
-        setError: (error) => set((state) => {
-          state.ui.error = error;
-        }),
+        setError: error =>
+          set(state => {
+            state.ui.error = error;
+          }),
 
-        setLastAction: (action) => set((state) => {
-          state.ui.lastAction = action;
-        }),
+        setLastAction: action =>
+          set(state => {
+            state.ui.lastAction = action;
+          }),
 
-        addNotification: (notification) => set((state) => {
-          const newNotification = {
-            ...notification,
-            id: `notification-${Date.now()}-${Math.random()}`,
-            timestamp: new Date(),
-          };
-          state.ui.notifications.unshift(newNotification);
-          
-          // Limit notifications to 10
-          if (state.ui.notifications.length > 10) {
-            state.ui.notifications = state.ui.notifications.slice(0, 10);
-          }
-        }),
+        addNotification: notification =>
+          set(state => {
+            const newNotification = {
+              ...notification,
+              id: `notification-${Date.now()}-${Math.random()}`,
+              timestamp: new Date(),
+            };
+            state.ui.notifications.unshift(newNotification);
 
-        removeNotification: (id) => set((state) => {
-          state.ui.notifications = state.ui.notifications.filter(n => n.id !== id);
-        }),
+            // Limit notifications to 10
+            if (state.ui.notifications.length > 10) {
+              state.ui.notifications = state.ui.notifications.slice(0, 10);
+            }
+          }),
 
-        clearNotifications: () => set((state) => {
-          state.ui.notifications = [];
-        }),
+        removeNotification: id =>
+          set(state => {
+            state.ui.notifications = state.ui.notifications.filter(
+              n => n.id !== id
+            );
+          }),
+
+        clearNotifications: () =>
+          set(state => {
+            state.ui.notifications = [];
+          }),
 
         // Reset everything
-        reset: () => set((state) => {
-          // Reset to initial state
-          state.modals = {
-            create: { isOpen: false },
-            edit: { isOpen: false },
-            delete: { isOpen: false },
-            settings: { isOpen: false },
-            share: { isOpen: false },
-          };
-          state.view = {
-            mode: 'grid',
-            sortBy: 'created',
-            sortOrder: 'desc',
-            filterBy: 'all',
-            searchQuery: '',
-            pageSize: 12,
-          };
-          state.selection = {
-            selectedIds: new Set(),
-            isSelectMode: false,
-            selectAll: false,
-          };
-          state.ui = {
-            isLoading: false,
-            error: null,
-            lastAction: null,
-            notifications: [],
-          };
-        }),
+        reset: () =>
+          set(state => {
+            // Reset to initial state
+            state.modals = {
+              create: { isOpen: false },
+              edit: { isOpen: false },
+              delete: { isOpen: false },
+              settings: { isOpen: false },
+              share: { isOpen: false },
+            };
+            state.view = {
+              mode: 'grid',
+              sortBy: 'created',
+              sortOrder: 'desc',
+              filterBy: 'all',
+              searchQuery: '',
+              pageSize: 12,
+            };
+            state.selection = {
+              selectedIds: new Set(),
+              isSelectMode: false,
+              selectAll: false,
+            };
+            state.ui = {
+              isLoading: false,
+              error: null,
+              lastAction: null,
+              notifications: [],
+            };
+          }),
       })),
       {
         name: 'links-ui-store',
@@ -804,35 +848,37 @@ export const useLinksUIStore = create<LinksUIState & LinksUIActions>()(
 );
 
 // Selector hooks for performance optimization
-export const useLinksModals = () => useLinksUIStore((state) => state.modals);
-export const useLinksView = () => useLinksUIStore((state) => state.view);
-export const useLinksSelection = () => useLinksUIStore((state) => state.selection);
-export const useLinksUI = () => useLinksUIStore((state) => state.ui);
+export const useLinksModals = () => useLinksUIStore(state => state.modals);
+export const useLinksView = () => useLinksUIStore(state => state.view);
+export const useLinksSelection = () =>
+  useLinksUIStore(state => state.selection);
+export const useLinksUI = () => useLinksUIStore(state => state.ui);
 
 // Action hooks
-export const useLinksUIActions = () => useLinksUIStore((state) => ({
-  openModal: state.openModal,
-  closeModal: state.closeModal,
-  closeAllModals: state.closeAllModals,
-  setViewMode: state.setViewMode,
-  setSorting: state.setSorting,
-  setFilter: state.setFilter,
-  setSearchQuery: state.setSearchQuery,
-  setPageSize: state.setPageSize,
-  toggleSelectMode: state.toggleSelectMode,
-  selectLink: state.selectLink,
-  deselectLink: state.deselectLink,
-  toggleLinkSelection: state.toggleLinkSelection,
-  selectAll: state.selectAll,
-  clearSelection: state.clearSelection,
-  setLoading: state.setLoading,
-  setError: state.setError,
-  setLastAction: state.setLastAction,
-  addNotification: state.addNotification,
-  removeNotification: state.removeNotification,
-  clearNotifications: state.clearNotifications,
-  reset: state.reset,
-}));
+export const useLinksUIActions = () =>
+  useLinksUIStore(state => ({
+    openModal: state.openModal,
+    closeModal: state.closeModal,
+    closeAllModals: state.closeAllModals,
+    setViewMode: state.setViewMode,
+    setSorting: state.setSorting,
+    setFilter: state.setFilter,
+    setSearchQuery: state.setSearchQuery,
+    setPageSize: state.setPageSize,
+    toggleSelectMode: state.toggleSelectMode,
+    selectLink: state.selectLink,
+    deselectLink: state.deselectLink,
+    toggleLinkSelection: state.toggleLinkSelection,
+    selectAll: state.selectAll,
+    clearSelection: state.clearSelection,
+    setLoading: state.setLoading,
+    setError: state.setError,
+    setLastAction: state.setLastAction,
+    addNotification: state.addNotification,
+    removeNotification: state.removeNotification,
+    clearNotifications: state.clearNotifications,
+    reset: state.reset,
+  }));
 ```
 
 ### **Store Persistence and Hydration**
@@ -852,7 +898,7 @@ interface LinksPersistentState {
     sortOrder: 'asc' | 'desc';
     theme: 'light' | 'dark' | 'system';
   };
-  
+
   // Recently viewed links
   recentLinks: Array<{
     linkId: string;
@@ -863,7 +909,7 @@ interface LinksPersistentState {
       linkType: string;
     };
   }>;
-  
+
   // User-specific settings
   settings: {
     autoRefresh: boolean;
@@ -879,19 +925,21 @@ interface LinksPersistentActions {
   setPageSize: (size: number) => void;
   setSorting: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
-  
+
   // Recent links actions
   addRecentLink: (linkId: string, linkData: any) => void;
   clearRecentLinks: () => void;
-  
+
   // Settings actions
   updateSettings: (settings: Partial<LinksPersistentState['settings']>) => void;
-  
+
   // Reset
   resetPreferences: () => void;
 }
 
-export const useLinksPersistentStore = create<LinksPersistentState & LinksPersistentActions>()(
+export const useLinksPersistentStore = create<
+  LinksPersistentState & LinksPersistentActions
+>()(
   devtools(
     persist(
       (set, get) => ({
@@ -912,81 +960,90 @@ export const useLinksPersistentStore = create<LinksPersistentState & LinksPersis
         },
 
         // Actions
-        setViewMode: (mode) => set((state) => ({
-          preferences: { ...state.preferences, viewMode: mode },
-        })),
+        setViewMode: mode =>
+          set(state => ({
+            preferences: { ...state.preferences, viewMode: mode },
+          })),
 
-        setPageSize: (size) => set((state) => ({
-          preferences: { ...state.preferences, pageSize: size },
-        })),
+        setPageSize: size =>
+          set(state => ({
+            preferences: { ...state.preferences, pageSize: size },
+          })),
 
-        setSorting: (sortBy, sortOrder) => set((state) => ({
-          preferences: { ...state.preferences, sortBy, sortOrder },
-        })),
+        setSorting: (sortBy, sortOrder) =>
+          set(state => ({
+            preferences: { ...state.preferences, sortBy, sortOrder },
+          })),
 
-        setTheme: (theme) => set((state) => ({
-          preferences: { ...state.preferences, theme },
-        })),
+        setTheme: theme =>
+          set(state => ({
+            preferences: { ...state.preferences, theme },
+          })),
 
-        addRecentLink: (linkId, linkData) => set((state) => {
-          const existingIndex = state.recentLinks.findIndex(item => item.linkId === linkId);
-          
-          const newItem = {
-            linkId,
-            timestamp: new Date(),
-            linkData,
-          };
+        addRecentLink: (linkId, linkData) =>
+          set(state => {
+            const existingIndex = state.recentLinks.findIndex(
+              item => item.linkId === linkId
+            );
 
-          let newRecentLinks;
-          if (existingIndex >= 0) {
-            // Update existing item
-            newRecentLinks = [...state.recentLinks];
-            newRecentLinks[existingIndex] = newItem;
-          } else {
-            // Add new item
-            newRecentLinks = [newItem, ...state.recentLinks];
-          }
+            const newItem = {
+              linkId,
+              timestamp: new Date(),
+              linkData,
+            };
 
-          // Keep only last 10 items
-          return {
-            recentLinks: newRecentLinks.slice(0, 10),
-          };
-        }),
+            let newRecentLinks;
+            if (existingIndex >= 0) {
+              // Update existing item
+              newRecentLinks = [...state.recentLinks];
+              newRecentLinks[existingIndex] = newItem;
+            } else {
+              // Add new item
+              newRecentLinks = [newItem, ...state.recentLinks];
+            }
+
+            // Keep only last 10 items
+            return {
+              recentLinks: newRecentLinks.slice(0, 10),
+            };
+          }),
 
         clearRecentLinks: () => set({ recentLinks: [] }),
 
-        updateSettings: (newSettings) => set((state) => ({
-          settings: { ...state.settings, ...newSettings },
-        })),
+        updateSettings: newSettings =>
+          set(state => ({
+            settings: { ...state.settings, ...newSettings },
+          })),
 
-        resetPreferences: () => set({
-          preferences: {
-            viewMode: 'grid',
-            pageSize: 12,
-            sortBy: 'created',
-            sortOrder: 'desc',
-            theme: 'system',
-          },
-          settings: {
-            autoRefresh: true,
-            refreshInterval: 30000,
-            showNotifications: true,
-            compactMode: false,
-          },
-        }),
+        resetPreferences: () =>
+          set({
+            preferences: {
+              viewMode: 'grid',
+              pageSize: 12,
+              sortBy: 'created',
+              sortOrder: 'desc',
+              theme: 'system',
+            },
+            settings: {
+              autoRefresh: true,
+              refreshInterval: 30000,
+              showNotifications: true,
+              compactMode: false,
+            },
+          }),
       }),
       {
         name: 'links-persistent-store',
         version: 1,
         storage: createJSONStorage(() => localStorage),
-        partialize: (state) => ({
+        partialize: state => ({
           // Only persist certain parts of the state
           preferences: state.preferences,
           recentLinks: state.recentLinks,
           settings: state.settings,
         }),
         skipHydration: false,
-        onRehydrateStorage: () => (state) => {
+        onRehydrateStorage: () => state => {
           // Handle rehydration
           console.log('Links persistent store rehydrated');
         },
@@ -1008,16 +1065,23 @@ export const useLinksPersistentStore = create<LinksPersistentState & LinksPersis
 import { useMemo } from 'react';
 import { useTree } from '@headless-tree/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
+import {
   syncDataLoaderFeature,
   selectionFeature,
   dragAndDropFeature,
   searchFeature,
   hotkeysFeature,
 } from '@headless-tree/react';
-import { createTreeDataAdapter, createFilteredTreeAdapter } from '../lib/tree-data-adapter';
+import {
+  createTreeDataAdapter,
+  createFilteredTreeAdapter,
+} from '../lib/tree-data-adapter';
 import { workspaceQueryKeys } from '../lib/query-keys';
-import { fetchWorkspaceData, moveItemsAction, deleteItemsAction } from '../lib/actions';
+import {
+  fetchWorkspaceData,
+  moveItemsAction,
+  deleteItemsAction,
+} from '../lib/actions';
 import type { TreeItem, WorkspaceData } from '../types';
 
 export function useWorkspaceTree(workspaceId: string) {
@@ -1046,13 +1110,13 @@ export function useWorkspaceTree(workspaceId: string) {
   // Create data adapter for tree
   const dataLoader = useMemo(() => {
     if (!workspaceData) return null;
-    
+
     const baseAdapter = createTreeDataAdapter(
       workspaceData.folders,
       workspaceData.files,
       workspaceData.name
     );
-    
+
     // Add filtering capabilities
     return createFilteredTreeAdapter(baseAdapter, {
       filterBy: 'all',
@@ -1063,12 +1127,21 @@ export function useWorkspaceTree(workspaceId: string) {
 
   // Move items mutation
   const moveItemsMutation = useMutation({
-    mutationFn: async ({ itemIds, targetParentId, targetIndex }: {
+    mutationFn: async ({
+      itemIds,
+      targetParentId,
+      targetIndex,
+    }: {
       itemIds: string[];
       targetParentId: string | null;
       targetIndex: number;
     }) => {
-      const result = await moveItemsAction(workspaceId, itemIds, targetParentId, targetIndex);
+      const result = await moveItemsAction(
+        workspaceId,
+        itemIds,
+        targetParentId,
+        targetIndex
+      );
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -1101,8 +1174,8 @@ export function useWorkspaceTree(workspaceId: string) {
   // Initialize tree with headless-tree
   const tree = useTree<TreeItem>({
     rootItemId: 'root',
-    getItemName: (item) => item.getItemData().name,
-    isItemFolder: (item) => !item.getItemData().isFile,
+    getItemName: item => item.getItemData().name,
+    isItemFolder: item => !item.getItemData().isFile,
     dataLoader,
     features: [
       syncDataLoaderFeature,
@@ -1114,7 +1187,7 @@ export function useWorkspaceTree(workspaceId: string) {
           try {
             const itemIds = dragItems.map(item => item.getId());
             const targetParentId = targetItem?.getId() || null;
-            
+
             await moveItemsMutation.mutateAsync({
               itemIds,
               targetParentId,
@@ -1219,12 +1292,14 @@ describe('LinksUIStore', () => {
   describe('modal management', () => {
     it('should open and close modals correctly', () => {
       const { openModal, closeModal } = useLinksUIStore.getState();
-      
+
       // Open create modal
       openModal('create', { title: 'Test Link' });
       expect(useLinksUIStore.getState().modals.create.isOpen).toBe(true);
-      expect(useLinksUIStore.getState().modals.create.data?.title).toBe('Test Link');
-      
+      expect(useLinksUIStore.getState().modals.create.data?.title).toBe(
+        'Test Link'
+      );
+
       // Close create modal
       closeModal('create');
       expect(useLinksUIStore.getState().modals.create.isOpen).toBe(false);
@@ -1233,14 +1308,14 @@ describe('LinksUIStore', () => {
 
     it('should close all modals', () => {
       const { openModal, closeAllModals } = useLinksUIStore.getState();
-      
+
       // Open multiple modals
       openModal('create');
       openModal('edit', { linkId: 'test-id' });
-      
+
       // Close all
       closeAllModals();
-      
+
       const modals = useLinksUIStore.getState().modals;
       expect(modals.create.isOpen).toBe(false);
       expect(modals.edit.isOpen).toBe(false);
@@ -1249,42 +1324,51 @@ describe('LinksUIStore', () => {
 
   describe('selection management', () => {
     it('should handle link selection', () => {
-      const { selectLink, deselectLink, toggleLinkSelection } = useLinksUIStore.getState();
-      
+      const { selectLink, deselectLink, toggleLinkSelection } =
+        useLinksUIStore.getState();
+
       // Select link
       selectLink('link-1');
-      expect(useLinksUIStore.getState().selection.selectedIds.has('link-1')).toBe(true);
-      
+      expect(
+        useLinksUIStore.getState().selection.selectedIds.has('link-1')
+      ).toBe(true);
+
       // Toggle selection (should deselect)
       toggleLinkSelection('link-1');
-      expect(useLinksUIStore.getState().selection.selectedIds.has('link-1')).toBe(false);
-      
+      expect(
+        useLinksUIStore.getState().selection.selectedIds.has('link-1')
+      ).toBe(false);
+
       // Toggle again (should select)
       toggleLinkSelection('link-1');
-      expect(useLinksUIStore.getState().selection.selectedIds.has('link-1')).toBe(true);
-      
+      expect(
+        useLinksUIStore.getState().selection.selectedIds.has('link-1')
+      ).toBe(true);
+
       // Deselect
       deselectLink('link-1');
-      expect(useLinksUIStore.getState().selection.selectedIds.has('link-1')).toBe(false);
+      expect(
+        useLinksUIStore.getState().selection.selectedIds.has('link-1')
+      ).toBe(false);
     });
 
     it('should handle select all', () => {
       const { selectAll } = useLinksUIStore.getState();
       const linkIds = ['link-1', 'link-2', 'link-3'];
-      
+
       // Select all
       selectAll(linkIds);
-      
+
       const selection = useLinksUIStore.getState().selection;
       expect(selection.selectAll).toBe(true);
       expect(selection.selectedIds.size).toBe(3);
       linkIds.forEach(id => {
         expect(selection.selectedIds.has(id)).toBe(true);
       });
-      
+
       // Select all again (should deselect all)
       selectAll(linkIds);
-      
+
       const selectionAfter = useLinksUIStore.getState().selection;
       expect(selectionAfter.selectAll).toBe(false);
       expect(selectionAfter.selectedIds.size).toBe(0);
@@ -1293,21 +1377,22 @@ describe('LinksUIStore', () => {
 
   describe('view management', () => {
     it('should update view preferences', () => {
-      const { setViewMode, setSorting, setFilter, setSearchQuery } = useLinksUIStore.getState();
-      
+      const { setViewMode, setSorting, setFilter, setSearchQuery } =
+        useLinksUIStore.getState();
+
       // Set view mode
       setViewMode('list');
       expect(useLinksUIStore.getState().view.mode).toBe('list');
-      
+
       // Set sorting
       setSorting('name', 'asc');
       expect(useLinksUIStore.getState().view.sortBy).toBe('name');
       expect(useLinksUIStore.getState().view.sortOrder).toBe('asc');
-      
+
       // Set filter
       setFilter('active');
       expect(useLinksUIStore.getState().view.filterBy).toBe('active');
-      
+
       // Set search query (should clear filter)
       setSearchQuery('test');
       expect(useLinksUIStore.getState().view.searchQuery).toBe('test');
@@ -1317,36 +1402,37 @@ describe('LinksUIStore', () => {
 
   describe('notifications', () => {
     it('should manage notifications', () => {
-      const { addNotification, removeNotification, clearNotifications } = useLinksUIStore.getState();
-      
+      const { addNotification, removeNotification, clearNotifications } =
+        useLinksUIStore.getState();
+
       // Add notification
       addNotification({
         type: 'success',
         message: 'Test notification',
       });
-      
+
       const notifications = useLinksUIStore.getState().ui.notifications;
       expect(notifications).toHaveLength(1);
       expect(notifications[0].message).toBe('Test notification');
       expect(notifications[0].type).toBe('success');
-      
+
       // Remove notification
       const notificationId = notifications[0].id;
       removeNotification(notificationId);
       expect(useLinksUIStore.getState().ui.notifications).toHaveLength(0);
-      
+
       // Add multiple and clear all
       addNotification({ type: 'info', message: 'Info 1' });
       addNotification({ type: 'error', message: 'Error 1' });
       expect(useLinksUIStore.getState().ui.notifications).toHaveLength(2);
-      
+
       clearNotifications();
       expect(useLinksUIStore.getState().ui.notifications).toHaveLength(0);
     });
 
     it('should limit notifications to 10', () => {
       const { addNotification } = useLinksUIStore.getState();
-      
+
       // Add 15 notifications
       for (let i = 0; i < 15; i++) {
         addNotification({
@@ -1354,7 +1440,7 @@ describe('LinksUIStore', () => {
           message: `Notification ${i}`,
         });
       }
-      
+
       // Should only keep the last 10
       const notifications = useLinksUIStore.getState().ui.notifications;
       expect(notifications).toHaveLength(10);
@@ -1385,7 +1471,7 @@ import type { LinkWithStats } from '../types';
 export function useOptimizedLinks(userId: string) {
   // Fetch data from server
   const linksQuery = useLinksQuery(userId, {
-    refetchInterval: useLinksPersistentStore(state => 
+    refetchInterval: useLinksPersistentStore(state =>
       state.settings.autoRefresh ? state.settings.refreshInterval : undefined
     ),
   });
@@ -1403,10 +1489,11 @@ export function useOptimizedLinks(userId: string) {
     // Apply search filter
     if (view.searchQuery) {
       const query = view.searchQuery.toLowerCase();
-      filteredLinks = filteredLinks.filter(link =>
-        link.title.toLowerCase().includes(query) ||
-        link.description?.toLowerCase().includes(query) ||
-        link.fullUrl.toLowerCase().includes(query)
+      filteredLinks = filteredLinks.filter(
+        link =>
+          link.title.toLowerCase().includes(query) ||
+          link.description?.toLowerCase().includes(query) ||
+          link.fullUrl.toLowerCase().includes(query)
       );
     }
 
@@ -1422,7 +1509,9 @@ export function useOptimizedLinks(userId: string) {
         case 'base':
         case 'custom':
         case 'generated':
-          filteredLinks = filteredLinks.filter(link => link.linkType === view.filterBy);
+          filteredLinks = filteredLinks.filter(
+            link => link.linkType === view.filterBy
+          );
           break;
       }
     }
@@ -1462,7 +1551,13 @@ export function useOptimizedLinks(userId: string) {
     });
 
     return filteredLinks;
-  }, [linksQuery.data, view.searchQuery, view.filterBy, view.sortBy, view.sortOrder]);
+  }, [
+    linksQuery.data,
+    view.searchQuery,
+    view.filterBy,
+    view.sortBy,
+    view.sortOrder,
+  ]);
 
   // Memoized pagination
   const paginatedLinks = useMemo(() => {
@@ -1471,14 +1566,20 @@ export function useOptimizedLinks(userId: string) {
   }, [processedLinks]);
 
   // Selection helpers
-  const selectionHelpers = useMemo(() => ({
-    isSelected: (linkId: string) => selection.selectedIds.has(linkId),
-    selectedCount: selection.selectedIds.size,
-    selectedLinks: paginatedLinks.filter(link => selection.selectedIds.has(link.id)),
-    canSelectAll: paginatedLinks.length > 0,
-    isAllSelected: paginatedLinks.length > 0 && 
-      paginatedLinks.every(link => selection.selectedIds.has(link.id)),
-  }), [selection.selectedIds, paginatedLinks]);
+  const selectionHelpers = useMemo(
+    () => ({
+      isSelected: (linkId: string) => selection.selectedIds.has(linkId),
+      selectedCount: selection.selectedIds.size,
+      selectedLinks: paginatedLinks.filter(link =>
+        selection.selectedIds.has(link.id)
+      ),
+      canSelectAll: paginatedLinks.length > 0,
+      isAllSelected:
+        paginatedLinks.length > 0 &&
+        paginatedLinks.every(link => selection.selectedIds.has(link.id)),
+    }),
+    [selection.selectedIds, paginatedLinks]
+  );
 
   return {
     // Query state
@@ -1486,14 +1587,14 @@ export function useOptimizedLinks(userId: string) {
     isLoading: linksQuery.isLoading,
     error: linksQuery.error,
     refetch: linksQuery.refetch,
-    
+
     // Processed data
     totalCount: processedLinks.length,
     filteredCount: processedLinks.length,
-    
+
     // Selection helpers
     selection: selectionHelpers,
-    
+
     // View state
     view,
   };
@@ -1513,71 +1614,80 @@ import { shallow } from 'zustand/shallow';
  */
 
 // Modal selectors
-export const useCreateModal = () => 
+export const useCreateModal = () =>
   useLinksUIStore(state => state.modals.create, shallow);
 
-export const useEditModal = () => 
+export const useEditModal = () =>
   useLinksUIStore(state => state.modals.edit, shallow);
 
-export const useDeleteModal = () => 
+export const useDeleteModal = () =>
   useLinksUIStore(state => state.modals.delete, shallow);
 
 // View selectors
-export const useViewMode = () => 
-  useLinksUIStore(state => state.view.mode);
+export const useViewMode = () => useLinksUIStore(state => state.view.mode);
 
-export const useSortingState = () => 
-  useLinksUIStore(state => ({ 
-    sortBy: state.view.sortBy, 
-    sortOrder: state.view.sortOrder 
-  }), shallow);
+export const useSortingState = () =>
+  useLinksUIStore(
+    state => ({
+      sortBy: state.view.sortBy,
+      sortOrder: state.view.sortOrder,
+    }),
+    shallow
+  );
 
-export const useFilterState = () => 
-  useLinksUIStore(state => ({
-    filterBy: state.view.filterBy,
-    searchQuery: state.view.searchQuery,
-  }), shallow);
+export const useFilterState = () =>
+  useLinksUIStore(
+    state => ({
+      filterBy: state.view.filterBy,
+      searchQuery: state.view.searchQuery,
+    }),
+    shallow
+  );
 
 // Selection selectors
-export const useSelectionCount = () => 
+export const useSelectionCount = () =>
   useLinksUIStore(state => state.selection.selectedIds.size);
 
-export const useIsSelectMode = () => 
+export const useIsSelectMode = () =>
   useLinksUIStore(state => state.selection.isSelectMode);
 
-export const useSelectedIds = () => 
+export const useSelectedIds = () =>
   useLinksUIStore(state => Array.from(state.selection.selectedIds));
 
 // UI state selectors
-export const useIsLoading = () => 
-  useLinksUIStore(state => state.ui.isLoading);
+export const useIsLoading = () => useLinksUIStore(state => state.ui.isLoading);
 
-export const useError = () => 
-  useLinksUIStore(state => state.ui.error);
+export const useError = () => useLinksUIStore(state => state.ui.error);
 
-export const useNotifications = () => 
+export const useNotifications = () =>
   useLinksUIStore(state => state.ui.notifications, shallow);
 
 // Composite selectors for complex UI logic
-export const useModalState = () => 
-  useLinksUIStore(state => ({
-    isCreateOpen: state.modals.create.isOpen,
-    isEditOpen: state.modals.edit.isOpen,
-    isDeleteOpen: state.modals.delete.isOpen,
-    isSettingsOpen: state.modals.settings.isOpen,
-    isShareOpen: state.modals.share.isOpen,
-    hasOpenModal: Object.values(state.modals).some(modal => modal.isOpen),
-  }), shallow);
+export const useModalState = () =>
+  useLinksUIStore(
+    state => ({
+      isCreateOpen: state.modals.create.isOpen,
+      isEditOpen: state.modals.edit.isOpen,
+      isDeleteOpen: state.modals.delete.isOpen,
+      isSettingsOpen: state.modals.settings.isOpen,
+      isShareOpen: state.modals.share.isOpen,
+      hasOpenModal: Object.values(state.modals).some(modal => modal.isOpen),
+    }),
+    shallow
+  );
 
-export const useViewState = () => 
-  useLinksUIStore(state => ({
-    mode: state.view.mode,
-    sortBy: state.view.sortBy,
-    sortOrder: state.view.sortOrder,
-    filterBy: state.view.filterBy,
-    searchQuery: state.view.searchQuery,
-    pageSize: state.view.pageSize,
-  }), shallow);
+export const useViewState = () =>
+  useLinksUIStore(
+    state => ({
+      mode: state.view.mode,
+      sortBy: state.view.sortBy,
+      sortOrder: state.view.sortOrder,
+      filterBy: state.view.filterBy,
+      searchQuery: state.view.searchQuery,
+      pageSize: state.view.pageSize,
+    }),
+    shallow
+  );
 ```
 
 ---
@@ -1602,7 +1712,7 @@ export function StatePerformanceMonitor() {
         const queries = cache.getAll();
         const cacheSize = queries.length;
         const staleCounts = queries.filter(query => query.isStale()).length;
-        
+
         console.log(`Query Cache Metrics:`, {
           totalQueries: cacheSize,
           staleQueries: staleCounts,
@@ -1612,9 +1722,13 @@ export function StatePerformanceMonitor() {
 
       // Monitor mutation performance
       const mutationCache = queryClient.getMutationCache();
-      mutationCache.subscribe((event) => {
-        if (event.type === 'updated' && event.mutation.state.status === 'success') {
-          const duration = Date.now() - (event.mutation.state.submittedAt || Date.now());
+      mutationCache.subscribe(event => {
+        if (
+          event.type === 'updated' &&
+          event.mutation.state.status === 'success'
+        ) {
+          const duration =
+            Date.now() - (event.mutation.state.submittedAt || Date.now());
           console.log(`Mutation completed:`, {
             mutationKey: event.mutation.options.mutationKey,
             duration: `${duration}ms`,
@@ -1654,7 +1768,7 @@ export function StatePerformanceMonitor() {
 ### **Next Implementation Steps**
 
 1. **Complete Real-time Integration**: WebSocket updates with cache synchronization
-2. **Advanced Error Handling**: Comprehensive error recovery with user feedback  
+2. **Advanced Error Handling**: Comprehensive error recovery with user feedback
 3. **Performance Monitoring**: Production metrics and optimization insights
 4. **Offline Support**: Background sync and queue management for offline operations
 

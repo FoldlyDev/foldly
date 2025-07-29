@@ -6,7 +6,7 @@
   /* =============================================================================
      WORKSPACE CONTAINER LAYOUT
      ============================================================================= */
-  
+
   .workspace-layout {
     /* Base - Mobile First (320px+) */
     --workspace-padding: 0.75rem;
@@ -14,7 +14,7 @@
     --header-spacing: 1.5rem;
     --toolbar-height: auto;
     --tree-container-height: calc(100vh - 200px);
-    
+
     display: flex;
     flex-direction: column;
     gap: var(--workspace-gap);
@@ -25,21 +25,21 @@
   /* =============================================================================
      WORKSPACE HEADER RESPONSIVE
      ============================================================================= */
-  
+
   .workspace-header {
     margin-bottom: var(--header-spacing);
   }
-  
+
   .workspace-header-content {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .workspace-header-text {
     flex: 1;
   }
-  
+
   .workspace-header-actions {
     display: flex;
     flex-wrap: wrap;
@@ -51,56 +51,56 @@
   /* =============================================================================
      WORKSPACE TOOLBAR RESPONSIVE
      ============================================================================= */
-  
+
   .workspace-toolbar {
     background: white;
     border: 1px solid var(--neutral-200);
     border-radius: 0.75rem;
     overflow: hidden;
   }
-  
+
   .workspace-toolbar-main {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.75rem;
   }
-  
+
   .workspace-toolbar-left {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
   }
-  
+
   .workspace-toolbar-right {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
   }
-  
+
   .workspace-search-container {
     position: relative;
     min-width: 200px;
     flex: 1;
     max-width: 300px;
   }
-  
+
   .workspace-folder-creation {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
     width: 100%;
   }
-  
+
   .workspace-folder-input-group {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     flex-wrap: wrap;
   }
-  
+
   .workspace-folder-input {
     min-width: 200px;
     flex: 1;
@@ -109,7 +109,7 @@
   /* =============================================================================
      WORKSPACE TREE CONTAINER RESPONSIVE
      ============================================================================= */
-  
+
   .workspace-tree-container {
     display: flex;
     flex-direction: column;
@@ -117,7 +117,7 @@
     min-height: var(--tree-container-height);
     max-height: var(--tree-container-height);
   }
-  
+
   .workspace-tree-wrapper {
     flex: 1;
     display: flex;
@@ -127,21 +127,21 @@
     border-radius: 0.75rem;
     overflow: hidden;
   }
-  
+
   .workspace-tree-content {
     flex: 1;
     padding: 1rem;
     overflow: auto;
     min-height: 0; /* Important for flex scrolling */
   }
-  
+
   .workspace-tree-footer {
     padding: 0.75rem;
     border-top: 1px solid var(--neutral-100);
     background: var(--neutral-25);
     text-align: center;
   }
-  
+
   .workspace-tree-footer-text {
     font-size: 0.75rem;
     color: var(--neutral-500);
@@ -159,12 +159,12 @@
       --workspace-gap: 1.25rem;
       --tree-container-height: calc(100vh - 220px);
     }
-    
+
     .workspace-search-container {
       min-width: 240px;
       max-width: 350px;
     }
-    
+
     .workspace-folder-input {
       min-width: 240px;
     }
@@ -178,29 +178,29 @@
       --header-spacing: 2rem;
       --tree-container-height: calc(100vh - 240px);
     }
-    
+
     .workspace-header-content {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
     }
-    
+
     .workspace-toolbar-main {
       flex-direction: row;
       align-items: center;
       justify-content: space-between;
       padding: 1rem;
     }
-    
+
     .workspace-search-container {
       min-width: 280px;
       max-width: 400px;
     }
-    
+
     .workspace-folder-creation {
       width: auto;
     }
-    
+
     .workspace-folder-input-group {
       flex-wrap: nowrap;
     }
@@ -213,12 +213,12 @@
       --workspace-gap: 2rem;
       --tree-container-height: calc(100vh - 260px);
     }
-    
+
     .workspace-header-actions {
       justify-content: flex-end;
       flex-wrap: nowrap;
     }
-    
+
     .workspace-search-container {
       min-width: 320px;
       max-width: 450px;
@@ -232,15 +232,15 @@
       --workspace-gap: 2.5rem;
       --tree-container-height: calc(100vh - 280px);
     }
-    
+
     .workspace-tree-wrapper {
       border-radius: 1rem;
     }
-    
+
     .workspace-toolbar {
       border-radius: 1rem;
     }
-    
+
     .workspace-search-container {
       min-width: 360px;
       max-width: 500px;
@@ -253,7 +253,7 @@
       --workspace-padding: 3rem;
       --tree-container-height: calc(100vh - 300px);
     }
-    
+
     .workspace-tree-container {
       max-width: 1200px;
       margin: 0 auto;
@@ -266,7 +266,7 @@
     .workspace-layout {
       --workspace-padding: 3.5rem;
     }
-    
+
     .workspace-tree-container {
       max-width: 1400px;
     }
@@ -277,7 +277,7 @@
     .workspace-layout {
       --workspace-padding: 4rem;
     }
-    
+
     .workspace-tree-container {
       max-width: 1600px;
     }
@@ -307,12 +307,12 @@
       padding: 1rem;
       gap: 1rem;
     }
-    
+
     .workspace-header-actions,
     .workspace-toolbar {
       display: none;
     }
-    
+
     .workspace-tree-container {
       max-height: none;
       height: auto;
@@ -337,11 +337,11 @@
     .workspace-toolbar-main {
       padding: 1rem;
     }
-    
+
     .workspace-tree-content {
       padding: 1.25rem;
     }
-    
+
     /* Larger tap targets on mobile */
     .workspace-header-actions button {
       min-height: 44px;

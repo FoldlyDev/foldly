@@ -4,7 +4,7 @@
 // Analytics components
 export * from './components';
 
-// Analytics hooks  
+// Analytics hooks
 export * from './hooks';
 
 // Analytics types

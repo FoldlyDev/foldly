@@ -16,9 +16,11 @@ interface LinkExpirationDateProps {
     expiresAt?: Date | null;
   };
   onDataChange: (data: any) => void;
-  errors?: {
-    expiresAt?: string;
-  } | undefined;
+  errors?:
+    | {
+        expiresAt?: string;
+      }
+    | undefined;
   isLoading?: boolean;
 }
 

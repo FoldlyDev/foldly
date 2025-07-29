@@ -103,9 +103,7 @@ export function UploadFileLimits({
             {fileSizeOptions.map(option => (
               <DropdownMenuItem
                 key={option.value}
-                onClick={() =>
-                  onDataChange({ maxFileSize: option.value })
-                }
+                onClick={() => onDataChange({ maxFileSize: option.value })}
                 className='cursor-pointer'
               >
                 {option.label}

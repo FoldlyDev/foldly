@@ -17,7 +17,7 @@ interface DragPreviewProps {
  */
 export function DragPreview({ tree, id = 'drag-preview' }: DragPreviewProps) {
   const draggedItems = tree.getState()?.dnd?.draggedItems || [];
-  
+
   if (draggedItems.length === 0) {
     return (
       <div id={id} className='drag-preview'>
@@ -27,10 +27,10 @@ export function DragPreview({ tree, id = 'drag-preview' }: DragPreviewProps) {
       </div>
     );
   }
-  
+
   const firstItem = draggedItems[0];
   const itemData = firstItem?.getItemData();
-  
+
   return (
     <div id={id} className='drag-preview'>
       <div className='flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-md shadow-lg'>

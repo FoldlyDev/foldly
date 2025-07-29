@@ -576,7 +576,7 @@ button[data-state],
 }
 
 /* Modal Typography Fix - Override Tailwind preflight in modal contexts */
-[role="dialog"] p,
+[role='dialog'] p,
 .modal-content p {
   margin: 0 !important;
 }
@@ -592,8 +592,12 @@ button[data-state],
 
 /* Modal backdrop with premium blur and overlay effects */
 .modal-backdrop {
-  background: 
-    radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%),
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(59, 130, 246, 0.15) 0%,
+      transparent 70%
+    ),
     linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.7) 100%);
   backdrop-filter: blur(12px) saturate(1.2);
   -webkit-backdrop-filter: blur(12px) saturate(1.2);
@@ -605,7 +609,7 @@ button[data-state],
   backdrop-filter: blur(20px) saturate(1.3);
   -webkit-backdrop-filter: blur(20px) saturate(1.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -614,7 +618,7 @@ button[data-state],
 .dark .modal-container {
   background: rgba(15, 15, 15, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(255, 255, 255, 0.02),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -625,7 +629,7 @@ button[data-state],
   /* No animation - keep modals perfectly stable */
   animation: none;
   transform: none;
-  
+
   /* Preserve sharp text rendering and visual quality */
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
@@ -641,7 +645,7 @@ button[data-state],
 
 .text-rendering-optimized {
   text-rendering: geometricPrecision;
-  font-feature-settings: "kern" 1;
+  font-feature-settings: 'kern' 1;
   font-kerning: normal;
 }
 
@@ -677,10 +681,12 @@ button[data-state],
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, 
-    rgba(102, 126, 234, 0.1) 0%, 
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.1) 0%,
     rgba(118, 75, 162, 0.1) 50%,
-    rgba(59, 130, 246, 0.1) 100%);
+    rgba(59, 130, 246, 0.1) 100%
+  );
   border-radius: 12px;
   z-index: -1;
 }
@@ -694,7 +700,7 @@ button[data-state],
 
 .interactive-card:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 
+  box-shadow:
     0 20px 40px -12px rgba(0, 0, 0, 0.2),
     0 0 0 1px rgba(59, 130, 246, 0.1);
 }
@@ -708,7 +714,7 @@ button[data-state],
 
 .display-card:hover {
   transform: translateY(-1px);
-  box-shadow: 
+  box-shadow:
     0 10px 25px -8px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(59, 130, 246, 0.05);
 }
@@ -728,7 +734,12 @@ button[data-state],
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s;
 }
 
@@ -759,9 +770,11 @@ button[data-state],
 
 /* Data visualization enhancements */
 .stats-card {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.05) 0%, 
-    rgba(147, 51, 234, 0.05) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05) 0%,
+    rgba(147, 51, 234, 0.05) 100%
+  );
   border: 1px solid rgba(59, 130, 246, 0.1);
   /* Remove backdrop-filter to prevent text blur */
   /* backdrop-filter: blur(10px); */
@@ -785,7 +798,7 @@ button[data-state],
 .premium-input:focus {
   background: rgba(255, 255, 255, 0.95);
   border-color: #3b82f6;
-  box-shadow: 
+  box-shadow:
     0 0 0 3px rgba(59, 130, 246, 0.1),
     0 4px 12px rgba(59, 130, 246, 0.15);
   transform: translateY(-1px);
@@ -803,10 +816,7 @@ button[data-state],
 
 /* Progress indicators */
 .premium-progress {
-  background: linear-gradient(90deg, 
-    #3b82f6 0%, 
-    #8b5cf6 50%, 
-    #ec4899 100%);
+  background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
   height: 4px;
   border-radius: 2px;
   position: relative;
@@ -820,16 +830,22 @@ button[data-state],
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.3) 50%, 
-    transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
   animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 /* Micro-interactions for icons */
@@ -873,7 +889,7 @@ button[data-state],
 /* Fix for mobile browsers where 100vh includes browser chrome */
 @supports (height: 100dvh) {
   .modal-container,
-  [role="dialog"] {
+  [role='dialog'] {
     max-height: 100dvh !important;
   }
 }
@@ -881,15 +897,15 @@ button[data-state],
 /* Ensure modal content areas have sufficient bottom padding on mobile */
 @media (max-width: 640px) {
   .modal-content > div:last-child,
-  [role="dialog"] > div:last-child {
+  [role='dialog'] > div:last-child {
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 4rem) !important;
   }
 }
 
 /* Ensure dialog containers don't have cursor pointer */
-[role="dialog"],
-[data-state="open"][role="dialog"],
-[data-state="closed"][role="dialog"],
+[role='dialog'],
+[data-state='open'][role='dialog'],
+[data-state='closed'][role='dialog'],
 .modal-container,
 .modal-content {
   cursor: default !important;
@@ -911,7 +927,7 @@ button[data-state],
 }
 
 /* Ensure notifications section doesn't create layout space */
-section[aria-label*="Notifications"] {
+section[aria-label*='Notifications'] {
   position: fixed !important;
   top: 0 !important;
   right: 0 !important;
@@ -923,7 +939,7 @@ section[aria-label*="Notifications"] {
   width: 0 !important;
 }
 
-section[aria-label*="Notifications"] > * {
+section[aria-label*='Notifications'] > * {
   pointer-events: auto !important;
 }
 
@@ -933,30 +949,59 @@ section[aria-label*="Notifications"] > * {
 
 /* Common gradient backgrounds that are repeated across modals */
 @utility modal-gradient-blue {
-  background: linear-gradient(to bottom right, rgb(248 250 252), rgb(226 232 240), rgb(238 242 255));
+  background: linear-gradient(
+    to bottom right,
+    rgb(248 250 252),
+    rgb(226 232 240),
+    rgb(238 242 255)
+  );
 }
 
 @utility modal-gradient-purple {
-  background: linear-gradient(to bottom right, rgb(250 245 255), rgb(238 242 255), rgb(239 246 255));
+  background: linear-gradient(
+    to bottom right,
+    rgb(250 245 255),
+    rgb(238 242 255),
+    rgb(239 246 255)
+  );
 }
 
 @utility modal-gradient-indigo {
-  background: linear-gradient(to bottom right, rgb(238 242 255), rgb(250 245 255), rgb(252 231 243));
+  background: linear-gradient(
+    to bottom right,
+    rgb(238 242 255),
+    rgb(250 245 255),
+    rgb(252 231 243)
+  );
 }
 
 @utility modal-gradient-slate {
-  background: linear-gradient(to bottom right, rgb(248 250 252), rgb(243 244 246));
+  background: linear-gradient(
+    to bottom right,
+    rgb(248 250 252),
+    rgb(243 244 246)
+  );
 }
 
 @utility modal-gradient-red {
-  background: linear-gradient(to bottom right, rgb(254 242 242), rgb(252 231 243), rgb(255 241 242));
+  background: linear-gradient(
+    to bottom right,
+    rgb(254 242 242),
+    rgb(252 231 243),
+    rgb(255 241 242)
+  );
 }
 
 /* Common decorative overlay pattern */
 @utility modal-decoration-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgb(59 130 246 / 0.05), rgb(147 51 234 / 0.05), rgb(236 72 153 / 0.05));
+  background: linear-gradient(
+    to right,
+    rgb(59 130 246 / 0.05),
+    rgb(147 51 234 / 0.05),
+    rgb(236 72 153 / 0.05)
+  );
 }
 
 /* Modal subtitle centering wrapper */
@@ -971,7 +1016,7 @@ section[aria-label*="Notifications"] > * {
   color: rgb(75 85 99);
   text-align: center;
   max-width: 28rem;
-  
+
   @media (min-width: 640px) {
     font-size: 1rem;
   }
@@ -979,17 +1024,29 @@ section[aria-label*="Notifications"] > * {
 
 /* Common gradient icon containers */
 @utility modal-icon-blue {
-  background: linear-gradient(to bottom right, rgb(59 130 246), rgb(147 51 234));
+  background: linear-gradient(
+    to bottom right,
+    rgb(59 130 246),
+    rgb(147 51 234)
+  );
   box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.25);
 }
 
 @utility modal-icon-purple {
-  background: linear-gradient(to bottom right, rgb(147 51 234), rgb(99 102 241));
+  background: linear-gradient(
+    to bottom right,
+    rgb(147 51 234),
+    rgb(99 102 241)
+  );
   box-shadow: 0 25px 50px -12px rgb(147 51 234 / 0.25);
 }
 
 @utility modal-icon-indigo {
-  background: linear-gradient(to bottom right, rgb(99 102 241), rgb(147 51 234));
+  background: linear-gradient(
+    to bottom right,
+    rgb(99 102 241),
+    rgb(147 51 234)
+  );
   box-shadow: 0 25px 50px -12px rgb(99 102 241 / 0.25);
 }
 
@@ -1000,7 +1057,12 @@ section[aria-label*="Notifications"] > * {
 
 /* Common title gradients */
 @utility modal-title-gradient-blue {
-  background: linear-gradient(to right, rgb(17 24 39), rgb(30 58 138), rgb(107 33 168));
+  background: linear-gradient(
+    to right,
+    rgb(17 24 39),
+    rgb(30 58 138),
+    rgb(107 33 168)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -1008,7 +1070,12 @@ section[aria-label*="Notifications"] > * {
 }
 
 @utility modal-title-gradient-purple {
-  background: linear-gradient(to right, rgb(17 24 39), rgb(107 33 168), rgb(99 102 241));
+  background: linear-gradient(
+    to right,
+    rgb(17 24 39),
+    rgb(107 33 168),
+    rgb(99 102 241)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -1016,7 +1083,12 @@ section[aria-label*="Notifications"] > * {
 }
 
 @utility modal-title-gradient-indigo {
-  background: linear-gradient(to right, rgb(17 24 39), rgb(99 102 241), rgb(107 33 168));
+  background: linear-gradient(
+    to right,
+    rgb(17 24 39),
+    rgb(99 102 241),
+    rgb(107 33 168)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
@@ -1024,10 +1096,14 @@ section[aria-label*="Notifications"] > * {
 }
 
 @utility modal-title-gradient-red {
-  background: linear-gradient(to right, rgb(17 24 39), rgb(220 38 38), rgb(239 68 68));
+  background: linear-gradient(
+    to right,
+    rgb(17 24 39),
+    rgb(220 38 38),
+    rgb(239 68 68)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   line-height: 1.5; /* Better spacing for gradient text */
 }
-

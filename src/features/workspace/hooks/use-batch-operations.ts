@@ -18,11 +18,13 @@ export type BatchMoveModalState = {
   targetParentId: string | undefined;
   progress: BatchOperationProgress | undefined;
   isProcessing: boolean;
-  pendingMove: {
-    parentId: string;
-    oldChildren: string[];
-    newChildren: string[];
-  } | undefined;
+  pendingMove:
+    | {
+        parentId: string;
+        oldChildren: string[];
+        newChildren: string[];
+      }
+    | undefined;
 };
 
 export type UseBatchOperationsParams = {
@@ -35,23 +37,24 @@ export type UseBatchOperationsParams = {
  * Hook that manages batch operation modal state and execution
  * Handles batch move operations with progress tracking
  */
-export function useBatchOperations({ 
-  rootId, 
-  onSelectionChange, 
-  tree 
+export function useBatchOperations({
+  rootId,
+  onSelectionChange,
+  tree,
 }: UseBatchOperationsParams) {
   const queryClient = useQueryClient();
-  
+
   // Batch operation modal state
-  const [batchMoveModal, setBatchMoveModal] = React.useState<BatchMoveModalState>({
-    isOpen: false,
-    items: [],
-    targetFolder: undefined,
-    targetParentId: undefined,
-    progress: undefined,
-    isProcessing: false,
-    pendingMove: undefined,
-  });
+  const [batchMoveModal, setBatchMoveModal] =
+    React.useState<BatchMoveModalState>({
+      isOpen: false,
+      items: [],
+      targetFolder: undefined,
+      targetParentId: undefined,
+      progress: undefined,
+      isProcessing: false,
+      pendingMove: undefined,
+    });
 
   // Function to handle batch move with modal integration
   const handleBatchMove = React.useCallback(
@@ -67,14 +70,14 @@ export function useBatchOperations({
       if (movedItems.length === 1) {
         // Set operation active to prevent data rebuilds during batch operation
         setDragOperationActive(true);
-        
+
         try {
           const result = await batchMoveItemsAction(movedItems, parentId);
           if (result.success) {
             // Mark cache as stale but don't refetch immediately
             queryClient.invalidateQueries({
               queryKey: workspaceQueryKeys.tree(),
-              refetchType: 'none'
+              refetchType: 'none',
             });
             toast.success('Item moved successfully');
             onSelectionChange?.([]);
@@ -132,7 +135,7 @@ export function useBatchOperations({
     if (!batchMoveModal.items.length || !batchMoveModal.targetParentId) return;
 
     setBatchMoveModal(prev => ({ ...prev, isProcessing: true }));
-    
+
     // Set operation active to prevent data rebuilds during batch operation
     setDragOperationActive(true);
 
@@ -190,7 +193,7 @@ export function useBatchOperations({
         // Mark cache as stale but don't refetch immediately
         queryClient.invalidateQueries({
           queryKey: workspaceQueryKeys.tree(),
-          refetchType: 'none'
+          refetchType: 'none',
         });
       } else {
         setBatchMoveModal(prev => ({
@@ -203,7 +206,7 @@ export function useBatchOperations({
             : undefined,
         }));
         toast.error(result.error || 'Failed to move items');
-        
+
         // Force refetch on error to ensure consistency
         queryClient.invalidateQueries({
           queryKey: workspaceQueryKeys.tree(),

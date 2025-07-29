@@ -4,16 +4,16 @@ import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 
 export function WorkspaceHeaderSkeleton() {
   return (
-    <div className="workspace-header-content">
-      <div className="workspace-header-text">
-        <Skeleton className="h-8 sm:h-10 w-64 sm:w-80 mb-2" />
-        <Skeleton className="h-5 sm:h-6 w-48 sm:w-72" />
+    <div className='workspace-header-content'>
+      <div className='workspace-header-text'>
+        <Skeleton className='h-8 sm:h-10 w-64 sm:w-80 mb-2' />
+        <Skeleton className='h-5 sm:h-6 w-48 sm:w-72' />
       </div>
-      <div className="workspace-header-actions">
-        <Skeleton className="h-10 w-10 rounded-xl" />
-        <Skeleton className="h-10 w-10 rounded-xl hidden sm:block" />
-        <Skeleton className="h-10 w-32 sm:w-40 rounded-xl" />
-        <Skeleton className="h-10 w-10 rounded-xl sm:hidden" />
+      <div className='workspace-header-actions'>
+        <Skeleton className='h-10 w-10 rounded-xl' />
+        <Skeleton className='h-10 w-10 rounded-xl hidden sm:block' />
+        <Skeleton className='h-10 w-32 sm:w-40 rounded-xl' />
+        <Skeleton className='h-10 w-10 rounded-xl sm:hidden' />
       </div>
     </div>
   );
@@ -21,16 +21,16 @@ export function WorkspaceHeaderSkeleton() {
 
 export function WorkspaceToolbarSkeleton() {
   return (
-    <div className="workspace-toolbar">
-      <div className="workspace-toolbar-main">
-        <div className="workspace-toolbar-left">
-          <Skeleton className="h-8 w-28 rounded-md" />
+    <div className='workspace-toolbar'>
+      <div className='workspace-toolbar-main'>
+        <div className='workspace-toolbar-left'>
+          <Skeleton className='h-8 w-28 rounded-md' />
         </div>
-        <div className="workspace-toolbar-right">
-          <div className="workspace-search-container">
-            <Skeleton className="h-8 w-full rounded-md" />
+        <div className='workspace-toolbar-right'>
+          <div className='workspace-search-container'>
+            <Skeleton className='h-8 w-full rounded-md' />
           </div>
-          <Skeleton className="h-8 w-8 rounded-md" />
+          <Skeleton className='h-8 w-8 rounded-md' />
         </div>
       </div>
     </div>
@@ -39,42 +39,42 @@ export function WorkspaceToolbarSkeleton() {
 
 export function WorkspaceTreeSkeleton() {
   return (
-    <div className="workspace-tree-container">
-      <div className="workspace-tree-wrapper">
-        <div className="workspace-tree-content">
+    <div className='workspace-tree-container'>
+      <div className='workspace-tree-wrapper'>
+        <div className='workspace-tree-content'>
           {/* Root folders skeleton */}
-          <div className="space-y-1">
+          <div className='space-y-1'>
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center gap-2 p-2">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 flex-1 max-w-40" />
+              <div key={i} className='flex items-center gap-2 p-2'>
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 flex-1 max-w-40' />
               </div>
             ))}
-            
+
             {/* Nested items */}
-            <div className="ml-6 space-y-1">
+            <div className='ml-6 space-y-1'>
               {[...Array(2)].map((_, i) => (
-                <div key={i} className="flex items-center gap-2 p-2">
-                  <Skeleton className="h-4 w-4" />
-                  <Skeleton className="h-4 flex-1 max-w-32" />
+                <div key={i} className='flex items-center gap-2 p-2'>
+                  <Skeleton className='h-4 w-4' />
+                  <Skeleton className='h-4 flex-1 max-w-32' />
                 </div>
               ))}
             </div>
-            
+
             {/* More root items */}
             {[...Array(2)].map((_, i) => (
-              <div key={i + 3} className="flex items-center gap-2 p-2">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 flex-1 max-w-36" />
+              <div key={i + 3} className='flex items-center gap-2 p-2'>
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 flex-1 max-w-36' />
               </div>
             ))}
           </div>
         </div>
-        
-        <div className="workspace-tree-footer">
-          <Skeleton className="h-3 w-48 mx-auto" />
+
+        <div className='workspace-tree-footer'>
+          <Skeleton className='h-3 w-48 mx-auto' />
         </div>
       </div>
     </div>
@@ -83,13 +83,13 @@ export function WorkspaceTreeSkeleton() {
 
 export function WorkspaceSkeleton() {
   return (
-    <div className="dashboard-container workspace-layout">
-      <div className="workspace-header">
+    <div className='dashboard-container workspace-layout'>
+      <div className='workspace-header'>
         <WorkspaceHeaderSkeleton />
       </div>
-      
+
       <WorkspaceToolbarSkeleton />
-      
+
       <WorkspaceTreeSkeleton />
     </div>
   );

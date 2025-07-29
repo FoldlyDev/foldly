@@ -22,7 +22,12 @@ export { folders } from './folders';
 export { batches } from './batches';
 export { files } from './files';
 export { subscriptionAnalytics } from './subscription-analytics';
-export { subscriptionPlans, type SubscriptionPlan, type InsertSubscriptionPlan, type PlanUIMetadata } from './subscription-plans';
+export {
+  subscriptionPlans,
+  type SubscriptionPlan,
+  type InsertSubscriptionPlan,
+  type PlanUIMetadata,
+} from './subscription-plans';
 
 // =============================================================================
 // RELATIONS - Table Relationship Definitions

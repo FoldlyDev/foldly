@@ -25,9 +25,7 @@ interface PopulatedLinksStateProps {
 }
 
 export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
-  function PopulatedLinksState({
-    links = [],
-  }: PopulatedLinksStateProps) {
+  function PopulatedLinksState({ links = [] }: PopulatedLinksStateProps) {
     // Single store subscription instead of multiple selectors to prevent cascading re-renders
     const {
       openCreateModal,
@@ -50,7 +48,9 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     } = useUIStore();
 
     // Selection state for checkboxes
-    const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(new Set());
+    const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(
+      new Set()
+    );
 
     // Memoize stats calculation using the passed-in links (already filtered)
     const overviewData = useMemo(() => {
@@ -277,7 +277,10 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             <div className='flex gap-2 lg:gap-3'>
               {/* Type Filter */}
               <div className='flex-1 lg:w-36'>
-                <Select value={filterType} onValueChange={handleFilterTypeChange}>
+                <Select
+                  value={filterType}
+                  onValueChange={handleFilterTypeChange}
+                >
                   <SelectTrigger
                     size='sm'
                     className='border-[var(--neutral-200)] w-full justify-between'
@@ -330,47 +333,47 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
         {/* Links Grid/List */}
         <motion.div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
-                : 'space-y-3 md:space-y-4'
-            }
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {links.map((link, index) => (
-              <motion.div
-                key={`${link.id}-${viewMode}`}
-                initial={
-                  viewMode === 'grid'
-                    ? { opacity: 0, y: 20 }
-                    : { opacity: 0, y: -10 }
-                }
-                animate={
-                  viewMode === 'grid'
-                    ? { opacity: 1, y: 0 }
-                    : { opacity: 1, y: 0 }
-                }
-                transition={
-                  viewMode === 'grid'
-                    ? { duration: 0.3, delay: index * 0.05 }
-                    : { duration: 0.25, delay: index * 0.04, ease: 'easeOut' }
-                }
-              >
-                <LinkCard
-                  link={link}
-                  viewMode={viewMode}
-                  onDetails={() => handleDetailsModal(link)} 
-                  onShare={() => handleShareModal(link)}
-                  onSettings={() => handleSettingsModal(link)}
-                  onDelete={() => handleDeleteModal(link)}
-                  isMultiSelected={selectedLinkIds.has(link.id)}
-                  onMultiSelect={handleMultiSelect}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+          className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
+              : 'space-y-3 md:space-y-4'
+          }
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {links.map((link, index) => (
+            <motion.div
+              key={`${link.id}-${viewMode}`}
+              initial={
+                viewMode === 'grid'
+                  ? { opacity: 0, y: 20 }
+                  : { opacity: 0, y: -10 }
+              }
+              animate={
+                viewMode === 'grid'
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 1, y: 0 }
+              }
+              transition={
+                viewMode === 'grid'
+                  ? { duration: 0.3, delay: index * 0.05 }
+                  : { duration: 0.25, delay: index * 0.04, ease: 'easeOut' }
+              }
+            >
+              <LinkCard
+                link={link}
+                viewMode={viewMode}
+                onDetails={() => handleDetailsModal(link)}
+                onShare={() => handleShareModal(link)}
+                onSettings={() => handleSettingsModal(link)}
+                onDelete={() => handleDeleteModal(link)}
+                isMultiSelected={selectedLinkIds.has(link.id)}
+                onMultiSelect={handleMultiSelect}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     );
   }

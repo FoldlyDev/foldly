@@ -4,7 +4,7 @@
 // Auth components
 export * from './components';
 
-// Auth hooks  
+// Auth hooks
 export * from './hooks';
 
 // Auth types

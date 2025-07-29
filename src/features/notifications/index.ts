@@ -4,7 +4,7 @@
 // Notifications components
 export * from './components';
 
-// Notifications hooks  
+// Notifications hooks
 export * from './hooks';
 
 // Notifications store

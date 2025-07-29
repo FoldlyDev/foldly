@@ -62,7 +62,7 @@ export class BillingErrorRecoveryService {
     userId?: string
   ): Promise<DatabaseResult<FallbackPlanData>> {
     const cacheKey = `plan_data_${userId || 'current'}`;
-    
+
     try {
       // Try primary source (Clerk integration)
       const primaryResult = await this.withRetry(
@@ -91,7 +91,10 @@ export class BillingErrorRecoveryService {
 
       throw new Error(primaryResult.error);
     } catch (error) {
-      console.warn('Primary plan data source failed, attempting fallback...', error);
+      console.warn(
+        'Primary plan data source failed, attempting fallback...',
+        error
+      );
       return this.getFallbackPlanData(userId, cacheKey, error as Error);
     }
   }
@@ -104,11 +107,12 @@ export class BillingErrorRecoveryService {
     userId?: string
   ): Promise<boolean> {
     const cacheKey = `feature_${feature}_${userId || 'current'}`;
-    
+
     try {
       // Try Clerk first
       const hasAccess = await this.withRetry(
-        async () => ClerkBillingIntegrationService.hasFeatureAccess(feature, userId),
+        async () =>
+          ClerkBillingIntegrationService.hasFeatureAccess(feature, userId),
         'hasFeatureAccess',
         userId
       );
@@ -117,8 +121,11 @@ export class BillingErrorRecoveryService {
       this.setCache(cacheKey, hasAccess);
       return hasAccess;
     } catch (error) {
-      console.warn(`Feature access check failed for ${feature}, using fallback...`, error);
-      
+      console.warn(
+        `Feature access check failed for ${feature}, using fallback...`,
+        error
+      );
+
       // Try cache first
       const cached = this.getCache(cacheKey);
       if (cached) {
@@ -138,7 +145,7 @@ export class BillingErrorRecoveryService {
     userId?: string
   ): Promise<'free' | 'pro' | 'business'> {
     const cacheKey = `current_plan_${userId || 'current'}`;
-    
+
     try {
       const result = await this.withRetry(
         async () => ClerkBillingIntegrationService.getCurrentUserPlan(),
@@ -151,11 +158,11 @@ export class BillingErrorRecoveryService {
         this.setCache(cacheKey, plan);
         return plan;
       }
-      
+
       throw new Error(result.error);
     } catch (error) {
       console.warn('Current plan check failed, using fallback...', error);
-      
+
       // Try cache first
       const cached = this.getCache(cacheKey);
       if (cached) {
@@ -221,7 +228,8 @@ export class BillingErrorRecoveryService {
 
     // Test Clerk integration
     try {
-      const clerkResult = await ClerkBillingIntegrationService.getCurrentUserPlan();
+      const clerkResult =
+        await ClerkBillingIntegrationService.getCurrentUserPlan();
       results.clerk = clerkResult.success ? 'healthy' : 'degraded';
     } catch (error) {
       console.error('Clerk health check failed:', error);
@@ -230,7 +238,8 @@ export class BillingErrorRecoveryService {
 
     // Test database connection
     try {
-      const planResult = await ClerkBillingIntegrationService.getPlanUIMetadata('free');
+      const planResult =
+        await ClerkBillingIntegrationService.getPlanUIMetadata('free');
       results.database = planResult.success ? 'healthy' : 'degraded';
     } catch (error) {
       console.error('Database health check failed:', error);
@@ -271,12 +280,18 @@ export class BillingErrorRecoveryService {
   } {
     const entries = Array.from(this.cache.entries());
     const timestamps = entries.map(([, value]) => value.timestamp);
-    
+
     return {
       size: this.cache.size,
       keys: entries.map(([key]) => key),
-      oldestEntry: timestamps.length > 0 ? new Date(Math.min(...timestamps.map(t => t.getTime()))) : null,
-      newestEntry: timestamps.length > 0 ? new Date(Math.max(...timestamps.map(t => t.getTime()))) : null,
+      oldestEntry:
+        timestamps.length > 0
+          ? new Date(Math.min(...timestamps.map(t => t.getTime())))
+          : null,
+      newestEntry:
+        timestamps.length > 0
+          ? new Date(Math.max(...timestamps.map(t => t.getTime())))
+          : null,
     };
   }
 
@@ -290,13 +305,13 @@ export class BillingErrorRecoveryService {
     userId?: string
   ): Promise<T> {
     let lastError: Error | null = null;
-    
+
     for (let attempt = 0; attempt < this.config.maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         // Record error context
         this.recordError({
           operation: operationName,
@@ -333,12 +348,13 @@ export class BillingErrorRecoveryService {
 
     // Try database-only fallback
     try {
-      const freePlanResult = await ClerkBillingIntegrationService.getPlanUIMetadata('free');
-      
+      const freePlanResult =
+        await ClerkBillingIntegrationService.getPlanUIMetadata('free');
+
       if (!freePlanResult.success) {
         throw new Error(freePlanResult.error);
       }
-      
+
       const fallbackData: FallbackPlanData = {
         currentPlan: 'free',
         uiMetadata: freePlanResult.data,
@@ -357,7 +373,7 @@ export class BillingErrorRecoveryService {
       return { success: true, data: fallbackData };
     } catch (dbError) {
       console.error('Database fallback also failed:', dbError);
-      
+
       // Absolute fallback with hardcoded values
       const emergencyFallback: FallbackPlanData = {
         currentPlan: 'free',
@@ -371,8 +387,8 @@ export class BillingErrorRecoveryService {
           storageLimitGb: 50,
           highlightFeatures: ['Basic sharing', 'Limited storage'],
           featureDescriptions: {
-            'basic_sharing': 'Create and share simple file links',
-            'limited_storage': '50GB of storage space'
+            basic_sharing: 'Create and share simple file links',
+            limited_storage: '50GB of storage space',
           },
           isPopular: false,
         },
@@ -395,12 +411,27 @@ export class BillingErrorRecoveryService {
     try {
       // Try to get current plan using fallback mechanisms
       const currentPlan = await this.getCurrentPlanWithFallback(userId);
-      
+
       // Conservative feature mapping based on plan hierarchy
       const featureMap: Record<string, string[]> = {
         free: ['basic_sharing', 'limited_storage'],
-        pro: ['basic_sharing', 'limited_storage', 'custom_branding', 'password_protection', 'extended_storage'],
-        business: ['basic_sharing', 'limited_storage', 'custom_branding', 'password_protection', 'extended_storage', 'unlimited_storage', 'advanced_branding', 'priority_support'],
+        pro: [
+          'basic_sharing',
+          'limited_storage',
+          'custom_branding',
+          'password_protection',
+          'extended_storage',
+        ],
+        business: [
+          'basic_sharing',
+          'limited_storage',
+          'custom_branding',
+          'password_protection',
+          'extended_storage',
+          'unlimited_storage',
+          'advanced_branding',
+          'priority_support',
+        ],
       };
 
       const planFeatures = featureMap[currentPlan] || featureMap.free || [];
@@ -414,7 +445,7 @@ export class BillingErrorRecoveryService {
 
   private static setCache(key: string, data: any): void {
     this.cache.set(key, { data, timestamp: new Date() });
-    
+
     // Clean up old cache entries
     this.cleanupCache();
   }

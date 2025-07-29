@@ -102,7 +102,8 @@ export function BrandingSettingsSection({
                   </p>
                 )}
                 <p className='text-xs text-muted-foreground'>
-                  Choose your brand color that will be used throughout your upload page
+                  Choose your brand color that will be used throughout your
+                  upload page
                 </p>
               </div>
             </div>

@@ -23,13 +23,15 @@ import { useLinksQuery } from '../../hooks/react-query/use-links-query';
  */
 export const CreateLinkInformationStep = () => {
   const { user } = useUser();
-  
+
   // Get user's links to find their base link slug
   const { data: links } = useLinksQuery();
-  
+
   // Find the user's base link slug
   const userBaseSlug = useMemo(() => {
-    const baseLink = links?.find(link => link.linkType === 'base' && !link.topic);
+    const baseLink = links?.find(
+      link => link.linkType === 'base' && !link.topic
+    );
     return baseLink?.slug || user?.username?.toLowerCase() || 'username';
   }, [links, user?.username]);
 
@@ -40,26 +42,20 @@ export const CreateLinkInformationStep = () => {
     createLinkFormSelectors.isSubmitting
   );
   const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canProceed);
-  
+
   // Add slug validation for base links
-  const slugValidation = useSlugValidation(
-    formData.slug || '', 
-    { 
-      enabled: linkType === 'base',
-      debounceMs: 500 
-    }
-  );
+  const slugValidation = useSlugValidation(formData.slug || '', {
+    enabled: linkType === 'base',
+    debounceMs: 500,
+  });
 
   // Add topic validation for topic links
-  const topicValidation = useTopicValidation(
-    formData.topic || '',
-    {
-      enabled: linkType === 'custom' || linkType === 'generated',
-      ...(user?.id && { userId: user.id }),
-      slug: userBaseSlug,
-      debounceMs: 500
-    }
-  );
+  const topicValidation = useTopicValidation(formData.topic || '', {
+    enabled: linkType === 'custom' || linkType === 'generated',
+    ...(user?.id && { userId: user.id }),
+    slug: userBaseSlug,
+    debounceMs: 500,
+  });
 
   // Form actions
   const updateFormField = useCreateLinkFormStore(
@@ -104,7 +100,6 @@ export const CreateLinkInformationStep = () => {
   // Handle form changes with proper typing
   const handleFormChange = useCallback(
     (updates: Record<string, any>) => {
-
       // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
 
@@ -197,7 +192,6 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.brandColor = String(updates.brandColor);
       }
 
-
       // Update form fields individually since updateMultipleFields doesn't exist
       Object.entries(convertedUpdates).forEach(([field, value]) => {
         updateFormField(field as keyof CreateLinkFormData, value);
@@ -210,12 +204,15 @@ export const CreateLinkInformationStep = () => {
   const canProceedToNext = useMemo(() => {
     // Basic form validation
     if (!canGoNext) return false;
-    
+
     // Password validation - if password protection is enabled, password must be 8+ characters
-    if (formData.requirePassword && (!formData.password || formData.password.length < 8)) {
+    if (
+      formData.requirePassword &&
+      (!formData.password || formData.password.length < 8)
+    ) {
       return false;
     }
-    
+
     // For base links, also check slug validation
     if (linkType === 'base') {
       // If slug is provided, it must be available
@@ -225,7 +222,7 @@ export const CreateLinkInformationStep = () => {
       // If no slug provided, it's OK (will use username)
       return true;
     }
-    
+
     // For topic links, check topic validation
     if (linkType === 'custom' || linkType === 'generated') {
       // If topic is provided, it must be available
@@ -235,11 +232,20 @@ export const CreateLinkInformationStep = () => {
       // Topic is required for topic links
       return false;
     }
-    
+
     return true;
-  }, [canGoNext, linkType, formData.slug, formData.topic, formData.requirePassword, formData.password,
-      slugValidation.isAvailable, slugValidation.isChecking,
-      topicValidation.isAvailable, topicValidation.isChecking]);
+  }, [
+    canGoNext,
+    linkType,
+    formData.slug,
+    formData.topic,
+    formData.requirePassword,
+    formData.password,
+    slugValidation.isAvailable,
+    slugValidation.isChecking,
+    topicValidation.isAvailable,
+    topicValidation.isChecking,
+  ]);
 
   // Handle next step
   const handleNext = useCallback(() => {

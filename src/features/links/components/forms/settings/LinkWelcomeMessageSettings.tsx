@@ -10,7 +10,9 @@ interface LinkWelcomeMessageSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function LinkWelcomeMessageSettings({ form }: LinkWelcomeMessageSettingsProps) {
+export function LinkWelcomeMessageSettings({
+  form,
+}: LinkWelcomeMessageSettingsProps) {
   return (
     <div className='space-y-4'>
       <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>

@@ -65,26 +65,20 @@ export function SettingsModal() {
   const isSubmitting = updateLink.isPending;
 
   // Add slug validation for base links
-  const slugValidation = useSlugValidation(
-    watchedValues.slug || '', 
-    { 
-      enabled: link?.linkType === 'base',
-      ...(link?.id && { excludeId: link.id }),
-      debounceMs: 500 
-    }
-  );
+  const slugValidation = useSlugValidation(watchedValues.slug || '', {
+    enabled: link?.linkType === 'base',
+    ...(link?.id && { excludeId: link.id }),
+    debounceMs: 500,
+  });
 
   // Add topic validation for topic/custom links
-  const topicValidation = useTopicValidation(
-    watchedValues.topic || '',
-    {
-      enabled: link?.linkType === 'custom',
-      ...(link?.id && { excludeId: link.id }),
-      ...(link?.userId && { userId: link.userId }),
-      ...(link?.slug && { slug: link.slug }),
-      debounceMs: 500
-    }
-  );
+  const topicValidation = useTopicValidation(watchedValues.topic || '', {
+    enabled: link?.linkType === 'custom',
+    ...(link?.id && { excludeId: link.id }),
+    ...(link?.userId && { userId: link.userId }),
+    ...(link?.slug && { slug: link.slug }),
+    debounceMs: 500,
+  });
 
   // Enhanced validation that includes slug availability
   const canSubmit = useMemo(() => {
@@ -97,45 +91,63 @@ export function SettingsModal() {
       topic: watchedValues.topic,
       slugValidation: {
         isAvailable: slugValidation.isAvailable,
-        isChecking: slugValidation.isChecking
+        isChecking: slugValidation.isChecking,
       },
       topicValidation: {
         isAvailable: topicValidation.isAvailable,
-        isChecking: topicValidation.isChecking
-      }
+        isChecking: topicValidation.isChecking,
+      },
     });
-    
+
     if (!isDirty || !isValid || isSubmitting) return false;
-    
+
     // For base links, check slug validation if slug is provided
     if (link?.linkType === 'base') {
       // If slug is provided, it must be available
       if (watchedValues.slug) {
         const result = slugValidation.isAvailable && !slugValidation.isChecking;
-        console.log('🔧 SETTINGS MODAL: Base link with slug validation result:', result);
+        console.log(
+          '🔧 SETTINGS MODAL: Base link with slug validation result:',
+          result
+        );
         return result;
       }
       // If no slug (empty), it's valid (will use username)
       console.log('🔧 SETTINGS MODAL: Base link with empty slug - valid');
       return true;
     }
-    
+
     // For topic/custom links, check topic validation if topic is provided
     if (link?.linkType === 'custom') {
       // If topic is provided, it must be available
       if (watchedValues.topic) {
-        const result = topicValidation.isAvailable && !topicValidation.isChecking;
-        console.log('🔧 SETTINGS MODAL: Custom link with topic validation result:', result);
+        const result =
+          topicValidation.isAvailable && !topicValidation.isChecking;
+        console.log(
+          '🔧 SETTINGS MODAL: Custom link with topic validation result:',
+          result
+        );
         return result;
       }
       // Topic is required for custom links, so empty is not valid
       console.log('🔧 SETTINGS MODAL: Custom link with empty topic - invalid');
       return false;
     }
-    
+
     console.log('🔧 SETTINGS MODAL: Default case - valid');
     return true;
-  }, [isDirty, isValid, isSubmitting, link?.linkType, watchedValues.slug, slugValidation.isAvailable, slugValidation.isChecking, watchedValues.topic, topicValidation.isAvailable, topicValidation.isChecking]);
+  }, [
+    isDirty,
+    isValid,
+    isSubmitting,
+    link?.linkType,
+    watchedValues.slug,
+    slugValidation.isAvailable,
+    slugValidation.isChecking,
+    watchedValues.topic,
+    topicValidation.isAvailable,
+    topicValidation.isChecking,
+  ]);
 
   // Initialize form with real link data when modal opens
   // Following 2025 React Hook Form best practices for async data loading
@@ -154,7 +166,9 @@ export function SettingsModal() {
         isActive: link.isActive,
         requireEmail: link.requireEmail,
         requirePassword: link.requirePassword,
-        password: link.passwordHash ? Buffer.from(link.passwordHash, 'base64').toString() : '', // Decode password for editing
+        password: link.passwordHash
+          ? Buffer.from(link.passwordHash, 'base64').toString()
+          : '', // Decode password for editing
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
@@ -229,31 +243,32 @@ export function SettingsModal() {
         transition={{ type: 'spring', stiffness: 160, damping: 20 }}
       >
         {/* Accessibility Labels */}
-        <DialogTitle className="sr-only">
+        <DialogTitle className='sr-only'>
           Link Settings: {link.title}
         </DialogTitle>
-        <DialogDescription className="sr-only">
-          Configure how "{link.title}" works for uploaders including privacy, security, and upload restrictions
+        <DialogDescription className='sr-only'>
+          Configure how "{link.title}" works for uploaders including privacy,
+          security, and upload restrictions
         </DialogDescription>
         {/* Premium Header with Gradient Background */}
-        <div className="relative overflow-hidden modal-gradient-purple border-b border-gray-200/50">
+        <div className='relative overflow-hidden modal-gradient-purple border-b border-gray-200/50'>
           {/* Decorative Background */}
-          <div className="modal-decoration-overlay" />
-          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-transparent rounded-full -translate-y-32 -translate-x-32" />
-          
-          <div className="relative p-4 sm:p-6 pb-4">
-            <div className="text-center mb-4">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 sm:p-4 rounded-2xl modal-icon-purple">
+          <div className='modal-decoration-overlay' />
+          <div className='absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-transparent rounded-full -translate-y-32 -translate-x-32' />
+
+          <div className='relative p-4 sm:p-6 pb-4'>
+            <div className='text-center mb-4'>
+              <div className='flex justify-center mb-4'>
+                <div className='p-3 sm:p-4 rounded-2xl modal-icon-purple'>
                   <Sliders className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
                 </div>
               </div>
-              <div className="text-center">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-purple mb-2">
+              <div className='text-center'>
+                <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-purple mb-2'>
                   Link Settings
                 </h1>
-                <div className="flex justify-center">
-                  <p className="text-sm sm:text-base text-gray-600 text-center max-w-md">
+                <div className='flex justify-center'>
+                  <p className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
                     Configure how "{link.title}" works for uploaders
                   </p>
                 </div>
@@ -263,28 +278,31 @@ export function SettingsModal() {
         </div>
 
         {/* Premium Form Content */}
-        <div className="p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12">
-          <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 max-w-2xl mx-auto'>
-          {/* General Settings Section */}
-          <LinkSettingsForm
-            link={{
-              ...link,
-              stats: {
-                fileCount: link.totalFiles || 0,
-                batchCount: 0,
-                folderCount: 0,
-                totalViewCount: 0,
-                uniqueViewCount: 0,
-                averageFileSize:
-                  link.totalFiles > 0
-                    ? (link.totalSize || 0) / link.totalFiles
-                    : 0,
-                storageUsedPercentage: 0,
-                isNearLimit: false,
-              },
-            }}
-            form={form}
-          />
+        <div className='p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12'>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className='space-y-6 max-w-2xl mx-auto'
+          >
+            {/* General Settings Section */}
+            <LinkSettingsForm
+              link={{
+                ...link,
+                stats: {
+                  fileCount: link.totalFiles || 0,
+                  batchCount: 0,
+                  folderCount: 0,
+                  totalViewCount: 0,
+                  uniqueViewCount: 0,
+                  averageFileSize:
+                    link.totalFiles > 0
+                      ? (link.totalSize || 0) / link.totalFiles
+                      : 0,
+                  storageUsedPercentage: 0,
+                  isNearLimit: false,
+                },
+              }}
+              form={form}
+            />
 
             {/* Premium Action Buttons */}
             <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200/50'>

@@ -29,15 +29,16 @@ export const files = pgTable(
   'files',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    linkId: uuid('link_id')
-      .references(() => links.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
-    batchId: uuid('batch_id')
-      .references(() => batches.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
+    linkId: uuid('link_id').references(() => links.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
+    batchId: uuid('batch_id').references(() => batches.id, {
+      onDelete: 'cascade',
+    }), // Optional - null for personal workspace files
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    workspaceId: uuid('workspace_id')
-      .references(() => workspaces.id, { onDelete: 'cascade' }), // Optional - null for link-only files
+    workspaceId: uuid('workspace_id').references(() => workspaces.id, {
+      onDelete: 'cascade',
+    }), // Optional - null for link-only files
     folderId: uuid('folder_id').references(() => folders.id, {
       onDelete: 'set null',
     }), // NULL for root folder files

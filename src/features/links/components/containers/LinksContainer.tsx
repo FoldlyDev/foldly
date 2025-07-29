@@ -26,7 +26,6 @@ export function LinksContainer({
   isLoading: propLoading = false,
   error: propError = null,
 }: LinksContainerProps) {
-
   // Get UI state from store
   const searchQuery = useUIStore(state => state.searchQuery);
   const filterType = useUIStore(state => state.filterType);
@@ -61,7 +60,10 @@ export function LinksContainer({
 
   // Use prop loading/error state if provided, otherwise use query state
   // Only show loading if we don't have any data and are actually loading
-  const isComponentLoading = propLoading || (allLinksLoading && allLinks.length === 0) || (filteredLoading && filteredLinks.length === 0);
+  const isComponentLoading =
+    propLoading ||
+    (allLinksLoading && allLinks.length === 0) ||
+    (filteredLoading && filteredLinks.length === 0);
   const componentError =
     propError ||
     (allLinksError ? allLinksQueryError?.message : null) ||
@@ -136,9 +138,7 @@ export function LinksContainer({
               />
             </motion.div>
           ) : (
-            <PopulatedLinksState
-              links={filteredLinks}
-            />
+            <PopulatedLinksState links={filteredLinks} />
           )}
         </div>
 

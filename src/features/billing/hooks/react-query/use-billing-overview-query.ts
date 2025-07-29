@@ -43,7 +43,7 @@ export function useBillingOverviewQuery(
 ): BillingOverviewResult {
   const { user, isLoaded } = useUser();
   const { isFreeTier, isProTier, isBusinessTier } = useClerkSubscription();
-  
+
   const {
     enabled = true,
     staleTime = 5 * 60 * 1000, // 5 minutes
@@ -99,7 +99,7 @@ export function useStorageUsageQuery(
 ): BillingOverviewResult {
   const { user, isLoaded } = useUser();
   const { isFreeTier, isProTier, isBusinessTier } = useClerkSubscription();
-  
+
   const {
     enabled = true,
     staleTime = 2 * 60 * 1000, // 2 minutes (more frequent for storage)

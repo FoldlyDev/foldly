@@ -67,9 +67,7 @@ export class WorkspaceService {
         .where(eq(workspaces.userId, userId))
         .limit(1);
 
-      return workspace
-        ? workspace
-        : null;
+      return workspace ? workspace : null;
     } catch (error) {
       console.error(`❌ WORKSPACE_FETCH_FAILED: User ${userId}`, error);
       return null;
@@ -134,9 +132,7 @@ export class WorkspaceService {
         .where(eq(workspaces.id, workspaceId))
         .limit(1);
 
-      return workspace
-        ? workspace
-        : null;
+      return workspace ? workspace : null;
     } catch (error) {
       console.error(`❌ WORKSPACE_FETCH_BY_ID_FAILED: ${workspaceId}`, error);
       return null;

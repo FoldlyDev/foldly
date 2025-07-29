@@ -14,15 +14,11 @@ const plans = [
     monthlyPriceUsd: '0.00',
     yearlyPriceUsd: '0.00',
     storageLimitGb: 50,
-    highlightFeatures: [
-      'File sharing',
-      'Basic storage',
-      'QR code generation'
-    ],
+    highlightFeatures: ['File sharing', 'Basic storage', 'QR code generation'],
     featureDescriptions: {
-      'basic_sharing': 'Simple file sharing links',
-      'storage_quota': '50GB storage space',
-      'qr_codes': 'Generate QR codes for links'
+      basic_sharing: 'Simple file sharing links',
+      storage_quota: '50GB storage space',
+      qr_codes: 'Generate QR codes for links',
     },
     isPopular: false,
     sortOrder: 1,
@@ -39,15 +35,15 @@ const plans = [
       'Custom branding',
       'Password protection',
       'Premium short links',
-      'Email notifications'
+      'Email notifications',
     ],
     featureDescriptions: {
-      'custom_branding': 'Add your own logos and colors',
-      'password_protection': 'Secure links with passwords',
-      'premium_links': 'Custom domain short links',
-      'email_notifications': 'Upload notifications via email',
-      'file_previews': 'Generate file thumbnails',
-      'storage_quota': '500GB storage space'
+      custom_branding: 'Add your own logos and colors',
+      password_protection: 'Secure links with passwords',
+      premium_links: 'Custom domain short links',
+      email_notifications: 'Upload notifications via email',
+      file_previews: 'Generate file thumbnails',
+      storage_quota: '500GB storage space',
     },
     isPopular: true,
     sortOrder: 2,
@@ -65,45 +61,44 @@ const plans = [
       'Priority support',
       'Advanced file restrictions',
       'Cloud integrations',
-      'Team management'
+      'Team management',
     ],
     featureDescriptions: {
-      'unlimited_storage': 'Unlimited file storage',
-      'priority_support': '24/7 priority customer support',
-      'file_restrictions': 'Advanced file type and size controls',
-      'cloud_integrations': 'Connect with Google Drive, Dropbox, etc.',
-      'team_management': 'Manage team members and permissions',
-      'custom_branding': 'Full white-label branding',
-      'password_protection': 'Secure links with passwords',
-      'premium_links': 'Custom domain short links',
-      'email_notifications': 'Advanced notification system'
+      unlimited_storage: 'Unlimited file storage',
+      priority_support: '24/7 priority customer support',
+      file_restrictions: 'Advanced file type and size controls',
+      cloud_integrations: 'Connect with Google Drive, Dropbox, etc.',
+      team_management: 'Manage team members and permissions',
+      custom_branding: 'Full white-label branding',
+      password_protection: 'Secure links with passwords',
+      premium_links: 'Custom domain short links',
+      email_notifications: 'Advanced notification system',
     },
     isPopular: false,
     sortOrder: 3,
     isActive: true,
-  }
+  },
 ];
 
 async function seedSubscriptionPlans() {
   try {
     console.log('🌱 Seeding subscription plans...');
-    
+
     // Clear existing plans
     await db.delete(subscriptionPlans);
     console.log('📝 Cleared existing plans');
-    
+
     // Insert new plans
     for (const plan of plans) {
       await db.insert(subscriptionPlans).values(plan);
       console.log(`✅ Added ${plan.planName} plan`);
     }
-    
+
     console.log('🎉 Successfully seeded subscription plans!');
-    
+
     // Verify the data
     const result = await db.select().from(subscriptionPlans);
     console.log('📊 Plans in database:', result.length);
-    
   } catch (error) {
     console.error('❌ Error seeding subscription plans:', error);
     throw error;
@@ -114,7 +109,7 @@ async function seedSubscriptionPlans() {
 if (require.main === module) {
   seedSubscriptionPlans()
     .then(() => process.exit(0))
-    .catch((error) => {
+    .catch(error => {
       console.error(error);
       process.exit(1);
     });

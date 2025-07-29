@@ -4,11 +4,27 @@ import { lazy, Suspense } from 'react';
 import { useModalStore } from '../../store';
 
 // Lazy load all modal components for better performance
-const CreateLinkModal = lazy(() => import('../modals/CreateLinkModal').then(m => ({ default: m.CreateLinkModal })));
-const LinkDetailsModal = lazy(() => import('../modals/LinkDetailsModal').then(m => ({ default: m.LinkDetailsModal })));
-const ShareModal = lazy(() => import('../modals/ShareModal').then(m => ({ default: m.ShareModal })));
-const SettingsModal = lazy(() => import('../modals/SettingsModal').then(m => ({ default: m.SettingsModal })));
-const DeleteConfirmationModal = lazy(() => import('../modals/DeleteConfirmationModal').then(m => ({ default: m.DeleteConfirmationModal })));
+const CreateLinkModal = lazy(() =>
+  import('../modals/CreateLinkModal').then(m => ({
+    default: m.CreateLinkModal,
+  }))
+);
+const LinkDetailsModal = lazy(() =>
+  import('../modals/LinkDetailsModal').then(m => ({
+    default: m.LinkDetailsModal,
+  }))
+);
+const ShareModal = lazy(() =>
+  import('../modals/ShareModal').then(m => ({ default: m.ShareModal }))
+);
+const SettingsModal = lazy(() =>
+  import('../modals/SettingsModal').then(m => ({ default: m.SettingsModal }))
+);
+const DeleteConfirmationModal = lazy(() =>
+  import('../modals/DeleteConfirmationModal').then(m => ({
+    default: m.DeleteConfirmationModal,
+  }))
+);
 
 /**
  * LinksModalManager - Centralized modal management using store architecture
@@ -64,11 +80,13 @@ export function LinksModalManager() {
 
   // Wrap modal in Suspense for lazy loading
   return (
-    <Suspense fallback={
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+          <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+        </div>
+      }
+    >
       {modal}
     </Suspense>
   );

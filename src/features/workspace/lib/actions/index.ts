@@ -9,10 +9,7 @@ export {
 } from './tree-actions';
 
 // Batch operations
-export { 
-  batchMoveItemsAction, 
-  batchDeleteItemsAction 
-} from './batch-actions';
+export { batchMoveItemsAction, batchDeleteItemsAction } from './batch-actions';
 
 // Other actions
 export * from './folder-actions';

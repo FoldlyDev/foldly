@@ -416,7 +416,7 @@ CREATE TABLE links (
   max_files INTEGER DEFAULT 100,
   max_file_size BIGINT DEFAULT 104857600, -- 100MB
   expires_at TIMESTAMP WITH TIME ZONE,
-  
+
   -- Branding Options
   brand_enabled BOOLEAN DEFAULT FALSE,
   brand_color VARCHAR(7),
@@ -553,6 +553,7 @@ CREATE POLICY "Users manage own files" ON files FOR ALL USING (user_id = auth.jw
   - Storage quota management and usage monitoring
 
 **Modern Architecture Benefits**:
+
 - **Enterprise Integration**: Direct Clerk 2025 billing API integration
 - **Business Intelligence**: Comprehensive subscription analytics and revenue tracking
 - **Performance Optimized**: Real-time feature checking with intelligent caching
@@ -615,7 +616,7 @@ export const billing = {
   getCurrentPlan,
   hasFeature,
   isUserSubscribed,
-  
+
   // Core services
   integration: ClerkBillingIntegrationService,
   analytics: SubscriptionAnalyticsService,
@@ -631,6 +632,7 @@ export const billing = {
 ```
 
 **Service Layer Benefits**:
+
 - **Centralized Access**: Single import patterns for all domain services
 - **Type Safety**: Comprehensive TypeScript coverage with branded types
 - **Error Recovery**: Multi-layer fallback systems with health monitoring

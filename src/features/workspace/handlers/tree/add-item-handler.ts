@@ -1,7 +1,4 @@
-import {
-  insertItemsAtTarget,
-  type DragTarget,
-} from '@headless-tree/core';
+import { insertItemsAtTarget, type DragTarget } from '@headless-tree/core';
 import { data, insertNewItem } from '../../lib/tree-data';
 import type { WorkspaceTreeItem } from '../../lib/tree-data';
 
@@ -28,16 +25,20 @@ export function handleAddItem(
     console.warn('Cannot add item: no root ID provided');
     return null;
   }
-  
+
   const targetId = parentId || rootId;
   const targetItem = tree.getItemInstance(targetId);
-  
+
   if (!targetItem) {
     console.warn('Cannot add item: target item not found:', targetId);
     return null;
   }
 
-  console.log('➕ Adding new item:', { name, isFile, targetId: targetId.slice(-8) });
+  console.log('➕ Adding new item:', {
+    name,
+    isFile,
+    targetId: targetId.slice(-8),
+  });
 
   // Create new item in tree data
   const newId = insertNewItem(name, isFile);

@@ -3,11 +3,7 @@
 // =============================================================================
 // 🎯 2025 Best Practice: Centralized common types for consistency
 
-import type {
-  LinkType,
-  FileProcessingStatus,
-  BatchStatus,
-} from './enums';
+import type { LinkType, FileProcessingStatus, BatchStatus } from './enums';
 
 // =============================================================================
 // RESULT PATTERN - Type-safe error handling

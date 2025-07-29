@@ -94,7 +94,7 @@ export function LinkCreationForm({
   // Real-time URL generation with validation
   // Use 'topic' field from database schema, fallback to 'name' for compatibility
   const topicValue = formData.topic || formData.name || '';
-  
+
   // Real-time topic validation for topic links
   const topicValidation = useTopicValidation(topicValue, {
     enabled: linkType === 'topic' && !!user?.id,
@@ -121,9 +121,11 @@ export function LinkCreationForm({
       : `foldly.io/${baseSlug}/[topic-name]`;
 
     // Combine format validation and uniqueness validation
-    const isValidTopic = formatValidation.isValid && (topicValidation.isAvailable || !topicValue);
-    const topicError = formatValidation.error || 
-                      (topicValidation.isUnavailable ? topicValidation.message : null);
+    const isValidTopic =
+      formatValidation.isValid && (topicValidation.isAvailable || !topicValue);
+    const topicError =
+      formatValidation.error ||
+      (topicValidation.isUnavailable ? topicValidation.message : null);
 
     return {
       displayUrl,
@@ -131,7 +133,15 @@ export function LinkCreationForm({
       isValidTopic,
       topicError,
     };
-  }, [linkType, baseSlug, topicValue, formData.slug, topicValidation.isAvailable, topicValidation.isUnavailable, topicValidation.message]);
+  }, [
+    linkType,
+    baseSlug,
+    topicValue,
+    formData.slug,
+    topicValidation.isAvailable,
+    topicValidation.isUnavailable,
+    topicValidation.message,
+  ]);
 
   return (
     <div className='space-y-6'>

@@ -4,7 +4,7 @@
 // Landing components
 export * from './components';
 
-// Landing hooks  
+// Landing hooks
 export * from './hooks';
 
 // Landing store

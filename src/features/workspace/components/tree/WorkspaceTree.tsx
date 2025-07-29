@@ -134,7 +134,7 @@ export default function WorkspaceTree({
       !item.getItemData()?.isFile,
     canReorder: true,
     reorderAreaPercentage: 0.4, // Increase reorder zone sensitivity for better UX
-    
+
     // Custom drag preview
     ...dragPreviewConfig,
 
@@ -255,7 +255,7 @@ export default function WorkspaceTree({
   // Error state
   if (error) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
@@ -271,7 +271,7 @@ export default function WorkspaceTree({
   // Empty state
   if (!workspaceData.folders?.length && !workspaceData.files?.length) {
     return (
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.2 }}
@@ -285,11 +285,12 @@ export default function WorkspaceTree({
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
-      className='h-full flex flex-col'>
+      className='h-full flex flex-col'
+    >
       <div
         {...tree.getContainerProps()}
         className='tree flex-1 overflow-auto relative'
@@ -383,27 +384,37 @@ export default function WorkspaceTree({
           const draggedItems = tree.getState()?.dnd?.draggedItems;
           const dragTarget = tree.getDragTarget?.();
           const dragLineStyle = tree.getDragLineStyle();
-          
+
           // Check if the drag line is targeting one of the currently dragged items
           // This prevents showing drag lines between/above/below items that are being dragged
-          const isDragLineOnDraggedItem = draggedItems && dragTarget && 
-            draggedItems.some(draggedItem => draggedItem.getId() === dragTarget.item.getId());
-          
+          const isDragLineOnDraggedItem =
+            draggedItems &&
+            dragTarget &&
+            draggedItems.some(
+              draggedItem => draggedItem.getId() === dragTarget.item.getId()
+            );
+
           // Check if the drag line is targeting the root workspace
           // Root workspace shouldn't show drag lines for reordering
-          const isTargetingRootWorkspace = dragTarget && dragTarget.item.getId() === rootId;
-          
+          const isTargetingRootWorkspace =
+            dragTarget && dragTarget.item.getId() === rootId;
+
           // Hide drag line if:
           // 1. It's targeting one of the dragged items (illogical)
           // 2. It's targeting the root workspace (no reordering in root)
           // 3. No drag line style available
-          if (isDragLineOnDraggedItem || isTargetingRootWorkspace || !dragLineStyle || dragLineStyle.display === 'none') {
+          if (
+            isDragLineOnDraggedItem ||
+            isTargetingRootWorkspace ||
+            !dragLineStyle ||
+            dragLineStyle.display === 'none'
+          ) {
             return null;
           }
-          
+
           return <div style={dragLineStyle} className='dragline' />;
         })()}
-        
+
         {/* Drag preview component */}
         <DragPreview tree={tree} />
       </div>

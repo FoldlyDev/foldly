@@ -153,10 +153,13 @@ export const filesRelations = relations(files, ({ one }) => ({
 // SUBSCRIPTION ANALYTICS RELATIONS
 // =============================================================================
 
-export const subscriptionAnalyticsRelations = relations(subscriptionAnalytics, ({ one }) => ({
-  // Many-to-one relationship with user
-  user: one(users, {
-    fields: [subscriptionAnalytics.userId],
-    references: [users.id],
-  }),
-}));
+export const subscriptionAnalyticsRelations = relations(
+  subscriptionAnalytics,
+  ({ one }) => ({
+    // Many-to-one relationship with user
+    user: one(users, {
+      fields: [subscriptionAnalytics.userId],
+      references: [users.id],
+    }),
+  })
+);

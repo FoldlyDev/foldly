@@ -16,7 +16,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             refetchOnMount: false, // Prevent refetch on component mount if data exists
             refetchOnReconnect: 'always', // Only refetch on network reconnect
             retry: 2, // Reduced from 3 to 2 for faster error handling
-            retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000), // Max 10s delay
+            retryDelay: attemptIndex =>
+              Math.min(1000 * 2 ** attemptIndex, 10000), // Max 10s delay
             networkMode: 'online', // Only fetch when online
           },
           mutations: {
@@ -31,14 +32,14 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools 
-          initialIsOpen={false} 
-          position="bottom-right"
+        <ReactQueryDevtools
+          initialIsOpen={false}
+          position='bottom-right'
           toggleButtonProps={{
             style: {
               backgroundColor: 'var(--primary)',
               borderRadius: '8px',
-            }
+            },
           }}
         />
       )}

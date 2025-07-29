@@ -24,9 +24,7 @@ export function LinkStatusControls({
         <div className='space-y-1'>
           <div className='flex items-center gap-2'>
             <Power className='h-4 w-4 text-green-600' />
-            <p className='text-sm font-medium text-foreground'>
-              Link Status
-            </p>
+            <p className='text-sm font-medium text-foreground'>Link Status</p>
           </div>
           <p className='text-xs text-muted-foreground'>
             Control whether this link is active and accepting uploads
@@ -49,9 +47,7 @@ export function LinkStatusControls({
             ) : (
               <EyeOff className='h-4 w-4 text-orange-600' />
             )}
-            <p className='text-sm font-medium text-foreground'>
-              Visibility
-            </p>
+            <p className='text-sm font-medium text-foreground'>Visibility</p>
           </div>
           <p className='text-xs text-muted-foreground'>
             {formData.isPublic

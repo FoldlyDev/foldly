@@ -5,7 +5,10 @@
 
 import { eq, asc } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import { subscriptionPlans, type SubscriptionPlan } from '@/lib/database/schemas';
+import {
+  subscriptionPlans,
+  type SubscriptionPlan,
+} from '@/lib/database/schemas';
 
 // =============================================================================
 // TYPES
@@ -49,28 +52,33 @@ export class SubscriptionPlansService {
         .from(subscriptionPlans)
         .where(eq(subscriptionPlans.isActive, true))
         .orderBy(asc(subscriptionPlans.sortOrder));
-      
+
       // Return empty array if no plans found instead of throwing
       return plans || [];
     } catch (error) {
       console.error('Error fetching active plans:', error);
       // Return default free plan as fallback
-      return [{
-        id: 0,
-        planKey: 'free',
-        planName: 'Free',
-        planDescription: 'Basic plan with essential features',
-        monthlyPriceUsd: '0.00',
-        yearlyPriceUsd: '0.00',
-        storageLimitGb: 50,
-        highlightFeatures: ['File sharing', 'Basic storage'],
-        featureDescriptions: { 'File sharing': 'Share files with others', 'Basic storage': '50GB of storage space' },
-        isPopular: false,
-        isActive: true,
-        sortOrder: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }];
+      return [
+        {
+          id: 0,
+          planKey: 'free',
+          planName: 'Free',
+          planDescription: 'Basic plan with essential features',
+          monthlyPriceUsd: '0.00',
+          yearlyPriceUsd: '0.00',
+          storageLimitGb: 50,
+          highlightFeatures: ['File sharing', 'Basic storage'],
+          featureDescriptions: {
+            'File sharing': 'Share files with others',
+            'Basic storage': '50GB of storage space',
+          },
+          isPopular: false,
+          isActive: true,
+          sortOrder: 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
     }
   }
 
@@ -103,7 +111,7 @@ export class SubscriptionPlansService {
       return result[0] || null;
     } catch (error) {
       console.error(`Error fetching plan ${planKey}:`, error);
-      
+
       // Return fallback plan data for known plan types
       if (planKey === 'free') {
         return {
@@ -115,7 +123,10 @@ export class SubscriptionPlansService {
           yearlyPriceUsd: '0.00',
           storageLimitGb: 50,
           highlightFeatures: ['File sharing', 'Basic storage'],
-          featureDescriptions: { 'File sharing': 'Share files with others', 'Basic storage': '50GB of storage space' },
+          featureDescriptions: {
+            'File sharing': 'Share files with others',
+            'Basic storage': '50GB of storage space',
+          },
           isPopular: false,
           isActive: true,
           sortOrder: 1,
@@ -123,7 +134,7 @@ export class SubscriptionPlansService {
           updatedAt: new Date(),
         };
       }
-      
+
       return null;
     }
   }
@@ -173,10 +184,12 @@ export class SubscriptionPlansService {
   /**
    * Update an existing subscription plan
    */
-  static async updatePlan(input: UpdatePlanInput): Promise<SubscriptionPlan | null> {
+  static async updatePlan(
+    input: UpdatePlanInput
+  ): Promise<SubscriptionPlan | null> {
     try {
       const { planKey, ...updateData } = input;
-      
+
       const result = await db
         .update(subscriptionPlans)
         .set({
@@ -213,7 +226,10 @@ export class SubscriptionPlansService {
   /**
    * Toggle plan active status
    */
-  static async togglePlanStatus(planKey: string, isActive: boolean): Promise<SubscriptionPlan | null> {
+  static async togglePlanStatus(
+    planKey: string,
+    isActive: boolean
+  ): Promise<SubscriptionPlan | null> {
     try {
       const result = await db
         .update(subscriptionPlans)
@@ -241,10 +257,11 @@ export class SubscriptionPlansService {
     try {
       const plan = await this.getPlanByKey(planKey);
       if (!plan) return null;
-      
+
       return {
         highlightFeatures: (plan.highlightFeatures as string[]) || [],
-        featureDescriptions: (plan.featureDescriptions as Record<string, string>) || {},
+        featureDescriptions:
+          (plan.featureDescriptions as Record<string, string>) || {},
       };
     } catch (error) {
       console.error(`Error fetching UI metadata for plan ${planKey}:`, error);
@@ -265,7 +282,8 @@ export function getDefaultPlanConfigurations(): CreatePlanInput[] {
     {
       planKey: 'free',
       planName: 'Free',
-      planDescription: 'Perfect for personal use with essential file sharing features',
+      planDescription:
+        'Perfect for personal use with essential file sharing features',
       monthlyPriceUsd: '0.00',
       yearlyPriceUsd: '0.00',
       storageLimitGb: 50,
@@ -273,13 +291,13 @@ export function getDefaultPlanConfigurations(): CreatePlanInput[] {
         'File sharing',
         'Basic storage',
         'Email notifications',
-        'QR code generation'
+        'QR code generation',
       ],
       featureDescriptions: {
         'File sharing': 'Share files with others easily',
         'Basic storage': '50GB of storage space',
         'Email notifications': 'Get notified about file activities',
-        'QR code generation': 'Generate QR codes for easy sharing'
+        'QR code generation': 'Generate QR codes for easy sharing',
       },
       isPopular: false,
       isActive: true,
@@ -297,14 +315,14 @@ export function getDefaultPlanConfigurations(): CreatePlanInput[] {
         'Password protection',
         'Premium short links',
         'File restrictions',
-        'Priority support'
+        'Priority support',
       ],
       featureDescriptions: {
         'Custom branding': 'Add your logo and brand colors',
         'Password protection': 'Secure your uploads with passwords',
         'Premium short links': 'Create custom short URLs',
         'File restrictions': 'Control file types and sizes',
-        'Priority support': 'Get faster support responses'
+        'Priority support': 'Get faster support responses',
       },
       isPopular: true,
       isActive: true,
@@ -322,14 +340,14 @@ export function getDefaultPlanConfigurations(): CreatePlanInput[] {
         'Advanced analytics',
         'Team management',
         'API access',
-        'Dedicated support'
+        'Dedicated support',
       ],
       featureDescriptions: {
         'Unlimited storage': 'No storage limits for your team',
         'Advanced analytics': 'Detailed insights and reporting',
         'Team management': 'Manage team members and permissions',
         'API access': 'Integrate with your existing systems',
-        'Dedicated support': '24/7 dedicated support channel'
+        'Dedicated support': '24/7 dedicated support channel',
       },
       isPopular: false,
       isActive: true,
@@ -344,11 +362,13 @@ export function getDefaultPlanConfigurations(): CreatePlanInput[] {
 export async function seedSubscriptionPlans(): Promise<void> {
   try {
     const defaultPlans = getDefaultPlanConfigurations();
-    
+
     for (const planConfig of defaultPlans) {
       // Check if plan already exists
-      const existingPlan = await SubscriptionPlansService.getPlanByKey(planConfig.planKey);
-      
+      const existingPlan = await SubscriptionPlansService.getPlanByKey(
+        planConfig.planKey
+      );
+
       if (!existingPlan) {
         await SubscriptionPlansService.createPlan(planConfig);
         console.log(`✅ Created plan: ${planConfig.planName}`);
@@ -356,7 +376,7 @@ export async function seedSubscriptionPlans(): Promise<void> {
         console.log(`⏭️  Plan already exists: ${planConfig.planName}`);
       }
     }
-    
+
     console.log('✅ Subscription plans seeding completed');
   } catch (error) {
     console.error('❌ Error seeding subscription plans:', error);

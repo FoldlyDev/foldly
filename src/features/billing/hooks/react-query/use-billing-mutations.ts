@@ -39,23 +39,25 @@ export function useUpdateStorageQuotaMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: UpdateStorageQuotaInput): Promise<BillingResponse<{ storageLimit: number }>> => {
+    mutationFn: async (
+      input: UpdateStorageQuotaInput
+    ): Promise<BillingResponse<{ storageLimit: number }>> => {
       // This would call a server action to update storage quota
       // For now, simulating the API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       return {
         success: true,
         error: null,
         data: { storageLimit: input.newLimit },
       };
     },
-    onMutate: async (input) => {
+    onMutate: async input => {
       if (!user?.id) return;
 
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ 
-        queryKey: billingQueryKeys.userBilling(user.id) 
+      await queryClient.cancelQueries({
+        queryKey: billingQueryKeys.userBilling(user.id),
       });
 
       // Snapshot the previous value
@@ -83,18 +85,18 @@ export function useUpdateStorageQuotaMutation() {
           context.previousData
         );
       }
-      
+
       toast.error('Failed to update storage quota');
       console.error('Storage quota update error:', error);
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       toast.success('Storage quota updated successfully');
     },
     onSettled: () => {
       // Always refetch after error or success
       if (user?.id) {
-        queryClient.invalidateQueries({ 
-          queryKey: billingQueryKeys.userBilling(user.id) 
+        queryClient.invalidateQueries({
+          queryKey: billingQueryKeys.userBilling(user.id),
         });
       }
     },
@@ -111,16 +113,16 @@ export function useRefreshBillingDataMutation() {
   return useMutation({
     mutationFn: async (): Promise<void> => {
       if (!user?.id) throw new Error('User not authenticated');
-      
+
       // Invalidate all billing queries to force refresh
-      await queryClient.invalidateQueries({ 
-        queryKey: billingQueryKeys.userBilling(user.id) 
+      await queryClient.invalidateQueries({
+        queryKey: billingQueryKeys.userBilling(user.id),
       });
     },
     onSuccess: () => {
       toast.success('Billing data refreshed');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error('Failed to refresh billing data');
       console.error('Billing data refresh error:', error);
     },
@@ -137,16 +139,16 @@ export function useClearBillingCacheMutation() {
   return useMutation({
     mutationFn: async (): Promise<void> => {
       if (!user?.id) throw new Error('User not authenticated');
-      
+
       // Remove all billing queries from cache
-      queryClient.removeQueries({ 
-        queryKey: billingQueryKeys.userBilling(user.id) 
+      queryClient.removeQueries({
+        queryKey: billingQueryKeys.userBilling(user.id),
       });
     },
     onSuccess: () => {
       toast.success('Billing cache cleared');
     },
-    onError: (error) => {
+    onError: error => {
       toast.error('Failed to clear billing cache');
       console.error('Cache clear error:', error);
     },
@@ -160,23 +162,25 @@ export function useInvalidateBillingQueriesMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (scope: 'all' | 'user' | 'plans' = 'all'): Promise<void> => {
+    mutationFn: async (
+      scope: 'all' | 'user' | 'plans' = 'all'
+    ): Promise<void> => {
       switch (scope) {
         case 'all':
-          await queryClient.invalidateQueries({ 
-            queryKey: billingQueryKeys.all 
+          await queryClient.invalidateQueries({
+            queryKey: billingQueryKeys.all,
           });
           break;
         case 'plans':
-          await queryClient.invalidateQueries({ 
-            queryKey: billingQueryKeys.subscriptionPlans() 
+          await queryClient.invalidateQueries({
+            queryKey: billingQueryKeys.subscriptionPlans(),
           });
           break;
         case 'user':
         default:
           // This would require userId parameter in a real implementation
-          await queryClient.invalidateQueries({ 
-            queryKey: billingQueryKeys.all 
+          await queryClient.invalidateQueries({
+            queryKey: billingQueryKeys.all,
           });
           break;
       }
@@ -184,7 +188,7 @@ export function useInvalidateBillingQueriesMutation() {
     onSuccess: (data, variables) => {
       toast.success(`${variables} billing data refreshed`);
     },
-    onError: (error) => {
+    onError: error => {
       toast.error('Failed to refresh billing data');
       console.error('Billing invalidation error:', error);
     },

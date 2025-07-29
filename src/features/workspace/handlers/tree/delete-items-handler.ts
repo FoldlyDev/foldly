@@ -21,11 +21,14 @@ export function handleDeleteItems(
     return;
   }
 
-  console.log('🗑️ Deleting items:', itemIds.map(id => id.slice(-8)));
+  console.log(
+    '🗑️ Deleting items:',
+    itemIds.map(id => id.slice(-8))
+  );
 
   // Remove items from tree data structure
   deleteItemsFromTree(itemIds);
-  
+
   // Rebuild tree to reflect changes
   tree.rebuildTree();
 

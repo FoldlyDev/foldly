@@ -20,7 +20,9 @@ export let isDragOperationActive = false;
 // Helper functions to manage drag state
 export const setDragOperationActive = (active: boolean) => {
   isDragOperationActive = active;
-  console.log(`🎯 Drag operation state changed: ${active ? 'ACTIVE' : 'INACTIVE'}`);
+  console.log(
+    `🎯 Drag operation state changed: ${active ? 'ACTIVE' : 'INACTIVE'}`
+  );
 };
 
 export const getDragOperationActive = () => isDragOperationActive;
@@ -106,7 +108,10 @@ export const populateFromDatabase = (
   });
 
   // Build hierarchy - collect items by parent first, then sort by sortOrder
-  const itemsByParent: Record<string, Array<{id: string, sortOrder: number, type: 'folder' | 'file'}>> = {};
+  const itemsByParent: Record<
+    string,
+    Array<{ id: string; sortOrder: number; type: 'folder' | 'file' }>
+  > = {};
 
   // Group folders by parent
   folders.forEach(folder => {
@@ -116,9 +121,16 @@ export const populateFromDatabase = (
       itemsByParent[parentId].push({
         id: folder.id,
         sortOrder: folder.sortOrder,
-        type: 'folder'
+        type: 'folder',
       });
-      console.log('📁 Grouped folder by parent:', folder.id, '->', parentId, 'sortOrder:', folder.sortOrder);
+      console.log(
+        '📁 Grouped folder by parent:',
+        folder.id,
+        '->',
+        parentId,
+        'sortOrder:',
+        folder.sortOrder
+      );
     } else {
       console.log(
         '❌ Parent not found for folder:',
@@ -137,9 +149,16 @@ export const populateFromDatabase = (
       itemsByParent[parentId].push({
         id: file.id,
         sortOrder: file.sortOrder,
-        type: 'file'
+        type: 'file',
       });
-      console.log('📄 Grouped file by parent:', file.id, '->', parentId, 'sortOrder:', file.sortOrder);
+      console.log(
+        '📄 Grouped file by parent:',
+        file.id,
+        '->',
+        parentId,
+        'sortOrder:',
+        file.sortOrder
+      );
     } else {
       console.log(
         '❌ Parent not found for file:',
@@ -154,7 +173,7 @@ export const populateFromDatabase = (
   Object.keys(itemsByParent).forEach(parentId => {
     const items = itemsByParent[parentId];
     if (!items) return;
-    
+
     // Sort by sortOrder, then by type (folders first), then by id for consistency
     items.sort((a, b) => {
       if (a.sortOrder !== b.sortOrder) {
@@ -165,11 +184,16 @@ export const populateFromDatabase = (
       }
       return a.id.localeCompare(b.id);
     });
-    
+
     const parentData = data[parentId];
     if (parentData) {
       parentData.children = items.map(item => item.id);
-      console.log('🔗 Sorted children for parent:', parentId, 'order:', items.map(i => `${i.id}(${i.sortOrder})`));
+      console.log(
+        '🔗 Sorted children for parent:',
+        parentId,
+        'order:',
+        items.map(i => `${i.id}(${i.sortOrder})`)
+      );
     }
   });
 
@@ -177,7 +201,7 @@ export const populateFromDatabase = (
     '✅ populateFromDatabase completed. Final data structure:',
     JSON.stringify(data, null, 2)
   );
-  
+
   // Return true to indicate data was updated
   return true;
 };

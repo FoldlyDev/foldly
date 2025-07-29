@@ -4,11 +4,11 @@
 // 🎯 Centralized exports for database connection, schemas, and utilities
 
 // Database connection and client
-export { 
-  db, 
-  postgresClient, 
-  checkDatabaseConnection, 
-  closeDatabaseConnection 
+export {
+  db,
+  postgresClient,
+  checkDatabaseConnection,
+  closeDatabaseConnection,
 } from './connection';
 
 // Database schemas

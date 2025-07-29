@@ -34,11 +34,13 @@ export interface ClerkSubscriptionStatus {
   isFreeTier: boolean;
   isProTier: boolean;
   isBusinessTier: boolean;
-  
+
   // Feature access using Clerk's has() method
   hasFeature: (feature: keyof ClerkBillingFeatures) => boolean;
-  checkMultipleFeatures: (features: (keyof ClerkBillingFeatures)[]) => Record<string, boolean>;
-  
+  checkMultipleFeatures: (
+    features: (keyof ClerkBillingFeatures)[]
+  ) => Record<string, boolean>;
+
   // Quick feature checks (using actual 12 features)
   hasStorageLimits: boolean;
   hasCustomUsername: boolean;
@@ -53,18 +55,18 @@ export interface ClerkSubscriptionStatus {
   hasFileRestrictions: boolean;
   hasQrCodeGeneration: boolean;
   hasPrioritySupport: boolean;
-  
+
   // Upgrade capabilities
   canUpgrade: boolean;
   canUpgradeToPro: boolean;
   canUpgradeToBusiness: boolean;
   upgradeOptions: string[];
-  
+
   // Billing information
   currentPlan: 'free' | 'pro' | 'business';
   planDisplayName: string;
   billingCycle: 'monthly' | 'yearly' | null;
-  
+
   // User info
   isLoaded: boolean;
   user: any;
@@ -77,7 +79,7 @@ export interface ClerkSubscriptionStatus {
 export const useClerkSubscription = (): ClerkSubscriptionStatus => {
   const { has } = useAuth();
   const { isLoaded, user } = useUser();
-  
+
   return useMemo(() => {
     if (!isLoaded) {
       return {
@@ -115,12 +117,13 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
     const getCurrentPlan = (): 'free' | 'pro' | 'business' => {
       try {
         if (!has) return 'free';
-        
+
         // Direct plan detection using Clerk's billing subscription state
-        if (has({ plan: 'business' }) || has({ plan: 'Business' })) return 'business';
+        if (has({ plan: 'business' }) || has({ plan: 'Business' }))
+          return 'business';
         if (has({ plan: 'pro' }) || has({ plan: 'Pro' })) return 'pro';
         if (has({ plan: 'free' }) || has({ plan: 'Free' })) return 'free';
-        
+
         return 'free'; // Default fallback
       } catch (error) {
         console.warn('Error determining current plan:', error);
@@ -129,7 +132,7 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
     };
 
     const currentPlan = getCurrentPlan();
-    
+
     // Helper function to check features using Clerk's 2025 has() method FIRST
     const hasFeature = (feature: keyof ClerkBillingFeatures): boolean => {
       try {
@@ -140,32 +143,42 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
             return clerkFeatureCheck;
           }
         }
-        
+
         // FALLBACK: Plan-based feature checking if Clerk billing isn't configured
         const freeFeatures: (keyof ClerkBillingFeatures)[] = [
-          'storage_limits', 'custom_username', 'unlimited_links', 
-          'email_notifications', 'file_preview_thumbnails', 
-          'cloud_integrations', 'color_customization', 'qr_code_generation'
+          'storage_limits',
+          'custom_username',
+          'unlimited_links',
+          'email_notifications',
+          'file_preview_thumbnails',
+          'cloud_integrations',
+          'color_customization',
+          'qr_code_generation',
         ];
-        
+
         const proFeatures: (keyof ClerkBillingFeatures)[] = [
-          'custom_branding', 'premium_short_links', 'password_protected_links', 
-          'file_restrictions', 'priority_support'
+          'custom_branding',
+          'premium_short_links',
+          'password_protected_links',
+          'file_restrictions',
+          'priority_support',
         ];
-        
+
         // Check based on current plan (fallback only)
         if (currentPlan === 'free') {
           return freeFeatures.includes(feature);
         }
-        
+
         if (currentPlan === 'pro') {
-          return freeFeatures.includes(feature) || proFeatures.includes(feature);
+          return (
+            freeFeatures.includes(feature) || proFeatures.includes(feature)
+          );
         }
-        
+
         if (currentPlan === 'business') {
           return true; // Business plan has all features
         }
-        
+
         return false;
       } catch (error) {
         console.warn(`Error checking feature ${feature}:`, error);
@@ -174,14 +187,16 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
     };
 
     // Helper to check multiple features at once
-    const checkMultipleFeatures = (features: (keyof ClerkBillingFeatures)[]): Record<string, boolean> => {
+    const checkMultipleFeatures = (
+      features: (keyof ClerkBillingFeatures)[]
+    ): Record<string, boolean> => {
       const result: Record<string, boolean> = {};
       features.forEach(feature => {
         result[feature] = hasFeature(feature);
       });
       return result;
     };
-    
+
     // Quick feature access checks (using actual 12 features)
     const hasStorageLimits = hasFeature('storage_limits');
     const hasCustomUsername = hasFeature('custom_username');
@@ -196,38 +211,42 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
     const hasFileRestrictions = hasFeature('file_restrictions');
     const hasQrCodeGeneration = hasFeature('qr_code_generation');
     const hasPrioritySupport = hasFeature('priority_support');
-    
+
     // Tier identification based on current plan (FIXED)
     const isBusinessTier = currentPlan === 'business';
     const isProTier = currentPlan === 'pro';
     const isFreeTier = currentPlan === 'free';
-    
+
     // Plan display name
-    const planDisplayName = currentPlan === 'business' ? 'Business' : 
-                           currentPlan === 'pro' ? 'Pro' : 'Free';
-    
+    const planDisplayName =
+      currentPlan === 'business'
+        ? 'Business'
+        : currentPlan === 'pro'
+          ? 'Pro'
+          : 'Free';
+
     // Upgrade capabilities
     const canUpgradeToPro = isFreeTier;
     const canUpgradeToBusiness = isFreeTier || isProTier;
     const canUpgrade = canUpgradeToPro || canUpgradeToBusiness;
-    
+
     const upgradeOptions: string[] = [];
     if (canUpgradeToPro) upgradeOptions.push('pro');
     if (canUpgradeToBusiness) upgradeOptions.push('business');
-    
+
     // Try to determine billing cycle (this would require additional Clerk billing data)
     const billingCycle: 'monthly' | 'yearly' | null = null; // Would be set from Clerk subscription data
-    
+
     return {
       // Tier identification
       isFreeTier,
       isProTier,
       isBusinessTier,
-      
+
       // Feature access
       hasFeature,
       checkMultipleFeatures,
-      
+
       // Quick feature checks (actual 12 features)
       hasStorageLimits,
       hasCustomUsername,
@@ -242,18 +261,18 @@ export const useClerkSubscription = (): ClerkSubscriptionStatus => {
       hasFileRestrictions,
       hasQrCodeGeneration,
       hasPrioritySupport,
-      
+
       // Upgrade capabilities
       canUpgrade,
       canUpgradeToPro,
       canUpgradeToBusiness,
       upgradeOptions,
-      
+
       // Billing information (FIXED - now using direct plan detection)
       currentPlan,
       planDisplayName,
       billingCycle,
-      
+
       // User info
       isLoaded,
       user,
@@ -278,9 +297,11 @@ export const useFeatureCheck = (feature: FeatureKey): boolean => {
  * Hook to get multiple feature access states at once
  * FIXED: Now uses plan-based logic for consistency
  */
-export const useMultipleFeatures = (features: FeatureKey[]): Record<FeatureKey, boolean> => {
+export const useMultipleFeatures = (
+  features: FeatureKey[]
+): Record<FeatureKey, boolean> => {
   const { hasFeature } = useClerkSubscription();
-  
+
   return useMemo(() => {
     const result: Record<string, boolean> = {};
     features.forEach(feature => {
@@ -300,28 +321,31 @@ export const useMultipleFeatures = (features: FeatureKey[]): Record<FeatureKey, 
  */
 export const useBillingNavigation = () => {
   const router = useRouter();
-  
-  return useMemo(() => ({
-    // Navigate to billing page - use Next.js router for smooth navigation
-    goToBilling: () => {
-      router.push('/dashboard/billing');
-    },
-    
-    // Navigate to pricing page - use Next.js router for smooth navigation
-    goToPricing: () => {
-      router.push('/pricing');
-    },
-    
-    // Open Clerk's user profile with billing tab - use Next.js router for smooth navigation
-    openUserProfile: () => {
-      router.push('/dashboard/billing?tab=profile');
-    },
-    
-    // Direct links - for use with Next.js Link components
-    billingUrl: '/dashboard/billing',
-    pricingUrl: '/pricing',
-    profileUrl: '/dashboard/billing?tab=profile',
-  }), [router]);
+
+  return useMemo(
+    () => ({
+      // Navigate to billing page - use Next.js router for smooth navigation
+      goToBilling: () => {
+        router.push('/dashboard/billing');
+      },
+
+      // Navigate to pricing page - use Next.js router for smooth navigation
+      goToPricing: () => {
+        router.push('/pricing');
+      },
+
+      // Open Clerk's user profile with billing tab - use Next.js router for smooth navigation
+      openUserProfile: () => {
+        router.push('/dashboard/billing?tab=profile');
+      },
+
+      // Direct links - for use with Next.js Link components
+      billingUrl: '/dashboard/billing',
+      pricingUrl: '/pricing',
+      profileUrl: '/dashboard/billing?tab=profile',
+    }),
+    [router]
+  );
 };
 
 // =============================================================================
@@ -333,22 +357,26 @@ export const useBillingNavigation = () => {
  * Note: This hook provides basic tier info. For real storage data, use useUserStorageStatusQuery
  */
 export const useStorageTier = () => {
-  const { isBusinessTier, isProTier, hasStorageLimits } = useClerkSubscription();
-  
-  return useMemo(() => ({
-    // Tier information (use subscription_plans table for actual limits)
-    tierName: isBusinessTier ? 'Business' : isProTier ? 'Pro' : 'Free',
-    tierColor: isBusinessTier ? 'orange' : isProTier ? 'purple' : 'blue',
-    
-    // Capabilities
-    hasStorageLimits,
-    isBusinessTier,
-    isProTier,
-    
-    // Deprecated fields - use React Query hooks for real data
-    storageLimit: 'Use useUserStorageStatusQuery for real storage limits',
-    storageDescription: 'Use useUserStorageStatusQuery for real storage info',
-  }), [isBusinessTier, isProTier, hasStorageLimits]);
+  const { isBusinessTier, isProTier, hasStorageLimits } =
+    useClerkSubscription();
+
+  return useMemo(
+    () => ({
+      // Tier information (use subscription_plans table for actual limits)
+      tierName: isBusinessTier ? 'Business' : isProTier ? 'Pro' : 'Free',
+      tierColor: isBusinessTier ? 'orange' : isProTier ? 'purple' : 'blue',
+
+      // Capabilities
+      hasStorageLimits,
+      isBusinessTier,
+      isProTier,
+
+      // Deprecated fields - use React Query hooks for real data
+      storageLimit: 'Use useUserStorageStatusQuery for real storage limits',
+      storageDescription: 'Use useUserStorageStatusQuery for real storage info',
+    }),
+    [isBusinessTier, isProTier, hasStorageLimits]
+  );
 };
 
 // =============================================================================
@@ -361,7 +389,7 @@ export const useStorageTier = () => {
  */
 export const useSubscriptionStatus = () => {
   const clerkSubscription = useClerkSubscription();
-  
+
   return {
     subscription: null, // No longer needed with Clerk
     isLoading: !clerkSubscription.isLoaded,
@@ -376,7 +404,7 @@ export const useSubscriptionStatus = () => {
  */
 export const useSubscriptionFeatures = () => {
   const { hasFeature } = useClerkSubscription();
-  
+
   return {
     features: {}, // Features are now checked individually
     hasFeature,

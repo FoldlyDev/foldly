@@ -12,14 +12,16 @@ import { useCallback } from 'react';
  */
 export function normalizeSlug(slug: string): string {
   if (!slug) return '';
-  
-  return slug
-    .toLowerCase()
-    .trim()
-    // Remove any potential double spaces and replace with single
-    .replace(/\s+/g, ' ')
-    // Convert spaces to hyphens for URL-friendly format (if needed)
-    .replace(/\s/g, '-');
+
+  return (
+    slug
+      .toLowerCase()
+      .trim()
+      // Remove any potential double spaces and replace with single
+      .replace(/\s+/g, ' ')
+      // Convert spaces to hyphens for URL-friendly format (if needed)
+      .replace(/\s/g, '-')
+  );
 }
 
 /**
@@ -29,10 +31,8 @@ export function normalizeSlug(slug: string): string {
  */
 export function normalizeTopic(topic: string): string {
   if (!topic) return '';
-  
-  return topic
-    .toLowerCase()
-    .trim();
+
+  return topic.toLowerCase().trim();
 }
 
 /**
@@ -42,7 +42,6 @@ export function normalizeTopic(topic: string): string {
  */
 
 export function useSlugNormalization() {
-  
   const normalizeSlugInput = useCallback((input: string): string => {
     return normalizeSlug(input);
   }, []);
@@ -51,13 +50,19 @@ export function useSlugNormalization() {
     return normalizeTopic(input);
   }, []);
 
-  const isSlugEquivalent = useCallback((slug1: string, slug2: string): boolean => {
-    return normalizeSlug(slug1) === normalizeSlug(slug2);
-  }, []);
+  const isSlugEquivalent = useCallback(
+    (slug1: string, slug2: string): boolean => {
+      return normalizeSlug(slug1) === normalizeSlug(slug2);
+    },
+    []
+  );
 
-  const isTopicEquivalent = useCallback((topic1: string, topic2: string): boolean => {
-    return normalizeTopic(topic1) === normalizeTopic(topic2);
-  }, []);
+  const isTopicEquivalent = useCallback(
+    (topic1: string, topic2: string): boolean => {
+      return normalizeTopic(topic1) === normalizeTopic(topic2);
+    },
+    []
+  );
 
   return {
     normalizeSlug: normalizeSlugInput,
@@ -74,7 +79,7 @@ export function useSlugNormalization() {
  */
 export function isValidNormalizedSlug(normalizedSlug: string): boolean {
   if (!normalizedSlug) return true; // Empty is valid (will use username)
-  
+
   // Check for valid URL-safe characters (lowercase letters, numbers, hyphens, underscores)
   return /^[a-z0-9_-]+$/.test(normalizedSlug);
 }
@@ -86,7 +91,7 @@ export function isValidNormalizedSlug(normalizedSlug: string): boolean {
  */
 export function isValidNormalizedTopic(normalizedTopic: string): boolean {
   if (!normalizedTopic) return false; // Topic is required
-  
+
   // Allow lowercase letters, numbers, spaces, hyphens, underscores
   return /^[a-z0-9\s_-]+$/.test(normalizedTopic);
 }

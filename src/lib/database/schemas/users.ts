@@ -28,7 +28,9 @@ export const users = pgTable(
     avatarUrl: text('avatar_url'),
 
     // Storage tracking (bytes) - for performance, updated when files change
-    storageUsed: bigint('storage_used', { mode: 'number' }).default(0).notNull(),
+    storageUsed: bigint('storage_used', { mode: 'number' })
+      .default(0)
+      .notNull(),
 
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })

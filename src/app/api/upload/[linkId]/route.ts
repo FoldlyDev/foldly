@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFileToLinkAction, validateLinkForUploadAction } from '@/features/upload/lib/actions/upload-to-link';
+import {
+  uploadFileToLinkAction,
+  validateLinkForUploadAction,
+} from '@/features/upload/lib/actions/upload-to-link';
 import { linkUploadValidationService } from '@/features/upload/lib/services/link-validation';
 
 // =============================================================================
@@ -25,7 +28,7 @@ export async function POST(
     // =============================================================================
     // 1. PARSE MULTIPART FORM DATA
     // =============================================================================
-    
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const uploaderName = formData.get('uploaderName') as string;
@@ -37,10 +40,10 @@ export async function POST(
     // Validate required fields
     if (!file) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'No file provided',
-          code: 'MISSING_FILE'
+          code: 'MISSING_FILE',
         },
         { status: 400 }
       );
@@ -48,30 +51,35 @@ export async function POST(
 
     if (!uploaderName || uploaderName.trim().length === 0) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: 'Uploader name is required',
-          code: 'MISSING_UPLOADER_NAME'
+          code: 'MISSING_UPLOADER_NAME',
         },
         { status: 400 }
       );
     }
 
-    console.log(`📁 File: ${file.name} (${Math.round(file.size / 1024)}KB) by ${uploaderName}`);
+    console.log(
+      `📁 File: ${file.name} (${Math.round(file.size / 1024)}KB) by ${uploaderName}`
+    );
 
     // =============================================================================
     // 2. REAL-TIME LINK AND FILE VALIDATION
     // =============================================================================
-    
+
     // Validate link and file before attempting upload
-    const validation = await linkUploadValidationService.validateFileForUpload(file, linkId);
-    
+    const validation = await linkUploadValidationService.validateFileForUpload(
+      file,
+      linkId
+    );
+
     if (!validation.success) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: validation.error,
-          code: 'VALIDATION_FAILED'
+          code: 'VALIDATION_FAILED',
         },
         { status: 400 }
       );
@@ -79,12 +87,12 @@ export async function POST(
 
     if (!validation.data.canUpload) {
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: validation.data.errors[0] || 'Upload not allowed',
           errors: validation.data.errors,
           warnings: validation.data.warnings,
-          code: 'UPLOAD_NOT_ALLOWED'
+          code: 'UPLOAD_NOT_ALLOWED',
         },
         { status: 403 }
       );
@@ -98,7 +106,7 @@ export async function POST(
     // =============================================================================
     // 3. PERFORM UPLOAD
     // =============================================================================
-    
+
     const uploaderInfo = {
       name: uploaderName.trim(),
       ...(uploaderEmail?.trim() && { email: uploaderEmail.trim() }),
@@ -115,11 +123,11 @@ export async function POST(
 
     if (!uploadResult.success) {
       console.error(`❌ Upload failed: ${uploadResult.error}`);
-      
+
       // Return appropriate HTTP status based on error type
       let statusCode = 500;
       let errorCode = 'UPLOAD_FAILED';
-      
+
       if (uploadResult.error?.includes('expired')) {
         statusCode = 410; // Gone
         errorCode = 'LINK_EXPIRED';
@@ -138,10 +146,10 @@ export async function POST(
       }
 
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: uploadResult.error,
-          code: errorCode
+          code: errorCode,
         },
         { status: statusCode }
       );
@@ -152,7 +160,7 @@ export async function POST(
     // =============================================================================
     // 4. RETURN SUCCESS RESPONSE
     // =============================================================================
-    
+
     return NextResponse.json({
       success: true,
       message: 'File uploaded successfully',
@@ -166,15 +174,14 @@ export async function POST(
       quotaInfo: uploadResult.quotaInfo,
       warnings: validation.data.warnings,
     });
-
   } catch (error) {
     console.error('❌ Upload API error:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Internal server error during upload',
-        code: 'INTERNAL_ERROR'
+        code: 'INTERNAL_ERROR',
       },
       { status: 500 }
     );
@@ -199,26 +206,29 @@ export async function GET(
     // =============================================================================
     // VALIDATE LINK FOR UPLOAD
     // =============================================================================
-    
-    const validation = await validateLinkForUploadAction(linkId, password || undefined);
-    
+
+    const validation = await validateLinkForUploadAction(
+      linkId,
+      password || undefined
+    );
+
     if (!validation.success) {
       if (validation.error?.includes('not found')) {
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: validation.error,
-            code: 'LINK_NOT_FOUND'
+            code: 'LINK_NOT_FOUND',
           },
           { status: 404 }
         );
       }
-      
+
       return NextResponse.json(
-        { 
-          success: false, 
+        {
+          success: false,
           error: validation.error,
-          code: 'VALIDATION_FAILED'
+          code: 'VALIDATION_FAILED',
         },
         { status: 400 }
       );
@@ -229,7 +239,7 @@ export async function GET(
     // =============================================================================
     // RETURN LINK INFORMATION
     // =============================================================================
-    
+
     return NextResponse.json({
       success: true,
       data: {
@@ -248,15 +258,14 @@ export async function GET(
         // Don't expose sensitive information
       },
     });
-
   } catch (error) {
     console.error('❌ Link validation API error:', error);
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Internal server error during validation',
-        code: 'INTERNAL_ERROR'
+        code: 'INTERNAL_ERROR',
       },
       { status: 500 }
     );

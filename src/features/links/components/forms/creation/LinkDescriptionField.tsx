@@ -9,9 +9,11 @@ interface LinkDescriptionFieldProps {
   };
   onDataChange: (data: any) => void;
   linkType: 'base' | 'topic';
-  errors?: {
-    description?: string;
-  } | undefined;
+  errors?:
+    | {
+        description?: string;
+      }
+    | undefined;
   isLoading?: boolean;
 }
 

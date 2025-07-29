@@ -21,7 +21,7 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
   const quickStart = async () => {
     console.log('🚀 QUICK START: Starting quick start process');
     console.log('🚀 QUICK START: User object:', user);
-    
+
     if (!user?.username) {
       console.error('🚀 QUICK START: Username not available');
       toast.error('Username not available');
@@ -33,12 +33,12 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
 
     try {
       toast.loading('Setting up your base link...', { id: 'quick-start' });
-      
+
       // Create base link with sensible defaults - matching manual creation exactly
       const quickStartData = {
         // Required fields matching manual creation
         title: 'Base link', // Match exactly with manual creation
-        
+
         // Optional fields with exact same structure as manual creation
         slug: normalizeSlug(user.username), // Normalize username for consistent slug handling
         topic: undefined, // undefined for base links
@@ -76,27 +76,35 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
       const result = await createLinkMutation.mutateAsync(quickStartData);
       console.log('🚀 QUICK START: Mutation successful! Result:', result);
 
-      toast.success('Base link created successfully! 🎉', { 
-        id: 'quick-start' 
+      toast.success('Base link created successfully! 🎉', {
+        id: 'quick-start',
       });
-      
+
       // Call success callback (for refreshing dashboard, etc.)
       options.onSuccess?.();
-      
     } catch (error) {
       console.error('🚀 QUICK START: Error caught:', error);
       console.error('🚀 QUICK START: Error type:', typeof error);
-      console.error('🚀 QUICK START: Error constructor:', error?.constructor?.name);
+      console.error(
+        '🚀 QUICK START: Error constructor:',
+        error?.constructor?.name
+      );
       console.error('🚀 QUICK START: Error message:', error?.message);
       console.error('🚀 QUICK START: Error stack:', error?.stack);
-      
+
       if (error && typeof error === 'object') {
-        console.error('🚀 QUICK START: Error object properties:', Object.keys(error));
-        console.error('🚀 QUICK START: Full error object:', JSON.stringify(error, null, 2));
+        console.error(
+          '🚀 QUICK START: Error object properties:',
+          Object.keys(error)
+        );
+        console.error(
+          '🚀 QUICK START: Full error object:',
+          JSON.stringify(error, null, 2)
+        );
       }
-      
-      toast.error('Failed to create base link. Please try the custom setup.', { 
-        id: 'quick-start' 
+
+      toast.error('Failed to create base link. Please try the custom setup.', {
+        id: 'quick-start',
       });
       options.onError?.(error);
     }

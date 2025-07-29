@@ -11,7 +11,8 @@ import { BillingPageClient } from '@/features/billing/components/views/BillingPa
 
 export const metadata: Metadata = {
   title: 'Billing & Subscription | Foldly',
-  description: 'Manage your subscription, view billing history, and update payment methods.',
+  description:
+    'Manage your subscription, view billing history, and update payment methods.',
 };
 
 interface BillingCatchAllPageProps {
@@ -20,7 +21,9 @@ interface BillingCatchAllPageProps {
   };
 }
 
-export default async function BillingCatchAllPage({ params }: BillingCatchAllPageProps) {
+export default async function BillingCatchAllPage({
+  params,
+}: BillingCatchAllPageProps) {
   const { userId } = await auth();
 
   if (!userId) {

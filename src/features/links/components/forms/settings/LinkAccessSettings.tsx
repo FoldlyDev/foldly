@@ -1,7 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { Globe, Mail, Lock, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
+import {
+  Globe,
+  Mail,
+  Lock,
+  ToggleLeft,
+  ToggleRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Checkbox } from '@/components/ui/core/shadcn/checkbox';
 import { HelpPopover } from '@/components/ui/core/help-popover';
@@ -12,9 +20,7 @@ interface LinkAccessSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function LinkAccessSettings({
-  form,
-}: LinkAccessSettingsProps) {
+export function LinkAccessSettings({ form }: LinkAccessSettingsProps) {
   const {
     watch,
     setValue,
@@ -211,7 +217,11 @@ Share both:
                     onClick={() => setShowPassword(!showPassword)}
                     className='absolute right-3 top-1/2 -translate-y-1/2 text-[var(--neutral-500)] hover:text-[var(--neutral-700)] transition-colors'
                   >
-                    {showPassword ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
+                    {showPassword ? (
+                      <EyeOff className='w-4 h-4' />
+                    ) : (
+                      <Eye className='w-4 h-4' />
+                    )}
                   </button>
                 </div>
                 {errors.password && (

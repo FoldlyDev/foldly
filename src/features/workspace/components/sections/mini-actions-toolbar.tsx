@@ -33,7 +33,7 @@ export function MiniActionsToolbar({
 
       // Set operation active to prevent data rebuilds during batch operation
       setDragOperationActive(true);
-      
+
       try {
         const result = await batchDeleteItemsAction(selectMode.selectedItems);
         if (!result.success) {
@@ -47,14 +47,16 @@ export function MiniActionsToolbar({
     },
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
-        refetchType: 'none'
+        refetchType: 'none',
       });
-      toast.success(`${selectedCount} item${selectedCount > 1 ? 's' : ''} deleted`);
+      toast.success(
+        `${selectedCount} item${selectedCount > 1 ? 's' : ''} deleted`
+      );
       selectMode.clearSelection();
     },
-    onError: (error) => {
+    onError: error => {
       // Force refetch on error to ensure consistency
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
       toast.error(
@@ -65,8 +67,12 @@ export function MiniActionsToolbar({
 
   const handleDelete = () => {
     if (selectedCount === 0) return;
-    
-    if (confirm(`Are you sure you want to delete ${selectedCount} item${selectedCount > 1 ? 's' : ''}?`)) {
+
+    if (
+      confirm(
+        `Are you sure you want to delete ${selectedCount} item${selectedCount > 1 ? 's' : ''}?`
+      )
+    ) {
       batchDeleteMutation.mutate();
     }
   };
@@ -74,29 +80,29 @@ export function MiniActionsToolbar({
   if (!selectMode.isSelectMode || selectedCount === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-md">
-      <span className="text-sm font-medium text-blue-700">
+    <div className='flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-md'>
+      <span className='text-sm font-medium text-blue-700'>
         {selectedCount} selected
       </span>
-      
-      <div className="flex items-center gap-1">
+
+      <div className='flex items-center gap-1'>
         <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2"
+          size='sm'
+          variant='ghost'
+          className='h-7 px-2'
           onClick={handleDelete}
           disabled={batchDeleteMutation.isPending}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className='h-4 w-4' />
         </Button>
 
         <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2"
+          size='sm'
+          variant='ghost'
+          className='h-7 px-2'
           onClick={selectMode.clearSelection}
         >
-          <X className="h-4 w-4" />
+          <X className='h-4 w-4' />
         </Button>
       </div>
     </div>

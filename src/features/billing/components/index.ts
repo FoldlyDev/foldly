@@ -4,8 +4,16 @@
 // 🎯 Modern Clerk-based billing system with feature access control
 
 // Access Control Components (NEW - Clerk Integration)
-export { default as FeatureGate, ClerkProtectWrapper, useFeatureAccess } from './access-control/FeatureGate';
-export type { FeatureGateProps, FeatureKey, FeatureTier } from './access-control/FeatureGate';
+export {
+  default as FeatureGate,
+  ClerkProtectWrapper,
+  useFeatureAccess,
+} from './access-control/FeatureGate';
+export type {
+  FeatureGateProps,
+  FeatureKey,
+  FeatureTier,
+} from './access-control/FeatureGate';
 
 // Modern Billing Pages & Views
 export { BillingPageClient } from './views/BillingPageClient';

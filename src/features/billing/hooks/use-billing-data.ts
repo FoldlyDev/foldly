@@ -5,7 +5,10 @@
 
 'use client';
 
-import { useBillingDataQuery, useStorageMonitorQuery } from './react-query/use-billing-data-query';
+import {
+  useBillingDataQuery,
+  useStorageMonitorQuery,
+} from './react-query/use-billing-data-query';
 import { useBillingOverviewQuery } from './react-query/use-billing-overview-query';
 import { useClerkSubscription } from './use-clerk-billing';
 import { useStorageDashboard } from '@/lib/hooks/use-storage-tracking';
@@ -16,7 +19,8 @@ import { useMemo } from 'react';
  * @deprecated Use useBillingDataQuery instead
  */
 export function useBillingData() {
-  const { data, isLoading, error, refetch, derivedData } = useBillingDataQuery();
+  const { data, isLoading, error, refetch, derivedData } =
+    useBillingDataQuery();
 
   return {
     data: derivedData ? { ...data, ...derivedData } : data,
@@ -34,14 +38,16 @@ export function useBillingData() {
 export function useStorageUsage() {
   const { currentPlan } = useClerkSubscription();
   const { data: storageData } = useStorageDashboard(currentPlan || 'free');
-  
-  return storageData ? {
-    used: storageData.storageUsedBytes,
-    limit: storageData.storageLimitBytes,
-    percentage: storageData.usagePercentage,
-    isNearLimit: storageData.usagePercentage > 80,
-    isOverLimit: storageData.usagePercentage > 100,
-  } : null;
+
+  return storageData
+    ? {
+        used: storageData.storageUsedBytes,
+        limit: storageData.storageLimitBytes,
+        percentage: storageData.usagePercentage,
+        isNearLimit: storageData.usagePercentage > 80,
+        isOverLimit: storageData.usagePercentage > 100,
+      }
+    : null;
 }
 
 /**

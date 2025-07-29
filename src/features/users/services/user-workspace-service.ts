@@ -2,11 +2,7 @@ import { db } from '@/lib/database/connection';
 import { users, workspaces } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import { workspaceService } from '@/features/workspace/services/workspace-service';
-import type {
-  User,
-  Workspace,
-  DatabaseResult,
-} from '@/lib/database/types';
+import type { User, Workspace, DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
 
 // Combined user + workspace creation result
@@ -282,7 +278,7 @@ export class UserWorkspaceService {
         // Check by Clerk ID first (most reliable)
         db.select().from(users).where(eq(users.id, userData.id)).limit(1),
         // Check by email (for conflict resolution)
-        db.select().from(users).where(eq(users.email, userData.email)).limit(1)
+        db.select().from(users).where(eq(users.email, userData.email)).limit(1),
       ]);
 
       if (existingUserById.length > 0) {
@@ -290,7 +286,7 @@ export class UserWorkspaceService {
         console.log(
           `✅ EXISTING_USER_UPDATE: User ${userData.id} exists, updating profile data`
         );
-        
+
         [user] = await db
           .update(users)
           .set({
@@ -303,14 +299,13 @@ export class UserWorkspaceService {
           })
           .where(eq(users.id, userData.id))
           .returning();
-          
       } else if (existingUserByEmail.length > 0) {
         // Different Clerk ID but same email - potential conflict or email change
         const existingUser = existingUserByEmail[0];
         if (!existingUser) {
           throw new Error('Unexpected: existing user by email not found');
         }
-        
+
         console.log(
           `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email}, updating with new Clerk ID ${userData.id}`
         );

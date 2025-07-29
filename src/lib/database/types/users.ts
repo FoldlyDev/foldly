@@ -88,7 +88,6 @@ export interface UserWithStorageStats extends User {
   planKey: string;
 }
 
-
 /**
  * User with activity stats - includes usage statistics
  */
@@ -357,9 +356,10 @@ export const isNewUser = (user: Pick<User, 'createdAt'>): boolean => {
  * Check if user storage is near limit (>80%)
  * Use with real-time storage data from storage service
  */
-export const isStorageNearLimit = (
-  storageInfo: { storageUsedBytes: number; storageLimitBytes: number }
-): boolean => {
+export const isStorageNearLimit = (storageInfo: {
+  storageUsedBytes: number;
+  storageLimitBytes: number;
+}): boolean => {
   if (storageInfo.storageLimitBytes === 0) return false;
   return storageInfo.storageUsedBytes / storageInfo.storageLimitBytes > 0.8;
 };
@@ -368,9 +368,10 @@ export const isStorageNearLimit = (
  * Check if user storage is full (>95%)
  * Use with real-time storage data from storage service
  */
-export const isStorageFull = (
-  storageInfo: { storageUsedBytes: number; storageLimitBytes: number }
-): boolean => {
+export const isStorageFull = (storageInfo: {
+  storageUsedBytes: number;
+  storageLimitBytes: number;
+}): boolean => {
   if (storageInfo.storageLimitBytes === 0) return false;
   return storageInfo.storageUsedBytes / storageInfo.storageLimitBytes > 0.95;
 };
@@ -379,11 +380,14 @@ export const isStorageFull = (
  * Calculate storage used percentage
  * Use with real-time storage data from storage service
  */
-export const calculateStoragePercentage = (
-  storageInfo: { storageUsedBytes: number; storageLimitBytes: number }
-): number => {
+export const calculateStoragePercentage = (storageInfo: {
+  storageUsedBytes: number;
+  storageLimitBytes: number;
+}): number => {
   if (storageInfo.storageLimitBytes === 0) return 0;
-  return Math.round((storageInfo.storageUsedBytes / storageInfo.storageLimitBytes) * 100);
+  return Math.round(
+    (storageInfo.storageUsedBytes / storageInfo.storageLimitBytes) * 100
+  );
 };
 
 /**

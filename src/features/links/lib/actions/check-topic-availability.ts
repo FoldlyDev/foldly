@@ -26,13 +26,16 @@ export async function checkTopicAvailabilityAction({
   userId,
   slug,
   excludeId,
-}: CheckTopicAvailabilityInput): Promise<ActionResult<TopicAvailabilityResult>> {
+}: CheckTopicAvailabilityInput): Promise<
+  ActionResult<TopicAvailabilityResult>
+> {
   try {
     // Validate inputs
     if (!topic || !userId || !slug) {
       return {
         success: false,
-        error: 'Missing required parameters: topic, userId, and slug are required',
+        error:
+          'Missing required parameters: topic, userId, and slug are required',
       };
     }
 
@@ -50,8 +53,12 @@ export async function checkTopicAvailabilityAction({
     }
 
     // Check if topic exists for this user and slug combination
-    const existingLinkResult = await linksDbService.getByUserSlugAndTopic(userId, slug, topic);
-    
+    const existingLinkResult = await linksDbService.getByUserSlugAndTopic(
+      userId,
+      slug,
+      topic
+    );
+
     if (!existingLinkResult.success) {
       return {
         success: false,
@@ -60,7 +67,7 @@ export async function checkTopicAvailabilityAction({
     }
 
     const existingLink = existingLinkResult.data;
-    
+
     // If link exists and it's not the one being edited, topic is unavailable
     if (existingLink && existingLink.id !== excludeId) {
       return {

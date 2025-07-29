@@ -21,10 +21,7 @@ interface LinkSettingsFormProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function LinkSettingsForm({
-  link,
-  form,
-}: LinkSettingsFormProps) {
+export function LinkSettingsForm({ link, form }: LinkSettingsFormProps) {
   const isBaseLink = link.linkType === 'base';
 
   return (

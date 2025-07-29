@@ -26,10 +26,10 @@ interface EmptyLinksStateProps {
 export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
   const { user } = useUser();
   const { openCreateModal } = useModalStore();
-  
+
   // Local loading state to persist until component unmounts
   const [isCreatingLink, setIsCreatingLink] = useState(false);
-  
+
   // Quick start hook with clean separation of concerns
   const { quickStart, isLoading, username } = useQuickStart({
     onSuccess: () => {
@@ -90,7 +90,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           <h2 className='text-2xl font-bold text-[var(--quaternary)]'>
             Setting up your base link...
           </h2>
-          
+
           <p className='text-[var(--neutral-600)]'>
             Creating your personalized collection hub at{' '}
             <span className='font-mono text-[var(--primary)]'>
@@ -196,10 +196,10 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           <span>Your Link</span>
         </div>
         <div className='text-xl font-mono text-[var(--quaternary)] font-bold'>
-          foldly.io/<span className='text-[var(--primary)]'>{displayUsername}</span>
+          foldly.io/
+          <span className='text-[var(--primary)]'>{displayUsername}</span>
         </div>
       </motion.div>
-
 
       {/* Actions & Descriptions */}
       <motion.div
@@ -233,9 +233,12 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               )}
             </GradientButton>
             <div className='space-y-1'>
-              <p className='font-medium text-[var(--quaternary)] text-sm'>⚡ Ready in seconds</p>
+              <p className='font-medium text-[var(--quaternary)] text-sm'>
+                ⚡ Ready in seconds
+              </p>
               <p className='text-xs text-[var(--neutral-600)]'>
-                We'll set up "{displayUsername}" as your link and get you started right away
+                We'll set up "{displayUsername}" as your link and get you
+                started right away
               </p>
             </div>
           </div>
@@ -257,19 +260,19 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               Custom Setup
             </ActionButton>
             <div className='space-y-1'>
-              <p className='font-medium text-[var(--quaternary)] text-sm'>👑 Make it yours</p>
+              <p className='font-medium text-[var(--quaternary)] text-sm'>
+                👑 Make it yours
+              </p>
               <p className='text-xs text-[var(--neutral-600)]'>
                 Choose your perfect URL and configure everything to your liking
               </p>
             </div>
           </div>
         </div>
-        
+
         {/* Reassurance Message */}
         <div className='text-[var(--neutral-500)] text-sm max-w-md mx-auto pt-4 border-t border-[var(--neutral-200)]'>
-          <p>
-            Don't worry—you can always change everything later! ✨
-          </p>
+          <p>Don't worry—you can always change everything later! ✨</p>
         </div>
       </motion.div>
     </motion.div>

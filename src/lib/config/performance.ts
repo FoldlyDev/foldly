@@ -26,26 +26,36 @@ export function initializePerformanceMonitoring() {
   }
 
   // Largest Contentful Paint
-  const lcpObserver = new PerformanceObserver((list) => {
+  const lcpObserver = new PerformanceObserver(list => {
     for (const entry of list.getEntries()) {
       const lcp = entry.startTime;
-      console.log('🎯 LCP:', lcp, 'ms', lcp < PERFORMANCE_METRICS.LCP_THRESHOLD ? '✅' : '⚠️');
+      console.log(
+        '🎯 LCP:',
+        lcp,
+        'ms',
+        lcp < PERFORMANCE_METRICS.LCP_THRESHOLD ? '✅' : '⚠️'
+      );
     }
   });
   lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
 
   // First Input Delay
-  const fidObserver = new PerformanceObserver((list) => {
+  const fidObserver = new PerformanceObserver(list => {
     for (const entry of list.getEntries()) {
       const fidEntry = entry as any;
       const fid = fidEntry.processingStart - fidEntry.startTime;
-      console.log('🎯 FID:', fid, 'ms', fid < PERFORMANCE_METRICS.FID_THRESHOLD ? '✅' : '⚠️');
+      console.log(
+        '🎯 FID:',
+        fid,
+        'ms',
+        fid < PERFORMANCE_METRICS.FID_THRESHOLD ? '✅' : '⚠️'
+      );
     }
   });
   fidObserver.observe({ type: 'first-input', buffered: true });
 
   // Cumulative Layout Shift
-  const clsObserver = new PerformanceObserver((list) => {
+  const clsObserver = new PerformanceObserver(list => {
     let cls = 0;
     for (const entry of list.getEntries()) {
       const clsEntry = entry as any;
@@ -53,16 +63,25 @@ export function initializePerformanceMonitoring() {
         cls += clsEntry.value;
       }
     }
-    console.log('🎯 CLS:', cls, cls < PERFORMANCE_METRICS.CLS_THRESHOLD ? '✅' : '⚠️');
+    console.log(
+      '🎯 CLS:',
+      cls,
+      cls < PERFORMANCE_METRICS.CLS_THRESHOLD ? '✅' : '⚠️'
+    );
   });
   clsObserver.observe({ type: 'layout-shift', buffered: true });
 
   // First Contentful Paint
-  const fcpObserver = new PerformanceObserver((list) => {
+  const fcpObserver = new PerformanceObserver(list => {
     for (const entry of list.getEntries()) {
       if (entry.name === 'first-contentful-paint') {
         const fcp = entry.startTime;
-        console.log('🎯 FCP:', fcp, 'ms', fcp < PERFORMANCE_METRICS.FCP_THRESHOLD ? '✅' : '⚠️');
+        console.log(
+          '🎯 FCP:',
+          fcp,
+          'ms',
+          fcp < PERFORMANCE_METRICS.FCP_THRESHOLD ? '✅' : '⚠️'
+        );
       }
     }
   });
@@ -73,7 +92,10 @@ export function initializePerformanceMonitoring() {
 export const performanceUtils = {
   // Measure component render time
   measureRender: (componentName: string) => {
-    if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production') {
+    if (
+      typeof window === 'undefined' ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return { start: () => {}, end: () => {} };
     }
 
@@ -88,14 +110,18 @@ export const performanceUtils = {
         performance.measure(measureName, startMark, endMark);
         const measure = performance.getEntriesByName(measureName)[0];
         if (measure) {
-          console.log(`🎯 ${componentName} render time:`, measure.duration, 'ms');
+          console.log(
+            `🎯 ${componentName} render time:`,
+            measure.duration,
+            'ms'
+          );
         }
-        
+
         // Clean up marks
         performance.clearMarks(startMark);
         performance.clearMarks(endMark);
         performance.clearMeasures(measureName);
-      }
+      },
     };
   },
 
@@ -104,7 +130,10 @@ export const performanceUtils = {
     apiName: string,
     apiCall: () => Promise<T>
   ): Promise<T> => {
-    if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production') {
+    if (
+      typeof window === 'undefined' ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return apiCall();
     }
 
@@ -123,20 +152,26 @@ export const performanceUtils = {
 
   // Log navigation timing
   logNavigationTiming: () => {
-    if (typeof window === 'undefined' || process.env.NODE_ENV !== 'production') {
+    if (
+      typeof window === 'undefined' ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return;
     }
 
     window.addEventListener('load', () => {
-      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      
+      const navigation = performance.getEntriesByType(
+        'navigation'
+      )[0] as PerformanceNavigationTiming;
+
       console.log('🎯 Navigation Timing:', {
         'DNS Lookup': navigation.domainLookupEnd - navigation.domainLookupStart,
         'TCP Connect': navigation.connectEnd - navigation.connectStart,
         'TLS Setup': navigation.connectEnd - navigation.secureConnectionStart,
-        'Request': navigation.responseStart - navigation.requestStart,
-        'Response': navigation.responseEnd - navigation.responseStart,
-        'DOM Processing': navigation.domComplete - navigation.domContentLoadedEventStart,
+        Request: navigation.responseStart - navigation.requestStart,
+        Response: navigation.responseEnd - navigation.responseStart,
+        'DOM Processing':
+          navigation.domComplete - navigation.domContentLoadedEventStart,
         'Total Load Time': navigation.loadEventEnd - navigation.fetchStart,
       });
     });
@@ -144,7 +179,11 @@ export const performanceUtils = {
 
   // Memory usage monitoring
   logMemoryUsage: () => {
-    if (typeof window === 'undefined' || !('memory' in performance) || process.env.NODE_ENV !== 'production') {
+    if (
+      typeof window === 'undefined' ||
+      !('memory' in performance) ||
+      process.env.NODE_ENV !== 'production'
+    ) {
       return;
     }
 
@@ -166,7 +205,7 @@ export function withPerformanceTracking<P extends object>(
     if (process.env.NODE_ENV === 'production') {
       const measure = performanceUtils.measureRender(componentName);
       measure.start();
-      
+
       React.useEffect(() => {
         measure.end();
       });

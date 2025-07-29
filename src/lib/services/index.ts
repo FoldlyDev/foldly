@@ -6,7 +6,7 @@
 
 // Re-export services from their new feature locations for backward compatibility
 export * from '@/features/files/services'; // FileService, FolderService
-export * from '@/features/users/services'; // UserDeletionService, UserWorkspaceService  
+export * from '@/features/users/services'; // UserDeletionService, UserWorkspaceService
 export * from '@/features/workspace/services'; // WorkspaceService
 // Note: Billing services are maintained in @/lib/services/billing
 

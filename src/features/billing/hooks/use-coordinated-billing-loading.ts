@@ -7,7 +7,10 @@
 
 import { useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { usePlanConfig, useUserStorageStatusQuery } from './react-query/use-billing-data-query';
+import {
+  usePlanConfig,
+  useUserStorageStatusQuery,
+} from './react-query/use-billing-data-query';
 
 interface CoordinatedLoadingState {
   // Loading states
@@ -15,15 +18,15 @@ interface CoordinatedLoadingState {
   isClerkLoading: boolean;
   isDataLoading: boolean;
   isFullyLoaded: boolean;
-  
+
   // Error states
   hasErrors: boolean;
   errors: Array<{ source: string; message: string }>;
-  
+
   // Loading phases
   loadingPhase: 'clerk' | 'data' | 'complete' | 'error';
   loadingMessage: string;
-  
+
   // Ready states for components
   isReadyForOverview: boolean;
   isReadyForPricingTable: boolean;
@@ -36,11 +39,19 @@ interface CoordinatedLoadingState {
  */
 export function useCoordinatedBillingLoading(): CoordinatedLoadingState {
   const { isLoaded: isClerkLoaded, user } = useUser();
-  const { data: planConfig, isLoading: planLoading, error: planError } = usePlanConfig({
-    enabled: isClerkLoaded && !!user?.id
+  const {
+    data: planConfig,
+    isLoading: planLoading,
+    error: planError,
+  } = usePlanConfig({
+    enabled: isClerkLoaded && !!user?.id,
   });
-  const { data: storageStatus, isLoading: storageLoading, error: storageError } = useUserStorageStatusQuery({
-    enabled: isClerkLoaded && !!user?.id
+  const {
+    data: storageStatus,
+    isLoading: storageLoading,
+    error: storageError,
+  } = useUserStorageStatusQuery({
+    enabled: isClerkLoaded && !!user?.id,
   });
 
   const coordinatedState = useMemo<CoordinatedLoadingState>(() => {
@@ -81,8 +92,10 @@ export function useCoordinatedBillingLoading(): CoordinatedLoadingState {
 
     // Check for errors
     const errors: Array<{ source: string; message: string }> = [];
-    if (planError) errors.push({ source: 'Plan Config', message: planError.message });
-    if (storageError) errors.push({ source: 'Storage Status', message: storageError.message });
+    if (planError)
+      errors.push({ source: 'Plan Config', message: planError.message });
+    if (storageError)
+      errors.push({ source: 'Storage Status', message: storageError.message });
 
     if (errors.length > 0) {
       return {
@@ -151,8 +164,9 @@ export function useCoordinatedBillingLoading(): CoordinatedLoadingState {
  * Optimized for performance during navigation
  */
 export function useTabSwitchingReadiness() {
-  const { isReadyForTabSwitching, loadingPhase } = useCoordinatedBillingLoading();
-  
+  const { isReadyForTabSwitching, loadingPhase } =
+    useCoordinatedBillingLoading();
+
   return {
     isReady: isReadyForTabSwitching,
     canSwitchTabs: isReadyForTabSwitching,
@@ -165,8 +179,9 @@ export function useTabSwitchingReadiness() {
  * Ensures Clerk components only render when ready
  */
 export function usePricingTableReadiness() {
-  const { isReadyForPricingTable, isClerkLoading, loadingPhase } = useCoordinatedBillingLoading();
-  
+  const { isReadyForPricingTable, isClerkLoading, loadingPhase } =
+    useCoordinatedBillingLoading();
+
   return {
     isReady: isReadyForPricingTable,
     shouldShowClerkLoading: isClerkLoading,

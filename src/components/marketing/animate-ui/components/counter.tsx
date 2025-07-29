@@ -3,10 +3,7 @@
 import * as React from 'react';
 import { motion, type HTMLMotionProps, type Transition } from 'motion/react';
 
-import {
-  SlidingNumber,
-  type SlidingNumberProps,
-} from '../text/sliding-number';
+import { SlidingNumber, type SlidingNumberProps } from '../text/sliding-number';
 import { Button } from '@/components/ui/shadcn/button';
 import { cn } from '@/lib/utils/utils';
 

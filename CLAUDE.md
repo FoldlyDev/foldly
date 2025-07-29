@@ -155,17 +155,20 @@ src/
 ### Database Schema & Migration System
 
 **Schema Organization:**
+
 - **Location**: `src/lib/database/schemas/` (modular organization)
 - **Main Export**: `drizzle/schema.ts` exports from `@/lib/database/schemas`
 - **Connection**: `src/lib/database/connection.ts` (centralized)
 - **Legacy**: `src/lib/db/db.ts` (deprecated, use database/connection.ts)
 
 **Migration Files** (in `drizzle/` directory):
+
 - `0000_sad_vanisher.sql` through `0008_calm_black_widow.sql`
 - `0009_flexible_subscription_system.sql` (latest)
 - Migration metadata in `drizzle/meta/` directory
 
 **8-Table PostgreSQL Schema:**
+
 1. **users**: User accounts with Clerk integration, storage quotas, and usage tracking
 2. **workspaces**: User workspaces for file organization
 3. **links**: Multi-link types (base/custom/generated) with usage stats and storage limits
@@ -222,14 +225,16 @@ src/
 The project is in **Phase 3: Service Layer Integration** with all major architectural migrations complete. Current status:
 
 **✅ Completed Migrations:**
+
 1. Feature-Based Architecture Migration (January 2025) - Complete project reorganization
 2. Zustand Store Architecture Migration (January 2025) - Modern state management
 3. React Query + Server Actions Hybrid (January 2025) - Enterprise server state
 4. Optimal Project Organization & Architecture Restructure (January 2025) - Performance optimization
 
 **🚀 Current Focus:**
+
 - Service layer integration and type alignment
-- Multi-link system implementation  
+- Multi-link system implementation
 - Database service integration completion
 
 ## Database Configuration
@@ -251,7 +256,7 @@ import { users, links, workspaces } from '@/lib/database/schemas';
 
 - `src/lib/db/db.ts` - Deprecated, use `database/connection.ts`
 - `src/lib/supabase/schemas/` - Removed, migrated to `database/schemas/`
-- `src/lib/supabase/types/` - Removed, migrated to `database/types/` 
+- `src/lib/supabase/types/` - Removed, migrated to `database/types/`
 - `npm run migrate` script references non-existent `migration.ts`
 
 ## Component Architecture Updates
@@ -259,15 +264,17 @@ import { users, links, workspaces } from '@/lib/database/schemas';
 ### UI System Reorganization
 
 **New Structure:**
+
 ```
 src/components/ui/
 ├── core/          # shadcn + base components
-├── composite/     # Complex multi-component compositions  
+├── composite/     # Complex multi-component compositions
 ├── feedback/      # Loading, skeletons, error states
 └── layout/        # Layout-specific components
 ```
 
 **Migration Status:**
+
 - ✅ Components moved to new structure
 - ✅ Core exports updated in `src/components/ui/core/index.ts`
 - 🚧 Feature imports need updating to new paths
@@ -275,17 +282,19 @@ src/components/ui/
 ## Import Path Guidelines
 
 ### Database
+
 ```typescript
 // ✅ Correct
 import { db } from '@/lib/database/connection';
 import { users, links } from '@/lib/database/schemas';
 
-// ❌ Deprecated  
+// ❌ Deprecated
 import { db } from '@/lib/db/db';
 import { users } from '@/lib/supabase/schemas';
 ```
 
 ### UI Components
+
 ```typescript
 // ✅ Correct
 import { Button } from '@/components/ui/core/shadcn';

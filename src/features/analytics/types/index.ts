@@ -5,7 +5,11 @@
 import type { HexColor, DeepReadonly, ValidationError } from '@/types';
 
 // Re-export database types
-export type { DashboardOverview, LinkAccessLog, AccessAnalytics } from './database';
+export type {
+  DashboardOverview,
+  LinkAccessLog,
+  AccessAnalytics,
+} from './database';
 
 // =============================================================================
 // ANALYTICS CONSTANTS
