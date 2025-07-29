@@ -7,9 +7,13 @@
 // CORE SERVICES - Individual Services for Specific Purposes
 // =============================================================================
 
-export { SubscriptionAnalyticsService } from './subscription-analytics-service';
-export { BillingErrorRecoveryService } from './billing-error-recovery';
-export { ClerkBillingIntegrationService } from './clerk-billing-integration';
+import { SubscriptionAnalyticsService } from './subscription-analytics-service';
+import { BillingErrorRecoveryService } from './billing-error-recovery';
+import { ClerkBillingIntegrationService } from './clerk-billing-integration';
+
+export { SubscriptionAnalyticsService };
+export { BillingErrorRecoveryService };
+export { ClerkBillingIntegrationService };
 
 // Legacy services (maintained for existing functionality)
 export {
@@ -27,7 +31,6 @@ import { auth } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
 import { subscriptionPlans, users } from '@/lib/database/schemas';
-import { SubscriptionAnalyticsService } from './subscription-analytics-service';
 import type { DatabaseResult } from '@/lib/database/types';
 
 // Unified types (serializable - no functions for client/server boundary)
@@ -296,5 +299,24 @@ export async function getCurrentPlan(): Promise<'free' | 'pro' | 'business'> {
 // =============================================================================
 // EXPORTS
 // =============================================================================
+
+// Create a unified billing object for backward compatibility
+export const billing = {
+  getUserBillingData: BillingService.getUserBillingData,
+  hasFeatureAccess: BillingService.hasFeatureAccess,
+  getAllPlans: BillingService.getAllPlans,
+  recordSubscriptionEvent: BillingService.recordSubscriptionEvent,
+  getUserSubscriptionHistory: BillingService.getUserSubscriptionHistory,
+  
+  // Convenience methods
+  isUserSubscribed,
+  hasFeature,
+  getCurrentPlan,
+  
+  // Sub-services
+  errorRecovery: new BillingErrorRecoveryService(),
+  integration: new ClerkBillingIntegrationService(),
+  analytics: SubscriptionAnalyticsService,
+};
 
 export default BillingService;

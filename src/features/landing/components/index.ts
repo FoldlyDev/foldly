@@ -5,7 +5,6 @@
 export { HeroSection } from './sections/hero-section';
 export { FeaturesSection } from './sections/features-section';
 export { AboutSection } from './sections/about-section';
-export { PricingSection } from './sections/pricing-section';
 export { OutroSection } from './sections/outro-section';
 
 // View components
