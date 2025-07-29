@@ -3,7 +3,10 @@
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui/core/gradient-button';
-import { Plus, Settings, Bell } from 'lucide-react';
+import { Plus, Settings, Bell, AlertTriangle } from 'lucide-react';
+import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
+import { useStorageQuotaStatus } from '../../hooks';
+import { toast } from 'sonner';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;
@@ -15,6 +18,8 @@ export function WorkspaceHeader({
   totalFiles = 0,
 }: WorkspaceHeaderProps) {
   const { user } = useUser();
+  const { openUploadModal } = useWorkspaceUI();
+  const quotaStatus = useStorageQuotaStatus();
 
   // Get appropriate greeting based on time of day
   const getGreeting = () => {
@@ -26,6 +31,28 @@ export function WorkspaceHeader({
 
   // Get user's first name or fallback to "there"
   const firstName = user?.firstName || 'there';
+
+  // Handle upload button click with storage validation
+  const handleUploadClick = () => {
+    if (quotaStatus.status === 'exceeded') {
+      toast.error('Storage limit exceeded', {
+        description: 'Please free up space before uploading more files.',
+      });
+      return;
+    }
+    
+    if (quotaStatus.status === 'critical') {
+      toast.warning('Storage almost full', {
+        description: 'Consider upgrading your plan for more storage.',
+      });
+    }
+    
+    openUploadModal();
+  };
+
+  // Determine upload button state
+  const isUploadDisabled = quotaStatus.status === 'exceeded';
+  const showStorageWarning = quotaStatus.status === 'critical' || quotaStatus.status === 'warning';
 
   return (
     <motion.div
@@ -91,14 +118,28 @@ export function WorkspaceHeader({
         </motion.button>
 
         {/* Primary CTA - Always visible with responsive sizing */}
-        <GradientButton
-          variant='primary'
-          size='md'
-          className='shadow-brand flex-shrink-0 px-4 sm:px-6'
-        >
-          <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
-          <span className='text-sm sm:text-base'>Upload File</span>
-        </GradientButton>
+        <div className='relative'>
+          <GradientButton
+            variant={isUploadDisabled ? 'outline' : 'primary'}
+            size='md'
+            className='shadow-brand flex-shrink-0 px-4 sm:px-6 relative'
+            onClick={handleUploadClick}
+            disabled={isUploadDisabled}
+          >
+            {showStorageWarning && !isUploadDisabled && (
+              <AlertTriangle className='w-3 h-3 sm:w-4 sm:h-4 mr-1 text-yellow-500' />
+            )}
+            <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
+            <span className='text-sm sm:text-base'>
+              {isUploadDisabled ? 'Storage Full' : 'Upload File'}
+            </span>
+          </GradientButton>
+          
+          {/* Storage warning indicator */}
+          {showStorageWarning && (
+            <div className='absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full border border-white animate-pulse' />
+          )}
+        </div>
 
         {/* Mobile Settings Button - Only show on mobile */}
         <motion.button

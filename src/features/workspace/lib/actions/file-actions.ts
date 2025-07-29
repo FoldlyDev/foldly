@@ -97,7 +97,21 @@ export async function deleteFileAction(
       }
     }
 
-    return { success: true, data: result.data };
+    // Get updated storage info after deletion
+    const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+    const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
+    
+    return { 
+      success: true, 
+      data: {
+        ...result.data,
+        storageInfo: {
+          usagePercentage: updatedStorageInfo.usagePercentage,
+          remainingBytes: updatedStorageInfo.remainingBytes,
+          shouldShowWarning: false, // Deletion always reduces usage
+        }
+      },
+    };
   } catch (error) {
     console.error('Failed to delete file:', error);
     return {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/core/shadcn/button';
 import { Input } from '@/components/ui/core/shadcn/input';
@@ -12,12 +12,25 @@ import {
   DialogTitle,
 } from '@/components/ui/core/shadcn/dialog';
 import { Progress } from '@/components/ui/core/shadcn/progress';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { uploadFileAction } from '../../lib/actions';
 import { useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { toast } from 'sonner';
 import type { DatabaseId } from '@/lib/database/types';
+import { 
+  useStorageTracking, 
+  usePreUploadValidation,
+  useInvalidateStorage,
+  useStorageQuotaStatus 
+} from '../../hooks';
+import { StorageInfoDisplay, StorageWarningBanner } from '../storage/storage-info-display';
+import { 
+  showStorageWarning,
+  showStorageCritical,
+  checkAndShowStorageThresholds
+} from '@/features/notifications/internal/workspace-notifications';
+import { type StorageNotificationData } from '@/features/notifications/internal/types';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -43,10 +56,32 @@ export function UploadModal({
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadValidation, setUploadValidation] = useState<{
+    valid: boolean;
+    reason?: string;
+    totalSize: number;
+    exceedsLimit: boolean;
+  } | null>(null);
+  
   const queryClient = useQueryClient();
+  const { storageInfo, formatSize } = useStorageTracking();
+  const preUploadValidation = usePreUploadValidation();
+  const invalidateStorage = useInvalidateStorage();
+  const quotaStatus = useStorageQuotaStatus();
 
-  const handleFileSelect = useCallback((selectedFiles: FileList | null) => {
+  const handleFileSelect = useCallback(async (selectedFiles: FileList | null) => {
     if (!selectedFiles) return;
+
+    // Validate storage before adding files
+    const validation = await preUploadValidation(selectedFiles);
+    setUploadValidation(validation);
+
+    if (!validation.valid && validation.exceedsLimit) {
+      toast.error('Storage limit exceeded', {
+        description: validation.reason,
+      });
+      return;
+    }
 
     const newFiles: UploadFile[] = Array.from(selectedFiles).map(file => ({
       id: Math.random().toString(36).substring(7),
@@ -56,7 +91,14 @@ export function UploadModal({
     }));
 
     setFiles(prev => [...prev, ...newFiles]);
-  }, []);
+
+    // Show warning if approaching limit
+    if (validation.valid && quotaStatus.status !== 'safe') {
+      toast.warning('Storage getting full', {
+        description: `${formatSize(validation.totalSize)} will be added. ${formatSize(storageInfo.remainingBytes - validation.totalSize)} remaining.`,
+      });
+    }
+  }, [preUploadValidation, quotaStatus.status, formatSize, storageInfo.remainingBytes]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -115,6 +157,20 @@ export function UploadModal({
           throw new Error(result.error || 'Upload failed');
         }
 
+        // Handle storage notifications based on upload result
+        if (result.storageInfo && result.storageInfo.shouldShowWarning) {
+          const storageData: StorageNotificationData = {
+            currentUsage: (storageInfo.storageLimitBytes * result.storageInfo.usagePercentage) / 100,
+            totalLimit: storageInfo.storageLimitBytes,
+            remainingSpace: result.storageInfo.remainingBytes,
+            usagePercentage: result.storageInfo.usagePercentage,
+            planKey: storageInfo.planKey,
+            filesCount: storageInfo.filesCount + 1,
+          };
+          
+          checkAndShowStorageThresholds(storageData, storageInfo.usagePercentage);
+        }
+
         // Complete the progress
         setFiles(prev =>
           prev.map(f =>
@@ -163,6 +219,9 @@ export function UploadModal({
       queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
       });
+      
+      // Invalidate storage data to reflect changes
+      invalidateStorage();
 
       const successCount = results.length;
       const failedCount = files.filter(f => f.status === 'error').length;
@@ -172,6 +231,25 @@ export function UploadModal({
       }
       if (failedCount > 0) {
         toast.error(`Failed to upload ${failedCount} file(s)`);
+      }
+      
+      // Show final storage status if approaching limits
+      const finalResult = results[results.length - 1];
+      if (finalResult && finalResult.storageInfo && finalResult.storageInfo.usagePercentage >= 90) {
+        const storageData: StorageNotificationData = {
+          currentUsage: (storageInfo.storageLimitBytes * finalResult.storageInfo.usagePercentage) / 100,
+          totalLimit: storageInfo.storageLimitBytes,
+          remainingSpace: finalResult.storageInfo.remainingBytes,
+          usagePercentage: finalResult.storageInfo.usagePercentage,
+          planKey: storageInfo.planKey,
+          filesCount: storageInfo.filesCount + successCount,
+        };
+        
+        if (finalResult.storageInfo.usagePercentage >= 95) {
+          showStorageCritical(storageData);
+        } else {
+          showStorageWarning(storageData);
+        }
       }
 
       // Clear files after upload attempt
@@ -189,8 +267,19 @@ export function UploadModal({
   const handleClose = useCallback(() => {
     if (isUploading) return;
     setFiles([]);
+    setUploadValidation(null);
     onClose();
   }, [isUploading, onClose]);
+
+  // Re-validate when files change
+  useEffect(() => {
+    if (files.length > 0) {
+      const fileList = files.map(f => f.file);
+      preUploadValidation(fileList).then(setUploadValidation);
+    } else {
+      setUploadValidation(null);
+    }
+  }, [files, preUploadValidation]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -216,6 +305,14 @@ export function UploadModal({
         </DialogHeader>
 
         <div className='space-y-4'>
+          {/* Storage Warning Banner */}
+          <StorageWarningBanner />
+
+          {/* Storage Information */}
+          <div className='bg-[var(--neutral-50)] rounded-lg p-3'>
+            <StorageInfoDisplay compact={true} />
+          </div>
+
           {/* Upload Area */}
           <div
             onDragOver={handleDragOver}
@@ -232,7 +329,7 @@ export function UploadModal({
               multiple
               onChange={e => handleFileSelect(e.target.files)}
               className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-              disabled={isUploading}
+              disabled={isUploading || quotaStatus.status === 'exceeded'}
             />
 
             <div className='space-y-2'>
@@ -242,7 +339,12 @@ export function UploadModal({
                 drop
               </p>
               <p className='text-xs text-[var(--neutral-500)]'>
-                Any file type supported
+                {quotaStatus.status === 'exceeded' 
+                  ? 'Storage limit exceeded - please free up space'
+                  : storageInfo.remainingBytes > 0
+                  ? `${formatSize(storageInfo.remainingBytes)} remaining`
+                  : 'Any file type supported'
+                }
               </p>
             </div>
           </div>
@@ -293,6 +395,34 @@ export function UploadModal({
             </div>
           )}
 
+          {/* Upload Validation Warning */}
+          {uploadValidation && !uploadValidation.valid && (
+            <div className='bg-red-50 border border-red-200 rounded-lg p-3'>
+              <div className='flex items-center gap-2 text-red-700'>
+                <AlertTriangle className='w-4 h-4 flex-shrink-0' />
+                <div>
+                  <p className='text-sm font-medium'>Upload not allowed</p>
+                  <p className='text-xs mt-1'>{uploadValidation.reason}</p>
+                  {uploadValidation.totalSize > 0 && (
+                    <p className='text-xs mt-1'>
+                      Selected files: {formatSize(uploadValidation.totalSize)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Upload Size Summary */}
+          {uploadValidation && uploadValidation.valid && uploadValidation.totalSize > 0 && (
+            <div className='bg-blue-50 border border-blue-200 rounded-lg p-3'>
+              <div className='flex items-center justify-between text-blue-700'>
+                <span className='text-sm'>Ready to upload</span>
+                <span className='text-sm font-medium'>{formatSize(uploadValidation.totalSize)}</span>
+              </div>
+            </div>
+          )}
+
           {/* Progress Summary */}
           {isUploading && (
             <div className='bg-[var(--neutral-50)] rounded-lg p-3'>
@@ -321,9 +451,18 @@ export function UploadModal({
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={files.length === 0 || isUploading}
+            disabled={
+              files.length === 0 || 
+              isUploading || 
+              (uploadValidation && !uploadValidation.valid)
+            }
           >
-            {isUploading ? 'Uploading...' : `Upload ${files.length} file(s)`}
+            {isUploading 
+              ? 'Uploading...' 
+              : uploadValidation && !uploadValidation.valid
+              ? 'Cannot Upload'
+              : `Upload ${files.length} file(s)`
+            }
           </Button>
         </div>
       </DialogContent>

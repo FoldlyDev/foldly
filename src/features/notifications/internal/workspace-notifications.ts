@@ -3,16 +3,24 @@ import type {
   NotificationEvent,
   NotificationConfig,
   WorkspaceNotificationData,
+  StorageNotificationData,
 } from './types';
+import { formatBytes } from '@/features/workspace/lib/utils/storage-utils';
 
 /**
  * Generate a unique toast ID for deduplication
  */
 function generateToastId(
   event: NotificationEvent,
-  data: WorkspaceNotificationData
+  data: WorkspaceNotificationData | StorageNotificationData
 ): string {
-  return `${event}-${data.itemName}-${data.itemType}-${Date.now()}`;
+  // For storage notifications, use planKey as identifier
+  if ('planKey' in data) {
+    return `${event}-${data.planKey}-${Date.now()}`;
+  }
+  // For workspace notifications, use itemName and itemType
+  const workspaceData = data as WorkspaceNotificationData;
+  return `${event}-${workspaceData.itemName}-${workspaceData.itemType}-${Date.now()}`;
 }
 
 /**
@@ -20,7 +28,7 @@ function generateToastId(
  */
 function generateNotificationConfig(
   event: NotificationEvent,
-  data: WorkspaceNotificationData
+  data: WorkspaceNotificationData | StorageNotificationData
 ): NotificationConfig {
   const { itemName, itemType, targetLocation } = data;
 
@@ -103,11 +111,49 @@ function generateNotificationConfig(
         variant: 'success',
       };
 
+    case 'storage_warning':
+      const warningData = data as StorageNotificationData;
+      return {
+        event,
+        title: 'Storage getting full',
+        description: `Using ${warningData.usagePercentage.toFixed(1)}% of your storage limit. ${formatBytes(warningData.remainingSpace)} remaining.`,
+        variant: 'warning',
+      };
+
+    case 'storage_critical':
+      const criticalData = data as StorageNotificationData;
+      return {
+        event,
+        title: 'Storage almost full',
+        description: `Using ${criticalData.usagePercentage.toFixed(1)}% of your storage limit. Only ${formatBytes(criticalData.remainingSpace)} remaining.`,
+        variant: 'warning',
+      };
+
+    case 'storage_exceeded':
+      const exceededData = data as StorageNotificationData;
+      return {
+        event,
+        title: 'Storage limit exceeded',
+        description: `You've reached your ${formatBytes(exceededData.totalLimit)} storage limit. Please free up space or upgrade your plan.`,
+        variant: 'error',
+      };
+
+    case 'upload_blocked':
+      const blockedData = data as StorageNotificationData;
+      return {
+        event,
+        title: 'Upload blocked',
+        description: `Cannot upload files. Storage limit of ${formatBytes(blockedData.totalLimit)} has been reached.`,
+        variant: 'error',
+      };
+
     default:
+      // For workspace events, access itemType and itemName
+      const workspaceData = data as WorkspaceNotificationData;
       return {
         event,
         title: 'Action completed',
-        description: `${itemType} ${itemName} updated`,
+        description: `${workspaceData.itemType} ${workspaceData.itemName} updated`,
         variant: 'success',
       };
   }
@@ -118,7 +164,7 @@ function generateNotificationConfig(
  */
 export function showWorkspaceNotification(
   event: NotificationEvent,
-  data: WorkspaceNotificationData
+  data: WorkspaceNotificationData | StorageNotificationData
 ): void {
   const config = generateNotificationConfig(event, data);
   const toastId = generateToastId(event, data);
@@ -165,4 +211,84 @@ export function showWorkspaceError(
     id: toastId,
     duration: 6000, // 6 seconds for errors
   });
+}
+
+// =============================================================================
+// STORAGE NOTIFICATIONS
+// =============================================================================
+
+/**
+ * Show storage warning notification
+ */
+export function showStorageWarning(
+  data: StorageNotificationData
+): void {
+  showWorkspaceNotification('storage_warning', data);
+}
+
+/**
+ * Show storage critical notification
+ */
+export function showStorageCritical(
+  data: StorageNotificationData
+): void {
+  showWorkspaceNotification('storage_critical', data);
+}
+
+/**
+ * Show storage exceeded notification
+ */
+export function showStorageExceeded(
+  data: StorageNotificationData
+): void {
+  showWorkspaceNotification('storage_exceeded', data);
+}
+
+/**
+ * Show upload blocked notification
+ */
+export function showUploadBlocked(
+  data: StorageNotificationData
+): void {
+  showWorkspaceNotification('upload_blocked', data);
+}
+
+/**
+ * Show storage threshold notifications based on usage percentage
+ */
+export function checkAndShowStorageThresholds(
+  data: StorageNotificationData,
+  previousPercentage?: number
+): void {
+  const currentPercentage = data.usagePercentage;
+  
+  // Only show notifications when crossing thresholds, not on every check
+  if (previousPercentage !== undefined) {
+    // Crossing 100% threshold
+    if (previousPercentage < 100 && currentPercentage >= 100) {
+      showStorageExceeded(data);
+      return;
+    }
+    
+    // Crossing 95% threshold
+    if (previousPercentage < 95 && currentPercentage >= 95) {
+      showStorageCritical(data);
+      return;
+    }
+    
+    // Crossing 80% threshold
+    if (previousPercentage < 80 && currentPercentage >= 80) {
+      showStorageWarning(data);
+      return;
+    }
+  } else {
+    // First time check - show appropriate notification
+    if (currentPercentage >= 100) {
+      showStorageExceeded(data);
+    } else if (currentPercentage >= 95) {
+      showStorageCritical(data);
+    } else if (currentPercentage >= 80) {
+      showStorageWarning(data);
+    }
+  }
 }

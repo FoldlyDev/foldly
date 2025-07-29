@@ -10,7 +10,7 @@ interface ClerkWebhookEvent {
 // Enhanced subscription event data interfaces
 interface ClerkSubscriptionEvent {
   id: string;
-  object: 'subscription';
+  object: 'subscription' | 'commerce_subscription';
   status:
     | 'active'
     | 'canceled'
@@ -21,8 +21,12 @@ interface ClerkSubscriptionEvent {
     | 'unpaid';
   created_at: number;
   updated_at: number;
-  current_period_start: number;
-  current_period_end: number;
+  current_period_start?: number;
+  current_period_end?: number;
+  active_at?: number;
+  canceled_at?: number;
+  ended_at?: number;
+  past_due_at?: number;
   plan?: {
     id: string;
     name: string;
@@ -30,18 +34,29 @@ interface ClerkSubscriptionEvent {
   };
   user_id?: string;
   organization_id?: string;
+  payer?: {
+    user_id?: string;
+    organization_id?: string;
+  };
 }
 
 interface ClerkSubscriptionItemEvent {
   id: string;
-  object: 'subscription_item';
+  object: 'subscription_item' | 'commerce_subscription_item';
   subscription_id: string;
   plan: {
     id: string;
     name: string;
     nickname?: string;
+    slug?: string;
+    amount?: number;
+    currency?: string;
+    is_recurring?: boolean;
   };
   quantity?: number;
+  interval?: string;
+  period_start?: number;
+  period_end?: number;
   status:
     | 'active'
     | 'canceled'
@@ -54,6 +69,13 @@ interface ClerkSubscriptionItemEvent {
   updated_at: number;
   user_id?: string;
   organization_id?: string;
+  payer?: {
+    user_id?: string;
+    organization_id?: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
 
 // Clerk email address structure
@@ -210,8 +232,10 @@ export function transformSubscriptionEventData(
 
   if ('plan' in event && event.plan) {
     // For subscription items, the plan is directly available
-    toPlan = normalizePlanName(event.plan.nickname || event.plan.name);
-  } else if ('status' in event && event.object === 'subscription') {
+    // Prioritize slug, then nickname, then name
+    const planIdentifier = ('slug' in event.plan && event.plan.slug) || event.plan.nickname || event.plan.name;
+    toPlan = normalizePlanName(planIdentifier);
+  } else if ('status' in event && (event.object === 'commerce_subscription' || event.object === 'subscription')) {
     // For subscriptions, we might need to infer from metadata or status
     // This would require additional context from your subscription flow
     toPlan = event.status === 'active' ? 'pro' : 'free'; // Simplified logic
@@ -258,6 +282,7 @@ function normalizePlanName(planName: string): string {
   // Map common variations to standard plan names
   const planMap: Record<string, string> = {
     free: 'free',
+    free_user: 'free',
     basic: 'free',
     starter: 'free',
     pro: 'pro',
@@ -287,7 +312,10 @@ export function validateSubscriptionEvent(
     typeof event.updated_at === 'number';
 
   const isValidObject =
-    event.object === 'subscription' || event.object === 'subscription_item';
+    event.object === 'commerce_subscription' || 
+    event.object === 'commerce_subscription_item' ||
+    event.object === 'subscription' || 
+    event.object === 'subscription_item';
 
   return hasRequiredFields && isValidObject;
 }
@@ -298,6 +326,15 @@ export function validateSubscriptionEvent(
 export function extractUserIdentifier(
   event: ClerkSubscriptionEvent | ClerkSubscriptionItemEvent
 ): string | null {
-  // Prioritize user_id, fall back to organization_id
-  return event.user_id || event.organization_id || null;
+  // First try direct user_id/organization_id fields
+  if (event.user_id) return event.user_id;
+  if (event.organization_id) return event.organization_id;
+  
+  // For commerce events, check the payer field
+  if ('payer' in event && event.payer) {
+    if (event.payer.user_id) return event.payer.user_id;
+    if (event.payer.organization_id) return event.payer.organization_id;
+  }
+  
+  return null;
 }

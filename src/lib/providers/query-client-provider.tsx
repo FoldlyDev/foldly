@@ -12,7 +12,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes
             gcTime: 10 * 60 * 1000, // 10 minutes
-            refetchOnWindowFocus: false, // Critical: Prevent aggressive refetching on tab switch
+            refetchOnWindowFocus: true, // Enable refetch on window focus for immediate updates
             refetchOnMount: false, // Prevent refetch on component mount if data exists
             refetchOnReconnect: 'always', // Only refetch on network reconnect
             retry: 2, // Reduced from 3 to 2 for faster error handling
@@ -32,16 +32,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       {children}
       {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          position='bottom-right'
-          toggleButtonProps={{
-            style: {
-              backgroundColor: 'var(--primary)',
-              borderRadius: '8px',
-            },
-          }}
-        />
+        <ReactQueryDevtools initialIsOpen={false} position='bottom' />
       )}
     </QueryClientProvider>
   );

@@ -316,3 +316,66 @@ import { ConfigurableModal } from '@/components/ui';
 - **Testing**: Maintain co-located test files with updated import paths
 - **Type Safety**: Ensure all database operations use Drizzle types
 - **Feature Architecture**: Follow feature-based organization for new domains
+
+## Client/Server Separation Rules
+
+**CRITICAL RULE: Always maintain proper client/server boundaries in Next.js 15 App Router**
+
+### Required Architecture Pattern:
+```
+Client Component → Server Action → Service Layer → Database
+```
+
+### Mandatory Separation Rules:
+
+1. **Client Components (`'use client'`)**:
+   - NEVER import database connections or server-only functions directly
+   - NEVER access environment variables directly
+   - Use server actions for all data mutations
+   - Use React Query for data fetching with server actions
+
+2. **Server Actions**:
+   - Handle all database operations
+   - Process server-side logic and validation
+   - Return serializable data to client components
+   - Use proper error handling and type safety
+
+3. **Service Layer**:
+   - Contains business logic and database operations
+   - Should only be called from server actions or server components
+   - NEVER imported directly by client components
+
+4. **Database Layer**:
+   - Only accessible through service layer
+   - Protected by RLS policies and proper authentication
+
+### Violation Examples to AVOID:
+```typescript
+// ❌ WRONG - Client component importing server service
+'use client';
+import { getUserData } from '@/lib/services/users/user-service';
+
+// ❌ WRONG - Direct database access from client
+'use client';
+import { db } from '@/lib/database/connection';
+
+// ❌ WRONG - Server environment in client code
+'use client';
+const apiKey = process.env.DATABASE_URL;
+```
+
+### Correct Implementation:
+```typescript
+// ✅ CORRECT - Client component using server action
+'use client';
+import { getUserDataAction } from '../lib/actions/user-actions';
+
+// ✅ CORRECT - Server action calling service
+// app/actions/user-actions.ts
+import { getUserData } from '@/lib/services/users/user-service';
+export async function getUserDataAction() {
+  return await getUserData();
+}
+```
+
+**This rule prevents hydration errors, security vulnerabilities, and maintains proper Next.js architecture.**

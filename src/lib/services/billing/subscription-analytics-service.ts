@@ -154,7 +154,7 @@ export class SubscriptionAnalyticsService {
       const currentPlan = eventData[0]?.toPlan || 'free';
       const subscriptionStartDate =
         eventData.length > 0
-          ? eventData[eventData.length - 1]?.occurredAt
+          ? eventData[eventData.length - 1]?.occurredAt || null
           : null;
 
       const hasEverUpgraded = eventData.some(
