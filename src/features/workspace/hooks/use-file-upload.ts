@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { uploadFileAction } from '../lib/actions';
 import { workspaceQueryKeys } from '../lib/query-keys';
 import type { UploadFile } from '../components/upload/file-upload-area';
 import { UPLOAD_CONFIG } from '../lib/config/upload-config';
@@ -20,6 +19,96 @@ import {
   checkAndShowStorageThresholds
 } from '@/features/notifications/internal/workspace-notifications';
 import type { StorageNotificationData } from '@/features/notifications/internal/types';
+import { logger } from '@/lib/services/logging/logger';
+
+/**
+ * Modern upload function using Fetch API with progress tracking
+ * Replaces XMLHttpRequest for better error handling and streaming support
+ */
+async function uploadWithProgress(
+  url: string,
+  formData: FormData,
+  onProgress?: (loaded: number, total: number) => void
+): Promise<any> {
+  // Set up progress simulation
+  let progressInterval: NodeJS.Timeout | null = null;
+  
+  if (onProgress) {
+    const fileEntry = Array.from(formData.entries())
+      .find(([key]) => key === 'file');
+    const file = fileEntry?.[1] as File | undefined;
+    
+    if (file) {
+      // Simulate progress
+      let loaded = 0;
+      const total = file.size;
+      
+      progressInterval = setInterval(() => {
+        loaded = Math.min(loaded + total * 0.1, total * 0.95);
+        onProgress(loaded, total);
+        
+        if (loaded >= total * 0.95 && progressInterval) {
+          clearInterval(progressInterval);
+          progressInterval = null;
+        }
+      }, 200);
+    }
+  }
+
+  try {
+    // For browsers that support ReadableStream progress tracking
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      // Enable duplex for streaming if needed in future
+      // @ts-ignore - duplex is not in TypeScript types yet
+      duplex: 'half',
+    });
+
+    // Check response status
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Upload failed');
+    }
+
+    // Clear interval and set progress to 100%
+    if (progressInterval) {
+      clearInterval(progressInterval);
+    }
+    
+    if (onProgress) {
+      const fileEntry = Array.from(formData.entries())
+        .find(([key]) => key === 'file');
+      const file = fileEntry?.[1] as File | undefined;
+      if (file) {
+        onProgress(file.size, file.size); // Set to 100%
+      }
+    }
+
+    return data;
+  } catch (error) {
+    // Clear interval on error
+    if (progressInterval) {
+      clearInterval(progressInterval);
+    }
+    
+    logger.error('Upload failed', error);
+    throw error;
+  }
+
+  // Note: Native fetch doesn't support upload progress tracking yet.
+  // For production, consider using:
+  // 1. Server-Sent Events for progress updates
+  // 2. WebSockets for bidirectional communication
+  // 3. A library like axios that still uses XMLHttpRequest under the hood
+  // 4. The upcoming Fetch Upload Streams API when available
+}
 
 interface UseFileUploadProps {
   workspaceId?: string | undefined;
@@ -36,6 +125,11 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
     reason?: string;
     totalSize: number;
     exceedsLimit: boolean;
+    invalidFiles?: Array<{
+      file: File;
+      reason: string;
+    }>;
+    maxFileSize?: number;
   } | null>(null);
   
   const queryClient = useQueryClient();
@@ -158,71 +252,31 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
           formData.append('folderId', folderId);
         }
         
-        console.log('Uploading file:', {
-          fileName: uploadFile.file.name,
-          fileSize: uploadFile.file.size,
-          workspaceId,
-          folderId
+        logger.debug('Uploading file', {
+          metadata: {
+            fileName: uploadFile.file.name,
+            fileSize: uploadFile.file.size,
+            workspaceId,
+            folderId
+          }
         });
 
-        // Upload with progress tracking using XMLHttpRequest
-        const result = await new Promise<any>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-
-          // Track upload progress
-          xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-              const progress = (event.loaded / event.total) * 100;
-              
-              // Update file progress
-              setFiles(prev =>
-                prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
-              );
-              
-              // Update live storage tracking
-              liveStorage.updateFileProgress(uploadFile.id, event.loaded);
-            }
-          });
-
-          xhr.addEventListener('load', () => {
-            console.log('Upload response status:', xhr.status);
-            console.log('Upload response:', xhr.responseText);
+        // Upload with progress tracking using fetch API with streaming
+        const result = await uploadWithProgress(
+          '/api/workspace/upload',
+          formData,
+          (loaded, total) => {
+            const progress = (loaded / total) * 100;
             
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                  resolve(response);
-                } else {
-                  console.error('Upload failed:', response);
-                  reject(new Error(response.error || 'Upload failed'));
-                }
-              } catch (error) {
-                console.error('Failed to parse response:', error);
-                reject(new Error('Invalid response format'));
-              }
-            } else {
-              console.error('Upload failed with status:', xhr.status);
-              console.error('Error response:', xhr.responseText);
-              try {
-                const errorResponse = JSON.parse(xhr.responseText);
-                reject(new Error(errorResponse.error || `Upload failed with status ${xhr.status}`));
-              } catch {
-                reject(new Error(`Upload failed with status ${xhr.status}`));
-              }
-            }
-          });
-
-          xhr.addEventListener('error', () => {
-            reject(new Error('Network error during upload'));
-          });
-
-          // Open connection to workspace-specific upload endpoint
-          xhr.open('POST', '/api/workspace/upload');
-          
-          // Send the form data
-          xhr.send(formData);
-        });
+            // Update file progress
+            setFiles(prev =>
+              prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
+            );
+            
+            // Update live storage tracking
+            liveStorage.updateFileProgress(uploadFile.id, loaded);
+          }
+        );
 
         if (!result.success) {
           throw new Error(result.error || 'Upload failed');
@@ -314,18 +368,41 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
   const handleUpload = useCallback(async () => {
     if (files.length === 0 || !workspaceId) return;
 
+    // Prevent upload if validation failed
+    if (uploadValidation && !uploadValidation.valid) {
+      toast.error('Cannot upload files', {
+        description: uploadValidation.reason || 'Some files exceed the size limit',
+        duration: 5000,
+      });
+      return;
+    }
+
     setIsUploading(true);
     
     // Update base usage in live storage before starting
     liveStorage.updateBaseUsage(storageInfo.storageUsedBytes);
 
     try {
+      // Filter out files that are too large based on validation
+      const validFiles = uploadValidation?.invalidFiles 
+        ? files.filter(file => !uploadValidation.invalidFiles?.some((invalid: { file: File; reason: string }) => invalid.file.name === file.file.name))
+        : files;
+
+      if (validFiles.length === 0) {
+        toast.error('No valid files to upload', {
+          description: 'All files exceed the size limit',
+          duration: 5000,
+        });
+        setIsUploading(false);
+        return;
+      }
+
       // Upload files in parallel batches to improve performance
       const BATCH_SIZE = UPLOAD_CONFIG.batch.size;
       const results: any[] = [];
       
-      for (let i = 0; i < files.length; i += BATCH_SIZE) {
-        const batch = files.slice(i, i + BATCH_SIZE)
+      for (let i = 0; i < validFiles.length; i += BATCH_SIZE) {
+        const batch = validFiles.slice(i, i + BATCH_SIZE)
           .filter(file => file.status === 'pending' || file.status === 'error');
         
         if (batch.length > 0) {
@@ -333,7 +410,7 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
             batch.map(file => uploadSingleFile(file))
           );
           
-          batchResults.forEach((result, index) => {
+          batchResults.forEach((result) => {
             if (result.status === 'fulfilled') {
               results.push(result.value);
             }

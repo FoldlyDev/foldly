@@ -72,19 +72,46 @@ export function FileUploadArea({
 
   // Generate thumbnails for image files
   React.useEffect(() => {
+    const newThumbnails: Record<string, string> = {};
+    
     files.forEach(file => {
       if (file.file.type.startsWith('image/') && !thumbnails[file.id]) {
         const reader = new FileReader();
         reader.onload = (e) => {
+          const result = e.target?.result as string;
+          newThumbnails[file.id] = result;
           setThumbnails(prev => ({
             ...prev,
-            [file.id]: e.target?.result as string
+            [file.id]: result
           }));
         };
         reader.readAsDataURL(file.file);
       }
     });
+    
+    // Cleanup function to revoke object URLs
+    return () => {
+      // Clean up any blob URLs that were created
+      Object.entries(thumbnails).forEach(([fileId, url]) => {
+        // Only revoke blob URLs, not data URLs
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
   }, [files]);
+  
+  // Additional cleanup when component unmounts
+  React.useEffect(() => {
+    return () => {
+      // Clean up all thumbnails on unmount
+      Object.values(thumbnails).forEach(url => {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [thumbnails]);
 
   const handleFileChange = (newFiles: File[]) => {
     onFileSelect(newFiles);
@@ -279,6 +306,20 @@ export function FileUploadArea({
                               src={thumbnails[file.id]} 
                               alt={file.file.name}
                               className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Handle image load errors
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                // Clean up the failed thumbnail
+                                if (thumbnails[file.id]?.startsWith('blob:')) {
+                                  URL.revokeObjectURL(thumbnails[file.id]);
+                                }
+                                setThumbnails(prev => {
+                                  const next = { ...prev };
+                                  delete next[file.id];
+                                  return next;
+                                });
+                              }}
                             />
                           </div>
                         ) : (
