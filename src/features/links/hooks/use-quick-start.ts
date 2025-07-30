@@ -49,7 +49,7 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
         isPublic: true,
         isActive: true,
         maxFiles: 100,
-        maxFileSize: 10, // 10MB (server action will convert to bytes)
+        maxFileSize: 5, // 5MB (Supabase deployment limit, server action will convert to bytes)
         allowedFileTypes: undefined, // undefined instead of empty array
         expiresAt: undefined, // undefined for no expiration
         brandEnabled: false,

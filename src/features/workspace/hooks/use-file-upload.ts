@@ -455,13 +455,18 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
         }
       }
 
-      // Clear files after upload attempt
-      setTimeout(() => {
-        setFiles([]);
-        onClose?.();
-        // Reset live storage tracking
+      // Only close modal and clear files if all uploads succeeded
+      if (failedCount === 0 && successCount > 0) {
+        setTimeout(() => {
+          setFiles([]);
+          onClose?.();
+          // Reset live storage tracking
+          liveStorage.resetLiveTracking();
+        }, 1000);
+      } else {
+        // Keep files visible on error but reset live storage
         liveStorage.resetLiveTracking();
-      }, 1000);
+      }
     } catch (error) {
       toast.error('Upload failed');
     } finally {

@@ -21,7 +21,7 @@ export const FORM_DEFAULTS = {
 
   // File upload defaults
   maxFiles: 100,
-  maxFileSize: 100, // MB
+  maxFileSize: 5, // MB (Supabase deployment limit)
   allowedFileTypes: [] as string[],
 
   // Branding defaults

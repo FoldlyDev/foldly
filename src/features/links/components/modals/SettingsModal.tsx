@@ -46,7 +46,7 @@ export function SettingsModal() {
       requirePassword: false,
       password: '',
       maxFiles: 100,
-      maxFileSize: 10,
+      maxFileSize: 5, // 5MB (Supabase deployment limit)
       allowedFileTypes: [],
       brandEnabled: false,
       brandColor: '',
