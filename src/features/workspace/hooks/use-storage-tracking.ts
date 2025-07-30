@@ -11,6 +11,7 @@ import {
 import { type UserStorageInfo, type StorageValidationResult } from '@/lib/services/storage/storage-tracking-service';
 import { formatBytes, getStorageQuotaStatus, shouldShowStorageWarning, type StorageQuotaStatus } from '../lib/utils/storage-utils';
 import { workspaceQueryKeys } from '../lib/query-keys';
+import { useUserPlan } from './use-user-plan';
 
 // =============================================================================
 // TYPES
@@ -53,9 +54,7 @@ export const storageQueryKeys = {
 export function useStorageTracking(): StorageTrackingData {
   const { user } = useUser();
   const queryClient = useQueryClient();
-
-  // Get user's current plan (defaulting to 'free' for now - can be enhanced later)
-  const userPlanKey = 'free'; // TODO: Integrate with actual user subscription service
+  const { planKey: userPlanKey } = useUserPlan();
 
   // Query for storage dashboard data using server action
   const {
@@ -64,18 +63,20 @@ export function useStorageTracking(): StorageTrackingData {
     error,
     refetch,
   } = useQuery({
-    queryKey: storageQueryKeys.dashboard(user?.id || ''),
+    queryKey: [...storageQueryKeys.dashboard(user?.id || ''), userPlanKey],
     queryFn: async () => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
+      console.log('[useStorageTracking] Fetching storage for plan:', userPlanKey);
       const result = await getStorageDashboardAction(userPlanKey);
       if (!result.success) {
         throw new Error(result.error || 'Failed to get storage dashboard');
       }
+      console.log('[useStorageTracking] Storage result:', result.data);
       return result.data!;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!userPlanKey,
     staleTime: 1000 * 60 * 2, // 2 minutes - storage data changes frequently
     gcTime: 1000 * 60 * 10, // 10 minutes garbage collection
     refetchOnWindowFocus: true,

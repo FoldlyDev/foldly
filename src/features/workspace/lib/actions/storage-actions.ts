@@ -149,7 +149,7 @@ export async function validateMultipleFilesAction(
       success: true,
       data: {
         valid: validation.canUpload,
-        reason: validation.reason || undefined,
+        ...(validation.reason && { reason: validation.reason }),
         totalSize,
         exceedsLimit: validation.wouldExceedLimit,
       },
