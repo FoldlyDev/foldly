@@ -3,6 +3,7 @@
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import type { TreeInstance } from '@headless-tree/core';
 import { batchMoveItemsAction } from '../lib/actions';
 import { workspaceQueryKeys } from '../lib/query-keys';
 import type {
@@ -10,6 +11,7 @@ import type {
   BatchOperationProgress,
 } from '../components/modals/batch-operation-modal';
 import { data, setDragOperationActive } from '../lib/tree-data';
+import type { WorkspaceTreeItem } from '../lib/tree-data';
 
 export type BatchMoveModalState = {
   isOpen: boolean;
@@ -30,7 +32,7 @@ export type BatchMoveModalState = {
 export type UseBatchOperationsParams = {
   rootId: string | undefined;
   onSelectionChange?: ((selectedItems: string[]) => void) | undefined;
-  tree: any;
+  tree: any | null;
 };
 
 /**

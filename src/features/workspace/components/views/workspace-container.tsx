@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, lazy, Suspense } from 'react';
+import type { WorkspaceTreeItem } from '@/features/workspace/lib/tree-data';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
@@ -8,6 +9,7 @@ import { UploadModal } from '../modals/upload-modal';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
+import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
 import { 
   useStorageTracking, 
   useStorageQuotaStatus,
@@ -28,8 +30,8 @@ export function WorkspaceContainer() {
   // Set up real-time subscription for workspace changes
   useWorkspaceRealtime(workspaceData?.workspace?.id);
 
-  // UI state management
-  const { isUploadModalOpen, closeUploadModal } = useWorkspaceUI();
+  // UI state management - use store directly for modal state
+  const { isOpen: isUploadModalOpen, closeModal: closeUploadModal, workspaceId: modalWorkspaceId } = useWorkspaceUploadModal();
 
   // Storage tracking
   const { storageInfo, isLoading: storageLoading } = useStorageTracking();
@@ -37,7 +39,7 @@ export function WorkspaceContainer() {
   const [previousStoragePercentage, setPreviousStoragePercentage] = useState<number | undefined>(undefined);
 
   // Tree instance state
-  const [treeInstance, setTreeInstance] = useState<any>(null);
+  const [treeInstance, setTreeInstance] = useState<any | null>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,6 +115,7 @@ export function WorkspaceContainer() {
         <WorkspaceHeader 
           totalLinks={workspaceData?.stats?.totalLinks || 0}
           totalFiles={workspaceData?.stats?.totalFiles || 0}
+          workspaceId={workspaceData?.workspace?.id}
         />
       </div>
 
@@ -154,11 +157,15 @@ export function WorkspaceContainer() {
       </div>
 
       {/* Upload Modal with Storage Context */}
+      {console.log('Upload Modal workspaceId:', {
+        modalWorkspaceId,
+        workspaceDataId: workspaceData?.workspace?.id,
+        finalId: modalWorkspaceId || workspaceData?.workspace?.id
+      })}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={closeUploadModal}
-        workspaceId={workspaceData?.workspace?.id}
-        folderId={undefined} // For root workspace uploads
+        workspaceId={modalWorkspaceId || workspaceData?.workspace?.id}
       />
       
       {/* Global Storage Status Overlay for Critical States */}

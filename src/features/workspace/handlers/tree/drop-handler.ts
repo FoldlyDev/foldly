@@ -235,6 +235,7 @@ async function handleReorderOperation(
 
   // Update data immediately (optimistic update)
   parentData.children = newChildren;
+  tree.rebuildTree(); // Trigger UI update immediately
 
   try {
     // Persist to database
@@ -330,6 +331,9 @@ async function handleMoveOperation(
         targetParentData.children = [itemId];
       }
     }
+
+    // Rebuild tree after optimistic updates
+    tree.rebuildTree();
 
     // Execute database moves
     const results = await Promise.all(

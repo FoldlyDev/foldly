@@ -11,11 +11,13 @@ import { toast } from 'sonner';
 interface WorkspaceHeaderProps {
   totalLinks?: number;
   totalFiles?: number;
+  workspaceId?: string;
 }
 
 export function WorkspaceHeader({
   totalLinks = 0,
   totalFiles = 0,
+  workspaceId,
 }: WorkspaceHeaderProps) {
   const { user } = useUser();
   const { openUploadModal } = useWorkspaceUI();
@@ -40,19 +42,20 @@ export function WorkspaceHeader({
       });
       return;
     }
-    
+
     if (quotaStatus.status === 'critical') {
       toast.warning('Storage almost full', {
         description: 'Consider upgrading your plan for more storage.',
       });
     }
-    
-    openUploadModal();
+
+    openUploadModal(workspaceId);
   };
 
   // Determine upload button state
   const isUploadDisabled = quotaStatus.status === 'exceeded';
-  const showStorageWarning = quotaStatus.status === 'critical' || quotaStatus.status === 'warning';
+  const showStorageWarning =
+    quotaStatus.status === 'critical' || quotaStatus.status === 'warning';
 
   return (
     <motion.div
@@ -120,7 +123,7 @@ export function WorkspaceHeader({
         {/* Primary CTA - Always visible with responsive sizing */}
         <div className='relative'>
           <GradientButton
-            variant={isUploadDisabled ? 'outline' : 'primary'}
+            variant={isUploadDisabled ? 'secondary' : 'primary'}
             size='md'
             className='shadow-brand flex-shrink-0 px-4 sm:px-6 relative'
             onClick={handleUploadClick}
@@ -134,7 +137,7 @@ export function WorkspaceHeader({
               {isUploadDisabled ? 'Storage Full' : 'Upload File'}
             </span>
           </GradientButton>
-          
+
           {/* Storage warning indicator */}
           {showStorageWarning && (
             <div className='absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full border border-white animate-pulse' />
