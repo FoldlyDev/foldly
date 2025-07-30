@@ -191,8 +191,12 @@ export class LinkUploadValidationService {
       const validationResult = validateFile(file, constraints);
       
       // Convert validation errors to string messages
-      const errors = validationResult.errors.map(e => e.message);
-      const warnings = validationResult.warnings;
+      const fileErrors = validationResult.errors.map(e => e.message);
+      const fileWarnings = validationResult.warnings;
+      
+      // Merge file validation errors with link validation errors
+      errors.push(...fileErrors);
+      warnings.push(...fileWarnings);
       
       // Add link-specific validation messages
       if (link.allowedFileTypes && !validationResult.isValid && 
