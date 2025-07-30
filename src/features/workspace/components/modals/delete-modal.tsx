@@ -14,6 +14,9 @@ import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
 import { toast } from 'sonner';
 import type { DatabaseId } from '@/lib/database/types';
+import { useInvalidateStorage } from '../../hooks/use-storage-tracking';
+import { useQueryClient } from '@tanstack/react-query';
+import { workspaceQueryKeys } from '../../lib/query-keys';
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -27,6 +30,8 @@ interface DeleteModalProps {
 
 export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const invalidateStorage = useInvalidateStorage();
+  const queryClient = useQueryClient();
 
   const handleDelete = async () => {
     if (!item) return;
@@ -40,6 +45,12 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
           : await deleteFileAction(item.id);
 
       if (result.success) {
+        // Invalidate both storage and workspace tree queries for real-time updates
+        await Promise.all([
+          invalidateStorage(),
+          queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() })
+        ]);
+        
         onClose();
         toast.success(
           `${item.type === 'folder' ? 'Folder' : 'File'} deleted successfully`

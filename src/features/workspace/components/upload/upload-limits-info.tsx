@@ -4,6 +4,7 @@ import { Info, Zap, Shield, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { UPLOAD_CONFIG, formatFileSize } from '../../lib/config/upload-config';
 import { cn } from '@/lib/utils';
+import { getPlanConfig, formatPlanFileSize } from '@/lib/config/plan-configuration';
 
 interface UploadLimitsInfoProps {
   plan: 'free' | 'pro' | 'business';
@@ -13,6 +14,8 @@ interface UploadLimitsInfoProps {
 
 export function UploadLimitsInfo({ plan, className, compact = false }: UploadLimitsInfoProps) {
   const limits = UPLOAD_CONFIG.fileSizeLimits[plan];
+  const planConfig = getPlanConfig(plan);
+  const maxFileSize = formatPlanFileSize(plan);
   
   const features = [
     {
@@ -25,7 +28,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
     {
       icon: Shield,
       label: 'Max File Size',
-      value: plan === 'pro' ? '10GB per file' : plan === 'business' ? '25GB per file' : '2GB per file',
+      value: `${maxFileSize} per file`,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -43,7 +46,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
       <div className={cn("flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600", className)}>
         <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
         <span className="line-clamp-1">
-          Up to {plan === 'pro' ? '10GB' : plan === 'business' ? '25GB' : '2GB'} per file • {UPLOAD_CONFIG.batch.size} files at once
+          Up to {maxFileSize} per file • {UPLOAD_CONFIG.batch.size} files at once
         </span>
       </div>
     );
