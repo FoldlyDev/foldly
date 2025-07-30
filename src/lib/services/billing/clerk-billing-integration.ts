@@ -84,7 +84,6 @@ export class ClerkBillingIntegrationService {
             'priority_support',
             'custom_branding',
             'password_protected_links',
-            'file_restrictions',
             'premium_short_links',
             'qr_code_generation',
           ];
@@ -98,7 +97,6 @@ export class ClerkBillingIntegrationService {
             'custom_branding',
             'password_protected_links',
             'storage_limits',
-            'file_restrictions',
             'premium_short_links',
             'qr_code_generation',
           ];

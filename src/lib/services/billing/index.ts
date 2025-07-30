@@ -78,16 +78,41 @@ export class BillingService {
       // Get current plan from Clerk
       let currentPlan: 'free' | 'pro' | 'business' = 'free';
       let features: string[] = [];
+      
+      console.log('[BillingService] Checking plan for user:', targetUserId);
 
       if (has) {
-        if (has({ plan: 'business' }) || has({ plan: 'Business' })) {
+        // Debug: Log all plan checks
+        const planChecks = {
+          business: has({ plan: 'business' }),
+          Business: has({ plan: 'Business' }),
+          enterprise: has({ plan: 'enterprise' }),
+          pro: has({ plan: 'pro' }),
+          Pro: has({ plan: 'Pro' }),
+          professional: has({ plan: 'professional' }),
+          Professional: has({ plan: 'Professional' }),
+        };
+        console.log('[BillingService] Plan checks:', planChecks);
+        
+        if (
+          has({ plan: 'business' }) || 
+          has({ plan: 'Business' }) ||
+          has({ plan: 'enterprise' })
+        ) {
           currentPlan = 'business';
           features = ['unlimited_storage', 'advanced_branding', 'priority_support', 'team_collaboration'];
-        } else if (has({ plan: 'pro' }) || has({ plan: 'Pro' })) {
+        } else if (
+          has({ plan: 'pro' }) || 
+          has({ plan: 'Pro' }) ||
+          has({ plan: 'professional' }) ||
+          has({ plan: 'Professional' })
+        ) {
           currentPlan = 'pro';
+          console.log('[BillingService] User has Pro plan');
           features = ['custom_branding', 'password_protection', 'extended_storage', 'analytics'];
         } else {
           currentPlan = 'free';
+          console.log('[BillingService] User has Free plan (no paid plan detected)');
           features = ['basic_sharing', 'limited_storage'];
         }
 

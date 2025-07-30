@@ -94,13 +94,6 @@ export const FEATURES = {
     category: 'sharing',
   },
 
-  FILE_RESTRICTIONS: {
-    key: 'file_restrictions',
-    displayName: 'File Restrictions',
-    description: 'Take control with custom file size limits and type restrictions for each sharing link',
-    availableInPlans: ['pro', 'business'],
-    category: 'security',
-  },
 
   // Integration Features
   CLOUD_INTEGRATIONS: {
