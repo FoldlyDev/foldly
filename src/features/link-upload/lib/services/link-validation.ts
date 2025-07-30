@@ -6,6 +6,13 @@ import {
 } from '@/lib/database/types/links';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import type { Link } from '@/lib/database/types/links';
+import {
+  validateFile,
+  formatFileSize,
+  type FileConstraints,
+  type FileValidationResult,
+} from '@/lib/upload/utils/file-validation';
+import { LINK_UPLOAD_LIMITS } from '@/lib/upload/constants/limits';
 
 // =============================================================================
 // TYPES
@@ -175,54 +182,31 @@ export class LinkUploadValidationService {
       const errors: string[] = [];
       const warnings: string[] = [];
 
-      // File size validation
-      const exceedsMaxSize = file.size > link.maxFileSize;
-      if (exceedsMaxSize) {
-        const maxSizeMB = Math.round(link.maxFileSize / (1024 * 1024));
-        const fileSizeMB = Math.round(file.size / (1024 * 1024));
-        errors.push(
-          `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit.`
-        );
-      }
+      // Use shared file validation utility
+      const constraints: FileConstraints = {
+        maxFileSize: link.maxFileSize,
+        allowedFileTypes: link.allowedFileTypes || undefined,
+      };
 
-      // File type validation
-      let isAllowedType = true;
-      if (link.allowedFileTypes && link.allowedFileTypes.length > 0) {
-        const fileExtension = file.name.split('.').pop()?.toLowerCase();
-        const mimeType = file.type.toLowerCase();
-
-        isAllowedType = link.allowedFileTypes.some(allowedType => {
-          return (
-            mimeType.includes(allowedType.toLowerCase()) ||
-            (fileExtension && allowedType.toLowerCase().includes(fileExtension))
-          );
-        });
-
-        if (!isAllowedType) {
-          errors.push(
-            `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`
-          );
+      const validationResult = validateFile(file, constraints);
+      
+      // Convert validation errors to string messages
+      const errors = validationResult.errors.map(e => e.message);
+      const warnings = validationResult.warnings;
+      
+      // Add link-specific validation messages
+      if (link.allowedFileTypes && !validationResult.isValid && 
+          validationResult.errors.some(e => e.field === 'fileType')) {
+        // Replace generic message with link-specific one
+        const typeErrorIndex = errors.findIndex(e => e.includes('File type not allowed'));
+        if (typeErrorIndex !== -1) {
+          errors[typeErrorIndex] = `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`;
         }
       }
-
-      // File name validation
-      if (file.name.length > 255) {
-        errors.push(
-          'File name is too long. Please rename the file to be under 255 characters.'
-        );
-      }
-
-      if (!/^[^<>:"/\\|?*]+$/.test(file.name)) {
-        warnings.push(
-          'File name contains special characters that may cause issues.'
-        );
-      }
-
-      // Size warnings
-      if (file.size > 100 * 1024 * 1024) {
-        // 100MB
-        warnings.push('This is a large file and may take some time to upload.');
-      }
+      
+      const exceedsMaxSize = file.size > link.maxFileSize;
+      const isAllowedType = validationResult.isValid || 
+        !validationResult.errors.some(e => e.field === 'fileType');
 
       return {
         success: true,

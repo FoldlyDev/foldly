@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   uploadFileToLinkAction,
   validateLinkForUploadAction,
-} from '@/features/upload/lib/actions/upload-to-link';
-import { linkUploadValidationService } from '@/features/upload/lib/services/link-validation';
+} from '@/features/link-upload/lib/actions/upload-to-link';
+import { linkUploadValidationService } from '@/features/link-upload/lib/services/link-validation';
 
 // =============================================================================
 // TYPES

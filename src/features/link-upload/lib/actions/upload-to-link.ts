@@ -5,6 +5,13 @@ import { FileService } from '@/lib/services/files/file-service';
 import { storageService } from '@/lib/services/files/storage-service';
 import { canAcceptUploads, isLinkExpired } from '@/lib/database/types/links';
 import type { DatabaseResult } from '@/lib/database/types/common';
+import {
+  validateFile,
+  formatFileSize,
+  checkFileType,
+  type FileConstraints,
+} from '@/lib/upload/utils/file-validation';
+import { generateUniqueFileName } from '@/lib/upload/utils/file-processing';
 
 // =============================================================================
 // TYPES
@@ -134,35 +141,43 @@ export async function uploadFileToLinkAction(
     // 5. FILE SIZE AND TYPE VALIDATION
     // =============================================================================
 
-    // Check individual file size against link limits
-    if (file.size > link.maxFileSize) {
-      const maxSizeMB = Math.round(link.maxFileSize / (1024 * 1024));
-      const fileSizeMB = Math.round(file.size / (1024 * 1024));
-      return {
-        success: false,
-        error: `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit for this upload link.`,
-      };
-    }
+    // Use shared file validation utility
+    const constraints: FileConstraints = {
+      maxFileSize: link.maxFileSize,
+      allowedFileTypes: link.allowedFileTypes || undefined,
+    };
 
-    // Check allowed file types if specified
-    if (link.allowedFileTypes && link.allowedFileTypes.length > 0) {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      const mimeType = file.type.toLowerCase();
-
-      const isAllowed = link.allowedFileTypes.some(allowedType => {
-        // Check both MIME type and extension patterns
-        return (
-          mimeType.includes(allowedType.toLowerCase()) ||
-          (fileExtension && allowedType.toLowerCase().includes(fileExtension))
-        );
-      });
-
-      if (!isAllowed) {
+    const validationResult = validateFile(file, constraints);
+    
+    if (!validationResult.isValid) {
+      // Customize error messages for link context
+      const errors = validationResult.errors;
+      
+      // Check for file size error
+      const sizeError = errors.find(e => e.field === 'fileSize');
+      if (sizeError) {
+        const maxSizeMB = Math.round(link.maxFileSize / (1024 * 1024));
+        const fileSizeMB = Math.round(file.size / (1024 * 1024));
+        return {
+          success: false,
+          error: `File too large. This file (${fileSizeMB}MB) exceeds the ${maxSizeMB}MB limit for this upload link.`,
+        };
+      }
+      
+      // Check for file type error
+      const typeError = errors.find(e => e.field === 'fileType');
+      if (typeError && link.allowedFileTypes) {
         return {
           success: false,
           error: `File type not allowed. This upload link only accepts: ${link.allowedFileTypes.join(', ')}`,
         };
       }
+      
+      // Return first error if any other validation failed
+      return {
+        success: false,
+        error: errors[0]?.message || 'File validation failed',
+      };
     }
 
     console.log(
@@ -195,10 +210,7 @@ export async function uploadFileToLinkAction(
         const existingFileNames = existingFilesResult.data.map(f => f.fileName);
 
         // Generate unique name if duplicates exist
-        const { generateUniqueName } = await import(
-          '@/features/files/utils/file-operations'
-        );
-        uniqueFileName = generateUniqueName(file.name, existingFileNames);
+        uniqueFileName = generateUniqueFileName(file.name, existingFileNames);
       }
     } else {
       // For root files, check existing root files for this link

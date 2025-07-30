@@ -1,5 +1,5 @@
-// Upload Types for Foldly - Upload Flow and File Processing
-// Feature-specific types for upload functionality
+// Link Upload Types for Foldly
+// Feature-specific types for link-based upload functionality
 // Following 2025 TypeScript best practices with strict type safety
 
 import type { ReactNode, DragEvent } from 'react';
@@ -14,25 +14,35 @@ import type {
 } from '@/types/ids';
 
 import type { DeepReadonly, ValidationError, Result } from '@/types/utils';
-
 import type { LinkType } from '@/features/links/types';
-
 import type { FileProcessingStatus } from '@/features/files/types';
-
 import type { UploadLink } from '@/features/links/types';
-
 import type { Folder } from '@/features/files/types';
-
 import type { UploadBatch } from './database';
 
+// Re-export shared upload types
+export type {
+  FileValidationResult,
+  FileConstraints,
+  UploadProgressCallback,
+  UploadProgressEvent,
+  UploadStateEvent,
+  BatchStateEvent,
+  FileUploadOptions,
+  BatchUploadOptions,
+  FileUploadResult,
+  BatchUploadResult,
+  UploadConstraints,
+} from '@/lib/upload/types/common';
+
 // =============================================================================
-// UPLOAD CONFIGURATION AND REQUIREMENTS
+// LINK UPLOAD SPECIFIC TYPES
 // =============================================================================
 
 /**
- * Upload requirements configuration
+ * Link upload requirements configuration
  */
-export interface UploadRequirements {
+export interface LinkUploadRequirements {
   readonly requireEmail: boolean;
   readonly requirePassword: boolean;
   readonly allowFolderCreation: boolean;
@@ -40,8 +50,11 @@ export interface UploadRequirements {
   readonly maxFileSize: number; // bytes
   readonly allowedFileTypes?: string[]; // MIME types
   readonly customInstructions?: string;
-} /**
- * Uploader information collected during upload
+  readonly expiresAt?: Date;
+}
+
+/**
+ * Uploader information collected during link upload
  */
 export interface UploaderInfo {
   readonly name: string;
@@ -51,7 +64,7 @@ export interface UploaderInfo {
 }
 
 // =============================================================================
-// UPLOAD FLOW CONSTANTS
+// LINK UPLOAD FLOW TYPES
 // =============================================================================
 
 /**
@@ -81,59 +94,69 @@ export const isValidUploadFlowStep = (
   );
 };
 
-// Upload service types
-export type UploadProgressCallback = (fileId: FileId, progress: number) => void;
+// =============================================================================
+// LINK UPLOAD SERVICE INTERFACES
+// =============================================================================
 
-export interface FileValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-  fileSize: number;
-  fileType: string;
-  fileName: string;
-}
-
-export interface UploadServiceInterface {
+/**
+ * Link upload service interface
+ */
+export interface LinkUploadServiceInterface {
   uploadFile(
     file: File,
-    batchId: BatchId,
+    linkId: LinkId,
+    uploaderInfo: UploaderInfo,
+    folderId?: FolderId,
+    password?: string,
     onProgress?: UploadProgressCallback
   ): Promise<Result<FileId, ValidationError>>;
 
   uploadBatch(
     files: File[],
-    batchId: BatchId,
+    linkId: LinkId,
+    uploaderInfo: UploaderInfo,
+    folderId?: FolderId,
+    password?: string,
     onProgress?: UploadProgressCallback
   ): Promise<Result<FileId[], ValidationError>>;
 
+  validateLink(
+    linkId: LinkId,
+    password?: string
+  ): Promise<Result<LinkUploadRequirements, ValidationError>>;
+
   createUploadBatch(
-    linkId: string,
-    uploaderInfo?: any
+    linkId: LinkId,
+    uploaderInfo: UploaderInfo
   ): Promise<Result<BatchId, ValidationError>>;
-  completeBatch(batchId: BatchId): Promise<Result<boolean, ValidationError>>;
-  cancelBatch(batchId: BatchId): Promise<Result<boolean, ValidationError>>;
-
-  getUploadProgress(
-    batchId: BatchId
-  ): Promise<Result<Record<FileId, number>, ValidationError>>;
 }
 
-export interface FileValidationInterface {
-  validateFile(file: File, constraints?: FileConstraints): FileValidationResult;
-  validateFiles(
-    files: File[],
-    constraints?: FileConstraints
-  ): FileValidationResult[];
-  checkFileSize(file: File, maxSize: number): boolean;
-  checkFileType(file: File, allowedTypes: string[]): boolean;
-  checkFileName(fileName: string): boolean;
+// =============================================================================
+// LINK UPLOAD UI TYPES
+// =============================================================================
+
+/**
+ * Link upload form state
+ */
+export interface LinkUploadFormState {
+  currentStep: UploadFlowStep;
+  linkId?: LinkId;
+  password?: string;
+  uploaderInfo?: UploaderInfo;
+  selectedFiles: File[];
+  uploadProgress: Record<FileId, number>;
+  errors: ValidationError[];
 }
 
-export interface FileConstraints {
-  maxFileSize?: number;
-  allowedFileTypes?: string[];
-  maxFiles?: number;
-  allowDuplicates?: boolean;
+/**
+ * Link upload context
+ */
+export interface LinkUploadContext {
+  link: UploadLink;
+  requirements: LinkUploadRequirements;
+  uploaderInfo?: UploaderInfo;
+  selectedFolder?: Folder;
 }
 
-// Export all upload types
+// Export all database types
 export * from './database';
