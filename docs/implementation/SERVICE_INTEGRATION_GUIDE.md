@@ -260,6 +260,132 @@ export const billingQueryKeys = {
 
 ---
 
+## 📁 **File Service Integration**
+
+### **Enhanced File Deletion with Storage Cleanup**
+
+The file service now includes enhanced methods for proper file deletion that handles both database records and Supabase storage cleanup:
+
+#### **Single File Deletion with Storage**
+
+```typescript
+// file-service.ts
+async deleteFileWithStorage(
+  fileId: string,
+  storageService: any
+): Promise<DatabaseResult<{ deletedFromStorage: boolean }>> {
+  // Get file details first
+  const file = await this.getFileById(fileId);
+  
+  // Delete from storage first if path exists
+  if (file.storagePath) {
+    const context = file.linkId ? 'shared' : 'workspace';
+    await storageService.deleteFile(file.storagePath, context);
+  }
+  
+  // Delete from database
+  await this.deleteFile(fileId);
+  
+  return { success: true, data: { deletedFromStorage: true } };
+}
+```
+
+#### **Batch File Deletion with Storage**
+
+```typescript
+// Batch delete multiple files with storage cleanup
+async batchDeleteFilesWithStorage(
+  fileIds: string[],
+  storageService: any
+): Promise<DatabaseResult<{ totalDeleted: number; storageDeleted: number }>> {
+  // Get all file details
+  const files = await Promise.all(fileIds.map(id => this.getFileById(id)));
+  
+  // Delete from storage in parallel for performance
+  const storagePromises = files
+    .filter(file => file.storagePath)
+    .map(file => {
+      const context = file.linkId ? 'shared' : 'workspace';
+      return storageService.deleteFile(file.storagePath, context);
+    });
+  
+  await Promise.all(storagePromises);
+  
+  // Delete from database
+  await this.batchDeleteFiles(fileIds);
+  
+  return {
+    success: true,
+    data: { totalDeleted: fileIds.length, storageDeleted }
+  };
+}
+```
+
+### **Folder Deletion with Nested File Cleanup**
+
+The folder service properly handles storage cleanup for all nested files when deleting folders:
+
+```typescript
+// folder-service.ts
+async deleteFolderWithStorage(
+  folderId: string,
+  storageService: any
+): Promise<DatabaseResult<{ filesDeleted: number; storageDeleted: number }>> {
+  // Get all nested files recursively
+  const nestedFiles = await this.getNestedFiles(folderId);
+  
+  // Delete all files from storage first
+  const storagePromises = nestedFiles
+    .filter(file => file.storagePath)
+    .map(async file => {
+      const context = file.linkId ? 'shared' : 'workspace';
+      return storageService.deleteFile(file.storagePath, context);
+    });
+  
+  await Promise.all(storagePromises);
+  
+  // Delete folder and all nested content from database
+  await this.deleteFolder(folderId);
+  
+  return {
+    success: true,
+    data: { filesDeleted: nestedFiles.length, storageDeleted }
+  };
+}
+```
+
+### **Integration Benefits**
+
+1. **Atomic Operations**: Storage and database cleanup happen together
+2. **No Orphaned Files**: Prevents storage leaks from orphaned files
+3. **Performance Optimized**: Parallel deletion for better performance
+4. **Error Resilience**: Continues with database deletion even if storage fails
+5. **Context Awareness**: Handles both workspace and shared file contexts
+
+### **Usage in Server Actions**
+
+```typescript
+// delete-file-action.ts
+export async function deleteFileAction(fileId: string) {
+  const result = await fileService.deleteFileWithStorage(
+    fileId,
+    storageService
+  );
+  
+  if (result.success) {
+    // Invalidate caches
+    revalidatePath('/workspace');
+    
+    // Track storage quota update
+    await storageTrackingService.updateQuotaAfterDeletion(fileId);
+  }
+  
+  return result;
+}
+```
+
+---
+
 ## 🧩 **Component Integration Patterns**
 
 ### **FeatureGate Component**

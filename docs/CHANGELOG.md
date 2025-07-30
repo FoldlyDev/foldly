@@ -17,16 +17,26 @@ This unified changelog consolidates all project updates, replacing the previous 
 
 ---
 
-## 🚀 **Current Release: 2025.1.2 - Billing System Integration Complete**
+## 🚀 **Current Release: 2025.1.3 - Enhanced File Management & Upload Experience**
 
-**Release Date**: January 27, 2025  
-**Status**: 🟢 **Production Ready** - Complete billing system with 2025 Clerk integration  
-**Migration Required**: Database migrations applied automatically  
-**Critical Update**: Complete billing system refactoring with enterprise-grade Clerk integration
+**Release Date**: January 30, 2025  
+**Status**: 🟢 **Production Ready** - Complete file management system with enhanced user experience  
+**Migration Required**: No database migrations required  
+**Critical Update**: Enhanced file deletion service and improved upload validation experience
 
 ### **🎯 Major Features**
 
-#### **Billing System Integration (100% Complete)** 🆕
+#### **Enhanced File Management System (100% Complete)** 🆕
+
+- ✅ **File Deletion with Storage Cleanup**: Automatic Supabase storage cleanup when deleting files
+- ✅ **Batch File Operations**: Efficient batch deletion with parallel storage cleanup
+- ✅ **Folder Deletion Enhancement**: Recursive storage cleanup for all nested files
+- ✅ **Real-time File Size Validation**: Immediate feedback when files exceed plan limits
+- ✅ **Always-Visible Upload Info**: Persistent display of upload limits and storage usage
+- ✅ **Detailed Error Messages**: Specific file information when size limits are exceeded
+- ✅ **Performance Optimized**: Parallel storage operations for better performance
+
+#### **Billing System Integration (100% Complete)**
 
 - ✅ **Clerk 2025 Integration**: Direct billing API integration with modern patterns
 - ✅ **Service Layer Consolidation**: 50% reduction from 12+ services to 6 focused modules
@@ -215,6 +225,14 @@ This unified changelog consolidates all project updates, replacing the previous 
 ---
 
 ## 🔄 **Version History**
+
+### **2025.1.3 - Enhanced File Management & Upload Experience (January 30, 2025)**
+
+- **Major**: Complete file management system with storage cleanup and enhanced upload validation
+- **Features**: File deletion with storage cleanup, real-time size validation, always-visible upload info
+- **Performance**: Parallel storage operations, optimized batch deletions
+- **Security**: File size validation as security measure, detailed error reporting
+- **User Experience**: Immediate validation feedback, persistent upload limits display, specific error details
 
 ### **2025.1.2 - Billing System Integration Complete (January 27, 2025)**
 

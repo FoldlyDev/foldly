@@ -160,6 +160,7 @@ flowchart TD
    - File size limits per user tier
    - Filename sanitization
    - MIME type verification
+   - **Real-time Size Validation**: Immediate feedback when files exceed plan limits
 
 2. **Upload Process Security**
    - Virus and malware scanning
@@ -167,12 +168,43 @@ flowchart TD
    - Encrypted transmission (TLS 1.3)
    - Progress monitoring with real-time updates
    - **Real-time Quota Validation**: Pre-upload quota checking via database functions
+   - **Plan-Based Enforcement**: File size limits enforced by subscription tier
 
 3. **Post-Upload Processing**
    - Automatic thumbnail generation (images)
    - Metadata extraction and storage
    - File integrity verification
    - Backup creation for critical files
+
+### **File Size Validation as Security Measure**
+
+The platform implements comprehensive file size validation as both a security and resource management measure:
+
+#### **Real-time Validation Benefits**
+
+1. **Abuse Prevention**: Prevents users from uploading files larger than their plan allows
+2. **Resource Protection**: Protects platform resources from excessive storage usage
+3. **User Awareness**: Immediate feedback prevents frustration from failed uploads
+4. **Clear Communication**: Detailed error messages show exactly which files are too large
+
+#### **Plan-Based Limits**
+
+```typescript
+const FILE_SIZE_LIMITS = {
+  free: 10 * 1024 * 1024,      // 10 MB
+  pro: 100 * 1024 * 1024,      // 100 MB
+  business: 500 * 1024 * 1024, // 500 MB
+};
+```
+
+#### **Enhanced Error Messaging**
+
+When file size limits are exceeded, users receive detailed feedback:
+
+- **Specific File Information**: Shows file names and their actual sizes
+- **Plan Context**: Indicates the user's current plan and its limit
+- **Multiple File Handling**: Lists up to 3 problematic files with a count of additional ones
+- **Actionable Guidance**: Clear indication of what needs to be done (remove files or upgrade plan)
 
 ### **Storage Infrastructure Security** - Production Ready ✅
 

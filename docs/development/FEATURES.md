@@ -213,6 +213,44 @@ Domains in development or testing phases:
 - **🏗️ Impact**: Improved performance, reduced unnecessary re-fetching, better memory efficiency
 - **🔧 Technical**: Separate cache entries per `includeInactive` value, optimized stale time management
 
+#### **Enhanced File Management System** (January 2025)
+
+- **📁 Location**: `src/lib/services/files/` and `src/features/workspace/`
+- **🎯 Objective**: Comprehensive file management with proper storage cleanup and validation
+- **📊 Status**: ✅ **COMPLETED** - Full implementation with storage integration
+- **🏗️ Impact**: Prevents storage leaks, improves user experience, ensures data integrity
+- **📚 Documentation**: Updated in SERVICE_INTEGRATION_GUIDE.md
+
+##### **Key Features Implemented**
+
+###### **Enhanced File Deletion with Storage Cleanup**
+
+- **🎯 Objective**: Ensure Supabase storage files are deleted when database records are removed
+- **📊 Status**: ✅ **COMPLETED** - Full implementation in FileService
+- **🏗️ Impact**: Prevents orphaned files in storage, reduces storage costs
+- **🔧 Technical**: Methods: `deleteFileWithStorage()` and `batchDeleteFilesWithStorage()`
+
+###### **Real-time File Size Validation**
+
+- **🎯 Objective**: Validate file sizes against subscription plan limits before upload
+- **📊 Status**: ✅ **COMPLETED** - Immediate validation on file selection
+- **🏗️ Impact**: Users get instant feedback about files exceeding their plan limits
+- **🔧 Technical**: Plan-based limits: Free (10MB), Pro (100MB), Business (500MB)
+
+###### **Always-Visible Upload Information**
+
+- **🎯 Objective**: Show upload limits and storage info throughout the upload process
+- **📊 Status**: ✅ **COMPLETED** - Persistent display in upload modal
+- **🏗️ Impact**: Users always aware of their limits and current usage
+- **🔧 Technical**: `UploadLimitsInfo` and `StorageInfoDisplay` components
+
+###### **Detailed Error Messaging**
+
+- **🎯 Objective**: Provide specific information about which files exceed size limits
+- **📊 Status**: ✅ **COMPLETED** - Shows file names and sizes for invalid files
+- **🏗️ Impact**: Clear guidance helps users understand and resolve upload issues
+- **🔧 Technical**: Enhanced `UploadValidation` component with detailed file lists
+
 ### **🔄 In Development**
 
 _No features currently in active development_

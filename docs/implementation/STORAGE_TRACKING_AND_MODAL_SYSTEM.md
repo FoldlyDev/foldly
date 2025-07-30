@@ -149,6 +149,43 @@ const useFilesModalStore = create<FilesModalStore>((set) => ({
 3. **No Prop Drilling**: Components access modal state directly
 4. **Consistent API**: Same pattern for all modal types
 
+### Enhanced Upload Modal Features
+
+The upload modal has been significantly enhanced with better user feedback and information display:
+
+#### **Always-Visible Upload Limits and Storage Info**
+
+The modal now **always displays** upload limits and storage information, not just when no files are selected. This provides users with constant awareness of their plan limits and current usage:
+
+- **Upload Limits Info**: Shows file size limits based on subscription plan (Free: 10MB, Pro: 100MB, Business: 500MB)
+- **Storage Info Display**: Real-time storage usage with live updates during uploads
+- **Persistent Visibility**: Both components remain visible throughout the upload process
+
+#### **Improved File Size Validation**
+
+Real-time validation happens **immediately** when files are selected:
+
+- **Instant Feedback**: Files are validated against plan limits as soon as they're added
+- **Detailed Error Messages**: Shows specific files that exceed size limits with their actual sizes
+- **Multiple File Handling**: Lists up to 3 files that exceed limits, with a count of additional files if more than 3
+
+Example error display:
+```
+Files exceeding free plan limit (10 MB):
+• large-video.mp4 (125 MB)
+• huge-image.png (45 MB)
+• big-document.pdf (22 MB)
+...and 2 more files
+```
+
+#### **Enhanced User Experience Flow**
+
+1. **File Selection**: User selects files via drag-drop or file picker
+2. **Immediate Validation**: Files are instantly checked against plan limits
+3. **Visual Feedback**: Invalid files highlighted with detailed size information
+4. **Upload Prevention**: Upload button disabled if validation fails
+5. **Clear Guidance**: Users know exactly which files are too large and what their limit is
+
 ## Usage Examples
 
 ### Live Storage Tracking
