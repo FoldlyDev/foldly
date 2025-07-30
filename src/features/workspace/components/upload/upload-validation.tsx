@@ -41,44 +41,48 @@ export function UploadValidation({ validation, formatSize, planKey = 'free' }: U
         >
           <div className={cn(
             'relative rounded-xl border p-4',
-            'bg-gradient-to-br from-red-50 to-red-50/50',
-            'dark:from-red-950/20 dark:to-red-900/10',
-            'border-red-200 dark:border-red-800'
+            'bg-gradient-to-br from-red-950/95 to-red-900/90 dark:from-red-950/50 dark:to-red-900/40',
+            'border-red-500/20 dark:border-red-400/20',
+            'backdrop-blur-sm shadow-lg shadow-red-950/10 dark:shadow-red-950/20'
           )}>
-            {/* Decorative background */}
+            {/* Subtle decorative background */}
             <div className="absolute inset-0 opacity-5">
-              <div className="absolute -right-8 -top-8 w-32 h-32 bg-red-500 rounded-full blur-3xl" />
-              <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-red-600 rounded-full blur-3xl" />
+              <div className="absolute -right-8 -top-8 w-24 h-24 bg-red-600 rounded-full blur-2xl" />
+              <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-red-700 rounded-full blur-2xl" />
             </div>
 
             <div className="relative flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 shrink-0">
-                <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+              <div className="p-2 rounded-lg bg-red-500/20 dark:bg-red-400/20 shrink-0 border border-red-500/10 dark:border-red-400/10">
+                <AlertTriangle className="w-4 h-4 text-red-200 dark:text-red-300" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                <p className="text-sm font-semibold text-white dark:text-red-50">
                   {exceedsLimit ? 'Storage Full' : invalidFiles?.length ? 'File Size Limit Exceeded' : 'Cannot Upload'}
                 </p>
-                <p className="text-xs text-red-700 dark:text-red-300 mt-1">
+                <p className="text-xs text-red-100 dark:text-red-200 mt-1 opacity-90">
                   {reason || (exceedsLimit ? UPLOAD_CONFIG.messages.errors.storageFull : 'Upload validation failed')}
                 </p>
                 
                 {/* Show invalid files if any */}
                 {invalidFiles && invalidFiles.length > 0 && (
-                  <div className="mt-3 space-y-1">
-                    <p className="text-xs font-medium text-red-800 dark:text-red-200">
+                  <div className="mt-3 space-y-1.5">
+                    <p className="text-xs font-medium text-red-50 dark:text-red-100">
                       Files exceeding {planKey} plan limit ({maxFileSize ? formatSize(maxFileSize) : 'N/A'}):
                     </p>
-                    <ul className="space-y-1">
+                    <ul className="space-y-1 bg-red-950/40 dark:bg-red-950/30 rounded-lg p-2 border border-red-800/20 dark:border-red-700/20">
                       {invalidFiles.slice(0, 3).map((invalid, idx) => (
-                        <li key={idx} className="text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
-                          <span className="truncate">{invalid.file.name}</span>
-                          <span className="text-red-500">({formatSize(invalid.file.size)})</span>
+                        <li key={idx} className="text-xs flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-red-400 dark:bg-red-300 rounded-full flex-shrink-0" />
+                          <span className="text-red-100 dark:text-red-200 truncate flex-1">
+                            {invalid.file.name}
+                          </span>
+                          <span className="text-red-200 dark:text-red-300 font-medium opacity-75">
+                            ({formatSize(invalid.file.size)})
+                          </span>
                         </li>
                       ))}
                       {invalidFiles.length > 3 && (
-                        <li className="text-xs text-red-600 dark:text-red-400 italic">
+                        <li className="text-xs text-red-200 dark:text-red-300 italic pl-3.5 opacity-75">
                           ...and {invalidFiles.length - 3} more file{invalidFiles.length - 3 > 1 ? 's' : ''}
                         </li>
                       )}
@@ -87,7 +91,7 @@ export function UploadValidation({ validation, formatSize, planKey = 'free' }: U
                 )}
                 
                 {totalSize > 0 && !invalidFiles?.length && (
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  <p className="text-xs text-red-200 dark:text-red-300 mt-2 opacity-75">
                     Total size: {formatSize(totalSize)}
                   </p>
                 )}
