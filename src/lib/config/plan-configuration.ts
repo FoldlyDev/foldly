@@ -20,7 +20,7 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 0.00,
       yearly_price_usd: 0.00,
       storage_limit_gb: 50,
-      max_file_size_mb: 2048, // 2GB
+      max_file_size_mb: 10, // 10MB (Supabase free tier limit)
       features: {
         storage_limits: true,
         custom_username: true,
@@ -46,7 +46,7 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 10.00,
       yearly_price_usd: 100.00,
       storage_limit_gb: 500,
-      max_file_size_mb: 10240, // 10GB
+      max_file_size_mb: 10, // 10MB (Supabase free tier limit)
       features: {
         storage_limits: true,
         custom_username: true,
@@ -72,7 +72,7 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 35.00,
       yearly_price_usd: 350.00,
       storage_limit_gb: 2048, // 2TB
-      max_file_size_mb: 25600, // 25GB
+      max_file_size_mb: 10, // 10MB (Supabase free tier limit)
       features: {
         storage_limits: true,
         custom_username: true,
@@ -101,7 +101,7 @@ export const PLAN_CONFIGURATION = {
     },
     file_size_limit: {
       name: 'File Size Limits',
-      description: 'Maximum file size per upload. Free: 2GB, Pro: 10GB, Business: 25GB.',
+      description: 'Maximum file size per upload. All plans: 10MB (Supabase free tier limit).',
       category: 'storage',
     },
     custom_username: {

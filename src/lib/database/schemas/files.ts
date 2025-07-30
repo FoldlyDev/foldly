@@ -109,5 +109,10 @@ export const files = pgTable(
       table.userId,
       table.uploadedAt
     ),
+    // Performance optimization: Composite index for storage quota calculations
+    filesUserIdFileSizeIdx: index('files_user_id_file_size_idx').on(
+      table.userId,
+      table.fileSize
+    ),
   })
 );
