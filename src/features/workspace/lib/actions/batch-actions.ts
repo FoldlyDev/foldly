@@ -150,7 +150,7 @@ export async function batchMoveItemsAction(
 }
 
 /**
- * Batch delete items - simplified version
+ * Batch delete items - optimized with storage cleanup
  */
 export async function batchDeleteItemsAction(
   itemIds: string[]
@@ -171,10 +171,18 @@ export async function batchDeleteItemsAction(
     const { FolderService } = await import(
       '@/lib/services/files/folder-service'
     );
+    const { StorageService } = await import(
+      '@/lib/services/files/storage-service'
+    );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
 
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
     const folderService = new FolderService();
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
 
     // Verify workspace ownership
     const workspace = await workspaceService.getWorkspaceByUserId(userId);
@@ -195,52 +203,89 @@ export async function batchDeleteItemsAction(
     const workspaceFileIds = new Set(filesResult.data.map(f => f.id));
     const workspaceFolderIds = new Set(foldersResult.data.map(f => f.id));
 
-    // Filter items to only those that belong to this user's workspace
-    const validItemIds = itemIds.filter(
-      id => workspaceFileIds.has(id) || workspaceFolderIds.has(id)
-    );
+    // Separate files and folders for optimized deletion
+    const fileIdsToDelete = itemIds.filter(id => workspaceFileIds.has(id));
+    const folderIdsToDelete = itemIds.filter(id => workspaceFolderIds.has(id));
 
-    if (validItemIds.length === 0) {
+    if (fileIdsToDelete.length === 0 && folderIdsToDelete.length === 0) {
       return {
         success: false,
         error: 'No valid items to delete - items may not have workspaceId set',
       };
     }
 
-    if (validItemIds.length < itemIds.length) {
-      console.warn(
-        `⚠️ Filtered out ${itemIds.length - validItemIds.length} items not owned by user`
+    const deletionResults = [];
+
+    // Delete files with storage cleanup using batch method
+    if (fileIdsToDelete.length > 0) {
+      const filesDeleteResult = await fileService.batchDeleteFilesWithStorage(
+        fileIdsToDelete,
+        storageService
       );
+      
+      if (!filesDeleteResult.success) {
+        return {
+          success: false,
+          error: `Failed to delete files: ${filesDeleteResult.error}`,
+        };
+      }
+      
+      deletionResults.push({
+        type: 'files',
+        total: fileIdsToDelete.length,
+        storageDeleted: filesDeleteResult.data?.storageDeleted || 0,
+      });
     }
 
-    // Delete each item (determine type first, then delete accordingly)
-    const results = await Promise.all(
-      validItemIds.map(async id => {
-        // Check if it's a file first
-        if (workspaceFileIds.has(id)) {
-          return await fileService.deleteFile(id);
-        }
-
-        // Otherwise it must be a folder
-        if (workspaceFolderIds.has(id)) {
-          return await folderService.deleteFolder(id);
-        }
-
-        // This shouldn't happen since we validated, but just in case
-        return { success: false, error: `Item ${id} not found` };
-      })
-    );
-
-    const failed = results.filter(r => !r.success);
-    if (failed.length > 0) {
-      return {
-        success: false,
-        error: `Failed to delete ${failed.length} of ${itemIds.length} items`,
-      };
+    // Delete folders with storage cleanup
+    if (folderIdsToDelete.length > 0) {
+      let totalStorageDeleted = 0;
+      let totalFilesDeleted = 0;
+      
+      // Delete each folder with storage cleanup
+      const folderResults = await Promise.all(
+        folderIdsToDelete.map(async id => {
+          const result = await folderService.deleteFolderWithStorage(id, storageService);
+          if (result.success && result.data) {
+            totalStorageDeleted += result.data.storageDeleted;
+            totalFilesDeleted += result.data.filesDeleted;
+          }
+          return result;
+        })
+      );
+      
+      const failedFolders = folderResults.filter(r => !r.success);
+      if (failedFolders.length > 0) {
+        return {
+          success: false,
+          error: `Failed to delete ${failedFolders.length} folders`,
+        };
+      }
+      
+      deletionResults.push({
+        type: 'folders',
+        total: folderIdsToDelete.length,
+        filesDeleted: totalFilesDeleted,
+        storageDeleted: totalStorageDeleted,
+      });
     }
+
+    // Get updated storage info after deletion
+    const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+    const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
 
     revalidatePath('/dashboard/workspace');
-    return { success: true, data: results };
+    return {
+      success: true,
+      data: {
+        deletionResults,
+        storageInfo: {
+          usagePercentage: updatedStorageInfo.usagePercentage,
+          remainingBytes: updatedStorageInfo.remainingBytes,
+          shouldShowWarning: false, // Deletion always reduces usage
+        },
+      },
+    };
   } catch (error) {
     console.error('Batch delete failed:', error);
     return { success: false, error: 'Failed to delete items' };

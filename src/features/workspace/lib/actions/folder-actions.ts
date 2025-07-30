@@ -155,7 +155,7 @@ export async function renameFolderAction(
 }
 
 /**
- * Delete a folder
+ * Delete a folder with storage cleanup
  */
 export async function deleteFolderAction(
   folderId: DatabaseId
@@ -167,12 +167,36 @@ export async function deleteFolderAction(
       return { success: false, error: 'Unauthorized' };
     }
 
+    const { StorageService } = await import(
+      '@/lib/services/files/storage-service'
+    );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const folderService = new FolderService();
-    const result = await folderService.deleteFolder(folderId);
+    
+    // Use the optimized deletion method that handles both DB and storage
+    const result = await folderService.deleteFolderWithStorage(folderId, storageService);
 
     if (result.success) {
-      // Don't revalidate path - React Query handles cache updates
-      return { success: true, data: result.data };
+      // Get updated storage info after deletion
+      const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+      const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
+      
+      return { 
+        success: true, 
+        data: {
+          ...result.data,
+          storageInfo: {
+            usagePercentage: updatedStorageInfo.usagePercentage,
+            remainingBytes: updatedStorageInfo.remainingBytes,
+            shouldShowWarning: false, // Deletion always reduces usage
+          },
+        },
+      };
     } else {
       return { success: false, error: result.error };
     }

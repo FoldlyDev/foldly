@@ -3,7 +3,6 @@
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  createOnDropHandler,
   type TreeInstance,
   type ItemInstance,
   type DragTarget,
@@ -47,16 +46,12 @@ export function useTreeHandlers({ tree, rootId }: UseTreeHandlersParams) {
   }
 
   // Memoize drop handler with dependencies
-  const onDrop = React.useMemo(
-    () =>
-      createOnDropHandler(
-        (
-          parentItem: ItemInstance<WorkspaceTreeItem>,
-          newChildren: string[]
-        ) => {
-          return handleDrop({ parentItem, newChildren }, { tree });
-        }
-      ),
+  // Direct drop handler without createOnDropHandler wrapper
+  const onDrop = React.useCallback(
+    async (items: ItemInstance<WorkspaceTreeItem>[], target: DragTarget<WorkspaceTreeItem>) => {
+      if (!tree) return;
+      return handleDrop({ items, target }, { tree });
+    },
     [tree]
   );
 
@@ -86,7 +81,11 @@ export function useTreeHandlers({ tree, rootId }: UseTreeHandlersParams) {
   // Memoize add item handler
   const addItem = React.useCallback(
     (name: string, parentId?: string, isFile = false) => {
-      return handleAddItem({ name, parentId, isFile }, { tree, rootId });
+      const params: Parameters<typeof handleAddItem>[0] = { name, isFile };
+      if (parentId !== undefined) {
+        params.parentId = parentId;
+      }
+      return handleAddItem(params, { tree, rootId });
     },
     [tree, rootId]
   );

@@ -112,6 +112,12 @@ export async function validateMultipleFilesAction(
   reason?: string;
   totalSize: number;
   exceedsLimit: boolean;
+  invalidFiles?: Array<{
+    index: number;
+    size: number;
+    reason: string;
+  }>;
+  maxFileSize?: number;
 }>> {
   try {
     const { userId } = await auth();
@@ -143,6 +149,53 @@ export async function validateMultipleFilesAction(
       };
     }
 
+    // Get plan limits for file size validation
+    const { getPlanLimits } = await import('@/lib/services/billing/plan-limits-service');
+    const planLimitsResult = await getPlanLimits(userPlanKey);
+    
+    if (!planLimitsResult.success) {
+      return {
+        success: false,
+        error: 'Failed to get plan limits',
+        data: {
+          valid: false,
+          reason: 'Could not verify plan limits',
+          totalSize,
+          exceedsLimit: true,
+        }
+      };
+    }
+
+    const planLimits = planLimitsResult.data!;
+    const invalidFiles: Array<{ index: number; size: number; reason: string }> = [];
+
+    // Check each file against plan's max file size
+    fileSizes.forEach((size, index) => {
+      if (size > planLimits.maxFileSize) {
+        invalidFiles.push({
+          index,
+          size,
+          reason: `File exceeds ${planLimits.maxFileSizeMb}MB limit for ${userPlanKey} plan`
+        });
+      }
+    });
+
+    // If any files exceed the size limit, return invalid
+    if (invalidFiles.length > 0) {
+      return {
+        success: true,
+        data: {
+          valid: false,
+          reason: `${invalidFiles.length} file(s) exceed your plan's ${planLimits.maxFileSizeMb}MB size limit`,
+          totalSize,
+          exceedsLimit: false, // This is about storage quota, not file size
+          invalidFiles,
+          maxFileSize: planLimits.maxFileSize,
+        },
+      };
+    }
+
+    // Now check total storage quota
     const validation = await canUserUpload(userId, totalSize, userPlanKey);
 
     return {
@@ -152,6 +205,7 @@ export async function validateMultipleFilesAction(
         ...(validation.reason && { reason: validation.reason }),
         totalSize,
         exceedsLimit: validation.wouldExceedLimit,
+        maxFileSize: planLimits.maxFileSize,
       },
     };
   } catch (error) {

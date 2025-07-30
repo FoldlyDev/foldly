@@ -157,11 +157,6 @@ export function WorkspaceContainer() {
       </div>
 
       {/* Upload Modal with Storage Context */}
-      {console.log('Upload Modal workspaceId:', {
-        modalWorkspaceId,
-        workspaceDataId: workspaceData?.workspace?.id,
-        finalId: modalWorkspaceId || workspaceData?.workspace?.id
-      })}
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={closeUploadModal}

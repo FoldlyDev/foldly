@@ -80,32 +80,10 @@ export async function deleteFileAction(
     const storageService = new StorageService(supabaseClient);
     const fileService = new FileService();
 
-    // First get the file to obtain storage path
-    const fileResult = await fileService.getFileById(fileId);
-    if (!fileResult.success) {
-      return { success: false, error: 'File not found' };
-    }
-
-    const file = fileResult.data;
-
-    // Delete from database first
-    const result = await fileService.deleteFile(fileId);
+    // Use the optimized deletion method that handles both DB and storage
+    const result = await fileService.deleteFileWithStorage(fileId, storageService);
     if (!result.success) {
       return { success: false, error: result.error };
-    }
-
-    // Then delete from storage (non-blocking, but log errors)
-    if (file.storagePath) {
-      const storageResult = await storageService.deleteFile(
-        file.storagePath,
-        'workspace'
-      );
-      if (!storageResult.success) {
-        console.error(
-          `Failed to delete file from storage: ${storageResult.error}`
-        );
-        // Don't fail the entire operation if storage deletion fails
-      }
     }
 
     // Get updated storage info after deletion
