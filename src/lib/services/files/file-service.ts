@@ -197,16 +197,70 @@ export class FileService {
   }
 
   /**
-   * Delete file
+   * Delete file - only removes database record
+   * Storage deletion should be handled separately by the caller
    */
   async deleteFile(fileId: string): Promise<DatabaseResult<void>> {
     try {
       await db.delete(files).where(eq(files.id, fileId));
 
-      console.log(`✅ FILE_DELETED: ${fileId}`);
+      console.log(`✅ FILE_DELETED_FROM_DB: ${fileId}`);
       return { success: true, data: undefined };
     } catch (error) {
       console.error(`❌ FILE_DELETE_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Delete file with storage cleanup
+   * Handles both database and storage deletion atomically
+   */
+  async deleteFileWithStorage(
+    fileId: string,
+    storageService: any
+  ): Promise<DatabaseResult<{ deletedFromStorage: boolean }>> {
+    try {
+      // Get file details first
+      const fileResult = await this.getFileById(fileId);
+      if (!fileResult.success) {
+        return { success: false, error: 'File not found' };
+      }
+
+      const file = fileResult.data;
+      let deletedFromStorage = false;
+
+      // Delete from storage first if path exists
+      if (file.storagePath) {
+        const context = file.linkId ? 'shared' : 'workspace';
+        const storageResult = await storageService.deleteFile(
+          file.storagePath,
+          context
+        );
+        
+        if (!storageResult.success) {
+          console.error(
+            `⚠️ Storage deletion failed for ${fileId}: ${storageResult.error}`
+          );
+          // Continue with database deletion even if storage fails
+          // This prevents orphaned database records
+        } else {
+          deletedFromStorage = true;
+        }
+      }
+
+      // Delete from database
+      const dbResult = await this.deleteFile(fileId);
+      if (!dbResult.success) {
+        return { success: false, error: dbResult.error };
+      }
+
+      console.log(
+        `✅ FILE_FULLY_DELETED: ${fileId} (storage: ${deletedFromStorage})`
+      );
+      return { success: true, data: { deletedFromStorage } };
+    } catch (error) {
+      console.error(`❌ FILE_DELETE_WITH_STORAGE_FAILED: ${fileId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -365,7 +419,8 @@ export class FileService {
   }
 
   /**
-   * Batch delete multiple files
+   * Batch delete multiple files - only removes database records
+   * Storage deletion should be handled separately by the caller
    */
   async batchDeleteFiles(fileIds: string[]): Promise<DatabaseResult<void>> {
     try {
@@ -373,15 +428,79 @@ export class FileService {
         return { success: true, data: undefined };
       }
 
-      // Delete all files
+      // Delete all files from database
       for (const fileId of fileIds) {
         await db.delete(files).where(eq(files.id, fileId));
       }
 
-      console.log(`✅ FILES_BATCH_DELETED: ${fileIds.length} files`);
+      console.log(`✅ FILES_BATCH_DELETED_FROM_DB: ${fileIds.length} files`);
       return { success: true, data: undefined };
     } catch (error) {
       console.error(`❌ FILES_BATCH_DELETE_FAILED:`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Batch delete files with storage cleanup
+   * Handles both database and storage deletion for multiple files
+   */
+  async batchDeleteFilesWithStorage(
+    fileIds: string[],
+    storageService: any
+  ): Promise<DatabaseResult<{ totalDeleted: number; storageDeleted: number }>> {
+    try {
+      if (fileIds.length === 0) {
+        return { success: true, data: { totalDeleted: 0, storageDeleted: 0 } };
+      }
+
+      // Get all file details first
+      const fileResults = await Promise.all(
+        fileIds.map(id => this.getFileById(id))
+      );
+
+      const validFiles = fileResults
+        .filter(r => r.success)
+        .map(r => r.data!);
+
+      let storageDeleted = 0;
+
+      // Delete from storage first (in parallel for performance)
+      const storagePromises = validFiles
+        .filter(file => file.storagePath)
+        .map(async file => {
+          const context = file.linkId ? 'shared' : 'workspace';
+          const result = await storageService.deleteFile(
+            file.storagePath,
+            context
+          );
+          if (result.success) {
+            storageDeleted++;
+          } else {
+            console.error(
+              `⚠️ Storage deletion failed for ${file.id}: ${result.error}`
+            );
+          }
+          return result;
+        });
+
+      await Promise.all(storagePromises);
+
+      // Delete from database
+      const dbResult = await this.batchDeleteFiles(fileIds);
+      if (!dbResult.success) {
+        return { success: false, error: dbResult.error };
+      }
+
+      console.log(
+        `✅ FILES_BATCH_FULLY_DELETED: ${fileIds.length} files (storage: ${storageDeleted})`
+      );
+      return {
+        success: true,
+        data: { totalDeleted: fileIds.length, storageDeleted },
+      };
+    } catch (error) {
+      console.error(`❌ FILES_BATCH_DELETE_WITH_STORAGE_FAILED:`, error);
       return { success: false, error: (error as Error).message };
     }
   }

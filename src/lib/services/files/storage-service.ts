@@ -49,7 +49,10 @@ export class StorageService {
     workspace: 'workspace-files',
     shared: 'shared-files',
   } as const;
-  private readonly maxFileSize = 50 * 1024 * 1024; // 50MB
+  // Max file size is now plan-based, not hardcoded
+  // Free: 2GB, Pro: 10GB, Business: 25GB
+  // This property is deprecated and should not be used for validation
+  private readonly maxFileSize = 25 * 1024 * 1024 * 1024; // 25GB system max (Business plan)
 
   constructor(supabaseClient?: SupabaseClient) {
     this.supabase = supabaseClient || getSupabaseClient();
@@ -119,13 +122,17 @@ export class StorageService {
     context: StorageContext = 'workspace'
   ): Promise<DatabaseResult<UploadResult>> {
     try {
-      // Validate file size
+      // IMPORTANT: File size validation is handled by uploadFileWithQuotaCheck
+      // This method should NOT be called directly - always use uploadFileWithQuotaCheck
+      // Commenting out this validation to prevent duplicate/incorrect checks
+      /*
       if (file.size > this.maxFileSize) {
         return {
           success: false,
-          error: `File size exceeds ${this.maxFileSize / (1024 * 1024)}MB limit`,
+          error: `File size exceeds system limit. Please use uploadFileWithQuotaCheck for proper plan-based validation.`,
         };
       }
+      */
 
       const bucketName = this.getBucketName(context);
 

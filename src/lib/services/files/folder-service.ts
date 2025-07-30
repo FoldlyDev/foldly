@@ -183,6 +183,7 @@ export class FolderService {
 
   /**
    * Delete folder (WITH ALL NESTED CONTENT RECURSIVELY)
+   * Note: This only deletes database records. Storage cleanup should be handled by the caller.
    */
   async deleteFolder(folderId: string): Promise<DatabaseResult<void>> {
     try {
@@ -198,7 +199,7 @@ export class FolderService {
         return nestedFoldersResult;
       }
 
-      // Delete all nested files
+      // Delete all nested files from database
       for (const file of nestedFilesResult.data) {
         await db.delete(files).where(eq(files.id, file.id));
       }
@@ -215,11 +216,74 @@ export class FolderService {
       await db.delete(folders).where(eq(folders.id, folderId));
 
       console.log(
-        `✅ FOLDER_DELETED_WITH_CONTENT: ${folderId} (${nestedFilesResult.data.length} files, ${nestedFoldersResult.data.length} nested folders)`
+        `✅ FOLDER_DELETED_FROM_DB: ${folderId} (${nestedFilesResult.data.length} files, ${nestedFoldersResult.data.length} nested folders)`
       );
       return { success: true, data: undefined };
     } catch (error) {
       console.error(`❌ FOLDER_DELETE_FAILED: ${folderId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Delete folder with storage cleanup for all nested files
+   */
+  async deleteFolderWithStorage(
+    folderId: string,
+    storageService: any
+  ): Promise<DatabaseResult<{ filesDeleted: number; storageDeleted: number }>> {
+    try {
+      // Get all nested files first
+      const nestedFilesResult = await this.getNestedFiles(folderId);
+      if (!nestedFilesResult.success) {
+        return nestedFilesResult;
+      }
+
+      // Get all nested folders
+      const nestedFoldersResult = await this.getNestedFolders(folderId);
+      if (!nestedFoldersResult.success) {
+        return nestedFoldersResult;
+      }
+
+      let storageDeleted = 0;
+      const allFiles = nestedFilesResult.data;
+
+      // Delete all files from storage first (in parallel for performance)
+      const storagePromises = allFiles
+        .filter(file => file.storagePath)
+        .map(async file => {
+          const context = file.linkId ? 'shared' : 'workspace';
+          const result = await storageService.deleteFile(
+            file.storagePath,
+            context
+          );
+          if (result.success) {
+            storageDeleted++;
+          } else {
+            console.error(
+              `⚠️ Storage deletion failed for ${file.id}: ${result.error}`
+            );
+          }
+          return result;
+        });
+
+      await Promise.all(storagePromises);
+
+      // Now delete from database using the regular method
+      const dbResult = await this.deleteFolder(folderId);
+      if (!dbResult.success) {
+        return { success: false, error: dbResult.error };
+      }
+
+      console.log(
+        `✅ FOLDER_FULLY_DELETED: ${folderId} (${allFiles.length} files, storage: ${storageDeleted})`
+      );
+      return {
+        success: true,
+        data: { filesDeleted: allFiles.length, storageDeleted },
+      };
+    } catch (error) {
+      console.error(`❌ FOLDER_DELETE_WITH_STORAGE_FAILED: ${folderId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }
