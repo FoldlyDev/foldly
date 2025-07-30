@@ -190,38 +190,44 @@ export const MIME_TYPE_MAPPING: Record<string, FileType> = {
   'application/x-appimage': 'EXECUTABLE',
 } as const;
 
+import { SYSTEM_LIMITS } from '@/lib/config/plan-configuration';
+
 // =============================================================================
 // FILE SIZE LIMITS
 // =============================================================================
 
 /**
- * File size limits by type (in bytes)
+ * Recommended file size limits by type (in bytes)
+ * These are UX recommendations only - actual limits are determined by user's plan
+ * 
+ * @deprecated Do not use for validation. Use plan-based limits from @/lib/config/plan-configuration
  */
-export const FILE_SIZE_LIMITS: Record<FileType, number> = {
-  IMAGE: 10 * 1024 * 1024, // 10MB
-  VIDEO: 500 * 1024 * 1024, // 500MB
-  AUDIO: 50 * 1024 * 1024, // 50MB
-  DOCUMENT: 25 * 1024 * 1024, // 25MB
-  SPREADSHEET: 25 * 1024 * 1024, // 25MB
-  PRESENTATION: 50 * 1024 * 1024, // 50MB
-  ARCHIVE: 100 * 1024 * 1024, // 100MB
-  CODE: 5 * 1024 * 1024, // 5MB
-  FONT: 2 * 1024 * 1024, // 2MB
-  DESIGN: 100 * 1024 * 1024, // 100MB
-  DATA: 10 * 1024 * 1024, // 10MB
-  EXECUTABLE: 100 * 1024 * 1024, // 100MB
-  OTHER: 25 * 1024 * 1024, // 25MB
+export const FILE_TYPE_RECOMMENDATIONS: Record<FileType, number> = {
+  IMAGE: 10 * 1024 * 1024, // 10MB recommended for images
+  VIDEO: 500 * 1024 * 1024, // 500MB recommended for videos
+  AUDIO: 50 * 1024 * 1024, // 50MB recommended for audio
+  DOCUMENT: 25 * 1024 * 1024, // 25MB recommended for documents
+  SPREADSHEET: 25 * 1024 * 1024, // 25MB recommended for spreadsheets
+  PRESENTATION: 50 * 1024 * 1024, // 50MB recommended for presentations
+  ARCHIVE: 100 * 1024 * 1024, // 100MB recommended for archives
+  CODE: 5 * 1024 * 1024, // 5MB recommended for code files
+  FONT: 2 * 1024 * 1024, // 2MB recommended for fonts
+  DESIGN: 100 * 1024 * 1024, // 100MB recommended for design files
+  DATA: 10 * 1024 * 1024, // 10MB recommended for data files
+  EXECUTABLE: 100 * 1024 * 1024, // 100MB recommended for executables
+  OTHER: 25 * 1024 * 1024, // 25MB recommended for other files
 } as const;
 
 /**
  * Global file size limits
+ * Uses centralized system limits from plan configuration
  */
 export const GLOBAL_FILE_LIMITS = {
-  MAX_FILE_SIZE: 500 * 1024 * 1024, // 500MB
-  MAX_TOTAL_SIZE: 10 * 1024 * 1024 * 1024, // 10GB
-  MAX_FILES_PER_UPLOAD: 50,
-  MAX_FILES_PER_FOLDER: 1000,
-  MAX_FOLDER_DEPTH: 10,
+  MAX_FILE_SIZE: SYSTEM_LIMITS.MAX_FILE_SIZE, // Plan-based (2GB free, 10GB pro, 25GB business)
+  MAX_TOTAL_SIZE: SYSTEM_LIMITS.MAX_BATCH_SIZE, // 10GB for batch uploads
+  MAX_FILES_PER_UPLOAD: SYSTEM_LIMITS.MAX_FILES_PER_BATCH,
+  MAX_FILES_PER_FOLDER: SYSTEM_LIMITS.MAX_FILES_PER_FOLDER,
+  MAX_FOLDER_DEPTH: SYSTEM_LIMITS.MAX_FOLDER_DEPTH,
 } as const;
 
 // =============================================================================
@@ -552,10 +558,11 @@ export const getFileTypeFromExtension = (extension: string): FileType => {
 };
 
 /**
- * Check if file size is within limit
+ * Check if file size is within recommended limit for file type
+ * @deprecated Use plan-based validation instead
  */
-export const isFileSizeValid = (size: number, fileType: FileType): boolean => {
-  return size <= FILE_SIZE_LIMITS[fileType];
+export const isFileSizeWithinRecommendation = (size: number, fileType: FileType): boolean => {
+  return size <= FILE_TYPE_RECOMMENDATIONS[fileType];
 };
 
 /**

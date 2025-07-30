@@ -16,17 +16,21 @@ interface FieldValidation {
   rules?: ValidationRule[];
 }
 
+import { SYSTEM_LIMITS } from '@/lib/config/plan-configuration';
+
 /**
  * File upload validation limits - centralized constants
  * Following 2025 best practices for consistent validation across the app
+ * 
+ * Note: MAX_FILE_SIZE is now plan-based (2GB free, 10GB pro, 25GB business)
  */
 export const FILE_UPLOAD_LIMITS = {
   MIN_FILES: 1,
   MAX_FILES: 1000,
   MIN_FILE_SIZE: 1024, // 1KB
-  MAX_FILE_SIZE: 500 * 1024 * 1024, // 500MB
+  MAX_FILE_SIZE: SYSTEM_LIMITS.MAX_FILE_SIZE, // Plan-based limit (up to 25GB for business)
   DEFAULT_MAX_FILES: 100,
-  DEFAULT_MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB
+  DEFAULT_MAX_FILE_SIZE: 100 * 1024 * 1024, // 100MB default for link uploads
 } as const;
 
 /**

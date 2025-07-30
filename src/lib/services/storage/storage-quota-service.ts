@@ -5,6 +5,7 @@ import type { DatabaseResult } from '@/lib/database/types/common';
 import { ClerkBillingIntegrationService } from '@/lib/services/billing/clerk-billing-integration';
 import { storageBackgroundService } from './storage-background-service';
 import { UPLOAD_CONFIG, getFileSizeLimit } from '@/features/workspace/lib/config/upload-config';
+import { formatBytes } from './utils';
 
 interface QuotaCheckResult {
   allowed: boolean;
@@ -125,11 +126,11 @@ export class StorageQuotaService {
       if (!allowed) {
         if (newUsage > storageLimit) {
           error = 'quota_exceeded';
-          message = `Storage limit reached. You've used ${this.formatBytes(currentUsage)} of ${this.formatBytes(storageLimit)}.`;
+          message = `Storage limit reached. You've used ${formatBytes(currentUsage)} of ${formatBytes(storageLimit)}.`;
           auditLog.reason = 'quota_exceeded';
         } else if (fileSize > maxFileSize) {
           error = 'file_too_large';
-          message = `File too large. Maximum file size is ${this.formatBytes(maxFileSize)}.`;
+          message = `File too large. Maximum file size is ${formatBytes(maxFileSize)}.`;
           auditLog.reason = 'file_too_large';
         } else {
           error = 'invalid_request';
@@ -206,16 +207,6 @@ export class StorageQuotaService {
     }
   }
 
-  /**
-   * Format bytes to human readable format
-   */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
 
   /**
    * Check rate limit for upload attempts
@@ -250,7 +241,7 @@ export class StorageQuotaService {
       console.log('📋 QUOTA_AUDIT:', {
         userId: audit.userId,
         action: audit.action,
-        fileSize: this.formatBytes(audit.fileSize),
+        fileSize: formatBytes(audit.fileSize),
         result: audit.result,
         reason: audit.reason,
         planType: audit.planType,

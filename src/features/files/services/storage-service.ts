@@ -45,7 +45,10 @@ export class StorageService {
     workspace: 'workspace-files',
     shared: 'shared-files',
   } as const;
-  private readonly maxFileSize = 50 * 1024 * 1024; // 50MB
+  // Max file size is now plan-based, not hardcoded
+  // Free: 2GB, Pro: 10GB, Business: 25GB
+  // This property is deprecated and should not be used
+  private readonly maxFileSize = 25 * 1024 * 1024 * 1024; // 25GB system max (Business plan)
 
   /**
    * Get bucket name for context
@@ -124,13 +127,17 @@ export class StorageService {
     context: StorageContext = 'workspace'
   ): Promise<DatabaseResult<UploadResult>> {
     try {
-      // Validate file size
+      // File size validation should be handled by plan-based quota checks
+      // This is a legacy validation that should not be used
+      // Commenting out to prevent hardcoded limits
+      /*
       if (file.size > this.maxFileSize) {
         return {
           success: false,
           error: `File size exceeds ${this.maxFileSize / (1024 * 1024)}MB limit`,
         };
       }
+      */
 
       const bucketName = this.getBucketName(context);
 
@@ -694,22 +701,29 @@ export class StorageService {
 
   /**
    * Get subscription tier limits
+   * @deprecated Use getPlanLimits() from @/lib/services/billing/plan-limits-service
+   * or import from @/lib/config/plan-configuration for centralized configuration
    */
   getSubscriptionTierLimits(tier: 'free' | 'pro' | 'business') {
+    console.warn('[DEPRECATED] getSubscriptionTierLimits: Use centralized plan configuration');
+    
+    // Import centralized configuration to ensure consistency
+    const { getPlanFileSizeLimit, getPlanStorageLimit } = require('@/lib/config/plan-configuration');
+    
     const TIER_LIMITS = {
       free: {
-        storage: 1024 * 1024 * 1024, // 1GB
-        fileSize: 10 * 1024 * 1024, // 10MB
+        storage: getPlanStorageLimit('free'),
+        fileSize: getPlanFileSizeLimit('free'),
         links: 1,
       },
       pro: {
-        storage: 100 * 1024 * 1024 * 1024, // 100GB
-        fileSize: 100 * 1024 * 1024, // 100MB
+        storage: getPlanStorageLimit('pro'),
+        fileSize: getPlanFileSizeLimit('pro'),
         links: 5,
       },
       business: {
-        storage: 500 * 1024 * 1024 * 1024, // 500GB
-        fileSize: 500 * 1024 * 1024, // 500MB
+        storage: getPlanStorageLimit('business'),
+        fileSize: getPlanFileSizeLimit('business'),
         links: 25,
       },
     } as const;

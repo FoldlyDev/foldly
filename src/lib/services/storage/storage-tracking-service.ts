@@ -8,6 +8,7 @@ import { db } from '@/lib/database/connection';
 import { files, subscriptionPlans } from '@/lib/database/schemas';
 import { eq, sum, sql } from 'drizzle-orm';
 import { createClient } from '@supabase/supabase-js';
+import { formatBytes } from './utils';
 
 // Initialize Supabase client for storage operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -377,20 +378,8 @@ export const syncStorageWithSupabase = async (
   }
 };
 
-/**
- * Format bytes to human-readable format
- */
-export const formatBytes = (bytes: number, decimals: number = 2): string => {
-  if (bytes === 0) return '0 Bytes';
-
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-};
+// Re-export formatBytes from utils for backward compatibility
+export { formatBytes } from './utils';
 
 /**
  * Get storage usage breakdown by file type

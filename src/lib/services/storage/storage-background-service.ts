@@ -2,6 +2,7 @@ import { db } from '@/lib/database/connection';
 import { users } from '@/lib/database/schemas';
 import { eq, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
+import { formatBytes } from './utils';
 
 /**
  * Storage Background Service
@@ -59,7 +60,7 @@ export class StorageBackgroundService {
     for (const [userId, bytesToAdd] of updates) {
       try {
         await this.updateUserStorage(userId, bytesToAdd);
-        console.log(`📊 BACKGROUND_STORAGE_UPDATE: User ${userId}, +${this.formatBytes(bytesToAdd)}`);
+        console.log(`📊 BACKGROUND_STORAGE_UPDATE: User ${userId}, +${formatBytes(bytesToAdd)}`);
       } catch (error) {
         console.error(`Failed to update storage for user ${userId}:`, error);
         
@@ -156,16 +157,6 @@ export class StorageBackgroundService {
     await this.processQueue();
   }
 
-  /**
-   * Format bytes to human readable format
-   */
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
 }
 
 // Singleton instance
