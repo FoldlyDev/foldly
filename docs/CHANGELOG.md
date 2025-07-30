@@ -17,16 +17,27 @@ This unified changelog consolidates all project updates, replacing the previous 
 
 ---
 
-## 🚀 **Current Release: 2025.1.3 - Enhanced File Management & Upload Experience**
+## 🚀 **Current Release: 2025.1.4 - Upload System Enhancements & Supabase Tier Alignment**
 
 **Release Date**: January 30, 2025  
-**Status**: 🟢 **Production Ready** - Complete file management system with enhanced user experience  
-**Migration Required**: No database migrations required  
-**Critical Update**: Enhanced file deletion service and improved upload validation experience
+**Status**: 🟢 **Production Ready** - Upload system improvements with Supabase free tier optimizations  
+**Migration Required**: Yes - Run migration 0007 to add max_file_size_mb column  
+**Critical Update**: File size limits aligned with Supabase free tier (10MB for all plans)
 
 ### **🎯 Major Features**
 
-#### **Enhanced File Management System (100% Complete)** 🆕
+#### **Upload System Enhancements (100% Complete)** 🆕
+
+- ✅ **Unified File Size Limits**: All plans now use 10MB limit (Supabase free tier constraint)
+- ✅ **Multi-File Upload Validation**: Fixed validation to prevent oversized files in batch uploads
+- ✅ **Individual Progress Indicators**: Fixed file progress tracking with proper interval cleanup
+- ✅ **Centralized Configuration**: Removed hardcoded values in favor of plan configuration
+- ✅ **TypeScript Error Fixes**: Resolved type errors in use-file-upload hook
+- ✅ **Improved UI Contrast**: Enhanced error section visibility in upload validation
+- ✅ **Real-time Storage Updates**: Storage data refreshes automatically after file deletion
+- ✅ **Modal Storage Refresh**: Storage information updates when upload modal opens
+
+#### **Enhanced File Management System (100% Complete)**
 
 - ✅ **File Deletion with Storage Cleanup**: Automatic Supabase storage cleanup when deleting files
 - ✅ **Batch File Operations**: Efficient batch deletion with parallel storage cleanup
@@ -73,7 +84,17 @@ This unified changelog consolidates all project updates, replacing the previous 
 
 ### **🔧 Technical Improvements**
 
-#### **Billing System Modernization** 🆕
+#### **Upload System Optimization** 🆕
+
+- ✅ **Database Schema Update**: Added max_file_size_mb column to subscription_plans table
+- ✅ **Configuration Centralization**: Single source of truth for all plan limits in plan-configuration.ts
+- ✅ **Validation Pipeline**: Multi-layer validation from client to server with consistent limits
+- ✅ **Error Handling**: Improved error messages with specific file details and size information
+- ✅ **Performance**: Fixed memory leaks from uncleaned intervals in progress tracking
+- ✅ **Type Safety**: Resolved TypeScript errors in upload hooks and components
+- ✅ **Real-time Updates**: Automatic data refresh on file operations and modal interactions
+
+#### **Billing System Modernization**
 
 - ✅ **Centralized Service Architecture**: Single `billing` object for all billing operations
 - ✅ **Modern Import Patterns**: 80% simpler imports with centralized exports
@@ -225,6 +246,14 @@ This unified changelog consolidates all project updates, replacing the previous 
 ---
 
 ## 🔄 **Version History**
+
+### **2025.1.4 - Upload System Enhancements & Supabase Tier Alignment (January 30, 2025)**
+
+- **Major**: Upload system improvements with Supabase free tier optimizations
+- **Features**: Unified 10MB file size limits, fixed multi-file validation, individual progress tracking
+- **Technical**: Database schema update, centralized configuration, TypeScript fixes
+- **Performance**: Fixed interval cleanup memory leaks, real-time storage updates
+- **User Experience**: Better error contrast, automatic storage refresh, modal data updates
 
 ### **2025.1.3 - Enhanced File Management & Upload Experience (January 30, 2025)**
 
@@ -425,4 +454,4 @@ This unified changelog consolidates all project updates, replacing the previous 
 **Maintenance**: Weekly updates with monthly comprehensive reviews  
 **Stakeholder Communication**: Clear updates for all audiences
 
-**Last Updated**: January 25, 2025 - Complete changelog consolidation with unified tracking system
+**Last Updated**: January 30, 2025 - Upload system enhancements and Supabase tier alignment (v2025.1.4)

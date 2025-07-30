@@ -1,8 +1,10 @@
 # Storage Tracking and Modal System Implementation
 
 > **Implementation Date**: January 2025  
+> **Last Updated**: January 30, 2025  
 > **Status**: ✅ Complete  
-> **Impact**: Enhanced user experience with real-time storage tracking and reliable modal management
+> **Impact**: Enhanced user experience with real-time storage tracking and reliable modal management  
+> **Recent Changes**: Aligned all plan file size limits to 10MB (Supabase free tier constraint)
 
 ## Overview
 
@@ -157,7 +159,7 @@ The upload modal has been significantly enhanced with better user feedback and i
 
 The modal now **always displays** upload limits and storage information, not just when no files are selected. This provides users with constant awareness of their plan limits and current usage:
 
-- **Upload Limits Info**: Shows file size limits based on subscription plan (Free: 10MB, Pro: 100MB, Business: 500MB)
+- **Upload Limits Info**: Shows file size limits based on subscription plan (All plans: 10MB due to Supabase free tier)
 - **Storage Info Display**: Real-time storage usage with live updates during uploads
 - **Persistent Visibility**: Both components remain visible throughout the upload process
 
