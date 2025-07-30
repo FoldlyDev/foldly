@@ -13,6 +13,11 @@ interface ActionResult<T> {
   data?: T;
   error?: string;
   quotaInfo?: any;
+  storageInfo?: {
+    usagePercentage: number;
+    remainingBytes: number;
+    shouldShowWarning: boolean;
+  };
 }
 
 // =============================================================================
@@ -64,9 +69,15 @@ export async function deleteFileAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { storageService } = await import(
+    const { StorageService } = await import(
       '@/lib/services/files/storage-service'
     );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const fileService = new FileService();
 
     // First get the file to obtain storage path
@@ -103,14 +114,12 @@ export async function deleteFileAction(
     
     return { 
       success: true, 
-      data: {
-        ...result.data,
-        storageInfo: {
-          usagePercentage: updatedStorageInfo.usagePercentage,
-          remainingBytes: updatedStorageInfo.remainingBytes,
-          shouldShowWarning: false, // Deletion always reduces usage
-        }
-      },
+      data: result.data,
+      storageInfo: {
+        usagePercentage: updatedStorageInfo.usagePercentage,
+        remainingBytes: updatedStorageInfo.remainingBytes,
+        shouldShowWarning: false, // Deletion always reduces usage
+      }
     };
   } catch (error) {
     console.error('Failed to delete file:', error);
@@ -269,9 +278,15 @@ export async function downloadFileAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { storageService } = await import(
+    const { StorageService } = await import(
       '@/lib/services/files/storage-service'
     );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const fileService = new FileService();
 
     const result = await fileService.prepareFileForDownload(fileId);
@@ -322,7 +337,8 @@ export async function downloadFileAction(
 export async function uploadFileAction(
   file: File,
   workspaceId: string,
-  folderId?: string
+  folderId?: string,
+  clientIp?: string
 ): Promise<ActionResult<any>> {
   try {
     const { userId } = await auth();
@@ -331,9 +347,15 @@ export async function uploadFileAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { storageService } = await import(
+    const { StorageService } = await import(
       '@/lib/services/files/storage-service'
     );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const fileService = new FileService();
 
     // Initialize storage buckets if they don't exist
@@ -381,8 +403,8 @@ export async function uploadFileAction(
       }
     }
 
-    // Determine upload path
-    const uploadPath = folderId ? `folders/${folderId}` : 'workspace';
+    // Determine upload path - must start with userId for RLS policy
+    const uploadPath = folderId ? `${userId}/folders/${folderId}` : `${userId}/workspace`;
 
     // Upload file with quota validation (workspace context for personal files)
     const uploadResult = await storageService.uploadFileWithQuotaCheck(
@@ -390,7 +412,8 @@ export async function uploadFileAction(
       uploadPath,
       userId,
       undefined, // No linkId for workspace files
-      'workspace'
+      'workspace',
+      clientIp
     );
 
     if (!uploadResult.success) {
@@ -412,8 +435,9 @@ export async function uploadFileAction(
       extension: uniqueFileName.split('.').pop() || '',
       userId,
       folderId: folderId || null,
-      linkId: workspaceId, // Link to workspace
-      batchId: workspaceId, // Batch identifier for workspace
+      workspaceId: workspaceId, // Workspace file - NOT a link file
+      linkId: null, // NULL for workspace files
+      batchId: null, // NULL for workspace files
       storagePath: uploadResult.data!.path,
       storageProvider: 'supabase' as const,
       checksum,
@@ -423,18 +447,24 @@ export async function uploadFileAction(
       isOrganized: false,
       needsReview: false,
       downloadCount: 0,
-      isPublic: false,
-      sharedAt: null,
       uploadedAt: new Date(),
     };
 
     const result = await fileService.createFile(fileData);
 
     if (result.success) {
+      // Calculate storage info for client
+      const quotaInfo = uploadResult.data!.quotaInfo;
+      const storageInfo = {
+        usagePercentage: quotaInfo.usagePercentage,
+        remainingBytes: quotaInfo.storageLimit - quotaInfo.newUsage,
+        shouldShowWarning: quotaInfo.usagePercentage >= 80,
+      };
+      
       return {
         success: true,
         data: result.data,
-        quotaInfo: uploadResult.data!.quotaInfo,
+        storageInfo,
       };
     } else {
       // If database creation fails, clean up the uploaded file
@@ -456,7 +486,8 @@ export async function uploadFileAction(
 export async function uploadFileToLinkAction(
   file: File,
   linkId: string,
-  folderId?: string
+  folderId?: string,
+  clientIp?: string
 ): Promise<ActionResult<any>> {
   try {
     const { userId } = await auth();
@@ -465,9 +496,15 @@ export async function uploadFileToLinkAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const { storageService } = await import(
+    const { StorageService } = await import(
       '@/lib/services/files/storage-service'
     );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const fileService = new FileService();
 
     // Initialize storage buckets if they don't exist
@@ -488,7 +525,8 @@ export async function uploadFileToLinkAction(
       uploadPath,
       userId,
       linkId, // Include linkId for link-specific quota checking
-      'shared'
+      'shared',
+      clientIp
     );
 
     if (!uploadResult.success) {

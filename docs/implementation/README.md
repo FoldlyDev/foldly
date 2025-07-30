@@ -21,7 +21,8 @@ docs/implementation/
 ├── 07-SUBSCRIPTION_BILLING.md       # Billing and feature access
 ├── 08-PERFORMANCE_OPTIMIZATION.md   # Optimization and scaling strategies
 ├── SERVICE_INTEGRATION_GUIDE.md     # 🆕 Modern service layer patterns (2025)
-└── PLAN_CONFIG_UTILITIES.md         # Simplified plan configuration utilities
+├── PLAN_CONFIG_UTILITIES.md         # Simplified plan configuration utilities
+└── STORAGE_TRACKING_AND_MODAL_SYSTEM.md # 🆕 Live storage tracking & modal fixes (2025)
 ```
 
 ---
@@ -146,6 +147,18 @@ docs/implementation/
 - Storage quota management
 - Subscription analytics integration
 - Modern import patterns and type safety
+
+### **11. Storage Tracking and Modal System** 🆕
+
+**File**: `STORAGE_TRACKING_AND_MODAL_SYSTEM.md`  
+**Scope**: Real-time storage tracking and modal state management (2025)
+
+- Live storage usage tracking during file uploads
+- Real-time calculations with predictive usage
+- Dynamic billing integration with plan-based limits
+- Zustand-based modal state management fix
+- Per-file upload progress monitoring
+- Storage limit enforcement (Free: 50GB, Pro: 500GB, Business: 2TB)
 
 ---
 

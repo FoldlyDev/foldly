@@ -944,6 +944,24 @@ section[aria-label*='Notifications'] > * {
 }
 
 /* ===================================================================== */
+/* ANIMATIONS */
+/* ===================================================================== */
+
+/* Shimmer effect for loading states and progress bars */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ===================================================================== */
 /* MODAL UTILITY CLASSES - Tailwind v4+ CSS-First Approach (Hybrid) */
 /* ===================================================================== */
 

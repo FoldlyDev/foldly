@@ -12,17 +12,11 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 5 * 60 * 1000, // 5 minutes
             gcTime: 10 * 60 * 1000, // 10 minutes
-            refetchOnWindowFocus: true, // Enable refetch on window focus for immediate updates
-            refetchOnMount: false, // Prevent refetch on component mount if data exists
-            refetchOnReconnect: 'always', // Only refetch on network reconnect
-            retry: 2, // Reduced from 3 to 2 for faster error handling
-            retryDelay: attemptIndex =>
-              Math.min(1000 * 2 ** attemptIndex, 10000), // Max 10s delay
-            networkMode: 'online', // Only fetch when online
+            refetchOnWindowFocus: false,
+            retry: 3,
           },
           mutations: {
             retry: 1,
-            networkMode: 'online',
           },
         },
       })
@@ -31,9 +25,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      {process.env.NODE_ENV === 'development' && (
-        <ReactQueryDevtools initialIsOpen={false} position='bottom' />
-      )}
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );
 }
