@@ -11,14 +11,20 @@ interface UploadValidationProps {
     reason?: string;
     totalSize: number;
     exceedsLimit: boolean;
+    invalidFiles?: Array<{
+      file: File;
+      reason: string;
+    }>;
+    maxFileSize?: number;
   } | null;
   formatSize: (bytes: number) => string;
+  planKey?: string;
 }
 
-export function UploadValidation({ validation, formatSize }: UploadValidationProps) {
+export function UploadValidation({ validation, formatSize, planKey = 'free' }: UploadValidationProps) {
   if (!validation) return null;
 
-  const { valid, reason, totalSize, exceedsLimit } = validation;
+  const { valid, reason, totalSize, exceedsLimit, invalidFiles, maxFileSize } = validation;
 
   // Don't show if valid and no size
   if (valid && totalSize === 0) return null;
@@ -51,14 +57,38 @@ export function UploadValidation({ validation, formatSize }: UploadValidationPro
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-red-900 dark:text-red-100">
-                  {exceedsLimit ? 'Storage Full' : 'Cannot Upload'}
+                  {exceedsLimit ? 'Storage Full' : invalidFiles?.length ? 'File Size Limit Exceeded' : 'Cannot Upload'}
                 </p>
                 <p className="text-xs text-red-700 dark:text-red-300 mt-1">
                   {reason || (exceedsLimit ? UPLOAD_CONFIG.messages.errors.storageFull : 'Upload validation failed')}
                 </p>
-                {totalSize > 0 && (
+                
+                {/* Show invalid files if any */}
+                {invalidFiles && invalidFiles.length > 0 && (
+                  <div className="mt-3 space-y-1">
+                    <p className="text-xs font-medium text-red-800 dark:text-red-200">
+                      Files exceeding {planKey} plan limit ({maxFileSize ? formatSize(maxFileSize) : 'N/A'}):
+                    </p>
+                    <ul className="space-y-1">
+                      {invalidFiles.slice(0, 3).map((invalid, idx) => (
+                        <li key={idx} className="text-xs text-red-600 dark:text-red-400 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-red-400 rounded-full flex-shrink-0" />
+                          <span className="truncate">{invalid.file.name}</span>
+                          <span className="text-red-500">({formatSize(invalid.file.size)})</span>
+                        </li>
+                      ))}
+                      {invalidFiles.length > 3 && (
+                        <li className="text-xs text-red-600 dark:text-red-400 italic">
+                          ...and {invalidFiles.length - 3} more file{invalidFiles.length - 3 > 1 ? 's' : ''}
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+                
+                {totalSize > 0 && !invalidFiles?.length && (
                   <p className="text-xs text-red-600 dark:text-red-400 mt-2">
-                    Selected: {formatSize(totalSize)}
+                    Total size: {formatSize(totalSize)}
                   </p>
                 )}
               </div>

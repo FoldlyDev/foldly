@@ -25,14 +25,14 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
     {
       icon: Shield,
       label: 'Max File Size',
-      value: `${limits.maxFileSizeMB}MB per file`,
+      value: plan === 'pro' ? '10GB per file' : plan === 'business' ? '25GB per file' : '2GB per file',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
     {
       icon: Clock,
       label: 'Auto-Retry',
-      value: 'Network issues handled',
+      value: `Up to ${UPLOAD_CONFIG.batch.maxRetries} retries`,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
@@ -43,7 +43,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
       <div className={cn("flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600", className)}>
         <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
         <span className="line-clamp-1">
-          Up to {limits.maxFileSizeMB}MB per file • {UPLOAD_CONFIG.batch.size} files at once
+          Up to {plan === 'pro' ? '10GB' : plan === 'business' ? '25GB' : '2GB'} per file • {UPLOAD_CONFIG.batch.size} files at once
         </span>
       </div>
     );

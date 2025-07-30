@@ -183,6 +183,8 @@ export function useInvalidateStorage() {
  */
 export function usePreUploadValidation() {
   const { user } = useUser();
+  const { planKey: userPlanKey } = useUserPlan();
+  const { formatSize } = useStorageTracking();
 
   return useCallback(
     async (files: File[] | FileList): Promise<{
@@ -190,6 +192,11 @@ export function usePreUploadValidation() {
       reason?: string;
       totalSize: number;
       exceedsLimit: boolean;
+      invalidFiles?: Array<{
+        file: File;
+        reason: string;
+      }>;
+      maxFileSize?: number;
     }> => {
       const fileArray = Array.from(files);
       const fileSizes = fileArray.map(file => file.size);
@@ -213,15 +220,68 @@ export function usePreUploadValidation() {
         };
       }
 
-      const result = await validateMultipleFilesAction(fileSizes, 'free'); // TODO: Get actual user plan
+      const result = await validateMultipleFilesAction(fileSizes, userPlanKey);
       
-      return result.data || {
-        valid: false,
-        reason: result.error || 'Validation failed',
-        totalSize,
-        exceedsLimit: true,
+      // If server returned invalid files, enhance the data with file references
+      if (result.data?.invalidFiles && result.data.invalidFiles.length > 0) {
+        const invalidFilesWithDetails = result.data.invalidFiles.map(invalid => {
+          const file = fileArray[invalid.index];
+          if (!file) {
+            return null;
+          }
+          return {
+            file,
+            reason: `${file.name} (${formatSize(invalid.size)}) exceeds the ${userPlanKey} plan limit`
+          };
+        }).filter((item): item is { file: File; reason: string } => item !== null);
+
+        const response: {
+          valid: boolean;
+          reason?: string;
+          totalSize: number;
+          exceedsLimit: boolean;
+          invalidFiles?: Array<{ file: File; reason: string }>;
+          maxFileSize?: number;
+        } = {
+          valid: result.data.valid,
+          totalSize: result.data.totalSize,
+          exceedsLimit: result.data.exceedsLimit,
+        };
+        
+        if (result.data.reason) response.reason = result.data.reason;
+        if (result.data.maxFileSize) response.maxFileSize = result.data.maxFileSize;
+        if (invalidFilesWithDetails.length > 0) response.invalidFiles = invalidFilesWithDetails;
+        
+        return response;
+      }
+      
+      if (!result.data) {
+        return {
+          valid: false,
+          reason: result.error || 'Validation failed',
+          totalSize,
+          exceedsLimit: true,
+        };
+      }
+      
+      const response: {
+        valid: boolean;
+        reason?: string;
+        totalSize: number;
+        exceedsLimit: boolean;
+        invalidFiles?: Array<{ file: File; reason: string }>;
+        maxFileSize?: number;
+      } = {
+        valid: result.data.valid,
+        totalSize: result.data.totalSize,
+        exceedsLimit: result.data.exceedsLimit,
       };
+      
+      if (result.data.reason) response.reason = result.data.reason;
+      if (result.data.maxFileSize) response.maxFileSize = result.data.maxFileSize;
+      
+      return response;
     },
-    [user?.id]
+    [user?.id, userPlanKey, formatSize]
   );
 }

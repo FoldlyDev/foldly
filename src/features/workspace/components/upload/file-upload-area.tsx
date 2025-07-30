@@ -304,6 +304,17 @@ export function FileUploadArea({
                           >
                             {file.file.name}
                           </motion.p>
+                          {file.status === 'success' && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="p-1.5 rounded-lg bg-green-100"
+                            >
+                              <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </motion.div>
+                          )}
                           {!isUploading && file.status !== 'uploading' && file.status !== 'success' && onRemoveFile && (
                             <motion.button
                               whileHover={{ scale: 1.1 }}
@@ -352,6 +363,50 @@ export function FileUploadArea({
                                 transition={{ duration: 0.3 }}
                               />
                             </div>
+                            {file.retryCount && file.retryCount > 0 && (
+                              <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-[10px] text-blue-600 mt-1 flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                Retry {file.retryCount} of {file.maxRetries}
+                              </motion.p>
+                            )}
+                          </motion.div>
+                        )}
+                        
+                        {/* Error State */}
+                        {file.status === 'error' && file.error && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-1 space-y-1"
+                          >
+                            <p className="text-[10px] text-red-600">
+                              {file.error}
+                            </p>
+                            {onRemoveFile && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Reset file status to pending for retry
+                                  const resetFile = { ...file, status: 'pending' as const, progress: 0, error: undefined };
+                                  onRemoveFile(file.id);
+                                  // Re-add the file
+                                  setTimeout(() => onFileSelect([file.file]), 100);
+                                }}
+                                className="text-[10px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Retry upload
+                              </button>
+                            )}
                           </motion.div>
                         )}
                       </div>

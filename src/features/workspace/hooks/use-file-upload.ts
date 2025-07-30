@@ -53,17 +53,7 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
       ? Array.from(selectedFiles) 
       : selectedFiles;
 
-    // Validate storage before adding files
-    const validation = await preUploadValidation(fileArray);
-    setUploadValidation(validation);
-
-    if (!validation.valid && validation.exceedsLimit) {
-      toast.error('Storage limit exceeded', {
-        description: validation.reason,
-      });
-      return;
-    }
-
+    // Always add files to the list for visibility
     const newFiles: UploadFile[] = fileArray.map(file => ({
       id: Math.random().toString(36).substring(7),
       file,
@@ -75,8 +65,33 @@ export function useFileUpload({ workspaceId, folderId, onClose }: UseFileUploadP
 
     setFiles(prev => [...prev, ...newFiles]);
 
-    // Show warning if approaching limit
-    if (validation.valid && quotaStatus.status !== 'safe') {
+    // Validate storage after adding files
+    const validation = await preUploadValidation(fileArray);
+    setUploadValidation(validation);
+
+    // Show appropriate notifications based on validation
+    if (!validation.valid) {
+      if (validation.invalidFiles && validation.invalidFiles.length > 0) {
+        // File size limit exceeded
+        toast.error('File size limit exceeded', {
+          description: `${validation.invalidFiles.length} file(s) exceed your plan's size limit`,
+          duration: 5000,
+        });
+      } else if (validation.exceedsLimit) {
+        // Storage quota exceeded
+        toast.error('Storage limit exceeded', {
+          description: validation.reason,
+          duration: 5000,
+        });
+      } else {
+        // Other validation errors
+        toast.error('Upload validation failed', {
+          description: validation.reason || 'Please check your files and try again',
+          duration: 5000,
+        });
+      }
+    } else if (validation.valid && quotaStatus.status !== 'safe') {
+      // Show warning if approaching limit
       toast.warning('Storage getting full', {
         description: `${formatSize(validation.totalSize)} will be added. ${formatSize(storageInfo.remainingBytes - validation.totalSize)} remaining.`,
       });
