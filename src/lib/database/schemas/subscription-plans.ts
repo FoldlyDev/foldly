@@ -34,6 +34,8 @@ export interface PlanUIMetadata {
   yearlyPrice: string; // Mapped from yearlyPriceUsd
   storageLimit: string; // Formatted from storageLimitGb: "50 GB", "500 GB", "Unlimited"
   storageLimitGb: number; // Raw GB value from database
+  maxFileSize: string; // Formatted from maxFileSizeMb: "2 GB", "10 GB", "25 GB"
+  maxFileSizeMb: number | null; // Raw MB value from database
   highlightFeatures: string[];
   featureDescriptions: Record<string, string>;
   isPopular: boolean;
@@ -68,6 +70,9 @@ export const subscriptionPlans = pgTable(
 
     // Storage limit for UI display (50, 500, -1 for unlimited)
     storageLimitGb: integer('storage_limit_gb').notNull(),
+    
+    // Maximum file size limit in MB (2048 = 2GB, 10240 = 10GB, 25600 = 25GB)
+    maxFileSizeMb: integer('max_file_size_mb'),
 
     // UI-focused feature flags for display purposes only (added in migration)
     highlightFeatures: jsonb('highlight_features').$type<string[]>(), // ['Custom branding', 'Password protection']

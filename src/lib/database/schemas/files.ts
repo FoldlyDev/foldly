@@ -104,5 +104,10 @@ export const files = pgTable(
     ),
     filesUploadedAtIdx: index('files_uploaded_at_idx').on(table.uploadedAt),
     filesChecksumIdx: index('files_checksum_idx').on(table.checksum),
+    // Composite index for storage calculations - speeds up SUM queries by user
+    filesUserIdUploadedAtIdx: index('files_user_id_uploaded_at_idx').on(
+      table.userId,
+      table.uploadedAt
+    ),
   })
 );

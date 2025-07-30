@@ -36,6 +36,27 @@
       "when": 1753568892043,
       "tag": "0004_gorgeous_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1753854893722,
+      "tag": "0005_handy_human_robot",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1753855153593,
+      "tag": "0006_jittery_hiroim",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1753856255129,
+      "tag": "0007_ambiguous_ulik",
+      "breakpoints": true
     }
   ]
 }
