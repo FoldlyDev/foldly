@@ -6,6 +6,8 @@ import type {
   WorkspaceUpdate,
   DatabaseResult,
 } from '@/lib/database/types';
+import { logger } from '@/lib/services/logging/logger';
+import { ERROR_CODES } from '@/lib/types/error-response';
 
 export class WorkspaceService {
   /**
@@ -45,13 +47,13 @@ export class WorkspaceService {
         };
       }
 
-      console.log(`✅ WORKSPACE_CREATED: ${workspace.id} for user ${userId}`);
+      logger.info('Workspace created successfully', { workspaceId: workspace.id, userId });
       return {
         success: true,
         data: workspace,
       };
     } catch (error) {
-      console.error(`❌ WORKSPACE_CREATE_FAILED: User ${userId}`, error);
+      logger.error('Workspace creation failed', error, { userId });
       return { success: false, error: (error as Error).message };
     }
   }
@@ -69,19 +71,45 @@ export class WorkspaceService {
 
       return workspace || null;
     } catch (error) {
-      console.error(`❌ WORKSPACE_FETCH_FAILED: User ${userId}`, error);
+      logger.error('Failed to fetch workspace by user ID', error, { userId });
       return null;
     }
   }
 
   /**
-   * Update workspace (used by workspace feature)
+   * Update workspace with authorization check
+   * @param workspaceId - The workspace ID to update
+   * @param updates - The updates to apply
+   * @param userId - The user ID requesting the update (for authorization)
    */
   async updateWorkspace(
     workspaceId: string,
-    updates: WorkspaceUpdate
+    updates: WorkspaceUpdate,
+    userId?: string
   ): Promise<DatabaseResult<Workspace>> {
     try {
+      // If userId is provided, verify ownership first
+      if (userId) {
+        const workspace = await this.getWorkspaceById(workspaceId);
+        if (!workspace) {
+          logger.warn('Workspace not found for update', { workspaceId, userId });
+          return { success: false, error: 'Workspace not found', code: ERROR_CODES.NOT_FOUND };
+        }
+        
+        if (workspace.userId !== userId) {
+          logger.logSecurityEvent(
+            'Unauthorized workspace update attempt',
+            'high',
+            { workspaceId, userId, ownerId: workspace.userId }
+          );
+          return { 
+            success: false, 
+            error: 'You do not have permission to update this workspace',
+            code: ERROR_CODES.FORBIDDEN 
+          };
+        }
+      }
+
       const [updatedWorkspace] = await db
         .update(workspaces)
         .set({ ...updates })
@@ -89,17 +117,21 @@ export class WorkspaceService {
         .returning();
 
       if (!updatedWorkspace) {
-        return { success: false, error: 'Workspace not found' };
+        return { success: false, error: 'Workspace not found', code: ERROR_CODES.NOT_FOUND };
       }
 
-      console.log(`✅ WORKSPACE_UPDATED: ${workspaceId}`);
+      logger.info('Workspace updated successfully', { workspaceId, userId });
       return {
         success: true,
         data: updatedWorkspace,
       };
     } catch (error) {
-      console.error(`❌ WORKSPACE_UPDATE_FAILED: ${workspaceId}`, error);
-      return { success: false, error: (error as Error).message };
+      logger.error('Workspace update failed', error, { workspaceId, userId });
+      return { 
+        success: false, 
+        error: (error as Error).message,
+        code: ERROR_CODES.DATABASE_ERROR 
+      };
     }
   }
 
@@ -116,7 +148,7 @@ export class WorkspaceService {
 
       return !!workspace;
     } catch (error) {
-      console.error(`❌ WORKSPACE_CHECK_FAILED: User ${userId}`, error);
+      logger.error('Failed to check workspace existence', error, { userId });
       return false;
     }
   }
@@ -134,23 +166,54 @@ export class WorkspaceService {
 
       return workspace || null;
     } catch (error) {
-      console.error(`❌ WORKSPACE_FETCH_BY_ID_FAILED: ${workspaceId}`, error);
+      logger.error('Failed to fetch workspace by ID', error, { workspaceId });
       return null;
     }
   }
 
   /**
-   * Delete workspace (for cleanup/admin operations)
+   * Delete workspace with authorization check
+   * @param workspaceId - The workspace ID to delete
+   * @param userId - The user ID requesting the deletion (for authorization)
    */
-  async deleteWorkspace(workspaceId: string): Promise<DatabaseResult<void>> {
+  async deleteWorkspace(
+    workspaceId: string,
+    userId?: string
+  ): Promise<DatabaseResult<void>> {
     try {
+      // If userId is provided, verify ownership first
+      if (userId) {
+        const workspace = await this.getWorkspaceById(workspaceId);
+        if (!workspace) {
+          logger.warn('Workspace not found for deletion', { workspaceId, userId });
+          return { success: false, error: 'Workspace not found', code: ERROR_CODES.NOT_FOUND };
+        }
+        
+        if (workspace.userId !== userId) {
+          logger.logSecurityEvent(
+            'Unauthorized workspace deletion attempt',
+            'critical',
+            { workspaceId, userId, ownerId: workspace.userId }
+          );
+          return { 
+            success: false, 
+            error: 'You do not have permission to delete this workspace',
+            code: ERROR_CODES.FORBIDDEN 
+          };
+        }
+      }
+
       await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
 
-      console.log(`✅ WORKSPACE_DELETED: ${workspaceId}`);
+      logger.info('Workspace deleted successfully', { workspaceId, userId });
       return { success: true, data: undefined };
     } catch (error) {
-      console.error(`❌ WORKSPACE_DELETE_FAILED: ${workspaceId}`, error);
-      return { success: false, error: (error as Error).message };
+      logger.error('Workspace deletion failed', error, { workspaceId, userId });
+      return { 
+        success: false, 
+        error: (error as Error).message,
+        code: ERROR_CODES.DATABASE_ERROR 
+      };
     }
   }
 }

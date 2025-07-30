@@ -4,6 +4,8 @@ import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { moveItemAction } from './tree-actions';
 import type { ActionResult } from './tree-actions';
+import { logger } from '@/lib/services/logging/logger';
+import { sanitizeUserId } from '@/lib/utils/security';
 
 /**
  * Batch move items with hierarchical handling
@@ -100,36 +102,47 @@ export async function batchMoveItemsAction(
       });
     });
 
-    console.log(
-      `🚚 Batch move: ${itemIds.length} items selected, ${topLevelItems.length} top-level items to move`
-    );
-    console.log('📋 Items to move:', {
-      itemIds,
-      topLevelItems,
-      targetId,
-      actualTargetId,
+    logger.debug('Starting batch move operation', {
+      metadata: {
+        totalItems: itemIds.length,
+        topLevelItems: topLevelItems.length,
+        targetId,
+        actualTargetId
+      }
     });
 
     // Move only the top-level items - their children will be moved automatically
     const results = await Promise.all(
       topLevelItems.map(id => {
-        console.log(`🔄 Moving item ${id} to target ${targetId}`);
+        logger.debug('Moving individual item', { itemId: id, targetId });
         return moveItemAction(id, targetId);
       })
     );
 
-    console.log('📊 Move results:', results);
+    logger.debug('Batch move results processed', {
+      metadata: {
+        totalResults: results.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length
+      }
+    });
 
     const failed = results.filter(r => !r.success);
     if (failed.length > 0) {
-      console.log('❌ Some moves failed:', failed);
+      logger.error('Some batch moves failed', undefined, {
+        metadata: {
+          failedCount: failed.length,
+          totalCount: topLevelItems.length,
+          errors: failed.map(f => f.error)
+        }
+      });
       return {
         success: false,
         error: `Failed to move ${failed.length} of ${topLevelItems.length} top-level items`,
       };
     }
 
-    console.log('✅ All moves completed successfully, revalidating path');
+    logger.info('All batch moves completed successfully');
     revalidatePath('/dashboard/workspace');
 
     const result = {
@@ -141,10 +154,16 @@ export async function batchMoveItemsAction(
       },
     };
 
-    console.log('🎯 Batch move action completed:', result);
+    logger.info('Batch move action completed', {
+      metadata: {
+        success: result.success,
+        movedItems: result.data?.movedItems || 0,
+        totalItems: result.data?.totalItems || 0
+      }
+    });
     return result;
   } catch (error) {
-    console.error('Batch move failed:', error);
+    logger.error('Batch move failed', error);
     return { success: false, error: 'Failed to move items' };
   }
 }
@@ -287,7 +306,7 @@ export async function batchDeleteItemsAction(
       },
     };
   } catch (error) {
-    console.error('Batch delete failed:', error);
+    logger.error('Batch delete failed', error);
     return { success: false, error: 'Failed to delete items' };
   }
 }

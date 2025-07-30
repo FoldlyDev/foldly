@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { WorkspaceService } from '@/lib/services/workspace';
 import { FileService } from '@/lib/services/files/file-service';
 import { FolderService } from '@/lib/services/files/folder-service';
+import { logger } from '@/lib/services/logging/logger';
 
 const workspaceService = new WorkspaceService();
 const fileService = new FileService();
@@ -52,7 +53,7 @@ export async function fetchWorkspaceTreeAction(): Promise<ActionResult> {
       },
     };
   } catch (error) {
-    console.error('Failed to get workspace tree:', error);
+    logger.error('Failed to get workspace tree', error);
     return { success: false, error: 'Failed to get workspace tree' };
   }
 }
@@ -94,7 +95,7 @@ export async function moveItemAction(
 
     return { success: false, error: 'Item not found' };
   } catch (error) {
-    console.error('Failed to move item:', error);
+    logger.error('Failed to move item', error);
     return { success: false, error: 'Failed to move item' };
   }
 }
@@ -138,7 +139,7 @@ export async function updateItemOrderAction(
       } else if (fileIds.has(id)) {
         return fileService.updateFile(id, { sortOrder: index });
       } else {
-        console.warn(`Item ${id} not found in workspace`);
+        logger.warn('Item not found in workspace', { itemId: id });
         return { success: false, error: `Item ${id} not found` };
       }
     });
@@ -148,7 +149,7 @@ export async function updateItemOrderAction(
     // Check if any updates failed
     const failedUpdates = results.filter(result => !result.success);
     if (failedUpdates.length > 0) {
-      console.error('Some updates failed:', failedUpdates);
+      logger.error('Some sort order updates failed', undefined, { failedUpdates });
       return { success: false, error: 'Some items failed to update' };
     }
 
@@ -156,7 +157,7 @@ export async function updateItemOrderAction(
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to update order:', error);
+    logger.error('Failed to update sort order', error);
     return { success: false, error: 'Failed to update order' };
   }
 }

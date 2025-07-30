@@ -7,6 +7,7 @@ import {
   type UserStorageInfo,
   type StorageValidationResult,
 } from '@/lib/services/storage/storage-tracking-service';
+import { logger } from '@/lib/services/logging/logger';
 
 // =============================================================================
 // TYPES
@@ -43,7 +44,7 @@ export async function getStorageDashboardAction(
       data: storageInfo,
     };
   } catch (error) {
-    console.error('Failed to get storage dashboard:', error);
+    logger.error('Failed to get storage dashboard', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get storage dashboard',
@@ -84,7 +85,7 @@ export async function validateUploadAction(
       data: validationResult,
     };
   } catch (error) {
-    console.error('Failed to validate upload:', error);
+    logger.error('Failed to validate upload', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate upload',
@@ -209,7 +210,7 @@ export async function validateMultipleFilesAction(
       },
     };
   } catch (error) {
-    console.error('Failed to validate multiple files:', error);
+    logger.error('Failed to validate multiple files', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to validate files',

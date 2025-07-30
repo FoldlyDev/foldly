@@ -4,6 +4,9 @@ import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { workspaceService } from '@/lib/services/workspace';
 import type { Workspace, WorkspaceUpdate } from '@/lib/database/types';
+import { logger } from '@/lib/services/logging/logger';
+import { sanitizeUserId } from '@/lib/utils/security';
+import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
 
 // =============================================================================
 // TYPES
@@ -13,6 +16,7 @@ interface ActionResult<T> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: string;
 }
 
 // =============================================================================
@@ -25,28 +29,32 @@ interface ActionResult<T> {
 export async function getWorkspaceByUserId(): Promise<ActionResult<Workspace>> {
   try {
     const { userId } = await auth();
+    const sanitizedUserId = sanitizeUserId(userId);
 
-    if (!userId) {
-      return { success: false, error: 'Unauthorized' };
+    if (!sanitizedUserId) {
+      logger.warn('Unauthorized workspace fetch attempt');
+      return createErrorResponse('Unauthorized', ERROR_CODES.UNAUTHORIZED);
     }
 
-    const workspace = await workspaceService.getWorkspaceByUserId(userId);
+    const workspace = await workspaceService.getWorkspaceByUserId(sanitizedUserId);
 
     if (!workspace) {
-      return { success: false, error: 'Workspace not found' };
+      logger.info('Workspace not found for user', { userId: sanitizedUserId });
+      return createErrorResponse('Workspace not found', ERROR_CODES.NOT_FOUND);
     }
 
-    return {
-      success: true,
-      data: workspace,
-    };
+    logger.debug('Workspace fetched successfully', {
+      userId: sanitizedUserId,
+      workspaceId: workspace.id
+    });
+
+    return createSuccessResponse(workspace);
   } catch (error) {
-    console.error('Failed to fetch workspace:', error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : 'Failed to fetch workspace',
-    };
+    logger.error('Failed to fetch workspace', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to fetch workspace',
+      ERROR_CODES.INTERNAL_ERROR
+    );
   }
 }
 
@@ -59,39 +67,50 @@ export async function updateWorkspaceAction(
 ): Promise<ActionResult<Workspace>> {
   try {
     const { userId } = await auth();
+    const sanitizedUserId = sanitizeUserId(userId);
 
-    if (!userId) {
-      return { success: false, error: 'Unauthorized' };
+    if (!sanitizedUserId) {
+      logger.warn('Unauthorized workspace update attempt', { workspaceId });
+      return createErrorResponse('Unauthorized', ERROR_CODES.UNAUTHORIZED);
     }
 
     // Verify workspace ownership
-    const workspace = await workspaceService.getWorkspaceByUserId(userId);
+    const workspace = await workspaceService.getWorkspaceByUserId(sanitizedUserId);
     if (!workspace || workspace.id !== workspaceId) {
-      return { success: false, error: 'Workspace not found or unauthorized' };
+      logger.logSecurityEvent(
+        'Workspace update attempt with invalid ownership',
+        'medium',
+        { workspaceId, userId: sanitizedUserId, foundWorkspaceId: workspace?.id }
+      );
+      return createErrorResponse('Workspace not found or unauthorized', ERROR_CODES.FORBIDDEN);
     }
 
-    const result = await workspaceService.updateWorkspace(workspaceId, updates);
+    const result = await workspaceService.updateWorkspace(workspaceId, updates, sanitizedUserId);
 
     if (result.success) {
       // Revalidate cache for any pages that depend on workspace data
       revalidatePath('/dashboard/workspace');
 
-      return {
-        success: true,
-        data: result.data,
-      };
+      logger.info('Workspace updated successfully', {
+        userId: sanitizedUserId,
+        workspaceId,
+        updates: Object.keys(updates)
+      });
+
+      return createSuccessResponse(result.data!);
     } else {
-      return {
-        success: false,
-        error: result.error,
-      };
+      logger.error('Workspace update failed', undefined, {
+        userId: sanitizedUserId,
+        workspaceId,
+        error: result.error
+      });
+      return createErrorResponse(result.error || 'Update failed', result.code);
     }
   } catch (error) {
-    console.error('Failed to update workspace:', error);
-    return {
-      success: false,
-      error:
-        error instanceof Error ? error.message : 'Failed to update workspace',
-    };
+    logger.error('Failed to update workspace', error, { workspaceId });
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to update workspace',
+      ERROR_CODES.INTERNAL_ERROR
+    );
   }
 }

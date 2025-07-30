@@ -3,6 +3,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { billing } from '@/lib/services/billing';
 import type { PlanType } from '@/features/billing/lib/feature-registry';
+import { logger } from '@/lib/services/logging/logger';
 
 // =============================================================================
 // BILLING SERVER ACTIONS
@@ -36,7 +37,7 @@ export async function getCurrentPlanAction(): Promise<BillingActionResult<PlanTy
       data: plan,
     };
   } catch (error) {
-    console.error('Failed to get current plan:', error);
+    logger.error('Failed to get current plan', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get current plan',
@@ -66,7 +67,7 @@ export async function hasFeatureAction(feature: string): Promise<BillingActionRe
       data: hasFeature,
     };
   } catch (error) {
-    console.error('Failed to check feature access:', error);
+    logger.error('Failed to check feature access', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to check feature access',

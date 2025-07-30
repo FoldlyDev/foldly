@@ -1,31 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { uploadFileAction } from '@/features/workspace/lib/actions';
+import { validateClientIP } from '@/lib/utils/security';
+import { logger } from '@/lib/services/logging/logger';
+import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds timeout for uploads
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('Workspace upload request received');
+    logger.debug('Workspace upload request received');
     
-    // Extract client IP for security audit
-    const clientIp = req.headers.get('x-forwarded-for') || 
-                    req.headers.get('x-real-ip') || 
-                    req.ip || 
-                    'unknown';
+    // Extract and validate client IP for security audit
+    const headers = Object.fromEntries(req.headers.entries());
+    const clientIp = validateClientIP(headers);
+    
+    if (!clientIp) {
+      logger.logSecurityEvent(
+        'Upload attempt with invalid IP',
+        'medium',
+        { headers: Object.keys(headers) }
+      );
+      return NextResponse.json(
+        createErrorResponse('Invalid client IP', ERROR_CODES.INVALID_IP),
+        { status: 400 }
+      );
+    }
     
     const { userId } = await auth();
     
     if (!userId) {
-      console.error('Upload failed: No authenticated user');
+      logger.warn('Upload attempt without authentication', { clientIp });
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        createErrorResponse('Unauthorized', ERROR_CODES.UNAUTHORIZED),
         { status: 401 }
       );
     }
 
-    console.log('Authenticated user:', userId);
+    logger.debug('Authenticated user for upload', { userId, clientIp });
 
     // Parse multipart form data
     const formData = await req.formData();
@@ -33,28 +46,35 @@ export async function POST(req: NextRequest) {
     const workspaceId = formData.get('workspaceId') as string;
     const folderId = formData.get('folderId') as string | null;
     
-    console.log('Upload request data:', {
-      hasFile: !!file,
-      fileName: file?.name,
-      fileSize: file?.size,
-      workspaceId,
-      folderId
+    logger.debug('Upload request data', {
+      userId,
+      metadata: {
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        workspaceId,
+        folderId,
+        clientIp
+      }
     });
 
     if (!file || !workspaceId) {
-      console.error('Upload failed: Missing required fields', {
-        hasFile: !!file,
-        hasWorkspaceId: !!workspaceId
+      logger.warn('Upload validation failed: Missing required fields', {
+        userId,
+        metadata: {
+          hasFile: !!file,
+          hasWorkspaceId: !!workspaceId
+        }
       });
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Missing required fields',
-          details: {
+        createErrorResponse(
+          'Missing required fields',
+          ERROR_CODES.INVALID_INPUT,
+          {
             hasFile: !!file,
             hasWorkspaceId: !!workspaceId
           }
-        },
+        ),
         { status: 400 }
       );
     }
@@ -68,26 +88,39 @@ export async function POST(req: NextRequest) {
     );
 
     if (!result.success) {
-      console.error('Upload action failed:', result.error);
+      logger.error('Upload action failed', undefined, {
+        userId,
+        workspaceId,
+        metadata: { error: result.error }
+      });
       return NextResponse.json(
-        { success: false, error: result.error },
+        createErrorResponse(result.error || 'Upload failed', result.code),
         { status: 400 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result.data,
-      storageInfo: result.storageInfo,
+    logger.info('File uploaded successfully', {
+      userId,
+      workspaceId,
+      fileId: result.data?.id,
+      metadata: { 
+        fileName: file.name,
+        fileSize: file.size 
+      }
     });
-  } catch (error) {
-    console.error('Workspace upload API error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Upload failed' 
-      },
+      createSuccessResponse(result.data, { storageInfo: result.storageInfo })
+    );
+  } catch (error) {
+    logger.critical('Workspace upload API error', error, {
+      action: 'workspace_upload'
+    });
+    return NextResponse.json(
+      createErrorResponse(
+        error instanceof Error ? error.message : 'Upload failed',
+        ERROR_CODES.INTERNAL_ERROR
+      ),
       { status: 500 }
     );
   }

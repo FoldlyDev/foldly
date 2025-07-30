@@ -4,6 +4,7 @@ import { auth } from '@clerk/nextjs/server';
 import { workspaceService } from '@/lib/services/workspace';
 import { FolderService } from '@/lib/services/files/folder-service';
 import type { DatabaseId } from '@/lib/database/types';
+import { logger } from '@/lib/services/logging/logger';
 
 // =============================================================================
 // TYPES
@@ -112,7 +113,7 @@ export async function createFolderAction(
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to create folder:', error);
+    logger.error('Failed to create folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create folder',
@@ -146,7 +147,7 @@ export async function renameFolderAction(
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to rename folder:', error);
+    logger.error('Failed to rename folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to rename folder',
@@ -201,7 +202,7 @@ export async function deleteFolderAction(
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to delete folder:', error);
+    logger.error('Failed to delete folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete folder',
