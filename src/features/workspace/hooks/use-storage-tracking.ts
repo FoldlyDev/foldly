@@ -162,12 +162,13 @@ export function useStorageQuotaStatus(): StorageQuotaStatus {
 export function useInvalidateStorage() {
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const { planKey: userPlanKey } = useUserPlan();
 
   return useCallback(() => {
     if (user?.id) {
-      // Invalidate storage data
+      // Invalidate storage data with the exact query key that includes plan
       queryClient.invalidateQueries({
-        queryKey: storageQueryKeys.dashboard(user.id),
+        queryKey: [...storageQueryKeys.dashboard(user.id), userPlanKey],
       });
 
       // Also invalidate workspace tree data since file counts might have changed
@@ -175,7 +176,7 @@ export function useInvalidateStorage() {
         queryKey: workspaceQueryKeys.tree(),
       });
     }
-  }, [queryClient, user?.id]);
+  }, [queryClient, user?.id, userPlanKey]);
 }
 
 /**

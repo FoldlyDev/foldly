@@ -17,6 +17,7 @@ import { StorageInfoDisplay } from '../storage/storage-info-display';
 import { FileUploadArea } from '../upload/file-upload-area';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
 import { useAuth, Protect } from '@clerk/nextjs';
+import { useStorageTracking } from '../../hooks/use-storage-tracking';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export function UploadModal({
   workspaceId,
   folderId,
 }: UploadModalProps) {
+  const { refetchStorage } = useStorageTracking();
   const {
     files,
     isDragging,
@@ -56,6 +58,14 @@ export function UploadModal({
     if (isUploading) return;
     onClose();
   }, [isUploading, onClose]);
+
+  // Refetch storage data when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Refresh storage data to ensure we have the latest info
+      refetchStorage();
+    }
+  }, [isOpen, refetchStorage]);
 
   // Clear files when modal closes
   useEffect(() => {
