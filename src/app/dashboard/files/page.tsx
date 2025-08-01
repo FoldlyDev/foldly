@@ -10,11 +10,5 @@ export default function FilesPage() {
   // In a real app, you would fetch data here on the server
   // const filesData = await getFilesData();
 
-  return (
-    <FilesContainer
-    // initialData={filesData}
-    // isLoading={false}
-    // error={null}
-    />
-  );
+  return <FilesContainer />;
 }
