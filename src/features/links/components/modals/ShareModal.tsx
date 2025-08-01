@@ -23,6 +23,7 @@ import {
 import { CopyButton } from '@/components/ui/core/copy-button';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 export function ShareModal() {
   const currentModal = useCurrentModal();
@@ -33,8 +34,7 @@ export function ShareModal() {
 
   if (!isOpen || !link) return null;
 
-  const linkUrl = `foldly.com/${link.slug}${link.topic ? `/${link.topic}` : ''}`;
-  const fullUrl = `https://${linkUrl}`;
+  const { displayUrl, fullUrl } = useLinkUrl(link.slug, link.topic);
   const shareText = `Check out this file collection: ${link.title}`;
 
   const socialShareLinks = [

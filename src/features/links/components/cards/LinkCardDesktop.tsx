@@ -15,6 +15,7 @@ import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 interface LinkCardDesktopProps {
   link: LinkWithStats;
@@ -48,6 +49,7 @@ export const LinkCardDesktop = memo(
     quickActions,
     searchQuery,
   }: LinkCardDesktopProps) => {
+    const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -97,8 +99,7 @@ export const LinkCardDesktop = memo(
                 </h3>
               </div>
               <p className='text-xs text-gray-500 truncate'>
-                foldly.io/{link.slug}
-                {link.topic ? `/${link.topic}` : ''}
+                {displayUrl}
               </p>
             </div>
           </div>

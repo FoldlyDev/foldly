@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/core';
 import type { ActionItem } from '@/components/ui/core/types';
 import type { LinkWithStats } from '@/lib/database/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 interface LinkCardMobileProps {
   link: LinkWithStats;
@@ -44,6 +45,7 @@ export const LinkCardMobile = memo(
     quickActions,
     searchQuery,
   }: LinkCardMobileProps) => {
+    const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -94,8 +96,7 @@ export const LinkCardMobile = memo(
                   </h3>
                 </div>
                 <p className='text-sm text-gray-500 truncate'>
-                  foldly.io/{link.slug}
-                  {link.topic ? `/${link.topic}` : ''}
+                  {displayUrl}
                 </p>
               </div>
             </div>

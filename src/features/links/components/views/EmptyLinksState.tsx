@@ -7,6 +7,7 @@ import { GradientButton } from '@/components/ui/core/gradient-button';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { useModalStore } from '../../store';
 import { useQuickStart } from '../../hooks/use-quick-start';
+import { getDisplayDomain } from '@/lib/config/url-config';
 import {
   Link2,
   Plus,
@@ -41,6 +42,9 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
 
   // Fallback username for display purposes
   const displayUsername = username || 'your-username';
+  
+  // Get the display domain from centralized configuration
+  const displayDomain = getDisplayDomain();
 
   // Enhanced quick start function that manages local loading state
   const handleQuickStart = async () => {
@@ -94,7 +98,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           <p className='text-[var(--neutral-600)]'>
             Creating your personalized collection hub at{' '}
             <span className='font-mono text-[var(--primary)]'>
-              foldly.io/{displayUsername}
+              {displayDomain}/{displayUsername}
             </span>
           </p>
 
@@ -196,7 +200,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
           <span>Your Link</span>
         </div>
         <div className='text-xl font-mono text-[var(--quaternary)] font-bold'>
-          foldly.io/
+          {displayDomain}/
           <span className='text-[var(--primary)]'>{displayUsername}</span>
         </div>
       </motion.div>

@@ -21,6 +21,7 @@ import { ActionButton } from '@/components/ui/core/action-button';
 import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import type { LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 interface LinkCardGridProps {
   link: LinkWithStats;
@@ -48,6 +49,7 @@ export const LinkCardGrid = memo(
     quickActions,
     searchQuery,
   }: LinkCardGridProps) => {
+    const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -113,8 +115,7 @@ export const LinkCardGrid = memo(
 
               <div className='flex items-center gap-1 text-slate-500 text-sm'>
                 <span className='truncate'>
-                  foldly.io/{link.slug}
-                  {link.topic ? `/${link.topic}` : ''}
+                  {displayUrl}
                 </span>
                 <ExternalLink className='w-3 h-3 flex-shrink-0' />
               </div>

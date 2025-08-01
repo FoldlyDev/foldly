@@ -11,6 +11,7 @@ import type { LinkWithStats } from '@/lib/database/types';
 import { useSlugValidation } from '../../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../../hooks/use-topic-validation';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';
+import { getDisplayDomain } from '@/lib/config/url-config';
 
 interface LinkIdentitySettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
@@ -29,6 +30,7 @@ export function LinkIdentitySettings({
   const watchedValues = watch();
   const isBaseLink = link.linkType === 'base';
   const isTopicLink = link.linkType === 'custom';
+  const displayDomain = getDisplayDomain();
 
   // Slug normalization utilities
   const { normalizeSlug } = useSlugNormalization();
@@ -72,7 +74,7 @@ export function LinkIdentitySettings({
             <div className='relative'>
               <div className='flex items-center'>
                 <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
-                  foldly.io/
+                  {displayDomain}/
                 </span>
                 <Input
                   value={watchedValues.slug || ''}
@@ -149,7 +151,7 @@ export function LinkIdentitySettings({
             <div className='relative'>
               <div className='flex items-center'>
                 <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
-                  foldly.io/{link.slug}/
+                  {displayDomain}/{link.slug}/
                 </span>
                 <Input
                   value={watchedValues.topic || ''}

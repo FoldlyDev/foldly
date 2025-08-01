@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Hash, CheckCircle, AlertCircle } from 'lucide-react';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';
+import { getDisplayDomain } from '@/lib/config/url-config';
 
 interface LinkSlugFieldProps {
   formData: {
@@ -27,6 +28,7 @@ export function LinkSlugField({
   isLoading = false,
 }: LinkSlugFieldProps) {
   const { normalizeSlug } = useSlugNormalization();
+  const displayDomain = getDisplayDomain();
 
   return (
     <motion.div
@@ -53,7 +55,7 @@ export function LinkSlugField({
           <div className='relative'>
             <div className='flex items-center'>
               <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
-                foldly.io/
+                {displayDomain}/
               </span>
               <input
                 type='text'

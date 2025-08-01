@@ -30,6 +30,7 @@ import {
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
 import { useUser } from '@clerk/nextjs';
+import { getDisplayDomain } from '@/lib/config/url-config';
 
 // Import modular sections
 import {
@@ -104,10 +105,12 @@ export function LinkCreationForm({
   });
 
   const urlData = useMemo(() => {
+    const displayDomain = getDisplayDomain();
+    
     if (linkType === 'base') {
       const slug = formData.slug || baseSlug;
       return {
-        displayUrl: `foldly.io/${slug}`,
+        displayUrl: `${displayDomain}/${slug}`,
         slug: formData.slug || '',
         isValidTopic: true,
         topicError: null,
@@ -118,7 +121,7 @@ export function LinkCreationForm({
     const slug = topicValue ? generateUrlSlug(topicValue) : '';
     const displayUrl = topicValue
       ? generateTopicUrl(baseSlug, topicValue)
-      : `foldly.io/${baseSlug}/[topic-name]`;
+      : `${displayDomain}/${baseSlug}/[topic-name]`;
 
     // Combine format validation and uniqueness validation
     const isValidTopic =

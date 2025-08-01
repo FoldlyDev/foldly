@@ -12,6 +12,7 @@ import {
 } from '@/components/marketing/animate-ui/radix/dialog';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useDeleteLinkMutation } from '../../hooks/react-query/use-delete-link-mutation';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 export function DeleteConfirmationModal() {
   const currentModal = useCurrentModal();
@@ -46,7 +47,7 @@ export function DeleteConfirmationModal() {
     closeModal();
   };
 
-  const linkUrl = `foldly.com/${link.slug}${link.topic ? `/${link.topic}` : ''}`;
+  const { displayUrl } = useLinkUrl(link.slug, link.topic);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
@@ -101,7 +102,7 @@ export function DeleteConfirmationModal() {
                   {link.title}
                 </p>
                 <div className='flex items-center gap-3 mt-1 text-xs text-gray-500'>
-                  <code className='truncate'>{linkUrl}</code>
+                  <code className='truncate'>{displayUrl}</code>
                   <span>•</span>
                   <span>{link.totalFiles} files</span>
                   <span>•</span>

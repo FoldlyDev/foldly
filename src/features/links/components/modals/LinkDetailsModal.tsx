@@ -28,6 +28,7 @@ import {
 import { CopyButton } from '@/components/ui/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import type { Link } from '@/lib/database/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
 
 export function LinkDetailsModal() {
   const currentModal = useCurrentModal();
@@ -63,7 +64,7 @@ export function LinkDetailsModal() {
   };
 
   const statusConfig = getStatusConfig();
-  const linkUrl = `foldly.com/${link.slug}${link.topic ? `/${link.topic}` : ''}`;
+  const { displayUrl, fullUrl } = useLinkUrl(link.slug, link.topic);
 
   // Calculate basic metrics from database fields
   const conversionRate =
@@ -151,12 +152,12 @@ export function LinkDetailsModal() {
                     Live URL
                   </p>
                   <code className='text-sm sm:text-base lg:text-lg font-mono font-semibold text-gray-900 break-all'>
-                    {linkUrl}
+                    {displayUrl}
                   </code>
                 </div>
               </div>
               <CopyButton
-                value={`https://${linkUrl}`}
+                value={fullUrl}
                 size='sm'
                 showText
                 variant='default'
