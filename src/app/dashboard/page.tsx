@@ -6,7 +6,7 @@ import { useAuth } from '@clerk/nextjs';
 import { Card } from '@/components/ui/core/shadcn/card';
 import { Progress } from '@/components/ui/core/shadcn/progress';
 import { Button } from '@/components/ui/core/shadcn/button';
-import { CheckCircle2, AlertCircle, Sparkles, FolderOpen, Shield, Zap } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Sparkles, FolderOpen, Shield, Zap, RefreshCw } from 'lucide-react';
 import { checkWorkspaceStatusAction, createWorkspaceAction } from '@/features/workspace/lib/actions/workspace-actions';
 
 export default function DashboardPage() {
@@ -80,11 +80,7 @@ export default function DashboardPage() {
     };
 
     const startChecking = async () => {
-      // Initial check - if workspace exists, redirect immediately
-      const exists = await checkWorkspace(true);
-      if (exists) return;
-
-      // Only show loading UI for new users
+      // Always show loading UI for consistent experience
       // Show features after a brief delay
       setTimeout(() => setShowFeatures(true), 800);
 
@@ -95,6 +91,14 @@ export default function DashboardPage() {
           return prev + 5;
         });
       }, 150);
+
+      // Initial check - if workspace exists, handle with minimum display time
+      const exists = await checkWorkspace(true);
+      if (exists) {
+        clearInterval(progressIntervalId);
+        clearTimeout(timeoutId);
+        return;
+      }
 
       // Poll for workspace existence
       intervalId = setInterval(async () => {
