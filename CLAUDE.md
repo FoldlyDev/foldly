@@ -279,6 +279,33 @@ src/components/ui/
 - ✅ Core exports updated in `src/components/ui/core/index.ts`
 - 🚧 Feature imports need updating to new paths
 
+## URL Configuration System
+
+### Centralized URL Management
+
+The application uses a centralized URL configuration system that handles multiple environments dynamically:
+
+```typescript
+// URL configuration: src/lib/config/url-config.ts
+import { getBaseUrl, getDisplayDomain, generateLinkUrl, urlBuilder } from '@/lib/config/url-config';
+
+// Client-side URL generation
+import { useLinkUrl } from '@/features/links/hooks/use-link-url';
+```
+
+### Environment Configuration
+
+```bash
+# Production URL (optional - auto-detected if not set)
+NEXT_PUBLIC_APP_URL="https://foldly.com"
+```
+
+### Key Features:
+- **Automatic Environment Detection**: Works seamlessly with localhost, Vercel preview deployments, and production
+- **Security**: Host validation prevents header injection attacks
+- **No Hardcoded Domains**: All domain references use the centralized configuration
+- **Client-Server Compatible**: Works in both server and client components
+
 ## Import Path Guidelines
 
 ### Database
@@ -304,6 +331,18 @@ import { ContentLoader } from '@/components/ui/feedback';
 // ❌ Old paths (being phased out)
 import { Button } from '@/components/ui/shadcn';
 import { ConfigurableModal } from '@/components/ui';
+```
+
+### URL Generation
+
+```typescript
+// ✅ Correct - Use centralized URL configuration
+import { getBaseUrl, generateLinkUrl } from '@/lib/config/url-config';
+import { useLinkUrl } from '@/features/links/hooks/use-link-url';
+
+// ❌ Wrong - Don't hardcode domains
+const url = 'https://foldly.com/' + slug;
+const domain = 'foldly.io';
 ```
 
 ## Important Notes

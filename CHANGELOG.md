@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Centralized URL Configuration System** (`/src/lib/config/url-config.ts`)
+  - Dynamic base URL handling for multiple environments (localhost, Vercel preview, production)
+  - Security features with host validation to prevent header injection attacks
+  - Helper functions: `getBaseUrl()`, `getDisplayDomain()`, `generateLinkUrl()`
+  - `UrlBuilder` class for consistent URL generation across the application
+  - Environment variable support: `NEXT_PUBLIC_APP_URL` for production configuration
+- **Client-side URL Hook** (`/src/features/links/hooks/use-link-url.ts`)
+  - `useLinkUrl` hook for generating dynamic URLs in client components
+  - Returns displayUrl, fullUrl, and shareUrl variants
 - Modern Zustand store architecture for Links feature state management
 - Multiple focused stores (LinksDataStore, LinksUIStore, LinksModalStore)
 - Pure reducer pattern with automatic action generation
@@ -18,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING**: Upload routes restructured from optional catch-all `[[...slug]]` to required catch-all `[...slug]`
+  - Prevents route conflicts with root route on Vercel deployments
+  - Routes now handle: `/myfiles`, `/portfolio/designs`, etc. (but not `/`)
+  - Organized under `(public-upload)` route group for better code organization
+- **BREAKING**: Removed all hardcoded domain references (foldly.com, foldly.io)
+  - Link services now use dynamic domains via `getDisplayDomain()`
+  - Components updated to use centralized URL configuration
+  - Enables proper multi-environment support (development, preview, production)
 - **BREAKING**: Refactored LinkCard component interface from 14+ props to 3 props
 - **BREAKING**: PopulatedLinksState component now uses store-based state (0 props)
 - **BREAKING**: LinksContainer simplified to use store orchestration
@@ -40,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Build Error**: Import paths for hooks corrected from `@/lib/hooks` to `@/hooks`
+- **Schema Import**: Fixed schema imports from snake_case to camelCase (`subscription_plans` to `subscriptionPlans`)
+- **Vercel Deployment**: Resolved route conflict where optional catch-all route conflicted with root route
+- **Client-Server Boundary**: Updated URL configuration to use Vercel environment variables instead of next/headers for client compatibility
 - Infinite rendering loops caused by non-stable selector functions
 - Memory leaks from recreated objects in component renders
 - TypeScript strict mode compatibility issues
@@ -47,6 +68,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+- **Host Validation**: Added security checks in URL configuration to prevent header injection attacks
+- **Allowed Hosts**: Defined whitelist of allowed domains (localhost, foldly.com, foldly.io, *.vercel.app)
+- **Environment Isolation**: Proper handling of environment-specific URLs prevents exposure of internal URLs
 - Enhanced type safety prevents runtime errors in state management
 - Strict TypeScript configuration eliminates potential type-related vulnerabilities
 

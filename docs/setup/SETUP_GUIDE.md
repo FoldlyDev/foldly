@@ -93,6 +93,11 @@ FOR SELECT USING (
 Add to `.env.local`:
 
 ```bash
+# Application URL Configuration
+# Leave empty for automatic detection in development
+# Set to your production domain in production (e.g., https://foldly.com)
+NEXT_PUBLIC_APP_URL=""
+
 # Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="your_anon_key_here"

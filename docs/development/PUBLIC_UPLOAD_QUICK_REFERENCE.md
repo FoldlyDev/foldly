@@ -17,8 +17,10 @@ The public upload feature allows external users to upload files to user-created 
 
 ### **Route Handler**
 ```
-src/app/[slug]/[...topic]/page.tsx
+src/app/(public-upload)/[...slug]/page.tsx
 ```
+
+> **Note**: The route uses a required catch-all pattern `[...slug]` to handle all upload paths while avoiding conflicts with the root route. The `(public-upload)` route group improves code organization without affecting URLs.
 
 ### **Feature Module**
 ```

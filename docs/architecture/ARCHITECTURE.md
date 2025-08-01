@@ -15,6 +15,7 @@ Foldly implements a **sophisticated feature-based architecture** following 2025 
 3. **Performance Optimized**: Sub-3-second load times with efficient state management
 4. **Security Layered**: Multi-tier security with Row Level Security and audit logging
 5. **Scalable Foundation**: Architecture supports 10,000+ concurrent users
+6. **Environment-Agnostic**: Dynamic URL configuration supports multiple deployment environments
 
 ---
 
@@ -101,6 +102,7 @@ foldly/
 │   │   ├── utils/                    # Global utility functions
 │   │   ├── validations/              # Global validation schemas
 │   │   ├── config/                   # Global configuration
+│   │   │   └── url-config.ts         # Centralized URL configuration
 │   │   ├── constants/                # Global constants
 │   │   └── animations/               # Global animation utilities
 │   │
@@ -829,6 +831,52 @@ links/tests/
 - **Extensibility**: Easy addition of new business capabilities as independent domains
 - **Performance**: Domain-optimized loading and execution patterns
 - **Security**: Multi-layer protection with domain-specific security policies
+
+---
+
+## 🌐 **Configuration & Environment Management**
+
+### **Centralized URL Configuration**
+
+Foldly implements a sophisticated URL configuration system that enables seamless operation across multiple environments without hardcoding domains:
+
+#### **Dynamic Environment Detection**
+
+```typescript
+// src/lib/config/url-config.ts
+export function getBaseUrl(): string {
+  // Priority order:
+  // 1. Production environment variable
+  // 2. Vercel deployment URL
+  // 3. Client-side detection
+  // 4. Development fallback
+}
+```
+
+#### **Security Features**
+
+- **Host Validation**: Whitelist of allowed domains prevents header injection
+- **Environment Isolation**: Separate configurations for dev/staging/production
+- **Dynamic Resolution**: No hardcoded domains throughout the codebase
+
+#### **Usage Patterns**
+
+```typescript
+// Server Components
+import { getBaseUrl } from '@/lib/config/url-config';
+const apiUrl = `${getBaseUrl()}/api/endpoint`;
+
+// Client Components
+import { useLinkUrl } from '@/features/links/hooks/use-link-url';
+const { displayUrl, fullUrl } = useLinkUrl(slug, topic);
+```
+
+### **Environment Variables Architecture**
+
+- **Public Variables**: Prefixed with `NEXT_PUBLIC_` for client access
+- **Server Variables**: Protected from client exposure
+- **Automatic Detection**: Vercel environment variables for deployments
+- **Local Development**: Optional `.env.local` overrides
 
 ---
 

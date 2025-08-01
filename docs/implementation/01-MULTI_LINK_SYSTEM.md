@@ -100,11 +100,13 @@ CREATE TYPE link_type_enum AS ENUM ('base', 'custom', 'generated');
 ### **URL Resolution System**
 
 ```typescript
-// URL pattern definitions
+import { getDisplayDomain } from '@/lib/config/url-config';
+
+// URL pattern definitions (using dynamic domain)
 export const LINK_PATTERNS = {
-  BASE: 'foldly.com/{any-slug}',
-  CUSTOM: 'foldly.com/{any-slug}/{topic}',
-  GENERATED: 'foldly.com/{any-slug}/{generated-slug}',
+  BASE: '{domain}/{any-slug}',
+  CUSTOM: '{domain}/{any-slug}/{topic}',
+  GENERATED: '{domain}/{any-slug}/{generated-slug}',
 } as const;
 
 // URL resolution function
@@ -138,10 +140,12 @@ export async function resolveLinkUrl(
 
     if (!link[0]) return null;
 
+    const displayDomain = getDisplayDomain(); // Dynamic domain from url-config
+    
     return {
       ...link[0].link,
       user: link[0].user,
-      fullUrl: topic ? `foldly.com/${slug}/${topic}` : `foldly.com/${slug}`, // slug is user-chosen, not username
+      fullUrl: topic ? `${displayDomain}/${slug}/${topic}` : `${displayDomain}/${slug}`, // slug is user-chosen, not username
       requiresPassword: !!link[0].link.passwordHash,
       isExpired: link[0].link.expiresAt
         ? link[0].link.expiresAt < new Date()

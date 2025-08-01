@@ -32,6 +32,13 @@
 - **Purpose**: Auto-generated links for folder shares
 - **Creation**: System generates unique slug when sharing folders
 
+### Dynamic URL System
+
+- **Multi-Environment Support**: Automatic detection for localhost, Vercel preview, and production
+- **No Hardcoded Domains**: Centralized configuration handles all URL generation
+- **Security**: Host validation prevents header injection attacks
+- **Configuration**: Optional `NEXT_PUBLIC_APP_URL` for production domain
+
 ### Advanced Upload & Organization System
 
 #### **Uploader Requirements (Minimal Friction)**
