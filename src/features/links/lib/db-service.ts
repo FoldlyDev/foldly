@@ -748,7 +748,9 @@ export class LinksDbService {
    * Build full URL for a link
    */
   private buildLinkUrl(slug: string, topic?: string | null): string {
-    const baseUrl = 'foldly.com';
+    // Use display domain for database storage (without protocol)
+    const { getDisplayDomain } = require('@/lib/config/url-config');
+    const baseUrl = getDisplayDomain();
     return topic ? `${baseUrl}/${slug}/${topic}` : `${baseUrl}/${slug}`;
   }
 
