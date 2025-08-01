@@ -1,0 +1,88 @@
+/* =============================================================================
+   FILES FEATURE LAYOUT STYLES
+   ============================================================================= */
+
+@layer components {
+  /* =============================================================================
+     FILES CONTAINER LAYOUT
+     ============================================================================= */
+
+  .files-layout {
+    /* Base - Mobile First */
+    --files-padding: 0;
+    /* Account for dashboard wrapper padding (p-6 = 1.5rem = 24px) and header */
+    --files-container-height: calc(100vh - 48px); /* 24px top + 24px bottom */
+
+    display: flex;
+    flex-direction: column;
+    height: var(--files-container-height);
+    overflow: hidden;
+  }
+
+  .files-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flex scrolling */
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* =============================================================================
+     RESPONSIVE BREAKPOINTS
+     ============================================================================= */
+
+  /* Small Mobile (xs: 480px+) */
+  @media (min-width: 30rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Tablet Portrait (sm: 640px+) */
+  @media (min-width: 40rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Tablet Landscape (md: 768px+) */
+  @media (min-width: 48rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Desktop (lg: 1024px+) */
+  @media (min-width: 64rem) {
+    .files-layout {
+      /* On desktop, account for collapsed sidebar and padding */
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Large Desktop (xl: 1280px+) */
+  @media (min-width: 80rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Extra Large Desktop (2xl: 1536px+) */
+  @media (min-width: 96rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* =============================================================================
+     MOBILE-SPECIFIC OPTIMIZATIONS
+     ============================================================================= */
+
+  /* Mobile Landscape */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+}
