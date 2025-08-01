@@ -1,8 +1,8 @@
 # 📝 Foldly Changelog
 
 > **Unified changelog system for all project updates, releases, and milestones**  
-> **Version**: 2025.1.0  
-> **Last Updated**: January 2025
+> **Version**: 2025.2.0  
+> **Last Updated**: February 2025
 
 ## 📋 **Changelog Overview**
 
@@ -17,10 +17,52 @@ This unified changelog consolidates all project updates, replacing the previous 
 
 ---
 
-## 🚀 **Current Release: 2025.1.4 - Upload System Enhancements & Supabase Tier Alignment**
+## 🚀 **Current Release: 2025.2.0 - Public Link Upload System**
+
+**Release Date**: February 1, 2025  
+**Status**: 🟢 **Production Ready** - Complete public link upload feature with authentication and security  
+**Migration Required**: No - Uses existing database schema  
+**Major Feature**: Public file uploads to user links at routes like foldly.com/[username] or foldly.com/[username]/[topic]
+
+### **🎯 Major Features**
+
+#### **Public Link Upload System (100% Complete)** 🆕
+
+- ✅ **Dynamic Route Handling**: Support for base links (foldly.com/[any-slug]) and custom topic links
+- ✅ **Authentication Options**: Optional password protection and email collection for uploads
+- ✅ **Real-time Validation**: Link expiration checking, storage quota enforcement, and file constraints
+- ✅ **File Organization**: Automatic folder structure with uploader metadata tracking
+- ✅ **Public File Preview**: Tree view with download capabilities for uploaded files
+- ✅ **Responsive UI**: Optimized desktop and mobile upload interfaces
+- ✅ **Progress Tracking**: Real-time upload progress with batch support
+- ✅ **Security Pipeline**: File type validation, size limits, and sanitization
+
+### **🔧 Technical Implementation**
+
+#### **Public Upload Architecture**
+
+- ✅ **Feature-Based Structure**: Complete link-upload feature module with components, actions, and stores
+- ✅ **Server Actions**: Type-safe server actions for link validation, file upload, and storage management
+- ✅ **Database Integration**: Leverages existing links, batches, and files tables with new metadata
+- ✅ **Storage Service**: Supabase storage integration with quota checking and path organization
+- ✅ **Authentication Flow**: Modal-based authentication for password and email requirements
+- ✅ **File Validation**: Multi-layer validation from client-side checks to server-side constraints
+- ✅ **Error Handling**: Comprehensive error messages for expired links, storage limits, and file restrictions
+- ✅ **Performance**: Chunked upload support ready, parallel file processing, and optimistic UI updates
+
+#### **API Endpoints**
+
+- `validateLinkAccessAction`: Validates link availability and authentication requirements
+- `uploadFileToLinkAction`: Handles file upload with real-time expiration and quota checking
+- `fetchPublicFiles`: Retrieves files for public preview with folder organization
+- `downloadFileAction`: Generates signed URLs for secure file downloads
+
+---
+
+## 📚 **Previous Release: 2025.1.4 - Upload System Enhancements & Supabase Tier Alignment**
 
 **Release Date**: January 30, 2025  
-**Status**: 🟢 **Production Ready** - Upload system improvements with Supabase free tier optimizations  
+**Status**: 🟢 **Stable** - Upload system improvements with Supabase free tier optimizations  
 **Migration Required**: Yes - Run migration 0007 to add max_file_size_mb column  
 **Critical Update**: File size limits aligned with Supabase free tier (10MB for all plans)
 
@@ -59,9 +101,9 @@ This unified changelog consolidates all project updates, replacing the previous 
 
 #### **Multi-Link System Architecture (75% Complete)**
 
-- ✅ **Base Links**: `foldly.com/username` format implemented
-- ✅ **Custom Links**: `foldly.com/username/topic` format implemented
-- ✅ **Generated Links**: Right-click folder link creation (backend ready)
+- ✅ **Base Links**: `foldly.com/[any-slug]` format implemented (user-chosen slug)
+- ✅ **Custom Links**: `foldly.com/[any-slug]/[topic]` format implemented
+- ✅ **Generated Links**: `foldly.com/[any-slug]/[generated-slug]` format implemented
 - ✅ **URL Resolution**: Complete routing and validation system
 - 🟡 **Frontend Integration**: UI components connected to backend services (in progress)
 
