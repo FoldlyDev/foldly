@@ -34,9 +34,9 @@ docs/implementation/
 **File**: `01-MULTI_LINK_SYSTEM.md`  
 **Scope**: Complete multi-link architecture implementation
 
-- Base link system (`foldly.com/username`)
-- Custom topic links (`foldly.com/username/topic`)
-- Generated folder links (right-click creation)
+- Base link system (`foldly.com/[any-slug]` - user-chosen slug)
+- Custom topic links (`foldly.com/[any-slug]/[topic]`)
+- Generated folder links (`foldly.com/[any-slug]/[generated-slug]`)
 - URL routing and resolution
 - Link validation and security
 - Permission controls and access management
