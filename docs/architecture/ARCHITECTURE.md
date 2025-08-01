@@ -215,9 +215,9 @@ src/features/links/
 ```typescript
 // Advanced link type architecture
 export const LINK_TYPES = {
-  BASE: 'base', // foldly.com/username
-  CUSTOM: 'custom', // foldly.com/username/topic
-  GENERATED: 'generated', // Right-click folder creation
+  BASE: 'base', // foldly.com/[any-slug]
+  CUSTOM: 'custom', // foldly.com/[any-slug]/[topic]
+  GENERATED: 'generated', // foldly.com/[any-slug]/[generated-slug]
 } as const satisfies Record<string, string>;
 
 export type LinkType = (typeof LINK_TYPES)[keyof typeof LINK_TYPES];

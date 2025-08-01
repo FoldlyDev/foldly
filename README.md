@@ -13,16 +13,24 @@
 
 #### **Base Upload Links**
 
-- **Format**: `foldly.com/username`
+- **Format**: `foldly.com/[any-slug]` (users can set ANY slug they want, not tied to username)
 - **Purpose**: General "data dump" area for any file uploads
 - **Use Case**: Primary collection point for various file types
+- **Examples**: `foldly.com/myfiles`, `foldly.com/portfolio`, `foldly.com/uploads2025`
 
 #### **Custom Topic Links**
 
-- **Format**: `foldly.com/username/topic_or_folder`
-- **Examples**: `foldly.com/mike/logo_competition`, `foldly.com/sarah/wedding-photos`
+- **Format**: `foldly.com/[any-slug]/[topic]` (base slug with a topic)
+- **Examples**: `foldly.com/portfolio/designs`, `foldly.com/myfiles/documents`
 - **Purpose**: Project-specific links with automatic folder organization
 - **Creation**: Right-click any folder to generate custom upload link
+
+#### **Generated Links**
+
+- **Format**: `foldly.com/[any-slug]/[generated-slug]` (base slug + generated slug)
+- **Examples**: `foldly.com/myfiles/xY7k9m2`, `foldly.com/portfolio/aB3n5K8`
+- **Purpose**: Auto-generated links for folder shares
+- **Creation**: System generates unique slug when sharing folders
 
 ### Advanced Upload & Organization System
 
@@ -48,8 +56,8 @@
 - **Email Requirement**: Toggle to require uploader email
 - **Password Protection**: Optional password-lock for upload links
 - **Visibility Settings**: Public vs private sublink configurations
-  - **Public**: `foldly.com/mikes_wedding_photos` (viewable by all)
-  - **Private**: `foldly.com/contractor_bids` (recipient-only access)
+  - **Public**: `foldly.com/wedding/photos` (viewable by all)
+  - **Private**: `foldly.com/private/contractor-bids` (recipient-only access)
 
 #### **Security Features**
 

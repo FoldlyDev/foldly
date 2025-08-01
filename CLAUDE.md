@@ -188,9 +188,9 @@ src/
 ### File Upload System
 
 - Multiple link types:
-  - Base links: `foldly.com/username`
-  - Custom links: `foldly.com/username/topic`
-  - Generated links: Right-click folder creation
+  - Base links: `foldly.com/[any-slug]` (user can set any slug they want)
+  - Custom links: `foldly.com/[any-slug]/[topic]` (base slug with topic)
+  - Generated links: `foldly.com/[any-slug]/[generated-slug]` (base slug + generated slug)
 - Batch upload processing with progress tracking
 - File security validation pipeline
 - Automatic organization by uploader name and date

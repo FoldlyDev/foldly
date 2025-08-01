@@ -29,26 +29,29 @@ The file collection market suffers from **fragmented solutions** and **poor user
 
 Foldly introduces **three distinct link types** that cover every file collection scenario:
 
-#### **1. Base Links**: `foldly.com/username`
+#### **1. Base Links**: `foldly.com/[any-slug]`
 
 - **Use Case**: General file collection and client communication
 - **UX**: Zero friction - only name required, no account creation
 - **Organization**: Smart batch creation with `[Uploader Name] (Batch Name) [Date]`
 - **Target**: Freelancers, consultants, small agencies
+- **Examples**: `foldly.com/myfiles`, `foldly.com/portfolio`, `foldly.com/uploads2025`
 
-#### **2. Custom Topic Links**: `foldly.com/username/topic`
+#### **2. Custom Topic Links**: `foldly.com/[any-slug]/[topic]`
 
 - **Use Case**: Project-specific file collection with context
 - **UX**: Pre-configured settings and topic-specific instructions
 - **Organization**: Auto-route files to designated project folders
 - **Target**: Professional services, project managers, teams
+- **Examples**: `foldly.com/portfolio/designs`, `foldly.com/myfiles/documents`
 
-#### **3. Generated Links**: Right-click folder creation
+#### **3. Generated Links**: `foldly.com/[any-slug]/[generated-slug]`
 
 - **Use Case**: Targeted uploads for specific folders and workflows
 - **UX**: Direct folder assignment with clear context and purpose
 - **Organization**: Immediate placement in correct organizational structure
 - **Target**: Enterprise teams, complex project hierarchies
+- **Examples**: `foldly.com/myfiles/xY7k9m2`, `foldly.com/portfolio/aB3n5K8`
 
 ### **Advanced Organization System**
 

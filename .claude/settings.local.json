@@ -11,7 +11,10 @@
       "mcp__supabase__execute_sql",
       "Bash(git add:*)",
       "Bash(mkdir:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

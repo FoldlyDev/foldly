@@ -69,7 +69,7 @@
 | `id`                 | UUID         | PRIMARY KEY, NOT NULL       | gen_random_uuid() | Link unique identifier            |
 | `user_id`            | TEXT         | FK users(id), NOT NULL      | -                 | Link owner user ID                |
 | `workspace_id`       | UUID         | FK workspaces(id), NOT NULL | -                 | Associated workspace              |
-| `slug`               | VARCHAR(100) | NOT NULL                    | -                 | URL slug (usually username)       |
+| `slug`               | VARCHAR(100) | NOT NULL                    | -                 | User-chosen URL slug (not tied to username) |
 | `topic`              | VARCHAR(100) | NULLABLE                    | -                 | Topic for custom links            |
 | `link_type`          | ENUM         | NOT NULL                    | 'base'            | Link type (base/custom/generated) |
 | `title`              | VARCHAR(255) | NOT NULL                    | -                 | Link display title                |
