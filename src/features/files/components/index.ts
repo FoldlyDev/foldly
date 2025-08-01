@@ -15,3 +15,12 @@ export * from './modals';
 
 // Skeletons
 export * from './skeletons';
+
+// Shared components
+export * from './shared';
+
+// Desktop components
+export * from './desktop';
+
+// Mobile components
+export * from './mobile';
