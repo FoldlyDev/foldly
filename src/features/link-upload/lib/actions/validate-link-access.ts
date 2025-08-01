@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/database/connection';
-import { links, users, subscription_plans } from '@/lib/database/schemas';
+import { links, users, subscriptionPlans } from '@/lib/database/schemas';
 import { eq, and } from 'drizzle-orm';
 import type { LinkWithOwner } from '../../types';
 import type { ActionResult } from '@/types/actions';
@@ -116,11 +116,11 @@ export async function validateLinkAccessAction({
     // TODO: Integrate with actual subscription system
     const planResult = await db
       .select({
-        storage_limit_gb: subscription_plans.storage_limit_gb,
-        max_file_size_mb: subscription_plans.max_file_size_mb,
+        storage_limit_gb: subscriptionPlans.storage_limit_gb,
+        max_file_size_mb: subscriptionPlans.max_file_size_mb,
       })
-      .from(subscription_plans)
-      .where(eq(subscription_plans.plan_key, 'free'))
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.plan_key, 'free'))
       .limit(1);
 
     const plan = planResult[0] || {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMediaQuery } from '@/lib/hooks/use-media-query';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { LinkUploadDesktop } from '../desktop/LinkUploadDesktop';
 import { LinkUploadMobile } from '../mobile/LinkUploadMobile';
 import { AuthenticationModal } from '../modals/AuthenticationModal';

@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/database/connection';
-import { users, subscription_plans } from '@/lib/database/schemas';
+import { users, subscriptionPlans } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import type { ActionResult } from '@/types/actions';
 
@@ -44,10 +44,10 @@ export async function checkStorageAvailableAction({
     // TODO: Integrate with actual subscription system
     const planResult = await db
       .select({
-        storage_limit_gb: subscription_plans.storage_limit_gb,
+        storage_limit_gb: subscriptionPlans.storage_limit_gb,
       })
-      .from(subscription_plans)
-      .where(eq(subscription_plans.plan_key, 'free'))
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.plan_key, 'free'))
       .limit(1);
 
     const storageLimit = planResult[0]?.storage_limit_gb || 50;
