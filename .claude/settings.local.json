@@ -9,7 +9,9 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__get_advisors",
       "mcp__supabase__execute_sql",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
