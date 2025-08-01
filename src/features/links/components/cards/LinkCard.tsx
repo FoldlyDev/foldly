@@ -6,6 +6,7 @@ import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
 import { toast } from 'sonner';
+import { useLinkUrl } from '../../hooks/use-link-url';
 import type { LinkWithStats } from '@/lib/database/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
 
@@ -42,11 +43,13 @@ const LinkCardComponent = ({
     year: 'numeric',
   }).format(new Date(link.createdAt));
 
+  // Get dynamic URLs
+  const { fullUrl } = useLinkUrl(link.slug, link.topic);
+
   // Action handlers
   const handleCopyLink = async () => {
     try {
-      const url = `https://foldly.com/${link.slug}`;
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(fullUrl);
       toast.success('Link copied to clipboard');
     } catch (error) {
       console.error('Failed to copy link:', error);
@@ -55,8 +58,7 @@ const LinkCardComponent = ({
   };
 
   const handleOpenExternal = () => {
-    const url = `https://foldly.com/${link.slug}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Define dropdown actions with actual icon components (actions not in quick actions)

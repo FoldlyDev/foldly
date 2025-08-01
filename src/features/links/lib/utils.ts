@@ -179,9 +179,11 @@ export function generateUrlSlug(input: string): string {
  * Generates a complete URL preview for a topic link
  */
 export function generateTopicUrl(baseSlug: string, topic: string): string {
+  const { getDisplayDomain } = require('@/lib/config/url-config');
+  const domain = getDisplayDomain();
   const topicSlug = generateUrlSlug(topic);
-  if (!topicSlug) return `foldly.io/${baseSlug}`;
-  return `foldly.io/${baseSlug}/${topicSlug}`;
+  if (!topicSlug) return `${domain}/${baseSlug}`;
+  return `${domain}/${baseSlug}/${topicSlug}`;
 }
 
 /**
