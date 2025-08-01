@@ -1,0 +1,125 @@
+'use client';
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  X, 
+  Folder, 
+  FolderOpen, 
+  ChevronRight,
+  Home,
+  Check
+} from 'lucide-react';
+import { Button } from '@/components/ui/core/shadcn/button';
+import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
+import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
+import { cn } from '@/lib/utils';
+
+interface WorkspaceFolderPickerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (folderId: string | null) => void;
+  selectedFolderId: string | null;
+}
+
+export function WorkspaceFolderPicker({
+  isOpen,
+  onClose,
+  onSelect,
+  selectedFolderId,
+}: WorkspaceFolderPickerProps) {
+  const [tempSelectedId, setTempSelectedId] = useState<string | null>(selectedFolderId);
+
+  const handleSelect = () => {
+    onSelect(tempSelectedId);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className="fixed bottom-0 left-0 right-0 z-50 h-[80vh] bg-background rounded-t-2xl shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 border-b">
+            <h2 className="text-lg font-semibold">Select Destination</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-8 w-8"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Content */}
+          <ScrollArea className="flex-1 h-[calc(80vh-8rem)]">
+            <div className="p-4">
+              {/* Root folder option */}
+              <button
+                className={cn(
+                  "w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
+                  "hover:bg-accent",
+                  tempSelectedId === null && "bg-accent"
+                )}
+                onClick={() => setTempSelectedId(null)}
+              >
+                <Home className="h-5 w-5 text-muted-foreground" />
+                <span className="flex-1 text-left font-medium">My Workspace</span>
+                {tempSelectedId === null && (
+                  <Check className="h-4 w-4 text-primary" />
+                )}
+              </button>
+
+              {/* Workspace tree */}
+              <div className="mt-4">
+                <WorkspaceTree
+                  onSelectionChange={(selectedItems) => {
+                    if (selectedItems.length > 0) {
+                      setTempSelectedId(selectedItems[0]);
+                    }
+                  }}
+                  selectedItems={tempSelectedId ? [tempSelectedId] : []}
+                />
+              </div>
+            </div>
+          </ScrollArea>
+
+          {/* Footer */}
+          <div className="p-4 border-t">
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSelect}
+                className="flex-1"
+              >
+                Copy Here
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
