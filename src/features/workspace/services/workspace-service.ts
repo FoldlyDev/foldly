@@ -120,13 +120,13 @@ export class WorkspaceService {
         return { success: false, error: 'Workspace not found', code: ERROR_CODES.NOT_FOUND };
       }
 
-      logger.info('Workspace updated successfully', { workspaceId, userId });
+      logger.info('Workspace updated successfully', userId ? { workspaceId, userId } : { workspaceId });
       return {
         success: true,
         data: updatedWorkspace,
       };
     } catch (error) {
-      logger.error('Workspace update failed', error, { workspaceId, userId });
+      logger.error('Workspace update failed', error, userId ? { workspaceId, userId } : { workspaceId });
       return { 
         success: false, 
         error: (error as Error).message,
@@ -205,10 +205,10 @@ export class WorkspaceService {
 
       await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
 
-      logger.info('Workspace deleted successfully', { workspaceId, userId });
+      logger.info('Workspace deleted successfully', userId ? { workspaceId, userId } : { workspaceId });
       return { success: true, data: undefined };
     } catch (error) {
-      logger.error('Workspace deletion failed', error, { workspaceId, userId });
+      logger.error('Workspace deletion failed', error, userId ? { workspaceId, userId } : { workspaceId });
       return { 
         success: false, 
         error: (error as Error).message,

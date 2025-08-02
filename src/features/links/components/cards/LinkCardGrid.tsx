@@ -20,7 +20,7 @@ import { SearchHighlight } from '@/components/ui/core/search-highlight';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import type { LinkWithStats } from '@/lib/database/types';
-import type { ActionItem } from '@/components/ui/types';
+import type { ActionItem } from '@/components/ui/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 
 interface LinkCardGridProps {

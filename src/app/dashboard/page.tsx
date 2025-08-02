@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
 import { Card } from '@/components/ui/core/shadcn/card';
@@ -18,35 +18,37 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState(0);
   const [showFeatures, setShowFeatures] = useState(false);
   const [readyTimestamp, setReadyTimestamp] = useState<number | null>(null);
+  const loadStartTime = useRef<number>(Date.now());
 
   useEffect(() => {
     if (!userId) return;
 
-    let intervalId: NodeJS.Timeout;
-    let progressIntervalId: NodeJS.Timeout;
-    let timeoutId: NodeJS.Timeout;
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+    let progressIntervalId: ReturnType<typeof setInterval> | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const checkWorkspace = async (isInitialCheck = false) => {
       try {
         const result = await checkWorkspaceStatusAction();
         
         if (result.success && result.data?.exists) {
-          if (isInitialCheck) {
-            // Existing user with workspace - redirect immediately
-            router.push('/dashboard/workspace');
-            return true;
-          }
-          
-          // New user - workspace just created, show success animation
+          // Set status to ready and complete progress
           setStatus('ready');
           setProgress(100);
           setReadyTimestamp(Date.now());
           
-          // Ensure minimum 3 seconds display for new users
+          // ALWAYS ensure minimum 3 seconds display time for better UX
+          // This gives users time to see the welcome message and understand what's happening
           const displayDuration = 3000;
+          
+          // Calculate remaining time if we've already been loading
+          const elapsedTime = Date.now() - loadStartTime.current;
+          const remainingTime = Math.max(0, displayDuration - elapsedTime);
+          
           setTimeout(() => {
             router.push('/dashboard/workspace');
-          }, displayDuration);
+          }, remainingTime);
+          
           return true;
         }
         return false;
@@ -65,11 +67,14 @@ export default function DashboardPage() {
           setProgress(100);
           setReadyTimestamp(Date.now());
           
-          // Ensure minimum 3 seconds display
+          // Ensure minimum 3 seconds display time from initial load
           const displayDuration = 3000;
+          const elapsedTime = Date.now() - loadStartTime.current;
+          const remainingTime = Math.max(0, displayDuration - elapsedTime);
+          
           setTimeout(() => {
             router.push('/dashboard/workspace');
-          }, displayDuration);
+          }, remainingTime);
         } else {
           throw new Error(result.error || 'Failed to create workspace');
         }
@@ -80,6 +85,9 @@ export default function DashboardPage() {
     };
 
     const startChecking = async () => {
+      // Reset load start time when starting/restarting the check
+      loadStartTime.current = Date.now();
+      
       // Always show loading UI for consistent experience
       // Show features after a brief delay
       setTimeout(() => setShowFeatures(true), 800);
@@ -92,7 +100,7 @@ export default function DashboardPage() {
         });
       }, 150);
 
-      // Initial check - if workspace exists, handle with minimum display time
+      // Initial check - workspace existence check with minimum display time
       const exists = await checkWorkspace(true);
       if (exists) {
         clearInterval(progressIntervalId);
@@ -126,9 +134,9 @@ export default function DashboardPage() {
     startChecking();
 
     return () => {
-      clearInterval(intervalId);
-      clearInterval(progressIntervalId);
-      clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+      if (progressIntervalId) clearInterval(progressIntervalId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [userId, router, retryCount]);
 
@@ -137,6 +145,7 @@ export default function DashboardPage() {
     setError('');
     setProgress(0);
     setShowFeatures(false);
+    loadStartTime.current = Date.now(); // Reset timer for retry
     setRetryCount(prev => prev + 1);
   };
 

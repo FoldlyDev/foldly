@@ -195,6 +195,7 @@ export interface LinkWithFileTree extends Link {
 export interface CopyResult {
   success: boolean;
   copiedFiles: number;
+  copiedFolders: number;
   errors: Array<{
     fileId: string;
     fileName: string;

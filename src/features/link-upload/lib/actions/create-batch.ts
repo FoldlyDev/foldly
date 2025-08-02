@@ -1,54 +1,32 @@
 'use server';
 
-import { db } from '@/lib/database/connection';
-import { batches } from '@/lib/database/schemas';
+import { linkUploadService } from '../services';
 import type { ActionResult } from '@/types/actions';
+
+interface FileData {
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  uploaderName: string;
+}
 
 interface CreateBatchParams {
   linkId: string;
-  userId: string;
-  uploaderName: string;
+  files: FileData[];
+  folderId?: string;
+  uploaderName?: string;
   uploaderEmail?: string;
   uploaderMessage?: string;
-  totalFiles: number;
-  totalSize: number;
+}
+
+interface BatchResponse {
+  batchId: string;
+  files: { id: string; fileName: string }[];
 }
 
 export async function createBatchAction(
   params: CreateBatchParams
-): Promise<ActionResult<{ id: string }>> {
-  try {
-    const result = await db
-      .insert(batches)
-      .values({
-        link_id: params.linkId,
-        user_id: params.userId,
-        uploader_name: params.uploaderName,
-        uploader_email: params.uploaderEmail,
-        uploader_message: params.uploaderMessage,
-        total_files: params.totalFiles,
-        total_size: params.totalSize,
-        status: 'uploading',
-        processed_files: 0,
-      })
-      .returning({ id: batches.id });
-
-    if (result.length === 0) {
-      return {
-        success: false,
-        error: 'Failed to create batch',
-      };
-    }
-
-    return {
-      success: true,
-      data: { id: result[0].id },
-    };
-  } catch (error) {
-    console.error('Error creating batch:', error);
-    return {
-      success: false,
-      error: 'Failed to create upload batch',
-    };
-  }
+): Promise<ActionResult<BatchResponse>> {
+  // Delegate to service layer
+  return linkUploadService.createBatch(params);
 }

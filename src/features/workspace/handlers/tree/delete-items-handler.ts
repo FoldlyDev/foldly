@@ -17,20 +17,13 @@ export function handleDeleteItems(
   { tree }: DeleteItemsHandlerDependencies
 ): void {
   if (itemIds.length === 0) {
-    console.warn('No items to delete');
+    // No items to delete - exit early
     return;
   }
-
-  console.log(
-    '🗑️ Deleting items:',
-    itemIds.map(id => id.slice(-8))
-  );
 
   // Remove items from tree data structure
   deleteItemsFromTree(itemIds);
 
   // Rebuild tree to reflect changes
   tree.rebuildTree();
-
-  console.log('✅ Items deleted successfully');
 }

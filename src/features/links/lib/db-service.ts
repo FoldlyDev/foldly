@@ -197,6 +197,8 @@ export class LinksDbService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
+          storageUsed: links.storageUsed,
+          storageLimit: links.storageLimit,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info
@@ -282,6 +284,8 @@ export class LinksDbService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
+          storageUsed: links.storageUsed,
+          storageLimit: links.storageLimit,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info
@@ -368,6 +372,8 @@ export class LinksDbService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
+          storageUsed: links.storageUsed,
+          storageLimit: links.storageLimit,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info

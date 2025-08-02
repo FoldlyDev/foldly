@@ -65,7 +65,7 @@ describe('File Actions', () => {
     });
 
     it('should handle file service errors gracefully', async () => {
-      const { FileService } = await import('@/lib/services/files/file-service');
+      const { FileService } = await import('@/features/files/lib/services/file-service');
       vi.mocked(FileService).mockImplementationOnce(() => ({
         deleteFileWithStorage: vi.fn().mockResolvedValue({
           success: false,
@@ -80,7 +80,7 @@ describe('File Actions', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const { FileService } = await import('@/lib/services/files/file-service');
+      const { FileService } = await import('@/features/files/lib/services/file-service');
       vi.mocked(FileService).mockImplementationOnce(() => ({
         deleteFileWithStorage: vi.fn().mockRejectedValue(new Error('Network error')),
       } as any));

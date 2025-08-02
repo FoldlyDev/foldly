@@ -9,7 +9,7 @@ import {
   validateSubscriptionEvent,
   extractUserIdentifier,
 } from '@/lib/webhooks/clerk-webhook-handler';
-import { ClerkBillingIntegrationService } from '@/lib/services/billing/clerk-billing-integration';
+import { ClerkBillingIntegrationService } from '@/features/billing/lib/services/clerk-billing-integration';
 
 export async function POST(req: NextRequest) {
   // Security headers for webhook endpoint (Clerk 2025 best practices)

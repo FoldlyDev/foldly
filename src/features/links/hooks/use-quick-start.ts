@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useCreateLinkMutation } from './react-query/use-create-link-mutation';
 import { useModalStore } from '../store';
 import { normalizeSlug } from '../lib/utils/slug-normalization';
+import { DEFAULT_BASE_LINK_TITLE } from '../lib/constants/base-link-defaults';
 
 interface UseQuickStartOptions {
   onSuccess?: () => void;
@@ -37,12 +38,12 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
       // Create base link with sensible defaults - matching manual creation exactly
       const quickStartData = {
         // Required fields matching manual creation
-        title: 'Base link', // Match exactly with manual creation
+        title: DEFAULT_BASE_LINK_TITLE, // Use centralized default
 
         // Optional fields with exact same structure as manual creation
         slug: normalizeSlug(user.username), // Normalize username for consistent slug handling
         topic: undefined, // undefined for base links
-        description: 'My personal file collection hub',
+        description: 'Upload your files here', // Use consistent description
         requireEmail: false,
         requirePassword: false,
         password: undefined, // undefined when no password required
@@ -85,14 +86,16 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
     } catch (error) {
       console.error('🚀 QUICK START: Error caught:', error);
       console.error('🚀 QUICK START: Error type:', typeof error);
-      console.error(
-        '🚀 QUICK START: Error constructor:',
-        error?.constructor?.name
-      );
-      console.error('🚀 QUICK START: Error message:', error?.message);
-      console.error('🚀 QUICK START: Error stack:', error?.stack);
-
-      if (error && typeof error === 'object') {
+      
+      // Type-safe error handling
+      if (error instanceof Error) {
+        console.error(
+          '🚀 QUICK START: Error constructor:',
+          error.constructor.name
+        );
+        console.error('🚀 QUICK START: Error message:', error.message);
+        console.error('🚀 QUICK START: Error stack:', error.stack);
+      } else if (error && typeof error === 'object') {
         console.error(
           '🚀 QUICK START: Error object properties:',
           Object.keys(error)

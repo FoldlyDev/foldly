@@ -4,7 +4,7 @@
 // 🎯 Debug utilities for testing the billing plan detection system
 
 import { auth } from '@clerk/nextjs/server';
-import { billing } from '@/lib/services/billing';
+import { billing } from '@/features/billing/lib/services';
 
 // =============================================================================
 // TYPES
@@ -84,8 +84,9 @@ export async function debugPlanDetection(): Promise<PlanDetectionDebugInfo> {
 
     // Test plan detection using new billing service
     const planResult = await billing.getCurrentPlan();
+    const { ClerkBillingIntegrationService } = await import('@/features/billing/lib/services/clerk-billing-integration');
     const integratedDataResult =
-      await billing.integration.getIntegratedPlanData();
+      await ClerkBillingIntegrationService.getIntegratedPlanData();
 
     if (integratedDataResult.success) {
       const data = integratedDataResult.data;
@@ -224,7 +225,8 @@ export async function billingSystemHealthCheck(): Promise<{
 
     // Test billing service
     try {
-      await billing.errorRecovery.healthCheck();
+      const { BillingErrorRecoveryService } = await import('@/features/billing/lib/services/billing-error-recovery');
+      await BillingErrorRecoveryService.healthCheck();
       services.billingService = true;
     } catch (error) {
       services.billingService = false;

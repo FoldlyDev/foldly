@@ -1,12 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import {
+import type {
   HTMLMotionProps,
+  SpringOptions,
+} from 'motion/react';
+import {
   motion,
   useMotionValue,
   useSpring,
-  type SpringOptions,
 } from 'motion/react';
 
 type MagneticProps = {

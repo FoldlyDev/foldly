@@ -87,7 +87,9 @@ export const useUploadStore = create<UploadStore>()(
           if (fileIndex === -1) return;
 
           const file = state.currentBatch.files[fileIndex];
-          state.currentBatch.totalSize -= file.file.size;
+          if (file?.file) {
+            state.currentBatch.totalSize -= file.file.size;
+          }
           state.currentBatch.files.splice(fileIndex, 1);
 
           if (state.currentBatch.files.length === 0) {

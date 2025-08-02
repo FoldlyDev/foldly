@@ -17,8 +17,10 @@ export interface LogContext {
   workspaceId?: string;
   fileId?: string;
   linkId?: string;
+  folderId?: string;
   action?: string;
   metadata?: Record<string, any>;
+  [key: string]: any; // Allow additional properties
 }
 
 export interface LogEntry {
@@ -52,14 +54,22 @@ class Logger {
     context?: LogContext,
     error?: Error
   ): LogEntry {
-    return {
+    const entry: LogEntry = {
       level,
       message,
-      context,
-      error,
       timestamp: new Date(),
       environment: process.env.NODE_ENV || 'production',
     };
+    
+    if (context !== undefined) {
+      entry.context = context;
+    }
+    
+    if (error !== undefined) {
+      entry.error = error;
+    }
+    
+    return entry;
   }
 
   private logToConsole(entry: LogEntry): void {

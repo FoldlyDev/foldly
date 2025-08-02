@@ -249,7 +249,7 @@ export function WorkspaceToolbar({
         })
         .filter(item => item.name !== 'Unknown'); // Filter out invalid items
     } catch (error) {
-      console.warn('Error in getBatchOperationItems:', error);
+      // Error in getBatchOperationItems - return empty array
       return [];
     }
   };

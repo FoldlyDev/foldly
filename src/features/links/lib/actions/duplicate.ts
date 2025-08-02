@@ -63,6 +63,9 @@ export async function duplicateLinkAction(
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
+      // Initialize storage quota fields (copy from original)
+      storageUsed: 0, // Start with 0 for the duplicate
+      storageLimit: originalLink.data.storageLimit,
     };
 
     // 5. Create duplicate link

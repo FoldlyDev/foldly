@@ -1,61 +1,36 @@
-// Upload Feature Database Types - UploadBatch entity
-// Following 2025 TypeScript best practices with strict type safety
+// Link Upload Feature Database Types - Drizzle Type Inference
+// Using proper Drizzle ORM type inference with correct field names from batches schema
 
-import type {
-  BaseEntity,
-  EmailAddress,
-  LinkId,
-  FolderId,
-  DeepReadonly,
-} from '@/types';
-import type { BatchStatus } from '@/features/files/types';
+import { batches } from '@/lib/database/schemas';
 
 // =============================================================================
-// UPLOAD BATCHES - BATCH PROCESSING SYSTEM
+// DRIZZLE TYPE INFERENCE - Type-safe database operations
 // =============================================================================
 
 /**
- * Upload batch for grouping related files
+ * Upload batch record type inferred from batches table schema
+ * Note: Field is 'linkId' not 'uploadLinkId' in the actual schema
  */
-export interface UploadBatch extends BaseEntity {
-  readonly uploadLinkId: LinkId; // References upload_links.id
-
-  // Uploader information
-  readonly uploaderName: string;
-  readonly uploaderEmail?: EmailAddress;
-  readonly batchName?: string; // Optional custom batch name
-  readonly displayName: string; // Auto-generated: "[Name] (Batch) [Date]"
-
-  // Batch metadata
-  readonly status: BatchStatus;
-  readonly totalFiles: number;
-  readonly processedFiles: number;
-  readonly failedFiles: number;
-  readonly totalSize: number; // bytes
-
-  // Processing information
-  readonly uploadStartedAt: Date;
-  readonly uploadCompletedAt?: Date;
-  readonly processingCompletedAt?: Date;
-  readonly estimatedCompletionAt?: Date;
-
-  // Organization
-  readonly targetFolderId?: FolderId; // Default destination folder
-  readonly autoOrganized: boolean; // Whether files were auto-organized
-  readonly organizationRules?: DeepReadonly<Record<string, unknown>>; // JSON rules used
-} /**
- * Input type for creating upload batches (Application Layer)
- */
-export interface CreateUploadBatchInput {
-  readonly uploadLinkId: LinkId;
-  readonly uploaderName: string;
-  readonly uploaderEmail?: EmailAddress;
-  readonly batchName?: string;
-  readonly targetFolderId?: FolderId;
-}
+export type UploadBatch = typeof batches.$inferSelect;
 
 /**
- * Batch processing statistics
+ * Upload batch input type for insertions inferred from batches table schema
+ */
+export type CreateUploadBatchInput = typeof batches.$inferInsert;
+
+// =============================================================================
+// UTILITY TYPES - For application layer convenience
+// =============================================================================
+
+/**
+ * Partial update input for upload batches
+ */
+export type UpdateUploadBatchInput = Partial<CreateUploadBatchInput> & {
+  readonly id: string;
+};
+
+/**
+ * Batch processing statistics (computed type)
  */
 export interface BatchStatistics {
   readonly totalBatches: number;
@@ -64,12 +39,9 @@ export interface BatchStatistics {
   readonly failedBatches: number;
   readonly averageFilesPerBatch: number;
   readonly averageBatchSize: number; // bytes
-  readonly processingTimeStats: DeepReadonly<{
+  readonly processingTimeStats: {
     readonly average: number; // seconds
     readonly min: number;
     readonly max: number;
-  }>;
+  };
 }
-
-// Export all upload database types
-export type * from './database';

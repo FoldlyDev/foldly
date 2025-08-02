@@ -112,11 +112,11 @@ function CodeTabs({
 
         {copyButton && highlightedCodes && (
           <CopyButton
-            content={codes[selectedCode]}
+            content={codes[selectedCode] || ''}
             size='sm'
             variant='ghost'
             className='-me-2 bg-transparent hover:bg-black/5 dark:hover:bg-white/10'
-            onCopy={onCopy}
+            {...(onCopy && { onCopy })}
           />
         )}
       </TabsList>

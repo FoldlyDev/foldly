@@ -3,13 +3,13 @@ import { LinkUploadContainer } from '@/features/link-upload/components/views/Lin
 import { validateLinkAccessAction } from '@/features/link-upload/lib/actions/validate-link-access';
 
 interface LinkUploadPageProps {
-  params: {
+  params: Promise<{
     slug: string[];
-  };
+  }>;
 }
 
 export default async function LinkUploadPage({ params }: LinkUploadPageProps) {
-  const { slug } = params;
+  const { slug } = await params;
   
   // Validate link access and get link data
   const linkValidation = await validateLinkAccessAction({

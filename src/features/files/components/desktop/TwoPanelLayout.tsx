@@ -9,7 +9,7 @@ import { ContextMenu } from '../shared/ContextMenu';
 import { CopyProgressIndicator } from '../shared/CopyProgressIndicator';
 import { useFilesManagementStore } from '../../store/files-management-store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { copyFilesToWorkspaceAction } from '../../lib/actions';
+import { copyFilesToWorkspaceAction, copyTreeNodesToWorkspaceAction } from '../../lib/actions';
 import { toast } from 'sonner';
 import type { LinkWithFileTree, TreeNode } from '../../types';
 import { cn } from '@/lib/utils';
@@ -46,27 +46,91 @@ export function TwoPanelLayout({
     openWorkspaceFolderPicker,
   } = useFilesManagementStore();
 
-  // Copy mutation
-  const copyMutation = useMutation({
-    mutationFn: async ({ fileIds, targetFolderId }: { fileIds: string[]; targetFolderId: string | null }) => {
-      return copyFilesToWorkspaceAction(fileIds, targetFolderId);
+  // Copy mutation with tree nodes support
+  const copyTreeMutation = useMutation({
+    mutationFn: async ({ nodes, targetFolderId }: { nodes: TreeNode[]; targetFolderId: string | null }) => {
+      return copyTreeNodesToWorkspaceAction(nodes, targetFolderId);
     },
     onSuccess: (result, variables) => {
       if (result.success && result.data) {
         // Update progress for completed files
-        variables.fileIds.forEach(fileId => {
-          completeCopyOperation(fileId);
+        const extractFileIds = (node: TreeNode): string[] => {
+          const fileIds: string[] = [];
+          if (node.type === 'file') {
+            fileIds.push(node.id);
+          }
+          if (node.children) {
+            node.children.forEach(child => {
+              fileIds.push(...extractFileIds(child));
+            });
+          }
+          return fileIds;
+        };
+        
+        variables.nodes.forEach(node => {
+          extractFileIds(node).forEach(fileId => {
+            completeCopyOperation(fileId);
+          });
         });
 
-        toast.success('Files copied successfully', {
-          description: `${result.data.copiedFiles} files copied to your workspace`,
-        });
+        // Create dynamic notification message
+        const { copiedFiles, copiedFolders } = result.data;
+        let title = 'Copied successfully';
+        let description = '';
+        
+        if (copiedFolders > 0 && copiedFiles > 0) {
+          title = `Copied ${copiedFolders} folder${copiedFolders !== 1 ? 's' : ''} and ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`;
+          description = 'Files and folders copied to your workspace with structure preserved';
+        } else if (copiedFolders > 0) {
+          title = `Copied ${copiedFolders} folder${copiedFolders !== 1 ? 's' : ''}`;
+          description = 'Folder structure copied to your workspace';
+        } else if (copiedFiles > 0) {
+          title = `Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`;
+          description = 'Files copied to your workspace';
+        }
+
+        toast.success(title, { description });
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['workspace'] });
         queryClient.invalidateQueries({ queryKey: ['storage'] });
       } else {
         // Handle errors
+        result.data?.errors.forEach(error => {
+          failCopyOperation(error.fileId, error.error);
+        });
+
+        toast.error('Copy completed with errors', {
+          description: result.error || 'Some files failed to copy',
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error('Copy failed', {
+        description: error instanceof Error ? error.message : 'Failed to copy files',
+      });
+    },
+  });
+
+  // Fallback copy mutation for context menu (files only)
+  const copyFilesMutation = useMutation({
+    mutationFn: async ({ fileIds, targetFolderId }: { fileIds: string[]; targetFolderId: string | null }) => {
+      return copyFilesToWorkspaceAction(fileIds, targetFolderId);
+    },
+    onSuccess: (result, variables) => {
+      if (result.success && result.data) {
+        variables.fileIds.forEach(fileId => {
+          completeCopyOperation(fileId);
+        });
+
+        const { copiedFiles } = result.data;
+        toast.success(`Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`, {
+          description: 'Files copied to your workspace',
+        });
+
+        queryClient.invalidateQueries({ queryKey: ['workspace'] });
+        queryClient.invalidateQueries({ queryKey: ['storage'] });
+      } else {
         result.data?.errors.forEach(error => {
           failCopyOperation(error.fileId, error.error);
         });
@@ -98,37 +162,39 @@ export function TwoPanelLayout({
       const data = e.dataTransfer.getData('application/json');
       const nodes: TreeNode[] = JSON.parse(data);
 
-      // Extract file IDs from nodes
-      const fileIds: string[] = [];
-      const extractFileIds = (node: TreeNode) => {
-        if (node.type === 'file') {
-          fileIds.push(node.id);
-        }
-        if (node.children) {
-          node.children.forEach(extractFileIds);
-        }
-      };
-      nodes.forEach(extractFileIds);
-
-      if (fileIds.length === 0) {
-        toast.error('No files selected', {
-          description: 'Please select files to copy',
+      if (nodes.length === 0) {
+        toast.error('No items selected', {
+          description: 'Please select files or folders to copy',
         });
         return;
       }
 
-      // Start copy operation
-      startCopyOperation(nodes.filter(n => n.type === 'file'));
+      // Start copy operation (track files for progress)
+      const extractFiles = (node: TreeNode): TreeNode[] => {
+        const files: TreeNode[] = [];
+        if (node.type === 'file') {
+          files.push(node);
+        }
+        if (node.children) {
+          node.children.forEach(child => {
+            files.push(...extractFiles(child));
+          });
+        }
+        return files;
+      };
       
-      // Execute copy
-      copyMutation.mutate({ fileIds, targetFolderId });
+      const allFiles = nodes.flatMap(extractFiles);
+      startCopyOperation(allFiles);
+      
+      // Execute copy with full tree structure
+      copyTreeMutation.mutate({ nodes, targetFolderId });
     } catch (error) {
       console.error('Drop error:', error);
       toast.error('Drop failed', {
-        description: 'Failed to process dropped files',
+        description: 'Failed to process dropped items',
       });
     }
-  }, [startCopyOperation, copyMutation]);
+  }, [startCopyOperation, copyTreeMutation]);
 
   // Handle context menu copy action
   const handleCopyToWorkspace = useCallback(() => {
@@ -158,8 +224,8 @@ export function TwoPanelLayout({
     });
 
     startCopyOperation(selectedNodes);
-    copyMutation.mutate({ fileIds, targetFolderId: destinationFolderId });
-  }, [selectedFiles, links, startCopyOperation, copyMutation, destinationFolderId]);
+    copyFilesMutation.mutate({ fileIds, targetFolderId: destinationFolderId });
+  }, [selectedFiles, links, startCopyOperation, copyFilesMutation, destinationFolderId]);
 
   return (
     <div className={cn('flex gap-4 h-full', className)}>

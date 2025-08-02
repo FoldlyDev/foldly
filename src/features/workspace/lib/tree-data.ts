@@ -20,9 +20,6 @@ export let isDragOperationActive = false;
 // Helper functions to manage drag state
 export const setDragOperationActive = (active: boolean) => {
   isDragOperationActive = active;
-  console.log(
-    `🎯 Drag operation state changed: ${active ? 'ACTIVE' : 'INACTIVE'}`
-  );
 };
 
 export const getDragOperationActive = () => isDragOperationActive;
@@ -52,21 +49,10 @@ export const populateFromDatabase = (
   folders: Folder[],
   files: File[]
 ) => {
-  console.log('🏗️ populateFromDatabase called with:', {
-    workspace,
-    folderCount: folders.length,
-    fileCount: files.length,
-    currentDataKeys: Object.keys(data),
-    timestamp: new Date().toISOString(),
-  });
-
   // Clear existing data
-  const keysBeforeClearing = Object.keys(data);
   Object.keys(data).forEach(key => delete data[key]);
-  console.log('🗑️ Cleared existing data. Keys removed:', keysBeforeClearing);
 
   if (!workspace) {
-    console.log('❌ No workspace provided, returning early');
     return;
   }
 
@@ -75,7 +61,6 @@ export const populateFromDatabase = (
     name: workspace.name,
     children: [],
   };
-  console.log('📁 Added workspace root:', workspace.id, workspace.name);
 
   // Add folders
   folders.forEach(folder => {
@@ -83,13 +68,6 @@ export const populateFromDatabase = (
       name: folder.name,
       children: [],
     };
-    console.log(
-      '📂 Added folder:',
-      folder.id,
-      folder.name,
-      'parent:',
-      folder.parentFolderId
-    );
   });
 
   // Add files
@@ -98,13 +76,6 @@ export const populateFromDatabase = (
       name: file.fileName,
       isFile: true,
     };
-    console.log(
-      '📄 Added file:',
-      file.id,
-      file.fileName,
-      'parent:',
-      file.folderId
-    );
   });
 
   // Build hierarchy - collect items by parent first, then sort by sortOrder
@@ -123,21 +94,6 @@ export const populateFromDatabase = (
         sortOrder: folder.sortOrder,
         type: 'folder',
       });
-      console.log(
-        '📁 Grouped folder by parent:',
-        folder.id,
-        '->',
-        parentId,
-        'sortOrder:',
-        folder.sortOrder
-      );
-    } else {
-      console.log(
-        '❌ Parent not found for folder:',
-        folder.id,
-        'expected parent:',
-        parentId
-      );
     }
   });
 
@@ -151,21 +107,6 @@ export const populateFromDatabase = (
         sortOrder: file.sortOrder,
         type: 'file',
       });
-      console.log(
-        '📄 Grouped file by parent:',
-        file.id,
-        '->',
-        parentId,
-        'sortOrder:',
-        file.sortOrder
-      );
-    } else {
-      console.log(
-        '❌ Parent not found for file:',
-        file.id,
-        'expected parent:',
-        parentId
-      );
     }
   });
 
@@ -188,19 +129,8 @@ export const populateFromDatabase = (
     const parentData = data[parentId];
     if (parentData) {
       parentData.children = items.map(item => item.id);
-      console.log(
-        '🔗 Sorted children for parent:',
-        parentId,
-        'order:',
-        items.map(i => `${i.id}(${i.sortOrder})`)
-      );
     }
   });
-
-  console.log(
-    '✅ populateFromDatabase completed. Final data structure:',
-    JSON.stringify(data, null, 2)
-  );
 
   // Return true to indicate data was updated
   return true;

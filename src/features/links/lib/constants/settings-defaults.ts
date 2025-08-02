@@ -107,22 +107,21 @@ export const CREATE_LINK_FORM_DEFAULTS = {
 /**
  * Default values for general settings modal initialization
  */
-export const GENERAL_SETTINGS_MODAL_DEFAULTS: Omit<
-  GeneralSettingsData,
-  'brandColor' | 'accentColor'
-> = {
+export const GENERAL_SETTINGS_MODAL_DEFAULTS = {
   isPublic: FORM_FIELD_DEFAULTS.isPublic,
   requireEmail: FORM_FIELD_DEFAULTS.requireEmail,
   requirePassword: FORM_FIELD_DEFAULTS.requirePassword,
   password: FORM_FIELD_DEFAULTS.password,
-  expiresAt: undefined,
+  expiresAt: null,
   maxFiles: FORM_FIELD_DEFAULTS.maxFiles,
   maxFileSize: FORM_FIELD_DEFAULTS.maxFileSize,
+  title: '',
+  description: '',
   allowedFileTypes: [...FORM_FIELD_DEFAULTS.allowedFileTypes],
   autoCreateFolders: FORM_FIELD_DEFAULTS.autoCreateFolders,
   allowMultiple: FORM_FIELD_DEFAULTS.allowMultiple,
   customMessage: FORM_FIELD_DEFAULTS.customMessage,
-};
+} as const;
 
 // =============================================================================
 // LINK TYPE SPECIFIC DEFAULTS (Business logic, not user prefs)

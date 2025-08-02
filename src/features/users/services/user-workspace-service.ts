@@ -43,15 +43,9 @@ export class UserWorkspaceService {
 
           // If the existing user has the same Clerk ID, just return it
           if (existingUser.id === userData.id) {
-            console.log(
-              `✅ EXISTING_USER: User ${userData.id} already exists with correct Clerk ID`
-            );
             user = existingUser;
           } else {
             // Different Clerk ID - UPDATE existing user instead of deleting (prevents webhook race condition)
-            console.log(
-              `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email} but different Clerk ID. Updating existing user ${existingUser.id} with new Clerk ID ${userData.id}`
-            );
 
             // Update the existing user with the new Clerk ID - preserves all relationships and workspace
             [user] = await tx
@@ -115,9 +109,6 @@ export class UserWorkspaceService {
           } catch (insertError: any) {
             // Final fallback - if any constraint violation, try to find by email/username and use cascade deletion
             if (insertError?.code === '23505') {
-              console.log(
-                `🔄 FINAL_FALLBACK: Constraint violation, attempting cascade deletion for ${userData.id}`
-              );
 
               // Try to find by email or username
               const [existingUser] = await tx
@@ -190,9 +181,6 @@ export class UserWorkspaceService {
             throw new Error('Failed to create or retrieve workspace');
           }
 
-          const duration = Date.now() - startTime;
-          console.log(`✅ USER_WORKSPACE_EXISTS: ${user.id} | ${duration}ms`);
-
           return {
             success: true,
             data: {
@@ -201,9 +189,6 @@ export class UserWorkspaceService {
             },
           };
         }
-
-        const duration = Date.now() - startTime;
-        console.log(`✅ USER_WORKSPACE_CREATED: ${user.id} | ${duration}ms`);
 
         return {
           success: true,
@@ -214,11 +199,6 @@ export class UserWorkspaceService {
         };
       });
     } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error(
-        `❌ USER_WORKSPACE_FAILED: ${userData.id} | ${duration}ms`,
-        error
-      );
       return { success: false, error: (error as Error).message };
     }
   }
@@ -260,7 +240,6 @@ export class UserWorkspaceService {
         },
       };
     } catch (error) {
-      console.error(`❌ USER_WORKSPACE_FETCH_FAILED: ${userId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -283,9 +262,6 @@ export class UserWorkspaceService {
 
       if (existingUserById.length > 0) {
         // User exists with same Clerk ID - simple update (user might have changed primary email)
-        console.log(
-          `✅ EXISTING_USER_UPDATE: User ${userData.id} exists, updating profile data`
-        );
 
         [user] = await db
           .update(users)
@@ -306,9 +282,7 @@ export class UserWorkspaceService {
           throw new Error('Unexpected: existing user by email not found');
         }
 
-        console.log(
-          `🔄 CONFLICT_RESOLUTION: User exists with email ${userData.email}, updating with new Clerk ID ${userData.id}`
-        );
+        // Conflict resolution: User exists with email, updating with new Clerk ID
 
         [user] = await db
           .update(users)
@@ -364,10 +338,8 @@ export class UserWorkspaceService {
         throw new Error('Failed to create or update user');
       }
 
-      console.log(`✅ USER_CREATED: ${user.id}`);
       return { success: true, data: user };
     } catch (error) {
-      console.error(`❌ USER_CREATE_FAILED: ${userData.id}`, error);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -385,7 +357,6 @@ export class UserWorkspaceService {
 
       return user || null;
     } catch (error) {
-      console.error(`❌ USER_FETCH_FAILED: ${userId}`, error);
       return null;
     }
   }
@@ -403,7 +374,6 @@ export class UserWorkspaceService {
 
       return !!user;
     } catch (error) {
-      console.error(`❌ USER_EXISTS_CHECK_FAILED: ${userId}`, error);
       return false;
     }
   }
@@ -448,10 +418,6 @@ export class UserWorkspaceService {
         },
       };
     } catch (error) {
-      console.error(
-        `❌ USER_WORKSPACE_OPTIMIZED_FETCH_FAILED: ${userId}`,
-        error
-      );
       return { success: false, error: (error as Error).message };
     }
   }

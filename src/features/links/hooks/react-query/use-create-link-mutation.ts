@@ -68,7 +68,7 @@ export function useCreateLinkMutation(
           id: `temp-${Date.now()}`, // Temporary ID
           userId: 'temp-user-id',
           workspaceId: 'temp-workspace-id',
-          slug: input.slug || 'username', // Use input slug or default fallback
+          slug: (input as any).slug || 'username', // Use input slug or default fallback
           linkType: input.topic ? 'custom' : 'base',
           passwordHash: null,
           ...input,
@@ -83,6 +83,8 @@ export function useCreateLinkMutation(
           totalFiles: 0,
           totalSize: 0,
           lastUploadAt: null,
+          storageUsed: 0,
+          storageLimit: 1000000000, // 1GB default
           stats: {
             fileCount: 0,
             batchCount: 0,

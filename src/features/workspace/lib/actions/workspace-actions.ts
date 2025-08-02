@@ -2,11 +2,11 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-import { workspaceService } from '@/lib/services/workspace';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
 import type { Workspace, WorkspaceUpdate } from '@/lib/database/types';
 import { logger } from '@/lib/services/logging/logger';
 import { sanitizeUserId } from '@/lib/utils/security';
-import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
+import { createErrorResponse, createSuccessResponse, ERROR_CODES, type ErrorCode } from '@/lib/types/error-response';
 
 // =============================================================================
 // TYPES
@@ -53,10 +53,10 @@ export async function getWorkspaceByUserId(): Promise<ActionResult<Workspace>> {
       }
       
       // Create workspace for existing user
-      const createResult = await workspaceService.createWorkspace({
-        userId: sanitizedUserId,
-        name: 'My Workspace',
-      });
+      const createResult = await workspaceService.createWorkspace(
+        sanitizedUserId,
+        'My Workspace'
+      );
       
       if (!createResult.success) {
         // Check if workspace was created by another concurrent request
@@ -131,7 +131,7 @@ export async function updateWorkspaceAction(
         workspaceId,
         error: result.error
       });
-      return createErrorResponse(result.error || 'Update failed', result.code);
+      return createErrorResponse(result.error || 'Update failed', result.code as ErrorCode);
     }
   } catch (error) {
     logger.error('Failed to update workspace', error, { workspaceId });
@@ -203,7 +203,7 @@ export async function createWorkspaceAction(): Promise<ActionResult<Workspace>> 
       // Create user and workspace together using session claims
       if (!sessionClaims?.email) {
         logger.warn('User profile incomplete', { userId: sanitizedUserId });
-        return createErrorResponse('User profile not complete. Please try again.', ERROR_CODES.BAD_REQUEST);
+        return createErrorResponse('User profile not complete. Please try again.', ERROR_CODES.VALIDATION_FAILED);
       }
 
       const result = await userWorkspaceService.createUserWithWorkspace({
@@ -229,10 +229,10 @@ export async function createWorkspaceAction(): Promise<ActionResult<Workspace>> 
     }
 
     // User exists but no workspace - create one
-    const createResult = await workspaceService.createWorkspace({
-      userId: sanitizedUserId,
-      name: 'My Workspace',
-    });
+    const createResult = await workspaceService.createWorkspace(
+      sanitizedUserId,
+      'My Workspace'
+    );
     
     if (!createResult.success) {
       // Check if workspace was created by another concurrent request

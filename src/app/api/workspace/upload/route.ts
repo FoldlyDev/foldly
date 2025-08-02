@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { uploadFileAction } from '@/features/workspace/lib/actions';
 import { validateClientIP } from '@/lib/utils/security';
 import { logger } from '@/lib/services/logging/logger';
-import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
+import { createErrorResponse, createSuccessResponse, ERROR_CODES, type ErrorCode } from '@/lib/types/error-response';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds timeout for uploads
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
         metadata: { error: result.error }
       });
       return NextResponse.json(
-        createErrorResponse(result.error || 'Upload failed', result.code),
+        createErrorResponse(result.error || 'Upload failed', result.code as ErrorCode),
         { status: 400 }
       );
     }

@@ -1,2 +1,2 @@
 export { fetchLinksWithFilesAction } from './fetch-links-files';
-export { copyFilesToWorkspaceAction } from './copy-files';
+export { copyFilesToWorkspaceAction, copyTreeNodesToWorkspaceAction } from './copy-files';

@@ -84,7 +84,7 @@ export async function updateLinkAction(
         }
 
         // Apply other non-slug updates to the base link if present
-        const otherUpdates: Record<string, any> = {};
+        const otherUpdates: FlexibleLinkUpdate = {};
         if (updateData.title !== undefined)
           otherUpdates.title = updateData.title;
         if (updateData.description !== undefined)
@@ -93,10 +93,11 @@ export async function updateLinkAction(
           otherUpdates.requireEmail = updateData.requireEmail;
         if (updateData.requirePassword !== undefined)
           otherUpdates.requirePassword = updateData.requirePassword;
-        if (updateData.password !== undefined)
-          otherUpdates.passwordHash = updateData.password
+        if (updateData.password !== undefined) {
+          (otherUpdates as any).passwordHash = updateData.password
             ? Buffer.from(updateData.password).toString('base64')
             : null;
+        }
         if (updateData.isPublic !== undefined)
           otherUpdates.isPublic = updateData.isPublic;
         if (updateData.isActive !== undefined)
@@ -107,16 +108,15 @@ export async function updateLinkAction(
           otherUpdates.maxFileSize = updateData.maxFileSize * 1024 * 1024;
         if (updateData.allowedFileTypes !== undefined)
           otherUpdates.allowedFileTypes = updateData.allowedFileTypes || null;
-        if (updateData.expiresAt !== undefined)
-          otherUpdates.expiresAt = updateData.expiresAt
-            ? new Date(updateData.expiresAt)
-            : null;
+        if (updateData.expiresAt !== undefined) {
+          (otherUpdates as any).expiresAt = updateData.expiresAt;
+        }
 
         // If there are other updates, apply them to the base link
         if (Object.keys(otherUpdates).length > 0) {
           const additionalUpdateResult = await linksDbService.update(
             id,
-            otherUpdates
+            otherUpdates as any
           );
           if (additionalUpdateResult.success && additionalUpdateResult.data) {
             updatedBaseLink = additionalUpdateResult.data;

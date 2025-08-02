@@ -5,13 +5,15 @@ import { AnimatePresence, motion } from 'motion/react';
 import { FileIcon, FolderIcon, FolderOpenIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils/utils';
+import type {
+  AccordionItemProps,
+  AccordionTriggerProps,
+} from '../radix/accordion';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
-  AccordionItemProps,
   AccordionTrigger,
-  AccordionTriggerProps,
   useAccordionItem,
 } from '../radix/accordion';
 import {
@@ -120,9 +122,9 @@ function Files({
         <Accordion
           type='multiple'
           className='p-2'
-          defaultValue={defaultOpen}
-          value={open}
-          onValueChange={onOpenChange}
+          {...(defaultOpen && { defaultValue: defaultOpen })}
+          {...(open && { value: open })}
+          {...(onOpenChange && { onValueChange: onOpenChange })}
         >
           {children}
         </Accordion>
@@ -198,9 +200,9 @@ function Folder({
         <AccordionContent className='relative pb-0 !ml-7 before:absolute before:-left-3 before:inset-y-0 before:w-px before:h-full before:bg-border'>
           <Accordion
             type='multiple'
-            defaultValue={defaultOpen}
-            value={open}
-            onValueChange={onOpenChange}
+            {...(defaultOpen && { defaultValue: defaultOpen })}
+            {...(open && { value: open })}
+            {...(onOpenChange && { onValueChange: onOpenChange })}
           >
             {children}
           </Accordion>

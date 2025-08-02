@@ -1,6 +1,6 @@
 'use server';
 
-import { linkUploadService } from '../services/link-upload-service';
+import { linkUploadService } from '../services';
 
 /**
  * Fetch link tree data for the tree component

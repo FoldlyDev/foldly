@@ -92,8 +92,9 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
           completeCopyOperation(fileId);
         });
 
-        toast.success('Files copied successfully', {
-          description: `${result.data.copiedFiles} files copied to your workspace`,
+        const { copiedFiles } = result.data;
+        toast.success(`Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`, {
+          description: 'Files copied to your workspace',
         });
 
         queryClient.invalidateQueries({ queryKey: ['workspace'] });

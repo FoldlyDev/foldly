@@ -1,7 +1,14 @@
-import type { Link, User, Batch, File } from '@/lib/database/schemas';
+import type { links, users, batches, files } from '@/lib/database/schemas';
+import type { InferSelectModel } from 'drizzle-orm';
+
+// Type aliases for database models
+type Link = InferSelectModel<typeof links>;
+type User = InferSelectModel<typeof users>;
+type Batch = InferSelectModel<typeof batches>;
+type FileRecord = InferSelectModel<typeof files>;
 
 export interface LinkWithOwner extends Link {
-  owner: Pick<User, 'id' | 'username' | 'storage_used'>;
+  owner: Pick<User, 'id' | 'username' | 'storageUsed'>;
   subscription: {
     storageLimit: number;
     maxFileSize: number;
@@ -39,8 +46,8 @@ export interface StorageQuota {
   percentage: number;
 }
 
-export interface PublicFile extends File {
-  batch: Pick<Batch, 'id' | 'uploader_name' | 'created_at'>;
+export interface PublicFile extends FileRecord {
+  batch: Pick<Batch, 'id' | 'uploaderName' | 'createdAt'>;
 }
 
 export interface FileTreeNode {
@@ -53,4 +60,40 @@ export interface FileTreeNode {
   children?: FileTreeNode[];
   uploadedAt?: Date;
   uploaderName?: string;
+  // Staging support
+  isStaged?: boolean;
+  stagingId?: string;
+}
+
+// Batch upload types for processing staged items
+export interface BatchUploadPayload {
+  files: Array<{
+    id: string;
+    file: File;
+    parentFolderId?: string;
+    uploaderName?: string;
+    sortOrder?: number;
+  }>;
+  folders: Array<{
+    id: string;
+    name: string;
+    parentFolderId?: string;
+    sortOrder?: number;
+  }>;
+  linkId: string;
+  uploaderName?: string;
+  uploaderEmail?: string;
+  uploaderMessage?: string;
+}
+
+export interface BatchUploadProgress {
+  total: number;
+  completed: number;
+  failed: number;
+  currentItem?: string;
+  errors: Array<{
+    itemId: string;
+    itemName: string;
+    error: string;
+  }>;
 }

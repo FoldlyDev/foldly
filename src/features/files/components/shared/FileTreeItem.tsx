@@ -123,12 +123,21 @@ export const FileTreeItem = memo(function FileTreeItem({
       {getIcon()}
 
       {/* Name */}
-      <span className="flex-1 truncate text-sm">{node.name}</span>
+      <div className="flex-1 min-w-0">
+        <span className="truncate text-sm">{node.name}</span>
+      </div>
 
       {/* File size */}
       {node.type === 'file' && node.size && (
         <span className="text-xs text-muted-foreground">
           {formatFileSize(node.size)}
+        </span>
+      )}
+
+      {/* Uploader info - moved to the end */}
+      {node.metadata?.uploaderName && (
+        <span className="text-xs text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded-md flex-shrink-0 max-w-32 truncate">
+          by {node.metadata.uploaderName}
         </span>
       )}
 

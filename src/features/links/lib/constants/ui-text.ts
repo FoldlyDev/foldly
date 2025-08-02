@@ -4,6 +4,8 @@
  * Following 2025 best practices with proper typing and const assertions
  */
 
+import { DEFAULT_BASE_LINK_TITLE } from './base-link-defaults';
+
 /**
  * Link type display names and descriptions
  */
@@ -316,7 +318,7 @@ export const ERROR_MESSAGES = {
  * Placeholder text for form fields
  */
 export const PLACEHOLDER_TEXT = {
-  linkName: 'My Collection',
+  linkName: DEFAULT_BASE_LINK_TITLE,
   topic: 'project-files',
   description: 'Upload your files here...',
   instructions: 'Please upload your files in the correct format...',

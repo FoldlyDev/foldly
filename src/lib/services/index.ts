@@ -1,14 +1,14 @@
 // =============================================================================
-// SERVICES INDEX - Central Export Hub for All Services (DEPRECATED)
+// CROSS-CUTTING SERVICES INDEX
 // =============================================================================
-// 📢 MIGRATION NOTICE: Services have moved to their respective features
-// This file provides backward compatibility during the transition period
+// This file exports only cross-cutting services that are used across multiple features
+// Feature-specific services have been moved to their respective feature directories:
+// - Billing services: @/features/billing/lib/services
+// - Files services: @/features/files/lib/services
+// - Links services: @/features/links/lib/services
+// - Users services: @/features/users/lib/services
+// - Workspace services: @/features/workspace/lib/services
 
-// Re-export services from their new feature locations for backward compatibility
-export * from '@/features/files/services'; // FileService, FolderService
-export * from '@/features/users/services'; // UserDeletionService, UserWorkspaceService
-export * from '@/features/workspace/services'; // WorkspaceService
-// Note: Billing services are maintained in @/lib/services/billing
-
-// Local services (maintained here for core functionality)
+// Cross-cutting services (used by multiple features)
 export * from './storage';
+export * from './logging/logger';

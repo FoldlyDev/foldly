@@ -141,8 +141,7 @@ describe('GradientButton Component', () => {
 
     it('handles undefined props gracefully', () => {
       // Testing that component works with undefined props
-      const props = { variant: undefined, size: undefined };
-      render(<GradientButton {...props}>Fallback Button</GradientButton>);
+      render(<GradientButton>Fallback Button</GradientButton>);
       const button = screen.getByRole('button');
 
       // Should fallback to primary variant and medium size

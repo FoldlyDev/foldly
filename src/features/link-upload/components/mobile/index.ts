@@ -1,1 +1,0 @@
-export { LinkUploadMobile } from './LinkUploadMobile';

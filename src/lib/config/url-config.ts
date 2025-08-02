@@ -38,6 +38,7 @@ export function getBaseUrl(): string {
 
 /**
  * Validate host to prevent header injection attacks
+ * Currently unused but kept for future security enhancements
  */
 function isValidHost(host: string): boolean {
   // Remove port if present
@@ -57,7 +58,8 @@ function isValidHost(host: string): boolean {
     if (typeof allowed === 'string') {
       return hostname === allowed;
     }
-    return allowed.test(hostname);
+    // Check hostname is defined before testing with regex
+    return hostname ? allowed.test(hostname) : false;
   });
 }
 

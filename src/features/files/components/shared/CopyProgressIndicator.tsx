@@ -27,6 +27,17 @@ export function CopyProgressIndicator({
   const completedCount = operations.filter(op => op.status === 'completed').length;
   const errorCount = operations.filter(op => op.status === 'error').length;
   const isComplete = operations.every(op => op.status === 'completed' || op.status === 'error');
+  
+  // Auto-dismiss after successful completion
+  React.useEffect(() => {
+    if (isComplete && errorCount === 0 && onDismiss) {
+      const timer = setTimeout(() => {
+        onDismiss();
+      }, 3000); // Auto-dismiss after 3 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, errorCount, onDismiss]);
 
   if (operations.length === 0) return null;
 
@@ -43,7 +54,10 @@ export function CopyProgressIndicator({
           <div className="flex items-center gap-2">
             <Copy className="h-4 w-4 text-primary" />
             <h3 className="font-medium">
-              Copying Files ({completedCount}/{operations.length})
+              {isComplete 
+                ? `Copied ${operations.length} item${operations.length !== 1 ? 's' : ''}`
+                : `Copying ${operations.length} item${operations.length !== 1 ? 's' : ''} (${completedCount}/${operations.length})`
+              }
             </h3>
           </div>
           {onDismiss && isComplete && (

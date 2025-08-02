@@ -185,7 +185,7 @@ export class LinkUploadValidationService {
       // Use shared file validation utility
       const constraints: FileConstraints = {
         maxFileSize: link.maxFileSize,
-        allowedFileTypes: link.allowedFileTypes || undefined,
+        ...(link.allowedFileTypes && { allowedFileTypes: link.allowedFileTypes }),
       };
 
       const validationResult = validateFile(file, constraints);

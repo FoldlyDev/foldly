@@ -36,13 +36,7 @@ export const FILE_UPLOAD_LIMITS = {
 /**
  * Link-specific validation rules
  */
-export const LINK_VALIDATION_RULES: FieldValidation = {
-  name: {
-    required: true,
-    minLength: 1,
-    maxLength: 100,
-    message: 'Link name must be between 1 and 100 characters',
-  },
+export const LINK_VALIDATION_RULES = {
   title: {
     required: true,
     minLength: 1,

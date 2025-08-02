@@ -2,10 +2,10 @@
 
 import * as React from 'react';
 import {
-  SVGMotionProps,
   useAnimation,
   type LegacyAnimationControls,
   type Variants,
+  type SVGMotionProps,
 } from 'motion/react';
 
 import { cn } from '@/lib/utils/utils';
@@ -245,15 +245,15 @@ function IconWrapper<T extends string>({
   ) {
     return (
       <AnimateIcon
-        animate={animate}
-        onAnimateChange={onAnimateChange}
-        animateOnHover={animateOnHover}
-        animateOnTap={animateOnTap}
-        animation={animationProp}
-        loop={loop}
-        loopDelay={loopDelay}
-        onAnimateStart={onAnimateStart}
-        onAnimateEnd={onAnimateEnd}
+        {...(animate !== undefined && { animate })}
+        {...(onAnimateChange && { onAnimateChange })}
+        animateOnHover={animateOnHover || false}
+        animateOnTap={animateOnTap || false}
+        animation={animationProp || 'none'}
+        loop={loop || false}
+        loopDelay={loopDelay || 0}
+        {...(onAnimateStart && { onAnimateStart })}
+        {...(onAnimateEnd && { onAnimateEnd })}
       >
         <IconComponent
           size={size}

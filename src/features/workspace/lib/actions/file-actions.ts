@@ -1,11 +1,11 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { FileService } from '@/lib/services/files/file-service';
+import { FileService } from '@/features/files/lib/services/file-service';
 import type { DatabaseId } from '@/lib/database/types';
 import { sanitizePath, isValidFolderId, sanitizeUserId } from '@/lib/utils/security';
 import { logger } from '@/lib/services/logging/logger';
-import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
+import { createErrorResponse, createSuccessResponse, ERROR_CODES, type ErrorCode } from '@/lib/types/error-response';
 
 // =============================================================================
 // TYPES
@@ -82,7 +82,7 @@ export async function renameFileAction(
       return { 
         success: false, 
         error: result.error,
-        code: result.code
+        ...(result.code && { code: result.code })
       };
     }
   } catch (error) {
@@ -115,7 +115,7 @@ export async function deleteFileAction(
     }
 
     const { StorageService } = await import(
-      '@/lib/services/files/storage-service'
+      '@/features/files/lib/services/storage-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -245,7 +245,7 @@ export async function moveFileAction(
     } else {
       // Moving to root - check existing root files
       // Note: This handles workspace root files
-      const { workspaceService } = await import('@/lib/services/workspace');
+      const { workspaceService } = await import('@/features/workspace/services/workspace-service');
       const workspace = await workspaceService.getWorkspaceByUserId(sanitizedUserId);
       if (!workspace) {
         return { success: false, error: 'Workspace not found' };
@@ -317,7 +317,7 @@ export async function moveFileAction(
       return { 
         success: false, 
         error: result.error,
-        code: result.code
+        ...(result.code && { code: result.code })
       };
     }
   } catch (error) {
@@ -350,7 +350,7 @@ export async function downloadFileAction(
     }
 
     const { StorageService } = await import(
-      '@/lib/services/files/storage-service'
+      '@/features/files/lib/services/storage-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -423,7 +423,7 @@ export async function uploadFileAction(
     const sanitizedUserId = sanitizeUserId(userId);
 
     if (!sanitizedUserId) {
-      logger.warn('Unauthorized upload file attempt', { workspaceId, folderId });
+      logger.warn('Unauthorized upload file attempt', folderId ? { workspaceId, folderId } : { workspaceId });
       return createErrorResponse('Unauthorized', ERROR_CODES.UNAUTHORIZED);
     }
 
@@ -448,7 +448,7 @@ export async function uploadFileAction(
     }
 
     const { StorageService } = await import(
-      '@/lib/services/files/storage-service'
+      '@/features/files/lib/services/storage-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -526,7 +526,7 @@ export async function uploadFileAction(
     if (!uploadResult.success) {
       return createErrorResponse(
         uploadResult.error || 'Upload failed',
-        uploadResult.code || ERROR_CODES.UPLOAD_FAILED
+        (uploadResult.code as ErrorCode) || ERROR_CODES.INTERNAL_ERROR
       );
     }
 
@@ -568,10 +568,16 @@ export async function uploadFileAction(
         shouldShowWarning: quotaInfo.usagePercentage >= 80,
       };
       
-      logger.info('File uploaded successfully to workspace', {
+      logger.info('File uploaded successfully to workspace', folderId ? {
         userId: sanitizedUserId,
         workspaceId,
         folderId,
+        fileId: result.data.id,
+        fileName: uniqueFileName,
+        fileSize: file.size
+      } : {
+        userId: sanitizedUserId,
+        workspaceId,
         fileId: result.data.id,
         fileName: uniqueFileName,
         fileSize: file.size
@@ -586,10 +592,10 @@ export async function uploadFileAction(
         workspaceId,
         error: result.error
       });
-      return createErrorResponse(result.error || 'Database creation failed', result.code);
+      return createErrorResponse(result.error || 'Database creation failed', result.code as ErrorCode);
     }
   } catch (error) {
-    logger.error('Failed to upload file', error, { workspaceId, folderId });
+    logger.error('Failed to upload file', error, folderId ? { workspaceId, folderId } : { workspaceId });
     return createErrorResponse(
       error instanceof Error ? error.message : 'Failed to upload file',
       ERROR_CODES.INTERNAL_ERROR
@@ -611,7 +617,7 @@ export async function uploadFileToLinkAction(
     const sanitizedUserId = sanitizeUserId(userId);
 
     if (!sanitizedUserId) {
-      logger.warn('Unauthorized upload to link attempt', { linkId, folderId });
+      logger.warn('Unauthorized upload to link attempt', folderId ? { linkId, folderId } : { linkId });
       return createErrorResponse('Unauthorized', ERROR_CODES.UNAUTHORIZED);
     }
 
@@ -636,7 +642,7 @@ export async function uploadFileToLinkAction(
     }
 
     const { StorageService } = await import(
-      '@/lib/services/files/storage-service'
+      '@/features/files/lib/services/storage-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -678,7 +684,7 @@ export async function uploadFileToLinkAction(
     if (!uploadResult.success) {
       return createErrorResponse(
         uploadResult.error || 'Upload failed',
-        uploadResult.code || ERROR_CODES.UPLOAD_FAILED
+        (uploadResult.code as ErrorCode) || ERROR_CODES.INTERNAL_ERROR
       );
     }
 
@@ -759,10 +765,16 @@ export async function uploadFileToLinkAction(
     const result = await fileService.createFile(fileData);
 
     if (result.success) {
-      logger.info('File uploaded successfully to link', {
+      logger.info('File uploaded successfully to link', folderId ? {
         userId: sanitizedUserId,
         linkId,
         folderId,
+        fileId: result.data.id,
+        fileName: uniqueFileName,
+        fileSize: file.size
+      } : {
+        userId: sanitizedUserId,
+        linkId,
         fileId: result.data.id,
         fileName: uniqueFileName,
         fileSize: file.size
@@ -777,10 +789,10 @@ export async function uploadFileToLinkAction(
         linkId,
         error: result.error
       });
-      return createErrorResponse(result.error || 'Database creation failed', result.code);
+      return createErrorResponse(result.error || 'Database creation failed', result.code as ErrorCode);
     }
   } catch (error) {
-    logger.error('Failed to upload file to link', error, { linkId, folderId });
+    logger.error('Failed to upload file to link', error, folderId ? { linkId, folderId } : { linkId });
     return createErrorResponse(
       error instanceof Error ? error.message : 'Failed to upload file to link',
       ERROR_CODES.INTERNAL_ERROR

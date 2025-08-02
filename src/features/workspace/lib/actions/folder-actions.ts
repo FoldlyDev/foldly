@@ -1,8 +1,8 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { workspaceService } from '@/lib/services/workspace';
-import { FolderService } from '@/lib/services/files/folder-service';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { FolderService } from '@/features/files/lib/services/folder-service';
 import type { DatabaseId } from '@/lib/database/types';
 import { logger } from '@/lib/services/logging/logger';
 
@@ -169,7 +169,7 @@ export async function deleteFolderAction(
     }
 
     const { StorageService } = await import(
-      '@/lib/services/files/storage-service'
+      '@/features/files/lib/services/storage-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'

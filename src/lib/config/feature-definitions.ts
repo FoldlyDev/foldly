@@ -230,7 +230,7 @@ export function getExclusiveFeatures(plan: PlanKey): FeatureKey[] {
   
   if (plan === 'pro' || plan === 'business') {
     Object.entries(FEATURE_DEFINITIONS).forEach(([key, def]) => {
-      if (def.proOnly && !def.businessOnly) {
+      if ('proOnly' in def && def.proOnly && !('businessOnly' in def && def.businessOnly)) {
         features.push(key as FeatureKey);
       }
     });
@@ -238,7 +238,7 @@ export function getExclusiveFeatures(plan: PlanKey): FeatureKey[] {
   
   if (plan === 'business') {
     Object.entries(FEATURE_DEFINITIONS).forEach(([key, def]) => {
-      if (def.businessOnly) {
+      if ('businessOnly' in def && def.businessOnly) {
         features.push(key as FeatureKey);
       }
     });
@@ -257,11 +257,15 @@ export function getFormattedFeatureList(plan: PlanKey): Array<{
   category: FeatureCategory;
   comingSoon?: boolean;
 }> {
-  return Object.entries(FEATURE_DEFINITIONS).map(([key, def]) => ({
-    name: def.name,
-    description: def.description,
-    enabled: isPlanFeatureEnabled(plan, key as FeatureKey),
-    category: def.category,
-    comingSoon: def.comingSoon,
-  }));
+  return Object.entries(FEATURE_DEFINITIONS).map(([key, def]) => {
+    const base = {
+      name: def.name,
+      description: def.description,
+      enabled: isPlanFeatureEnabled(plan, key as FeatureKey),
+      category: def.category,
+    };
+    return 'comingSoon' in def && def.comingSoon !== undefined
+      ? { ...base, comingSoon: def.comingSoon }
+      : base;
+  });
 }

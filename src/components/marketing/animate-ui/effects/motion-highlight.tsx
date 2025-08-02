@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { AnimatePresence, Transition, motion } from 'motion/react';
+import type { Transition } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 
 import { cn } from '@/lib/utils/utils';
 
@@ -22,7 +23,7 @@ type MotionHighlightContextType<T extends string> = {
   clearBounds: () => void;
   id: string;
   hover: boolean;
-  className?: string;
+  className: string;
   activeClassName?: string;
   setActiveClassName: (className: string) => void;
   transition?: Transition;
@@ -279,7 +280,7 @@ function MotionHighlight<T extends string>({
         setActiveValue: safeSetActiveValue,
         id,
         hover,
-        className,
+        className: className ?? '',
         transition,
         disabled,
         enabled,
@@ -289,7 +290,7 @@ function MotionHighlight<T extends string>({
         activeClassName: activeClassNameState,
         setActiveClassName: setActiveClassNameState,
         forceUpdateBounds: (props as ParentModeMotionHighlightProps)
-          ?.forceUpdateBounds,
+          ?.forceUpdateBounds || false,
       }}
     >
       {enabled
@@ -299,7 +300,7 @@ function MotionHighlight<T extends string>({
               React.Children.map(children, (child, index) => (
                 <MotionHighlightItem
                   key={index}
-                  className={props?.itemsClassName}
+                  className={props?.itemsClassName ?? ''}
                 >
                   {child}
                 </MotionHighlightItem>
@@ -493,7 +494,7 @@ function MotionHighlightItem({
                   contextClassName,
                   activeClassName
                 )}
-                transition={itemTransition}
+                transition={itemTransition || { duration: 0.3 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{
@@ -552,7 +553,7 @@ function MotionHighlightItem({
                 contextClassName,
                 activeClassName
               )}
-              transition={itemTransition}
+              transition={itemTransition || { duration: 0.3 }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{

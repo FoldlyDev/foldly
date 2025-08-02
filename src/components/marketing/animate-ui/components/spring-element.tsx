@@ -121,12 +121,12 @@ function SpringElement({
   const y = useMotionValue(0);
 
   const springX = useSpring(x, {
-    stiffness: springConfig.stiffness,
-    damping: springConfig.damping,
+    stiffness: springConfig.stiffness ?? 200,
+    damping: springConfig.damping ?? 16,
   });
   const springY = useSpring(y, {
-    stiffness: springConfig.stiffness,
-    damping: springConfig.damping,
+    stiffness: springConfig.stiffness ?? 200,
+    damping: springConfig.damping ?? 16,
   });
 
   const sx = useMotionValueValue(springX);

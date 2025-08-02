@@ -3,7 +3,7 @@
  * Using latest Motion for React API with variants and modern patterns
  */
 
-import { Variants, Transition } from 'framer-motion';
+import type { Variants, Transition } from 'framer-motion';
 
 // =============================================================================
 // FADE ANIMATIONS

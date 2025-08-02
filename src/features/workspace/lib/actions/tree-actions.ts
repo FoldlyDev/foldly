@@ -2,12 +2,11 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-import { WorkspaceService } from '@/lib/services/workspace';
-import { FileService } from '@/lib/services/files/file-service';
-import { FolderService } from '@/lib/services/files/folder-service';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { FileService } from '@/features/files/lib/services/file-service';
+import { FolderService } from '@/features/files/lib/services/folder-service';
 import { logger } from '@/lib/services/logging/logger';
 
-const workspaceService = new WorkspaceService();
 const fileService = new FileService();
 const folderService = new FolderService();
 

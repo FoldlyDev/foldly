@@ -26,6 +26,13 @@ export type Result<T, E = Error> =
 // Utility type for exact object matching
 export type Exact<T, U> = T extends U ? (U extends T ? T : never) : never;
 
+// Validation error type for form and input validation
+export type ValidationError = {
+  field?: string;
+  message: string;
+  code?: string;
+};
+
 // =============================================================================
 // TYPE GUARDS FOR BASIC TYPES
 // =============================================================================

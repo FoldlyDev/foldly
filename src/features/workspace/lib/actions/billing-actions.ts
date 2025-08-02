@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { billing } from '@/lib/services/billing';
+import { billing } from '@/features/billing/lib/services';
 import type { PlanType } from '@/features/billing/lib/feature-registry';
 import { logger } from '@/lib/services/logging/logger';
 

@@ -1,1 +1,0 @@
-export { LinkUploadDesktop } from './LinkUploadDesktop';

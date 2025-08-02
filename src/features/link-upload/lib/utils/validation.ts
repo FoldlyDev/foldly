@@ -11,35 +11,35 @@ export async function validateFiles(
   link: LinkWithOwner
 ): Promise<ValidationResult> {
   // Check file count
-  if (files.length > link.max_files) {
+  if (files.length > link.maxFiles) {
     return {
       valid: false,
-      error: `Maximum ${link.max_files} files allowed`,
+      error: `Maximum ${link.maxFiles} files allowed`,
     };
   }
 
   // Check individual file sizes
-  const maxFileSize = Math.min(link.max_file_size, link.subscription.maxFileSize);
+  const maxFileSize = Math.min(link.maxFileSize, link.subscription.maxFileSize);
   const oversizedFiles = files.filter(file => file.size > maxFileSize);
   
   if (oversizedFiles.length > 0) {
     return {
       valid: false,
-      error: `File "${oversizedFiles[0].name}" exceeds maximum size of ${maxFileSize / (1024 * 1024)}MB`,
+      error: `File "${oversizedFiles[0]?.name}" exceeds maximum size of ${maxFileSize / (1024 * 1024)}MB`,
     };
   }
 
   // Check file types if restricted
-  if (link.allowed_file_types && Array.isArray(link.allowed_file_types)) {
+  if (link.allowedFileTypes && Array.isArray(link.allowedFileTypes)) {
     const invalidFiles = files.filter(file => {
       const fileType = file.type;
-      return !(link.allowed_file_types as string[]).includes(fileType);
+      return !(link.allowedFileTypes as string[]).includes(fileType);
     });
 
     if (invalidFiles.length > 0) {
       return {
         valid: false,
-        error: `File type "${invalidFiles[0].type}" is not allowed`,
+        error: `File type "${invalidFiles[0]?.type}" is not allowed`,
       };
     }
   }

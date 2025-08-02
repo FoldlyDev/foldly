@@ -30,7 +30,15 @@ function generateNotificationConfig(
   event: NotificationEvent,
   data: WorkspaceNotificationData | StorageNotificationData
 ): NotificationConfig {
-  const { itemName, itemType, targetLocation } = data;
+  // Type guard to check if data is WorkspaceNotificationData
+  const isWorkspaceData = (d: typeof data): d is WorkspaceNotificationData => {
+    return 'itemName' in d && 'itemType' in d;
+  };
+  
+  // Extract workspace data properties if applicable
+  const itemName = isWorkspaceData(data) ? data.itemName : '';
+  const itemType = isWorkspaceData(data) ? data.itemType : '';
+  const targetLocation = isWorkspaceData(data) ? data.targetLocation : undefined;
 
   switch (event) {
     case 'file_moved':

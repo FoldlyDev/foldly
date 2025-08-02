@@ -1,6 +1,6 @@
 'use server';
 
-import { linkUploadService } from '../services/link-upload-service';
+import { linkUploadService } from '../services';
 import type { DatabaseResult } from '@/lib/database/types/common';
 
 // =============================================================================

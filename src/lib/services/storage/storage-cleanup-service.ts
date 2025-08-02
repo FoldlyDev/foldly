@@ -1,7 +1,7 @@
 import { db } from '@/lib/database/connection';
 import { files } from '@/lib/database/schemas';
 import { eq, and, lt, isNull } from 'drizzle-orm';
-import { StorageService } from '@/lib/services/files/storage-service';
+import { StorageService } from '@/features/files/lib/services/storage-service';
 import { createClient } from '@supabase/supabase-js';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import { UPLOAD_CONFIG } from '@/features/workspace/lib/config/upload-config';

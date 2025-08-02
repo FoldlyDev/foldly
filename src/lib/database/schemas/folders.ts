@@ -17,6 +17,7 @@ import {
 import { users } from './users';
 import { workspaces } from './workspaces';
 import { links } from './links';
+import { batches } from './batches';
 
 /**
  * Folders table - Simplified hierarchical structure with root folder support
@@ -30,14 +31,15 @@ export const folders = pgTable(
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
     workspaceId: uuid('workspace_id')
-      .references(() => workspaces.id, { onDelete: 'cascade' })
-      .notNull(),
-    parentFolderId: uuid('parent_folder_id').references((): any => folders.id, {
-      onDelete: 'cascade',
-    }),
+      .references(() => workspaces.id, { onDelete: 'cascade' }),
+    parentFolderId: uuid('parent_folder_id'),
+    // Self-referential foreign key handled at database level
     linkId: uuid('link_id').references(() => links.id, {
       onDelete: 'set null',
     }),
+    batchId: uuid('batch_id').references(() => batches.id, {
+      onDelete: 'set null',
+    }), // Optional - tracks which upload batch created this folder
 
     // Folder information - Simplified for MVP
     name: varchar('name', { length: 255 }).notNull(),

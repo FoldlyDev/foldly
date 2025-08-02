@@ -49,3 +49,6 @@ export type {
 export * from './settings-defaults';
 
 export * from './settings-validation';
+
+// Base link configuration
+export * from './base-link-defaults';

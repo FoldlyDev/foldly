@@ -19,10 +19,10 @@ import { linkUploadValidationService } from '@/features/link-upload/lib/services
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { linkId: string } }
+  { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
-    const { linkId } = params;
+    const { linkId } = await params;
     console.log(`🔄 API Upload request to link: ${linkId}`);
 
     // =============================================================================
@@ -194,10 +194,10 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { linkId: string } }
+  { params }: { params: Promise<{ linkId: string }> }
 ) {
   try {
-    const { linkId } = params;
+    const { linkId } = await params;
     const { searchParams } = new URL(request.url);
     const password = searchParams.get('password');
 

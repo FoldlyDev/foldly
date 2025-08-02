@@ -231,7 +231,8 @@ export function getQuotaMessage(usagePercentage: number): string | null {
  */
 export function formatStorageLimit(plan: UploadPlan): string {
   const limitGB = FILE_SIZE_LIMITS[plan].storageLimitGB;
-  return limitGB === -1 ? 'Unlimited' : `${limitGB}GB`;
+  // Business plan has 2048GB, not unlimited
+  return `${limitGB}GB`;
 }
 
 /**
@@ -239,7 +240,7 @@ export function formatStorageLimit(plan: UploadPlan): string {
  */
 export function isBlockedFileType(fileName: string): boolean {
   const extension = '.' + fileName.split('.').pop()?.toLowerCase();
-  return UPLOAD_SECURITY.blockedFileTypes.includes(extension);
+  return UPLOAD_SECURITY.blockedFileTypes.includes(extension as any);
 }
 
 /**
@@ -247,5 +248,5 @@ export function isBlockedFileType(fileName: string): boolean {
  */
 export function getRetryDelay(attempt: number): number {
   const delays = UPLOAD_PROCESSING.batch.retryDelays;
-  return delays[Math.min(attempt, delays.length - 1)];
+  return delays[Math.min(attempt, delays.length - 1)] || 0;
 }

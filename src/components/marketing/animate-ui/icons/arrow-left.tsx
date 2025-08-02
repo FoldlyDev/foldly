@@ -123,18 +123,22 @@ function IconComponent({ size, ...props }: ArrowLeftProps) {
       strokeLinejoin='round'
       {...props}
     >
-      <motion.g variants={variants.group} initial='initial' animate={controls}>
+      <motion.g 
+        {...(variants.group && { variants: variants.group })} 
+        initial='initial' 
+        animate={controls || 'initial'}
+      >
         <motion.path
           d='M19 12H5'
-          variants={variants.path1}
+          {...(variants.path1 && { variants: variants.path1 })}
           initial='initial'
-          animate={controls}
+          animate={controls || 'initial'}
         />
         <motion.path
           d='m12 19-7-7 7-7'
-          variants={variants.path2}
+          {...(variants.path2 && { variants: variants.path2 })}
           initial='initial'
-          animate={controls}
+          animate={controls || 'initial'}
         />
       </motion.g>
     </motion.svg>

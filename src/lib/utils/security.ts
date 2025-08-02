@@ -74,9 +74,9 @@ export function validateClientIP(headers: Headers | Record<string, string | stri
         // Handle comma-separated IPs (common in x-forwarded-for)
         const ip = Array.isArray(value) 
           ? value[0] 
-          : value.split(',')[0].trim();
+          : value.split(',')[0]?.trim();
         
-        if (isValidIP(ip)) {
+        if (ip && isValidIP(ip)) {
           clientIp = ip;
           break;
         }

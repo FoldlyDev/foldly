@@ -16,7 +16,7 @@ import {
 import { batchStatusEnum } from './enums';
 import { links } from './links';
 import { users } from './users';
-import { folders } from './folders';
+// Removed circular import - folders references batches, not vice versa
 
 /**
  * Batches table - Organizes file uploads into batches for better management
@@ -31,9 +31,8 @@ export const batches = pgTable(
     userId: text('user_id')
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    folderId: uuid('folder_id').references(() => folders.id, {
-      onDelete: 'set null',
-    }), // NULL for root folder uploads
+    folderId: uuid('folder_id'), // NULL for root folder uploads
+    // Note: Foreign key constraint handled at database level to avoid circular dependency
 
     // Uploader information (form data)
     uploaderName: varchar('uploader_name', { length: 255 }).notNull(),

@@ -12,6 +12,7 @@ import { useSlugValidation } from '../../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../../hooks/use-topic-validation';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';
 import { getDisplayDomain } from '@/lib/config/url-config';
+import { DEFAULT_BASE_LINK_TITLE } from '../../../lib/constants/base-link-defaults';
 
 interface LinkIdentitySettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
@@ -232,7 +233,7 @@ export function LinkIdentitySettings({
                 shouldValidate: true,
               })
             }
-            placeholder='My Collection'
+            placeholder={DEFAULT_BASE_LINK_TITLE}
             className='bg-white border-[var(--neutral-200)] text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)]'
           />
           {errors.title && (

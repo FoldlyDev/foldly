@@ -129,26 +129,34 @@ export function parseStoragePath(path: string): StoragePathInfo | null {
     case 'workspaces':
       if (segments.length >= 5) {
         const isFolder = segments[3] === 'folders';
-        return {
+        const result: StoragePathInfo = {
           type: 'workspace',
           userId: segments[1] as UserId,
           workspaceId: segments[2] as WorkspaceId,
-          folderId: isFolder ? (segments[4] as FolderId) : undefined,
-          fileName,
+          fileName: fileName || '',
         };
+        if (isFolder) {
+          result.folderId = segments[4] as FolderId;
+        }
+        return result;
       }
       break;
       
     case 'links':
       if (segments.length >= 6) {
-        return {
+        const result: StoragePathInfo = {
           type: 'link',
           userId: segments[1] as UserId,
           linkId: segments[2] as LinkId,
-          date: segments[3],
-          uploaderName: segments[4],
-          fileName,
+          fileName: fileName || '',
         };
+        if (segments[3]) {
+          result.date = segments[3];
+        }
+        if (segments[4]) {
+          result.uploaderName = segments[4];
+        }
+        return result;
       }
       break;
       
@@ -157,7 +165,7 @@ export function parseStoragePath(path: string): StoragePathInfo | null {
         return {
           type: 'temp',
           fileId: segments[1] as FileId,
-          fileName,
+          fileName: fileName || '',
         };
       }
       break;
@@ -167,7 +175,7 @@ export function parseStoragePath(path: string): StoragePathInfo | null {
         return {
           type: 'public',
           fileId: segments[2] as FileId,
-          fileName,
+          fileName: fileName || '',
         };
       }
       break;

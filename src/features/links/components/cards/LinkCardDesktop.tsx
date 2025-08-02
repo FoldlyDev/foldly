@@ -14,7 +14,7 @@ import { ActionButton } from '@/components/ui/core/action-button';
 import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
 import type { Link, LinkWithStats } from '@/lib/database/types';
-import type { ActionItem } from '@/components/ui/types';
+import type { ActionItem } from '@/components/ui/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 
 interface LinkCardDesktopProps {

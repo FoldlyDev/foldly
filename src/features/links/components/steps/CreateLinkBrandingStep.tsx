@@ -11,6 +11,7 @@ import { useModalStore } from '../../store';
 import { useCreateLinkMutation } from '../../hooks/react-query/use-create-link-mutation';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
 import { CreateLinkFormButtons } from '@/components/ui/core/create-link-form-buttons';
+import { DEFAULT_BASE_LINK_TITLE } from '../../lib/constants/base-link-defaults';
 
 /**
  * Branding step for create link modal
@@ -71,7 +72,7 @@ export const CreateLinkBrandingStep = () => {
       const linkInput = {
         title:
           linkType === 'base'
-            ? formData.title || 'Personal Collection' // Use form title, fallback to default
+            ? formData.title || DEFAULT_BASE_LINK_TITLE // Use form title, fallback to centralized default
             : formData.title || formData.topic || 'Untitled Link',
         slug: linkType === 'base' ? formData.topic || '' : undefined, // For base links, topic field is actually the slug
         topic: linkType === 'base' ? null : formData.topic || undefined, // Base links have no topic
@@ -126,7 +127,7 @@ export const CreateLinkBrandingStep = () => {
         username={user?.username?.toLowerCase() || 'username'}
         linkName={
           linkType === 'base'
-            ? 'Personal Collection'
+            ? DEFAULT_BASE_LINK_TITLE
             : formData.title || formData.topic || 'Untitled'
         }
         description={formData.description || ''}

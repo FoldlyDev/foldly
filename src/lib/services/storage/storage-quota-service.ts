@@ -2,7 +2,7 @@ import { db } from '@/lib/database/connection';
 import { users } from '@/lib/database/schemas';
 import { eq, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
-import { ClerkBillingIntegrationService } from '@/lib/services/billing/clerk-billing-integration';
+import { ClerkBillingIntegrationService } from '@/features/billing/lib/services/clerk-billing-integration';
 import { storageBackgroundService } from './storage-background-service';
 import { UPLOAD_CONFIG, getFileSizeLimit } from '@/features/workspace/lib/config/upload-config';
 import { formatBytes } from './utils';

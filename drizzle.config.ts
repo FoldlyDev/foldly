@@ -22,8 +22,6 @@ export default defineConfig({
     ssl: isProduction
       ? 'require' // ✅ Secure SSL validation for production
       : { rejectUnauthorized: false }, // ✅ Allow self-signed certs for development
-    connectionTimeoutMillis: 30000, // Increased for Supabase pooler latency
-    queryTimeoutMillis: 60000, // Increased for complex schema introspection
   },
 
   // Environment-specific settings
@@ -50,7 +48,7 @@ export default defineConfig({
 
   // Add introspection options for better schema pulling performance
   introspect: {
-    casing: 'snake_case',
+    casing: 'preserve',
   },
 
   // Add schema filter to improve performance (optional)

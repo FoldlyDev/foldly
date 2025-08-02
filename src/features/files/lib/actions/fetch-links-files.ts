@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { linkFilesService } from '@/lib/services/links/link-files-service';
+import { linkFilesService } from '@/features/links/lib/services/link-files-service';
 import type { LinkWithFileTree } from '@/features/files/types';
 
 /**

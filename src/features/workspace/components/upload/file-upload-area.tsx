@@ -134,7 +134,7 @@ export function FileUploadArea({
     onDragEnter: () => setLocalIsDragging(true),
     onDragLeave: () => setLocalIsDragging(false),
     onDropRejected: (error) => {
-      console.log(error);
+      // File(s) rejected - likely due to file type or size restrictions
       setLocalIsDragging(false);
     },
   });
@@ -311,8 +311,9 @@ export function FileUploadArea({
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
                                 // Clean up the failed thumbnail
-                                if (thumbnails[file.id]?.startsWith('blob:')) {
-                                  URL.revokeObjectURL(thumbnails[file.id]);
+                                const thumbnailUrl = thumbnails[file.id];
+                                if (thumbnailUrl?.startsWith('blob:')) {
+                                  URL.revokeObjectURL(thumbnailUrl);
                                 }
                                 setThumbnails(prev => {
                                   const next = { ...prev };

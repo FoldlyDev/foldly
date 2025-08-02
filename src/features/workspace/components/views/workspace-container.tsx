@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, lazy, Suspense } from 'react';
-import type { WorkspaceTreeItem } from '@/features/workspace/lib/tree-data';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
@@ -10,10 +9,10 @@ import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree'
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
 import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
-import { 
-  useStorageTracking, 
+import {
+  useStorageTracking,
   useStorageQuotaStatus,
-  shouldShowStorageWarning
+  shouldShowStorageWarning,
 } from '../../hooks';
 import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 import { checkAndShowStorageThresholds } from '@/features/notifications/internal/workspace-notifications';
@@ -31,12 +30,18 @@ export function WorkspaceContainer() {
   useWorkspaceRealtime(workspaceData?.workspace?.id);
 
   // UI state management - use store directly for modal state
-  const { isOpen: isUploadModalOpen, closeModal: closeUploadModal, workspaceId: modalWorkspaceId } = useWorkspaceUploadModal();
+  const {
+    isOpen: isUploadModalOpen,
+    closeModal: closeUploadModal,
+    workspaceId: modalWorkspaceId,
+  } = useWorkspaceUploadModal();
 
   // Storage tracking
   const { storageInfo, isLoading: storageLoading } = useStorageTracking();
   const quotaStatus = useStorageQuotaStatus();
-  const [previousStoragePercentage, setPreviousStoragePercentage] = useState<number | undefined>(undefined);
+  const [previousStoragePercentage, setPreviousStoragePercentage] = useState<
+    number | undefined
+  >(undefined);
 
   // Tree instance state
   const [treeInstance, setTreeInstance] = useState<any | null>(null);
@@ -60,7 +65,7 @@ export function WorkspaceContainer() {
   React.useEffect(() => {
     if (!storageLoading && storageInfo) {
       const currentPercentage = storageInfo.usagePercentage;
-      
+
       if (shouldShowStorageWarning(currentPercentage)) {
         const storageData: StorageNotificationData = {
           currentUsage: storageInfo.storageUsedBytes,
@@ -70,11 +75,11 @@ export function WorkspaceContainer() {
           planKey: storageInfo.planKey,
           filesCount: storageInfo.filesCount,
         };
-        
+
         // Only show notifications when crossing thresholds
         checkAndShowStorageThresholds(storageData, previousStoragePercentage);
       }
-      
+
       setPreviousStoragePercentage(currentPercentage);
     }
   }, [storageInfo, storageLoading, previousStoragePercentage]);
@@ -112,7 +117,7 @@ export function WorkspaceContainer() {
   return (
     <div className='dashboard-container workspace-layout'>
       <div className='workspace-header'>
-        <WorkspaceHeader 
+        <WorkspaceHeader
           totalLinks={workspaceData?.stats?.totalLinks || 0}
           totalFiles={workspaceData?.stats?.totalFiles || 0}
           workspaceId={workspaceData?.workspace?.id}
@@ -162,7 +167,7 @@ export function WorkspaceContainer() {
         onClose={closeUploadModal}
         workspaceId={modalWorkspaceId || workspaceData?.workspace?.id}
       />
-      
+
       {/* Global Storage Status Overlay for Critical States */}
       {quotaStatus.status === 'exceeded' && (
         <div className='fixed bottom-4 right-4 z-50 max-w-sm'>

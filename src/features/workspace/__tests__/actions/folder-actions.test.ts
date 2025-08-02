@@ -68,7 +68,7 @@ describe('Folder Actions', () => {
     });
 
     it('should handle folder service errors gracefully', async () => {
-      const { FolderService } = await import('@/lib/services/files/folder-service');
+      const { FolderService } = await import('@/features/files/lib/services/folder-service');
       vi.mocked(FolderService).mockImplementationOnce(() => ({
         deleteFolderWithStorage: vi.fn().mockResolvedValue({
           success: false,
@@ -83,7 +83,7 @@ describe('Folder Actions', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const { FolderService } = await import('@/lib/services/files/folder-service');
+      const { FolderService } = await import('@/features/files/lib/services/folder-service');
       vi.mocked(FolderService).mockImplementationOnce(() => ({
         deleteFolderWithStorage: vi.fn().mockRejectedValue(new Error('Database error')),
       } as any));

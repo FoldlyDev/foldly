@@ -116,6 +116,9 @@ export async function createLinkAction(
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
+      // Initialize storage quota fields
+      storageUsed: 0,
+      storageLimit: 524288000, // 500MB default per link
     };
 
     // 6. Create link in database

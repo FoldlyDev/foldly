@@ -151,7 +151,7 @@ export async function validateMultipleFilesAction(
     }
 
     // Get plan limits for file size validation
-    const { getPlanLimits } = await import('@/lib/services/billing/plan-limits-service');
+    const { getPlanLimits } = await import('@/features/billing/lib/services/plan-limits-service');
     const planLimitsResult = await getPlanLimits(userPlanKey);
     
     if (!planLimitsResult.success) {
