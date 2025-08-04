@@ -76,6 +76,10 @@ export const links = pgTable(
       .default(524288000)
       .notNull(), // 500MB default per link
 
+    // Notification tracking
+    unreadUploads: integer('unread_uploads').default(0).notNull(),
+    lastNotificationAt: timestamp('last_notification_at', { withTimezone: true }),
+
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()

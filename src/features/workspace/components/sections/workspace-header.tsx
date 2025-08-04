@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui/core/gradient-button';
@@ -7,6 +8,8 @@ import { Plus, Settings, Bell, AlertTriangle } from 'lucide-react';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useStorageQuotaStatus } from '../../hooks';
 import { toast } from 'sonner';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+import { useNotificationStore } from '@/features/notifications/store/notification-store';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;
@@ -22,6 +25,8 @@ export function WorkspaceHeader({
   const { user } = useUser();
   const { openUploadModal } = useWorkspaceUI();
   const quotaStatus = useStorageQuotaStatus();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const totalUnread = useNotificationStore(state => state.totalUnread);
 
   // Get appropriate greeting based on time of day
   const getGreeting = () => {
@@ -96,17 +101,24 @@ export function WorkspaceHeader({
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
+          onClick={() => setShowNotifications(!showNotifications)}
           className='relative p-2.5 sm:p-3 rounded-xl bg-white border border-[var(--neutral-200)] 
-                   shadow-sm hover:shadow-md transition-all duration-200 
+                   shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
                    focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0
                    flex items-center justify-center'
         >
           <Bell className='w-4 h-4 sm:w-5 sm:h-5 text-[var(--neutral-600)]' />
-          {/* Notification dot */}
-          <div
-            className='absolute -top-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-[var(--error-red)] 
-                        rounded-full border-2 border-white'
-          ></div>
+          {/* Notification dot - only show if there are unread notifications */}
+          {totalUnread > 0 && (
+            <div
+              className='absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-[var(--error-red)] 
+                          rounded-full border-2 border-white flex items-center justify-center'
+            >
+              <span className='text-[10px] font-bold text-white'>
+                {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            </div>
+          )}
         </motion.button>
 
         {/* Settings Button - Hidden on mobile to save space */}
@@ -156,6 +168,12 @@ export function WorkspaceHeader({
           <Settings className='w-4 h-4 text-[var(--neutral-600)]' />
         </motion.button>
       </motion.div>
+      
+      {/* Notification Center */}
+      <NotificationCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
     </motion.div>
   );
 }

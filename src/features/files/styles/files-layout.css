@@ -29,6 +29,34 @@
   }
 
   /* =============================================================================
+     HIGHLIGHT ANIMATION FOR NOTIFICATIONS
+     ============================================================================= */
+  
+  .highlight-animation {
+    animation: highlightPulse 2s ease-in-out;
+    position: relative;
+  }
+
+  @keyframes highlightPulse {
+    0% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+    25% {
+      background-color: hsl(var(--primary) / 0.1);
+      box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+    }
+    50% {
+      background-color: hsl(var(--primary) / 0.15);
+      box-shadow: 0 0 0 6px hsl(var(--primary) / 0.15);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  /* =============================================================================
      RESPONSIVE BREAKPOINTS
      ============================================================================= */
 

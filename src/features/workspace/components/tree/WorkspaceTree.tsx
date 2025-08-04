@@ -268,7 +268,7 @@ export default function WorkspaceTree({
       case 'rename':
         // Start rename on the first selected item
         if (contextMenuItems.length === 1) {
-          const item = tree.getItemInstance?.(contextMenuItems[0].id);
+          const item = tree?.getItemInstance?.(contextMenuItems[0].id);
           if (item && 'startRenaming' in item && typeof item.startRenaming === 'function') {
             item.startRenaming();
           }
@@ -294,7 +294,7 @@ export default function WorkspaceTree({
         if (contextMenuItems.length === 1 && contextMenuItems[0].type === 'folder') {
           const folderName = prompt('Enter folder name:');
           if (folderName && handlers) {
-            handlers.addItem(folderName, contextMenuItems[0].id, false);
+            handlers?.addItem(folderName, contextMenuItems[0].id, false);
           }
         }
         break;

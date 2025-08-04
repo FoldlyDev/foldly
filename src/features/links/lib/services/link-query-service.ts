@@ -1,6 +1,6 @@
 import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import { links, files, batches, users } from '@/lib/database/schemas';
+import { links, files, batches, users, folders } from '@/lib/database/schemas';
 import type {
   Link,
   LinkWithStats,
@@ -367,6 +367,86 @@ export class LinkQueryService {
       };
     } catch (error) {
       console.error('Failed to get link by user, slug and topic:', error);
+      return {
+        success: false,
+        error:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'DATABASE_ERROR',
+      };
+    }
+  }
+
+  /**
+   * Get detailed link statistics with correct counts
+   * This method properly counts batches, files, and folders
+   */
+  async getLinkDetailsWithStats(linkId: string): Promise<DatabaseResult<LinkWithStats | null>> {
+    try {
+      // First get the link data
+      const linkData = await db.query.links.findFirst({
+        where: eq(links.id, linkId),
+        with: {
+          user: true,
+        },
+      });
+
+      if (!linkData) {
+        return {
+          success: true,
+          data: null,
+        };
+      }
+
+      // Get actual batch count (upload sessions)
+      const batchCountResult = await db
+        .select({ count: count() })
+        .from(batches)
+        .where(eq(batches.linkId, linkId));
+
+      // Get actual file count
+      const fileCountResult = await db
+        .select({ count: count() })
+        .from(files)
+        .where(eq(files.linkId, linkId));
+
+      // Get actual folder count
+      const folderCountResult = await db
+        .select({ count: count() })
+        .from(folders)
+        .where(eq(folders.linkId, linkId));
+
+      const batchCount = Number(batchCountResult[0]?.count || 0);
+      const fileCount = Number(fileCountResult[0]?.count || 0);
+      const folderCount = Number(folderCountResult[0]?.count || 0);
+
+      // Create the response with accurate stats
+      const linkWithStats: LinkWithStats = {
+        ...linkData,
+        stats: {
+          fileCount: fileCount,
+          batchCount: batchCount,  // This is the actual number of upload sessions
+          folderCount: folderCount,
+          totalViewCount: 0, // Will be populated by analytics service
+          uniqueViewCount: 0,
+          averageFileSize:
+            linkData.totalFiles > 0 ? linkData.totalSize / linkData.totalFiles : 0,
+          storageUsedPercentage:
+            linkData.maxFileSize > 0
+              ? (linkData.totalSize / linkData.maxFileSize) * 100
+              : 0,
+          isNearLimit:
+            linkData.maxFileSize > 0
+              ? linkData.totalSize / linkData.maxFileSize > 0.8
+              : false,
+        },
+      };
+
+      return {
+        success: true,
+        data: linkWithStats,
+      };
+    } catch (error) {
+      console.error('Failed to get link details with stats:', error);
       return {
         success: false,
         error:

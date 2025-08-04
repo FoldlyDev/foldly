@@ -22,6 +22,7 @@ import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import type { LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
 interface LinkCardGridProps {
   link: LinkWithStats;
@@ -34,6 +35,8 @@ interface LinkCardGridProps {
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
+  unreadCount?: number;
+  onClearNotifications?: () => void;
 }
 
 export const LinkCardGrid = memo(
@@ -48,6 +51,8 @@ export const LinkCardGrid = memo(
     actions,
     quickActions,
     searchQuery,
+    unreadCount = 0,
+    onClearNotifications,
   }: LinkCardGridProps) => {
     const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
@@ -121,7 +126,19 @@ export const LinkCardGrid = memo(
               </div>
             </div>
 
-            <CardActionsMenu actions={actions} />
+            <div className='flex items-start gap-2'>
+              {unreadCount > 0 && (
+                <NotificationBadge
+                  count={unreadCount}
+                  className='mt-1'
+                  onClick={(e) => {
+                    e?.stopPropagation();
+                    onClearNotifications?.();
+                  }}
+                />
+              )}
+              <CardActionsMenu actions={actions} />
+            </div>
           </div>
 
           {/* Stats Grid */}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useSearchParams } from 'next/navigation';
 import { TwoPanelLayout } from '../desktop/TwoPanelLayout';
 import { ContentLoader } from '@/components/ui/feedback';
 import { Alert, AlertDescription } from '@/components/ui/core/shadcn/alert';
@@ -17,13 +18,37 @@ import '../../styles/files-layout.css';
 export function FilesContainer() {
   const { userId } = useAuth();
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const searchParams = useSearchParams();
+  
+  // Get linkId and highlight from URL params
+  const linkIdFromUrl = searchParams.get('linkId');
+  const shouldHighlight = searchParams.get('highlight') === 'true';
   
   // Show skeleton during initial hydration to prevent flash
   const [hydrated, setHydrated] = useState(false);
+  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   
   useEffect(() => {
     setHydrated(true);
   }, []);
+  
+  // Auto-select link when navigating from notification
+  useEffect(() => {
+    if (linkIdFromUrl && shouldHighlight) {
+      setSelectedLinkId(linkIdFromUrl);
+      // Optionally show a visual highlight effect
+      setTimeout(() => {
+        const element = document.getElementById(`link-${linkIdFromUrl}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-animation');
+          setTimeout(() => {
+            element.classList.remove('highlight-animation');
+          }, 2000);
+        }
+      }, 100);
+    }
+  }, [linkIdFromUrl, shouldHighlight]);
   
   // Get storage information
   const { storageInfo } = useStorageTracking();
@@ -83,10 +108,14 @@ export function FilesContainer() {
             storageUsed={storageInfo.storageUsedBytes}
             storageLimit={storageInfo.storageLimitBytes}
             className="h-full"
+            selectedLinkId={selectedLinkId}
+            onLinkSelect={setSelectedLinkId}
           />
         ) : (
           <SinglePanelLayout 
             links={data || []}
+            selectedLinkId={selectedLinkId}
+            onLinkSelect={setSelectedLinkId}
           />
         )}
       </div>

@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLinkAction } from '../../lib/actions/update';
 import { linksQueryKeys } from '../../lib/query-keys';
+import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
 import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
 import { toast } from 'sonner';
@@ -160,6 +161,9 @@ export function useUpdateLinkMutation(
 
         toast.success('Link updated successfully');
       }
+      
+      // Invalidate storage queries to reflect any changes in storage usage
+      queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
 
       onSuccess?.(result);
     },

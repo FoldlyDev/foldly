@@ -757,7 +757,6 @@ export async function uploadFileToLinkAction(
       isOrganized: false,
       needsReview: false,
       downloadCount: 0,
-      isPublic: true, // Link files are typically public
       sharedAt: new Date(),
       uploadedAt: new Date(),
     };

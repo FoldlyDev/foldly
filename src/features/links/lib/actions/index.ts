@@ -7,7 +7,7 @@
 export { createLinkAction } from './create';
 
 // Fetch actions
-export { fetchLinksAction, fetchLinkByIdAction } from './fetch';
+export { fetchLinksAction, fetchLinkByIdAction, fetchLinkDetailsWithStatsAction } from './fetch';
 
 // Update actions
 export { updateLinkAction, updateLinkSettingsAction } from './update';

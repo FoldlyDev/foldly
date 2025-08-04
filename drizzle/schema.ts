@@ -18,6 +18,7 @@ export { links } from '../src/lib/database/schemas/links';
 export { folders } from '../src/lib/database/schemas/folders';
 export { batches } from '../src/lib/database/schemas/batches';
 export { files } from '../src/lib/database/schemas/files';
+export { notifications } from '../src/lib/database/schemas/notifications';
 export { subscriptionAnalytics } from '../src/lib/database/schemas/subscription-analytics';
 export { subscriptionPlans } from '../src/lib/database/schemas/subscription-plans';
 

@@ -71,6 +71,20 @@
       "when": 1754111622977,
       "tag": "0009_cute_toad",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1754305180202,
+      "tag": "0010_milky_polaris",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1754305544401,
+      "tag": "0011_huge_vengeance",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, lazy, Suspense } from 'react';
 import type { LinkTreeItem } from '@/features/link-upload/lib/tree-data';
+import type { TreeInstance } from '@headless-tree/core';
 
 import { LinkUploadHeader } from '../sections/link-upload-header';
 import { LinkUploadFooter } from '../sections/link-upload-footer';
@@ -43,8 +44,12 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // UI state management - use store directly for modal state
   const { isOpen: isUploadModalOpen, closeModal: closeUploadModal, linkId: modalLinkId } = useLinkUploadModal();
 
-  // Tree instance state
-  const [treeInstance, setTreeInstance] = useState<any | null>(null);
+  // Tree instance state with extended methods
+  type ExtendedTreeInstance = TreeInstance<LinkTreeItem> & {
+    addFolder: (name: string, parentId?: string) => string | null;
+    rebuildTree: () => void;
+  };
+  const [treeInstance, setTreeInstance] = useState<ExtendedTreeInstance | null>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');

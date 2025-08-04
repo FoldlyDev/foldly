@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import type { LinkWithStats } from '@/lib/database/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
+import { useNotificationStore } from '@/features/notifications/store/notification-store';
 
 interface LinkCardProps {
   link: LinkWithStats;
@@ -34,6 +36,39 @@ const LinkCardComponent = ({
   onMultiSelect,
 }: LinkCardProps) => {
   const isMobile = useIsMobile();
+  const unreadCounts = useNotificationStore(state => state.unreadCounts);
+  const clearLinkNotificationsLocal = useNotificationStore(state => state.clearLinkNotifications);
+  
+  // Get unread count for this link
+  const unreadCount = unreadCounts.get(link.id) || 0;
+  
+  // Clear notifications both locally and in database
+  const clearLinkNotifications = async (linkId: string) => {
+    // Clear local state immediately for instant UI feedback
+    clearLinkNotificationsLocal(linkId);
+    
+    // Clear in database
+    try {
+      const response = await fetch('/api/notifications/mark-read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ linkId }),
+      });
+      
+      if (!response.ok) {
+        // If failed, refetch counts to sync with database
+        const countsResponse = await fetch('/api/notifications/unread-counts');
+        if (countsResponse.ok) {
+          const counts = await countsResponse.json();
+          useNotificationStore.getState().setUnreadCounts(counts);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+    }
+  };
 
   // Computed values
   const isBaseLink = link.linkType === 'base';
@@ -124,6 +159,8 @@ const LinkCardComponent = ({
         searchQuery={searchQuery}
         actions={dropdownActions}
         quickActions={quickActions}
+        unreadCount={unreadCount}
+        onClearNotifications={() => clearLinkNotifications(link.id)}
       />
     );
   }

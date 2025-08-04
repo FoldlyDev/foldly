@@ -16,7 +16,9 @@
       "Bash(cp:*)",
       "Bash(rm:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(npx eslint:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

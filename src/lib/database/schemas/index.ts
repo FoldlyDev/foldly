@@ -21,6 +21,7 @@ export { links } from './links';
 export { folders } from './folders';
 export { batches } from './batches';
 export { files } from './files';
+export { notifications } from './notifications';
 export { subscriptionAnalytics } from './subscription-analytics';
 export {
   subscriptionPlans,

@@ -1,6 +1,7 @@
 'use server';
 
 import { linksDbService } from '../db-service';
+import { linkQueryService } from '../services/link-query-service';
 import { requireAuth } from './shared';
 import type { ActionResult } from '../validations';
 import type { LinkWithStats } from '@/lib/database/types/links';
@@ -77,6 +78,49 @@ export async function fetchLinkByIdAction(
     };
   } catch (error) {
     console.error('Fetch link by ID error:', error);
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Fetch link details with accurate statistics
+ * This action properly counts upload sessions (batches), files, and folders
+ */
+export async function fetchLinkDetailsWithStatsAction(
+  linkId: string
+): Promise<ActionResult<LinkWithStats | null>> {
+  try {
+    // 1. Authenticate user
+    const user = await requireAuth();
+
+    // 2. Fetch link with accurate stats from database
+    const result = await linkQueryService.getLinkDetailsWithStats(linkId);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Failed to fetch link details',
+      };
+    }
+
+    // 3. Verify ownership
+    if (result.data && result.data.userId !== user.id) {
+      return {
+        success: false,
+        error: 'Access denied: Link not found',
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error('Fetch link details with stats error:', error);
 
     return {
       success: false,

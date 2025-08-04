@@ -11,7 +11,8 @@ export type NotificationEvent =
   | 'storage_warning'
   | 'storage_critical'
   | 'storage_exceeded'
-  | 'upload_blocked';
+  | 'upload_blocked'
+  | 'link_upload';
 
 export interface NotificationConfig {
   event: NotificationEvent;
@@ -35,4 +36,13 @@ export interface StorageNotificationData {
   usagePercentage: number;
   planKey: string;
   filesCount?: number;
+}
+
+export interface LinkUploadNotificationData {
+  linkId: string;
+  linkTitle: string;
+  uploaderName: string;
+  uploaderEmail?: string;
+  fileCount: number;
+  folderCount: number;
 }

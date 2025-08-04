@@ -9,6 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { db } from '@/lib/database/connection';
 import { files as filesTable, batches, links, users } from '@/lib/database/schemas';
 import { eq, and, sql } from 'drizzle-orm';
+import { notificationService } from '@/lib/services/notifications/notification-service';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds timeout for batch uploads
@@ -249,9 +250,9 @@ export async function POST(req: NextRequest) {
             throw new Error('error' in result ? result.error : 'Failed to create folder');
           }
           
-            results.createdFolders++;
-            results.totalProcessed++;
-          } catch (error) {
+          results.createdFolders++;
+          results.totalProcessed++;
+        } catch (error) {
             results.errors.push({
               itemId: folder?.id || `folder_${i}`,
               itemName: folder?.name || 'Unknown folder',
@@ -354,10 +355,8 @@ export async function POST(req: NextRequest) {
                 processingStatus: 'processing',
                 folderId: parentFolderId || null,
                 sortOrder: sortIndex,
-                isPublic: true,
                 isSafe: true,
                 virusScanResult: 'clean',
-                uploaderName: uploaderName,
                 downloadCount: 0,
               })
               .returning({ id: filesTable.id });
@@ -446,12 +445,85 @@ export async function POST(req: NextRequest) {
             }
           }
         }
-
-        // Step 4: Complete the batch
-        if (batchId) {
-          await completeBatchAction(batchId);
-        }
       }
+
+      // Step 4: Complete the batch
+      if (batchId) {
+        await completeBatchAction(batchId);
+        console.log('🔔 Batch completed, checking notification requirements');
+        console.log('🔔 Results state:', results);
+        
+        // Step 5: Create notification for link owner if upload successful
+        console.log('🔔 Notification check:', {
+            uploadedFiles: results.uploadedFiles,
+            createdFolders: results.createdFolders,
+            shouldCreateNotification: results.uploadedFiles > 0 || results.createdFolders > 0
+          });
+          
+          if (results.uploadedFiles > 0 || results.createdFolders > 0) {
+            try {
+              // Get link details for notification
+              const [link] = await db
+                .select({
+                  id: links.id,
+                  title: links.title,
+                  userId: links.userId,
+                })
+                .from(links)
+                .where(eq(links.id, linkId))
+                .limit(1);
+              
+              console.log('🔔 Link found for notification:', link);
+              
+              if (link) {
+                console.log('🔔 Creating notification with params:', {
+                  userId: link.userId,
+                  linkId: link.id,
+                  batchId: batchId,
+                  fileCount: results.uploadedFiles,
+                  folderCount: results.createdFolders,
+                  uploaderName: uploaderName
+                });
+                
+                // Create user-friendly description
+                let description = '';
+                const items = [];
+                
+                if (results.uploadedFiles > 0) {
+                  items.push(`${results.uploadedFiles} ${results.uploadedFiles === 1 ? 'file' : 'files'}`);
+                }
+                if (results.createdFolders > 0) {
+                  items.push(`${results.createdFolders} ${results.createdFolders === 1 ? 'folder' : 'folders'}`);
+                }
+                
+                if (items.length > 0) {
+                  description = `${uploaderName} uploaded ${items.join(' and ')}`;
+                } else {
+                  description = `${uploaderName} uploaded content`; // Fallback
+                }
+                
+                const notificationResult = await notificationService.createUploadNotification({
+                  userId: link.userId,
+                  linkId: link.id,
+                  batchId: batchId,
+                  title: `New upload to ${link.title}`,
+                  description: description,
+                  metadata: {
+                    fileCount: results.uploadedFiles,
+                    folderCount: results.createdFolders,
+                    uploaderName: uploaderName,
+                    uploaderEmail: uploaderEmail || undefined,
+                  },
+                });
+                
+                console.log('🔔 Notification created:', notificationResult);
+              }
+            } catch (notifError) {
+              // Log error but don't fail the upload
+              console.error('Failed to create notification:', notifError);
+            }
+          }
+        }
 
       logger.info('Link batch upload completed', {
         linkId,

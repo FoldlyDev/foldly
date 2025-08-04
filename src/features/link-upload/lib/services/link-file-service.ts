@@ -161,7 +161,7 @@ export class LinkFileService {
           processedFiles: 0,
           failedFiles: 0,
           totalSize: file.size,
-          status: 'processing',
+          processingStatus: 'processing',
         })
         .returning();
 
@@ -189,7 +189,7 @@ export class LinkFileService {
           fileSize: file.size,
           mimeType: file.type || 'application/octet-stream',
           folderId,
-          status: 'pending',
+          processingStatus: 'pending',
         })
         .returning();
 
@@ -205,7 +205,7 @@ export class LinkFileService {
         batchId,
         fileId,
         file,
-        folderId,
+        folderId: folderId || undefined,
       });
 
       if (!uploadResult.success) {

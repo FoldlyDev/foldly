@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { EmptyLinksState, PopulatedLinksState } from '@/features/links';
 import { LinksSkeleton } from '../skeletons/links-skeleton';
@@ -7,6 +8,8 @@ import { LinksModalManager } from '../managers/LinksModalManager';
 import { useFilteredLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useUIStore } from '../../store/ui-store';
 import { useLinksQuery } from '../../hooks/react-query/use-links-query';
+import { useRealtimeNotifications } from '@/features/notifications/hooks/use-realtime-notifications';
+import { useNotificationStore } from '@/features/notifications/store/notification-store';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -32,6 +35,26 @@ export function LinksContainer({
   const filterStatus = useUIStore(state => state.filterStatus);
   const sortBy = useUIStore(state => state.sortBy);
   const sortDirection = useUIStore(state => state.sortDirection);
+  
+  // Initialize real-time notifications
+  const { isConnected } = useRealtimeNotifications();
+  
+  // Fetch initial unread counts when component mounts
+  useEffect(() => {
+    fetchUnreadCounts();
+  }, []);
+  
+  const fetchUnreadCounts = async () => {
+    try {
+      const response = await fetch('/api/notifications/unread-counts');
+      if (response.ok) {
+        const counts = await response.json();
+        useNotificationStore.getState().setUnreadCounts(counts);
+      }
+    } catch (error) {
+      console.error('Failed to fetch unread counts:', error);
+    }
+  };
 
   // Get all links first (unfiltered) to determine if user has any links
   const {
@@ -93,7 +116,6 @@ export function LinksContainer({
             </p>
             <button
               onClick={() => {
-                console.log('🔄 LinksContainer: Retrying fetch...');
                 refetchAllLinks();
                 refetchFiltered();
               }}
@@ -107,13 +129,14 @@ export function LinksContainer({
     );
   }
 
-  console.log(
-    '📊 LinksContainer: Rendering with',
-    allLinks.length,
-    'total links,',
-    filteredLinks.length,
-    'filtered links'
-  );
+  // Remove debug logging in production
+  // console.log(
+  //   '📊 LinksContainer: Rendering with',
+  //   allLinks.length,
+  //   'total links,',
+  //   filteredLinks.length,
+  //   'filtered links'
+  // );
 
   return (
     <div className='min-h-screen bg-[var(--neutral-50)]'>
@@ -128,9 +151,6 @@ export function LinksContainer({
             >
               <EmptyLinksState
                 onRefreshDashboard={() => {
-                  console.log(
-                    '🔄 LinksContainer: Refreshing data (NO PAGE RELOAD)'
-                  );
                   // NO page reload - just refresh data with React Query
                   refetchAllLinks();
                   refetchFiltered();
