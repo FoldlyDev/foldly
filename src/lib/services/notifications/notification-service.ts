@@ -81,7 +81,7 @@ export class NotificationService {
         })
         .where(eq(links.id, params.linkId));
 
-      // Broadcast real-time event to the link owner
+      // Broadcast real-time event to the link owner for notifications
       await this.broadcastNotification(params.userId, {
         type: 'new_upload',
         linkId: params.linkId,
@@ -90,6 +90,14 @@ export class NotificationService {
         fileCount: params.metadata?.fileCount || 0,
         folderCount: params.metadata?.folderCount || 0,
         uploaderName: params.metadata?.uploaderName || 'Anonymous',
+      });
+
+      // Also broadcast file update event for real-time file list updates
+      await this.broadcastFileUpdate(params.userId, params.linkId, {
+        type: 'batch_completed',
+        linkId: params.linkId,
+        batchId: params.batchId,
+        userId: params.userId,
       });
 
       return {
@@ -297,6 +305,32 @@ export class NotificationService {
       });
     } catch (error) {
       console.error('Error broadcasting notification:', error);
+      // Non-critical error, don't fail the operation
+    }
+  }
+
+  /**
+   * Broadcast file update event for real-time file list updates
+   */
+  private async broadcastFileUpdate(userId: string, linkId: string, payload: any) {
+    try {
+      // Broadcast to link-specific channel
+      const linkChannel = this.supabase.channel(`files:link:${linkId}`);
+      await linkChannel.send({
+        type: 'broadcast',
+        event: 'file_update',
+        payload,
+      });
+
+      // Also broadcast to user's workspace channel
+      const userChannel = this.supabase.channel(`files:user:${userId}`);
+      await userChannel.send({
+        type: 'broadcast',
+        event: 'file_update',
+        payload,
+      });
+    } catch (error) {
+      console.error('Error broadcasting file update:', error);
       // Non-critical error, don't fail the operation
     }
   }

@@ -105,16 +105,14 @@ export function LinkTreeNode({
       {/* Name */}
       <span className='flex-1 truncate'>{itemData?.name || 'Unnamed'}</span>
 
-      {/* Staging status indicator */}
-      {isStaged && stagingStatus && (
+      {/* Staging status indicator - only show for uploading, completed, or failed states */}
+      {isStaged && stagingStatus && stagingStatus !== 'staged' && (
         <span className={cn(
           'text-xs px-2 py-0.5 rounded-full',
-          stagingStatus === 'staged' && 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
           stagingStatus === 'uploading' && 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
           stagingStatus === 'completed' && 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
           stagingStatus === 'failed' && 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
         )}>
-          {stagingStatus === 'staged' && 'Staged'}
           {stagingStatus === 'uploading' && 'Uploading...'}
           {stagingStatus === 'completed' && 'Uploaded'}
           {stagingStatus === 'failed' && 'Failed'}

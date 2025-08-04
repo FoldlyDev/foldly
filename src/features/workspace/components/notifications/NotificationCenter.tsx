@@ -5,6 +5,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bell, 
@@ -14,7 +15,8 @@ import {
   Trash2, 
   CheckCircle,
   Circle,
-  Clock
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/core/shadcn';
 import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
@@ -52,6 +54,7 @@ function NotificationItem({
   onMarkAsRead, 
   onDelete 
 }: NotificationItemProps) {
+  const router = useRouter();
   const { metadata } = notification;
   const hasFiles = metadata?.fileCount && metadata.fileCount > 0;
   
@@ -71,15 +74,25 @@ function NotificationItem({
     return desc;
   };
   
+  const handleViewUploads = () => {
+    // Navigate to files page with the specific link highlighted
+    router.push(`/dashboard/files?linkId=${notification.linkId}&highlight=true`);
+    // Mark as read when viewing
+    if (!notification.isRead) {
+      onMarkAsRead(notification.id);
+    }
+  };
+  
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       className={cn(
-        "relative p-4 border-b border-border/50 hover:bg-accent/50 transition-colors group",
+        "relative p-4 border-b border-border/50 hover:bg-accent/50 transition-colors group cursor-pointer",
         !notification.isRead && "bg-primary/5"
       )}
+      onClick={handleViewUploads}
     >
       <div className="flex items-start gap-3">
         {/* Icon */}
@@ -112,6 +125,18 @@ function NotificationItem({
                   {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                 </span>
               </div>
+              
+              {/* View uploads link */}
+              <button
+                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewUploads();
+                }}
+              >
+                View uploads
+                <ExternalLink className="w-3 h-3" />
+              </button>
             </div>
             
             {/* Actions */}
@@ -163,6 +188,7 @@ export function NotificationCenter({
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { deleteNotification, markAsRead: markAsReadInStore, refreshUnreadCounts } = useNotificationStore();
   
   // Fetch notifications when opened
   useEffect(() => {
@@ -200,6 +226,8 @@ export function NotificationCenter({
             n.id === notificationId ? { ...n, isRead: true } : n
           )
         );
+        // Update the global store
+        markAsReadInStore(notificationId);
       }
     } catch (error) {
       console.error('Failed to mark as read:', error);
@@ -216,6 +244,10 @@ export function NotificationCenter({
       
       if (response.ok) {
         setNotifications(prev => prev.filter(n => n.id !== notificationId));
+        // Update the global store to update the bell icon count
+        deleteNotification(notificationId);
+        // Refresh counts from server to ensure accuracy
+        await refreshUnreadCounts();
       }
     } catch (error) {
       console.error('Failed to delete notification:', error);

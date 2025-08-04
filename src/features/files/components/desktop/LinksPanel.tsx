@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Link as LinkIcon, 
@@ -35,7 +35,30 @@ interface GroupedLinks {
   generated: LinkWithFileTree[];
 }
 
+// Helper function to count total items (files and folders) in a tree
+function countTreeItems(nodes: TreeNode[]): { files: number; folders: number; total: number } {
+  let files = 0;
+  let folders = 0;
+  
+  const traverse = (nodeList: TreeNode[]) => {
+    for (const node of nodeList) {
+      if (node.type === 'file') {
+        files++;
+      } else if (node.type === 'folder') {
+        folders++;
+      }
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    }
+  };
+  
+  traverse(nodes);
+  return { files, folders, total: files + folders };
+}
+
 export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
+
   // Group links by type
   const groupedLinks = useMemo<GroupedLinks>(() => {
     return links.reduce<GroupedLinks>(
@@ -239,7 +262,12 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
               <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Files className="h-3 w-3" />
-                  <span>{link.totalFiles || 0} files</span>
+                  <span>{(() => {
+                    const itemCount = countTreeItems(link.fileTree);
+                    return itemCount.total === 1 
+                      ? '1 item' 
+                      : `${itemCount.total} items`;
+                  })()}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <HardDrive className="h-3 w-3" />

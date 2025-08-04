@@ -46,6 +46,9 @@ interface NotificationActions {
   // Mark notification as read
   markAsRead: (notificationId: string) => void;
   
+  // Delete a notification
+  deleteNotification: (notificationId: string) => void;
+  
   // Set recent notifications
   setRecentNotifications: (notifications: Notification[]) => void;
   
@@ -54,6 +57,9 @@ interface NotificationActions {
   
   // Set loading state
   setLoading: (loading: boolean) => void;
+  
+  // Refresh unread counts from server
+  refreshUnreadCounts: () => Promise<void>;
 }
 
 type NotificationStore = NotificationState & NotificationActions;
@@ -148,8 +154,63 @@ export const useNotificationStore = create<NotificationStore>()(
         });
       },
 
+      deleteNotification: (notificationId) => {
+        set((state) => {
+          const notification = state.recentNotifications.find(n => n.id === notificationId);
+          if (!notification) return state;
+          
+          // Remove the notification
+          const newRecent = state.recentNotifications.filter(n => n.id !== notificationId);
+          
+          // Decrement unread count if the notification was unread
+          let newCounts = new Map(state.unreadCounts);
+          let newTotal = state.totalUnread;
+          
+          if (!notification.isRead) {
+            const currentCount = newCounts.get(notification.linkId) || 0;
+            if (currentCount > 0) {
+              newCounts.set(notification.linkId, currentCount - 1);
+              if (currentCount === 1) {
+                newCounts.delete(notification.linkId);
+              }
+            }
+            newTotal = Math.max(0, state.totalUnread - 1);
+          }
+          
+          return {
+            recentNotifications: newRecent,
+            unreadCounts: newCounts,
+            totalUnread: newTotal,
+          };
+        });
+      },
+
       setRecentNotifications: (notifications) => {
         set({ recentNotifications: notifications });
+      },
+
+      refreshUnreadCounts: async () => {
+        try {
+          // First sync counts in database to fix any inconsistencies
+          const syncResponse = await fetch('/api/notifications/sync-counts', {
+            method: 'POST',
+          });
+          
+          if (syncResponse.ok) {
+            const syncData = await syncResponse.json();
+            // Use the synced counts directly
+            get().setUnreadCounts(syncData.counts || {});
+          } else {
+            // Fallback to just fetching counts
+            const response = await fetch('/api/notifications/unread-counts');
+            if (response.ok) {
+              const counts = await response.json();
+              get().setUnreadCounts(counts);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to refresh unread counts:', error);
+        }
       },
 
       clearAll: () => {

@@ -30,15 +30,25 @@ export async function POST() {
       )
       .returning({ id: notifications.id, linkId: notifications.linkId });
 
-    // Reset unread counts for all user's links
+    // Reset unread counts for all affected links
     if (updated.length > 0) {
-      await db
-        .update(links)
-        .set({
-          unreadUploads: 0,
-          updatedAt: new Date(),
-        })
-        .where(eq(links.userId, session.userId));
+      // Group by linkId to update each link
+      const linkIds = new Set(updated.map(n => n.linkId));
+      
+      for (const linkId of linkIds) {
+        await db
+          .update(links)
+          .set({
+            unreadUploads: 0,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(links.id, linkId),
+              eq(links.userId, session.userId)
+            )
+          );
+      }
     }
 
     return NextResponse.json({ 

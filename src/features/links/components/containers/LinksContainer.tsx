@@ -39,22 +39,11 @@ export function LinksContainer({
   // Initialize real-time notifications
   const { isConnected } = useRealtimeNotifications();
   
-  // Fetch initial unread counts when component mounts
+  // Fetch and sync initial unread counts when component mounts
   useEffect(() => {
-    fetchUnreadCounts();
+    // Use the store's refreshUnreadCounts which includes syncing
+    useNotificationStore.getState().refreshUnreadCounts();
   }, []);
-  
-  const fetchUnreadCounts = async () => {
-    try {
-      const response = await fetch('/api/notifications/unread-counts');
-      if (response.ok) {
-        const counts = await response.json();
-        useNotificationStore.getState().setUnreadCounts(counts);
-      }
-    } catch (error) {
-      console.error('Failed to fetch unread counts:', error);
-    }
-  };
 
   // Get all links first (unfiltered) to determine if user has any links
   const {

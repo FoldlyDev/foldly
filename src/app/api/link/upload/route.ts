@@ -193,6 +193,21 @@ export async function POST(req: NextRequest) {
       }
 
       // Step 2: Create all folders in hierarchical order
+      // Get link owner for real-time broadcasting
+      let linkOwnerId: string | undefined;
+      if (folders.length > 0 || files.length > 0) {
+        try {
+          const [link] = await db
+            .select({ userId: links.userId })
+            .from(links)
+            .where(eq(links.id, linkId))
+            .limit(1);
+          linkOwnerId = link?.userId;
+        } catch (err) {
+          console.log('Could not fetch link owner:', err);
+        }
+      }
+      
       // First, organize folders by depth to create parents before children
       const foldersByDepth = new Map<number, typeof folders>();
       const calculateDepth = (folder: any, depth = 0): number => {
@@ -246,6 +261,38 @@ export async function POST(req: NextRequest) {
           // Map staging ID to database ID
           if (result.success && 'data' in result && result.data?.folderId) {
             folderIdMap.set(folder.id, result.data.folderId);
+            
+            // Broadcast real-time folder creation event for immediate UI updates
+            if (linkOwnerId) {
+              try {
+                const linkChannel = supabase.channel(`files:link:${linkId}`);
+                await linkChannel.send({
+                  type: 'broadcast',
+                  event: 'file_update',
+                  payload: {
+                    type: 'folder_added',
+                    linkId: linkId,
+                    folderId: result.data.folderId,
+                    userId: linkOwnerId,
+                  }
+                });
+                
+                const userChannel = supabase.channel(`files:user:${linkOwnerId}`);
+                await userChannel.send({
+                  type: 'broadcast',
+                  event: 'file_update',
+                  payload: {
+                    type: 'folder_added',
+                    linkId: linkId,
+                    folderId: result.data.folderId,
+                    userId: linkOwnerId,
+                  }
+                });
+              } catch (err) {
+                // Non-critical - don't fail the upload
+                console.log('Could not broadcast folder creation:', err);
+              }
+            }
           } else if (!result.success) {
             throw new Error('error' in result ? result.error : 'Failed to create folder');
           }
@@ -431,6 +478,38 @@ export async function POST(req: NextRequest) {
               })
               .where(eq(batches.id, batchId));
             
+            // Broadcast real-time file upload event for immediate UI updates
+            if (linkOwnerId) {
+              try {
+                const linkChannel = supabase.channel(`files:link:${linkId}`);
+                await linkChannel.send({
+                  type: 'broadcast',
+                  event: 'file_update',
+                  payload: {
+                    type: 'file_added',
+                    linkId: linkId,
+                    fileId: fileId,
+                    userId: linkOwnerId,
+                  }
+                });
+                
+                const userChannel = supabase.channel(`files:user:${linkOwnerId}`);
+                await userChannel.send({
+                  type: 'broadcast',
+                  event: 'file_update',
+                  payload: {
+                    type: 'file_added',
+                    linkId: linkId,
+                    fileId: fileId,
+                    userId: linkOwnerId,
+                  }
+                });
+              } catch (err) {
+                // Non-critical - don't fail the upload
+                console.log('Could not broadcast file creation:', err);
+              }
+            }
+            
               results.uploadedFiles++;
               results.totalProcessed++;
               console.log(`✅ File uploaded successfully: ${file.name} (Total uploaded: ${results.uploadedFiles}, sortOrder: ${sortIndex})`);
@@ -485,21 +564,25 @@ export async function POST(req: NextRequest) {
                   uploaderName: uploaderName
                 });
                 
-                // Create user-friendly description
+                // Create user-friendly description with proper grammar
                 let description = '';
-                const items = [];
                 
-                if (results.uploadedFiles > 0) {
-                  items.push(`${results.uploadedFiles} ${results.uploadedFiles === 1 ? 'file' : 'files'}`);
-                }
-                if (results.createdFolders > 0) {
-                  items.push(`${results.createdFolders} ${results.createdFolders === 1 ? 'folder' : 'folders'}`);
-                }
-                
-                if (items.length > 0) {
-                  description = `${uploaderName} uploaded ${items.join(' and ')}`;
+                if (results.uploadedFiles > 0 && results.createdFolders > 0) {
+                  // Both files and folders
+                  const fileText = results.uploadedFiles === 1 ? '1 file' : `${results.uploadedFiles} files`;
+                  const folderText = results.createdFolders === 1 ? '1 folder' : `${results.createdFolders} folders`;
+                  description = `${uploaderName} uploaded ${fileText} and ${folderText}`;
+                } else if (results.uploadedFiles > 0) {
+                  // Only files
+                  const fileText = results.uploadedFiles === 1 ? '1 file' : `${results.uploadedFiles} files`;
+                  description = `${uploaderName} uploaded ${fileText}`;
+                } else if (results.createdFolders > 0) {
+                  // Only folders
+                  const folderText = results.createdFolders === 1 ? '1 folder' : `${results.createdFolders} folders`;
+                  description = `${uploaderName} uploaded ${folderText}`;
                 } else {
-                  description = `${uploaderName} uploaded content`; // Fallback
+                  // Fallback (shouldn't happen)
+                  description = `${uploaderName} uploaded content`;
                 }
                 
                 const notificationResult = await notificationService.createUploadNotification({

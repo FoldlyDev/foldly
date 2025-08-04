@@ -105,12 +105,31 @@ export function useRealtimeNotifications() {
     
     // Add to recent notifications if we have details
     if (data.notificationId) {
+      // Create user-friendly description with proper grammar
+      let description = '';
+      const fileCount = data.fileCount || 0;
+      const folderCount = data.folderCount || 0;
+      
+      if (fileCount > 0 && folderCount > 0) {
+        const fileText = fileCount === 1 ? '1 file' : `${fileCount} files`;
+        const folderText = folderCount === 1 ? '1 folder' : `${folderCount} folders`;
+        description = `${data.uploaderName} uploaded ${fileText} and ${folderText}`;
+      } else if (fileCount > 0) {
+        const fileText = fileCount === 1 ? '1 file' : `${fileCount} files`;
+        description = `${data.uploaderName} uploaded ${fileText}`;
+      } else if (folderCount > 0) {
+        const folderText = folderCount === 1 ? '1 folder' : `${folderCount} folders`;
+        description = `${data.uploaderName} uploaded ${folderText}`;
+      } else {
+        description = `${data.uploaderName} uploaded content`;
+      }
+      
       addRecentNotification({
         id: data.notificationId,
         linkId: data.linkId,
         linkTitle: linkTitle || 'Link',
         title: `New upload to ${linkTitle}`,
-        description: `${data.fileCount || 0} files and ${data.folderCount || 0} folders from ${data.uploaderName}`,
+        description: description,
         metadata: {
           fileCount: data.fileCount,
           folderCount: data.folderCount,

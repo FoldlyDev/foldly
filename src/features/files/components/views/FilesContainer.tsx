@@ -13,12 +13,16 @@ import { filesQueryKeys } from '../../lib/query-keys';
 import { useAuth } from '@clerk/nextjs';
 import { SinglePanelLayout } from '../mobile/SinglePanelLayout';
 import { useStorageTracking } from '@/features/workspace/hooks';
+import { useRealtimeFiles } from '../../hooks/use-realtime-files';
 import '../../styles/files-layout.css';
 
 export function FilesContainer() {
   const { userId } = useAuth();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const searchParams = useSearchParams();
+  
+  // Enable real-time updates for files
+  useRealtimeFiles();
   
   // Get linkId and highlight from URL params
   const linkIdFromUrl = searchParams.get('linkId');

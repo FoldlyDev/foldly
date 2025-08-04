@@ -17,6 +17,28 @@ import { toast } from 'sonner';
 import type { LinkWithFileTree, TreeNode } from '../../types';
 import { cn } from '@/lib/utils';
 
+// Helper function to count total items (files and folders) in a tree
+function countTreeItems(nodes: TreeNode[]): { files: number; folders: number; total: number } {
+  let files = 0;
+  let folders = 0;
+  
+  const traverse = (nodeList: TreeNode[]) => {
+    for (const node of nodeList) {
+      if (node.type === 'file') {
+        files++;
+      } else if (node.type === 'folder') {
+        folders++;
+      }
+      if (node.children && node.children.length > 0) {
+        traverse(node.children);
+      }
+    }
+  };
+  
+  traverse(nodes);
+  return { files, folders, total: files + folders };
+}
+
 interface SinglePanelLayoutProps {
   links: LinkWithFileTree[];
   className?: string;
@@ -234,7 +256,12 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
                   <div className="text-left">
                     <h3 className="font-medium text-sm">{link.title}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {link.totalFiles || 0} files • {link.totalSize ? formatFileSize(link.totalSize) : '0 B'}
+                      {(() => {
+                        const itemCount = countTreeItems(link.fileTree);
+                        return itemCount.total === 1 
+                          ? '1 item' 
+                          : `${itemCount.total} items`;
+                      })()} • {link.totalSize ? formatFileSize(link.totalSize) : '0 B'}
                     </p>
                   </div>
                 </div>

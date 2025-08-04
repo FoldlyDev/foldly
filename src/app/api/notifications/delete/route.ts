@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/database/connection';
-import { notifications } from '@/lib/database/schemas';
-import { and, eq } from 'drizzle-orm';
+import { notifications, links } from '@/lib/database/schemas';
+import { and, eq, sql } from 'drizzle-orm';
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -25,22 +25,43 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Delete the notification (only if it belongs to the user)
-    const deleted = await db
-      .delete(notifications)
+    // First, get the notification to check if it's unread and get the linkId
+    const [notification] = await db
+      .select({
+        id: notifications.id,
+        linkId: notifications.linkId,
+        isRead: notifications.isRead,
+      })
+      .from(notifications)
       .where(
         and(
           eq(notifications.id, notificationId),
           eq(notifications.userId, session.userId)
         )
       )
-      .returning({ id: notifications.id });
+      .limit(1);
 
-    if (deleted.length === 0) {
+    if (!notification) {
       return NextResponse.json(
         { error: 'Notification not found or unauthorized' },
         { status: 404 }
       );
+    }
+
+    // Delete the notification
+    await db
+      .delete(notifications)
+      .where(eq(notifications.id, notificationId));
+
+    // If the notification was unread, decrement the unread count in the links table
+    if (!notification.isRead) {
+      await db
+        .update(links)
+        .set({
+          unreadUploads: sql`GREATEST(0, ${links.unreadUploads} - 1)`,
+          updatedAt: new Date(),
+        })
+        .where(eq(links.id, notification.linkId));
     }
 
     return NextResponse.json({ 
