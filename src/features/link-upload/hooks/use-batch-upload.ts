@@ -45,21 +45,51 @@ interface BatchUploadResult {
   progress?: BatchUploadProgress;
 }
 
-export function useBatchUpload() {
+interface UseBatchUploadOptions {
+  linkId: string;
+  onComplete?: (results: Array<{ success: boolean; error?: string }>) => Promise<void>;
+  onProgress?: (progress: BatchUploadProgress) => void;
+}
+
+export function useBatchUpload(options: UseBatchUploadOptions) {
+  const { linkId, onComplete, onProgress } = options;
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState<BatchUploadProgress | null>(null);
   const queryClient = useQueryClient();
 
-  const uploadBatch = useCallback(async (params: BatchUploadParams): Promise<BatchUploadResult> => {
+  const uploadBatch = useCallback(async (
+    items: { files: Array<any>; folders: Array<any> },
+    uploaderInfo: {
+      uploaderName?: string;
+      uploaderEmail?: string;
+      uploaderMessage?: string;
+    }
+  ): Promise<Array<{ success: boolean; error?: string }>> => {
     setIsUploading(true);
+    
+    // Prepare params with linkId from hook config
+    const params: BatchUploadParams = {
+      files: items.files,
+      folders: items.folders,
+      linkId,
+      uploaderName: uploaderInfo.uploaderName,
+      uploaderEmail: uploaderInfo.uploaderEmail || null,
+      uploaderMessage: uploaderInfo.uploaderMessage || null,
+    };
+    
     const totalItems = params.files.length + params.folders.length;
     
-    setProgress({
+    const progressData: BatchUploadProgress = {
       total: totalItems,
       completed: 0,
       failed: 0,
       errors: [],
-    });
+    };
+    
+    setProgress(progressData);
+    if (onProgress) {
+      onProgress(progressData);
+    }
 
     try {
       // Use the improved /api/link/upload endpoint that handles files directly
@@ -109,29 +139,59 @@ export function useBatchUpload() {
       // Update progress
       if (result.data?.progress) {
         setProgress(result.data.progress);
+        if (onProgress) {
+          onProgress(result.data.progress);
+        }
       }
 
       // Invalidate queries to refresh the tree
       await queryClient.invalidateQueries({ 
-        queryKey: linkQueryKeys.tree(params.linkId) 
+        queryKey: linkQueryKeys.tree(linkId) 
       });
 
-      return {
-        success: true,
-        data: result.data || result,
-        progress: result.data?.progress,
-      };
+      // Prepare results for onComplete callback
+      const results: Array<{ success: boolean; error?: string }> = [];
+      
+      // Add success results for uploaded files
+      for (let i = 0; i < (result.data?.uploadedFiles || 0); i++) {
+        results.push({ success: true });
+      }
+      
+      // Add success results for created folders
+      for (let i = 0; i < (result.data?.createdFolders || 0); i++) {
+        results.push({ success: true });
+      }
+      
+      // Add error results if any
+      if (result.data?.progress?.errors) {
+        for (const error of result.data.progress.errors) {
+          results.push({ success: false, error: error.error });
+        }
+      }
+      
+      // Call onComplete callback if provided
+      if (onComplete) {
+        await onComplete(results);
+      }
+
+      return results;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed';
       
-      return {
-        success: false,
-        error: errorMessage,
-      };
+      const results = [{ 
+        success: false, 
+        error: errorMessage 
+      }];
+      
+      if (onComplete) {
+        await onComplete(results);
+      }
+      
+      return results;
     } finally {
       setIsUploading(false);
     }
-  }, [queryClient]);
+  }, [linkId, queryClient, onComplete, onProgress]);
 
   const reset = useCallback(() => {
     setIsUploading(false);

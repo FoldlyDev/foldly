@@ -6,7 +6,16 @@ const isProtectedRoute = createRouteMatcher([
   '/api/protected(.*)',
 ]);
 
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/unauthorized',
+  '/(.*)', // This makes ALL routes public by default, including [...slug]
+]);
+
 export default clerkMiddleware(async (auth, req) => {
+  // Only check auth for explicitly protected routes
   if (isProtectedRoute(req)) {
     const { userId } = await auth();
 
@@ -15,6 +24,7 @@ export default clerkMiddleware(async (auth, req) => {
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
   }
+  // All other routes are public by default
 });
 
 export const config = {

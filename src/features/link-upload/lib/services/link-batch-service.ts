@@ -3,7 +3,7 @@
  */
 
 import { db } from '@/lib/database/connection';
-import { batches, links } from '@/lib/database/schemas';
+import { batches, links, files } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import { success } from '@/lib/database/types/common';
@@ -27,7 +27,7 @@ interface CreateBatchParams {
 
 interface BatchResponse {
   batchId: string;
-  files: { id: string; fileName: string }[];
+  files: { fileName: string; fileSize: number; mimeType: string; sortOrder: number }[];
 }
 
 export class LinkBatchService {
@@ -126,13 +126,20 @@ export class LinkBatchService {
         }
       }
 
-      // For this service, we'll only return the batch info
-      // File creation will be handled by the file service
+      // Return batch info with file metadata for later processing
+      // Files will be created when they're actually uploaded with storage paths
+      const fileMetadata = params.files.map((file, index) => ({
+        fileName: file.fileName,
+        fileSize: file.fileSize,
+        mimeType: file.mimeType,
+        sortOrder: index,
+      }));
+
       return {
         success: true,
         data: {
           batchId: batch.id,
-          files: [], // Files will be created separately
+          files: fileMetadata,
         },
       };
     } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   dragAndDropFeature,
@@ -40,6 +40,11 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { BatchOperationModal } from '../modals/batch-operation-modal';
 import { DragPreview, useDragPreview } from './DragPreview';
+import { 
+  MobileWorkspaceActionsModal, 
+  type WorkspaceItem, 
+  type WorkspaceAction 
+} from '../modals/mobile-workspace-actions-modal';
 import '../../styles/workspace-tree.css';
 
 // Import tree UI components
@@ -49,30 +54,11 @@ import {
   FileIcon,
   ChevronRight,
   ChevronDown,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
 import type { FeatureImplementation } from '@headless-tree/core';
-
-// Custom click behavior - only allow expand/collapse via chevron clicks
-const customClickBehavior: FeatureImplementation = {
-  itemInstance: {
-    getProps: ({ tree, item, prev }) => ({
-      ...prev?.(),
-      onClick: (e: MouseEvent) => {
-        // Handle selection only - no expand/collapse
-        if (e.shiftKey) {
-          item.selectUpTo(e.ctrlKey || e.metaKey);
-        } else if (e.ctrlKey || e.metaKey) {
-          item.toggleSelect();
-        } else {
-          tree.setSelectedItems([item.getItemMeta().itemId]);
-        }
-
-        item.setFocused();
-      },
-    }),
-  },
-};
 
 // Remove hardcoded virtual root - use actual workspace ID
 
@@ -88,6 +74,8 @@ interface WorkspaceTreeProps {
   onRootDrop?: (dataTransfer: DataTransfer) => void;
   selectedItems?: string[];
   onSelectionChange?: (selectedItems: string[]) => void;
+  selectionMode?: boolean;
+  onSelectionModeChange?: (mode: boolean) => void;
 }
 
 // Simple approach - directly use exported data and loader
@@ -97,8 +85,32 @@ export default function WorkspaceTree({
   searchQuery = '',
   onRootClick,
   onSelectionChange,
+  selectionMode = false,
+  onSelectionModeChange,
 }: WorkspaceTreeProps) {
   const { data: workspaceData, error } = useWorkspaceTree();
+  
+  // Mobile selection mode state - use external prop if provided, otherwise internal state
+  const [internalSelectionMode, setInternalSelectionMode] = useState(false);
+  const isSelectionMode = selectionMode ?? internalSelectionMode;
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Long-press detection state
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [showMobileActions, setShowMobileActions] = useState(false);
+  const [contextMenuItems, setContextMenuItems] = useState<WorkspaceItem[]>([]);
+  
+  // Detect touch device
+  useEffect(() => {
+    const checkTouchDevice = () => {
+      setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+    };
+    
+    checkTouchDevice();
+    // Re-check on resize as device orientation might change
+    window.addEventListener('resize', checkTouchDevice);
+    return () => window.removeEventListener('resize', checkTouchDevice);
+  }, []);
 
   // Get the actual workspace root ID
   const rootId = workspaceData?.workspace?.id;
@@ -120,6 +132,75 @@ export default function WorkspaceTree({
 
   // Get drag preview configuration
   const dragPreviewConfig = useDragPreview();
+  
+  // Long-press handlers for mobile context menu
+  const handleTouchStart = (item: ItemInstance<WorkspaceTreeItem>) => {
+    if (!isTouchDevice || isSelectionMode) return;
+    
+    const timer = setTimeout(() => {
+      // Get selected items or use the long-pressed item
+      const selectedItems = tree.getSelectedItems();
+      const items: WorkspaceItem[] = selectedItems.length > 0 
+        ? selectedItems.map(i => ({
+            id: i.getId(),
+            name: i.getItemName(),
+            type: i.isFolder() ? 'folder' as const : 'file' as const,
+          }))
+        : [{
+            id: item.getId(),
+            name: item.getItemName(),
+            type: item.isFolder() ? 'folder' as const : 'file' as const,
+          }];
+      
+      setContextMenuItems(items);
+      setShowMobileActions(true);
+      
+      // Haptic feedback if available
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }, 500); // 500ms for long press
+    
+    setLongPressTimer(timer);
+  };
+  
+  const handleTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
+  
+  // Custom click behavior that accounts for selection mode
+  const customClickBehavior: FeatureImplementation = {
+    itemInstance: {
+      getProps: ({ tree, item, prev }) => ({
+        ...prev?.(),
+        onClick: (e: MouseEvent) => {
+          // In selection mode (mobile or desktop), toggle selection
+          if (isSelectionMode) {
+            item.toggleSelect();
+            item.setFocused();
+            return;
+          }
+          
+          // Normal mode behavior
+          if (e.shiftKey) {
+            item.selectUpTo(e.ctrlKey || e.metaKey);
+          } else if (e.ctrlKey || e.metaKey) {
+            item.toggleSelect();
+          } else {
+            tree.setSelectedItems([item.getItemMeta().itemId]);
+          }
+
+          item.setFocused();
+        },
+        onTouchStart: () => handleTouchStart(item),
+        onTouchEnd: handleTouchEnd,
+        onTouchCancel: handleTouchEnd,
+      }),
+    },
+  };
 
   // Initialize tree with inline handlers to avoid circular dependencies
   const tree: TreeInstance<WorkspaceTreeItem> = useTree<WorkspaceTreeItem>({
@@ -180,6 +261,52 @@ export default function WorkspaceTree({
     tree,
   });
   useTreeSearch({ tree, searchQuery });
+  
+  // Handle mobile workspace actions
+  const handleMobileAction = (action: WorkspaceAction) => {
+    switch (action) {
+      case 'rename':
+        // Start rename on the first selected item
+        if (contextMenuItems.length === 1) {
+          const item = tree.getItemInstance?.(contextMenuItems[0].id);
+          if (item && 'startRenaming' in item && typeof item.startRenaming === 'function') {
+            item.startRenaming();
+          }
+        }
+        break;
+      
+      case 'delete':
+        // Use existing batch delete functionality
+        if (contextMenuItems.length > 0) {
+          const itemIds = contextMenuItems.map(item => item.id);
+          handlers?.deleteItems(itemIds);
+        }
+        break;
+      
+      case 'move':
+        // TODO: Implement move functionality
+        // This requires selecting a target folder, which needs a more complex UI
+        console.log('Move action not fully implemented yet');
+        break;
+      
+      case 'createFolder':
+        // Create folder inside selected folder
+        if (contextMenuItems.length === 1 && contextMenuItems[0].type === 'folder') {
+          const folderName = prompt('Enter folder name:');
+          if (folderName && handlers) {
+            handlers.addItem(folderName, contextMenuItems[0].id, false);
+          }
+        }
+        break;
+      
+      // TODO: Implement other actions as needed
+      case 'copy':
+      case 'download':
+      case 'info':
+        console.log(`Action ${action} not yet implemented`);
+        break;
+    }
+  };
 
   // Sync database data to tree data store
   React.useEffect(() => {
@@ -235,17 +362,26 @@ export default function WorkspaceTree({
     }
   }, [tree?.getState?.()?.selectedItems, onSelectionChange]);
 
-  // Notify parent when tree is ready
+  // Notify parent when tree is ready and expose mobile state
   React.useEffect(() => {
     if (tree && onTreeReady && handlers) {
       const extendedTree = Object.assign(tree, {
         addFolder: (name: string, parentId?: string): string | null =>
           handlers.addItem(name, parentId, false),
         deleteItems: (itemIds: string[]): void => handlers.deleteItems(itemIds),
+        isTouchDevice: () => isTouchDevice,
+        isSelectionMode: () => isSelectionMode,
+        setSelectionMode: (mode: boolean) => {
+          if (onSelectionModeChange) {
+            onSelectionModeChange(mode);
+          } else {
+            setInternalSelectionMode(mode);
+          }
+        },
       });
       onTreeReady(extendedTree);
     }
-  }, [tree, onTreeReady, handlers]);
+  }, [tree, onTreeReady, handlers, isTouchDevice, isSelectionMode, onSelectionModeChange]);
 
   // Early return if no data (handled by progressive loader)
   if (!workspaceData) {
@@ -335,6 +471,24 @@ export default function WorkspaceTree({
                       getCssClass(item)
                     )}
                   >
+                    {/* Selection checkbox - shown in selection mode for all devices */}
+                    {isSelectionMode && (
+                      <span
+                        className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer'
+                        onClick={e => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          item.toggleSelect();
+                        }}
+                      >
+                        {item.isSelected() ? (
+                          <CheckSquare className='size-4 text-blue-600' />
+                        ) : (
+                          <Square className='size-4 text-muted-foreground' />
+                        )}
+                      </span>
+                    )}
+                    
                     {/* Expand/Collapse icon for folders */}
                     {item.isFolder() ? (
                       <span
@@ -429,6 +583,14 @@ export default function WorkspaceTree({
         onConfirm={batchOperations.executeBatchMove}
         progress={batchOperations.batchMoveModal.progress}
         isProcessing={batchOperations.batchMoveModal.isProcessing}
+      />
+      
+      {/* Mobile Actions Modal */}
+      <MobileWorkspaceActionsModal
+        isOpen={showMobileActions}
+        onClose={() => setShowMobileActions(false)}
+        selectedItems={contextMenuItems}
+        onAction={handleMobileAction}
       />
     </motion.div>
   );

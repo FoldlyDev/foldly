@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import { useShallow } from 'zustand/shallow';
 import { useStagingStore } from '../stores/staging-store';
 import type { LinkWithOwner } from '../types';
 
@@ -26,31 +27,32 @@ interface UploadValidation {
 
 export function useUploadFiles({ linkData, folderId, onClose }: UseUploadFilesProps) {
   const [isDragging, setIsDragging] = useState(false);
+  // Local state for preview files (before staging)
+  const [previewFiles, setPreviewFiles] = useState<FileWithProgress[]>([]);
   
-  // Use staging store instead of local state
+  // Use staging store for actual staging - with useShallow to prevent infinite loops
   const {
-    stagedFiles,
     addFiles,
     removeFile,
     hasStagedItems,
     getStagedItemCount,
-    getStagedFilesInFolder,
     uploaderName,
     uploaderEmail,
     uploaderMessage,
-  } = useStagingStore();
+  } = useStagingStore(
+    useShallow((state) => ({
+      addFiles: state.addFiles,
+      removeFile: state.removeFile,
+      hasStagedItems: state.hasStagedItems,
+      getStagedItemCount: state.getStagedItemCount,
+      uploaderName: state.uploaderName,
+      uploaderEmail: state.uploaderEmail,
+      uploaderMessage: state.uploaderMessage,
+    }))
+  );
   
-  // Convert staged files to legacy format for compatibility
-  const files: FileWithProgress[] = useMemo(() => {
-    const currentFolderFiles = getStagedFilesInFolder(folderId);
-    return currentFolderFiles.map(stagedFile => ({
-      file: stagedFile.file,
-      id: stagedFile.id,
-      progress: stagedFile.progress,
-      status: stagedFile.status,
-      error: stagedFile.error,
-    }));
-  }, [stagedFiles, folderId, getStagedFilesInFolder]);
+  // Use preview files for display in modal
+  const files: FileWithProgress[] = previewFiles;
 
   // Get uploader session data from staging store or localStorage fallback
   const getUploaderSession = useCallback(() => {
@@ -129,12 +131,19 @@ export function useUploadFiles({ linkData, folderId, onClose }: UseUploadFilesPr
 
   // No longer need upload mutations - staging only
 
-  // Handle file selection - stage files instead of auto-uploading
+  // Handle file selection - add to preview, not directly to staging
   const handleFileSelect = useCallback((selectedFiles: FileList | File[]) => {
     const fileArray = Array.from(selectedFiles);
-    // Add files to staging store
-    addFiles(fileArray, folderId);
-  }, [addFiles, folderId]);
+    // Add files to preview state
+    const newFiles: FileWithProgress[] = fileArray.map(file => ({
+      file,
+      id: `preview-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      progress: 0,
+      status: 'staged' as const,
+      error: undefined,
+    }));
+    setPreviewFiles(prev => [...prev, ...newFiles]);
+  }, []);
 
   // Handle drag events
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -156,17 +165,25 @@ export function useUploadFiles({ linkData, folderId, onClose }: UseUploadFilesPr
     }
   }, [handleFileSelect]);
 
-  // Remove file from staging
+  // Remove file from preview
   const handleRemoveFile = useCallback((fileId: string) => {
-    removeFile(fileId);
-  }, [removeFile]);
-
-  // Clear files - not needed in staging mode (handled by store)
-  const clearFiles = useCallback(() => {
-    // Files are managed by staging store
+    setPreviewFiles(prev => prev.filter(f => f.id !== fileId));
   }, []);
 
-  // Upload handler removed - now handled by toolbar
+  // Clear preview files
+  const clearFiles = useCallback(() => {
+    setPreviewFiles([]);
+  }, []);
+
+  // Stage files handler - move from preview to staging store
+  const handleStageFiles = useCallback(() => {
+    if (previewFiles.length > 0) {
+      const filesToStage = previewFiles.map(f => f.file);
+      addFiles(filesToStage, folderId);
+      clearFiles();
+      onClose();
+    }
+  }, [previewFiles, addFiles, folderId, clearFiles, onClose]);
 
   // Utility functions
   const formatFileSize = useCallback((bytes: number): string => {
@@ -207,6 +224,7 @@ export function useUploadFiles({ linkData, folderId, onClose }: UseUploadFilesPr
     failedFiles,
     hasFilesToUpload,
     clearFiles,
+    handleStageFiles,
     // New staging-specific properties
     hasStagedItems: hasStagedItems(),
     totalStagedItems: getStagedItemCount(),

@@ -15,6 +15,7 @@ export interface LinkTreeItem {
   id: string;
   name: string;
   isFile: boolean;
+  type?: 'file' | 'folder'; // Added for compatibility
   parentId?: string;
   linkId: string;
   
@@ -53,35 +54,42 @@ export const setDragOperationActive = (active: boolean) => {
 // =============================================================================
 
 export const dataLoader = {
-  getItem: (itemId: string) => {
+  getItem: (itemId: string): LinkTreeItem => {
     const item = data[itemId];
+    if (!item) {
+      // Return a dummy item to satisfy the type requirement
+      // The tree will handle undefined items gracefully
+      return {
+        id: itemId,
+        name: `Missing: ${itemId}`,
+        isFile: false,
+        type: 'folder',
+        linkId: '',
+        children: [],
+      };
+    }
     return item;
   },
   
-  getChildren: (itemId: string) => {
+  getChildren: (itemId: string): string[] => {
     const item = data[itemId];
-    if (!item) {
+    
+    // Return empty array for non-existent items or files
+    if (!item || item.isFile) {
       return [];
     }
     
-    if (item.isFile) {
-      return [];
-    }
-    
-    // If the item has a children array, return it
-    if (item.children) {
-      return item.children;
-    }
-    
-    // Otherwise, find all direct children dynamically
-    const children = Object.values(data).filter(
-      child => child.parentId === itemId
-    );
-    
-    // Store the children IDs in the parent for faster access
-    item.children = children.map(child => child.id);
-    
-    return item.children;
+    // Always return a valid array, never undefined
+    return item.children || [];
+  },
+  
+  // Add this method to match workspace implementation
+  getChildrenWithData: (itemId: string) => {
+    const childrenIds = dataLoader.getChildren(itemId);
+    return childrenIds.map(childId => ({
+      id: childId,
+      data: data[childId] || dataLoader.getItem(childId),
+    }));
   },
 };
 
@@ -125,6 +133,7 @@ export function populateFromDatabase(
     id: link.id,
     name: link.title || 'Link Root',
     isFile: false,
+    type: 'folder',
     linkId: link.id,
     children: [], // Initialize with empty children array
   };
@@ -135,6 +144,7 @@ export function populateFromDatabase(
       id: folder.id,
       name: folder.name,
       isFile: false,
+      type: 'folder',
       parentId: folder.parentId || link.id, // Use link ID as root parent
       linkId: folder.linkId,
       createdAt: folder.createdAt,
@@ -148,6 +158,7 @@ export function populateFromDatabase(
       id: file.id,
       name: file.originalName,
       isFile: true,
+      type: 'file',
       parentId: file.parentId || link.id, // Use link ID as root parent
       linkId: file.linkId,
       size: file.fileSize,
@@ -191,10 +202,35 @@ export function addItemToTree(
   // Use link ID as default parent if none specified
   const effectiveParentId = parentId || item.linkId;
   
+  // Ensure the root folder exists before adding items
+  if (effectiveParentId && !data[effectiveParentId]) {
+    // Create a virtual root if it doesn't exist
+    data[effectiveParentId] = {
+      id: effectiveParentId,
+      name: 'Link Root',
+      isFile: false,
+      type: 'folder',
+      linkId: item.linkId,
+      children: [],
+    };
+  }
+  
   data[item.id] = {
     ...item,
     parentId: effectiveParentId,
+    children: item.isFile ? undefined : [], // Initialize children array for folders
   };
+  
+  // Add to parent's children array
+  if (effectiveParentId && data[effectiveParentId]) {
+    const parent = data[effectiveParentId];
+    if (!parent.children) {
+      parent.children = [];
+    }
+    if (!parent.children.includes(item.id)) {
+      parent.children.push(item.id);
+    }
+  }
 }
 
 export function removeItemFromTree(itemId: string): void {
@@ -269,19 +305,46 @@ export function mergeStagedItemsWithTree(
   stagedFolders: Map<string, StagedFolder>
 ): void {
 
+  // Ensure the link root exists with proper initialization
+  if (!data[linkId]) {
+    data[linkId] = {
+      id: linkId,
+      name: 'Link Root',
+      isFile: false,
+      type: 'folder',
+      linkId,
+      children: [],
+    };
+  } else if (!data[linkId].children) {
+    // Ensure existing root has children array
+    data[linkId].children = [];
+  }
+
   // Remove existing staged items first
   Object.keys(data).forEach(id => {
     if (data[id]?.isStaged) {
+      // Also remove from parent's children array
+      const parentId = data[id].parentId;
+      if (parentId && data[parentId]) {
+        const parent = data[parentId];
+        if (parent.children) {
+          parent.children = parent.children.filter(childId => childId !== id);
+        }
+      }
       delete data[id];
     }
   });
 
   // Add staged folders
   stagedFolders.forEach(folder => {
+    // Skip if already exists to prevent duplicates
+    if (data[folder.id]) return;
+    
     const treeItem: LinkTreeItem = {
       id: folder.id,
       name: folder.name,
       isFile: false,
+      type: 'folder',
       parentId: folder.parentFolderId || linkId,
       linkId,
       isStaged: true,
@@ -306,10 +369,14 @@ export function mergeStagedItemsWithTree(
 
   // Add staged files
   stagedFiles.forEach(file => {
+    // Skip if already exists to prevent duplicates
+    if (data[file.id]) return;
+    
     const treeItem: LinkTreeItem = {
       id: file.id,
       name: file.name,
       isFile: true,
+      type: 'file',
       parentId: file.parentFolderId || linkId,
       linkId,
       size: file.size,

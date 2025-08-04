@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
               fileName: file.name,
               fileSize: file.size,
               mimeType: file.type,
-              uploaderName: fileMetadata[index]?.fileName || uploaderName,
+              uploaderName: uploaderName,
             })),
             uploaderName,
             ...(uploaderEmail && { uploaderEmail }),
@@ -289,27 +289,11 @@ export async function POST(req: NextRequest) {
             
             console.log(`📊 Processing file ${i}: ${file.name} (parent: ${parentKey}, sortOrder: ${sortIndex})`);
             
-            // Check if batchResult has files array and get the corresponding file
-            const batchFile = batchResult?.data?.files?.[i];
-            console.log(`📊 Batch file record for index ${i}:`, batchFile);
-            
             if (!file) {
               results.errors.push({
                 itemId: metadata?.id || `file_${i}`,
                 itemName: 'Unknown file',
                 error: 'File data not found',
-              });
-              results.totalProcessed++;
-              continue;
-            }
-            
-            if (!batchFile) {
-              // If no batch file record, we need to handle this differently
-              console.log(`⚠️ No batch file record found for file ${i}: ${file.name}`);
-              results.errors.push({
-                itemId: metadata?.id || `file_${i}`,
-                itemName: file?.name || 'Unknown file',
-                error: 'Batch file record not created',
               });
               results.totalProcessed++;
               continue;
@@ -322,20 +306,7 @@ export async function POST(req: NextRequest) {
                 parentFolderId = folderIdMap.get(parentFolderId);
               }
             
-            // Get the file record and batch info for storage path generation
-            const [fileRecord] = await db
-              .select()
-              .from(filesTable)
-              .where(and(
-                eq(filesTable.id, batchFile.id),
-                eq(filesTable.batchId, batchId)
-              ))
-              .limit(1);
-
-            if (!fileRecord) {
-              throw new Error('File record not found');
-            }
-
+            // Get batch info for user ID
             const [batch] = await db
               .select()
               .from(batches)
@@ -351,23 +322,55 @@ export async function POST(req: NextRequest) {
             // Generate unique file path
             const timestamp = Date.now();
             const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-            const storagePath = `${userId}/${fileRecord.linkId}/${timestamp}_${sanitizedName}`;
+            const storagePath = `${userId}/${linkId}/${timestamp}_${sanitizedName}`;
             
             console.log('📊 Storage upload details:', {
               storagePath,
               userId,
-              linkId: fileRecord.linkId,
+              linkId: linkId,
               fileName: file.name,
               fileSize: file.size,
               fileType: file.type
             });
 
+            // Create file record first with all required fields including storage path
+            const fileExtension = file.name.split('.').pop() || '';
+            const fileId = crypto.randomUUID();
+            
+            const [fileRecord] = await db
+              .insert(filesTable)
+              .values({
+                id: fileId,
+                linkId: linkId,
+                batchId: batchId,
+                userId: userId,
+                fileName: file.name,
+                originalName: file.name,
+                fileSize: file.size,
+                mimeType: file.type || 'application/octet-stream',
+                extension: fileExtension,
+                storagePath: storagePath, // Set the storage path before upload
+                storageProvider: 'supabase',
+                processingStatus: 'processing',
+                folderId: parentFolderId || null,
+                sortOrder: sortIndex,
+                isPublic: true,
+                isSafe: true,
+                virusScanResult: 'clean',
+                uploaderName: uploaderName,
+                downloadCount: 0,
+              })
+              .returning({ id: filesTable.id });
+
+            if (!fileRecord) {
+              throw new Error('Failed to create file record');
+            }
+
             // Convert File to ArrayBuffer then to Uint8Array for Supabase
             const arrayBuffer = await file.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
 
-            // Upload directly to Supabase Storage from the API route
-            // Using 'shared' bucket for link files (not 'files' bucket which is for workspace)
+            // Upload to Supabase Storage
             const { data: uploadData, error: uploadError } = await supabase.storage
               .from('shared')
               .upload(storagePath, uint8Array, {
@@ -376,53 +379,28 @@ export async function POST(req: NextRequest) {
               });
 
             if (uploadError) {
+              // Delete the file record if upload fails
+              await db.delete(filesTable).where(eq(filesTable.id, fileId));
+              
               console.error('❌ Supabase storage upload error:', {
                 error: uploadError,
                 message: uploadError.message,
                 statusCode: (uploadError as any).statusCode,
                 path: storagePath,
-                fileId: batchFile.id,
-                fileName: file.name
-              });
-              logger.error('Storage upload error', uploadError, {
-                fileId: batchFile.id,
+                fileId: fileId,
                 fileName: file.name
               });
               throw new Error(`Failed to upload file to storage: ${uploadError.message || 'Unknown error'}`);
             }
 
-            // Update the file record with storage path, status, and sort order
-            const fileExtension = file.name.split('.').pop() || '';
-            
-            const updateData: any = {
-              storagePath: uploadData.path,
-              storageProvider: 'supabase',
-              originalName: file.name,
-              extension: fileExtension,
-              processingStatus: 'completed',
-              isSafe: true,
-              virusScanResult: 'clean',
-              downloadCount: 0,
-              sortOrder: sortIndex, // Set the sort order within the parent folder
-              updatedAt: new Date(),
-            };
-            
-            // Update folderId if provided
-            if (parentFolderId !== undefined) {
-              updateData.folderId = parentFolderId;
-            }
-            
-            const updateResult = await db
+            // Update file status to completed after successful upload
+            await db
               .update(filesTable)
-              .set(updateData)
-              .where(eq(filesTable.id, batchFile.id))
-              .returning({ id: filesTable.id });
-
-            if (updateResult.length === 0) {
-              // Cleanup storage if database update fails
-              await supabase.storage.from('shared').remove([storagePath]);
-              throw new Error('Failed to update file record');
-            }
+              .set({
+                processingStatus: 'completed',
+                updatedAt: new Date(),
+              })
+              .where(eq(filesTable.id, fileId));
 
             // Update user storage usage
             await db
@@ -443,7 +421,7 @@ export async function POST(req: NextRequest) {
                 lastUploadAt: new Date(),
                 updatedAt: new Date(),
               })
-              .where(eq(links.id, fileRecord.linkId!));
+              .where(eq(links.id, linkId));
 
             // Update batch processed files count
             await db

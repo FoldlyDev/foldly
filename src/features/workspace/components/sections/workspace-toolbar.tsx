@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/core/shadcn/button';
 import { Input } from '@/components/ui/core/shadcn/input';
@@ -13,6 +13,8 @@ import {
   Maximize2,
   X,
   Trash2,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -47,11 +49,16 @@ interface WorkspaceToolbarProps {
     deleteItems?: (itemIds: string[]) => void;
     expandAll?: () => void;
     collapseAll?: () => void;
+    isTouchDevice?: () => boolean;
+    isSelectionMode?: () => boolean;
+    setSelectionMode?: (mode: boolean) => void;
   };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedItems?: string[];
   onClearSelection?: () => void;
+  selectionMode?: boolean;
+  onSelectionModeChange?: (mode: boolean) => void;
 }
 
 export function WorkspaceToolbar({
@@ -61,6 +68,8 @@ export function WorkspaceToolbar({
   setSearchQuery,
   selectedItems = [],
   onClearSelection,
+  selectionMode = false,
+  onSelectionModeChange,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -71,6 +80,25 @@ export function WorkspaceToolbar({
   const queryClient = useQueryClient();
 
   const { openUploadModal } = useWorkspaceUI();
+  
+  // Get mobile state from tree instance
+  const isMobile = treeInstance?.isTouchDevice?.() || false;
+  
+  // Use external selection mode state if provided, otherwise fallback to tree instance
+  const isSelectionMode = selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
+  
+  // Handle selection mode toggle
+  const handleToggleSelectionMode = () => {
+    const newMode = !isSelectionMode;
+    // Update external state if handler provided
+    if (onSelectionModeChange) {
+      onSelectionModeChange(newMode);
+    }
+    // Also update tree instance if available
+    if (treeInstance?.setSelectionMode) {
+      treeInstance.setSelectionMode(newMode);
+    }
+  };
 
   // Collapse all functionality
   const handleCollapseAll = () => {
@@ -290,6 +318,32 @@ export function WorkspaceToolbar({
       <div className='workspace-toolbar-main'>
         {/* Left side - Main actions */}
         <div className='workspace-toolbar-left'>
+          {/* Selection mode toggle - show for all users */}
+          <div className='flex items-center mr-3'>
+            <label className='flex items-center cursor-pointer'>
+              <input
+                type='checkbox'
+                checked={isSelectionMode}
+                onChange={handleToggleSelectionMode}
+                className='sr-only'
+              />
+              <Button
+                size='sm'
+                variant={isSelectionMode ? 'default' : 'ghost'}
+                onClick={handleToggleSelectionMode}
+                className='flex items-center'
+                type='button'
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className='h-4 w-4 mr-2' />
+                ) : (
+                  <Square className='h-4 w-4 mr-2' />
+                )}
+                <span>{isMobile ? (isSelectionMode ? 'Exit' : 'Select') : 'Select'}</span>
+              </Button>
+            </label>
+          </div>
+          
           {/* Create folder */}
           {isCreatingFolder ? (
             <div className='workspace-folder-creation'>
@@ -381,36 +435,50 @@ export function WorkspaceToolbar({
         </div>
       </div>
 
-      {/* Mini-actions toolbar - shows when items are selected */}
-      {selectedItems.length > 0 && (
+      {/* Mini-actions toolbar - shows when items are selected or in selection mode */}
+      {(selectedItems.length > 0 || (isMobile && isSelectionMode)) && (
         <div className='flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]'>
           <div className='flex items-center gap-3'>
             <span className='text-sm font-medium text-blue-700'>
-              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}
-              selected
+              {selectedItems.length > 0 ? (
+                <>
+                  {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}
+                  selected
+                </>
+              ) : (
+                'Tap items to select'
+              )}
             </span>
           </div>
 
           <div className='flex items-center gap-2'>
-            <Button
-              size='sm'
-              variant='ghost'
-              className='h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50'
-              onClick={handleDelete}
-              disabled={batchDeleteMutation.isPending}
-            >
-              <Trash2 className='h-4 w-4 mr-2' />
-              Delete
-            </Button>
+            {selectedItems.length > 0 && (
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50'
+                onClick={handleDelete}
+                disabled={batchDeleteMutation.isPending}
+              >
+                <Trash2 className='h-4 w-4 mr-2' />
+                Delete
+              </Button>
+            )}
 
             <Button
               size='sm'
               variant='ghost'
               className='h-8 px-3'
-              onClick={onClearSelection}
+              onClick={() => {
+                onClearSelection?.();
+                // Exit selection mode on mobile when clearing
+                if (isMobile && isSelectionMode) {
+                  handleToggleSelectionMode();
+                }
+              }}
             >
               <X className='h-4 w-4 mr-2' />
-              Clear
+              {isMobile && isSelectionMode && selectedItems.length === 0 ? 'Cancel' : 'Clear'}
             </Button>
           </div>
         </div>

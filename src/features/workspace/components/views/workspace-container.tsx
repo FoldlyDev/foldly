@@ -9,6 +9,7 @@ import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree'
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
 import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   useStorageTracking,
   useStorageQuotaStatus,
@@ -25,6 +26,9 @@ const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 export function WorkspaceContainer() {
   // Get workspace data with loading states
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
+  
+  // Mobile detection
+  const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Set up real-time subscription for workspace changes
   useWorkspaceRealtime(workspaceData?.workspace?.id);
@@ -51,6 +55,7 @@ export function WorkspaceContainer() {
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
 
   const handleClearSelection = () => {
     // Clear tree instance selection
@@ -59,6 +64,8 @@ export function WorkspaceContainer() {
     }
     // Clear local state
     setSelectedItems([]);
+    // Exit selection mode when clearing
+    setSelectionMode(false);
   };
 
   // Monitor storage changes and show threshold notifications
@@ -131,6 +138,8 @@ export function WorkspaceContainer() {
           setSearchQuery={setSearchQuery}
           selectedItems={selectedItems}
           onClearSelection={handleClearSelection}
+          selectionMode={selectionMode}
+          onSelectionModeChange={setSelectionMode}
         />
       </div>
 
@@ -149,6 +158,8 @@ export function WorkspaceContainer() {
                 searchQuery={searchQuery}
                 selectedItems={selectedItems}
                 onSelectionChange={setSelectedItems}
+                selectionMode={selectionMode}
+                onSelectionModeChange={setSelectionMode}
               />
             </Suspense>
           </div>

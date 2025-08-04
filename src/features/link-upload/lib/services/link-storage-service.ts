@@ -40,7 +40,7 @@ export class LinkStorageService {
         };
       }
 
-      const currentUsage = userResult[0].storageUsed;
+      const currentUsage = userResult[0]?.storageUsed ?? 0;
 
       // Get user's storage limit from subscription
       const billingResult = await BillingService.getUserBillingData(userId);

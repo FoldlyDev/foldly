@@ -49,8 +49,52 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Selected folder state for folder creation target
+  const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>(undefined);
+  const [selectedFolderName, setSelectedFolderName] = useState<string>('Link Root');
+
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  // Handle folder selection for creation target
+  const handleFolderSelection = React.useCallback((items: string[]) => {
+    setSelectedItems(items);
+    
+    // Update selected folder for creation target
+    if (items.length === 1 && treeInstance) {
+      const itemId = items[0];
+      const item = treeInstance.getItemInstance?.(itemId);
+      
+      if (item && !item.getItemData?.()?.isFile) {
+        // Check if this is the root link item
+        if (itemId === linkData.id) {
+          setSelectedFolderId(undefined);
+          setSelectedFolderName('Link Root');
+        } else {
+          setSelectedFolderId(itemId);
+          setSelectedFolderName(item.getItemName?.() || 'Unknown Folder');
+        }
+      } else {
+        // If a file is selected, keep previous folder selection
+        // This matches workspace behavior
+      }
+    } else if (items.length === 0) {
+      // No selection - reset to root
+      setSelectedFolderId(undefined);
+      setSelectedFolderName('Link Root');
+    }
+    // Multiple selection - keep current folder target
+  }, [treeInstance, linkData.id]);
+
+  // Handle root click - select root as target
+  const handleRootClick = React.useCallback(() => {
+    setSelectedFolderId(undefined);
+    setSelectedFolderName('Link Root');
+    if (treeInstance?.setSelectedItems) {
+      treeInstance.setSelectedItems([]);
+    }
+    setSelectedItems([]);
+  }, [treeInstance]);
 
   // Always show access modal on mount
   React.useEffect(() => {
@@ -189,6 +233,8 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
             setSearchQuery={setSearchQuery}
             selectedItems={selectedItems}
             onClearSelection={handleClearSelection}
+            selectedFolderId={selectedFolderId}
+            selectedFolderName={selectedFolderName}
           />
         </div>
 
@@ -208,7 +254,8 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                   onTreeReady={setTreeInstance}
                   searchQuery={searchQuery}
                   selectedItems={selectedItems}
-                  onSelectionChange={setSelectedItems}
+                  onSelectionChange={handleFolderSelection}
+                  onRootClick={handleRootClick}
                 />
               </Suspense>
             </div>

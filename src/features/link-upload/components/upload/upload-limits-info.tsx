@@ -63,18 +63,6 @@ export function UploadLimitsInfo({ linkData }: UploadLimitsInfoProps) {
               </div>
             )}
           </div>
-
-          {/* Plan Information */}
-          <div className="pt-2 border-t text-xs text-muted-foreground">
-            <p>
-              Plan: <span className="font-medium capitalize">{linkData.subscription.planKey}</span>
-              {linkData.subscription.planKey === 'free' && (
-                <span className="ml-2 text-blue-600">
-                  Upgrade for higher limits
-                </span>
-              )}
-            </p>
-          </div>
         </div>
       </div>
     </div>

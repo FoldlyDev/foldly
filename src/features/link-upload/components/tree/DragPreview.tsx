@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import type { TreeInstance } from '@headless-tree/core';
 import { FileIcon, FolderIcon } from 'lucide-react';
 import type { LinkTreeItem } from '../../lib/tree-data';
@@ -10,7 +9,13 @@ interface DragPreviewProps {
 }
 
 export function DragPreview({ tree }: DragPreviewProps) {
-  const draggedItems = tree.getState()?.dnd?.draggedItems || [];
+  // Safely get dragged items with null checks
+  if (!tree || typeof tree.getState !== 'function') {
+    return null;
+  }
+  
+  const treeState = tree.getState();
+  const draggedItems = treeState?.dnd?.draggedItems || [];
 
   if (draggedItems.length === 0) {
     return null;
@@ -20,13 +25,13 @@ export function DragPreview({ tree }: DragPreviewProps) {
     <div className="fixed pointer-events-none z-50 bg-white border rounded-lg shadow-lg p-2 max-w-xs">
       {draggedItems.length === 1 ? (
         <div className="flex items-center gap-2">
-          {draggedItems[0].isFolder() ? (
+          {draggedItems[0]?.isFolder?.() ? (
             <FolderIcon className="w-4 h-4 text-blue-600" />
           ) : (
             <FileIcon className="w-4 h-4 text-gray-600" />
           )}
           <span className="text-sm font-medium truncate">
-            {draggedItems[0].getItemName()}
+            {draggedItems[0]?.getItemName?.() || 'Unknown'}
           </span>
         </div>
       ) : (
@@ -34,11 +39,11 @@ export function DragPreview({ tree }: DragPreviewProps) {
           <div className="flex -space-x-1">
             {draggedItems.slice(0, 3).map((item, index) => (
               <div
-                key={item.getId()}
+                key={item?.getId?.() || index}
                 className="w-6 h-6 bg-blue-100 border-2 border-white rounded flex items-center justify-center"
                 style={{ zIndex: 10 - index }}
               >
-                {item.isFolder() ? (
+                {item?.isFolder?.() ? (
                   <FolderIcon className="w-3 h-3 text-blue-600" />
                 ) : (
                   <FileIcon className="w-3 h-3 text-gray-600" />
@@ -55,12 +60,3 @@ export function DragPreview({ tree }: DragPreviewProps) {
   );
 }
 
-/**
- * Hook to provide drag preview configuration for the tree
- */
-export function useDragPreview() {
-  return useMemo(() => ({
-    // Custom drag preview configuration could go here
-    // For now, we'll use the default headless-tree drag preview
-  }), []);
-}

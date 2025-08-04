@@ -40,7 +40,6 @@ export function LinkUploadModal({
     handleDragLeave,
     handleDrop,
     handleRemoveFile,
-    handleUpload,
     formatFileSize,
     formatSize,
     totalFiles,
@@ -49,6 +48,7 @@ export function LinkUploadModal({
     failedFiles,
     hasFilesToUpload,
     clearFiles,
+    handleStageFiles,
   } = useUploadFiles({ linkData, folderId, onClose });
 
   const handleClose = useCallback(() => {
@@ -76,7 +76,7 @@ export function LinkUploadModal({
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>Add Files to Link</DialogTitle>
         <DialogDescription className='sr-only'>
-          Select files to stage for upload to this link collection. Files will be added to the staging area and can be uploaded via the main upload button.
+          Select files to preview before adding them to the staging area. You can review your files before staging them for upload.
         </DialogDescription>
 
         {/* Modal Header */}
@@ -106,8 +106,8 @@ export function LinkUploadModal({
                 </h1>
                 <p className='text-xs sm:text-sm text-gray-600 mt-0.5 hidden sm:block'>
                   {linkData.isPublic 
-                    ? 'Select files to stage for this public collection'
-                    : 'Select files to stage for this private collection'
+                    ? 'Select files to preview before staging for this public collection'
+                    : 'Select files to preview before staging for this private collection'
                   }
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function LinkUploadModal({
               Cancel
             </Button>
             <Button
-              onClick={handleClose}
+              onClick={hasFilesToUpload ? handleStageFiles : handleClose}
               className='w-full sm:w-auto min-w-0 sm:min-w-[140px] text-white transition-all duration-200 cursor-pointer'
               style={{
                 background: linkData.brandEnabled && hasFilesToUpload
@@ -227,7 +227,7 @@ export function LinkUploadModal({
                 <>
                   <CloudUpload className='w-4 h-4' />
                   <span>
-                    Add Files{stagedFiles > 1 ? ` (${stagedFiles})` : ''}
+                    Add {stagedFiles} selected {stagedFiles === 1 ? 'file' : 'files'}
                   </span>
                 </>
               ) : (

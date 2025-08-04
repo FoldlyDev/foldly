@@ -1,86 +1,24 @@
-import { db } from '@/lib/database/connection';
-import { files, folders, links, batches } from '@/lib/database/schemas';
-import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { TreeNode, LinkWithFileTree, CopyResult, CopyOptions } from '@/features/files/types';
+import type { LinkWithFileTree, CopyResult, CopyOptions, TreeNode } from '@/features/files/types';
+import { linkFilesTreeService } from './link-files-tree-service';
+import { linkFilesCopyService } from './link-files-copy-service';
 
 /**
- * Service for managing links with their associated files and folders
+ * Facade service for managing links with their associated files and folders
+ * This service delegates to specialized services for tree building and copy operations
  */
 export class LinkFilesService {
   /**
    * Get all links for a user with their file tree structure
    */
   async getLinksWithFiles(userId: string): Promise<LinkWithFileTree[]> {
-    try {
-      // Get all links for the user
-      const userLinks = await db
-        .select()
-        .from(links)
-        .where(eq(links.userId, userId))
-        .execute();
-
-      // Get file trees for each link
-      const linksWithFiles = await Promise.all(
-        userLinks.map(async (link) => {
-          const linkFolders = await db
-            .select({
-              folder: folders,
-              batch: batches,
-            })
-            .from(folders)
-            .leftJoin(batches, eq(folders.batchId, batches.id))
-            .where(eq(folders.linkId, link.id))
-            .execute();
-
-          const linkFiles = await db
-            .select({
-              file: files,
-              batch: batches,
-            })
-            .from(files)
-            .leftJoin(batches, eq(files.batchId, batches.id))
-            .where(eq(files.linkId, link.id))
-            .execute();
-
-          // Build tree structure
-          const fileTree = this.buildFileTree(linkFolders, linkFiles);
-          
-          // Calculate totals
-          const totalFiles = linkFiles.length;
-          const totalSize = linkFiles.reduce((sum, fileWithBatch) => sum + fileWithBatch.file.fileSize, 0);
-
-          return {
-            ...link,
-            fileTree,
-            totalFiles,
-            totalSize,
-          };
-        })
-      );
-
-      return linksWithFiles;
-    } catch (error) {
-      console.error('Error fetching links with files:', error);
-      throw new Error('Failed to fetch links with files');
-    }
+    return linkFilesTreeService.getLinksWithFiles(userId);
   }
 
   /**
    * Get total size of files by IDs
    */
   async getFilesTotalSize(fileIds: string[]): Promise<{ totalSize: number }> {
-    try {
-      const result = await db
-        .select({ totalSize: sql<number>`COALESCE(SUM(${files.fileSize}), 0)` })
-        .from(files)
-        .where(inArray(files.id, fileIds))
-        .execute();
-
-      return { totalSize: Number(result[0]?.totalSize || 0) };
-    } catch (error) {
-      console.error('Error calculating total file size:', error);
-      return { totalSize: 0 };
-    }
+    return linkFilesCopyService.getFilesTotalSize(fileIds);
   }
 
   /**
@@ -94,74 +32,13 @@ export class LinkFilesService {
     workspaceId: string,
     options?: Partial<CopyOptions>
   ): Promise<CopyResult> {
-    const errors: Array<{ fileId: string; fileName: string; error: string }> = [];
-    let copiedFiles = 0;
-    let copiedFolders = 0;
-    let totalSize = 0;
-    const folderMapping = new Map<string, string>(); // sourceId -> newWorkspaceFolderId
-
-    try {
-      // Start a transaction
-      await db.transaction(async (tx) => {
-        // Process nodes in proper order: folders first, then files
-        const sortedNodes = [...nodes].sort((a, b) => {
-          if (a.type === 'folder' && b.type === 'file') return -1;
-          if (a.type === 'file' && b.type === 'folder') return 1;
-          return 0;
-        });
-
-        // First pass: Create all folders in workspace
-        for (const node of sortedNodes) {
-          if (node.type === 'folder') {
-            await this.createFolderInWorkspace(
-              tx, 
-              node, 
-              targetFolderId,
-              userId, 
-              workspaceId, 
-              folderMapping
-            );
-            copiedFolders++;
-          }
-        }
-
-        // Second pass: Copy all files to appropriate folders
-        const copyResults = { copiedFiles: 0, totalSize: 0 };
-        for (const node of sortedNodes) {
-          await this.copyNodeToWorkspace(
-            tx,
-            node,
-            targetFolderId,
-            userId,
-            workspaceId,
-            folderMapping,
-            errors,
-            copyResults
-          );
-        }
-        
-        copiedFiles = copyResults.copiedFiles;
-        totalSize = copyResults.totalSize;
-
-        // Update user's storage usage
-        await tx.execute(sql`
-          UPDATE users 
-          SET storage_used = storage_used + ${totalSize}
-          WHERE id = ${userId}
-        `);
-      });
-
-      return {
-        success: errors.length === 0,
-        copiedFiles,
-        copiedFolders,
-        errors,
-        totalSize,
-      };
-    } catch (error) {
-      console.error('Error copying tree nodes to workspace:', error);
-      throw new Error('Failed to copy tree nodes to workspace');
-    }
+    return linkFilesCopyService.copyTreeNodesToWorkspace(
+      nodes,
+      targetFolderId,
+      userId,
+      workspaceId,
+      options
+    );
   }
 
   /**
@@ -173,380 +50,34 @@ export class LinkFilesService {
     userId: string,
     workspaceId: string
   ): Promise<CopyResult> {
-    const errors: Array<{ fileId: string; fileName: string; error: string }> = [];
-    let copiedFiles = 0;
-    let totalSize = 0;
-
-    try {
-      // Start a transaction
-      await db.transaction(async (tx) => {
-        // Get source files
-        const sourceFiles = await tx
-          .select()
-          .from(files)
-          .where(inArray(files.id, fileIds))
-          .execute();
-
-        // Verify all files belong to user's links
-        const userLinkIds = await tx
-          .select({ id: links.id })
-          .from(links)
-          .where(eq(links.userId, userId))
-          .execute();
-
-        const userLinkIdSet = new Set(userLinkIds.map((l: { id: string }) => l.id));
-
-        for (const file of sourceFiles) {
-          if (!file.linkId || !userLinkIdSet.has(file.linkId)) {
-            errors.push({
-              fileId: file.id,
-              fileName: file.fileName,
-              error: 'Unauthorized access to file',
-            });
-            continue;
-          }
-
-          try {
-            // Create copy with new ID and workspace reference
-            const newFile = {
-              ...file,
-              id: crypto.randomUUID(),
-              linkId: null,
-              workspaceId,
-              folderId: targetFolderId,
-              copiedFromFileId: file.id,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            };
-
-            // Remove fields that shouldn't be copied
-            delete (newFile as any).batchId;
-
-            await tx.insert(files).values(newFile).execute();
-            
-            copiedFiles++;
-            totalSize += file.fileSize;
-          } catch (error) {
-            errors.push({
-              fileId: file.id,
-              fileName: file.fileName,
-              error: error instanceof Error ? error.message : 'Copy failed',
-            });
-          }
-        }
-
-        // Update user's storage usage
-        await tx.execute(sql`
-          UPDATE users 
-          SET storage_used = storage_used + ${totalSize}
-          WHERE id = ${userId}
-        `);
-      });
-
-      return {
-        success: errors.length === 0,
-        copiedFiles,
-        copiedFolders: 0, // File-only copy doesn't copy folders
-        errors,
-        totalSize,
-      };
-    } catch (error) {
-      console.error('Error copying files to workspace:', error);
-      throw new Error('Failed to copy files to workspace');
-    }
+    return linkFilesCopyService.copyFilesToWorkspace(
+      fileIds,
+      targetFolderId,
+      userId,
+      workspaceId
+    );
   }
 
   /**
    * Build hierarchical tree structure from flat folders and files
+   * Exposed for backward compatibility
    */
-  private buildFileTree(
+  buildFileTree(
     foldersData: Array<{ folder: any; batch: any }>,
     filesData: Array<{ file: any; batch: any }>
   ): TreeNode[] {
-    const nodeMap = new Map<string, TreeNode>();
-    const rootNodes: TreeNode[] = [];
-
-    // Create folder nodes
-    foldersData.forEach(({ folder, batch }) => {
-      const node: TreeNode = {
-        id: folder.id,
-        name: folder.name,
-        type: 'folder',
-        parentId: folder.parentFolderId,
-        path: folder.path,
-        children: [],
-        ...(batch && {
-          metadata: {
-            uploaderName: batch.uploaderName,
-            uploaderEmail: batch.uploaderEmail,
-          }
-        }),
-      };
-      nodeMap.set(folder.id, node);
-    });
-
-    // Create file nodes
-    filesData.forEach(({ file, batch }) => {
-      const node: TreeNode = {
-        id: file.id,
-        name: file.fileName,
-        type: 'file',
-        parentId: file.folderId,
-        path: `${file.folderId ? nodeMap.get(file.folderId)?.path + '/' : '/'}${file.fileName}`,
-        size: file.fileSize,
-        mimeType: file.mimeType,
-        metadata: {
-          uploadedAt: file.uploadedAt,
-          uploaderName: batch?.uploaderName || undefined,
-          uploaderEmail: batch?.uploaderEmail || undefined,
-        },
-      };
-      nodeMap.set(file.id, node);
-    });
-
-    // Build tree structure
-    nodeMap.forEach(node => {
-      if (node.parentId) {
-        const parent = nodeMap.get(node.parentId);
-        if (parent && parent.children) {
-          parent.children.push(node);
-        }
-      } else {
-        rootNodes.push(node);
-      }
-    });
-
-    // Sort nodes
-    this.sortNodes(rootNodes);
-
-    return rootNodes;
-  }
-
-  /**
-   * Sort nodes recursively (folders first, then alphabetically)
-   */
-  private sortNodes(nodes: TreeNode[]): void {
-    nodes.sort((a, b) => {
-      if (a.type !== b.type) {
-        return a.type === 'folder' ? -1 : 1;
-      }
-      return a.name.localeCompare(b.name);
-    });
-
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        this.sortNodes(node.children);
-      }
-    });
-  }
-
-  /**
-   * Create a folder in the workspace with proper hierarchy
-   */
-  private async createFolderInWorkspace(
-    tx: any,
-    folderNode: TreeNode,
-    targetFolderId: string | null,
-    userId: string,
-    workspaceId: string,
-    folderMapping: Map<string, string>
-  ): Promise<void> {
-    try {
-      // Determine parent folder ID
-      let parentFolderId = targetFolderId;
-      if (folderNode.parentId && folderMapping.has(folderNode.parentId)) {
-        parentFolderId = folderMapping.get(folderNode.parentId)!;
-      }
-
-      // Create new folder
-      const newFolderId = crypto.randomUUID();
-      const newFolder = {
-        id: newFolderId,
-        userId,
-        workspaceId,
-        name: folderNode.name,
-        parentFolderId,
-        path: this.buildFolderPath(folderNode.name, parentFolderId, folderMapping),
-        sortOrder: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      await tx.insert(folders).values(newFolder).execute();
-      
-      // Map source folder ID to new workspace folder ID
-      folderMapping.set(folderNode.id, newFolderId);
-
-      // Recursively create child folders
-      if (folderNode.children) {
-        for (const child of folderNode.children) {
-          if (child.type === 'folder') {
-            await this.createFolderInWorkspace(
-              tx,
-              child,
-              targetFolderId,
-              userId,
-              workspaceId,
-              folderMapping
-            );
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error creating folder in workspace:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Copy a single node (file or folder) to workspace
-   */
-  private async copyNodeToWorkspace(
-    tx: any,
-    node: TreeNode,
-    targetFolderId: string | null,
-    userId: string,
-    workspaceId: string,
-    folderMapping: Map<string, string>,
-    errors: Array<{ fileId: string; fileName: string; error: string }>,
-    copyResults: { copiedFiles: number; totalSize: number }
-  ): Promise<void> {
-    if (node.type === 'file') {
-      try {
-        // Get source file
-        const sourceFiles = await tx
-          .select()
-          .from(files)
-          .where(eq(files.id, node.id))
-          .execute();
-
-        if (sourceFiles.length === 0) {
-          errors.push({
-            fileId: node.id,
-            fileName: node.name,
-            error: 'Source file not found',
-          });
-          return;
-        }
-
-        const sourceFile = sourceFiles[0];
-
-        // Verify file belongs to user's links
-        const userLinkIds = await tx
-          .select({ id: links.id })
-          .from(links)
-          .where(eq(links.userId, userId))
-          .execute();
-
-        const userLinkIdSet = new Set(userLinkIds.map((l: { id: string }) => l.id));
-
-        if (!sourceFile.linkId || !userLinkIdSet.has(sourceFile.linkId)) {
-          errors.push({
-            fileId: node.id,
-            fileName: node.name,
-            error: 'Unauthorized access to file',
-          });
-          return;
-        }
-
-        // Determine target folder ID
-        let fileFolderId = targetFolderId;
-        if (node.parentId && folderMapping.has(node.parentId)) {
-          fileFolderId = folderMapping.get(node.parentId)!;
-        }
-
-        // Create copy with new ID and workspace reference
-        const newFile = {
-          ...sourceFile,
-          id: crypto.randomUUID(),
-          linkId: null,
-          workspaceId,
-          folderId: fileFolderId,
-          copiedFromFileId: sourceFile.id,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        // Remove fields that shouldn't be copied
-        delete (newFile as any).batchId;
-
-        await tx.insert(files).values(newFile).execute();
-        
-        // Update copy results
-        copyResults.copiedFiles++;
-        copyResults.totalSize += sourceFile.fileSize;
-      } catch (error) {
-        errors.push({
-          fileId: node.id,
-          fileName: node.name,
-          error: error instanceof Error ? error.message : 'Copy failed',
-        });
-      }
-    }
-
-    // Recursively copy children
-    if (node.children) {
-      for (const child of node.children) {
-        await this.copyNodeToWorkspace(
-          tx,
-          child,
-          targetFolderId,
-          userId,
-          workspaceId,
-          folderMapping,
-          errors,
-          copyResults
-        );
-      }
-    }
-  }
-
-  /**
-   * Build folder path for new workspace folder
-   */
-  private buildFolderPath(
-    folderName: string,
-    parentFolderId: string | null,
-    folderMapping: Map<string, string>
-  ): string {
-    if (!parentFolderId) {
-      return `/${folderName}`;
-    }
-
-    // For now, build simple path - in full implementation,
-    // you'd need to look up parent folder paths
-    return `/${folderName}`;
+    return linkFilesTreeService.buildFileTree(foldersData, filesData);
   }
 
   /**
    * Calculate statistics for a tree node (files count and total size)
+   * Exposed for backward compatibility
    */
-  private calculateNodeStats(
+  calculateNodeStats(
     node: TreeNode,
     callback: (fileCount: number, fileSize: number) => void
   ): void {
-    if (node.type === 'file') {
-      callback(1, node.size || 0);
-    }
-    
-    if (node.children) {
-      node.children.forEach(child => {
-        this.calculateNodeStats(child, callback);
-      });
-    }
-  }
-
-  /**
-   * Calculate total size of copied files
-   */
-  private async calculateCopiedFilesSize(
-    tx: any,
-    workspaceId: string,
-    userId: string
-  ): Promise<number> {
-    // This is a simplified version - in a full implementation,
-    // you'd track the actual files copied in this transaction
-    return 0;
+    return linkFilesTreeService.calculateNodeStats(node, callback);
   }
 }
 

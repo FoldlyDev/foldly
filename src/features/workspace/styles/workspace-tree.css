@@ -137,3 +137,52 @@
   padding: 0.5rem;
   border-bottom: 1px solid hsl(var(--border));
 }
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Touch-friendly sizing */
+  .tree button[role='treeitem'] {
+    min-height: 48px; /* Touch-friendly minimum height */
+    padding: 4px 0;
+  }
+  
+  .treeitem {
+    padding: 12px 10px; /* More padding for touch targets */
+    font-size: 14px;
+  }
+  
+  /* Larger icons for easier tapping */
+  .treeitem .size-4 {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Selection mode styles */
+  .tree.selection-mode .treeitem {
+    padding-left: 8px; /* Make room for checkboxes */
+  }
+  
+  /* Better visual feedback for touch */
+  .treeitem:active {
+    background-color: var(--tree-selected-color);
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Prevent text selection on mobile */
+  .tree {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Improve scrolling performance */
+  .tree {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Larger renaming input on mobile */
+  .renaming-item input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 8px 12px;
+  }
+}
