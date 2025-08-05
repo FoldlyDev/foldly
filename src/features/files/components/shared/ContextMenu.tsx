@@ -3,7 +3,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Copy,
-  Move,
   Eye,
   CheckSquare,
   Square,

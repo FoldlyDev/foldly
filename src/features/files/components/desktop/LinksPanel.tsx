@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Link as LinkIcon, 
@@ -96,6 +96,7 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
     setSearchQuery,
     openContextMenu,
     handleContextMenuAction,
+    deselectAll,
   } = useFilesManagementStore();
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -115,6 +116,27 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
       return newSet;
     });
   };
+
+  const handleSelectAll = useCallback(() => {
+    // Select all files and folders from all links
+    links.forEach(link => {
+      const collectNodes = (nodes: TreeNode[]) => {
+        nodes.forEach(node => {
+          if (node.type === 'file') {
+            selectedFiles.add(node.id);
+          } else {
+            selectedFolders.add(node.id);
+          }
+          if (node.children) {
+            collectNodes(node.children);
+          }
+        });
+      };
+      collectNodes(link.fileTree);
+    });
+    // Force re-render by creating new sets
+    toggleFileSelection(Array.from(selectedFiles)[0] || '', false);
+  }, [links, selectedFiles, selectedFolders, toggleFileSelection]);
 
   const handleDragStart = (e: React.DragEvent, node: TreeNode) => {
     // Get all selected nodes
@@ -158,7 +180,44 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
         <div key={node.id}>
           <ContextMenu
             nodeId={node.id}
-            onAction={handleContextMenuAction}
+            onAction={(action) => {
+              switch (action) {
+                case 'expand':
+                case 'collapse':
+                  handleFolderToggle(node.id);
+                  break;
+                case 'select':
+                  if (node.type === 'file') {
+                    handleFileSelect(node.id, false);
+                  } else {
+                    toggleFolderSelection(node.id);
+                  }
+                  break;
+                case 'selectAll':
+                  handleSelectAll();
+                  break;
+                case 'deselectAll':
+                  deselectAll();
+                  break;
+                case 'copyToWorkspace':
+                  // First select the item if not selected
+                  if (!isSelected) {
+                    if (node.type === 'file') {
+                      handleFileSelect(node.id, false);
+                    } else {
+                      toggleFolderSelection(node.id);
+                    }
+                  }
+                  handleContextMenuAction(action);
+                  break;
+                case 'viewDetails':
+                  // TODO: Implement view details modal
+                  console.log('View details for:', node);
+                  break;
+                default:
+                  handleContextMenuAction(action);
+              }
+            }}
             hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
             targetType={node.type}
             isExpanded={isExpanded}

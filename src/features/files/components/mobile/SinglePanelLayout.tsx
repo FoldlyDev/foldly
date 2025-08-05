@@ -99,6 +99,7 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
     completeCopyOperation,
     failCopyOperation,
     clearCompletedOperations,
+    deselectAll,
   } = useFilesManagementStore();
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -137,6 +138,27 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
       });
     },
   });
+
+  const handleSelectAll = useCallback(() => {
+    // Select all files and folders from all links
+    links.forEach(link => {
+      const collectNodes = (nodes: TreeNode[]) => {
+        nodes.forEach(node => {
+          if (node.type === 'file') {
+            selectedFiles.add(node.id);
+          } else {
+            selectedFolders.add(node.id);
+          }
+          if (node.children) {
+            collectNodes(node.children);
+          }
+        });
+      };
+      collectNodes(link.fileTree);
+    });
+    // Force re-render by creating new sets
+    toggleFileSelection(Array.from(selectedFiles)[0] || '', false);
+  }, [links, selectedFiles, selectedFolders, toggleFileSelection]);
 
   const handleFolderToggle = (folderId: string) => {
     setExpandedFolders(prev => {
@@ -190,7 +212,36 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
         <div key={node.id}>
           <ContextMenu
             nodeId={node.id}
-            onAction={handleContextMenuAction}
+            onAction={(action) => {
+              switch (action) {
+                case 'expand':
+                case 'collapse':
+                  handleFolderToggle(node.id);
+                  break;
+                case 'select':
+                  toggleFileSelection(node.id, false);
+                  break;
+                case 'selectAll':
+                  handleSelectAll();
+                  break;
+                case 'deselectAll':
+                  deselectAll();
+                  break;
+                case 'copyToWorkspace':
+                  // First select the item if not selected
+                  if (!isSelected) {
+                    toggleFileSelection(node.id, false);
+                  }
+                  handleContextMenuAction(action);
+                  break;
+                case 'viewDetails':
+                  // TODO: Implement view details modal
+                  console.log('View details for:', node);
+                  break;
+                default:
+                  handleContextMenuAction(action);
+              }
+            }}
             hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
             targetType={node.type}
             isExpanded={isExpanded}

@@ -229,24 +229,6 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
             }
           }
           break;
-        case 'expand':
-          if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
-            set((s) => {
-              const newExpandedFolders = new Set(s.expandedFolders);
-              newExpandedFolders.add(state.contextMenuTarget!.id);
-              s.expandedFolders = newExpandedFolders;
-            });
-          }
-          break;
-        case 'collapse':
-          if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
-            set((s) => {
-              const newExpandedFolders = new Set(s.expandedFolders);
-              newExpandedFolders.delete(state.contextMenuTarget!.id);
-              s.expandedFolders = newExpandedFolders;
-            });
-          }
-          break;
         case 'selectAll':
           state.selectAll();
           break;
