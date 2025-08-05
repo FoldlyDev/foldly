@@ -95,6 +95,7 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
     toggleLinkExpanded,
     setSearchQuery,
     openContextMenu,
+    handleContextMenuAction,
   } = useFilesManagementStore();
 
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
