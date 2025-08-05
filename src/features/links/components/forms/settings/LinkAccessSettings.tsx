@@ -79,35 +79,6 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           </label>
         </div>
 
-        <div className='space-y-3'>
-          <label className='flex items-center justify-between'>
-            <div className='space-y-1'>
-              <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
-                  Public Access
-                </span>
-                <HelpPopover
-                  title='Public vs Private Access'
-                  description="Public: Users can see all uploaded files from everyone.
-
-Private: Users only see their own uploads - others' files stay hidden."
-                />
-              </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
-                When private, uploaders cannot see each other's files
-              </p>
-            </div>
-            <Checkbox
-              checked={watchedValues.isPublic ?? true}
-              onCheckedChange={(checked: boolean) =>
-                setValue('isPublic', checked, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
-              }
-            />
-          </label>
-        </div>
 
         <div className='space-y-3'>
           <label className='flex items-center justify-between'>

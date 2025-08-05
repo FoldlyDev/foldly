@@ -44,7 +44,7 @@ export class LinkTreeService {
    * This fetches actual folders and files from the database
    */
   async fetchLinkTree(linkId: string): Promise<DatabaseResult<{
-    link: { id: string; title: string | null; isPublic: boolean };
+    link: { id: string; title: string | null; };
     folders: Array<{
       id: string;
       name: string;
@@ -163,7 +163,6 @@ export class LinkTreeService {
           link: { 
             id: linkData.id, 
             title: linkData.title || 'Upload Link',
-            isPublic: linkData.isPublic,
           },
           folders: transformedFolders,
           files: transformedFiles,

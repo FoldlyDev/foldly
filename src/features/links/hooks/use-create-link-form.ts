@@ -18,7 +18,6 @@ export interface CreateLinkFormData {
   title: string;
   topic: string;
   description: string;
-  isPublic: boolean;
   isActive: boolean;
   requireEmail: boolean;
   requirePassword: boolean;
@@ -60,7 +59,6 @@ const initialFormData: CreateLinkFormData = {
   title: '',
   topic: '',
   description: '',
-  isPublic: true,
   isActive: true,
   requireEmail: false,
   requirePassword: false,

@@ -105,10 +105,7 @@ export function LinkUploadModal({
                   Add Files to {linkData.title || 'Link Collection'}
                 </h1>
                 <p className='text-xs sm:text-sm text-gray-600 mt-0.5 hidden sm:block'>
-                  {linkData.isPublic 
-                    ? 'Select files to preview before staging for this public collection'
-                    : 'Select files to preview before staging for this private collection'
-                  }
+                  Select files to preview before staging for this collection
                 </p>
               </div>
             </div>
@@ -176,7 +173,6 @@ export function LinkUploadModal({
                   <p>• Files are encrypted during transfer and stored securely</p>
                   {linkData.requirePassword && <p>• Password protection is enabled for this link</p>}
                   {linkData.requireEmail && <p>• Email verification is required for uploads</p>}
-                  <p>• {linkData.isPublic ? 'Public link - files may be visible to others' : 'Private link - files are only visible to the owner'}</p>
                 </div>
               </div>
             </div>

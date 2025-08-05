@@ -201,7 +201,6 @@ export interface UpdateLinkRequest {
  */
 export interface LinkQueryParams extends ListQueryParams {
   linkType?: string;
-  isPublic?: boolean;
   isActive?: boolean;
   requireEmail?: boolean;
   requirePassword?: boolean;
@@ -309,7 +308,6 @@ export interface FileQueryParams extends ListQueryParams {
   status?: string;
   mimeType?: string;
   typeCategory?: string;
-  isPublic?: boolean;
   hasPreview?: boolean;
   hasThumbnail?: boolean;
   fileSizeRange?: string;
@@ -401,7 +399,6 @@ export interface FolderQueryParams extends ListQueryParams {
   linkId?: string;
   parentFolderId?: string;
   isArchived?: boolean;
-  isPublic?: boolean;
   depth?: number;
   depthRange?: string;
   fileCountRange?: string;

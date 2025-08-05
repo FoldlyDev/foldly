@@ -252,7 +252,6 @@ export const useFilesDataStore = create<FilesDataState>()(
             path: folderData.name || 'Untitled Folder',
             isArchived: false,
             sortOrder: 0,
-            isPublic: folderData.isPublic ?? true,
             inheritPermissions: true,
             classification: 'internal' as const,
             fileCount: 0,

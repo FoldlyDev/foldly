@@ -48,7 +48,6 @@ export const folders = pgTable(
 
     // Organization
     isArchived: boolean('is_archived').default(false).notNull(),
-    isPublic: boolean('is_public').default(false).notNull(),
     sortOrder: integer('sort_order').default(0).notNull(),
 
     // Statistics

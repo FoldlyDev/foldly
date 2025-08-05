@@ -50,7 +50,6 @@ export interface File extends TimestampFields {
   thumbnailPath: string | null;
 
   // Access control
-  isPublic: boolean;
   downloadCount: number;
   lastDownloadAt: Date | null;
 
@@ -91,7 +90,6 @@ export type FileUpdate = PartialBy<
   | 'height'
   | 'duration'
   | 'thumbnailPath'
-  | 'isPublic'
   | 'downloadCount'
   | 'lastDownloadAt'
   | 'expiresAt'
@@ -170,7 +168,6 @@ export interface FileWithLink extends File {
     id: DatabaseId;
     slug: string;
     title: string;
-    isPublic: boolean;
     isActive: boolean;
     brandColor: string | null;
   };
@@ -202,7 +199,6 @@ export interface FileListItem {
   fileSize: number;
   mimeType: string;
   status: FileProcessingStatus;
-  isPublic: boolean;
   downloadCount: number;
   createdAt: Date;
   thumbnailPath: string | null;
@@ -225,7 +221,6 @@ export interface FileDownloadInfo {
   storagePath: string;
   storageProvider: string;
   downloadUrl: string;
-  isPublic: boolean;
   expiresAt: Date | null;
   linkId: DatabaseId;
 }
@@ -239,7 +234,6 @@ export interface PublicFileInfo {
   originalName: string;
   fileSize: number;
   mimeType: string;
-  isPublic: boolean;
   downloadCount: number;
   createdAt: Date;
   thumbnailPath: string | null;
@@ -313,7 +307,6 @@ export interface FileRenameForm {
  * File settings form data
  */
 export interface FileSettingsForm {
-  isPublic?: boolean;
   expiresAt?: Date;
 }
 
@@ -374,7 +367,6 @@ export interface FileFilterOptions {
   status?: FileProcessingStatus | FileProcessingStatus[];
   mimeType?: string | string[];
   typeCategory?: string | string[];
-  isPublic?: boolean;
   hasPreview?: boolean;
   hasThumbnail?: boolean;
   fileSizeRange?: { min: number; max: number };

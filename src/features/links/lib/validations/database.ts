@@ -26,7 +26,6 @@ export const databaseLinkSchema = z.object({
   requireEmail: z.boolean(),
   requirePassword: z.boolean(),
   password: z.string().nullable(),
-  isPublic: z.boolean(),
   isActive: z.boolean(),
   expiresAt: z.date().nullable(),
   brandingEnabled: z.boolean(),

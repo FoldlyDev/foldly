@@ -36,7 +36,6 @@ export interface Link extends TimestampFields {
   requireEmail: boolean;
   requirePassword: boolean;
   passwordHash: string | null;
-  isPublic: boolean;
   isActive: boolean;
 
   // Limits and expiration
@@ -75,7 +74,6 @@ export type LinkUpdate = PartialBy<
   | 'title'
   | 'requireEmail'
   | 'requirePassword'
-  | 'isPublic'
   | 'isActive'
   | 'maxFiles'
   | 'maxFileSize'
@@ -179,7 +177,6 @@ export interface LinkListItem {
   linkType: LinkType;
   title: string;
   description: string | null;
-  isPublic: boolean;
   isActive: boolean;
   totalFiles: number;
   totalSize: number;
@@ -198,7 +195,6 @@ export interface PublicLinkInfo {
   topic: string | null;
   title: string;
   description: string | null;
-  isPublic: boolean;
   isActive: boolean;
   requireEmail: boolean;
   requirePassword: boolean;
@@ -253,7 +249,6 @@ export interface LinkCreateForm {
   requireEmail?: boolean;
   requirePassword?: boolean;
   password?: string;
-  isPublic?: boolean;
   maxFiles?: number;
   maxFileSize?: number;
   allowedFileTypes?: string[];
@@ -271,7 +266,6 @@ export interface LinkUpdateForm {
   requireEmail?: boolean;
   requirePassword?: boolean;
   password?: string;
-  isPublic?: boolean;
   isActive?: boolean;
   maxFiles?: number;
   maxFileSize?: number;
@@ -363,7 +357,6 @@ export interface LinkFilterOptions {
   userId?: DatabaseId;
   workspaceId?: DatabaseId;
   linkType?: LinkType | LinkType[];
-  isPublic?: boolean;
   isActive?: boolean;
   requireEmail?: boolean;
   requirePassword?: boolean;

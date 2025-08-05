@@ -47,7 +47,6 @@ export const links = pgTable(
     requireEmail: boolean('require_email').default(false).notNull(),
     requirePassword: boolean('require_password').default(false).notNull(),
     passwordHash: text('password_hash'),
-    isPublic: boolean('is_public').default(true).notNull(),
     isActive: boolean('is_active').default(true).notNull(),
 
     // Limits and expiration

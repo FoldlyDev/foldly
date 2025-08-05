@@ -77,16 +77,6 @@ export interface SettingsField {
 // =============================================================================
 
 export const GENERAL_SETTINGS_FIELDS: Record<string, SettingsField> = {
-  isPublic: {
-    id: 'isPublic',
-    type: FIELD_TYPES.TOGGLE,
-    category: SETTINGS_CATEGORIES.GENERAL,
-    label: 'Public Access',
-    description: 'Allow anyone with the link to access and upload files',
-    required: false,
-    order: 1,
-  },
-
   customMessage: {
     id: 'customMessage',
     type: FIELD_TYPES.TEXTAREA,

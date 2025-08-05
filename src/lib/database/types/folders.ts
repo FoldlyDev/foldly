@@ -31,7 +31,6 @@ export interface Folder extends TimestampFields {
 
   // Organization
   isArchived: boolean;
-  isPublic: boolean;
   sortOrder: number;
 
   // Statistics
@@ -54,7 +53,6 @@ export type FolderUpdate = PartialBy<
   | 'path'
   | 'depth'
   | 'isArchived'
-  | 'isPublic'
   | 'sortOrder'
   | 'fileCount'
   | 'totalSize'
@@ -141,7 +139,6 @@ export interface FolderListItem {
   fileCount: number;
   totalSize: number;
   isArchived: boolean;
-  isPublic: boolean;
   parentFolderId: DatabaseId | null;
   createdAt: Date;
   updatedAt: Date;
@@ -182,7 +179,6 @@ export interface FolderCreateForm {
   name: string;
   parentFolderId?: DatabaseId;
   linkId?: DatabaseId;
-  isPublic?: boolean;
   sortOrder?: number;
 }
 
@@ -193,7 +189,6 @@ export interface FolderUpdateForm {
   name?: string;
   parentFolderId?: DatabaseId;
   isArchived?: boolean;
-  isPublic?: boolean;
   sortOrder?: number;
 }
 
@@ -250,7 +245,6 @@ export interface FolderFilterOptions {
   linkId?: DatabaseId;
   parentFolderId?: DatabaseId;
   isArchived?: boolean;
-  isPublic?: boolean;
   depth?: number;
   depthRange?: { min: number; max: number };
   fileCountRange?: { min: number; max: number };

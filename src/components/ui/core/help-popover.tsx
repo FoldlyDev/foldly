@@ -19,15 +19,24 @@ export function HelpPopover({
   className = '',
 }: HelpPopoverProps) {
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          className={`inline-flex items-center justify-center text-[var(--neutral-400)] hover:text-[var(--neutral-600)] transition-colors ${className}`}
-          type='button'
-        >
-          <HelpCircle className='w-4 h-4' />
-        </button>
-      </PopoverTrigger>
+    <span style={{ marginLeft: '8px', display: 'inline-block' }}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            className={`text-[var(--neutral-400)] hover:text-[var(--neutral-600)] transition-colors ${className}`}
+            style={{
+              verticalAlign: 'middle',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0',
+              lineHeight: '1',
+            }}
+            type='button'
+          >
+            <HelpCircle className='w-3.5 h-3.5' />
+          </button>
+        </PopoverTrigger>
       <PopoverContent
         className='w-80 bg-white border border-[var(--neutral-200)] shadow-lg'
         side='top'
@@ -41,6 +50,7 @@ export function HelpPopover({
           </div>
         </div>
       </PopoverContent>
-    </Popover>
+      </Popover>
+    </span>
   );
 }

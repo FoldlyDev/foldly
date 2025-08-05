@@ -98,7 +98,6 @@ export async function createLinkAction(
         ? // In production, use proper password hashing
           Buffer.from(validatedData.password).toString('base64')
         : null,
-      isPublic: validatedData.isPublic ?? true, // Default to true if not provided
       isActive: validatedData.isActive ?? true, // Default to true if not provided
       maxFiles: validatedData.maxFiles,
       maxFileSize: validatedData.maxFileSize * 1024 * 1024, // Convert MB to bytes

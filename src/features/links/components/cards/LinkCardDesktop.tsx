@@ -6,7 +6,6 @@ import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
-  LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
 import { SearchHighlight } from '@/components/ui/core/search-highlight';
@@ -104,10 +103,9 @@ export const LinkCardDesktop = memo(
             </div>
           </div>
 
-          {/* Status & Visibility */}
+          {/* Status */}
           <div className='flex items-center gap-3 flex-shrink-0'>
             <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
-            <LinkVisibilityIndicator isPublic={link.isPublic} />
           </div>
 
           {/* Metrics */}

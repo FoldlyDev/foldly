@@ -40,7 +40,6 @@ export const createLinkFormSchema = z
     requireEmail: z.boolean().default(false),
     requirePassword: z.boolean().default(false),
     password: z.string().optional(),
-    isPublic: z.boolean().default(true),
     isActive: z.boolean().default(true),
 
     // Upload settings (database fields)
@@ -94,7 +93,6 @@ export const linkInformationSchema = withPasswordRequirement(
     requireEmail: z.boolean().default(false),
     requirePassword: z.boolean().default(false),
     password: z.string().optional(),
-    isPublic: z.boolean().default(true),
     isActive: z.boolean().default(true),
 
     // Upload constraints (database fields)
@@ -130,7 +128,6 @@ export const generalSettingsSchema = z
     description: descriptionSchema,
 
     // General settings (all optional for partial updates)
-    isPublic: z.boolean().optional(),
     isActive: z.boolean().optional(),
     requireEmail: z.boolean().optional(),
     requirePassword: z.boolean().optional(),

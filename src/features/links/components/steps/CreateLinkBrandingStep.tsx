@@ -80,7 +80,6 @@ export const CreateLinkBrandingStep = () => {
         requireEmail: formData.requireEmail,
         requirePassword: formData.requirePassword,
         password: formData.requirePassword ? formData.password : undefined,
-        isPublic: formData.isPublic,
         isActive: formData.isActive,
         maxFiles: formData.maxFiles,
         maxFileSize: formData.maxFileSize,

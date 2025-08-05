@@ -490,23 +490,6 @@ export function LinkDetailsModal() {
               </div>
 
               <div className='space-y-4'>
-                <div className='flex items-center justify-between py-3 border-b border-gray-100'>
-                  <div className='flex items-center gap-2'>
-                    <Eye className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-600'>
-                      Visibility
-                    </span>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold px-3 py-1 rounded-lg ${
-                      link.isPublic
-                        ? 'text-green-700 bg-green-100'
-                        : 'text-orange-700 bg-orange-100'
-                    }`}
-                  >
-                    {link.isPublic ? 'Public' : 'Private'}
-                  </span>
-                </div>
 
                 <div className='flex items-center justify-between py-3 border-b border-gray-100'>
                   <div className='flex items-center gap-2'>

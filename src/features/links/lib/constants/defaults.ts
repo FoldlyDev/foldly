@@ -12,7 +12,6 @@ import type { HexColor } from '@/types';
 export const FORM_DEFAULTS = {
   // Link creation defaults
   linkType: 'custom' as const,
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   password: '',
@@ -56,11 +55,6 @@ export const COMPONENT_DEFAULTS = {
     isBaseLink: false,
   },
 
-  // Visibility indicator
-  visibilityIndicator: {
-    size: 'sm' as const,
-    isPublic: true,
-  },
 
   // Loading states
   loading: {
@@ -101,7 +95,6 @@ export const LINK_DEFAULTS = {
   status: 'active' as const,
   uploads: 0,
   views: 0,
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   maxFiles: 100,

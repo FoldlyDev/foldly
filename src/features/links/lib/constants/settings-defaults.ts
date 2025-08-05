@@ -10,7 +10,6 @@ interface GeneralSettingsData {
   description: string;
   requireEmail: boolean;
   requirePassword: boolean;
-  isPublic: boolean;
   maxFiles: number;
   maxFileSize: number;
   expiresAt: Date | null;
@@ -33,7 +32,6 @@ interface LinkBrandingFormData {
  */
 export const FORM_FIELD_DEFAULTS = {
   // Security defaults
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   password: '',
@@ -83,7 +81,6 @@ export const CREATE_LINK_FORM_DEFAULTS = {
   requireEmail: FORM_FIELD_DEFAULTS.requireEmail,
   requirePassword: FORM_FIELD_DEFAULTS.requirePassword,
   password: FORM_FIELD_DEFAULTS.password,
-  isPublic: FORM_FIELD_DEFAULTS.isPublic,
 
   // Upload settings
   maxFiles: FORM_FIELD_DEFAULTS.maxFiles,
@@ -108,7 +105,6 @@ export const CREATE_LINK_FORM_DEFAULTS = {
  * Default values for general settings modal initialization
  */
 export const GENERAL_SETTINGS_MODAL_DEFAULTS = {
-  isPublic: FORM_FIELD_DEFAULTS.isPublic,
   requireEmail: FORM_FIELD_DEFAULTS.requireEmail,
   requirePassword: FORM_FIELD_DEFAULTS.requirePassword,
   password: FORM_FIELD_DEFAULTS.password,

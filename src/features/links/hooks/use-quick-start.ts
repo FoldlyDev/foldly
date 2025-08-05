@@ -47,7 +47,6 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
         requireEmail: false,
         requirePassword: false,
         password: undefined, // undefined when no password required
-        isPublic: true,
         isActive: true,
         maxFiles: 100,
         maxFileSize: 5, // 5MB (Supabase deployment limit, server action will convert to bytes)
@@ -65,7 +64,6 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
         description: typeof quickStartData.description,
         requireEmail: typeof quickStartData.requireEmail,
         requirePassword: typeof quickStartData.requirePassword,
-        isPublic: typeof quickStartData.isPublic,
         isActive: typeof quickStartData.isActive,
         maxFiles: typeof quickStartData.maxFiles,
         maxFileSize: typeof quickStartData.maxFileSize,

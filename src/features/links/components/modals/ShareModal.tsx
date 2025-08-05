@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Smartphone,
   Monitor,
+  Crown,
 } from 'lucide-react';
 import {
   Dialog,
@@ -24,11 +25,13 @@ import { CopyButton } from '@/components/ui/core/copy-button';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useLinkUrl } from '../../hooks/use-link-url';
+import { useUserPlan } from '@/features/link-upload/hooks/use-user-plan';
 
 export function ShareModal() {
   const currentModal = useCurrentModal();
   const { link } = useModalData();
   const { closeModal } = useModalStore();
+  const { isPro, isBusiness } = useUserPlan();
 
   const isOpen = currentModal === 'share-link';
 
@@ -36,33 +39,34 @@ export function ShareModal() {
 
   const { displayUrl, fullUrl } = useLinkUrl(link.slug, link.topic);
   const shareText = `Check out this file collection: ${link.title}`;
+  const hasQrCodeAccess = isPro || isBusiness;
 
   const socialShareLinks = [
     {
-      name: 'Twitter',
+      name: 'X (Twitter)',
       icon: Twitter,
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(fullUrl)}`,
-      color: 'text-blue-500',
-      bgColor: 'bg-blue-50 hover:bg-blue-100',
+      url: `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(fullUrl)}`,
+      color: 'text-gray-900',
+      bgColor: 'bg-gray-50 hover:bg-gray-100',
     },
     {
       name: 'Facebook',
       icon: Facebook,
-      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`,
+      url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}&quote=${encodeURIComponent(shareText)}`,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
     },
     {
       name: 'LinkedIn',
       icon: Linkedin,
-      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}`,
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(fullUrl)}&summary=${encodeURIComponent(shareText)}`,
       color: 'text-blue-700',
       bgColor: 'bg-blue-50 hover:bg-blue-100',
     },
     {
       name: 'WhatsApp',
       icon: MessageCircle,
-      url: `https://wa.me/?text=${encodeURIComponent(`${shareText} ${fullUrl}`)}`,
+      url: `https://api.whatsapp.com/send?text=${encodeURIComponent(`${shareText}\n\n${fullUrl}`)}`,
       color: 'text-green-600',
       bgColor: 'bg-green-50 hover:bg-green-100',
     },
@@ -143,7 +147,7 @@ export function ShareModal() {
             <div className='flex items-center gap-4 mt-4 pt-4 border-t border-gray-200/50'>
               <button
                 onClick={() => window.open(fullUrl, '_blank')}
-                className='flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium text-gray-700'
+                className='flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors text-sm font-medium text-gray-700 cursor-pointer'
               >
                 <ExternalLink className='w-4 h-4' />
                 Open Link
@@ -223,79 +227,54 @@ export function ShareModal() {
                 </div>
               </motion.button>
 
-              {/* QR Code Placeholder */}
-              <motion.div
-                className='display-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl cursor-not-allowed opacity-75'
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 }}
-              >
-                <div className='flex flex-col items-center space-y-3'>
-                  <div className='p-3 rounded-2xl bg-purple-50'>
-                    <QrCode className='w-6 h-6 text-purple-600' />
+              {/* QR Code - Pro Feature */}
+              {hasQrCodeAccess ? (
+                <motion.button
+                  onClick={() => {
+                    // TODO: Implement QR code generation logic
+                    console.log('Generate QR code for:', fullUrl);
+                  }}
+                  className='interactive-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl hover:shadow-lg transition-all duration-300'
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className='flex flex-col items-center space-y-3'>
+                    <div className='p-3 rounded-2xl bg-purple-50 hover:bg-purple-100 group-hover:scale-110 transition-all duration-200'>
+                      <QrCode className='w-6 h-6 text-purple-600' />
+                    </div>
+                    <span className='font-medium text-gray-900 text-sm'>
+                      QR Code
+                    </span>
                   </div>
-                  <span className='font-medium text-gray-600 text-sm'>
-                    QR Code
-                  </span>
-                  <span className='text-xs text-gray-500'>Coming Soon</span>
-                </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Link Information */}
-          <motion.div
-            className='display-card bg-gradient-to-r from-blue-50/50 to-indigo-50/50 border border-blue-200/50 rounded-2xl p-6'
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm'>
-              <div className='flex items-center justify-between'>
-                <span className='text-gray-600'>Type:</span>
-                <span className='font-semibold text-gray-900 capitalize px-3 py-1 bg-white/80 rounded-lg'>
-                  {link.linkType === 'base'
-                    ? 'Personal Collection Link'
-                    : 'Custom Topic Link'}
-                </span>
-              </div>
-
-              {link.topic && (
-                <div className='flex items-center justify-between'>
-                  <span className='text-gray-600'>Topic:</span>
-                  <span className='font-semibold text-gray-900 px-3 py-1 bg-white/80 rounded-lg'>
-                    {link.topic}
-                  </span>
-                </div>
+                </motion.button>
+              ) : (
+                <motion.div
+                  className='display-card group p-6 bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl cursor-not-allowed relative overflow-hidden'
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7 }}
+                >
+                  <div className='absolute top-2 right-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1'>
+                    <Crown className='w-3 h-3' />
+                    PRO
+                  </div>
+                  <div className='flex flex-col items-center space-y-3 opacity-50'>
+                    <div className='p-3 rounded-2xl bg-purple-50'>
+                      <QrCode className='w-6 h-6 text-purple-600' />
+                    </div>
+                    <span className='font-medium text-gray-600 text-sm'>
+                      QR Code
+                    </span>
+                    <span className='text-xs text-gray-500'>Upgrade to Pro</span>
+                  </div>
+                </motion.div>
               )}
-
-              <div className='flex items-center justify-between'>
-                <span className='text-gray-600'>Status:</span>
-                <span
-                  className={`font-semibold px-3 py-1 rounded-lg ${
-                    link.isActive
-                      ? 'text-green-700 bg-green-100'
-                      : 'text-orange-700 bg-orange-100'
-                  }`}
-                >
-                  {link.isActive ? 'Active' : 'Paused'}
-                </span>
-              </div>
-
-              <div className='flex items-center justify-between'>
-                <span className='text-gray-600'>Access:</span>
-                <span
-                  className={`font-semibold px-3 py-1 rounded-lg ${
-                    link.isPublic
-                      ? 'text-blue-700 bg-blue-100'
-                      : 'text-gray-700 bg-gray-100'
-                  }`}
-                >
-                  {link.isPublic ? 'Public' : 'Private'}
-                </span>
-              </div>
             </div>
           </motion.div>
+
         </div>
       </DialogContent>
     </Dialog>

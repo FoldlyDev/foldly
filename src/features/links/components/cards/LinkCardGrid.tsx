@@ -12,7 +12,6 @@ import {
 import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
-  LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
 import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
@@ -88,12 +87,9 @@ export const LinkCardGrid = memo(
             <div className='flex-1 min-w-0'>
               <div className='flex items-center gap-3 mb-2'>
                 <LinkTypeIcon isBaseLink={isBaseLink} size='lg' />
-                <div className='flex items-center gap-2'>
-                  <LinkStatusIndicator
-                    status={link.isActive ? 'active' : 'paused'}
-                  />
-                  <LinkVisibilityIndicator isPublic={link.isPublic} />
-                </div>
+                <LinkStatusIndicator
+                  status={link.isActive ? 'active' : 'paused'}
+                />
               </div>
 
               <div className='flex items-center gap-3 mb-1'>

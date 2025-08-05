@@ -18,7 +18,6 @@ export const MOCK_FOLDERS: Folder[] = [
     uploadLinkId: 'link_client_upload',
     isArchived: false,
     sortOrder: 1,
-    isPublic: false,
     fileCount: 8,
     totalSize: 15728640, // ~15MB
     lastActivity: new Date('2024-12-20T15:30:00Z'),
@@ -34,7 +33,6 @@ export const MOCK_FOLDERS: Folder[] = [
     uploadLinkId: 'link_team_upload',
     isArchived: false,
     sortOrder: 2,
-    isPublic: false,
     fileCount: 12,
     totalSize: 25165824, // ~24MB
     lastActivity: new Date('2024-12-21T11:15:00Z'),
@@ -50,7 +48,6 @@ export const MOCK_FOLDERS: Folder[] = [
     uploadLinkId: 'link_media_upload',
     isArchived: false,
     sortOrder: 3,
-    isPublic: true,
     fileCount: 15,
     totalSize: 45097984, // ~43MB
     lastActivity: new Date('2024-12-22T09:45:00Z'),
@@ -66,7 +63,6 @@ export const MOCK_FOLDERS: Folder[] = [
     uploadLinkId: 'link_feedback_upload',
     isArchived: false,
     sortOrder: 4,
-    isPublic: false,
     fileCount: 6,
     totalSize: 8388608, // ~8MB
     lastActivity: new Date('2024-12-19T16:20:00Z'),

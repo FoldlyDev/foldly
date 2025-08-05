@@ -77,7 +77,6 @@ export const CreateLinkInformationStep = () => {
       requireEmail: formData.requireEmail,
       requirePassword: formData.requirePassword,
       password: formData.password || '', // Convert undefined to empty string
-      isPublic: formData.isPublic,
       maxFiles: formData.maxFiles,
       maxFileSize: formData.maxFileSize,
       allowedFileTypes: formData.allowedFileTypes,
@@ -153,9 +152,6 @@ export const CreateLinkInformationStep = () => {
         );
       }
 
-      if (updates.isPublic !== undefined) {
-        convertedUpdates.isPublic = Boolean(updates.isPublic);
-      }
 
       if (updates.isActive !== undefined) {
         convertedUpdates.isActive = Boolean(updates.isActive);

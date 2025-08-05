@@ -50,7 +50,6 @@ export async function duplicateLinkAction(
       requireEmail: originalLink.data.requireEmail,
       requirePassword: originalLink.data.requirePassword,
       passwordHash: originalLink.data.passwordHash,
-      isPublic: originalLink.data.isPublic,
       isActive: originalLink.data.isActive,
       maxFiles: originalLink.data.maxFiles,
       maxFileSize: originalLink.data.maxFileSize,

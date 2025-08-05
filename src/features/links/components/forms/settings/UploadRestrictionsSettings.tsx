@@ -34,7 +34,7 @@ export function UploadRestrictionsSettings({
       <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
         <div className='space-y-3'>
           <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Maximum Files
+            <span>Maximum Files</span>
             <HelpPopover
               title='File Count Limit'
               description='Total number of files that can be uploaded to this link.
@@ -64,7 +64,7 @@ export function UploadRestrictionsSettings({
 
         <div className='space-y-3'>
           <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Maximum File Size (MB)
+            <span>Maximum File Size (MB)</span>
             <HelpPopover
               title='File Size Limit'
               description='Largest individual file size allowed.
@@ -95,7 +95,7 @@ export function UploadRestrictionsSettings({
 
         <div className='space-y-3'>
           <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Allowed File Types
+            <span>Allowed File Types</span>
             <HelpPopover
               title='File Type Restrictions'
               description='Control what types of files can be uploaded.

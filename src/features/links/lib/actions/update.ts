@@ -98,8 +98,6 @@ export async function updateLinkAction(
             ? Buffer.from(updateData.password).toString('base64')
             : null;
         }
-        if (updateData.isPublic !== undefined)
-          otherUpdates.isPublic = updateData.isPublic;
         if (updateData.isActive !== undefined)
           otherUpdates.isActive = updateData.isActive;
         if (updateData.maxFiles !== undefined)
@@ -172,8 +170,6 @@ export async function updateLinkAction(
       linkUpdate.passwordHash = updateData.password
         ? Buffer.from(updateData.password).toString('base64')
         : null;
-    if (updateData.isPublic !== undefined)
-      linkUpdate.isPublic = updateData.isPublic;
     if (updateData.isActive !== undefined)
       linkUpdate.isActive = updateData.isActive;
     if (updateData.maxFiles !== undefined)
@@ -266,7 +262,6 @@ export async function updateLinkSettingsAction(
 
     // 4. Prepare settings update
     const linkUpdate = {
-      isPublic: settings.isPublic,
       requireEmail: settings.requireEmail,
       requirePassword: settings.requirePassword,
       passwordHash: settings.password
