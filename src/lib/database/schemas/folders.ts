@@ -35,10 +35,10 @@ export const folders = pgTable(
     parentFolderId: uuid('parent_folder_id'),
     // Self-referential foreign key handled at database level
     linkId: uuid('link_id').references(() => links.id, {
-      onDelete: 'set null',
+      onDelete: 'cascade',
     }),
     batchId: uuid('batch_id').references(() => batches.id, {
-      onDelete: 'set null',
+      onDelete: 'cascade',
     }), // Optional - tracks which upload batch created this folder
 
     // Folder information - Simplified for MVP
