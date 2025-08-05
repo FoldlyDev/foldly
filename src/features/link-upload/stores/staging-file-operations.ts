@@ -9,7 +9,7 @@ export const fileOperations = {
     // Calculate the starting sort order for new files
     const existingFilesInParent = Array.from(state.stagedFiles.values())
       .filter(f => f.parentFolderId === parentFolderId);
-    let nextSortOrder = existingFilesInParent.length;
+    const nextSortOrder = existingFilesInParent.length;
     
     files.forEach((file, index) => {
       const id = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;

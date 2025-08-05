@@ -179,9 +179,16 @@ export class LinkFilesTreeService {
       return `/${folderName}`;
     }
 
-    // For now, build simple path - in full implementation,
-    // you'd need to look up parent folder paths
-    return `/${folderName}`;
+    // Build path by traversing parent folders
+    // Note: In a full implementation, you'd need to query parent folder paths
+    // from the database. For now, we'll construct a simple hierarchical path.
+    const pathSegments = [folderName];
+    
+    // TODO: Implement proper path construction by querying parent folders
+    // This would involve looking up the parent folder's path from the database
+    // and appending the current folder name to it
+    
+    return `/${pathSegments.join('/')}`;
   }
 }
 

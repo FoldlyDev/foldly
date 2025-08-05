@@ -470,7 +470,7 @@ export class FolderService {
         .where(eq(folders.parentFolderId, folderId))
         .orderBy(folders.path);
 
-      let allNestedFolders: DbFolder[] = [...childFolders];
+      const allNestedFolders: DbFolder[] = [...childFolders];
 
       // Recursively get nested folders for each child
       for (const childFolder of childFolders) {
@@ -498,7 +498,7 @@ export class FolderService {
         .from(files)
         .where(eq(files.folderId, folderId));
 
-      let allNestedFiles: any[] = [...directFiles];
+      const allNestedFiles: any[] = [...directFiles];
 
       // Get all nested subfolders
       const nestedFoldersResult = await this.getNestedFolders(folderId);

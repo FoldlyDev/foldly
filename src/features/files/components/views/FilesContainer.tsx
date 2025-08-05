@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSearchParams } from 'next/navigation';
 import { TwoPanelLayout } from '../desktop/TwoPanelLayout';
-import { ContentLoader } from '@/components/ui/feedback';
+import { FilesSkeleton } from '../skeletons/files-skeleton';
 import { Alert, AlertDescription } from '@/components/ui/core/shadcn/alert';
 import { AlertCircle } from 'lucide-react';
 import { fetchLinksWithFilesAction } from '../../lib/actions';
@@ -72,14 +72,7 @@ export function FilesContainer() {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <ContentLoader 
-          size="lg" 
-          text="Loading your files..." 
-        />
-      </div>
-    );
+    return <FilesSkeleton />;
   }
 
   // Error state

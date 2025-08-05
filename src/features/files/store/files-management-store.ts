@@ -107,6 +107,7 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
     // Copy operations
     startCopyOperation: (files) => set((state) => {
       state.isCopying = true;
+      state.copyOperations.clear(); // Clear any previous operations
       files.forEach(file => {
         const progress: CopyProgress = {
           fileId: file.id,
@@ -116,6 +117,7 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
         };
         state.copyOperations.set(file.id, progress);
       });
+      console.log('[CopyOperation] Started copying', files.length, 'files');
     }),
 
     updateCopyProgress: (fileId, progress) => set((state) => {
@@ -131,6 +133,9 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
       if (operation) {
         operation.progress = 100;
         operation.status = 'completed';
+        console.log('[CopyOperation] Completed file:', fileId);
+      } else {
+        console.warn('[CopyOperation] Trying to complete unknown file:', fileId);
       }
       
       // Check if all operations are complete
@@ -138,8 +143,14 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
         op => op.status === 'completed' || op.status === 'error'
       );
       
-      if (allComplete) {
+      console.log('[CopyOperation] All complete?', allComplete, 'Operations:', state.copyOperations.size);
+      
+      if (allComplete && state.copyOperations.size > 0) {
+        console.log('[CopyOperation] All operations complete, clearing state');
         state.isCopying = false;
+        // Automatically clear completed operations after all are done
+        // This prevents the overlay from staying visible
+        state.copyOperations.clear();
       }
     }),
 

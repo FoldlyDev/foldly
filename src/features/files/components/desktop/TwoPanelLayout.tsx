@@ -82,13 +82,17 @@ export function TwoPanelLayout({
         
         if (copiedFolders > 0 && copiedFiles > 0) {
           title = `Copied ${copiedFolders} folder${copiedFolders !== 1 ? 's' : ''} and ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`;
-          description = 'Files and folders copied to your workspace with structure preserved';
+          description = 'Everything has been copied to your workspace';
         } else if (copiedFolders > 0) {
           title = `Copied ${copiedFolders} folder${copiedFolders !== 1 ? 's' : ''}`;
-          description = 'Folder structure copied to your workspace';
+          description = copiedFolders === 1 
+            ? 'Folder and its contents copied to your workspace'
+            : 'Folders and their contents copied to your workspace';
         } else if (copiedFiles > 0) {
           title = `Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`;
-          description = 'Files copied to your workspace';
+          description = copiedFiles === 1
+            ? 'File copied to your workspace'
+            : 'Files copied to your workspace';
         }
 
         toast.success(title, { description });
@@ -96,6 +100,16 @@ export function TwoPanelLayout({
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['workspace'] });
         queryClient.invalidateQueries({ queryKey: ['storage'] });
+        
+        // Failsafe: ensure copy state is cleared after successful operation
+        // This handles cases where file IDs might not match perfectly
+        setTimeout(() => {
+          const store = useFilesManagementStore.getState();
+          if (store.isCopying) {
+            console.warn('[CopyOperation] Forcing clear of copy state after successful operation');
+            store.clearCompletedOperations();
+          }
+        }, 500);
       } else {
         // Handle errors
         result.data?.errors.forEach(error => {
@@ -201,33 +215,98 @@ export function TwoPanelLayout({
   // Handle context menu copy action
   const handleCopyToWorkspace = useCallback(() => {
     const fileIds = Array.from(selectedFiles);
+    const folderIds = Array.from(selectedFolders);
     
-    if (fileIds.length === 0) {
-      toast.error('No files selected', {
-        description: 'Please select files to copy',
+    if (fileIds.length === 0 && folderIds.length === 0) {
+      toast.error('No items selected', {
+        description: 'Please select files or folders to copy',
       });
       return;
     }
 
-    // Get selected nodes for progress tracking
+    // Get all selected nodes (files and folders) with their full tree structure
     const selectedNodes: TreeNode[] = [];
+    const processedIds = new Set<string>();
+    
     links.forEach(link => {
-      const collectNodes = (nodes: TreeNode[]) => {
+      const collectNodes = (nodes: TreeNode[], parentSelected: boolean = false) => {
         nodes.forEach(node => {
-          if (selectedFiles.has(node.id)) {
-            selectedNodes.push(node);
-          }
-          if (node.children) {
-            collectNodes(node.children);
+          const isSelected = selectedFiles.has(node.id) || selectedFolders.has(node.id);
+          
+          // If this node is selected or its parent is selected, include it
+          if ((isSelected || parentSelected) && !processedIds.has(node.id)) {
+            processedIds.add(node.id);
+            
+            // Clone the node with its children
+            const clonedNode: TreeNode = {
+              ...node,
+              children: node.children ? [] : undefined
+            };
+            
+            // If parent is not selected, add this as a root node
+            if (!parentSelected) {
+              selectedNodes.push(clonedNode);
+            }
+            
+            // Process children
+            if (node.children) {
+              clonedNode.children = [];
+              node.children.forEach(child => {
+                const childClone = collectChildNodes(child, true);
+                if (childClone) {
+                  clonedNode.children!.push(childClone);
+                }
+              });
+            }
           }
         });
       };
+      
+      // Helper to collect child nodes when parent is selected
+      const collectChildNodes = (node: TreeNode, parentSelected: boolean): TreeNode | null => {
+        if (processedIds.has(node.id)) return null;
+        processedIds.add(node.id);
+        
+        const clonedNode: TreeNode = {
+          ...node,
+          children: node.children ? [] : undefined
+        };
+        
+        if (node.children) {
+          node.children.forEach(child => {
+            const childClone = collectChildNodes(child, true);
+            if (childClone) {
+              clonedNode.children!.push(childClone);
+            }
+          });
+        }
+        
+        return clonedNode;
+      };
+      
       collectNodes(link.fileTree);
     });
 
-    startCopyOperation(selectedNodes);
-    copyFilesMutation.mutate({ fileIds, targetFolderId: destinationFolderId });
-  }, [selectedFiles, links, startCopyOperation, copyFilesMutation, destinationFolderId]);
+    // Extract all files for progress tracking
+    const extractFiles = (node: TreeNode): TreeNode[] => {
+      const files: TreeNode[] = [];
+      if (node.type === 'file') {
+        files.push(node);
+      }
+      if (node.children) {
+        node.children.forEach(child => {
+          files.push(...extractFiles(child));
+        });
+      }
+      return files;
+    };
+    
+    const allFiles = selectedNodes.flatMap(extractFiles);
+    startCopyOperation(allFiles);
+    
+    // Use tree copy mutation to preserve folder structure
+    copyTreeMutation.mutate({ nodes: selectedNodes, targetFolderId: destinationFolderId });
+  }, [selectedFiles, selectedFolders, links, startCopyOperation, copyTreeMutation, destinationFolderId]);
 
   return (
     <div className={cn('flex gap-4 h-full', className)}>

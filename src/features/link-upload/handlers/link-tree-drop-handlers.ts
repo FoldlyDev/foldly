@@ -22,7 +22,7 @@ interface HandlerContext {
 
 // Operation lock to prevent concurrent drag operations
 let operationInProgress = false;
-let operationQueue: Array<() => Promise<void>> = [];
+const operationQueue: Array<() => Promise<void>> = [];
 
 /**
  * Process queued operations sequentially to prevent race conditions

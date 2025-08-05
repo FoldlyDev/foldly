@@ -53,7 +53,7 @@ const generateSpringPath = (
   const perpX = -uy,
     perpY = ux;
 
-  let path = [];
+  const path = [];
   for (let i = 0; i < coilCount; i++) {
     const sx = x1 + ux * (i * d);
     const sy = y1 + uy * (i * d);

@@ -167,7 +167,16 @@ export function WorkspacePanel({
           >
             <div className="text-center">
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-sm font-medium">Copying files...</p>
+              <p className="text-sm font-medium">Copying items to your workspace...</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                {[
+                  "Hold tight, we're yeeting your files over! 🚀",
+                  "Just vibing with your data transfer rn... 💫",
+                  "Files coming through, this might take a sec... ⏳",
+                  "Your files are on their way, bestie! ✨",
+                  "Copying faster than you can say 'bussin'! 🔥"
+                ][Math.floor(Math.random() * 5)]}
+              </p>
             </div>
           </motion.div>
         )}

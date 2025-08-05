@@ -163,7 +163,7 @@ export const useNotificationStore = create<NotificationStore>()(
           const newRecent = state.recentNotifications.filter(n => n.id !== notificationId);
           
           // Decrement unread count if the notification was unread
-          let newCounts = new Map(state.unreadCounts);
+          const newCounts = new Map(state.unreadCounts);
           let newTotal = state.totalUnread;
           
           if (!notification.isRead) {
