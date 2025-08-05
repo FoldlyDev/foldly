@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Copy,
   CheckSquare,
@@ -69,6 +69,11 @@ export function ContextMenu({
   hasSelection = false,
   targetType,
 }: ContextMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const longPressTimerRef = useRef<NodeJS.Timeout>();
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const childRef = useRef<HTMLDivElement>(null);
+  
   // Filter menu items based on context
   const filteredItems = menuItems.filter((item) => {
     if (item.action === 'copyToWorkspace' && !hasSelection) {
@@ -83,10 +88,65 @@ export function ContextMenu({
     return true;
   });
 
+  // Handle long press for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    
+    longPressTimerRef.current = setTimeout(() => {
+      e.preventDefault();
+      setIsOpen(true);
+    }, 500); // 500ms for long press
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || !longPressTimerRef.current) return;
+    
+    const touch = e.touches[0];
+    const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+    const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+    
+    // Cancel long press if user moves finger too much
+    if (deltaX > 10 || deltaY > 10) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = undefined;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = undefined;
+    }
+    touchStartRef.current = null;
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <ContextMenuRoot>
+    <ContextMenuRoot open={isOpen} onOpenChange={setIsOpen}>
       <ContextMenuTrigger asChild>
-        {children}
+        <div
+          ref={childRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onContextMenu={(e) => {
+            // Prevent default context menu on touch devices when long press is used
+            if (e.type === 'contextmenu' && touchStartRef.current) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {children}
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         {filteredItems.map((item, index) => {
@@ -97,7 +157,10 @@ export function ContextMenu({
                 <ContextMenuSeparator />
               )}
               <ContextMenuItem
-                onClick={() => onAction(item.action)}
+                onClick={() => {
+                  onAction(item.action);
+                  setIsOpen(false);
+                }}
               >
                 <Icon className="mr-2 h-4 w-4" />
                 <span className="flex-1">{item.label}</span>
