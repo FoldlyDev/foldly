@@ -9,6 +9,7 @@ import {
   UploadNotificationContent, 
   BatchUploadNotificationContent 
 } from '../components/UploadNotificationContent';
+import { useUserSettingsStore } from '@/features/settings/store/user-settings-store';
 
 interface UploadNotificationData {
   linkId: string;
@@ -19,10 +20,39 @@ interface UploadNotificationData {
 }
 
 /**
+ * Play notification sound if not in silent mode
+ * @param type - 'upload' for upload notifications, 'general' for all others
+ */
+function playNotificationSound(type: 'upload' | 'general' = 'general') {
+  const { silentNotifications } = useUserSettingsStore.getState();
+  
+  if (!silentNotifications && typeof window !== 'undefined') {
+    try {
+      const audioFile = type === 'upload' 
+        ? '/assets/audio/upload_notification_sound.wav'
+        : '/assets/audio/general_notification_sound.wav';
+      
+      const audio = new Audio(audioFile);
+      audio.volume = 0.3; // 30% volume for subtlety
+      audio.play().catch(error => {
+        // Silently fail if audio playback is blocked
+        console.debug('Notification sound blocked:', error);
+      });
+    } catch (error) {
+      // Silently fail if audio is not supported
+      console.debug('Notification sound failed:', error);
+    }
+  }
+}
+
+/**
  * Show custom upload notification with View button
  * Uses custom toast with Next.js navigation
  */
 export function showUploadNotification(data: UploadNotificationData): void {
+  // Play upload-specific sound
+  playNotificationSound('upload');
+  
   // Use custom interactive toast with Next.js navigation
   toast.custom((t) => (
     <UploadNotificationContent
@@ -63,6 +93,9 @@ export function showBatchUploadNotification(
   totalCount: number,
   linkId: string
 ): void {
+  // Play upload-specific sound for batch notifications
+  playNotificationSound('upload');
+  
   // Use custom toast with Next.js navigation
   toast.custom((t) => (
     <BatchUploadNotificationContent

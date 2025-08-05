@@ -204,6 +204,24 @@ export function NotificationCenter({
       if (response.ok) {
         const data = await response.json();
         setNotifications(data.notifications || []);
+        
+        // Mark all unread notifications as read
+        const unreadNotifications = data.notifications?.filter((n: any) => !n.isRead) || [];
+        if (unreadNotifications.length > 0) {
+          // Mark all as read in the UI immediately
+          setNotifications(prev => 
+            prev.map(n => ({ ...n, isRead: true }))
+          );
+          
+          // Send request to mark all as read
+          await fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          // Refresh unread counts to update badges
+          await refreshUnreadCounts();
+        }
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);

@@ -37,7 +37,7 @@ export function UploadNotificationContent({
   }
   
   // Create user-friendly description
-  const title = `New upload to ${linkTitle}`;
+  const title = `New upload to: ${linkTitle}`;
   let description = '';
   
   if (items.length > 0) {

@@ -128,7 +128,7 @@ export function useRealtimeNotifications() {
         id: data.notificationId,
         linkId: data.linkId,
         linkTitle: linkTitle || 'Link',
-        title: `New upload to ${linkTitle}`,
+        title: `New upload to: ${linkTitle}`,
         description: description,
         metadata: {
           fileCount: data.fileCount,

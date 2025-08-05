@@ -85,7 +85,7 @@ export class NotificationService {
       await this.broadcastNotification(params.userId, {
         type: 'new_upload',
         linkId: params.linkId,
-        linkTitle: params.title.replace('New upload to ', ''), // Extract link title from notification title
+        linkTitle: params.title.replace('New upload to: ', ''), // Extract link title from notification title
         notificationId: notification.id,
         fileCount: params.metadata?.fileCount || 0,
         folderCount: params.metadata?.folderCount || 0,
