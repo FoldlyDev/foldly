@@ -8,7 +8,6 @@ import { LinksModalManager } from '../managers/LinksModalManager';
 import { useFilteredLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useUIStore } from '../../store/ui-store';
 import { useLinksQuery } from '../../hooks/react-query/use-links-query';
-import { useRealtimeNotifications } from '@/features/notifications/hooks/use-realtime-notifications';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useRealtimeLinkUpdates } from '../../hooks/use-realtime-link-updates';
 
@@ -36,9 +35,6 @@ export function LinksContainer({
   const filterStatus = useUIStore(state => state.filterStatus);
   const sortBy = useUIStore(state => state.sortBy);
   const sortDirection = useUIStore(state => state.sortDirection);
-  
-  // Initialize real-time notifications
-  const { isConnected } = useRealtimeNotifications();
   
   // Initialize real-time link updates (for file changes)
   useRealtimeLinkUpdates();

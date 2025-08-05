@@ -67,8 +67,8 @@ export function WorkspacePanel({
   return (
     <Card 
       className={cn(
-        'flex flex-col transition-all',
-        dragOver && 'ring-2 ring-primary ring-offset-2',
+        'flex flex-col transition-all duration-200',
+        dragOver && 'ring-2 ring-primary ring-offset-2 shadow-lg scale-[1.01]',
         className
       )}
       onDragOver={handleDragOver}
@@ -85,6 +85,7 @@ export function WorkspacePanel({
             Personal Storage
           </Badge>
         </div>
+
 
         {/* Storage Info */}
         <div className="mt-3 space-y-2">
@@ -139,23 +140,6 @@ export function WorkspacePanel({
           </div>
         </div>
 
-        {/* Drop Overlay */}
-        {dragOver && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-primary/5 backdrop-blur-sm flex items-center justify-center pointer-events-none"
-          >
-            <div className="bg-background border-2 border-primary border-dashed rounded-lg p-8 text-center">
-              <Upload className="h-12 w-12 text-primary mx-auto mb-3" />
-              <p className="text-lg font-medium">Drop files here</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Files will be copied to your workspace
-              </p>
-            </div>
-          </motion.div>
-        )}
 
         {/* Copy Progress Overlay */}
         {isCopying && (

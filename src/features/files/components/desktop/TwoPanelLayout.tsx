@@ -20,6 +20,8 @@ interface TwoPanelLayoutProps {
   storageUsed?: number;
   storageLimit?: number;
   className?: string;
+  selectedLinkId?: string | null;
+  onLinkSelect?: (linkId: string | null) => void;
 }
 
 export function TwoPanelLayout({
@@ -27,6 +29,8 @@ export function TwoPanelLayout({
   storageUsed,
   storageLimit,
   className,
+  selectedLinkId,
+  onLinkSelect,
 }: TwoPanelLayoutProps) {
   const queryClient = useQueryClient();
   const {
@@ -316,6 +320,8 @@ export function TwoPanelLayout({
           links={links}
           onDragStart={handleDragStart}
           className="flex-1"
+          selectedLinkId={selectedLinkId}
+          onLinkSelect={onLinkSelect}
         />
       </div>
 

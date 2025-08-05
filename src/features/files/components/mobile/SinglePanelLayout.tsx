@@ -42,6 +42,8 @@ function countTreeItems(nodes: TreeNode[]): { files: number; folders: number; to
 interface SinglePanelLayoutProps {
   links: LinkWithFileTree[];
   className?: string;
+  selectedLinkId?: string | null;
+  onLinkSelect?: (linkId: string | null) => void;
 }
 
 interface GroupedLinks {
@@ -50,7 +52,7 @@ interface GroupedLinks {
   generated: LinkWithFileTree[];
 }
 
-export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) {
+export function SinglePanelLayout({ links, className, selectedLinkId, onLinkSelect }: SinglePanelLayoutProps) {
   const queryClient = useQueryClient();
   
   // Group links by type

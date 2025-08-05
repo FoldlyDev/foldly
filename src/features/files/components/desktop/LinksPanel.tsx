@@ -5,8 +5,6 @@ import { motion } from 'framer-motion';
 import { 
   Link as LinkIcon, 
   Search, 
-  ChevronRight,
-  ChevronDown,
   ExternalLink,
   Files,
   HardDrive,
@@ -18,6 +16,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/core/s
 import { Input } from '@/components/ui/core/shadcn/input';
 import { Badge } from '@/components/ui/core/shadcn/badge';
 import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
+import { 
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent
+} from '@/components/marketing/animate-ui/radix/accordion';
 import { FileTreeItem } from '../shared/FileTreeItem';
 import { ContextMenu } from '../shared/ContextMenu';
 import { useFilesManagementStore } from '../../store/files-management-store';
@@ -28,6 +32,8 @@ interface LinksPanelProps {
   links: LinkWithFileTree[];
   onDragStart?: (e: React.DragEvent, nodes: TreeNode[]) => void;
   className?: string;
+  selectedLinkId?: string | null;
+  onLinkSelect?: (linkId: string | null) => void;
 }
 
 interface GroupedLinks {
@@ -58,7 +64,20 @@ function countTreeItems(nodes: TreeNode[]): { files: number; folders: number; to
   return { files, folders, total: files + folders };
 }
 
-export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
+export function LinksPanel({ links, onDragStart, className, selectedLinkId, onLinkSelect }: LinksPanelProps) {
+  const [highlightedLinkId, setHighlightedLinkId] = useState<string | null>(null);
+  
+  // Handle highlighting when selectedLinkId changes
+  useEffect(() => {
+    if (selectedLinkId) {
+      setHighlightedLinkId(selectedLinkId);
+      // Remove highlight after 3 seconds
+      const timer = setTimeout(() => {
+        setHighlightedLinkId(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [selectedLinkId]);
 
   // Group links by type
   const groupedLinks = useMemo<GroupedLinks>(() => {
@@ -84,15 +103,11 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
     );
   }, [links]);
   const {
-    selectedLinkId,
     selectedFiles,
     selectedFolders,
-    expandedLinks,
     searchQuery,
-    selectLink,
     toggleFileSelection,
     toggleFolderSelection,
-    toggleLinkExpanded,
     setSearchQuery,
     openContextMenu,
     handleContextMenuAction,
@@ -257,116 +272,101 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  const renderLinkGroup = (title: string, links: LinkWithFileTree[], icon?: React.ReactNode, showCount: boolean = true) => {
+  const renderLinkGroup = (title: string, links: LinkWithFileTree[], icon?: React.ReactNode, categoryValue: string) => {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          {icon}
-          <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
-          {showCount && links.length > 0 && (
-            <Badge variant="secondary" className="text-xs">{links.length}</Badge>
-          )}
-        </div>
-        {links.length === 0 ? (
-          <div className="px-1 py-4 text-center">
-            <p className="text-xs text-muted-foreground">No {title.toLowerCase()} yet</p>
+      <AccordionItem value={categoryValue} className="border-0">
+        <AccordionTrigger className="hover:no-underline py-3">
+          <div className="flex items-center gap-2">
+            {icon}
+            <span className="text-sm font-semibold">{title}</span>
+            {links.length > 0 && (
+              <Badge variant="secondary" className="text-xs ml-2">{links.length}</Badge>
+            )}
           </div>
-        ) : (
-          <>
-            {links.map(link => {
-          const isExpanded = expandedLinks.has(link.id);
-          const isSelected = selectedLinkId === link.id;
-
-          return (
-            <motion.div
-              key={link.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className={cn(
-                'rounded-lg border p-3 transition-colors cursor-pointer',
-                isSelected ? 'border-primary bg-accent' : 'hover:bg-accent/50'
-              )}
+        </AccordionTrigger>
+        <AccordionContent>
+          {links.length === 0 ? (
+            <div className="px-1 py-4 text-center">
+              <p className="text-xs text-muted-foreground">No {title.toLowerCase()} yet</p>
+            </div>
+          ) : (
+            <Accordion
+              type="multiple"
+              className="space-y-2"
             >
-              {/* Link Header */}
-              <div
-                className="flex items-center justify-between"
-                onClick={() => {
-                  selectLink(link.id);
-                  toggleLinkExpanded(link.id);
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <button
-                    className="p-0.5 hover:bg-muted rounded"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleLinkExpanded(link.id);
-                    }}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
+              {links.map(link => {
+                const isHighlighted = highlightedLinkId === link.id;
+
+                return (
+                  <AccordionItem 
+                    key={link.id} 
+                    value={link.id} 
+                    id={`link-${link.id}`}
+                    className={cn(
+                      "border rounded-lg transition-all duration-300",
+                      isHighlighted ? 'highlight-link' : ''
                     )}
-                  </button>
-                  <div>
-                    <h3 className="font-medium text-sm">{link.title}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      /{link.slug}{link.topic ? `/${link.topic}` : ''}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <a
-                    href={`/${link.slug}${link.topic ? `/${link.topic}` : ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1 hover:bg-muted rounded"
-                    onClick={(e) => e.stopPropagation()}
                   >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              </div>
-
-              {/* Link Stats */}
-              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Files className="h-3 w-3" />
-                  <span>{(() => {
-                    const itemCount = countTreeItems(link.fileTree);
-                    return itemCount.total === 1 
-                      ? '1 item' 
-                      : `${itemCount.total} items`;
-                  })()}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <HardDrive className="h-3 w-3" />
-                  <span>{link.totalSize ? formatFileSize(link.totalSize) : '0 B'}</span>
-                </div>
-              </div>
-
-              {/* File Tree */}
-              {isExpanded && link.fileTree.length > 0 && (
-                <div className="mt-3 border-t pt-3">
-                  {renderTreeNodes(link.fileTree)}
-                </div>
-              )}
-
-              {/* Empty State */}
-              {isExpanded && link.fileTree.length === 0 && (
-                <div className="mt-3 border-t pt-3 text-center py-4">
-                  <p className="text-xs text-muted-foreground">
-                    No files uploaded to this link yet
-                  </p>
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
-          </>
-        )}
-      </div>
+                    <AccordionTrigger 
+                      className="hover:no-underline px-3 py-2"
+                      onClick={() => onLinkSelect?.(link.id)}
+                    >
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div>
+                          <h3 className="font-medium text-sm text-left">{link.title}</h3>
+                          <p className="text-xs text-muted-foreground text-left">
+                            /{link.slug}{link.topic ? `/${link.topic}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Files className="h-3 w-3" />
+                              <span>{(() => {
+                                const itemCount = countTreeItems(link.fileTree);
+                                return itemCount.total === 1 
+                                  ? '1 item' 
+                                  : `${itemCount.total} items`;
+                              })()}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <HardDrive className="h-3 w-3" />
+                              <span>{link.totalSize ? formatFileSize(link.totalSize) : '0 B'}</span>
+                            </div>
+                          </div>
+                          <a
+                            href={`/${link.slug}${link.topic ? `/${link.topic}` : ''}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 hover:bg-muted rounded"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3">
+                      {/* File Tree */}
+                      {link.fileTree.length > 0 ? (
+                        <div className="border-t pt-3">
+                          {renderTreeNodes(link.fileTree)}
+                        </div>
+                      ) : (
+                        <div className="border-t pt-3 text-center py-4">
+                          <p className="text-xs text-muted-foreground">
+                            No files uploaded to this link yet
+                          </p>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          )}
+        </AccordionContent>
+      </AccordionItem>
     );
   };
 
@@ -403,43 +403,35 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
               </p>
             </div>
           ) : (
-            <div className="space-y-6 pb-4">
+            <Accordion
+              type="multiple"
+              defaultValue={['base-links', 'topic-links', 'generated-links']}
+              className="space-y-4 pb-4"
+            >
               {/* Base Link */}
               {renderLinkGroup(
                 'Base Link',
                 groupedLinks.base,
                 <Home className="h-4 w-4 text-primary" />,
-                false // Don't show count for base link
+                'base-links'
               )}
-              
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
-                </div>
-              </div>
               
               {/* Topic-Specific Links */}
               {renderLinkGroup(
                 'Topic-Specific Links',
                 groupedLinks.topic,
-                <Hash className="h-4 w-4 text-blue-500" />
+                <Hash className="h-4 w-4 text-blue-500" />,
+                'topic-links'
               )}
-              
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t" />
-                </div>
-              </div>
               
               {/* Generated Links */}
               {renderLinkGroup(
                 'Generated Links',
                 groupedLinks.generated,
-                <Sparkles className="h-4 w-4 text-purple-500" />
+                <Sparkles className="h-4 w-4 text-purple-500" />,
+                'generated-links'
               )}
-            </div>
+            </Accordion>
           )}
         </ScrollArea>
       </CardContent>
