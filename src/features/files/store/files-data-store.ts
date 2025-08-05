@@ -97,9 +97,9 @@ interface FilesDataState {
 export const useFilesDataStore = create<FilesDataState>()(
   devtools(
     (set, get) => ({
-      // Initial state with mock data
-      files: MOCK_FILES,
-      folders: MOCK_FOLDERS,
+      // Initial state with empty data
+      files: [],
+      folders: [],
       isLoading: false,
       isUploading: false,
       isDeleting: false,

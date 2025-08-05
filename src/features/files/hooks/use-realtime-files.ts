@@ -92,12 +92,9 @@ export function useRealtimeFiles(linkId?: string) {
             queryKey: filesQueryKeys.linkFiles(data.linkId),
           });
           
-          // Also invalidate legacy query keys that might be in use
+          // Also invalidate workspace-related queries
           await queryClient.invalidateQueries({
-            queryKey: ['link-files', data.linkId],
-          });
-          await queryClient.invalidateQueries({
-            queryKey: ['link-metadata', data.linkId],
+            queryKey: filesQueryKeys.workspace(),
           });
         }
         
@@ -106,12 +103,9 @@ export function useRealtimeFiles(linkId?: string) {
           queryKey: filesQueryKeys.all,
         });
         
-        // Also invalidate workspace-related queries
+        // Also invalidate storage queries to update storage usage
         await queryClient.invalidateQueries({
-          queryKey: ['workspace-files', userId],
-        });
-        await queryClient.invalidateQueries({
-          queryKey: ['user-links', userId],
+          queryKey: filesQueryKeys.storage(),
         });
         break;
         

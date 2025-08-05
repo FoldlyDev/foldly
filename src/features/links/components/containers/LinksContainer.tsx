@@ -10,6 +10,7 @@ import { useUIStore } from '../../store/ui-store';
 import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useRealtimeNotifications } from '@/features/notifications/hooks/use-realtime-notifications';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
+import { useRealtimeLinkUpdates } from '../../hooks/use-realtime-link-updates';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -38,6 +39,9 @@ export function LinksContainer({
   
   // Initialize real-time notifications
   const { isConnected } = useRealtimeNotifications();
+  
+  // Initialize real-time link updates (for file changes)
+  useRealtimeLinkUpdates();
   
   // Fetch and sync initial unread counts when component mounts
   useEffect(() => {

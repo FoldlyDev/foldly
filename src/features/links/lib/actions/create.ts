@@ -12,6 +12,7 @@ import {
 } from '../validations';
 import type { LinkInsert, Link } from '@/lib/database/types/links';
 import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
+import { getSupabaseClient } from '@/lib/config/supabase-client';
 
 /**
  * Create a new link
@@ -141,7 +142,26 @@ export async function createLinkAction(
       details: { title: linkData.title, linkType: linkData.linkType },
     });
 
-    // 6. DISABLED: No revalidatePath to prevent page refresh
+    // 6. Broadcast real-time update for new link creation
+    try {
+      const supabase = getSupabaseClient();
+      const userChannel = supabase.channel(`files:user:${user.id}`);
+      await userChannel.send({
+        type: 'broadcast',
+        event: 'file_update',
+        payload: {
+          type: 'file_added', // Using file_added to trigger files list refresh
+          linkId: result.data!.id,
+          userId: user.id,
+        },
+      });
+      console.log('Broadcasted new link creation to files channel');
+    } catch (error) {
+      console.error('Failed to broadcast link creation:', error);
+      // Don't fail the operation if broadcast fails
+    }
+
+    // 7. DISABLED: No revalidatePath to prevent page refresh
     // We handle UI updates manually via React state in LinksContainer
     // revalidatePath('/dashboard/links');
     // revalidatePath(`/dashboard/links/${result.data!.id}`);
