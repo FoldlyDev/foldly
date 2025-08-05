@@ -248,21 +248,7 @@ export function TwoPanelLayout({
         />
       </div>
 
-      {/* Context Menu */}
-      <ContextMenu
-        isOpen={!!contextMenuPosition}
-        position={contextMenuPosition || { x: 0, y: 0 }}
-        onAction={(action) => {
-          if (action === 'copyToWorkspace') {
-            handleCopyToWorkspace();
-          } else {
-            handleContextMenuAction(action);
-          }
-        }}
-        onClose={closeContextMenu}
-        hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
-        targetType={contextMenuTarget?.type}
-      />
+      {/* Context Menu - Now integrated directly within LinksPanel */}
 
       {/* Copy Progress */}
       <CopyProgressIndicator

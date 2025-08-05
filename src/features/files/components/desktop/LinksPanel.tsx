@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/core/shadcn/input';
 import { Badge } from '@/components/ui/core/shadcn/badge';
 import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
 import { FileTreeItem } from '../shared/FileTreeItem';
+import { ContextMenu } from '../shared/ContextMenu';
 import { useFilesManagementStore } from '../../store/files-management-store';
 import type { LinkWithFileTree, TreeNode } from '../../types';
 import { cn } from '@/lib/utils';
@@ -154,23 +155,25 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
 
       return (
         <div key={node.id}>
-          <div
-            draggable
-            onDragStart={(e) => handleDragStart(e, node)}
+          <ContextMenu
+            onAction={handleContextMenuAction}
+            hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
+            targetType={node.type}
           >
-            <FileTreeItem
-              node={node}
-              level={level}
-              isExpanded={isExpanded}
-              isSelected={isSelected}
-              onToggleExpand={handleFolderToggle}
-              onToggleSelect={handleFileSelect}
-              onContextMenu={(e, node) => openContextMenu(
-                { x: e.clientX, y: e.clientY },
-                { id: node.id, type: node.type }
-              )}
-            />
-          </div>
+            <div
+              draggable
+              onDragStart={(e) => handleDragStart(e, node)}
+            >
+              <FileTreeItem
+                node={node}
+                level={level}
+                isExpanded={isExpanded}
+                isSelected={isSelected}
+                onToggleExpand={handleFolderToggle}
+                onToggleSelect={handleFileSelect}
+              />
+            </div>
+          </ContextMenu>
           {node.children && isExpanded && (
             <div>{renderTreeNodes(node.children, level + 1)}</div>
           )}

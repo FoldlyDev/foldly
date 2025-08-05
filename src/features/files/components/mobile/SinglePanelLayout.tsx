@@ -188,18 +188,20 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
 
       return (
         <div key={node.id}>
-          <FileTreeItem
-            node={node}
-            level={level}
-            isExpanded={isExpanded}
-            isSelected={isSelected}
-            onToggleExpand={handleFolderToggle}
-            onToggleSelect={toggleFileSelection}
-            onContextMenu={(e, node) => openContextMenu(
-              { x: e.clientX, y: e.clientY },
-              { id: node.id, type: node.type }
-            )}
-          />
+          <ContextMenu
+            onAction={handleContextMenuAction}
+            hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
+            targetType={node.type}
+          >
+            <FileTreeItem
+              node={node}
+              level={level}
+              isExpanded={isExpanded}
+              isSelected={isSelected}
+              onToggleExpand={handleFolderToggle}
+              onToggleSelect={toggleFileSelection}
+            />
+          </ContextMenu>
           {node.children && isExpanded && (
             <div>{renderTreeNodes(node.children, level + 1)}</div>
           )}
@@ -399,15 +401,7 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
         </motion.div>
       )}
 
-      {/* Context Menu */}
-      <ContextMenu
-        isOpen={!!contextMenuPosition}
-        position={contextMenuPosition || { x: 0, y: 0 }}
-        onAction={handleContextMenuAction}
-        onClose={closeContextMenu}
-        hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
-        targetType={contextMenuTarget?.type}
-      />
+      {/* Context Menu - Now integrated directly with FileTreeItem components */}
 
       {/* Workspace Folder Picker Modal */}
       <WorkspaceFolderPicker
