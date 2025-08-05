@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { GradientButton } from '@/components/ui/core/gradient-button';
-import { Plus, Settings, Bell, AlertTriangle } from 'lucide-react';
+import { Plus, Bell, AlertTriangle } from 'lucide-react';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useStorageQuotaStatus } from '../../hooks';
 import { toast } from 'sonner';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
+import { SettingsDropdown } from '../settings/SettingsDropdown';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;
@@ -122,15 +123,9 @@ export function WorkspaceHeader({
         </motion.button>
 
         {/* Settings Button - Hidden on mobile to save space */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className='hidden sm:flex p-3 rounded-xl bg-white border border-[var(--neutral-200)] 
-                   shadow-sm hover:shadow-md transition-all duration-200 
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20'
-        >
-          <Settings className='w-5 h-5 text-[var(--neutral-600)]' />
-        </motion.button>
+        <div className='hidden sm:flex'>
+          <SettingsDropdown />
+        </div>
 
         {/* Primary CTA - Always visible with responsive sizing */}
         <div className='relative'>
@@ -157,16 +152,9 @@ export function WorkspaceHeader({
         </div>
 
         {/* Mobile Settings Button - Only show on mobile */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className='sm:hidden p-2.5 rounded-xl bg-white border border-[var(--neutral-200)] 
-                   shadow-sm hover:shadow-md transition-all duration-200 
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0
-                   flex items-center justify-center'
-        >
-          <Settings className='w-4 h-4 text-[var(--neutral-600)]' />
-        </motion.button>
+        <div className='sm:hidden'>
+          <SettingsDropdown />
+        </div>
       </motion.div>
       
       {/* Notification Center */}

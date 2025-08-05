@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { QueryProvider } from '@/lib/providers/query-client-provider';
 import { Toaster } from '@/components/ui/core/shadcn/sonner';
 import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor';
+import { NotificationProvider } from '@/features/notifications/providers/NotificationProvider';
 import './globals.css';
 
 const geistSans = Geist({
@@ -80,7 +81,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <ClerkProvider>{children}</ClerkProvider>
+          <ClerkProvider>
+            <NotificationProvider>
+              {children}
+            </NotificationProvider>
+          </ClerkProvider>
         </QueryProvider>
         <Toaster />
         <SpeedInsights />
