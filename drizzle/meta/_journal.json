@@ -85,6 +85,27 @@
       "when": 1754305544401,
       "tag": "0011_huge_vengeance",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1754373688128,
+      "tag": "0012_strong_ghost_rider",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1754378456438,
+      "tag": "0013_gifted_rhino",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1754378663240,
+      "tag": "0014_mature_sleeper",
+      "breakpoints": true
     }
   ]
 }

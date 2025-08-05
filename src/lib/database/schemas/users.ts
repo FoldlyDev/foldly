@@ -11,6 +11,7 @@ import {
   bigint,
   index,
   uniqueIndex,
+  jsonb,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -31,6 +32,21 @@ export const users = pgTable(
     storageUsed: bigint('storage_used', { mode: 'number' })
       .default(0)
       .notNull(),
+
+    // User Settings - Flexible JSON for easy extension
+    settings: jsonb('settings')
+      .default({
+        theme: 'system',
+        doNotDisturb: false,
+        silentNotifications: false,
+      })
+      .notNull()
+      .$type<{
+        theme: 'light' | 'dark' | 'system';
+        doNotDisturb: boolean;
+        silentNotifications: boolean;
+        [key: string]: any; // Allow future settings
+      }>(),
 
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
