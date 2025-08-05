@@ -69,10 +69,9 @@ export function ContextMenu({
   hasSelection = false,
   targetType,
 }: ContextMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const childRef = useRef<HTMLDivElement>(null);
+  const [showMenu, setShowMenu] = useState(false);
   
   // Filter menu items based on context
   const filteredItems = menuItems.filter((item) => {
@@ -95,7 +94,7 @@ export function ContextMenu({
     
     longPressTimerRef.current = setTimeout(() => {
       e.preventDefault();
-      setIsOpen(true);
+      setShowMenu(true);
     }, 500); // 500ms for long press
   }, []);
 
@@ -131,19 +130,12 @@ export function ContextMenu({
   }, []);
 
   return (
-    <ContextMenuRoot open={isOpen} onOpenChange={setIsOpen}>
+    <ContextMenuRoot open={showMenu} onOpenChange={setShowMenu}>
       <ContextMenuTrigger asChild>
         <div
-          ref={childRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onContextMenu={(e) => {
-            // Prevent default context menu on touch devices when long press is used
-            if (e.type === 'contextmenu' && touchStartRef.current) {
-              e.preventDefault();
-            }
-          }}
         >
           {children}
         </div>
@@ -157,10 +149,7 @@ export function ContextMenu({
                 <ContextMenuSeparator />
               )}
               <ContextMenuItem
-                onClick={() => {
-                  onAction(item.action);
-                  setIsOpen(false);
-                }}
+                onClick={() => onAction(item.action)}
               >
                 <Icon className="mr-2 h-4 w-4" />
                 <span className="flex-1">{item.label}</span>

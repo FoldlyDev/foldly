@@ -20,7 +20,6 @@ interface FileTreeItemProps {
   isReadOnly?: boolean;
   onToggleExpand?: (nodeId: string) => void;
   onToggleSelect?: (nodeId: string, isMultiSelect: boolean) => void;
-  onContextMenu?: (e: React.MouseEvent, node: TreeNode) => void;
   className?: string;
 }
 
@@ -32,7 +31,6 @@ export const FileTreeItem = memo(function FileTreeItem({
   isReadOnly = false,
   onToggleExpand,
   onToggleSelect,
-  onContextMenu,
   className,
 }: FileTreeItemProps) {
   const handleClick = (e: React.MouseEvent) => {
@@ -43,12 +41,6 @@ export const FileTreeItem = memo(function FileTreeItem({
     }
   };
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (onContextMenu && !isReadOnly) {
-      onContextMenu(e, node);
-    }
-  };
 
   const getIcon = () => {
     if (node.type === 'folder') {
@@ -80,7 +72,6 @@ export const FileTreeItem = memo(function FileTreeItem({
       )}
       style={{ paddingLeft: `${level * 20 + 8}px` }}
       onClick={handleClick}
-      onContextMenu={handleContextMenu}
       role="treeitem"
       aria-selected={isSelected}
       aria-expanded={node.type === 'folder' ? isExpanded : undefined}
