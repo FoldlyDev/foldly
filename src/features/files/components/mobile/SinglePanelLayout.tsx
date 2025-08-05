@@ -189,11 +189,17 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
       return (
         <div key={node.id}>
           <ContextMenu
+            nodeId={node.id}
             onAction={handleContextMenuAction}
             hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
             targetType={node.type}
             isExpanded={isExpanded}
             isSelected={isSelected}
+            onOpenChange={(open) => {
+              if (open) {
+                openContextMenu({ x: 0, y: 0 }, { id: node.id, type: node.type });
+              }
+            }}
           >
             <FileTreeItem
               node={node}

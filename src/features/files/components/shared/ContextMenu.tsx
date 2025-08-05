@@ -29,6 +29,8 @@ interface ContextMenuProps {
   targetType?: 'file' | 'folder';
   isExpanded?: boolean;
   isSelected?: boolean;
+  nodeId: string;
+  onOpenChange?: (open: boolean, nodeId: string) => void;
 }
 
 export function ContextMenu({
@@ -38,6 +40,8 @@ export function ContextMenu({
   targetType = 'file',
   isExpanded = false,
   isSelected = false,
+  nodeId,
+  onOpenChange,
 }: ContextMenuProps) {
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -60,12 +64,6 @@ export function ContextMenu({
         label: 'Copy to Workspace',
         icon: Copy,
         shortcut: 'Ctrl+C',
-      });
-      items.push({
-        action: 'moveToWorkspace',
-        label: 'Move to Workspace',
-        icon: Move,
-        shortcut: 'Ctrl+X',
       });
       items.push({
         action: 'viewDetails',
@@ -101,12 +99,6 @@ export function ContextMenu({
         icon: Copy,
         shortcut: 'Ctrl+C',
         divider: true,
-      });
-      items.push({
-        action: 'moveToWorkspace',
-        label: 'Move to Workspace',
-        icon: Move,
-        shortcut: 'Ctrl+X',
       });
       if (!isSelected) {
         items.push({
@@ -181,8 +173,15 @@ export function ContextMenu({
     };
   }, []);
 
+  const handleOpenChange = useCallback((open: boolean) => {
+    setShowMenu(open);
+    if (open && onOpenChange) {
+      onOpenChange(open, nodeId);
+    }
+  }, [nodeId, onOpenChange]);
+
   return (
-    <ContextMenuRoot open={showMenu} onOpenChange={setShowMenu}>
+    <ContextMenuRoot open={showMenu} onOpenChange={handleOpenChange}>
       <ContextMenuTrigger asChild>
         <div
           onTouchStart={handleTouchStart}

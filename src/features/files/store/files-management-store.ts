@@ -216,10 +216,6 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
         case 'copyToWorkspace':
           state.openWorkspaceFolderPicker();
           break;
-        case 'moveToWorkspace':
-          // TODO: Implement move functionality
-          state.openWorkspaceFolderPicker();
-          break;
         case 'viewDetails':
           // TODO: Implement view details modal
           console.log('View details not yet implemented');
@@ -236,14 +232,18 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
         case 'expand':
           if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
             set((s) => {
-              s.expandedFolders.add(state.contextMenuTarget!.id);
+              const newExpandedFolders = new Set(s.expandedFolders);
+              newExpandedFolders.add(state.contextMenuTarget!.id);
+              s.expandedFolders = newExpandedFolders;
             });
           }
           break;
         case 'collapse':
           if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
             set((s) => {
-              s.expandedFolders.delete(state.contextMenuTarget!.id);
+              const newExpandedFolders = new Set(s.expandedFolders);
+              newExpandedFolders.delete(state.contextMenuTarget!.id);
+              s.expandedFolders = newExpandedFolders;
             });
           }
           break;

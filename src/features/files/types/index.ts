@@ -245,7 +245,6 @@ export interface FilesUIState {
  */
 export type ContextMenuAction = 
   | 'copyToWorkspace'
-  | 'moveToWorkspace'
   | 'viewDetails'
   | 'select'
   | 'expand'
