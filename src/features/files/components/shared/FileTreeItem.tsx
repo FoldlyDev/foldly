@@ -103,7 +103,7 @@ export const FileTreeItem = memo(function FileTreeItem({
           checked={isSelected}
           onChange={(e) => {
             e.stopPropagation();
-            onToggleSelect?.(node.id, e.shiftKey);
+            onToggleSelect?.(node.id, true); // Always use multi-select for checkbox
           }}
           className="h-3.5 w-3.5 rounded border-gray-300"
           aria-label={`Select ${node.name}`}
