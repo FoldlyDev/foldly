@@ -926,6 +926,90 @@ button[data-state],
   pointer-events: auto !important;
 }
 
+/* Fix toast container structure and hover states */
+[data-sonner-toast] {
+  position: relative !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  min-height: 48px !important;
+}
+
+/* Remove double container effect */
+[data-sonner-toast] > div:first-child {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Ensure close button is properly positioned */
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  left: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 20px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+}
+
+/* Success toast specific fixes */
+[data-sonner-toast][data-type="success"] {
+  padding: 12px 16px 12px 48px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+[data-sonner-toast][data-type="success"] [data-content] {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+/* Fix success icon alignment - vertically centered */
+[data-sonner-toast][data-type="success"] > svg {
+  position: absolute !important;
+  left: 16px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  flex-shrink: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Ensure all toast types have proper padding for close button */
+[data-sonner-toast] {
+  padding-left: 48px !important;
+}
+
+/* Toast content should not overflow */
+[data-sonner-toast] [data-content] {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Fix hover state container placement */
+[data-sonner-toast]:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ensure proper content spacing with close button */
+[data-sonner-toast] [data-title] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
 /* Ensure notifications section doesn't create layout space */
 section[aria-label*='Notifications'] {
   position: fixed !important;

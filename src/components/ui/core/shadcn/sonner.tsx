@@ -13,24 +13,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'group toast group-[.toaster]:bg-popover group-[.toaster]:text-popover-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg rounded-lg border-2 px-4 py-3 font-medium',
+            'group toast bg-popover text-popover-foreground border-border shadow-lg rounded-lg border pl-12 pr-4 py-3 font-medium relative',
           title:
-            'group-[.toast]:text-sm group-[.toast]:font-semibold group-[.toast]:text-foreground',
+            'text-sm font-semibold text-foreground',
           description:
-            'group-[.toast]:text-xs group-[.toast]:text-muted-foreground group-[.toast]:mt-1',
+            'text-xs text-muted-foreground mt-1 pr-4',
           actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground hover:group-[.toast]:bg-primary/90 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+            'bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
           cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground hover:group-[.toast]:bg-muted/80 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+            'bg-muted text-muted-foreground hover:bg-muted/80 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
           closeButton:
-            'group-[.toast]:bg-transparent group-[.toast]:text-foreground/50 hover:group-[.toast]:text-foreground group-[.toast]:border-0 hover:group-[.toast]:bg-muted/20 transition-colors',
+            'absolute left-2 top-2.5 rounded-md p-1 text-foreground/50 hover:text-foreground hover:bg-muted/20 transition-colors opacity-100',
           success:
-            'group-[.toaster]:bg-emerald-50 group-[.toaster]:text-emerald-900 group-[.toaster]:border-emerald-200 dark:group-[.toaster]:bg-emerald-950/50 dark:group-[.toaster]:text-emerald-100 dark:group-[.toaster]:border-emerald-800/50',
+            'bg-emerald-50 text-emerald-900 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-100 dark:border-emerald-800/50',
           error:
-            'group-[.toaster]:bg-red-50 group-[.toaster]:text-red-900 group-[.toaster]:border-red-200 dark:group-[.toaster]:bg-red-950/50 dark:group-[.toaster]:text-red-100 dark:group-[.toaster]:border-red-800/50',
+            'bg-red-50 text-red-900 border-red-200 dark:bg-red-950/50 dark:text-red-100 dark:border-red-800/50',
           warning:
-            'group-[.toaster]:bg-amber-50 group-[.toaster]:text-amber-900 group-[.toaster]:border-amber-200 dark:group-[.toaster]:bg-amber-950/50 dark:group-[.toaster]:text-amber-100 dark:group-[.toaster]:border-amber-800/50',
-          info: 'group-[.toaster]:bg-blue-50 group-[.toaster]:text-blue-900 group-[.toaster]:border-blue-200 dark:group-[.toaster]:bg-blue-950/50 dark:group-[.toaster]:text-blue-100 dark:group-[.toaster]:border-blue-800/50',
+            'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-100 dark:border-amber-800/50',
+          info: 'bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-950/50 dark:text-blue-100 dark:border-blue-800/50',
         },
       }}
       style={
@@ -52,7 +52,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--info-border': 'hsl(var(--primary))',
         } as React.CSSProperties
       }
-      position='top-right'
+      position='bottom-right'
       expand={false}
       visibleToasts={4}
       closeButton

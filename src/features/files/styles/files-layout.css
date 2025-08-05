@@ -56,6 +56,39 @@
     }
   }
 
+  /* Link highlight animation */
+  .highlight-link {
+    animation: linkHighlightPulse 3s ease-in-out;
+    position: relative;
+  }
+
+  @keyframes linkHighlightPulse {
+    0% {
+      border-color: hsl(var(--border));
+      background-color: transparent;
+    }
+    20% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.1);
+      transform: scale(1.02);
+    }
+    40% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.05);
+      transform: scale(1.01);
+    }
+    60% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.1);
+      transform: scale(1.02);
+    }
+    100% {
+      border-color: hsl(var(--border));
+      background-color: transparent;
+      transform: scale(1);
+    }
+  }
+
   /* =============================================================================
      RESPONSIVE BREAKPOINTS
      ============================================================================= */
