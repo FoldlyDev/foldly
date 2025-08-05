@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/core/shadcn/button';
 import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
 import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
+import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { cn } from '@/lib/utils';
 
 interface WorkspaceFolderPickerProps {
@@ -29,6 +30,10 @@ export function WorkspaceFolderPicker({
   selectedFolderId,
 }: WorkspaceFolderPickerProps) {
   const [tempSelectedId, setTempSelectedId] = useState<string | null>(selectedFolderId);
+  const { data: workspaceData } = useWorkspaceTree();
+  
+  // Check if there are any folders in the workspace
+  const hasFolders = workspaceData?.folders && workspaceData.folders.length > 0;
 
   const handleSelect = () => {
     onSelect(tempSelectedId);
@@ -88,14 +93,26 @@ export function WorkspaceFolderPicker({
 
               {/* Workspace tree */}
               <div className="mt-4">
-                <WorkspaceTree
-                  onSelectionChange={(selectedItems) => {
-                    if (selectedItems.length > 0) {
-                      setTempSelectedId(selectedItems[0]);
-                    }
-                  }}
-                  selectedItems={tempSelectedId ? [tempSelectedId] : []}
-                />
+                {hasFolders ? (
+                  <WorkspaceTree
+                    onSelectionChange={(selectedItems) => {
+                      if (selectedItems.length > 0) {
+                        setTempSelectedId(selectedItems[0]);
+                      }
+                    }}
+                    selectedItems={tempSelectedId ? [tempSelectedId] : []}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Folder className="h-12 w-12 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-sm mb-2">
+                      No folders yet? No cap! 🧢
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      Your files will vibe in the root folder for now
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </ScrollArea>
@@ -114,7 +131,7 @@ export function WorkspaceFolderPicker({
                 onClick={handleSelect}
                 className="flex-1"
               >
-                Copy Here
+                {!hasFolders && tempSelectedId === null ? 'Copy to Root' : 'Copy Here'}
               </Button>
             </div>
           </div>

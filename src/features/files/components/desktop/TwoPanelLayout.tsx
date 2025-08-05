@@ -7,6 +7,7 @@ import { LinksPanel } from './LinksPanel';
 import { WorkspacePanel } from './WorkspacePanel';
 import { ContextMenu } from '../shared/ContextMenu';
 import { CopyProgressIndicator } from '../shared/CopyProgressIndicator';
+import { WorkspaceFolderPicker } from '../mobile/WorkspaceFolderPicker';
 import { useFilesManagementStore } from '../../store/files-management-store';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { copyFilesToWorkspaceAction, copyTreeNodesToWorkspaceAction } from '../../lib/actions';
@@ -44,6 +45,7 @@ export function TwoPanelLayout({
     closeContextMenu,
     handleContextMenuAction,
     openWorkspaceFolderPicker,
+    closeWorkspaceFolderPicker,
   } = useFilesManagementStore();
 
   // Copy mutation with tree nodes support
@@ -254,6 +256,14 @@ export function TwoPanelLayout({
       <CopyProgressIndicator
         operations={Array.from(copyOperations.values())}
         onDismiss={clearCompletedOperations}
+      />
+
+      {/* Workspace Folder Picker Modal */}
+      <WorkspaceFolderPicker
+        isOpen={isWorkspaceFolderPickerOpen}
+        onClose={closeWorkspaceFolderPicker}
+        onSelect={handleCopyToWorkspace}
+        selectedFolderId={destinationFolderId}
       />
     </div>
   );
