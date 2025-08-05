@@ -160,6 +160,8 @@ export function LinksPanel({ links, onDragStart, className }: LinksPanelProps) {
             onAction={handleContextMenuAction}
             hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
             targetType={node.type}
+            isExpanded={isExpanded}
+            isSelected={isSelected}
           >
             <div
               draggable

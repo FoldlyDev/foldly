@@ -3,10 +3,14 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import {
   Copy,
+  Move,
+  Eye,
   CheckSquare,
   Square,
-  Maximize2,
-  Minimize2,
+  ChevronRight,
+  ChevronDown,
+  FolderOpen,
+  Folder,
 } from 'lucide-react';
 import {
   ContextMenu as ContextMenuRoot,
@@ -23,69 +27,117 @@ interface ContextMenuProps {
   onAction: (action: ContextMenuAction) => void;
   hasSelection?: boolean;
   targetType?: 'file' | 'folder';
+  isExpanded?: boolean;
+  isSelected?: boolean;
 }
-
-const menuItems: Array<{
-  action: ContextMenuAction;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  shortcut?: string;
-  divider?: boolean;
-}> = [
-  {
-    action: 'copyToWorkspace',
-    label: 'Copy to Workspace',
-    icon: Copy,
-    shortcut: 'Ctrl+C',
-  },
-  {
-    action: 'selectAll',
-    label: 'Select All',
-    icon: CheckSquare,
-    shortcut: 'Ctrl+A',
-    divider: true,
-  },
-  {
-    action: 'deselectAll',
-    label: 'Deselect All',
-    icon: Square,
-  },
-  {
-    action: 'expandAll',
-    label: 'Expand All',
-    icon: Maximize2,
-    divider: true,
-  },
-  {
-    action: 'collapseAll',
-    label: 'Collapse All',
-    icon: Minimize2,
-  },
-];
 
 export function ContextMenu({
   children,
   onAction,
   hasSelection = false,
-  targetType,
+  targetType = 'file',
+  isExpanded = false,
+  isSelected = false,
 }: ContextMenuProps) {
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   
-  // Filter menu items based on context
-  const filteredItems = menuItems.filter((item) => {
-    if (item.action === 'copyToWorkspace' && !hasSelection) {
-      return false;
+  // Build menu items based on context
+  const menuItems = React.useMemo(() => {
+    const items: Array<{
+      action: ContextMenuAction;
+      label: string;
+      icon: React.ComponentType<{ className?: string }>;
+      shortcut?: string;
+      divider?: boolean;
+    }> = [];
+
+    if (targetType === 'file') {
+      // File context menu
+      items.push({
+        action: 'copyToWorkspace',
+        label: 'Copy to Workspace',
+        icon: Copy,
+        shortcut: 'Ctrl+C',
+      });
+      items.push({
+        action: 'moveToWorkspace',
+        label: 'Move to Workspace',
+        icon: Move,
+        shortcut: 'Ctrl+X',
+      });
+      items.push({
+        action: 'viewDetails',
+        label: 'View Details',
+        icon: Eye,
+        divider: true,
+      });
+      if (!isSelected) {
+        items.push({
+          action: 'select',
+          label: 'Select',
+          icon: CheckSquare,
+        });
+      }
+    } else {
+      // Folder context menu
+      if (isExpanded) {
+        items.push({
+          action: 'collapse',
+          label: 'Collapse',
+          icon: Folder,
+        });
+      } else {
+        items.push({
+          action: 'expand',
+          label: 'Expand',
+          icon: FolderOpen,
+        });
+      }
+      items.push({
+        action: 'copyToWorkspace',
+        label: 'Copy to Workspace',
+        icon: Copy,
+        shortcut: 'Ctrl+C',
+        divider: true,
+      });
+      items.push({
+        action: 'moveToWorkspace',
+        label: 'Move to Workspace',
+        icon: Move,
+        shortcut: 'Ctrl+X',
+      });
+      if (!isSelected) {
+        items.push({
+          action: 'select',
+          label: 'Select',
+          icon: CheckSquare,
+          divider: true,
+        });
+      }
     }
-    if (item.action === 'deselectAll' && !hasSelection) {
-      return false;
+
+    // Add select/deselect all at the bottom for both
+    if (hasSelection) {
+      items.push({
+        action: 'deselectAll',
+        label: 'Deselect All',
+        icon: Square,
+        divider: true,
+      });
+    } else {
+      items.push({
+        action: 'selectAll',
+        label: 'Select All',
+        icon: CheckSquare,
+        shortcut: 'Ctrl+A',
+        divider: true,
+      });
     }
-    if ((item.action === 'expandAll' || item.action === 'collapseAll') && targetType === 'file') {
-      return false;
-    }
-    return true;
-  });
+
+    return items;
+  }, [targetType, isExpanded, isSelected, hasSelection]);
 
   // Handle long press for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -141,7 +193,7 @@ export function ContextMenu({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
-        {filteredItems.map((item, index) => {
+        {menuItems.map((item, index) => {
           const Icon = item.icon;
           return (
             <React.Fragment key={item.action}>

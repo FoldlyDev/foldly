@@ -192,6 +192,8 @@ export function SinglePanelLayout({ links, className }: SinglePanelLayoutProps) 
             onAction={handleContextMenuAction}
             hasSelection={selectedFiles.size > 0 || selectedFolders.size > 0}
             targetType={node.type}
+            isExpanded={isExpanded}
+            isSelected={isSelected}
           >
             <FileTreeItem
               node={node}

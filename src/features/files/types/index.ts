@@ -245,10 +245,13 @@ export interface FilesUIState {
  */
 export type ContextMenuAction = 
   | 'copyToWorkspace'
+  | 'moveToWorkspace'
+  | 'viewDetails'
+  | 'select'
+  | 'expand'
+  | 'collapse'
   | 'selectAll'
-  | 'deselectAll'
-  | 'expandAll'
-  | 'collapseAll';
+  | 'deselectAll';
 
 /**
  * File operation permissions

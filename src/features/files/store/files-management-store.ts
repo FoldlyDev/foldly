@@ -216,17 +216,42 @@ export const useFilesManagementStore = create<FilesManagementStore>()(
         case 'copyToWorkspace':
           state.openWorkspaceFolderPicker();
           break;
+        case 'moveToWorkspace':
+          // TODO: Implement move functionality
+          state.openWorkspaceFolderPicker();
+          break;
+        case 'viewDetails':
+          // TODO: Implement view details modal
+          console.log('View details not yet implemented');
+          break;
+        case 'select':
+          if (state.contextMenuTarget) {
+            if (state.contextMenuTarget.type === 'file') {
+              state.toggleFileSelection(state.contextMenuTarget.id);
+            } else {
+              state.toggleFolderSelection(state.contextMenuTarget.id);
+            }
+          }
+          break;
+        case 'expand':
+          if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
+            set((s) => {
+              s.expandedFolders.add(state.contextMenuTarget!.id);
+            });
+          }
+          break;
+        case 'collapse':
+          if (state.contextMenuTarget && state.contextMenuTarget.type === 'folder') {
+            set((s) => {
+              s.expandedFolders.delete(state.contextMenuTarget!.id);
+            });
+          }
+          break;
         case 'selectAll':
           state.selectAll();
           break;
         case 'deselectAll':
           state.deselectAll();
-          break;
-        case 'expandAll':
-          state.expandAllLinks();
-          break;
-        case 'collapseAll':
-          state.collapseAllLinks();
           break;
       }
       
