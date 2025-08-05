@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteLinkAction } from '../../lib/actions/delete';
 import { linksQueryKeys } from '../../lib/query-keys';
+import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
 import type { Link, DatabaseId } from '@/lib/database/types';
 import { toast } from 'sonner';
@@ -100,6 +101,10 @@ export function useDeleteLinkMutation(
       
       // Invalidate storage queries since deleting a link frees up storage
       queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
+      
+      // Invalidate files feature queries to ensure deleted link is removed there
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       toast.success('Link deleted successfully');
       onSuccess?.();
@@ -108,6 +113,10 @@ export function useDeleteLinkMutation(
     onSettled: (data, error, linkId) => {
       // Always refetch after error or success
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
+      
+      // Also invalidate files feature queries
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
 

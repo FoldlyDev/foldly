@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLinkAction } from '../../lib/actions/update';
 import { linksQueryKeys } from '../../lib/query-keys';
+import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
 import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
@@ -164,6 +165,10 @@ export function useUpdateLinkMutation(
       
       // Invalidate storage queries to reflect any changes in storage usage
       queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
+      
+      // Invalidate files feature queries to ensure updates are reflected there
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       onSuccess?.(result);
     },
@@ -183,6 +188,10 @@ export function useUpdateLinkMutation(
           queryKey: linksQueryKeys.detail(variables.id),
         });
       }
+      
+      // Always invalidate files feature queries regardless of success/error
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
 

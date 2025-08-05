@@ -1,6 +1,6 @@
 import { eq, and, sql } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import { links, files, batches } from '@/lib/database/schemas';
+import { links } from '@/lib/database/schemas';
 import type {
   Link,
   LinkInsert,
@@ -230,27 +230,17 @@ export class LinkCrudService {
 
   /**
    * Hard delete a link and all associated data
+   * Note: Database cascades will automatically delete related files, batches, folders, and notifications
    */
   async hardDelete(linkId: string): Promise<DatabaseResult<boolean>> {
     try {
-      // Use transaction to ensure all related data is deleted
-      const result = await db.transaction(async tx => {
-        // Delete associated files
-        await tx.delete(files).where(eq(files.linkId, linkId));
+      // Simply delete the link - database cascades handle the rest
+      const deleteResult = await db
+        .delete(links)
+        .where(eq(links.id, linkId))
+        .returning();
 
-        // Delete associated batches
-        await tx.delete(batches).where(eq(batches.linkId, linkId));
-
-        // Delete the link
-        const deleteResult = await tx
-          .delete(links)
-          .where(eq(links.id, linkId))
-          .returning();
-
-        return deleteResult.length > 0;
-      });
-
-      if (!result) {
+      if (!deleteResult.length) {
         return {
           success: false,
           error: 'Link not found',

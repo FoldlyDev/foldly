@@ -589,7 +589,7 @@ export async function POST(req: NextRequest) {
                   userId: link.userId,
                   linkId: link.id,
                   batchId: batchId,
-                  title: `New upload to ${link.title}`,
+                  title: `New upload to: ${link.title}`,
                   description: description,
                   metadata: {
                     fileCount: results.uploadedFiles,

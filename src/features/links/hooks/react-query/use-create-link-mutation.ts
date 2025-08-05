@@ -8,6 +8,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createLinkAction } from '../../lib/actions/create';
 import { linksQueryKeys } from '../../lib/query-keys';
+import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import type { Link, LinkWithStats } from '@/lib/database/types/links';
 import type { ActionResult, CreateLinkActionData } from '../../lib/validations';
 import { toast } from 'sonner';
@@ -121,14 +122,23 @@ export function useCreateLinkMutation(
       // Invalidate and refetch queries to get the real data
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.stats() });
+      
+      // Invalidate files feature queries to ensure new link appears there
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
-      toast.success('Link created successfully');
+      // Don't show toast here - let the calling code handle it
+      // This prevents double toasts when using quick start or other features
       onSuccess?.(data);
     },
 
     onSettled: () => {
       // Always refetch after error or success to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
+      
+      // Also invalidate files feature queries
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
 
