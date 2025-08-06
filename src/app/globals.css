@@ -1,3 +1,6 @@
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap');
+
 @import 'tailwindcss';
 
 /* =============================================================================
@@ -16,7 +19,10 @@
 
   /* Font Families */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    'Host Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-barlow: 'Barlow Condensed', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 
   /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
   --color-primary: #c3e1f7;
@@ -43,6 +49,11 @@
   --color-quinary-dark: #050607;
   --color-quinary-light: #1a1d20;
   --color-quinary-subtle: #f8f9f9;
+
+  /* Juno Watts Accent Colors */
+  --accent-1: #b1c1ef;
+  --accent-2: #f2acac;
+  --accent-3: #ffdd94;
 
   /* Status Colors */
   --color-success: #10b981;
@@ -135,13 +146,14 @@
    ============================================================================= */
 
 /* 🚀 Landing Feature Styles */
-@import '../features/landing/styles/hero-section.css';
-@import '../features/landing/styles/about-section.css';
-@import '../features/landing/styles/features-section.css';
-@import '../features/landing/styles/outro-section.css';
-@import '../features/landing/styles/cards.css';
-@import '../features/landing/styles/sections.css';
-@import '../features/landing/styles/flip-card.css';
+@import '../features/landing/styles/home.css';
+@import '../features/landing/styles/about.css';
+@import '../features/landing/styles/work.css';
+@import '../features/landing/styles/project.css';
+@import '../features/landing/styles/contact.css';
+@import '../features/landing/styles/menu.css';
+@import '../features/landing/styles/footer.css';
+@import '../features/landing/styles/transition.css';
 
 /* 🔐 Auth Feature Styles */
 @import '../features/auth/styles/auth-pages.css';
@@ -162,6 +174,18 @@
    ============================================================================= */
 
 :root {
+  /* JUNO WATTS TEMPLATE COLORS */
+  --base-100: var(--primary-light);
+  --base-200: #efece5;
+  --base-300: #0a0a0a;
+  --base-secondary-dark: #686560;
+  --base-secondary-fade: rgba(249, 244, 235, 0.15);
+
+  /* JUNO WATTS ACCENT COLORS */
+  --accent-1: #b1c1ef;
+  --accent-2: #f2acac;
+  --accent-3: #ffdd94;
+
   /* FOLDLY BRAND COLORS - Dark Professional Theme */
 
   /* Primary Brand Colors - Light Blue Accent */
@@ -343,10 +367,8 @@
   }
 
   body {
-    font-feature-settings:
-      'rlig' 1,
-      'calt' 1;
     font-family:
+      'Host Grotesk',
       'Inter',
       -apple-system,
       BlinkMacSystemFont,
@@ -357,6 +379,7 @@
   }
 }
 
+/* Typography */
 h1 {
   font-size: 3rem;
   font-weight: 700;
@@ -372,6 +395,64 @@ p {
 span {
   font-size: 0.875rem;
   color: inherit;
+}
+
+/* JUNO WATTS SPECIFIC STYLES */
+img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.container {
+  width: 100%;
+  height: 100%;
+  padding: 2.75rem;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.symbols-container {
+  display: flex;
+  gap: 0.5rem;
+  height: 1.125rem;
+  z-index: 1;
+}
+
+.symbols-container .symbol {
+  width: 1.125rem;
+}
+
+/* Responsive Typography - Matching Juno Watts */
+@media (max-width: 1000px) {
+  h1:not(.hero h1) {
+    font-size: 6rem;
+  }
+  h2 {
+    font-size: 5rem;
+  }
+  h3 {
+    font-size: 3rem;
+  }
+  h4 {
+    font-size: 2rem;
+  }
+  p {
+    font-size: 1rem;
+  }
+  p.md {
+    font-size: 1.125rem;
+  }
+  p.lg {
+    font-size: 1.25rem;
+  }
+  p.mono {
+    font-size: 0.8rem;
+  }
+  .container {
+    padding: 2rem;
+  }
 }
 
 :focus-visible {
@@ -963,13 +1044,13 @@ button[data-state],
 }
 
 /* Success toast specific fixes */
-[data-sonner-toast][data-type="success"] {
+[data-sonner-toast][data-type='success'] {
   padding: 12px 16px 12px 48px !important;
   display: flex !important;
   align-items: center !important;
 }
 
-[data-sonner-toast][data-type="success"] [data-content] {
+[data-sonner-toast][data-type='success'] [data-content] {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
@@ -977,7 +1058,7 @@ button[data-state],
 }
 
 /* Fix success icon alignment - vertically centered */
-[data-sonner-toast][data-type="success"] > svg {
+[data-sonner-toast][data-type='success'] > svg {
   position: absolute !important;
   left: 16px !important;
   top: 50% !important;
@@ -1001,7 +1082,9 @@ button[data-state],
 /* Fix hover state container placement */
 [data-sonner-toast]:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
 
 /* Ensure proper content spacing with close button */

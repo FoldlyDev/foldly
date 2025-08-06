@@ -1,207 +1,230 @@
 'use client';
 
-import { forwardRef } from 'react';
-import { Diamond } from '@/components/ui/core/diamond';
-import { FlipCard } from '@/components/marketing/flip-card';
-import { BubbleBackground } from '@/components/ui/core/bubble';
-import { GradientButton } from '@/components/ui/core/gradient-button';
-import { SignUpButton, useUser } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { initAnimations } from '../../lib/animations';
+import { FlipCard } from '@/components/marketing/flip-card';
+import { useUser } from '@clerk/nextjs';
+import { BubbleBackground } from '@/components/marketing/animate-ui/backgrounds/bubble';
+import { landingCardData } from '../../constants/card-data';
 
-interface HeroSectionProps {}
-
-interface HeroSectionRefs {
-  heroRef: React.RefObject<HTMLElement | null>;
-  heroCardsRef: React.RefObject<HTMLDivElement | null>;
-  heroCard1Ref: React.RefObject<HTMLDivElement | null>;
-  heroCard2Ref: React.RefObject<HTMLDivElement | null>;
-  heroCard3Ref: React.RefObject<HTMLDivElement | null>;
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
 }
 
-// Diamond row configuration
-interface DiamondRowConfig {
-  variants: Array<'primary' | 'secondary' | 'tertiary'>;
-  text: string;
-  className: string;
-}
-
-// Diamond row data configuration
-const diamondRowsConfig: DiamondRowConfig[] = [
-  {
-    variants: [
-      'primary',
-      'secondary',
-      'tertiary',
-      'tertiary',
-      'secondary',
-      'primary',
-    ],
-    text: 'With foldly',
-    className: 'hero-diamonds-top',
-  },
-  {
-    variants: [
-      'secondary',
-      'tertiary',
-      'primary',
-      'primary',
-      'tertiary',
-      'secondary',
-    ],
-    text: 'MADE SIMPLE',
-    className: 'hero-diamonds-bottom',
-  },
-];
-
-// Hero cards configuration
-const heroCardData = [
-  {
-    id: 'hero-card-1',
-    title: 'Create',
-    number: '01',
-    features: ['Custom Links', 'Brand Your Page', 'Set Expiration'],
-    iconType: 'settings' as const,
-  },
-  {
-    id: 'hero-card-2',
-    title: 'Collect',
-    number: '02',
-    features: ['Drag & Drop', 'No Login Required', 'Large File Support'],
-    iconType: 'heart' as const,
-  },
-  {
-    id: 'hero-card-3',
-    title: 'Organize',
-    number: '03',
-    features: ['Auto Folders', 'Smart Tagging', 'Search & Filter'],
-    iconType: 'archive' as const,
-  },
-];
-
-// Reusable DiamondRow component
-interface DiamondRowProps {
-  variants: Array<'primary' | 'secondary' | 'tertiary'>;
-  text: string;
-  className: string;
-}
-
-const DiamondRow: React.FC<DiamondRowProps> = ({
-  variants,
-  text,
-  className,
-}) => {
-  // Split variants array to place text in the middle
-  const midpoint = Math.floor(variants.length / 2);
-  const leftVariants = variants.slice(0, midpoint);
-  const rightVariants = variants.slice(midpoint);
-
-  return (
-    <div className={className}>
-      {leftVariants.map((variant, index) => (
-        <Diamond
-          key={`left-${index}`}
-          size={16}
-          className='text-neutral-600'
-          filled
-          variant={variant}
-        />
-      ))}
-      <span className='hero-diamonds-text'>{text}</span>
-      {rightVariants.map((variant, index) => (
-        <Diamond
-          key={`right-${index}`}
-          size={16}
-          className='text-neutral-600'
-          filled
-          variant={variant}
-        />
-      ))}
-    </div>
-  );
-};
-
-const HeroCTA: React.FC = () => {
+export function HeroSection() {
   const { user } = useUser();
 
-  if (user) {
-    return (
-      <Link href='/dashboard/workspace'>
-        <GradientButton className='hero-cta-button' variant='primary' size='lg'>
-          Go to Dashboard
-        </GradientButton>
-      </Link>
-    );
-  } else {
-    return (
-      <SignUpButton>
-        <GradientButton className='hero-cta-button' variant='primary' size='lg'>
-          Get Started Now
-        </GradientButton>
-      </SignUpButton>
-    );
-  }
-};
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
-  (props, ref) => {
-    // Extract refs from the forwarded ref object
-    const refs = ref as React.RefObject<HeroSectionRefs>;
+    // Initialize animations for data-animate elements
+    initAnimations();
 
-    return (
-      <>
-        <BubbleBackground
-          interactive
-          className='absolute inset-0 flex items-center justify-center rounded-xl z-1'
-        />
-        <section className='hero' ref={refs?.current?.heroRef}>
-          {/* Hero Header - Groups title with its decorations */}
-          <div className='hero-header'>
-            {/* Dynamic Diamond Rows */}
-            <DiamondRow {...diamondRowsConfig[0]} />
+    // Hero cards animation
+    gsap.set('.hero .hero-cards .card', { transformOrigin: 'center center' });
 
-            {/* Main Title */}
-            <h1 className='hero-main-title'>FILE COLLECTION</h1>
+    gsap.to('.hero .hero-cards .card', {
+      scale: 1,
+      duration: 0.75,
+      delay: 0.25,
+      stagger: 0.1,
+      ease: 'power4.out',
+      onComplete: () => {
+        gsap.set('#hero-card-1', { transformOrigin: 'top right' });
+        gsap.set('#hero-card-3', { transformOrigin: 'top left' });
+      },
+    });
 
-            <DiamondRow {...diamondRowsConfig[1]} />
-          </div>
+    const smoothStep = (p: number) => p * p * (3 - 2 * p);
 
-          {/* Hero Cards */}
-          <div className='hero-cards' ref={refs?.current?.heroCardsRef}>
-            {heroCardData.map((card, index) => (
-              <FlipCard
-                key={card.id}
-                id={card.id}
-                title={card.title}
-                number={card.number}
-                features={card.features}
-                iconType={card.iconType}
-                className='hero-flip-card'
-                ref={
-                  index === 0
-                    ? refs?.current?.heroCard1Ref
-                    : index === 1
-                      ? refs?.current?.heroCard2Ref
-                      : refs?.current?.heroCard3Ref
-                }
+    if (window.innerWidth > 1000) {
+      ScrollTrigger.create({
+        trigger: '.hero',
+        start: 'top top',
+        end: '75% top',
+        scrub: 1,
+        onUpdate: self => {
+          const progress = self.progress;
+
+          const heroCardsContainerOpacity = gsap.utils.interpolate(
+            1,
+            0.5,
+            smoothStep(progress)
+          );
+          gsap.set('.hero-cards', {
+            opacity: heroCardsContainerOpacity,
+          });
+
+          ['#hero-card-1', '#hero-card-2', '#hero-card-3'].forEach(
+            (cardId, index) => {
+              const delay = index * 0.9;
+              const cardProgress = gsap.utils.clamp(
+                0,
+                1,
+                (progress - delay * 0.1) / (1 - delay * 0.1)
+              );
+
+              const y = gsap.utils.interpolate(
+                '0%',
+                '400%',
+                smoothStep(cardProgress)
+              );
+              const scale = gsap.utils.interpolate(
+                1,
+                0.75,
+                smoothStep(cardProgress)
+              );
+
+              let x = '0%';
+              let rotation = 0;
+              if (index === 0) {
+                x = gsap.utils.interpolate(
+                  '0%',
+                  '90%',
+                  smoothStep(cardProgress)
+                );
+                rotation = gsap.utils.interpolate(
+                  0,
+                  -15,
+                  smoothStep(cardProgress)
+                );
+              } else if (index === 2) {
+                x = gsap.utils.interpolate(
+                  '0%',
+                  '-90%',
+                  smoothStep(cardProgress)
+                );
+                rotation = gsap.utils.interpolate(
+                  0,
+                  15,
+                  smoothStep(cardProgress)
+                );
+              }
+
+              gsap.set(cardId, {
+                y: y,
+                x: x,
+                rotation: rotation,
+                scale: scale,
+              });
+            }
+          );
+        },
+      });
+    }
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
+  }, []);
+
+  return (
+    <section className='hero' id='home'>
+      <BubbleBackground
+        className='absolute inset-0 z-0'
+        interactive
+        colors={{
+          first: '154,190,222', // var(--secondary) - medium blue
+          second: '45,79,107', // var(--quaternary) - very dark blue
+          third: '123,165,199', // var(--secondary-dark) - darker medium blue
+          fourth: '74,107,133', // var(--tertiary-light) - lighter dark blue
+          fifth: '195,225,247', // var(--primary) - light blue
+          sixth: '45,111,171', // var(--tertiary) - dark blue
+        }}
+      />
+      <div className='absolute inset-0 bg-white/5 z-10' />
+      <div className='home-services-top-bar relative z-20'>
+        <div className='container'>
+          <div className='symbols-container'>
+            <div className='symbol'>
+              <Image
+                src='/assets/landing/symbols/s1-dark.png'
+                alt='Symbol'
+                width={18}
+                height={18}
               />
-            ))}
+            </div>
           </div>
-
-          {/* Hero Description & CTA */}
-          <div className='hero-description'>
-            <div className='hero-description-content'>
-              <p className='hero-description-text'>
+          <div className='symbols-container'>
+            <div className='symbol'>
+              <Image
+                src='/assets/landing/symbols/s1-dark.png'
+                alt='Symbol'
+                width={18}
+                height={18}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className='container relative z-20' style={{ overflow: 'visible' }}>
+        <div className='hero-content'>
+          <div className='hero-header'>
+            <h1 data-animate-type='reveal' data-animate-delay='0.25'>
+              FOLDLY
+            </h1>
+          </div>
+          <div className='hero-footer'>
+            <div className='hero-footer-copy'>
+              <p
+                className='md'
+                data-animate-type='line-reveal'
+                data-animate-delay='0.25'
+              >
                 Create custom branded upload links for clients. Collect files
                 without friction - no logins required. Organize everything
                 automatically with smart folders and real-time notifications.
               </p>
-              <HeroCTA />
+            </div>
+            <div className='hero-footer-tags'>
+              <p
+                className='mono'
+                data-animate-type='scramble'
+                data-animate-delay='0.5'
+              >
+                <span>▶</span> Interface Alchemy
+              </p>
+              <p
+                className='mono'
+                data-animate-type='scramble'
+                data-animate-delay='0.5'
+              >
+                <span>▶</span> Scroll Sorcery
+              </p>
             </div>
           </div>
-        </section>
-      </>
-    );
-  }
-);
-
-HeroSection.displayName = 'HeroSection';
+        </div>
+        <div className='hero-cards'>
+          {landingCardData.map(card => (
+            <FlipCard
+              key={card.heroId}
+              id={card.heroId}
+              title={card.title}
+              number={card.number}
+              features={card.features}
+              iconType={card.iconType}
+            />
+          ))}
+        </div>
+        <div className='hero-mobile-description'>
+          <p className='md'>
+            Create custom branded upload links for clients. Collect files
+            without friction - no logins required. Organize everything
+            automatically with smart folders and real-time notifications.
+          </p>
+          <Link
+            href={user ? '/dashboard/workspace' : '/sign-in'}
+            className='hero-mobile-cta'
+          >
+            {user ? 'Go to Dashboard' : 'Get Started Now'}
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
