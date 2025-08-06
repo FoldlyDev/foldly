@@ -19,6 +19,7 @@ import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 import { checkAndShowStorageThresholds } from '@/features/notifications/internal/workspace-notifications';
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
 
 // Lazy load the heavy WorkspaceTree component
 const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
@@ -91,13 +92,8 @@ export function WorkspaceContainer() {
     }
   }, [storageInfo, storageLoading, previousStoragePercentage]);
 
-  // Show skeleton while loading
-  if (isLoading) {
-    return <WorkspaceSkeleton />;
-  }
-
   // Show error state
-  if (isError) {
+  if (isError && !isLoading) {
     return (
       <div className='dashboard-container workspace-layout'>
         <div className='flex items-center justify-center h-64'>
@@ -122,7 +118,13 @@ export function WorkspaceContainer() {
   }
 
   return (
-    <div className='dashboard-container workspace-layout'>
+    <FadeTransitionWrapper
+      isLoading={isLoading}
+      loadingComponent={<WorkspaceSkeleton />}
+      duration={300}
+      className='dashboard-container workspace-layout'
+    >
+      <div className='dashboard-container workspace-layout'>
       <div className='workspace-header'>
         <WorkspaceHeader
           totalLinks={workspaceData?.stats?.totalLinks || 0}
@@ -196,6 +198,7 @@ export function WorkspaceContainer() {
         </div>
       )}
     </div>
+    </FadeTransitionWrapper>
   );
 }
 

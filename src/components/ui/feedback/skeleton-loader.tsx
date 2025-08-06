@@ -14,7 +14,10 @@ export function Skeleton({
 }: SkeletonProps & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('animate-pulse rounded-md bg-neutral-200/60', className)}
+      className={cn(
+        'animate-pulse rounded-md bg-neutral-200/60 transition-opacity duration-300',
+        className
+      )}
       {...props}
     >
       {children}

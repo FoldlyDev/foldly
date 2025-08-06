@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 
 export function AnalyticsSkeleton() {
   return (
-    <div className='dashboard-container'>
+    <div className='dashboard-container min-h-screen overflow-hidden'>
       {/* Header */}
       <div className='dashboard-header mb-8'>
         <Skeleton className='h-8 sm:h-10 w-64 sm:w-80 mb-2' />

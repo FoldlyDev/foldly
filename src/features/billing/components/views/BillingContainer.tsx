@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { BillingHeader } from '../sections/BillingHeader';
 import { PricingTable } from '@clerk/nextjs';
 import { BillingSkeleton } from '../loaders/BillingSkeleton';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
 
 export function BillingContainer() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -17,17 +18,19 @@ export function BillingContainer() {
     }
   }, [userLoaded]);
 
-  if (!isLoaded) {
-    return <BillingSkeleton />;
-  }
-
   return (
-    <motion.div 
+    <FadeTransitionWrapper
+      isLoading={!isLoaded}
+      loadingComponent={<BillingSkeleton />}
+      duration={300}
       className='dashboard-container'
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
     >
+      <motion.div 
+        className='dashboard-container'
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+      >
       {/* Header Section */}
       <motion.div 
         className='workspace-header'
@@ -70,5 +73,6 @@ export function BillingContainer() {
         </motion.div>
       </motion.div>
     </motion.div>
+    </FadeTransitionWrapper>
   );
 }

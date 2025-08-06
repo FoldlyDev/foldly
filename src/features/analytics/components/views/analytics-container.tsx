@@ -16,7 +16,8 @@ import {
   Link2,
 } from 'lucide-react';
 import { GradientButton } from '@/components/ui/core/gradient-button';
-import { ContentLoader } from '@/components/ui/feedback/content-loader';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
+import { AnalyticsSkeleton } from '../skeletons/analytics-skeleton';
 import type { DashboardOverview } from '../../types';
 
 // Simple interface that works without complex type extensions
@@ -82,19 +83,7 @@ export function AnalyticsContainer({
     router.push('/dashboard/links');
   };
 
-  if (isLoading) {
-    return (
-      <div className='min-h-screen bg-[var(--neutral-50)]'>
-        <div className='home-container w-full mx-auto'>
-          <div className='loading-container'>
-            <ContentLoader />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (error && !isLoading) {
     return (
       <div className='min-h-screen bg-[var(--neutral-50)] flex items-center justify-center'>
         <div className='error-container'>
@@ -125,8 +114,14 @@ export function AnalyticsContainer({
   }
 
   return (
-    <div className='min-h-screen bg-[var(--neutral-50)]'>
-      <div className='home-container w-full mx-auto'>
+    <FadeTransitionWrapper
+      isLoading={isLoading}
+      loadingComponent={<AnalyticsSkeleton />}
+      duration={300}
+      className='min-h-screen bg-[var(--neutral-50)]'
+    >
+      <div className='min-h-screen bg-[var(--neutral-50)]'>
+        <div className='home-container w-full mx-auto'>
         <AnimatePresence>
           {showContent && (
             <motion.div
@@ -374,5 +369,6 @@ export function AnalyticsContainer({
         </AnimatePresence>
       </div>
     </div>
+    </FadeTransitionWrapper>
   );
 }

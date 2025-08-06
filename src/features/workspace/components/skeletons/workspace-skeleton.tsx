@@ -41,10 +41,10 @@ export function WorkspaceTreeSkeleton() {
   return (
     <div className='workspace-tree-container'>
       <div className='workspace-tree-wrapper'>
-        <div className='workspace-tree-content'>
-          {/* Root folders skeleton */}
+        <div className='workspace-tree-content' style={{ overflow: 'hidden', height: 'auto' }}>
+          {/* Root folders skeleton - reduced items to prevent overflow */}
           <div className='space-y-1'>
-            {[...Array(3)].map((_, i) => (
+            {[...Array(2)].map((_, i) => (
               <div key={i} className='flex items-center gap-2 p-2'>
                 <Skeleton className='h-4 w-4' />
                 <Skeleton className='h-4 w-4' />
@@ -54,7 +54,7 @@ export function WorkspaceTreeSkeleton() {
 
             {/* Nested items */}
             <div className='ml-6 space-y-1'>
-              {[...Array(2)].map((_, i) => (
+              {[...Array(1)].map((_, i) => (
                 <div key={i} className='flex items-center gap-2 p-2'>
                   <Skeleton className='h-4 w-4' />
                   <Skeleton className='h-4 flex-1 max-w-32' />
@@ -63,8 +63,8 @@ export function WorkspaceTreeSkeleton() {
             </div>
 
             {/* More root items */}
-            {[...Array(2)].map((_, i) => (
-              <div key={i + 3} className='flex items-center gap-2 p-2'>
+            {[...Array(1)].map((_, i) => (
+              <div key={i + 2} className='flex items-center gap-2 p-2'>
                 <Skeleton className='h-4 w-4' />
                 <Skeleton className='h-4 w-4' />
                 <Skeleton className='h-4 flex-1 max-w-36' />
@@ -83,7 +83,7 @@ export function WorkspaceTreeSkeleton() {
 
 export function WorkspaceSkeleton() {
   return (
-    <div className='dashboard-container workspace-layout'>
+    <div className='dashboard-container workspace-layout h-screen overflow-hidden'>
       <div className='workspace-header'>
         <WorkspaceHeaderSkeleton />
       </div>

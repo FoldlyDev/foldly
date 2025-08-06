@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 
 export function LinksSkeleton() {
   return (
-    <div className='dashboard-container'>
+    <div className='dashboard-container min-h-screen overflow-hidden'>
       {/* Header */}
       <div className='dashboard-header mb-8'>
         <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>

@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/core/shadcn/card';
 export function BillingSkeleton() {
   return (
     <motion.div 
-      className='dashboard-container'
+      className='dashboard-container min-h-screen overflow-hidden'
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}

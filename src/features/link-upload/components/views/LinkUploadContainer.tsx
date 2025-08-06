@@ -17,6 +17,7 @@ import { LinkUploadSkeleton } from '../skeletons/link-upload-skeleton';
 import { AlertTriangle } from 'lucide-react';
 import { useStagingStore } from '../../stores/staging-store';
 import type { LinkWithOwner, UploadSession } from '../../types';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
 
 // Lazy load the heavy LinkTree component
 const LinkTree = lazy(() => import('../tree/LinkTree'));
@@ -191,13 +192,8 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     );
   }
 
-  // Show skeleton while loading (after access is granted)
-  if (isLoading) {
-    return <LinkUploadSkeleton />;
-  }
-
-  // Show error state
-  if (isError) {
+  // Show error state (without loading)
+  if (isError && !isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
         <LinkUploadHeader link={linkData} />
@@ -224,7 +220,13 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col">
+    <FadeTransitionWrapper
+      isLoading={isLoading}
+      loadingComponent={<LinkUploadSkeleton />}
+      duration={300}
+      className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col"
+    >
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col">
       <LinkUploadHeader 
         link={linkData}
       />
@@ -278,5 +280,6 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
         linkData={linkData}
       />
     </div>
+    </FadeTransitionWrapper>
   );
 }

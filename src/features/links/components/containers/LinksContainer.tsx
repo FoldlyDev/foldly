@@ -10,6 +10,7 @@ import { useUIStore } from '../../store/ui-store';
 import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useRealtimeLinkUpdates } from '../../hooks/use-realtime-link-updates';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -84,11 +85,7 @@ export function LinksContainer({
   // Check if user has any links at all (before filtering)
   const hasNoLinksAtAll = allLinks.length === 0;
 
-  if (isComponentLoading) {
-    return <LinksSkeleton />;
-  }
-
-  if (componentError) {
+  if (componentError && !isComponentLoading) {
     return (
       <div className='min-h-screen bg-[var(--neutral-50)] flex items-center justify-center'>
         <div className='error-container'>
@@ -128,32 +125,39 @@ export function LinksContainer({
   // );
 
   return (
-    <div className='min-h-screen bg-[var(--neutral-50)]'>
-      <div className='home-container w-full mx-auto'>
-        <div className='space-y-8'>
-          {/* Only show empty state if user has no links at all */}
-          {hasNoLinksAtAll ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              <EmptyLinksState
-                onRefreshDashboard={() => {
-                  // NO page reload - just refresh data with React Query
-                  refetchAllLinks();
-                  refetchFiltered();
-                }}
-              />
-            </motion.div>
-          ) : (
-            <PopulatedLinksState links={filteredLinks} />
-          )}
-        </div>
+    <FadeTransitionWrapper
+      isLoading={isComponentLoading}
+      loadingComponent={<LinksSkeleton />}
+      duration={300}
+      className='min-h-screen bg-[var(--neutral-50)]'
+    >
+      <div className='min-h-screen bg-[var(--neutral-50)]'>
+        <div className='home-container w-full mx-auto'>
+          <div className='space-y-8'>
+            {/* Only show empty state if user has no links at all */}
+            {hasNoLinksAtAll ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+              >
+                <EmptyLinksState
+                  onRefreshDashboard={() => {
+                    // NO page reload - just refresh data with React Query
+                    refetchAllLinks();
+                    refetchFiltered();
+                  }}
+                />
+              </motion.div>
+            ) : (
+              <PopulatedLinksState links={filteredLinks} />
+            )}
+          </div>
 
-        {/* Centralized Modal Management - All modals managed by store */}
-        <LinksModalManager />
+          {/* Centralized Modal Management - All modals managed by store */}
+          <LinksModalManager />
+        </div>
       </div>
-    </div>
+    </FadeTransitionWrapper>
   );
 }

@@ -6,3 +6,4 @@
 export { ContentLoader } from './content-loader';
 export { Skeleton } from './skeleton-loader';
 export { default as DynamicDashboardSkeleton } from './dynamic-dashboard-skeleton';
+export { FadeTransitionWrapper, useFadeTransition } from './fade-transition-wrapper';

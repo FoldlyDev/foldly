@@ -36,6 +36,8 @@ import FileCard from '../cards/FileCard';
 import FolderCard from '../cards/FolderCard';
 import EmptyFilesState from './EmptyFilesState';
 import TwoPanelFilesView from './TwoPanelFilesView';
+import { FadeTransitionWrapper } from '@/components/ui/feedback';
+import { FilesSkeleton } from '../skeletons/files-skeleton';
 import {
   VIEW_MODE,
   SORT_BY,
@@ -180,7 +182,35 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
     );
   }
 
+  // Show error state without loading
+  if (error && !isLoading) {
+    return (
+      <div className={cn('h-full flex flex-col', className)}>
+        <div className='flex items-center justify-center p-8 text-red-600 h-full'>
+          <div className='text-center'>
+            <p className='text-lg font-medium'>Error loading files</p>
+            <p className='text-sm text-red-500 mt-1'>{error}</p>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleRefresh}
+              className='mt-4'
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
+    <FadeTransitionWrapper
+      isLoading={isLoading}
+      loadingComponent={<FilesSkeleton />}
+      duration={300}
+      className={cn('h-full flex flex-col', className)}
+    >
     <div className={cn('h-full flex flex-col', className)}>
       {/* Header with controls */}
       <div className='flex flex-col gap-4 mb-6'>
@@ -385,36 +415,8 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
         </div>
       </div>
 
-      {/* Error state */}
-      {error && (
-        <div className='flex items-center justify-center p-8 text-red-600'>
-          <div className='text-center'>
-            <p className='text-lg font-medium'>Error loading files</p>
-            <p className='text-sm text-red-500 mt-1'>{error}</p>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={handleRefresh}
-              className='mt-4'
-            >
-              Try Again
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Loading state */}
-      {isLoading && (
-        <div className='flex items-center justify-center p-8'>
-          <div className='flex items-center gap-3 text-gray-600'>
-            <RefreshCw className='w-5 h-5 animate-spin' />
-            <span>Loading files...</span>
-          </div>
-        </div>
-      )}
-
       {/* No results state */}
-      {!isLoading && !error && totalItems === 0 && filters.hasActiveFilters && (
+      {totalItems === 0 && filters.hasActiveFilters && (
         <div className='flex items-center justify-center p-8 text-gray-500'>
           <div className='text-center'>
             <Search className='w-12 h-12 mx-auto mb-4 text-gray-300' />
@@ -433,7 +435,7 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
       )}
 
       {/* Main Content - Conditional rendering based on panel mode */}
-      {!isLoading && !error && (
+      {totalItems > 0 && (
         <>
           {/* Dual Panel View */}
           {panelMode === 'dual' ? (
@@ -479,6 +481,7 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
         </>
       )}
     </div>
+    </FadeTransitionWrapper>
   );
 });
 

@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 
 export function FilesSkeleton() {
   return (
-    <div className="files-layout">
+    <div className="files-layout min-h-screen overflow-hidden">
       <div className="files-container">
         {/* Desktop: Two Panel Layout Skeleton */}
         <div className="hidden md:flex h-full gap-4">
