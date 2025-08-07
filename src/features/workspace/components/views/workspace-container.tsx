@@ -95,19 +95,19 @@ export function WorkspaceContainer() {
   // Show error state
   if (isError && !isLoading) {
     return (
-      <div className='dashboard-container workspace-layout'>
+      <div className='dashboard-container workspace-layout bg-background'>
         <div className='flex items-center justify-center h-64'>
           <div className='text-center'>
-            <h3 className='text-lg font-semibold text-red-600 mb-2'>
+            <h3 className='text-lg font-semibold text-destructive mb-2'>
               Failed to load workspace
             </h3>
-            <p className='text-gray-600 mb-4'>
+            <p className='text-muted-foreground mb-4'>
               {error?.message ||
                 'An error occurred while loading your workspace'}
             </p>
             <button
               onClick={() => window.location.reload()}
-              className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
+              className='px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors'
             >
               Retry
             </button>
@@ -124,7 +124,6 @@ export function WorkspaceContainer() {
       duration={300}
       className='dashboard-container workspace-layout'
     >
-      <div className='dashboard-container workspace-layout'>
       <div className='workspace-header'>
         <WorkspaceHeader
           totalLinks={workspaceData?.stats?.totalLinks || 0}
@@ -184,12 +183,12 @@ export function WorkspaceContainer() {
       {/* Global Storage Status Overlay for Critical States */}
       {quotaStatus.status === 'exceeded' && (
         <div className='fixed bottom-4 right-4 z-50 max-w-sm'>
-          <div className='bg-red-100 border border-red-300 rounded-lg p-4 shadow-lg'>
+          <div className='bg-destructive/10 border border-destructive/30 rounded-lg p-4 shadow-lg'>
             <div className='flex items-center gap-2'>
-              <AlertTriangle className='w-5 h-5 text-red-600 flex-shrink-0' />
+              <AlertTriangle className='w-5 h-5 text-destructive flex-shrink-0' />
               <div>
-                <h4 className='font-medium text-red-800'>Storage Full</h4>
-                <p className='text-sm text-red-700 mt-1'>
+                <h4 className='font-medium text-destructive'>Storage Full</h4>
+                <p className='text-sm text-destructive/90 mt-1'>
                   Free up space to continue uploading files.
                 </p>
               </div>
@@ -197,7 +196,6 @@ export function WorkspaceContainer() {
           </div>
         </div>
       )}
-    </div>
     </FadeTransitionWrapper>
   );
 }

@@ -101,7 +101,6 @@ export async function createFolderAction(
       name: trimmedName,
       parentFolderId: parentId,
       workspaceId: workspace.id,
-      userId,
       path: folderPath,
       depth,
     });

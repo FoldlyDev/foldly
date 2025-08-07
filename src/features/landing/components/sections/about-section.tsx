@@ -5,16 +5,12 @@ import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
-import Matter from 'matter-js';
-import { useAnimatedElement } from '../../hooks/use-animations';
-
+import * as Matter from 'matter-js';
 export function AboutSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<Matter.Engine | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
-  const bodiesRef = useRef<any[]>([]);
-  
-  const { animateOnScroll } = useAnimatedElement();
+  const bodiesRef = useRef<{ body: Matter.Body; element: Element; width: number; height: number }[]>([]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -176,7 +172,7 @@ export function AboutSection() {
     galleryCards.forEach((galleryCard: any, index) => {
       gsap.set(galleryCard, {
         y: window.innerHeight,
-        rotate: rotations[index],
+        rotate: rotations[index] || 0,
       });
     });
 
@@ -224,7 +220,7 @@ export function AboutSection() {
     // Initialize physics for skills objects
     const initPhysics = (container: HTMLElement) => {
       const config = {
-        gravity: { x: 0, y: 1 },
+        gravity: { x: 0, y: 1, scale: 0.001 },
         restitution: 0.5,
         friction: 0.15,
         frictionAir: 0.02,
@@ -297,7 +293,7 @@ export function AboutSection() {
           height: objRect.height,
         });
 
-        Matter.World.add(engineRef.current.world, body);
+        Matter.World.add(engineRef.current!.world, body);
       });
 
       // Add top wall after delay
@@ -309,7 +305,9 @@ export function AboutSection() {
           wallThickness,
           { isStatic: true }
         );
-        Matter.World.add(engineRef.current!.world, topWall);
+        if (engineRef.current) {
+          Matter.World.add(engineRef.current.world, topWall);
+        }
       }, 3000);
 
       runnerRef.current = Matter.Runner.create();

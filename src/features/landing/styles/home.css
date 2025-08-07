@@ -154,11 +154,15 @@
   letter-spacing: -0.02em;
   text-align: center;
   line-height: 0.9;
-  color: var(--quaternary); /* Very dark blue for maximum impact */
+  color: var(--quaternary);
   text-transform: uppercase;
   position: relative;
   z-index: 2;
-  filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(6px 6px 12px rgba(0, 0, 0, 0.15));
+}
+
+/* Dark mode title color */
+.dark .hero .hero-content .hero-header h1 {
+  color: var(--primary-light);
 }
 
 .hero .hero-content .hero-footer {
@@ -196,6 +200,18 @@
   transform: scale(0);
 }
 
+/* Fallback for when animations don't load */
+@media (max-width: 1000px) {
+  .hero .hero-cards .card {
+    transform: scale(1) !important;
+  }
+}
+
+/* Ensure cards are visible if JS fails */
+.hero .hero-cards .card.fallback-visible {
+  transform: scale(1) !important;
+}
+
 .hero .hero-cards .card .hero-card-inner {
   position: absolute;
   top: 50%;
@@ -227,15 +243,10 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
 }
 
 .hero .hero-cards .card p {
-  font-size: 0.875rem;
-  font-weight: 700;
-  opacity: 0.9;
+  font-size: 0.8rem;
 }
 
 .hero .hero-cards .card#hero-card-1 {
@@ -251,33 +262,18 @@
 }
 
 .hero .hero-cards .card#hero-card-1 .hero-card-inner {
-  background: linear-gradient(
-    135deg,
-    var(--tertiary) 0%,
-    var(--quaternary) 40%,
-    var(--quinary) 100%
-  );
-  color: var(--neutral-100);
+  background-color: var(--accent-1);
+  color: var(--base-300);
 }
 
 .hero .hero-cards .card#hero-card-2 .hero-card-inner {
-  background: linear-gradient(
-    135deg,
-    var(--secondary) 0%,
-    var(--quaternary) 50%,
-    var(--quinary) 100%
-  );
-  color: var(--neutral-100);
+  background-color: var(--accent-2);
+  color: var(--base-300);
 }
 
 .hero .hero-cards .card#hero-card-3 .hero-card-inner {
-  background: linear-gradient(
-    135deg,
-    var(--quinary) 0%,
-    var(--quaternary) 40%,
-    var(--tertiary) 100%
-  );
-  color: var(--neutral-100);
+  background-color: var(--accent-3);
+  color: var(--base-300);
 }
 
 /* Mobile description - hidden by default */
@@ -817,13 +813,30 @@
   }
 }
 
+/* EXACT template responsive breakpoint - 1000px not 1200px */
+@media (max-width: 1000px) {
+  .hero .hero-cards .card,
+  .home-services .cards-container .card,
+  .home-spotlight .home-spotlight-images,
+  .outro .outro-strips {
+    animation: none !important;
+    transform: none !important;
+  }
+  
+  .hero .hero-cards .card .hero-card-inner,
+  .home-services .cards-container .card .card-wrapper {
+    animation: none !important;
+  }
+}
+
+/* Template breakpoint adjustments */
 @media (max-width: 1200px) {
   .hero .hero-content .hero-header {
     width: 100%;
   }
 
   .hero .hero-content .hero-header h1 {
-    font-size: clamp(2rem, 10vw, 3.5rem);
+    font-size: 20vw; /* Template uses 20vw */
   }
 
   .hero .hero-cards {
@@ -838,6 +851,10 @@
     min-height: 100svh;
     position: relative;
     overflow: hidden;
+  }
+  
+  .hero .hero-content .hero-header h1 {
+    font-size: 22.5vw; /* Template specific mobile sizing */
   }
   
   .hero .container {
@@ -861,7 +878,7 @@
   }
 
   .hero .hero-content .hero-header h1 {
-    font-size: clamp(2rem, 10vw, 3.5rem);
+    font-size: 22.5vw; /* Template uses exact 22.5vw */
     margin: 0;
   }
 
@@ -1019,7 +1036,7 @@
 
 @media (max-width: 600px) {
   .hero .hero-content .hero-header h1 {
-    font-size: clamp(2rem, 10vw, 3.5rem);
+    font-size: 25vw; /* Template uses 25vw for 600px breakpoint */
   }
 
   .hero .hero-cards {
@@ -1051,7 +1068,7 @@
 
 @media (max-width: 500px) {
   .hero .hero-content .hero-header h1 {
-    font-size: clamp(1.75rem, 12vw, 3rem);
+    font-size: 30vw; /* Template uses 30vw for 500px breakpoint */
     margin: 0.5rem 0;
   }
 

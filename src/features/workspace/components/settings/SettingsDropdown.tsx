@@ -104,30 +104,30 @@ export function SettingsDropdown() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className='p-2.5 sm:p-3 rounded-xl bg-white border border-[var(--neutral-200)] 
+          className='p-2.5 sm:p-3 rounded-xl bg-card border border-border 
                    shadow-sm hover:shadow-md transition-all duration-200 
                    focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 
                    flex items-center justify-center'
           aria-label="Open settings menu"
         >
-          <Settings className='w-4 h-4 sm:w-5 sm:h-5 text-[var(--neutral-600)]' />
+          <Settings className='w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground' />
         </motion.button>
       </DropdownMenuTrigger>
       
       <DropdownMenuContent className="w-72 mr-2">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs text-[var(--neutral-500)] px-2 py-1">
+          <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
             Theme
           </DropdownMenuLabel>
           
           <div className="px-2 pb-2">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-[var(--neutral-100)]">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
               <button
                 onClick={() => handleThemeChange('light')}
                 className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
                   theme === 'light' 
-                    ? 'bg-[var(--tertiary)] shadow-sm text-white' 
-                    : 'text-[var(--neutral-600)] hover:text-[var(--neutral-700)]'
+                    ? 'bg-primary shadow-sm text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Sun className="w-3.5 h-3.5" />
@@ -138,8 +138,8 @@ export function SettingsDropdown() {
                 onClick={() => handleThemeChange('dark')}
                 className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
                   theme === 'dark' 
-                    ? 'bg-[var(--tertiary)] shadow-sm text-white' 
-                    : 'text-[var(--neutral-600)] hover:text-[var(--neutral-700)]'
+                    ? 'bg-primary shadow-sm text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -150,8 +150,8 @@ export function SettingsDropdown() {
                 onClick={() => handleThemeChange('system')}
                 className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
                   theme === 'system' 
-                    ? 'bg-[var(--tertiary)] shadow-sm text-white' 
-                    : 'text-[var(--neutral-600)] hover:text-[var(--neutral-700)]'
+                    ? 'bg-primary shadow-sm text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Monitor className="w-3.5 h-3.5" />
@@ -184,7 +184,7 @@ export function SettingsDropdown() {
                   <motion.div
                     animate={{ x: doNotDisturb ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"
+                    className="w-4 h-4 bg-background rounded-full absolute top-0.5 left-0.5 shadow-sm"
                   />
                 </motion.div>
               </AnimatePresence>
@@ -211,7 +211,7 @@ export function SettingsDropdown() {
                   <motion.div
                     animate={{ x: silentNotifications ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-white rounded-full absolute top-0.5 left-0.5 shadow-sm"
+                    className="w-4 h-4 bg-background rounded-full absolute top-0.5 left-0.5 shadow-sm"
                   />
                 </motion.div>
               </AnimatePresence>

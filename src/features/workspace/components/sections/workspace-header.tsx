@@ -75,7 +75,7 @@ export function WorkspaceHeader({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className='text-2xl sm:text-3xl font-bold text-[var(--quaternary)] mb-2'
+          className='text-2xl sm:text-3xl font-bold text-foreground mb-2'
         >
           {getGreeting()}, {firstName}
         </motion.h1>
@@ -84,7 +84,7 @@ export function WorkspaceHeader({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className='text-[var(--neutral-600)] text-base sm:text-lg'
+          className='text-muted-foreground text-base sm:text-lg'
         >
           {totalLinks === 0 && totalFiles === 0
             ? 'Organize and manage your collected files in one place'
@@ -103,19 +103,19 @@ export function WorkspaceHeader({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowNotifications(!showNotifications)}
-          className='relative p-2.5 sm:p-3 rounded-xl bg-white border border-[var(--neutral-200)] 
+          className='relative p-2.5 sm:p-3 rounded-xl bg-card border border-border 
                    shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
-                   focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 flex-shrink-0
+                   focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/20 flex-shrink-0
                    flex items-center justify-center'
         >
-          <Bell className='w-4 h-4 sm:w-5 sm:h-5 text-[var(--neutral-600)]' />
+          <Bell className='w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground' />
           {/* Notification dot - only show if there are unread notifications */}
           {totalUnread > 0 && (
             <div
-              className='absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-[var(--error-red)] 
-                          rounded-full border-2 border-white flex items-center justify-center'
+              className='absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-destructive 
+                          rounded-full border-2 border-card flex items-center justify-center'
             >
-              <span className='text-[10px] font-bold text-white'>
+              <span className='text-[10px] font-bold text-destructive-foreground'>
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
             </div>
@@ -137,7 +137,7 @@ export function WorkspaceHeader({
             disabled={isUploadDisabled}
           >
             {showStorageWarning && !isUploadDisabled && (
-              <AlertTriangle className='w-3 h-3 sm:w-4 sm:h-4 mr-1 text-yellow-500' />
+              <AlertTriangle className='w-3 h-3 sm:w-4 sm:h-4 mr-1 text-warning' />
             )}
             <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
             <span className='text-sm sm:text-base'>
@@ -147,7 +147,7 @@ export function WorkspaceHeader({
 
           {/* Storage warning indicator */}
           {showStorageWarning && (
-            <div className='absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full border border-white animate-pulse' />
+            <div className='absolute -top-1 -right-1 w-2 h-2 bg-warning dark:bg-warning rounded-full border border-card animate-pulse' />
           )}
         </div>
 

@@ -12,7 +12,7 @@ interface AnimationCleanup {
   splitTexts: SplitText[];
   observers: IntersectionObserver[];
   timeouts: NodeJS.Timeout[];
-  intervals: NodeJS.Timer[];
+  intervals: NodeJS.Timeout[];
 }
 
 export function useAnimationCleanup() {
@@ -63,7 +63,7 @@ export function useAnimationCleanup() {
   };
 
   // Register an interval for cleanup
-  const registerInterval = (interval: NodeJS.Timer) => {
+  const registerInterval = (interval: NodeJS.Timeout) => {
     cleanupRef.current.intervals.push(interval);
     return interval;
   };
@@ -74,21 +74,21 @@ export function useAnimationCleanup() {
 
     // Kill all timelines
     timelines.forEach((timeline) => {
-      if (timeline && !timeline.killed()) {
+      if (timeline) {
         timeline.kill();
       }
     });
 
     // Kill all tweens
     tweens.forEach((tween) => {
-      if (tween && !tween.killed()) {
+      if (tween) {
         tween.kill();
       }
     });
 
     // Kill all ScrollTriggers
     scrollTriggers.forEach((trigger) => {
-      if (trigger) {
+      if (trigger && 'kill' in trigger && typeof trigger.kill === 'function') {
         trigger.kill();
       }
     });
@@ -157,7 +157,11 @@ export function useGSAPCleanup() {
       
       // Clear all ScrollTriggers
       if (typeof ScrollTrigger !== 'undefined') {
-        ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+        ScrollTrigger.getAll().forEach((trigger) => {
+          if (trigger && 'kill' in trigger && typeof trigger.kill === 'function') {
+            trigger.kill();
+          }
+        });
       }
     };
   }, []);

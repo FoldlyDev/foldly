@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
 export function ContactSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const gifRef = useRef<HTMLDivElement>(null);
-  const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+  const animationRef = useRef<gsap.core.Timeline | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -31,13 +31,14 @@ export function ContactSection() {
       });
 
       // Create flicker reveal animation
-      scrollTriggerRef.current = ScrollTrigger.create({
+      ScrollTrigger.create({
         trigger: section,
         start: 'top center',
         end: 'center center',
         onEnter: () => {
           // Flicker effect timeline
           const tl = gsap.timeline();
+          animationRef.current = tl;
 
           // Quick flashes
           tl.to(gif, {
@@ -99,9 +100,8 @@ export function ContactSection() {
 
     return () => {
       clearTimeout(timer);
-      if (scrollTriggerRef.current) {
-        scrollTriggerRef.current.kill();
-      }
+      animationRef.current?.kill();
+      ScrollTrigger.getAll().forEach(st => st.kill());
     };
   }, []);
 

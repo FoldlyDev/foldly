@@ -9,13 +9,9 @@ import { HomeAboutSection } from './sections/home-about-section';
 import { HomeServicesSection } from './sections/home-services-section';
 import { HomeSpotlightSection } from './sections/home-spotlight-section';
 import { OutroSection } from './sections/outro-section';
-import { useLenisScroll } from '../hooks/use-lenis-scroll';
 import { useAnimatedElement } from '../hooks/use-animations';
 
 export function HomePage() {
-  // Initialize smooth scroll
-  useLenisScroll();
-  
   // Initialize animations - this hook already handles initialization internally
   useAnimatedElement();
 

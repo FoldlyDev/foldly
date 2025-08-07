@@ -153,7 +153,6 @@ export class LinkFileService {
         .values({
           id: batchId,
           linkId,
-          userId: link.userId,
           uploaderName: uploaderInfo.name,
           uploaderEmail: uploaderInfo.email,
           uploaderMessage: uploaderInfo.message,
@@ -182,7 +181,6 @@ export class LinkFileService {
           id: fileId,
           batchId,
           linkId,
-          userId: link.userId,
           workspaceId: link.workspaceId,
           fileName: uniqueFileName,
           originalName: file.name,

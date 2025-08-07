@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
+import { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 import type { OutroStrip } from '../../types';
-
-// Register GSAP plugins
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger, SplitText);
-}
+import {
+  useGsapAnimation,
+  useScrollAnimations,
+  useTextAnimations,
+  useListRefs,
+  smootherStep,
+  mapRange,
+} from '../../hooks/animations';
 
 const outroStrips: OutroStrip[] = [
   {
@@ -82,92 +83,106 @@ const outroStrips: OutroStrip[] = [
 ];
 
 export function OutroSection() {
+  // Refs for animations
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLHeadingElement>(null);
+  const { itemRefs: stripRefs } = useListRefs<HTMLDivElement>(outroStrips.length);
+  
+  // Animation hooks
+  const { setRef } = useGsapAnimation();
+  const { createPinnedAnimation, createCustomScrollAnimation } = useScrollAnimations();
+  const { createSplitText, cleanupSplitTexts } = useTextAnimations();
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const outroHeader = document.querySelector('.outro h3');
-    let outroSplit: SplitText | null = null;
-
-    if (outroHeader) {
-      outroSplit = new SplitText(outroHeader, {
-        type: 'words',
+    // Create split text for header
+    let outroSplit: any = null;
+    if (headerRef.current) {
+      outroSplit = createSplitText(headerRef as RefObject<HTMLElement>, 'words', {
         wordsClass: 'outro-word',
       });
 
-      gsap.set(outroSplit.words, { opacity: 0 });
+      if (outroSplit) {
+        setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 0 });
+      }
     }
 
-    const outroStripElements = document.querySelectorAll('.outro-strip');
+    // Create pinned animation for the section
+    if (sectionRef.current) {
+      createPinnedAnimation(sectionRef as RefObject<HTMLElement>, {
+        start: 'top top',
+        end: `+=${window.innerHeight * 3}px`,
+        pin: true,
+        pinSpacing: true,
+        scrub: 1,
+        onUpdate: (progress) => {
+          // EXACT template header text animation
+          if (outroSplit && outroSplit.words.length > 0) {
+            if (progress >= 0.25 && progress <= 0.75) {
+              const textProgress = (progress - 0.25) / 0.5; // Template calculation
+              const totalWords = outroSplit.words.length;
 
-    ScrollTrigger.create({
-      trigger: '.outro',
-      start: 'top top',
-      end: `+=${window.innerHeight * 3}px`,
-      pin: true,
-      pinSpacing: true,
-      scrub: 1,
-      onUpdate: (self) => {
-        const progress = self.progress;
+              outroSplit.words.forEach((word: Element, index: number) => {
+                const wordRevealProgress = index / totalWords;
 
-        if (outroSplit && outroSplit.words.length > 0) {
-          if (progress >= 0.25 && progress <= 0.75) {
-            const textProgress = (progress - 0.25) / 0.5;
-            const totalWords = outroSplit.words.length;
-
-            outroSplit.words.forEach((word: Element, index: number) => {
-              const wordRevealProgress = index / totalWords;
-
-              if (textProgress >= wordRevealProgress) {
-                gsap.set(word, { opacity: 1 });
-              } else {
-                gsap.set(word, { opacity: 0 });
-              }
-            });
-          } else if (progress < 0.25) {
-            gsap.set(outroSplit.words, { opacity: 0 });
-          } else if (progress > 0.75) {
-            gsap.set(outroSplit.words, { opacity: 1 });
+                if (textProgress >= wordRevealProgress) {
+                  setRef({ current: word as HTMLElement }, { opacity: 1 });
+                } else {
+                  setRef({ current: word as HTMLElement }, { opacity: 0 });
+                }
+              });
+            } else if (progress < 0.25) {
+              setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 0 });
+            } else if (progress > 0.75) {
+              setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 1 });
+            }
           }
+        },
+      });
+
+      // EXACT template scroll animation for strips
+      createCustomScrollAnimation(
+        sectionRef as RefObject<HTMLElement>,
+        (progress) => {
+          // Template strips all move in the same direction with individual speeds
+          stripRefs.forEach((stripRef, index) => {
+            if (!stripRef.current) return;
+            
+            const stripData = outroStrips[index];
+            if (stripData) {
+              // Template: movement = progress * 100 * speed (no direction alternation)
+              const movement = progress * 100 * stripData.speed;
+              
+              setRef(stripRef, {
+                x: `${movement}%`,
+              });
+            }
+          });
+        },
+        {
+          start: 'top bottom',
+          end: `+=${window.innerHeight * 6}px`, // Template adds 'px'
+          scrub: 1,
         }
-      },
-    });
-
-    ScrollTrigger.create({
-      trigger: '.outro',
-      start: 'top bottom',
-      end: `+=${window.innerHeight * 6}px`,
-      scrub: 1,
-      onUpdate: (self) => {
-        const progress = self.progress;
-
-        outroStripElements.forEach((strip, index) => {
-          const stripData = outroStrips[index];
-          if (stripData) {
-            const movement = progress * 100 * stripData.speed;
-            gsap.set(strip, {
-              x: `${movement}%`,
-            });
-          }
-        });
-      },
-    });
+      );
+    }
 
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      outroSplit?.revert();
+      cleanupSplitTexts();
     };
-  }, []);
+  }, [createPinnedAnimation, createCustomScrollAnimation, createSplitText, setRef, cleanupSplitTexts, stripRefs]);
 
   return (
-    <section className="outro">
+    <section ref={sectionRef} className="outro">
       <div className="container">
-        <h3>Scroll ends but ideas don't</h3>
+        <h3 ref={headerRef}>Scroll ends but ideas don't</h3>
       </div>
       <div className="outro-strips">
-        {outroStrips.map((strip) => (
-          <div key={strip.id} className={`outro-strip ${strip.id}`}>
-            {strip.skills.map((skill, index) => (
-              <div key={index} className={`skill ${skill.variant}`}>
+        {outroStrips.map((strip, index) => (
+          <div key={strip.id} ref={stripRefs[index]} className={`outro-strip ${strip.id}`}>
+            {strip.skills.map((skill, skillIndex) => (
+              <div key={skillIndex} className={`skill ${skill.variant}`}>
                 <p className="mono">{skill.text}</p>
               </div>
             ))}

@@ -98,9 +98,9 @@ function NotificationItem({
         {/* Icon */}
         <div className="flex-shrink-0 mt-0.5">
           {hasFiles ? (
-            <FileUp className="w-4 h-4 text-blue-500" />
+            <FileUp className="w-4 h-4 text-primary dark:text-primary" />
           ) : (
-            <FolderUp className="w-4 h-4 text-blue-500" />
+            <FolderUp className="w-4 h-4 text-secondary dark:text-secondary" />
           )}
         </div>
         
@@ -128,7 +128,7 @@ function NotificationItem({
               
               {/* View uploads link */}
               <button
-                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary dark:text-primary hover:underline"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewUploads();
@@ -173,7 +173,7 @@ function NotificationItem({
         
         {/* Unread indicator */}
         {!notification.isRead && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary dark:bg-primary rounded-r" />
         )}
       </div>
     </motion.div>
@@ -299,7 +299,7 @@ export function NotificationCenter({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 z-40"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
             onClick={onClose}
           />
           
@@ -321,7 +321,7 @@ export function NotificationCenter({
                 <Bell className="w-5 h-5" />
                 <h3 className="font-semibold">Notifications</h3>
                 {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                  <span className="px-2 py-0.5 text-xs font-medium bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-full">
                     {unreadCount} new
                   </span>
                 )}

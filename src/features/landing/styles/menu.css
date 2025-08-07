@@ -11,6 +11,7 @@
 
 .menu.hidden {
   transform: translateX(-50%) translateY(-200%);
+  pointer-events: none;
 }
 
 .menu-header {
@@ -32,11 +33,19 @@
 
 .menu-logo img {
   width: 1.25rem;
-  transition: transform 0.5s ease;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu-logo img.rotated {
   transform: rotate(180deg);
+}
+
+.menu-logo:hover img {
+  transform: rotate(90deg);
+}
+
+.menu-logo img.rotated:hover {
+  transform: rotate(270deg);
 }
 
 .menu-toggle {
@@ -128,6 +137,11 @@
   font-weight: 900;
   line-height: 0.85;
   overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-nav a:hover {
+  transform: translateX(20px);
 }
 
 .menu-nav a div div {
@@ -159,6 +173,11 @@
   font-family: "DM Mono";
   font-size: 0.85rem;
   font-weight: 500;
+}
+
+.menu-social a:hover {
+  transform: translateX(5px);
+  color: var(--base-secondary-dark);
 }
 
 .menu-time {

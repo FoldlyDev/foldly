@@ -58,11 +58,9 @@ export class LinkBatchService {
         };
       }
 
-      // Use the link owner's userId for the batch
-      const userId = link.userId;
+      // userId no longer needed - derive from link
 
-      // We'll handle folder creation after batch is created, so we can pass the batchId
-      let actualFolderId = params.folderId;
+      // Check if folder exists for link uploads
       let needToCreateFolder = false;
       
       if (params.folderId) {
@@ -70,9 +68,8 @@ export class LinkBatchService {
         const folderResult = await this.folderService.getFolderById(params.folderId);
         
         if (!folderResult.success) {
-          // Mark that we need to create the folder after batch creation
+          // Mark that we need to create the folder
           needToCreateFolder = true;
-          actualFolderId = null; // We'll update this after creating the folder with batchId
         }
       }
 
@@ -80,13 +77,22 @@ export class LinkBatchService {
       const totalSize = params.files.reduce((sum, file) => sum + file.fileSize, 0);
       const totalFiles = params.files.length;
 
+      // For generated links, we need to set targetFolderId
+      // For base/custom links, targetFolderId should be null
+      let targetFolderId: string | null = null;
+      
+      // Check if this is a generated link by checking if it has a sourceFolderId
+      if (link.sourceFolderId && params.folderId) {
+        targetFolderId = params.folderId;
+      }
+
       // Create the batch record
       // For folder-only uploads (no files), set totalSize to 0 to avoid trigger issues
       const [batch] = await db
         .insert(batches)
         .values({
           linkId: params.linkId,
-          userId: userId,
+          targetFolderId: targetFolderId, // For generated links: the workspace folder to upload to
           uploaderName: params.uploaderName || params.files[0]?.uploaderName || 'Anonymous',
           uploaderEmail: params.uploaderEmail,
           uploaderMessage: params.uploaderMessage,
@@ -104,25 +110,28 @@ export class LinkBatchService {
         };
       }
 
-      // Now create the folder if needed, with the batchId
-      if (needToCreateFolder && params.folderId) {
+      // Create folder if needed for link uploads (not for generated links)
+      if (needToCreateFolder && params.folderId && !link.sourceFolderId) {
         const createResult = await this.folderService.createFolder({
           name: `Upload_${new Date().toISOString().split('T')[0]}`,
           parentFolderId: null,
           workspaceId: null,  // No workspace for link uploads
           linkId: params.linkId,
-          userId: userId,
           path: `Upload_${new Date().toISOString().split('T')[0]}`,
-          depth: 0,
-          batchId: batch.id, // Now we have the batchId to associate with the folder
+          depth: 0
         });
         
         if (createResult.success && createResult.data) {
-          actualFolderId = createResult.data.id;
+          // Update the batch with the created folder ID if it's a generated link
+          if (link.sourceFolderId) {
+            await db
+              .update(batches)
+              .set({ targetFolderId: createResult.data.id })
+              .where(eq(batches.id, batch.id));
+          }
         } else {
           // If folder creation fails, continue without folder
           console.warn('Failed to create folder for upload, continuing without folder');
-          actualFolderId = null;
         }
       }
 

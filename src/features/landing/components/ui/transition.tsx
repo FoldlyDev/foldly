@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
+import type { RefObject } from 'react';
 import Image from 'next/image';
-import gsap from 'gsap';
 import { useRouter } from 'next/navigation';
+import {
+  useGsapAnimation,
+  DURATIONS,
+  EASINGS,
+} from '../../hooks/animations';
 
 interface TransitionProps {
   onSectionChange?: (section: string) => void;
@@ -11,9 +16,16 @@ interface TransitionProps {
 
 export function Transition({ onSectionChange }: TransitionProps = {}) {
   const router = useRouter();
+  
+  // Refs for animations
   const transitionRef = useRef<HTMLDivElement>(null);
   const maskTransitionRef = useRef<HTMLDivElement>(null);
   const maskBgOverlayRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  
+  // Animation hooks
+  const { animateRef, setRef, createTimeline } = useGsapAnimation();
 
   const calculateLogoScale = () => {
     const logoSize = 60;
@@ -93,23 +105,25 @@ export function Transition({ onSectionChange }: TransitionProps = {}) {
         `translate(${translateX}, ${translateY}) scale(${initialScale})`
       );
 
-      gsap.set(maskTransitionRef.current, {
-        display: 'block',
-      });
-
-      gsap.set(maskBgOverlayRef.current, {
-        display: 'block',
-        opacity: 1,
-      });
+      setRef(maskTransitionRef as RefObject<HTMLElement>, { display: 'block' });
+      setRef(maskBgOverlayRef as RefObject<HTMLElement>, { display: 'block', opacity: 1 });
 
       const scaleMultiplier = window.innerWidth < 1000 ? 15 : 40;
 
-      gsap.to(
+      const tl = createTimeline({
+        onComplete: () => {
+          setRef(maskTransitionRef as RefObject<HTMLElement>, { display: 'none' });
+          setRef(maskBgOverlayRef as RefObject<HTMLElement>, { display: 'none' });
+          resolve();
+        },
+      });
+
+      tl.to(
         {},
         {
           duration: 2,
           delay: 0,
-          ease: 'power2.inOut',
+          ease: EASINGS.power2InOut,
           onUpdate: function () {
             const progress = this.progress();
             const scale = initialScale + progress * scaleMultiplier;
@@ -123,53 +137,46 @@ export function Transition({ onSectionChange }: TransitionProps = {}) {
             );
 
             const fadeProgress = Math.min(0.3, progress * 2.5);
-            gsap.set(maskBgOverlayRef.current, {
+            setRef(maskBgOverlayRef as RefObject<HTMLElement>, {
               opacity: 0.3 - fadeProgress,
             });
-          },
-          onComplete: () => {
-            gsap.set(maskTransitionRef.current, { display: 'none' });
-            gsap.set(maskBgOverlayRef.current, { display: 'none' });
-            resolve();
           },
         }
       );
 
-      const overlayElements = document.querySelectorAll('.transition-overlay');
-      if (overlayElements.length > 0) {
-        gsap.set('.transition-overlay', { scaleY: 0 });
-      }
+      // Set overlay scale to 0
+      setRef(overlayRef as RefObject<HTMLElement>, { scaleY: 0 });
     });
   };
 
   const animateTransition = useCallback((section: string, isExternal = false) => {
     return new Promise<void>((resolve) => {
-      const overlayElements = document.querySelectorAll('.transition-overlay');
-      if (overlayElements.length === 0) {
+      if (!overlayRef.current) {
         resolve();
         return;
       }
       
-      gsap.set('.transition-overlay', { scaleY: 0, transformOrigin: 'bottom' });
+      setRef(overlayRef as RefObject<HTMLElement>, { scaleY: 0, transformOrigin: 'bottom' });
 
-      gsap.to('.transition-overlay', {
+      const tl = createTimeline();
+
+      tl.to(overlayRef.current, {
         scaleY: 1,
-        duration: 0.75,
-        ease: 'power4.out',
+        duration: DURATIONS.medium,
+        ease: EASINGS.power4Out,
         onStart: () => {
-          const logoElements = document.querySelectorAll('.transition-logo');
-          if (logoElements.length > 0) {
-            gsap.set('.transition-logo', {
+          if (logoRef.current) {
+            setRef(logoRef as RefObject<HTMLElement>, {
               top: '120%',
               opacity: 1,
             });
 
-            gsap.to('.transition-logo', {
+            animateRef(logoRef as RefObject<HTMLElement>, {
               top: '50%',
               transform: 'translate(-50%, -50%)',
-              duration: 0.75,
-              delay: 0.5,
-              ease: 'power4.out',
+              duration: DURATIONS.medium,
+              delay: DURATIONS.normal,
+              ease: EASINGS.power4Out,
               onComplete: () => {
                 setTimeout(() => {
                   if (isExternal) {
@@ -185,7 +192,7 @@ export function Transition({ onSectionChange }: TransitionProps = {}) {
         },
       });
     });
-  }, [router, onSectionChange]);
+  }, [router, onSectionChange, animateRef, setRef, createTimeline]);
 
   // Handle navigation link clicks
   const handleLinkClick = useCallback((e: MouseEvent) => {
@@ -257,8 +264,8 @@ export function Transition({ onSectionChange }: TransitionProps = {}) {
   return (
     <>
       <div ref={transitionRef} className="transition">
-        <div className="transition-overlay overlay"></div>
-        <div className="transition-logo">
+        <div ref={overlayRef} className="transition-overlay overlay"></div>
+        <div ref={logoRef} className="transition-logo">
           <Image
             src="/assets/img/logo/foldly_logo_sm.png"
             alt="Foldly Logo"

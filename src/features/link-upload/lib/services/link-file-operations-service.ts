@@ -3,7 +3,7 @@
  */
 
 import { db } from '@/lib/database/connection';
-import { files, batches } from '@/lib/database/schemas';
+import { files, batches, links } from '@/lib/database/schemas';
 import { eq, and, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import { createClient } from '@supabase/supabase-js';
@@ -70,7 +70,22 @@ export class LinkFileOperationsService {
         };
       }
 
-      const userId = batch.userId;
+      // Get userId through link relationship
+      const [batchWithLink] = await db
+        .select({ userId: links.userId })
+        .from(batches)
+        .innerJoin(links, eq(batches.linkId, links.id))
+        .where(eq(batches.id, params.batchId))
+        .limit(1);
+
+      if (!batchWithLink) {
+        return {
+          success: false,
+          error: 'Batch link not found',
+        };
+      }
+
+      const userId = batchWithLink.userId;
 
       // Generate unique file path
       const timestamp = Date.now();

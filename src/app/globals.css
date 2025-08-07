@@ -174,17 +174,17 @@
    ============================================================================= */
 
 :root {
-  /* JUNO WATTS TEMPLATE COLORS */
-  --base-100: var(--primary-light);
-  --base-200: #efece5;
-  --base-300: #0a0a0a;
-  --base-secondary-dark: #686560;
-  --base-secondary-fade: rgba(249, 244, 235, 0.15);
+  /* JUNO WATTS TEMPLATE COLORS - Properly Integrated with Foldly Brand */
+  --base-100: #f9f4eb; /* Original cream background */
+  --base-200: #efece5; /* Slightly darker cream */
+  --base-300: #0a0a0a; /* Near black for text */
+  --base-secondary-dark: #686560; /* Muted brown for secondary text */
+  --base-secondary-fade: rgba(249, 244, 235, 0.15); /* Transparent base-100 */
 
-  /* JUNO WATTS ACCENT COLORS */
-  --accent-1: #b1c1ef;
-  --accent-2: #f2acac;
-  --accent-3: #ffdd94;
+  /* JUNO WATTS ACCENT COLORS - Maintain original palette */
+  --accent-1: #b1c1ef; /* Light blue accent */
+  --accent-2: #f2acac; /* Light red/pink accent */
+  --accent-3: #ffdd94; /* Light yellow accent */
 
   /* FOLDLY BRAND COLORS - Dark Professional Theme */
 
@@ -375,21 +375,70 @@
       'Segoe UI',
       sans-serif;
     overflow-x: hidden;
+    touch-action: auto;
     max-width: 100%;
   }
 }
 
 /* Typography */
+/* JUNO WATTS TYPOGRAPHY SYSTEM */
+h1,
+h2,
+h3,
+h4 {
+  text-transform: uppercase;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+}
+
 h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 12rem;
+}
+
+h2 {
+  font-size: 8rem;
+}
+
+h3 {
+  font-size: 6rem;
+}
+
+h4 {
+  font-size: 2.5rem;
 }
 
 p {
-  font-size: 1rem;
+  font-family: 'Host Grotesk', sans-serif;
+  font-size: 1.1rem;
   line-height: 1.6;
   margin-bottom: 1rem;
+}
+
+p.md {
+  font-size: 1.3rem;
+}
+
+p.lg {
+  font-size: 1.5rem;
+}
+
+p.mono {
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+p.mono span,
+a span {
+  position: relative;
+  top: -0.1rem;
+}
+
+a {
+  text-decoration: none;
 }
 
 span {
@@ -426,7 +475,7 @@ img {
 
 /* Responsive Typography - Matching Juno Watts */
 @media (max-width: 1000px) {
-  h1:not(.hero h1) {
+  h1 {
     font-size: 6rem;
   }
   h2 {

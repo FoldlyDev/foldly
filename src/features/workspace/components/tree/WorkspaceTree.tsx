@@ -456,7 +456,7 @@ export default function WorkspaceTree({
                 >
                   <input
                     {...item.getRenameInputProps()}
-                    className='px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary'
+                    className='px-2 py-1 text-sm border border-border rounded focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-primary bg-background dark:bg-background text-foreground dark:text-foreground'
                     autoFocus
                   />
                 </div>
@@ -482,9 +482,9 @@ export default function WorkspaceTree({
                         }}
                       >
                         {item.isSelected() ? (
-                          <CheckSquare className='size-4 text-blue-600' />
+                          <CheckSquare className='size-4 text-primary dark:text-primary' />
                         ) : (
-                          <Square className='size-4 text-muted-foreground' />
+                          <Square className='size-4 text-muted-foreground dark:text-muted-foreground' />
                         )}
                       </span>
                     )}
@@ -504,9 +504,9 @@ export default function WorkspaceTree({
                         }}
                       >
                         {item.isExpanded() ? (
-                          <ChevronDown className='size-4 text-muted-foreground' />
+                          <ChevronDown className='size-4 text-muted-foreground dark:text-muted-foreground' />
                         ) : (
-                          <ChevronRight className='size-4 text-muted-foreground' />
+                          <ChevronRight className='size-4 text-muted-foreground dark:text-muted-foreground' />
                         )}
                       </span>
                     ) : (
@@ -516,12 +516,12 @@ export default function WorkspaceTree({
                     {/* Folder/File icon */}
                     {item.isFolder() ? (
                       item.isExpanded() ? (
-                        <FolderOpenIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                        <FolderOpenIcon className='text-tertiary dark:text-tertiary size-4 flex-shrink-0' />
                       ) : (
-                        <FolderIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                        <FolderIcon className='text-tertiary dark:text-tertiary size-4 flex-shrink-0' />
                       )
                     ) : (
-                      <FileIcon className='text-muted-foreground size-4 flex-shrink-0' />
+                      <FileIcon className='text-muted-foreground dark:text-muted-foreground size-4 flex-shrink-0' />
                     )}
 
                     {/* Item name */}

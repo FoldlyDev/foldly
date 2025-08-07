@@ -94,11 +94,11 @@ export function UploadModal({
         <Protect
           fallback={
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <AlertCircle className="w-12 h-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 Authentication Required
               </h3>
-              <p className="text-sm text-gray-600 max-w-sm">
+              <p className="text-sm text-muted-foreground max-w-sm">
                 Please sign in to upload files to your workspace.
               </p>
               <Button
@@ -112,17 +112,17 @@ export function UploadModal({
           }
         >
           {/* Modal Header */}
-          <div className='relative border-b border-gray-200/50 bg-gradient-to-r from-blue-50 to-indigo-50 shrink-0'>
+          <div className='relative border-b border-border/50 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 shrink-0'>
             <div className='p-4 sm:p-6 lg:p-8'>
               <div className='flex items-center gap-3 sm:gap-4'>
-                <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg'>
-                  <CloudUpload className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
+                <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                  <CloudUpload className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
                 </div>
                 <div className='min-w-0 flex-1'>
-                  <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate'>
+                  <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
                     Add to Workspace
                   </h1>
-                  <p className='text-xs sm:text-sm text-gray-600 mt-0.5 hidden sm:block'>
+                  <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
                     Fast, secure uploads with automatic organization
                   </p>
                 </div>
@@ -250,11 +250,11 @@ export function UploadModal({
                 isUploading ||
                 uploadValidation?.valid === false
               }
-              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
+              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
             >
                   {isUploading ? (
                     <>
-                      <div className='w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin' />
+                      <div className='w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin' />
                       <span>Uploading...</span>
                     </>
                   ) : uploadValidation?.valid === false ? (

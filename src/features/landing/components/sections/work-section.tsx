@@ -71,49 +71,23 @@ export function WorkSection() {
     // Initialize first slide
     initializeFirstSlide();
 
-    // Event handlers
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const direction = e.deltaY > 0 ? 'down' : 'up';
-      handleScroll(direction);
-    };
-
-    let touchStartY = 0;
-    let isTouchActive = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY = e.touches[0].clientY;
-      isTouchActive = true;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      if (!isTouchActive || isAnimating || !scrollAllowed) return;
-
-      const touchCurrentY = e.touches[0].clientY;
-      const difference = touchStartY - touchCurrentY;
-
-      if (Math.abs(difference) > 50) {
-        isTouchActive = false;
-        const direction = difference > 0 ? 'down' : 'up';
-        handleScroll(direction);
+    // Use keyboard navigation instead of blocking scroll
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!scrollAllowed) return;
+      
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault();
+        handleScroll('down');
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        handleScroll('up');
       }
     };
 
-    const handleTouchEnd = () => {
-      isTouchActive = false;
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: false });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('keydown', handleKeyDown);
       
       // Clean up split instances
       splitInstancesRef.current.forEach(split => split.revert());
@@ -122,6 +96,9 @@ export function WorkSection() {
 
   const createSlide = (slideIndex: number) => {
     const slideData = slides[slideIndex - 1];
+    if (!slideData) {
+      throw new Error(`Slide data not found for index: ${slideIndex}`);
+    }
 
     const slide = document.createElement('div');
     slide.className = 'slide';

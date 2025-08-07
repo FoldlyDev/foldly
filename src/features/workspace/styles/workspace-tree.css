@@ -1,10 +1,17 @@
 /* Workspace tree styles - Following headless-tree library patterns */
 
 :root {
-  --tree-selected-color: #f0f2f5;
-  --tree-primary-blue: #0366d6;
-  --tree-drop-target-color: #e1f1f8;
-  --tree-search-match-color: #e1f8ff;
+  --tree-selected-color: var(--color-muted);
+  --tree-primary-blue: var(--color-primary);
+  --tree-drop-target-color: var(--color-primary);
+  --tree-search-match-color: var(--color-accent);
+}
+
+[data-theme="dark"] {
+  --tree-selected-color: var(--color-muted);
+  --tree-primary-blue: var(--color-primary);
+  --tree-drop-target-color: var(--color-primary);
+  --tree-search-match-color: var(--color-accent);
 }
 
 .tree {
@@ -37,16 +44,16 @@
 }
 
 .treeitem:hover {
-  background-color: var(--tree-selected-color);
+  background-color: var(--color-accent);
 }
 
 .treeitem.focused {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--color-ring);
   outline-offset: 1px;
 }
 
 .treeitem.selected {
-  background-color: #eee;
+  background-color: var(--color-accent);
 }
 
 /* Selection indicator - blue left border */
@@ -106,7 +113,7 @@
   top: -3px;
   height: 4px;
   width: 4px;
-  background: #fff;
+  background: var(--color-background);
   border: 2px solid var(--tree-primary-blue);
   border-radius: 99px;
 }
@@ -135,7 +142,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--color-border);
 }
 
 /* Mobile-specific styles */

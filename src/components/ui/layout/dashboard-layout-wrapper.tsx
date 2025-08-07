@@ -31,7 +31,12 @@ export function DashboardLayoutWrapper({
 
   return (
     <NavigationContext.Provider value={{ isExpanded, setIsExpanded }}>
-      <div className='min-h-screen bg-[var(--neutral-50)]'>
+      <div 
+        className='min-h-screen' 
+        style={{ 
+          background: 'linear-gradient(135deg, var(--tertiary) 0%, var(--neutral-800) 50%, var(--quaternary) 100%)'
+        }}
+      >
         <DashboardNavigation />
         <main
           className={`

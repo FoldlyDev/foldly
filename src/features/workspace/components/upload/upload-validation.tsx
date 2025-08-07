@@ -41,48 +41,48 @@ export function UploadValidation({ validation, formatSize, planKey = 'free' }: U
         >
           <div className={cn(
             'relative rounded-xl border p-4',
-            'bg-gradient-to-br from-red-950/95 to-red-900/90 dark:from-red-950/50 dark:to-red-900/40',
-            'border-red-500/20 dark:border-red-400/20',
-            'backdrop-blur-sm shadow-lg shadow-red-950/10 dark:shadow-red-950/20'
+            'bg-gradient-to-br from-destructive/10 to-destructive/5',
+            'border-destructive/20',
+            'backdrop-blur-sm shadow-lg shadow-destructive/10'
           )}>
             {/* Subtle decorative background */}
             <div className="absolute inset-0 opacity-5">
-              <div className="absolute -right-8 -top-8 w-24 h-24 bg-red-600 rounded-full blur-2xl" />
-              <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-red-700 rounded-full blur-2xl" />
+              <div className="absolute -right-8 -top-8 w-24 h-24 bg-destructive rounded-full blur-2xl" />
+              <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-destructive rounded-full blur-2xl" />
             </div>
 
             <div className="relative flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-red-500/20 dark:bg-red-400/20 shrink-0 border border-red-500/10 dark:border-red-400/10">
-                <AlertTriangle className="w-4 h-4 text-red-200 dark:text-red-300" />
+              <div className="p-2 rounded-lg bg-destructive/20 shrink-0 border border-destructive/10">
+                <AlertTriangle className="w-4 h-4 text-destructive" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-white dark:text-red-50">
+                <p className="text-sm font-semibold text-destructive-foreground">
                   {exceedsLimit ? 'Storage Full' : invalidFiles?.length ? 'File Size Limit Exceeded' : 'Cannot Upload'}
                 </p>
-                <p className="text-xs text-red-100 dark:text-red-200 mt-1 opacity-90">
+                <p className="text-xs text-destructive-foreground/90 mt-1">
                   {reason || (exceedsLimit ? UPLOAD_CONFIG.messages.errors.storageFull : 'Upload validation failed')}
                 </p>
                 
                 {/* Show invalid files if any */}
                 {invalidFiles && invalidFiles.length > 0 && (
                   <div className="mt-3 space-y-1.5">
-                    <p className="text-xs font-medium text-red-50 dark:text-red-100">
+                    <p className="text-xs font-medium text-destructive-foreground">
                       Files exceeding {planKey} plan limit ({maxFileSize ? formatSize(maxFileSize) : 'N/A'}):
                     </p>
-                    <ul className="space-y-1 bg-red-950/40 dark:bg-red-950/30 rounded-lg p-2 border border-red-800/20 dark:border-red-700/20">
+                    <ul className="space-y-1 bg-destructive/10 rounded-lg p-2 border border-destructive/20">
                       {invalidFiles.slice(0, 3).map((invalid, idx) => (
                         <li key={idx} className="text-xs flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-red-400 dark:bg-red-300 rounded-full flex-shrink-0" />
-                          <span className="text-red-100 dark:text-red-200 truncate flex-1">
+                          <span className="w-1.5 h-1.5 bg-destructive rounded-full flex-shrink-0" />
+                          <span className="text-destructive-foreground/90 truncate flex-1">
                             {invalid.file.name}
                           </span>
-                          <span className="text-red-200 dark:text-red-300 font-medium opacity-75">
+                          <span className="text-destructive-foreground/75 font-medium">
                             ({formatSize(invalid.file.size)})
                           </span>
                         </li>
                       ))}
                       {invalidFiles.length > 3 && (
-                        <li className="text-xs text-red-200 dark:text-red-300 italic pl-3.5 opacity-75">
+                        <li className="text-xs text-destructive-foreground/75 italic pl-3.5">
                           ...and {invalidFiles.length - 3} more file{invalidFiles.length - 3 > 1 ? 's' : ''}
                         </li>
                       )}
@@ -91,7 +91,7 @@ export function UploadValidation({ validation, formatSize, planKey = 'free' }: U
                 )}
                 
                 {totalSize > 0 && !invalidFiles?.length && (
-                  <p className="text-xs text-red-200 dark:text-red-300 mt-2 opacity-75">
+                  <p className="text-xs text-destructive-foreground/75 mt-2">
                     Total size: {formatSize(totalSize)}
                   </p>
                 )}
@@ -109,33 +109,32 @@ export function UploadValidation({ validation, formatSize, planKey = 'free' }: U
         >
           <div className={cn(
             'relative rounded-xl border p-4',
-            'bg-gradient-to-br from-blue-50 to-blue-50/50',
-            'dark:from-blue-950/20 dark:to-blue-900/10',
-            'border-blue-200 dark:border-blue-800'
+            'bg-gradient-to-br from-primary/10 to-primary/5',
+            'border-primary/20'
           )}>
             {/* Decorative background */}
             <div className="absolute inset-0 opacity-5">
-              <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500 rounded-full blur-3xl" />
-              <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-indigo-600 rounded-full blur-3xl" />
+              <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary rounded-full blur-3xl" />
+              <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-primary rounded-full blur-3xl" />
             </div>
 
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <CheckCircle className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  <p className="text-sm font-medium text-primary">
                     Ready to upload
                   </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  <p className="text-xs text-primary/80 mt-0.5">
                     {formatSize(totalSize)} will be uploaded
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <div className="px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                <div className="px-3 py-1.5 rounded-lg bg-primary/20">
+                  <p className="text-xs font-medium text-primary">
                     {formatSize(totalSize)}
                   </p>
                 </div>
@@ -165,34 +164,34 @@ export function StorageWarning({
       icon: Info,
       title: 'Storage getting full',
       subtitle: `${formatSize(remainingSpace)} remaining`,
-      gradient: 'from-yellow-400 to-amber-500',
-      bgGradient: 'from-yellow-50/90 via-amber-50/80 to-orange-50/70',
-      border: 'border-yellow-300/50',
-      iconBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
-      shadowColor: 'shadow-yellow-500/20',
-      pulseColor: 'bg-yellow-400'
+      gradient: 'from-warning to-warning',
+      bgGradient: 'from-warning/10 via-warning/5 to-warning/5',
+      border: 'border-warning/50',
+      iconBg: 'bg-gradient-to-br from-warning to-warning',
+      shadowColor: 'shadow-warning/20',
+      pulseColor: 'bg-warning'
     },
     critical: {
       icon: AlertTriangle,
       title: 'Storage almost full',
       subtitle: `Only ${formatSize(remainingSpace)} remaining`,
-      gradient: 'from-orange-400 to-red-500',
-      bgGradient: 'from-orange-50/90 via-red-50/80 to-rose-50/70',
-      border: 'border-orange-300/50',
-      iconBg: 'bg-gradient-to-br from-orange-400 to-red-500',
-      shadowColor: 'shadow-orange-500/20',
-      pulseColor: 'bg-orange-400'
+      gradient: 'from-warning to-destructive',
+      bgGradient: 'from-warning/10 via-destructive/10 to-destructive/5',
+      border: 'border-warning/50',
+      iconBg: 'bg-gradient-to-br from-warning to-destructive',
+      shadowColor: 'shadow-warning/20',
+      pulseColor: 'bg-warning'
     },
     exceeded: {
       icon: AlertTriangle,
       title: 'Storage limit exceeded',
       subtitle: 'Please free up space or upgrade your plan',
-      gradient: 'from-red-400 to-rose-500',
-      bgGradient: 'from-red-50/90 via-rose-50/80 to-pink-50/70',
-      border: 'border-red-300/50',
-      iconBg: 'bg-gradient-to-br from-red-400 to-rose-500',
-      shadowColor: 'shadow-red-500/20',
-      pulseColor: 'bg-red-400'
+      gradient: 'from-destructive to-destructive',
+      bgGradient: 'from-destructive/10 via-destructive/5 to-destructive/5',
+      border: 'border-destructive/50',
+      iconBg: 'bg-gradient-to-br from-destructive to-destructive',
+      shadowColor: 'shadow-destructive/20',
+      pulseColor: 'bg-destructive'
     }
   };
 
@@ -220,7 +219,7 @@ export function StorageWarning({
             opacity: [0, 0.5, 0]
           }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className={cn('absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent')}
+          className={cn('absolute inset-0 bg-gradient-to-r from-transparent via-background to-transparent')}
         />
       </div>
 
@@ -252,7 +251,7 @@ export function StorageWarning({
               config.shadowColor
             )}
           >
-            <Icon className="w-5 h-5 text-white" />
+            <Icon className="w-5 h-5 text-primary-foreground" />
           </motion.div>
           
           <div className="flex-1">
@@ -262,14 +261,14 @@ export function StorageWarning({
             )}>
               {config.title}
             </h4>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {config.subtitle}
             </p>
             
             {/* Progress indicator for warning/critical */}
             {status !== 'exceeded' && (
               <div className="mt-3 relative">
-                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ 
@@ -278,7 +277,7 @@ export function StorageWarning({
                     transition={{ duration: 1, ease: 'easeOut' }}
                     className={cn('h-full bg-gradient-to-r rounded-full', config.gradient)}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/30 to-transparent animate-shimmer" />
                   </motion.div>
                 </div>
               </div>

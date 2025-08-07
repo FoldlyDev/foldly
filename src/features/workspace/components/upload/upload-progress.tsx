@@ -29,10 +29,10 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
         'relative overflow-hidden rounded-2xl border',
         'display-card backdrop-blur-sm shadow-xl',
         hasErrors 
-          ? 'border-red-200/50 bg-gradient-to-br from-red-50/80 via-white/60 to-rose-50/80'
+          ? 'border-destructive/30 bg-gradient-to-br from-destructive/5 via-background/60 to-destructive/5'
           : isComplete
-          ? 'border-green-200/50 bg-gradient-to-br from-green-50/80 via-white/60 to-emerald-50/80'
-          : 'border-blue-200/50 bg-gradient-to-br from-blue-50/80 via-white/60 to-indigo-50/80'
+          ? 'border-green-500/30 bg-gradient-to-br from-green-500/5 via-background/60 to-green-500/5'
+          : 'border-primary/30 bg-gradient-to-br from-primary/5 via-background/60 to-primary/5'
       )}
     >
       {/* Premium animated background */}
@@ -43,7 +43,7 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
             opacity: [0.1, 0.3, 0.1]
           }}
           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-300/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent"
         />
         {/* Floating particles */}
         <motion.div
@@ -54,7 +54,7 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           className="absolute top-4 right-4"
         >
-          <Sparkles className="w-4 h-4 text-blue-400/30" />
+          <Sparkles className="w-4 h-4 text-primary/30" />
         </motion.div>
       </div>
 
@@ -74,28 +74,28 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
               className={cn(
                 'p-3 rounded-2xl shadow-lg',
                 hasErrors 
-                  ? 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-500/30'
+                  ? 'bg-gradient-to-br from-destructive to-destructive/80 shadow-destructive/30'
                   : isComplete
-                  ? 'bg-gradient-to-br from-green-400 to-emerald-500 shadow-green-500/30'
-                  : 'bg-gradient-to-br from-blue-400 to-indigo-500 shadow-blue-500/30'
+                  ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-500/30'
+                  : 'bg-gradient-to-br from-primary to-primary/80 shadow-primary/30'
               )}
             >
               {isComplete ? (
-                <CheckCircle className="w-5 h-5 text-white" />
+                <CheckCircle className="w-5 h-5 text-primary-foreground" />
               ) : (
-                <FileUp className="w-5 h-5 text-white" />
+                <FileUp className="w-5 h-5 text-primary-foreground" />
               )}
             </motion.div>
             <div>
-              <p className="text-base font-semibold text-gray-900">
+              <p className="text-base font-semibold text-foreground">
                 {isComplete ? 'Upload Complete!' : 'Uploading files...'}
               </p>
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-sm text-gray-600 font-medium">
+                <span className="text-sm text-muted-foreground font-medium">
                   {completedFiles} of {totalFiles} files
                 </span>
                 {hasErrors && (
-                  <span className="flex items-center gap-1 text-sm text-red-600 font-medium">
+                  <span className="flex items-center gap-1 text-sm text-destructive font-medium">
                     <AlertCircle className="w-3 h-3" />
                     {failedFiles} failed
                   </span>
@@ -112,11 +112,11 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
           >
             <p className={cn(
               "text-2xl font-bold",
-              hasErrors ? "text-red-600" : isComplete ? "text-green-600" : "text-blue-600"
+              hasErrors ? "text-destructive" : isComplete ? "text-green-600" : "text-primary"
             )}>
               {Math.round(progress)}%
             </p>
-            <p className="text-xs text-gray-500 font-medium">
+            <p className="text-xs text-muted-foreground font-medium">
               Progress
             </p>
           </motion.div>
@@ -124,25 +124,25 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
 
         {/* Premium Progress Bar */}
         <div className="relative">
-          <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+          <div className="relative h-3 bg-muted rounded-full overflow-hidden shadow-inner">
             <motion.div
               className={cn(
                 'absolute inset-y-0 left-0 rounded-full shadow-sm',
                 hasErrors 
-                  ? 'bg-gradient-to-r from-red-500 to-rose-500'
+                  ? 'bg-gradient-to-r from-destructive to-destructive/80'
                   : isComplete
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500'
-                  : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                  ? 'bg-gradient-to-r from-green-500 to-green-600'
+                  : 'bg-gradient-to-r from-primary to-primary/80'
               )}
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               {/* Animated shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/30 to-transparent animate-shimmer" />
               
               {/* Progress glow */}
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/30 rounded-full blur-xl" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/30 rounded-full blur-xl" />
             </motion.div>
           </div>
           
@@ -151,7 +151,7 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
             {Array.from({ length: totalFiles }).map((_, index) => (
               <div 
                 key={index} 
-                className="flex-1 border-r border-gray-300/30 last:border-r-0" 
+                className="flex-1 border-r border-border/30 last:border-r-0" 
               />
             ))}
           </div>
@@ -172,10 +172,10 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
                   animate={{ x: 0, opacity: 1 }}
                   className="flex items-center gap-2"
                 >
-                  <div className="p-1 rounded-full bg-green-100">
+                  <div className="p-1 rounded-full bg-green-500/10">
                     <CheckCircle className="w-3.5 h-3.5 text-green-600" />
                   </div>
-                  <span className="text-sm text-green-700 font-medium">
+                  <span className="text-sm text-green-600 font-medium">
                     {completedFiles - failedFiles} file{(completedFiles - failedFiles) !== 1 ? 's' : ''} uploaded successfully
                   </span>
                 </motion.div>
@@ -188,10 +188,10 @@ export function UploadProgress({ isUploading, totalFiles, completedFiles, failed
                   transition={{ delay: 0.1 }}
                   className="flex items-center gap-2"
                 >
-                  <div className="p-1 rounded-full bg-red-100">
-                    <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+                  <div className="p-1 rounded-full bg-destructive/10">
+                    <AlertCircle className="w-3.5 h-3.5 text-destructive" />
                   </div>
-                  <span className="text-sm text-red-700 font-medium">
+                  <span className="text-sm text-destructive font-medium">
                     {failedFiles} file{failedFiles !== 1 ? 's' : ''} failed to upload
                   </span>
                 </motion.div>

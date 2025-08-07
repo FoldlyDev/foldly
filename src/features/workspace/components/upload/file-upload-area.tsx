@@ -45,12 +45,12 @@ const getFileIcon = (file: File) => {
 
 const getFileIconColor = (file: File) => {
   const type = file.type;
-  if (type.startsWith('image/')) return 'text-blue-600';
-  if (type.startsWith('video/')) return 'text-purple-600';
-  if (type.startsWith('audio/')) return 'text-pink-600';
-  if (type.includes('zip') || type.includes('rar')) return 'text-yellow-600';
-  if (type.includes('pdf') || type.includes('doc')) return 'text-red-600';
-  return 'text-gray-600';
+  if (type.startsWith('image/')) return 'text-primary dark:text-primary';
+  if (type.startsWith('video/')) return 'text-secondary dark:text-secondary';
+  if (type.startsWith('audio/')) return 'text-tertiary dark:text-tertiary';
+  if (type.includes('zip') || type.includes('rar')) return 'text-warning dark:text-warning';
+  if (type.includes('pdf') || type.includes('doc')) return 'text-destructive dark:text-destructive';
+  return 'text-muted-foreground dark:text-muted-foreground';
 };
 
 export function FileUploadArea({
@@ -147,8 +147,8 @@ export function FileUploadArea({
           'relative overflow-hidden rounded-2xl transition-all duration-300',
           'group backdrop-blur-sm cursor-pointer',
           isDragging
-            ? 'border-2 border-blue-500 bg-gradient-to-br from-blue-50/90 to-indigo-50/90 scale-[1.02] shadow-2xl shadow-blue-500/20'
-            : 'border-2 border-dashed border-gray-300 hover:border-gray-400 bg-gradient-to-br from-white/90 to-gray-50/50 hover:shadow-xl',
+            ? 'border-2 border-primary bg-gradient-to-br from-primary/10 to-primary/5 scale-[1.02] shadow-2xl shadow-primary/20'
+            : 'border-2 border-dashed border-border hover:border-border/80 bg-gradient-to-br from-background/90 to-muted/50 hover:shadow-xl',
           isExceeded && 'opacity-50 cursor-not-allowed'
         )}
         initial={{ opacity: 0, y: 20 }}
@@ -176,7 +176,7 @@ export function FileUploadArea({
               scale: isDragging ? 1.2 : 1
             }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className='absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full -translate-x-32 -translate-y-32 blur-2xl' 
+            className='absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full -translate-x-32 -translate-y-32 blur-2xl' 
           />
           <motion.div 
             animate={{ 
@@ -185,7 +185,7 @@ export function FileUploadArea({
               scale: isDragging ? 1.2 : 1
             }}
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-            className='absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-purple-400/20 to-transparent rounded-full translate-x-32 translate-y-32 blur-2xl' 
+            className='absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-purple-600/20 to-transparent rounded-full translate-x-32 translate-y-32 blur-2xl' 
           />
           
           {/* Grid pattern */}
@@ -212,16 +212,16 @@ export function FileUploadArea({
               className={cn(
                 'p-4 sm:p-5 lg:p-6 rounded-2xl sm:rounded-3xl transition-all duration-300',
                 isDragging
-                  ? 'bg-gradient-to-br from-blue-500/20 to-indigo-500/20 shadow-xl shadow-blue-500/20'
-                  : 'bg-gradient-to-br from-gray-100 to-gray-200/50 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:shadow-lg'
+                  ? 'bg-gradient-to-br from-primary/20 to-primary/10 shadow-xl shadow-primary/20'
+                  : 'bg-gradient-to-br from-muted to-muted/50 group-hover:from-primary/10 group-hover:to-primary/5 group-hover:shadow-lg'
               )}
             >
               <CloudUpload
                 className={cn(
                   'w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 transition-colors duration-300',
                   isDragging
-                    ? 'text-blue-600'
-                    : 'text-gray-600 group-hover:text-blue-600'
+                    ? 'text-primary'
+                    : 'text-muted-foreground group-hover:text-primary'
                 )}
               />
             </motion.div>
@@ -231,7 +231,7 @@ export function FileUploadArea({
               <h3
                 className={cn(
                   'text-base sm:text-lg font-semibold transition-colors duration-300',
-                  isDragging ? 'text-blue-900' : 'text-gray-900'
+                  isDragging ? 'text-primary' : 'text-foreground'
                 )}
               >
                 {isDragging
@@ -240,7 +240,7 @@ export function FileUploadArea({
               </h3>
               <p className={cn(
                 'text-xs sm:text-sm transition-colors duration-300',
-                isDragging ? 'text-blue-700' : 'text-gray-600'
+                isDragging ? 'text-primary/80' : 'text-muted-foreground'
               )}>
                 {isDragging
                   ? 'Release to start uploading'
@@ -254,15 +254,15 @@ export function FileUploadArea({
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className='flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/80 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200 cursor-pointer'
+                className='flex items-center gap-2 px-3 sm:px-4 py-2 bg-card/80 rounded-lg sm:rounded-xl border border-border hover:border-primary/50 transition-all duration-200 cursor-pointer'
               >
-                <Folder className='w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600' />
-                <span className='text-xs sm:text-sm font-medium text-gray-700'>
+                <Folder className='w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground' />
+                <span className='text-xs sm:text-sm font-medium text-foreground'>
                   Browse Files
                 </span>
               </motion.div>
 
-              <div className='flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-gray-500'>
+              <div className='flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-muted-foreground'>
                 <MousePointer className='w-2.5 h-2.5 sm:w-3 sm:h-3' />
                 <span>or drag & drop</span>
               </div>
@@ -288,12 +288,12 @@ export function FileUploadArea({
                     }}
                     className={cn(
                       'relative overflow-hidden rounded-xl border transition-all duration-300',
-                      'bg-white/80 backdrop-blur-sm mt-3',
+                      'bg-card/80 backdrop-blur-sm mt-3',
                       file.status === 'error' 
-                        ? 'border-red-200/50 bg-gradient-to-r from-red-50/80 to-red-100/50' 
+                        ? 'border-destructive/20 bg-gradient-to-r from-destructive/10 to-destructive/5' 
                         : file.status === 'success'
                         ? 'border-green-200/50 bg-gradient-to-r from-green-50/80 to-emerald-50/50'
-                        : 'border-gray-200/50',
+                        : 'border-border',
                       'hover:shadow-md hover:scale-[1.01]'
                     )}
                   >
@@ -301,7 +301,7 @@ export function FileUploadArea({
                       {/* Thumbnail or Icon */}
                       <div className="shrink-0">
                         {file.file.type.startsWith('image/') && thumbnails[file.id] ? (
-                          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg overflow-hidden bg-gray-100">
+                          <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg overflow-hidden bg-muted">
                             <img 
                               src={thumbnails[file.id]} 
                               alt={file.file.name}
@@ -326,7 +326,7 @@ export function FileUploadArea({
                         ) : (
                           <div className={cn(
                             "w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 rounded-lg flex items-center justify-center",
-                            "bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200"
+                            "bg-gradient-to-br from-muted to-muted/50 border border-border"
                           )}>
                             <span className={getFileIconColor(file.file)}>
                               {getFileIcon(file.file)}
@@ -342,7 +342,7 @@ export function FileUploadArea({
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             layout
-                            className="text-xs sm:text-sm font-medium text-gray-900 truncate"
+                            className="text-xs sm:text-sm font-medium text-foreground truncate"
                           >
                             {file.file.name}
                           </motion.p>
@@ -365,19 +365,19 @@ export function FileUploadArea({
                                 e.stopPropagation();
                                 onRemoveFile(file.id);
                               }}
-                              className="p-1.5 rounded-lg bg-gray-100 hover:bg-red-50 transition-colors"
+                              className="p-1.5 rounded-lg bg-muted hover:bg-destructive/10 transition-colors"
                             >
-                              <X className="w-3.5 h-3.5 text-gray-500 hover:text-red-600" />
+                              <X className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
                             </motion.button>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 sm:gap-3 mt-1 text-[10px] sm:text-xs text-gray-600">
+                        <div className="flex items-center gap-2 sm:gap-3 mt-1 text-[10px] sm:text-xs text-muted-foreground">
                           <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             layout
-                            className="px-1.5 sm:px-2 py-0.5 rounded-md bg-gray-100"
+                            className="px-1.5 sm:px-2 py-0.5 rounded-md bg-muted"
                           >
                             {formatSize(file.file.size)}
                           </motion.span>
@@ -398,9 +398,9 @@ export function FileUploadArea({
                             exit={{ opacity: 0, height: 0 }}
                             className="mt-2"
                           >
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                               <motion.div
-                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                                className="h-full bg-gradient-to-r from-primary to-primary"
                                 animate={{ width: `${file.progress}%` }}
                                 transition={{ duration: 0.3 }}
                               />
@@ -409,7 +409,7 @@ export function FileUploadArea({
                               <motion.p
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="text-[10px] text-blue-600 mt-1 flex items-center gap-1"
+                                className="text-[10px] text-primary dark:text-primary mt-1 flex items-center gap-1"
                               >
                                 <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -428,7 +428,7 @@ export function FileUploadArea({
                             animate={{ opacity: 1 }}
                             className="mt-1 space-y-1"
                           >
-                            <p className="text-[10px] text-red-600">
+                            <p className="text-[10px] text-destructive">
                               {file.error}
                             </p>
                             {onRemoveFile && (
@@ -441,7 +441,7 @@ export function FileUploadArea({
                                   // Re-add the file
                                   setTimeout(() => onFileSelect([file.file]), 100);
                                 }}
-                                className="text-[10px] text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                                className="text-[10px] text-primary dark:text-primary hover:text-primary/80 dark:hover:text-primary/80 font-medium flex items-center gap-1"
                               >
                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -470,7 +470,7 @@ export function FileUploadArea({
             exit={{ opacity: 0, scale: 0.8 }}
             className='absolute inset-0 flex items-center justify-center pointer-events-none'
           >
-            <div className='px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-2xl shadow-blue-600/30 font-medium'>
+            <div className='px-6 py-3 bg-primary text-primary-foreground rounded-2xl shadow-2xl shadow-primary/30 font-medium'>
               ✨ Drop to upload instantly
             </div>
           </motion.div>

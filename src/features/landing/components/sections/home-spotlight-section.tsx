@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
 import Image from 'next/image';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SplitText } from 'gsap/SplitText';
 import type { SpotlightImage } from '../../types';
-
-// Register GSAP plugins
-if (typeof window !== 'undefined') {
-  gsap.registerPlugin(ScrollTrigger, SplitText);
-}
+import {
+  useGsapAnimation,
+  useScrollAnimations,
+  useTextAnimations,
+  smootherStep,
+  mapRange,
+  interpolateString,
+} from '../../hooks/animations';
 
 const spotlightImages: SpotlightImage[] = [
   { src: '/assets/landing/spotlight-images/spotlight-img-1.jpg', alt: 'Spotlight 1', row: 0, position: 1 },
@@ -25,88 +26,139 @@ const spotlightImages: SpotlightImage[] = [
 ];
 
 export function HomeSpotlightSection() {
+  // Refs for animations
+  const sectionRef = useRef<HTMLElement>(null);
+  const spotlightImagesRef = useRef<HTMLDivElement>(null);
+  const spotlightHeaderRef = useRef<HTMLHeadingElement>(null);
+  const introHeaderRef = useRef<HTMLHeadingElement>(null);
+  const maskContainerRef = useRef<HTMLDivElement>(null);
+  const maskImageRef = useRef<HTMLDivElement>(null);
+  const maskHeaderRef = useRef<HTMLHeadingElement>(null);
+  const bottomBarTextRefs = useRef<HTMLParagraphElement[]>([]);
+  
+  // Animation hooks
+  const { setRef } = useGsapAnimation();
+  const { createPinnedAnimation, createCustomScrollAnimation } = useScrollAnimations();
+  const { createSplitText, lineRevealText, scrambleText, cleanupSplitTexts } = useTextAnimations();
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const spotlightImages = document.querySelector('.home-spotlight-images');
-    if (!spotlightImages) return;
+    // Initialize text animations for bottom bar
+    bottomBarTextRefs.current.forEach((ref) => {
+      if (ref) {
+        const delay = parseFloat(ref.getAttribute('data-animate-delay') || '0');
+        
+        // Set up intersection observer for scroll-triggered animation
+        const observer = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+                scrambleText({ current: ref }, { delay });
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            threshold: [0, 0.1, 0.3, 0.5, 0.7, 1.0],
+            rootMargin: '0px 0px -20% 0px',
+          }
+        );
 
-    const containerHeight = spotlightImages.scrollHeight;
+        const parentSection = ref.closest('section');
+        if (parentSection) {
+          observer.observe(parentSection);
+        }
+      }
+    });
+
+    // Initialize intro header animation
+    if (introHeaderRef.current) {
+      const delay = parseFloat(introHeaderRef.current.getAttribute('data-animate-delay') || '0');
+      
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.intersectionRatio > 0.3) {
+              lineRevealText(introHeaderRef as RefObject<HTMLElement>, { delay });
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        {
+          threshold: [0, 0.1, 0.3, 0.5, 0.7, 1.0],
+          rootMargin: '0px 0px -20% 0px',
+        }
+      );
+
+      const parentSection = introHeaderRef.current.closest('section');
+      if (parentSection) {
+        observer.observe(parentSection);
+      }
+    }
+
+    if (!spotlightImagesRef.current || !sectionRef.current) return;
+
+    const containerHeight = spotlightImagesRef.current.scrollHeight;
     const viewportHeight = window.innerHeight;
-
     const initialOffset = containerHeight * 0.05;
     const totalMovement = containerHeight + initialOffset + viewportHeight;
 
-    const spotlightHeader = document.querySelector('.spotlight-mask-header h3');
-    let headerSplit: SplitText | null = null;
-
-    if (spotlightHeader) {
-      headerSplit = new SplitText(spotlightHeader, {
-        type: 'words',
+    // Create split text for mask header
+    let headerSplit: any = null;
+    if (maskHeaderRef.current) {
+      headerSplit = createSplitText(maskHeaderRef as RefObject<HTMLElement>, 'words', {
         wordsClass: 'spotlight-word',
       });
 
-      gsap.set(headerSplit.words, { opacity: 0 });
+      if (headerSplit) {
+        setRef({ current: headerSplit.words as unknown as HTMLElement }, { opacity: 0 });
+      }
     }
 
-    ScrollTrigger.create({
-      trigger: '.home-spotlight',
+    // Create pinned scroll animation
+    createPinnedAnimation(sectionRef as RefObject<HTMLElement>, {
       start: 'top top',
       end: `+=${window.innerHeight * 7}px`,
       pin: true,
       pinSpacing: true,
       scrub: 1,
-      onUpdate: (self) => {
-        const progress = self.progress;
-
-        if (progress <= 0.5) {
+      onUpdate: (progress) => {
+        // Animate spotlight images
+        if (progress <= 0.5 && spotlightImagesRef.current) {
           const animationProgress = progress / 0.5;
-
           const startY = 5;
           const endY = -(totalMovement / containerHeight) * 100;
-
           const currentY = startY + (endY - startY) * animationProgress;
-
-          gsap.set(spotlightImages, {
-            y: `${currentY}%`,
-          });
+          
+          setRef(spotlightImagesRef as RefObject<HTMLElement>, { y: `${currentY}%` });
         }
 
-        const maskContainer = document.querySelector(
-          '.spotlight-mask-image-container'
-        );
-        const maskImage = document.querySelector('.spotlight-mask-image');
-
-        if (maskContainer && maskImage) {
+        // Animate mask
+        if (maskContainerRef.current && maskImageRef.current) {
           if (progress >= 0.25 && progress <= 0.75) {
             const maskProgress = (progress - 0.25) / 0.5;
             const maskSize = `${maskProgress * 475}%`;
-
             const imageScale = 1.25 - maskProgress * 0.25;
 
-            (maskContainer as HTMLElement).style.setProperty('-webkit-mask-size', maskSize);
-            (maskContainer as HTMLElement).style.setProperty('mask-size', maskSize);
-
-            gsap.set(maskImage, {
-              scale: imageScale,
-            });
+            maskContainerRef.current.style.setProperty('-webkit-mask-size', maskSize);
+            maskContainerRef.current.style.setProperty('mask-size', maskSize);
+            
+            setRef(maskImageRef as RefObject<HTMLElement>, { scale: imageScale });
           } else if (progress < 0.25) {
-            (maskContainer as HTMLElement).style.setProperty('-webkit-mask-size', '0%');
-            (maskContainer as HTMLElement).style.setProperty('mask-size', '0%');
-
-            gsap.set(maskImage, {
-              scale: 1.25,
-            });
+            maskContainerRef.current.style.setProperty('-webkit-mask-size', '0%');
+            maskContainerRef.current.style.setProperty('mask-size', '0%');
+            
+            setRef(maskImageRef as RefObject<HTMLElement>, { scale: 1.25 });
           } else if (progress > 0.75) {
-            (maskContainer as HTMLElement).style.setProperty('-webkit-mask-size', '475%');
-            (maskContainer as HTMLElement).style.setProperty('mask-size', '475%');
-
-            gsap.set(maskImage, {
-              scale: 1,
-            });
+            maskContainerRef.current.style.setProperty('-webkit-mask-size', '475%');
+            maskContainerRef.current.style.setProperty('mask-size', '475%');
+            
+            setRef(maskImageRef as RefObject<HTMLElement>, { scale: 1 });
           }
         }
 
+        // Animate header text
         if (headerSplit && headerSplit.words.length > 0) {
           if (progress >= 0.75 && progress <= 0.95) {
             const textProgress = (progress - 0.75) / 0.2;
@@ -116,28 +168,27 @@ export function HomeSpotlightSection() {
               const wordRevealProgress = index / totalWords;
 
               if (textProgress >= wordRevealProgress) {
-                gsap.set(word, { opacity: 1 });
+                setRef({ current: word as HTMLElement }, { opacity: 1 });
               } else {
-                gsap.set(word, { opacity: 0 });
+                setRef({ current: word as HTMLElement }, { opacity: 0 });
               }
             });
           } else if (progress < 0.75) {
-            gsap.set(headerSplit.words, { opacity: 0 });
+            setRef({ current: headerSplit.words as unknown as HTMLElement }, { opacity: 0 });
           } else if (progress > 0.95) {
-            gsap.set(headerSplit.words, { opacity: 1 });
+            setRef({ current: headerSplit.words as unknown as HTMLElement }, { opacity: 1 });
           }
         }
       },
     });
 
     return () => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-      headerSplit?.revert();
+      cleanupSplitTexts();
     };
-  }, []);
+  }, [setRef, createPinnedAnimation, createSplitText, lineRevealText, scrambleText, cleanupSplitTexts]);
 
   return (
-    <section className="home-spotlight">
+    <section ref={sectionRef} className="home-spotlight">
       <div className="home-spotlight-top-bar">
         <div className="container">
           <div className="symbols-container">
@@ -197,6 +248,7 @@ export function HomeSpotlightSection() {
       <div className="home-spotlight-bottom-bar">
         <div className="container">
           <p
+            ref={(el) => { if (el) bottomBarTextRefs.current[0] = el; }}
             className="mono"
             data-animate-type="scramble"
             data-animate-delay="0.2"
@@ -205,6 +257,7 @@ export function HomeSpotlightSection() {
             <span>▶</span> Visual logs
           </p>
           <p
+            ref={(el) => { if (el) bottomBarTextRefs.current[1] = el; }}
             className="mono"
             data-animate-type="scramble"
             data-animate-delay="0.25"
@@ -217,6 +270,7 @@ export function HomeSpotlightSection() {
       <div className="container">
         <div className="spotlight-intro-header">
           <h3
+            ref={introHeaderRef}
             data-animate-type="line-reveal"
             data-animate-delay="0.3"
             data-animate-on-scroll="true"
@@ -225,7 +279,7 @@ export function HomeSpotlightSection() {
           </h3>
         </div>
       </div>
-      <div className="home-spotlight-images">
+      <div ref={spotlightImagesRef} className="home-spotlight-images">
         {[0, 1, 2, 3, 4].map((row) => (
           <div key={row} className="home-spotlight-images-row">
             {[0, 1, 2, 3].map((col) => {
@@ -252,8 +306,8 @@ export function HomeSpotlightSection() {
           </div>
         ))}
       </div>
-      <div className="spotlight-mask-image-container">
-        <div className="spotlight-mask-image">
+      <div ref={maskContainerRef} className="spotlight-mask-image-container">
+        <div ref={maskImageRef} className="spotlight-mask-image">
           <Image
             src="/assets/landing/spotlight-images/spotlight-banner.jpg"
             alt="Spotlight Banner"
@@ -264,7 +318,7 @@ export function HomeSpotlightSection() {
         </div>
         <div className="container">
           <div className="spotlight-mask-header">
-            <h3>Built This Face with Flexbox</h3>
+            <h3 ref={maskHeaderRef}>Built This Face with Flexbox</h3>
           </div>
         </div>
       </div>

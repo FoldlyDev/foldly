@@ -365,7 +365,19 @@ export async function POST(req: NextRequest) {
               throw new Error('Batch not found');
             }
 
-            const userId = batch.userId;
+            // Get userId through link relationship
+            const [batchWithLink] = await db
+              .select({ userId: links.userId })
+              .from(batches)
+              .innerJoin(links, eq(batches.linkId, links.id))
+              .where(eq(batches.id, batchId))
+              .limit(1);
+
+            if (!batchWithLink) {
+              throw new Error('Batch link not found');
+            }
+
+            const userId = batchWithLink.userId;
 
             // Generate unique file path
             const timestamp = Date.now();
@@ -391,7 +403,6 @@ export async function POST(req: NextRequest) {
                 id: fileId,
                 linkId: linkId,
                 batchId: batchId,
-                userId: userId,
                 fileName: file.name,
                 originalName: file.name,
                 fileSize: file.size,

@@ -151,6 +151,10 @@ export class LinksDbService {
    * @deprecated Use getBaseUrl from @/lib/config/url-config directly
    */
   private buildLinkUrl(slug: string, topic?: string | null): string {
+    // This method is deprecated and unused
+    // For proper URL building, use:
+    // import { getBaseUrl } from '@/lib/config/url-config';
+    // const baseUrl = getBaseUrl();
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://foldly.com';
     return topic ? `${baseUrl}/${slug}/${topic}` : `${baseUrl}/${slug}`;
   }

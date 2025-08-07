@@ -80,8 +80,8 @@ export function MiniActionsToolbar({
   if (!selectMode.isSelectMode || selectedCount === 0) return null;
 
   return (
-    <div className='flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-md'>
-      <span className='text-sm font-medium text-blue-700'>
+    <div className='flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-md'>
+      <span className='text-sm font-medium text-primary'>
         {selectedCount} selected
       </span>
 

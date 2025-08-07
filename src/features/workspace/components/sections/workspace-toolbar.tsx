@@ -437,9 +437,9 @@ export function WorkspaceToolbar({
 
       {/* Mini-actions toolbar - shows when items are selected or in selection mode */}
       {(selectedItems.length > 0 || (isMobile && isSelectionMode)) && (
-        <div className='flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]'>
+        <div className='flex items-center justify-between px-6 py-2 bg-primary/10 dark:bg-primary/10 border-b border-border'>
           <div className='flex items-center gap-3'>
-            <span className='text-sm font-medium text-blue-700'>
+            <span className='text-sm font-medium text-primary dark:text-primary'>
               {selectedItems.length > 0 ? (
                 <>
                   {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}
@@ -456,7 +456,7 @@ export function WorkspaceToolbar({
               <Button
                 size='sm'
                 variant='ghost'
-                className='h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50'
+                className='h-8 px-3 text-destructive hover:text-destructive/90 hover:bg-destructive/10'
                 onClick={handleDelete}
                 disabled={batchDeleteMutation.isPending}
               >

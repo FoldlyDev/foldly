@@ -53,13 +53,13 @@ export function StorageInfoDisplay({
       <div className={cn('animate-pulse', className)}>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+            <div className="w-10 h-10 bg-muted rounded-xl"></div>
             <div className="flex-1 space-y-2">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
             </div>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full w-full"></div>
+          <div className="h-2 bg-muted rounded-full w-full"></div>
         </div>
       </div>
     );
@@ -69,26 +69,26 @@ export function StorageInfoDisplay({
   const getStatusColor = () => {
     switch (quotaStatus.status) {
       case 'exceeded':
-        return 'text-red-600';
+        return 'text-destructive';
       case 'critical':
-        return 'text-red-500';
+        return 'text-destructive/90';
       case 'warning':
-        return 'text-yellow-600';
+        return 'text-warning dark:text-warning';
       default:
-        return 'text-green-600';
+        return 'text-success dark:text-success';
     }
   };
 
   const getProgressGradient = () => {
     switch (quotaStatus.status) {
       case 'exceeded':
-        return 'from-red-500 to-red-600';
+        return 'from-destructive to-destructive/80';
       case 'critical':
-        return 'from-red-400 to-red-500';
+        return 'from-destructive/90 to-destructive/70';
       case 'warning':
-        return 'from-yellow-400 to-yellow-500';
+        return 'from-warning to-warning/80';
       default:
-        return 'from-blue-500 to-indigo-500';
+        return 'from-success to-success/80';
     }
   };
 
@@ -106,13 +106,13 @@ export function StorageInfoDisplay({
   const getIconBackground = () => {
     switch (quotaStatus.status) {
       case 'exceeded':
-        return 'bg-red-100';
+        return 'bg-destructive/10';
       case 'critical':
-        return 'bg-red-100';
+        return 'bg-destructive/10';
       case 'warning':
-        return 'bg-yellow-100';
+        return 'bg-warning/10 dark:bg-warning/10';
       default:
-        return 'bg-blue-100';
+        return 'bg-success/10 dark:bg-success/10';
     }
   };
 
@@ -132,7 +132,7 @@ export function StorageInfoDisplay({
               <HardDrive className={cn('w-5 h-5', getStatusColor())} />
             </div>
             <div>
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="text-sm font-semibold text-foreground">
                 Storage Usage
               </span>
               {liveStorage.isUploading && (
@@ -141,8 +141,8 @@ export function StorageInfoDisplay({
                   animate={{ opacity: 1, x: 0 }}
                   className="flex items-center gap-1.5 mt-0.5"
                 >
-                  <Upload className="w-3 h-3 text-blue-500 animate-pulse" />
-                  <span className="text-xs text-blue-600 font-medium">Live tracking</span>
+                  <Upload className="w-3 h-3 text-primary dark:text-primary animate-pulse" />
+                  <span className="text-xs text-primary dark:text-primary font-medium">Live tracking</span>
                 </motion.div>
               )}
             </div>
@@ -153,10 +153,10 @@ export function StorageInfoDisplay({
       <div className="space-y-3">
         {/* Premium Progress Bar */}
         <div className="relative">
-          <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+          <div className="relative h-3 bg-muted rounded-full overflow-hidden shadow-inner">
             {/* Animated background pattern */}
             <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-300 to-transparent animate-shimmer" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent animate-shimmer" />
             </div>
             
             {/* Projected usage (if uploading) */}
@@ -166,7 +166,7 @@ export function StorageInfoDisplay({
                   initial={{ width: `${progressValue}%` }}
                   animate={{ width: `${projectedValue}%` }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-y-0 left-0 bg-gray-300/50 rounded-full"
+                  className="absolute inset-y-0 left-0 bg-muted-foreground/30 rounded-full"
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 />
               )}
@@ -182,7 +182,7 @@ export function StorageInfoDisplay({
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/20 to-transparent animate-shimmer" />
             </motion.div>
           </div>
           
@@ -191,7 +191,7 @@ export function StorageInfoDisplay({
         {/* Usage details - Premium card style */}
         {!compact && (
           <div className={cn(
-            'flex items-center justify-between p-3 rounded-xl bg-gray-50/50 border border-gray-200/50',
+            'flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50',
             'text-sm'
           )}>
             <div className="flex items-center gap-3">
@@ -201,28 +201,28 @@ export function StorageInfoDisplay({
                 </span>
               </div>
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-foreground">
                   {formatSize(displayUsage)} / {formatSize(storageInfo.storageLimitBytes)}
                   {liveStorage.isUploading && (
                     <motion.span 
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-blue-600 ml-1 font-semibold"
+                      className="text-primary dark:text-primary ml-1 font-semibold"
                     >
                       +{formatSize(liveStorage.uploadingBytes)}
                     </motion.span>
                   )}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {storageInfo.filesCount} files • {formatSize(storageInfo.remainingBytes)} remaining
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-medium text-gray-700">
+              <p className="font-medium text-foreground/80">
                 {storageInfo.planKey.charAt(0).toUpperCase() + storageInfo.planKey.slice(1)}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 plan
               </p>
             </div>
@@ -263,13 +263,13 @@ export function StorageInfoDisplay({
                   <p className={cn(
                     "text-sm font-medium",
                     quotaStatus.status === 'exceeded' || quotaStatus.status === 'critical'
-                      ? 'text-red-800'
-                      : 'text-yellow-800'
+                      ? 'text-destructive'
+                      : 'text-warning'
                   )}>
                     {quotaStatus.message}
                   </p>
                   {liveStorage.isUploading && (
-                    <p className="text-xs text-gray-600 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {formatSize(Math.max(0, storageInfo.storageLimitBytes - projectedUsage))} will remain after uploads
                     </p>
                   )}
@@ -319,31 +319,31 @@ export function StorageWarningBanner() {
     switch (quotaStatus.status) {
       case 'exceeded':
         return {
-          container: 'from-red-50 to-red-100/50 border-red-200/50',
-          icon: 'bg-red-100 text-red-600',
-          text: 'text-red-800',
-          subtext: 'text-red-700'
+          container: 'from-destructive/10 to-destructive/5 border-destructive/30',
+          icon: 'bg-destructive/10 text-destructive',
+          text: 'text-destructive',
+          subtext: 'text-destructive/90'
         };
       case 'critical':
         return {
-          container: 'from-red-50/80 to-orange-50/50 border-red-200/40',
-          icon: 'bg-red-100 text-red-500',
-          text: 'text-red-700',
-          subtext: 'text-red-600'
+          container: 'from-destructive/10 to-destructive/5 border-destructive/20',
+          icon: 'bg-destructive/10 text-destructive/90',
+          text: 'text-destructive/90',
+          subtext: 'text-destructive/80'
         };
       case 'warning':
         return {
-          container: 'from-yellow-50 to-amber-50/50 border-yellow-200/50',
-          icon: 'bg-yellow-100 text-yellow-600',
-          text: 'text-yellow-800',
-          subtext: 'text-yellow-700'
+          container: 'from-warning/10 to-warning/5 border-warning/30',
+          icon: 'bg-warning/10 text-warning',
+          text: 'text-warning',
+          subtext: 'text-warning/90'
         };
       default:
         return {
-          container: 'from-blue-50 to-indigo-50/50 border-blue-200/50',
-          icon: 'bg-blue-100 text-blue-600',
-          text: 'text-blue-800',
-          subtext: 'text-blue-700'
+          container: 'from-primary/10 to-primary/5 border-primary/30',
+          icon: 'bg-primary/10 text-primary',
+          text: 'text-primary',
+          subtext: 'text-primary/90'
         };
     }
   };
@@ -404,14 +404,14 @@ export function StorageWarningBanner() {
           </div>
           
           {/* Mini progress bar */}
-          <div className="relative h-1.5 bg-white/30 rounded-full overflow-hidden">
+          <div className="relative h-1.5 bg-muted/50 rounded-full overflow-hidden">
             <motion.div
               className={cn(
                 'absolute inset-y-0 left-0 rounded-full',
-                quotaStatus.status === 'exceeded' ? 'bg-red-500' :
-                quotaStatus.status === 'critical' ? 'bg-red-400' :
+                quotaStatus.status === 'exceeded' ? 'bg-destructive' :
+                quotaStatus.status === 'critical' ? 'bg-destructive/80' :
                 quotaStatus.status === 'warning' ? 'bg-yellow-500' :
-                'bg-blue-500'
+                'bg-primary'
               )}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(usagePercentage, 100)}%` }}

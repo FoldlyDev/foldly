@@ -74,9 +74,7 @@ export function ProjectSection() {
 
     return () => {
       clearTimeout(timer);
-      if (scrollTriggerRef.current) {
-        scrollTriggerRef.current.kill();
-      }
+      ScrollTrigger.getAll().forEach(st => st.kill());
     };
   }, []);
 

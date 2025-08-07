@@ -146,11 +146,11 @@ export function DashboardNavigation() {
       hoverBg: 'hover:bg-[var(--tertiary-subtle)]',
     },
     success: {
-      icon: 'text-[var(--success-green)] bg-green-50',
+      icon: 'text-[var(--success-green)] bg-[var(--success-green)]/10',
       activeIcon: 'text-white bg-[var(--success-green)]',
       activeBg:
-        'bg-gradient-to-r from-green-50 to-transparent border-r-2 border-[var(--success-green)]',
-      hoverBg: 'hover:bg-green-50',
+        'bg-gradient-to-r from-[var(--success-green)]/10 to-transparent border-r-2 border-[var(--success-green)]',
+      hoverBg: 'hover:bg-[var(--success-green)]/10',
     },
   };
 
@@ -168,7 +168,7 @@ export function DashboardNavigation() {
     return (
       <>
         {/* Header with Logo */}
-        <div className='p-4 border-b border-[var(--neutral-200)]'>
+        <div className='p-4 border-b border-border'>
           <div className='flex items-center justify-center mb-4'>
             <AnimatePresence mode='wait'>
               {shouldExpand ? (
@@ -178,13 +178,14 @@ export function DashboardNavigation() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.2 }}
+                  className='bg-white/90 dark:bg-white/95 rounded-lg p-2 shadow-sm'
                 >
                   <Image
                     src='/assets/img/logo/foldly_logo_lg.png'
                     alt='Foldly'
-                    width={180}
-                    height={60}
-                    className='h-14 w-auto'
+                    width={100}
+                    height={32}
+                    className='h-6 w-auto'
                     priority
                   />
                 </motion.div>
@@ -195,13 +196,14 @@ export function DashboardNavigation() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ duration: 0.2 }}
+                  className='bg-white/90 dark:bg-white/95 rounded-lg p-1.5 shadow-sm'
                 >
                   <Image
                     src='/assets/img/logo/foldly_logo_sm.png'
                     alt='Foldly'
-                    width={44}
-                    height={44}
-                    className='h-11 w-11'
+                    width={32}
+                    height={32}
+                    className='h-8 w-8'
                     priority
                   />
                 </motion.div>
@@ -212,7 +214,7 @@ export function DashboardNavigation() {
           {/* User Profile */}
           <div
             className={`
-              flex items-center gap-3 p-2 rounded-lg bg-[var(--neutral-50)] hover:bg-[var(--neutral-100)] 
+              flex items-center gap-3 p-2 rounded-lg bg-muted hover:bg-muted/80 
               transition-colors cursor-pointer
               ${shouldExpand ? '' : 'justify-center'}
             `}
@@ -236,7 +238,7 @@ export function DashboardNavigation() {
                   <div className='w-2 h-2 bg-[var(--success-green)] rounded-full'></div>
                   <div className='flex items-center justify-center h-8'>
                     <p
-                      className='text-sm text-[var(--neutral-600)] leading-none m-0 p-0'
+                      className='text-sm leading-none m-0 p-0 text-foreground'
                       style={{ lineHeight: '1', margin: '0', padding: '0' }}
                     >
                       Online
@@ -263,7 +265,7 @@ export function DashboardNavigation() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className='text-xs font-semibold text-[var(--neutral-500)] uppercase tracking-wider mb-2 px-2'
+                  className='text-xs font-semibold uppercase tracking-wider mb-2 px-2 text-muted-foreground'
                 >
                   {section.title}
                 </motion.h3>
@@ -323,7 +325,7 @@ export function DashboardNavigation() {
                               <p
                                 className={`
                                 font-medium text-sm transition-colors leading-none m-0 p-0
-                                ${isActive ? 'text-[var(--quaternary)]' : 'text-[var(--neutral-700)] group-hover:text-[var(--quaternary)]'}
+                                ${isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}
                               `}
                                 style={{
                                   lineHeight: '1',
@@ -379,7 +381,7 @@ export function DashboardNavigation() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className='lg:hidden fixed top-4 left-4 z-50 p-3 bg-white rounded-xl border border-[var(--neutral-200)] 
+        className='lg:hidden fixed top-4 left-4 z-50 p-3 bg-card rounded-xl border border-border 
                  shadow-lg hover:shadow-xl transition-all duration-200'
       >
         <AnimatePresence mode='wait'>
@@ -391,7 +393,7 @@ export function DashboardNavigation() {
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <X className='w-6 h-6 text-[var(--quaternary)]' />
+              <X className='w-6 h-6 text-foreground' />
             </motion.div>
           ) : (
             <motion.div
@@ -401,7 +403,7 @@ export function DashboardNavigation() {
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Menu className='w-6 h-6 text-[var(--quaternary)]' />
+              <Menu className='w-6 h-6 text-foreground' />
             </motion.div>
           )}
         </AnimatePresence>
@@ -429,9 +431,9 @@ export function DashboardNavigation() {
           left: isDesktopExpanded ? '240px' : '64px',
         }}
         className='hidden lg:flex fixed top-4 z-50 transition-all duration-300
-                   w-8 h-8 bg-white border border-[var(--neutral-200)] rounded-full
+                   w-8 h-8 bg-card border border-border rounded-full
                    items-center justify-center shadow-lg hover:shadow-xl
-                   hover:bg-[var(--primary-subtle)] hover:border-[var(--primary)]'
+                   hover:bg-primary/10 hover:border-primary'
       >
         <AnimatePresence mode='wait'>
           {isDesktopExpanded ? (
@@ -442,7 +444,7 @@ export function DashboardNavigation() {
               exit={{ rotate: 180, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronLeft className='w-4 h-4 text-[var(--neutral-600)]' />
+              <ChevronLeft className='w-4 h-4 text-muted-foreground' />
             </motion.div>
           ) : (
             <motion.div
@@ -452,7 +454,7 @@ export function DashboardNavigation() {
               exit={{ rotate: -180, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronRight className='w-4 h-4 text-[var(--neutral-600)]' />
+              <ChevronRight className='w-4 h-4 text-muted-foreground' />
             </motion.div>
           )}
         </AnimatePresence>
@@ -462,8 +464,11 @@ export function DashboardNavigation() {
       <motion.nav
         animate={{ width: isDesktopExpanded ? 256 : 80 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className='hidden lg:flex fixed left-0 top-0 bottom-0 bg-white border-r border-[var(--neutral-200)] 
+        className='hidden lg:flex fixed left-0 top-0 bottom-0 border-r border-border
                    shadow-sm z-40 flex-col overflow-hidden'
+        style={{
+          background: 'var(--color-background)'
+        }}
       >
         <NavigationContent isMobile={false} />
       </motion.nav>
@@ -476,8 +481,11 @@ export function DashboardNavigation() {
             animate={{ x: 0 }}
             exit={{ x: -256 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className='lg:hidden fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-[var(--neutral-200)] 
+            className='lg:hidden fixed left-0 top-0 bottom-0 w-64 border-r border-border
                      shadow-xl z-40 flex flex-col'
+            style={{
+              background: 'var(--color-background)'
+            }}
           >
             <NavigationContent isMobile={true} />
           </motion.nav>

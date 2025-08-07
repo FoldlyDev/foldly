@@ -79,7 +79,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
-            <AlertTriangle className='w-5 h-5 text-red-500' />
+            <AlertTriangle className='w-5 h-5 text-destructive' />
             Delete {item.type === 'folder' ? 'Folder' : 'File'}
           </DialogTitle>
           <DialogDescription>
@@ -89,15 +89,15 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
         </DialogHeader>
 
         <div className='py-4'>
-          <div className='flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg'>
+          <div className='flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'>
             {item.type === 'folder' ? (
-              <Folder className='w-8 h-8 text-blue-500 flex-shrink-0' />
+              <Folder className='w-8 h-8 text-primary flex-shrink-0' />
             ) : (
-              <FileText className='w-8 h-8 text-gray-500 flex-shrink-0' />
+              <FileText className='w-8 h-8 text-muted-foreground flex-shrink-0' />
             )}
             <div className='min-w-0 flex-1'>
-              <p className='font-medium text-gray-900 truncate'>{item.name}</p>
-              <p className='text-sm text-gray-500 capitalize'>{item.type}</p>
+              <p className='font-medium text-foreground truncate'>{item.name}</p>
+              <p className='text-sm text-muted-foreground capitalize'>{item.type}</p>
             </div>
           </div>
         </div>
@@ -120,7 +120,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
           >
             {isSubmitting ? (
               <>
-                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                <div className='w-4 h-4 border-2 border-destructive-foreground border-t-transparent rounded-full animate-spin' />
                 Deleting...
               </>
             ) : (

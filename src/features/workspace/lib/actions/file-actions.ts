@@ -540,7 +540,6 @@ export async function uploadFileAction(
       fileSize: file.size,
       mimeType: file.type,
       extension: uniqueFileName.split('.').pop() || '',
-      userId: sanitizedUserId,
       folderId: folderId || null,
       workspaceId: workspaceId, // Workspace file - NOT a link file
       linkId: null, // NULL for workspace files
@@ -744,7 +743,6 @@ export async function uploadFileToLinkAction(
       fileSize: file.size,
       mimeType: file.type,
       extension: uniqueFileName.split('.').pop() || '',
-      userId: sanitizedUserId,
       folderId: folderId || null,
       linkId, // Link to specific collection link
       batchId: linkId, // Batch identifier for link
@@ -757,7 +755,6 @@ export async function uploadFileToLinkAction(
       isOrganized: false,
       needsReview: false,
       downloadCount: 0,
-      sharedAt: new Date(),
       uploadedAt: new Date(),
     };
 

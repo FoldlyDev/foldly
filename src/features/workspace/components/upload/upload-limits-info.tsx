@@ -22,15 +22,15 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
       icon: Zap,
       label: 'Smart Upload',
       value: `${UPLOAD_CONFIG.batch.size} files at once`,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-50',
+      color: 'text-warning',
+      bgColor: 'bg-warning/10',
     },
     {
       icon: Shield,
       label: 'Max File Size',
       value: `${maxFileSize} per file`,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
     },
     {
       icon: Clock,
@@ -43,8 +43,8 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
 
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-gray-600", className)}>
-        <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
+      <div className={cn("flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground", className)}>
+        <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground/60 shrink-0" />
         <span className="line-clamp-1">
           Up to {maxFileSize} per file • {UPLOAD_CONFIG.batch.size} files at once
         </span>
@@ -68,7 +68,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
             transition={{ delay: 0.1 * (index + 1) }}
             className="relative group"
           >
-            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+            <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
               <div className={cn(
                 "p-1.5 sm:p-2 rounded-md sm:rounded-lg transition-colors shrink-0",
                 feature.bgColor,
@@ -77,10 +77,10 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
                 <feature.icon className={cn("w-3.5 h-3.5 sm:w-4 sm:h-4", feature.color)} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] sm:text-xs font-medium text-gray-700">
+                <p className="text-[10px] sm:text-xs font-medium text-foreground">
                   {feature.label}
                 </p>
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-0.5">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">
                   {feature.value}
                 </p>
               </div>
@@ -90,9 +90,9 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
       </div>
 
       {/* Rate limit info - subtle but visible */}
-      <div className="flex items-start gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-gray-50/50">
-        <Info className="w-3 h-3 text-gray-400 shrink-0 mt-0.5" />
-        <span className="text-[10px] sm:text-xs text-gray-600">
+      <div className="flex items-start gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-muted/30">
+        <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
+        <span className="text-[10px] sm:text-xs text-muted-foreground">
           Files are processed quickly with automatic error recovery. Large uploads may take a moment.
         </span>
       </div>

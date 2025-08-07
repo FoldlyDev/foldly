@@ -16,7 +16,9 @@ export function useLenisScroll() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    console.log('🚀 Lenis initialization started');
     let isMobile = window.innerWidth <= 900;
+    console.log('📱 Is mobile:', isMobile, 'Window width:', window.innerWidth);
 
     const scrollSettings = isMobile
       ? {
@@ -32,7 +34,8 @@ export function useLenisScroll() {
           wheelMultiplier: 1,
           orientation: 'vertical' as const,
           smoothWheel: true,
-          syncTouch: true,
+          syncTouch: false, // Disable syncTouch for better trackpad compatibility
+          autoRaf: true, // Ensure RAF is handled automatically
         }
       : {
           duration: 1.2,
@@ -40,25 +43,29 @@ export function useLenisScroll() {
           direction: 'vertical' as const,
           gestureDirection: 'vertical' as const,
           smooth: true,
-          smoothTouch: false,
-          touchMultiplier: 2,
+          smoothTouch: true, // Enable for trackpad support
+          touchMultiplier: 1, // Reduce for better trackpad feel
           infinite: false,
           lerp: 0.1,
           wheelMultiplier: 1,
           orientation: 'vertical' as const,
           smoothWheel: true,
-          syncTouch: true,
+          syncTouch: false, // Disable syncTouch for Mac trackpad compatibility
+          autoRaf: true, // Ensure RAF is handled automatically
         };
 
     lenisRef.current = new Lenis(scrollSettings);
+    console.log('✅ Lenis instance created:', lenisRef.current);
+    console.log('🔧 Settings applied:', scrollSettings);
 
     lenisRef.current.on('scroll', ScrollTrigger.update);
-
-    gsap.ticker.add((time) => {
-      lenisRef.current?.raf(time * 1000);
+    
+    lenisRef.current.on('scroll', (e: any) => {
+      console.log('📜 Scroll event:', e.scroll, 'velocity:', e.velocity);
     });
 
-    gsap.ticker.lagSmoothing(0);
+    // RAF is handled automatically with autoRaf: true
+    // No manual ticker needed
 
     const handleResize = () => {
       const wasMobile = isMobile;
@@ -81,7 +88,8 @@ export function useLenisScroll() {
               wheelMultiplier: 1,
               orientation: 'vertical' as const,
               smoothWheel: true,
-              syncTouch: true,
+              syncTouch: false, // Disable syncTouch for better trackpad compatibility
+              autoRaf: true,
             }
           : {
               duration: 1.2,
@@ -89,14 +97,15 @@ export function useLenisScroll() {
               direction: 'vertical' as const,
               gestureDirection: 'vertical' as const,
               smooth: true,
-              smoothTouch: false,
-              touchMultiplier: 2,
+              smoothTouch: true, // Enable for trackpad support
+              touchMultiplier: 1, // Reduce for better trackpad feel
               infinite: false,
               lerp: 0.1,
               wheelMultiplier: 1,
               orientation: 'vertical' as const,
               smoothWheel: true,
-              syncTouch: true,
+              syncTouch: false, // Disable syncTouch for Mac trackpad compatibility
+              autoRaf: true,
             };
 
         lenisRef.current = new Lenis(newScrollSettings);
@@ -109,9 +118,7 @@ export function useLenisScroll() {
     return () => {
       lenisRef.current?.destroy();
       window.removeEventListener('resize', handleResize);
-      gsap.ticker.remove((time) => {
-        lenisRef.current?.raf(time * 1000);
-      });
+      // No manual ticker cleanup needed with autoRaf
     };
   }, []);
 

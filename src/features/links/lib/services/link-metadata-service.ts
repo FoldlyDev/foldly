@@ -17,7 +17,7 @@ export class LinkMetadataService {
       const statsResult = await db
         .select({
           totalFiles: sql<number>`COUNT(${files.id})`,
-          totalSize: sql<number>`COALESCE(SUM(${files.size}), 0)`,
+          totalSize: sql<number>`COALESCE(SUM(${files.fileSize}), 0)`,
         })
         .from(files)
         .where(eq(files.linkId, linkId));
