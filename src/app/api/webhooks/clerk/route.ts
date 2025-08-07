@@ -10,6 +10,8 @@ import {
   extractUserIdentifier,
 } from '@/lib/webhooks/clerk-webhook-handler';
 import { ClerkBillingIntegrationService } from '@/features/billing/lib/services/clerk-billing-integration';
+import { createErrorResponse, createSuccessResponse } from '@/lib/types/error-response';
+import { logger } from '@/lib/services/logging/logger';
 
 export async function POST(req: NextRequest) {
   // Security headers for webhook endpoint
@@ -30,14 +32,16 @@ export async function POST(req: NextRequest) {
   // If there are no headers, error out
   if (!svix_id || !svix_timestamp || !svix_signature) {
     return NextResponse.json(
-      { error: 'Missing required headers', code: 'MISSING_HEADERS' },
+      createErrorResponse(
+        'Missing required Svix headers for webhook verification',
+        'MISSING_HEADERS'
+      ),
       { status: 400, headers: securityHeaders }
     );
   }
 
   // Get the body
   const payload = await req.text();
-  const body = JSON.parse(payload);
 
   // Get the Webhook secret from environment variables
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -68,23 +72,39 @@ export async function POST(req: NextRequest) {
     const thirtySecondsInFuture = now + 30;
 
     if (timestamp < fiveMinutesAgo || timestamp > thirtySecondsInFuture) {
+      logger.warn('Webhook timestamp invalid', {
+        timestamp,
+        now,
+        fiveMinutesAgo,
+        thirtySecondsInFuture,
+      });
       return NextResponse.json(
-        { error: 'Webhook timestamp invalid', code: 'TIMESTAMP_INVALID' },
+        createErrorResponse(
+          'Webhook timestamp is outside the acceptable window',
+          'TIMESTAMP_INVALID'
+        ),
         { status: 400, headers: securityHeaders }
       );
     }
 
     // Validate payload structure
     if (!evt || !evt.type || !evt.data) {
+      logger.error('Invalid webhook payload structure', { evt });
       return NextResponse.json(
-        { error: 'Invalid webhook payload', code: 'PAYLOAD_INVALID' },
+        createErrorResponse(
+          'Invalid webhook payload structure',
+          'PAYLOAD_INVALID'
+        ),
         { status: 400, headers: securityHeaders }
       );
     }
   } catch (err) {
-    console.error('Error verifying webhook:', err);
+    logger.error('Error verifying webhook', err);
     return NextResponse.json(
-      { error: 'Error verifying webhook', code: 'VERIFICATION_FAILED' },
+      createErrorResponse(
+        'Failed to verify webhook signature',
+        'VERIFICATION_FAILED'
+      ),
       { status: 400, headers: securityHeaders }
     );
   }
@@ -98,20 +118,8 @@ export async function POST(req: NextRequest) {
   try {
     switch (eventType) {
       case 'user.created':
-        try {
-          // Transform Clerk user data to our format
-          const userData = transformClerkUserData(evt.data);
-
-          // Create user and workspace atomically
-          const result =
-            await userWorkspaceService.createUserWithWorkspace(userData);
-
-          if (!result.success) {
-            console.error(`User creation failed: ${id} - ${result.error}`);
-          }
-        } catch (error) {
-          console.error(`User creation error: ${id}`, error);
-        }
+        // Skip user creation - now handled during onboarding
+        console.log(`User created in Clerk: ${id}, will be created during onboarding`);
         break;
 
       case 'user.updated':
@@ -120,21 +128,23 @@ export async function POST(req: NextRequest) {
           const userExists = await userWorkspaceService.userExists(id);
 
           if (!userExists) {
-            // If user doesn't exist, treat as creation
-            const userData = transformClerkUserData(evt.data);
-            const result =
-              await userWorkspaceService.createUserWithWorkspace(userData);
-
-            if (!result.success) {
-              console.error(`User creation on update failed: ${id} - ${result.error}`);
-            }
+            // User doesn't exist yet - they haven't completed onboarding
+            console.log(`User ${id} updated in Clerk but not onboarded yet`);
           } else {
             // User exists, update their information
             const userData = transformClerkUserData(evt.data);
+            
+            // Ensure username is stored in lowercase to match Clerk
+            if (userData.username) {
+              userData.username = userData.username.toLowerCase();
+            }
+            
             const result = await userWorkspaceService.createUser(userData);
 
             if (!result.success) {
               console.error(`User update failed: ${id} - ${result.error}`);
+            } else {
+              console.log(`User ${id} updated successfully, username: ${userData.username}`);
             }
           }
         } catch (error) {
@@ -198,32 +208,12 @@ export async function POST(req: NextRequest) {
             break;
           }
 
-          // Check if user exists, if not wait briefly for user creation webhook
+          // Check if user exists in database
           const userExists = await userWorkspaceService.userExists(userId);
           if (!userExists) {
-            console.log(`User ${userId} not found for subscription event, waiting for user creation...`);
-            
-            // Wait up to 5 seconds for user to be created
-            let retryCount = 0;
-            const maxRetries = 10;
-            const retryDelay = 500; // 500ms between retries
-            
-            while (retryCount < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              const exists = await userWorkspaceService.userExists(userId);
-              if (exists) {
-                console.log(`User ${userId} found after ${retryCount + 1} retries`);
-                break;
-              }
-              retryCount++;
-            }
-            
-            // Final check
-            const finalCheck = await userWorkspaceService.userExists(userId);
-            if (!finalCheck) {
-              console.error(`User ${userId} still not found after waiting, skipping subscription event`);
-              break;
-            }
+            // User hasn't completed onboarding yet - skip subscription event
+            console.log(`User ${userId} not onboarded yet, skipping subscription event ${eventType}`);
+            break;
           }
 
           const subscriptionData = transformSubscriptionEventData(
@@ -314,13 +304,12 @@ export async function POST(req: NextRequest) {
 
   // Success response
   return NextResponse.json(
-    {
-      success: true,
+    createSuccessResponse({
       eventType,
       eventId: id,
       processedAt: new Date().toISOString(),
       message: 'Webhook processed successfully',
-    },
+    }),
     {
       status: 200,
       headers: {

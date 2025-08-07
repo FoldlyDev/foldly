@@ -36,14 +36,17 @@ export function Menu() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()';
 
     elements.forEach((char) => {
-      const originalText = char.textContent || '';
+      const originalText = char.textContent ?? '';
       let iterations = 0;
       const maxIterations = Math.floor(Math.random() * 6) + 3;
 
       gsap.set(char, { opacity: 1 });
 
       const scrambleInterval = setInterval(() => {
-        char.textContent = chars[Math.floor(Math.random() * chars.length)];
+        const randomChar = chars[Math.floor(Math.random() * chars.length)];
+        if (randomChar !== undefined) {
+          char.textContent = randomChar;
+        }
         iterations++;
 
         if (iterations >= maxIterations) {
@@ -63,53 +66,78 @@ export function Menu() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    gsap.set(menuOverlayRef.current, {
-      scaleY: 0,
-      transformOrigin: 'top center',
-    });
+    // Clean up any existing splits first
+    splitTextsRef.current.forEach((split) => split.revert());
+    footerSplitTextsRef.current.forEach((split) => split.revert());
+    splitTextsRef.current = [];
+    footerSplitTextsRef.current = [];
 
-    // Initialize split text for menu items
-    const menuItems = document.querySelectorAll('.menu-nav li');
-    menuItems.forEach((item) => {
-      const link = item.querySelector('a');
-      if (link) {
-        const split = new SplitText(link, {
-          type: 'words',
-          mask: 'words',
-        });
-        splitTextsRef.current.push(split);
+    // Use a timeout to ensure DOM is ready
+    const initializeMenu = () => {
+      if (!menuOverlayRef.current) return;
 
-        gsap.set(split.words, {
-          yPercent: 120,
-        });
-      }
-    });
-
-    // Initialize split text for footer elements
-    const footerElements = document.querySelectorAll(
-      '.menu-social a, .menu-social span, .menu-time'
-    );
-    footerElements.forEach((element) => {
-      const split = new SplitText(element, {
-        type: 'chars',
-      });
-      footerSplitTextsRef.current.push(split);
-
-      gsap.set(split.chars, {
-        opacity: 0,
+      gsap.set(menuOverlayRef.current, {
+        scaleY: 0,
+        transformOrigin: 'top center',
       });
 
-      if (element.classList.contains('menu-time')) {
-        gsap.set(element, { opacity: 0 });
-      }
-    });
+      // Initialize split text for menu items
+      const menuItems = document.querySelectorAll('.menu-nav li');
+      if (menuItems.length > 0) {
+        menuItems.forEach((item) => {
+          const link = item.querySelector('a');
+          if (link && link.textContent) {
+            const split = new SplitText(link, {
+              type: 'words',
+            });
+            splitTextsRef.current.push(split);
 
-    gsap.set('.menu-nav li', { opacity: 1 });
-    gsap.set('.menu-footer', { opacity: 1, y: 20 });
+            gsap.set(split.words, {
+              yPercent: 120,
+            });
+          }
+        });
+
+        gsap.set('.menu-nav li', { opacity: 1 });
+      }
+
+      // Initialize split text for footer elements
+      const footerElements = document.querySelectorAll(
+        '.menu-social a, .menu-social span, .menu-time'
+      );
+      if (footerElements.length > 0) {
+        footerElements.forEach((element) => {
+          if (element.textContent) {
+            const split = new SplitText(element, {
+              type: 'chars',
+            });
+            footerSplitTextsRef.current.push(split);
+
+            gsap.set(split.chars, {
+              opacity: 0,
+            });
+
+            if (element.classList.contains('menu-time')) {
+              gsap.set(element, { opacity: 0 });
+            }
+          }
+        });
+      }
+
+      const menuFooter = document.querySelector('.menu-footer');
+      if (menuFooter) {
+        gsap.set('.menu-footer', { opacity: 1, y: 20 });
+      }
+    };
+
+    // Use requestAnimationFrame to ensure DOM is ready
+    requestAnimationFrame(initializeMenu);
 
     return () => {
       splitTextsRef.current.forEach((split) => split.revert());
       footerSplitTextsRef.current.forEach((split) => split.revert());
+      splitTextsRef.current = [];
+      footerSplitTextsRef.current = [];
     };
   }, []);
 
@@ -309,7 +337,7 @@ export function Menu() {
             alt="Logo"
             width={20}
             height={20}
-            style={{ width: '1.25rem', height: 'auto' }}
+            style={{ width: '1.25rem', height: '1.25rem' }}
           />
         </a>
         <button className="menu-toggle" aria-label="Toggle menu">

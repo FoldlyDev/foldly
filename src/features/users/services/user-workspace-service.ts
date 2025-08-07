@@ -1,6 +1,6 @@
 import { db } from '@/lib/database/connection';
 import { users, workspaces } from '@/lib/database/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, and, not, sql } from 'drizzle-orm';
 import { workspaceService } from '@/features/workspace/services/workspace-service';
 import type { User, Workspace, DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
@@ -38,11 +38,14 @@ export class UserWorkspaceService {
           user = existingUserById[0];
           
           // Update user info if needed (email might have changed in Clerk)
+          // Normalize username to lowercase before updating
+          const normalizedUsername = userData.username?.toLowerCase() || '';
+          
           const [updatedUser] = await tx
             .update(users)
             .set({
               email: userData.email,
-              username: userData.username,
+              username: normalizedUsername, // Always store lowercase
               firstName: userData.firstName,
               lastName: userData.lastName,
               avatarUrl: userData.avatarUrl,
@@ -81,12 +84,15 @@ export class UserWorkspaceService {
           }
           // No existing user - try to create new one
           try {
+            // Normalize username to lowercase before inserting
+            const normalizedUsername = userData.username?.toLowerCase() || '';
+            
             [user] = await tx
               .insert(users)
               .values({
                 id: userData.id,
                 email: userData.email,
-                username: userData.username,
+                username: normalizedUsername, // Always store lowercase
                 firstName: userData.firstName,
                 lastName: userData.lastName,
                 avatarUrl: userData.avatarUrl,
@@ -216,11 +222,14 @@ export class UserWorkspaceService {
 
       if (existingUserById.length > 0) {
         // User exists with same Clerk ID - simple update
+        // Normalize username to lowercase before updating
+        const normalizedUsername = userData.username?.toLowerCase() || '';
+        
         [user] = await db
           .update(users)
           .set({
             email: userData.email,
-            username: userData.username,
+            username: normalizedUsername, // Always store lowercase
             firstName: userData.firstName,
             lastName: userData.lastName,
             avatarUrl: userData.avatarUrl,
@@ -257,12 +266,15 @@ export class UserWorkspaceService {
         
         // No existing user - create new one
         try {
+          // Normalize username to lowercase before inserting
+          const normalizedUsername = userData.username?.toLowerCase() || '';
+          
           [user] = await db
             .insert(users)
             .values({
               id: userData.id,
               email: userData.email,
-              username: userData.username,
+              username: normalizedUsername, // Always store lowercase
               firstName: userData.firstName,
               lastName: userData.lastName,
               avatarUrl: userData.avatarUrl,
@@ -364,6 +376,53 @@ export class UserWorkspaceService {
       };
     } catch (error) {
       return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Check if a username is available with transaction isolation
+   * @param username The username to check
+   * @param excludeUserId Optional user ID to exclude from the check (for current user)
+   * @returns Boolean indicating if username is available
+   */
+  async isUsernameAvailable(
+    username: string,
+    excludeUserId?: string
+  ): Promise<boolean> {
+    try {
+      // Use transaction with serializable isolation level to prevent race conditions
+      return await db.transaction(async tx => {
+        // Convert username to lowercase for comparison
+        const lowerUsername = username.toLowerCase();
+
+        // Check if username exists (case-insensitive)
+        const existingUser = excludeUserId
+          ? await tx
+              .select({ id: users.id, username: users.username })
+              .from(users)
+              .where(
+                and(
+                  sql`LOWER(${users.username}) = ${lowerUsername}`,
+                  not(eq(users.id, excludeUserId))
+                )
+              )
+              .limit(1)
+          : await tx
+              .select({ id: users.id, username: users.username })
+              .from(users)
+              .where(sql`LOWER(${users.username}) = ${lowerUsername}`)
+              .limit(1);
+        
+        // Return true if no existing user found
+        return existingUser.length === 0;
+      }, {
+        isolationLevel: 'serializable', // Prevent phantom reads
+        accessMode: 'read only' // Optimize for read-only transaction
+      });
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      // Return false on error to be safe (assume username is taken)
+      return false;
     }
   }
 }

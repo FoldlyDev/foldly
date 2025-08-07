@@ -16,20 +16,8 @@ export function HomePage() {
   // Initialize smooth scroll
   useLenisScroll();
   
-  // Initialize animations
-  const { initAnimations } = useAnimatedElement();
-
-  useEffect(() => {
-    // Ensure animations are initialized after fonts are loaded
-    if (document.fonts) {
-      document.fonts.ready.then(() => {
-        initAnimations();
-      });
-    } else {
-      // Fallback for browsers that don't support document.fonts
-      setTimeout(initAnimations, 100);
-    }
-  }, [initAnimations]);
+  // Initialize animations - this hook already handles initialization internally
+  useAnimatedElement();
 
   return (
     <div className="landing-page">

@@ -181,8 +181,13 @@ export function useAnimatedElement() {
   const { revealAnimation } = useRevealAnimation();
   const { lineRevealAnimation } = useLineRevealAnimation();
   const observersRef = useRef<Map<Element, IntersectionObserver>>(new Map());
+  const initializedRef = useRef(false);
 
   const initAnimations = () => {
+    // Prevent double initialization
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
     if (typeof window !== 'undefined' && window.innerWidth < 1200) {
       return;
     }
@@ -271,6 +276,7 @@ export function useAnimatedElement() {
       observer.disconnect();
     });
     observersRef.current.clear();
+    initializedRef.current = false;
   };
 
   useEffect(() => {

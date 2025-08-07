@@ -8,8 +8,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initAnimations } from '../../lib/animations';
 import { FlipCard } from '@/components/marketing/flip-card';
 import { useUser } from '@clerk/nextjs';
-import { BubbleBackground } from '@/components/marketing/animate-ui/backgrounds/bubble';
 import { landingCardData } from '../../constants/card-data';
+import BackgroundHighlight from '../ui/background-highlight';
 
 // Register GSAP plugins
 if (typeof window !== 'undefined') {
@@ -124,95 +124,99 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className='hero' id='home'>
-      <div className='absolute inset-0 bg-white/5 z-10' />
-      <div className='home-services-top-bar relative z-20'>
-        <div className='container'>
-          <div className='symbols-container'>
-            <div className='symbol'>
-              <Image
-                src='/assets/landing/symbols/s1-dark.png'
-                alt='Symbol'
-                width={18}
-                height={18}
+    <BackgroundHighlight>
+      <section className='hero' id='home'>
+        <div className='home-services-top-bar relative z-20'>
+          <div className='container'>
+            <div className='symbols-container'>
+              <div className='symbol'>
+                <Image
+                  src='/assets/landing/symbols/s1-dark.png'
+                  alt='Symbol'
+                  width={18}
+                  height={18}
+                />
+              </div>
+            </div>
+            <div className='symbols-container'>
+              <div className='symbol'>
+                <Image
+                  src='/assets/landing/symbols/s1-dark.png'
+                  alt='Symbol'
+                  width={18}
+                  height={18}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          className='container relative z-20'
+          style={{ overflow: 'visible' }}
+        >
+          <div className='hero-content'>
+            <div className='hero-header'>
+              <h1 data-animate-type='reveal' data-animate-delay='0.25'>
+                FOLDLY
+              </h1>
+            </div>
+            <div className='hero-footer'>
+              <div className='hero-footer-copy'>
+                <p
+                  className='md'
+                  data-animate-type='line-reveal'
+                  data-animate-delay='0.25'
+                >
+                  Create custom branded upload links for clients. Collect files
+                  without friction - no logins required. Organize everything
+                  automatically with smart folders and real-time notifications.
+                </p>
+              </div>
+              <div className='hero-footer-tags'>
+                <p
+                  className='mono'
+                  data-animate-type='scramble'
+                  data-animate-delay='0.5'
+                >
+                  <span>▶</span> Interface Alchemy
+                </p>
+                <p
+                  className='mono'
+                  data-animate-type='scramble'
+                  data-animate-delay='0.5'
+                >
+                  <span>▶</span> Scroll Sorcery
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className='hero-cards'>
+            {landingCardData.map(card => (
+              <FlipCard
+                key={card.heroId}
+                id={card.heroId}
+                title={card.title}
+                number={card.number}
+                features={card.features}
+                iconType={card.iconType}
               />
-            </div>
+            ))}
           </div>
-          <div className='symbols-container'>
-            <div className='symbol'>
-              <Image
-                src='/assets/landing/symbols/s1-dark.png'
-                alt='Symbol'
-                width={18}
-                height={18}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className='container relative z-20' style={{ overflow: 'visible' }}>
-        <div className='hero-content'>
-          <div className='hero-header'>
-            <h1 data-animate-type='reveal' data-animate-delay='0.25'>
-              FOLDLY
-            </h1>
-          </div>
-          <div className='hero-footer'>
-            <div className='hero-footer-copy'>
-              <p
-                className='md'
-                data-animate-type='line-reveal'
-                data-animate-delay='0.25'
-              >
-                Create custom branded upload links for clients. Collect files
-                without friction - no logins required. Organize everything
-                automatically with smart folders and real-time notifications.
-              </p>
-            </div>
-            <div className='hero-footer-tags'>
-              <p
-                className='mono'
-                data-animate-type='scramble'
-                data-animate-delay='0.5'
-              >
-                <span>▶</span> Interface Alchemy
-              </p>
-              <p
-                className='mono'
-                data-animate-type='scramble'
-                data-animate-delay='0.5'
-              >
-                <span>▶</span> Scroll Sorcery
-              </p>
-            </div>
+          <div className='hero-mobile-description'>
+            <p className='md'>
+              Create custom branded upload links for clients. Collect files
+              without friction - no logins required. Organize everything
+              automatically with smart folders and real-time notifications.
+            </p>
+            <Link
+              href={user ? '/dashboard/workspace' : '/sign-in'}
+              className='hero-mobile-cta'
+            >
+              {user ? 'Go to Dashboard' : 'Get Started Now'}
+            </Link>
           </div>
         </div>
-        <div className='hero-cards'>
-          {landingCardData.map(card => (
-            <FlipCard
-              key={card.heroId}
-              id={card.heroId}
-              title={card.title}
-              number={card.number}
-              features={card.features}
-              iconType={card.iconType}
-            />
-          ))}
-        </div>
-        <div className='hero-mobile-description'>
-          <p className='md'>
-            Create custom branded upload links for clients. Collect files
-            without friction - no logins required. Organize everything
-            automatically with smart folders and real-time notifications.
-          </p>
-          <Link
-            href={user ? '/dashboard/workspace' : '/sign-in'}
-            className='hero-mobile-cta'
-          >
-            {user ? 'Go to Dashboard' : 'Get Started Now'}
-          </Link>
-        </div>
-      </div>
-    </section>
+      </section>
+    </BackgroundHighlight>
   );
 }

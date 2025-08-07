@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { QueryProvider } from '@/lib/providers/query-client-provider';
+import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { Toaster } from '@/components/ui/core/shadcn/sonner';
 import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor';
 import { NotificationProvider } from '@/features/notifications/providers/NotificationProvider';
@@ -76,20 +77,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang='en'>
+    <html lang='en' suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <ClerkProvider>
-            <NotificationProvider>
-              {children}
-            </NotificationProvider>
-          </ClerkProvider>
-        </QueryProvider>
-        <Toaster />
-        <SpeedInsights />
-        <PerformanceMonitor />
+        <ClerkProvider>
+          <ThemeProvider
+            attribute='class'
+            enableSystem
+            disableTransitionOnChange
+          >
+            <QueryProvider>
+              <NotificationProvider>{children}</NotificationProvider>
+            </QueryProvider>
+            <Toaster />
+            <SpeedInsights />
+            <PerformanceMonitor />
+          </ThemeProvider>
+        </ClerkProvider>
       </body>
     </html>
   );
