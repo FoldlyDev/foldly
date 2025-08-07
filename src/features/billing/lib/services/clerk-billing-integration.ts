@@ -357,6 +357,9 @@ export class ClerkBillingIntegrationService {
 
       // Additional processing based on event type
       switch (data.eventType) {
+        case 'initial':
+          await this.handleInitialEvent(data);
+          break;
         case 'upgrade':
           await this.handleUpgradeEvent(data);
           break;
@@ -476,6 +479,13 @@ export class ClerkBillingIntegrationService {
       default:
         return [];
     }
+  }
+
+  private static async handleInitialEvent(data: any): Promise<void> {
+    console.log(
+      `🎉 INITIAL_EVENT: User ${data.userId} initialized with ${data.toPlan} plan`
+    );
+    // Add any initial setup logic here (e.g., send welcome email, set up default workspace)
   }
 
   private static async handleUpgradeEvent(data: any): Promise<void> {

@@ -198,7 +198,7 @@ FROM files f
 LEFT JOIN folders fo ON f.folder_id = fo.id
 JOIN links l ON f.link_id = l.id
 JOIN batches b ON f.batch_id = b.id
-WHERE f.user_id = $1
+WHERE l.user_id = $1  -- Get user_id from links table
   AND f.processing_status = 'completed'
   AND (
     f.file_name ILIKE '%' || $2 || '%' OR

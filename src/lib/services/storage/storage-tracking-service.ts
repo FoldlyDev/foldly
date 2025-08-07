@@ -5,8 +5,8 @@
 // 📚 Uses files table as source of truth for storage calculations
 
 import { db } from '@/lib/database/connection';
-import { files, subscriptionPlans } from '@/lib/database/schemas';
-import { eq, sum, sql } from 'drizzle-orm';
+import { files, subscriptionPlans, workspaces, links } from '@/lib/database/schemas';
+import { eq, sum, sql, and, or } from 'drizzle-orm';
 import { createClient } from '@supabase/supabase-js';
 import { formatBytes } from './utils';
 
@@ -36,21 +36,34 @@ export interface StorageValidationResult {
 
 /**
  * Calculate total storage used by a user
- * Real-time calculation from files table
+ * Real-time calculation from files table through workspace and link relationships
  */
 export const calculateUserStorageUsage = async (
   userId: string
 ): Promise<number> => {
   try {
-    const result = await db
+    // Calculate storage from workspace files
+    const workspaceResult = await db
       .select({
         totalSize: sum(files.fileSize),
       })
       .from(files)
-      .where(eq(files.userId, userId));
+      .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+      .where(eq(workspaces.userId, userId));
 
-    // Handle null result when user has no files
-    return result?.[0]?.totalSize ? Number(result[0].totalSize) : 0;
+    // Calculate storage from link files
+    const linkResult = await db
+      .select({
+        totalSize: sum(files.fileSize),
+      })
+      .from(files)
+      .innerJoin(links, eq(files.linkId, links.id))
+      .where(eq(links.userId, userId));
+
+    const workspaceTotal = workspaceResult?.[0]?.totalSize ? Number(workspaceResult[0].totalSize) : 0;
+    const linkTotal = linkResult?.[0]?.totalSize ? Number(linkResult[0].totalSize) : 0;
+
+    return workspaceTotal + linkTotal;
   } catch (error) {
     console.error('Error calculating user storage usage:', error);
     throw new Error('Failed to calculate storage usage');
@@ -94,7 +107,7 @@ export const getUserStorageDashboard = async (
   userPlanKey: string = 'free'
 ): Promise<UserStorageInfo> => {
   try {
-    const [storageUsed, storageLimit, filesCountResult] = await Promise.all([
+    const [storageUsed, storageLimit, workspaceFilesCount, linkFilesCount] = await Promise.all([
       calculateUserStorageUsage(userId),
       getUserStorageLimit(userPlanKey),
       db
@@ -102,10 +115,19 @@ export const getUserStorageDashboard = async (
           count: sql<number>`count(*)`,
         })
         .from(files)
-        .where(eq(files.userId, userId)),
+        .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+        .where(eq(workspaces.userId, userId)),
+      db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(files)
+        .innerJoin(links, eq(files.linkId, links.id))
+        .where(eq(links.userId, userId)),
     ]);
 
-    const filesCount = Number(filesCountResult[0]?.count || 0);
+    const filesCount = Number(workspaceFilesCount[0]?.count || 0) + Number(linkFilesCount[0]?.count || 0);
+
     const remainingBytes = Math.max(0, storageLimit - storageUsed);
     const usagePercentage =
       storageLimit > 0 ? (storageUsed / storageLimit) * 100 : 0;
@@ -210,7 +232,6 @@ export const uploadFileWithTracking = async (
       .values({
         linkId: metadata.linkId,
         batchId: metadata.batchId,
-        userId,
         workspaceId: metadata.workspaceId,
         folderId: metadata.folderId,
         fileName: file.name,
@@ -256,11 +277,13 @@ export const deleteFileWithTracking = async (
   userId: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    // Get file record first
+    // Get file record and verify ownership through relationships
     const fileRecord = await db
       .select({
+        id: files.id,
         storagePath: files.storagePath,
-        userId: files.userId,
+        workspaceId: files.workspaceId,
+        linkId: files.linkId,
       })
       .from(files)
       .where(eq(files.id, fileId))
@@ -273,8 +296,26 @@ export const deleteFileWithTracking = async (
       };
     }
 
-    // Verify ownership
-    if (fileRecord[0]?.userId !== userId) {
+    // Verify ownership through workspace or link
+    let isOwner = false;
+    
+    if (fileRecord[0]?.workspaceId) {
+      const workspace = await db
+        .select({ userId: workspaces.userId })
+        .from(workspaces)
+        .where(eq(workspaces.id, fileRecord[0].workspaceId))
+        .limit(1);
+      isOwner = workspace[0]?.userId === userId;
+    } else if (fileRecord[0]?.linkId) {
+      const link = await db
+        .select({ userId: links.userId })
+        .from(links)
+        .where(eq(links.id, fileRecord[0].linkId))
+        .limit(1);
+      isOwner = link[0]?.userId === userId;
+    }
+
+    if (!isOwner) {
       return {
         success: false,
         error: 'Unauthorized file access',
@@ -318,14 +359,26 @@ export const syncStorageWithSupabase = async (
   syncedFiles: number;
 }> => {
   try {
-    // Get all file records for user
-    const dbFiles = await db
+    // Get all file records for user through workspace and link relationships
+    const workspaceFiles = await db
       .select({
         id: files.id,
         storagePath: files.storagePath,
       })
       .from(files)
-      .where(eq(files.userId, userId));
+      .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+      .where(eq(workspaces.userId, userId));
+
+    const linkFiles = await db
+      .select({
+        id: files.id,
+        storagePath: files.storagePath,
+      })
+      .from(files)
+      .innerJoin(links, eq(files.linkId, links.id))
+      .where(eq(links.userId, userId));
+
+    const dbFiles = [...workspaceFiles, ...linkFiles];
 
     // Get all files from Supabase Storage for user
     const { data: storageFiles, error: listError } = await supabase.storage
@@ -394,31 +447,57 @@ export const getStorageBreakdownByType = async (
   };
 }> => {
   try {
-    const breakdown = await db
+    // Get breakdown from workspace files
+    const workspaceBreakdown = await db
       .select({
         mimeType: files.mimeType,
         count: sql<number>`count(*)`,
         totalSize: sum(files.fileSize),
       })
       .from(files)
-      .where(eq(files.userId, userId))
+      .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+      .where(eq(workspaces.userId, userId))
       .groupBy(files.mimeType);
 
-    const totalStorage = breakdown.reduce(
-      (sum, item) => sum + (Number(item.totalSize) || 0),
+    // Get breakdown from link files
+    const linkBreakdown = await db
+      .select({
+        mimeType: files.mimeType,
+        count: sql<number>`count(*)`,
+        totalSize: sum(files.fileSize),
+      })
+      .from(files)
+      .innerJoin(links, eq(files.linkId, links.id))
+      .where(eq(links.userId, userId))
+      .groupBy(files.mimeType);
+
+    // Merge breakdowns
+    const mergedBreakdown: { [key: string]: { count: number; totalSize: number } } = {};
+    
+    [...workspaceBreakdown, ...linkBreakdown].forEach(item => {
+      const mimeType = item.mimeType;
+      if (!mergedBreakdown[mimeType]) {
+        mergedBreakdown[mimeType] = { count: 0, totalSize: 0 };
+      }
+      mergedBreakdown[mimeType].count += Number(item.count);
+      mergedBreakdown[mimeType].totalSize += Number(item.totalSize) || 0;
+    });
+
+    const totalStorage = Object.values(mergedBreakdown).reduce(
+      (sum, item) => sum + item.totalSize,
       0
     );
 
     const result: { [key: string]: any } = {};
 
-    breakdown.forEach(item => {
-      const size = Number(item.totalSize) || 0;
-      result[item.mimeType] = {
-        count: Number(item.count),
-        totalSize: size,
-        percentage: totalStorage > 0 ? (size / totalStorage) * 100 : 0,
+    Object.entries(mergedBreakdown).forEach(([mimeType, data]) => {
+      result[mimeType] = {
+        count: data.count,
+        totalSize: data.totalSize,
+        percentage: totalStorage > 0 ? (data.totalSize / totalStorage) * 100 : 0,
       };
     });
+
 
     return result;
   } catch (error) {

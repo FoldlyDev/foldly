@@ -7,7 +7,7 @@ import {
   links,
   batches,
 } from '@/lib/database/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types';
 
 export interface UserDeletionResult {
@@ -47,32 +47,78 @@ export class UserDeletionService {
           `🗑️ USER_DELETION_START: Starting deletion for user ${userId}`
         );
 
-        // Step 1: Delete files (must be first due to foreign key constraints)
-        const deletedFiles = await tx
-          .delete(files)
-          .where(eq(files.userId, userId))
-          .returning({ id: files.id });
+        // Step 1: Get user's workspaces and links for file deletion
+        const userWorkspaces = await tx
+          .select({ id: workspaces.id })
+          .from(workspaces)
+          .where(eq(workspaces.userId, userId));
+        
+        const userLinks = await tx
+          .select({ id: links.id })
+          .from(links)
+          .where(eq(links.userId, userId));
+
+        // Delete files from workspaces and links in batch operations
+        const workspaceIds = userWorkspaces.map(w => w.id);
+        const linkIds = userLinks.map(l => l.id);
+        
+        let deletedFiles: { id: string }[] = [];
+        
+        // Delete all workspace files in one query
+        if (workspaceIds.length > 0) {
+          const workspaceFiles = await tx
+            .delete(files)
+            .where(sql`${files.workspaceId} = ANY(ARRAY[${sql.join(workspaceIds, sql`, `)}]::uuid[])`)
+            .returning({ id: files.id });
+          deletedFiles = [...deletedFiles, ...workspaceFiles];
+        }
+        
+        // Delete all link files in one query
+        if (linkIds.length > 0) {
+          const linkFiles = await tx
+            .delete(files)
+            .where(sql`${files.linkId} = ANY(ARRAY[${sql.join(linkIds, sql`, `)}]::uuid[])`)
+            .returning({ id: files.id });
+          deletedFiles = [...deletedFiles, ...linkFiles];
+        }
+        
         deletedRecords.files = deletedFiles.length;
         console.log(
           `📄 DELETED_FILES: ${deletedRecords.files} files deleted for user ${userId}`
         );
 
-        // Step 2: Delete batches
-        const deletedBatches = await tx
-          .delete(batches)
-          .where(eq(batches.userId, userId))
-          .returning({ id: batches.id });
-        deletedRecords.batches = deletedBatches.length;
+        // Step 2: Count batches before links are deleted (CASCADE will delete them)
+        let batchCount = 0;
+        if (linkIds.length > 0) {
+          const batchCountResult = await tx
+            .select({ count: sql<number>`count(*)` })
+            .from(batches)
+            .where(sql`${batches.linkId} = ANY(ARRAY[${sql.join(linkIds, sql`, `)}]::uuid[])`);
+          batchCount = Number(batchCountResult[0]?.count || 0);
+        }
+        deletedRecords.batches = batchCount;
         console.log(
           `📦 DELETED_BATCHES: ${deletedRecords.batches} batches deleted for user ${userId}`
         );
 
-        // Step 3: Delete folders
-        const deletedFolders = await tx
-          .delete(folders)
-          .where(eq(folders.userId, userId))
-          .returning({ id: folders.id });
-        deletedRecords.folders = deletedFolders.length;
+        // Step 3: Count folders (they are deleted via CASCADE when workspaces/links are deleted)
+        // Count workspace folders
+        const workspaceFolderCount = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(folders)
+          .innerJoin(workspaces, eq(folders.workspaceId, workspaces.id))
+          .where(eq(workspaces.userId, userId))
+          .then(result => Number(result[0]?.count || 0));
+        
+        // Count link folders
+        const linkFolderCount = await tx
+          .select({ count: sql<number>`count(*)` })
+          .from(folders)
+          .innerJoin(links, eq(folders.linkId, links.id))
+          .where(eq(links.userId, userId))
+          .then(result => Number(result[0]?.count || 0));
+        
+        deletedRecords.folders = workspaceFolderCount + linkFolderCount;
         console.log(
           `📁 DELETED_FOLDERS: ${deletedRecords.folders} folders deleted for user ${userId}`
         );
@@ -160,37 +206,59 @@ export class UserDeletionService {
     userId: string
   ): Promise<UserDeletionResult['deletedRecords']> {
     try {
-      const [fileCount] = await db
-        .select({ count: files.id })
+      // Count files through workspace and link relationships
+      const workspaceFiles = await db
+        .select({ count: sql<number>`count(*)` })
         .from(files)
-        .where(eq(files.userId, userId));
+        .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+        .where(eq(workspaces.userId, userId));
 
-      const [folderCount] = await db
-        .select({ count: folders.id })
+      const linkFiles = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(files)
+        .innerJoin(links, eq(files.linkId, links.id))
+        .where(eq(links.userId, userId));
+
+      const fileCount = Number(workspaceFiles[0]?.count || 0) + Number(linkFiles[0]?.count || 0);
+
+      // Count folders through workspace and link relationships
+      const workspaceFolders = await db
+        .select({ count: sql<number>`count(*)` })
         .from(folders)
-        .where(eq(folders.userId, userId));
+        .innerJoin(workspaces, eq(folders.workspaceId, workspaces.id))
+        .where(eq(workspaces.userId, userId));
+      
+      const linkFolders = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(folders)
+        .innerJoin(links, eq(folders.linkId, links.id))
+        .where(eq(links.userId, userId));
+      
+      const folderCount = Number(workspaceFolders[0]?.count || 0) + Number(linkFolders[0]?.count || 0);
 
-      const [linkCount] = await db
-        .select({ count: links.id })
+      const linkCount = await db
+        .select({ count: sql<number>`count(*)` })
         .from(links)
         .where(eq(links.userId, userId));
 
-      const [batchCount] = await db
-        .select({ count: batches.id })
+      // Count batches through link relationships
+      const batchCount = await db
+        .select({ count: sql<number>`count(*)` })
         .from(batches)
-        .where(eq(batches.userId, userId));
+        .innerJoin(links, eq(batches.linkId, links.id))
+        .where(eq(links.userId, userId));
 
-      const [workspaceCount] = await db
-        .select({ count: workspaces.id })
+      const workspaceCount = await db
+        .select({ count: sql<number>`count(*)` })
         .from(workspaces)
         .where(eq(workspaces.userId, userId));
 
       return {
-        files: fileCount?.count ? 1 : 0, // Note: count queries return different structure in drizzle
-        folders: folderCount?.count ? 1 : 0,
-        links: linkCount?.count ? 1 : 0,
-        batches: batchCount?.count ? 1 : 0,
-        workspaces: workspaceCount?.count ? 1 : 0,
+        files: fileCount,
+        folders: folderCount,
+        links: Number(linkCount[0]?.count || 0),
+        batches: Number(batchCount[0]?.count || 0),
+        workspaces: Number(workspaceCount[0]?.count || 0),
         users: 1, // Always 1 since we're checking for a specific user
       };
     } catch (error) {

@@ -31,10 +31,11 @@ Foldly's **Multi-Link System** is the core innovation that differentiates it fro
 #### **3. Generated Links**
 
 - **Format**: `foldly.com/{any-slug}/{generated-slug}` (base slug + generated slug)
-- **Purpose**: Automatic link creation when sharing folders
-- **Use Case**: Right-click folder → "Generate Upload Link"
-- **Database**: `slug = [any-user-chosen-slug]`, `topic = [auto-generated-slug]`, `link_type = 'generated'`
-- **Limit**: Unlimited (auto-managed)
+- **Purpose**: Automatic link creation when sharing workspace folders
+- **Use Case**: Right-click workspace folder → "Generate Upload Link"
+- **Database**: `slug = [any-user-chosen-slug]`, `topic = [auto-generated-slug]`, `link_type = 'generated'`, `sourceFolderId = [workspace-folder-id]`
+- **Special Behavior**: Uploads go directly to the source workspace folder (not link root)
+- **Limit**: One generated link per workspace folder
 - **Examples**: `foldly.com/myfiles/xY7k9m2`, `foldly.com/portfolio/aB3n5K8`
 
 ---
@@ -86,11 +87,16 @@ CREATE TABLE links (
   storage_used BIGINT DEFAULT 0 NOT NULL,
   storage_limit BIGINT DEFAULT 524288000 NOT NULL, -- 500MB per link
 
+  -- Generated Link Support
+  source_folder_id UUID REFERENCES folders(id), -- For generated links only
+  
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
 
   -- Unique constraint ensures URL uniqueness
-  UNIQUE (user_id, slug, topic)
+  UNIQUE (user_id, slug, topic),
+  -- Ensure one generated link per folder
+  UNIQUE (source_folder_id)
 );
 
 -- Supporting enums

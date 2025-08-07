@@ -28,7 +28,7 @@ export const links = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
     userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' })
       .notNull(),
     workspaceId: uuid('workspace_id')
       .references(() => workspaces.id, { onDelete: 'cascade' })
@@ -79,6 +79,10 @@ export const links = pgTable(
     unreadUploads: integer('unread_uploads').default(0).notNull(),
     lastNotificationAt: timestamp('last_notification_at', { withTimezone: true }),
 
+    // Generated Link Support
+    sourceFolderId: uuid('source_folder_id'),
+    // Note: Foreign key reference to folders.id handled at database level to avoid circular dependency
+    
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
@@ -96,6 +100,8 @@ export const links = pgTable(
       table.topic
     ),
     linksActiveIdx: index('links_active_idx').on(table.isActive),
+    // Unique constraint: Only one generated link per folder
+    linksSourceFolderIdx: uniqueIndex('links_source_folder_idx').on(table.sourceFolderId),
     // Note: Slug consistency is enforced at the application level in the database service
     // PostgreSQL check constraints cannot use subqueries, so this is handled in the service layer
   })

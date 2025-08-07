@@ -21,7 +21,7 @@ export const workspaces = pgTable(
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
     userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' })
       .notNull(),
     name: varchar('name', { length: 255 }).notNull().default('My Files'),
 

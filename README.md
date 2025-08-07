@@ -89,6 +89,30 @@
 - **Supabase Storage** (file storage with global CDN)
 - **Vercel** (hosting) + **Stripe** (payments)
 
+## 🗄️ Database Architecture
+
+### Key Schema Design Principles
+
+1. **Context-Based File/Folder Ownership**:
+   - Files belong to EITHER workspace (personal) OR link (shared) context - never both
+   - Folders inherit parent context - workspace folders for personal files, link folders for shared
+   - Clean separation prevents data confusion and simplifies permissions
+
+2. **Three Link Types with Different Behaviors**:
+   - **Base Links** (`/[slug]`): Uploads go to link root, no folder pre-selection
+   - **Custom Links** (`/[slug]/[topic]`): Uploads go to link root, topic for organization
+   - **Generated Links** (`/[slug]/[generated]`): Created from workspace folders, uploads go directly to that folder
+
+3. **Batch-Based Upload Tracking**:
+   - All external uploads require a batch record for tracking and organization
+   - Batches removed redundant fields (userId, name, displayName) - derive from link
+   - `targetFolderId` field specifically for generated links to route uploads
+
+4. **Streamlined Foreign Key Relationships**:
+   - All tables now have proper CASCADE UPDATE rules for data consistency
+   - Removed userId from files/folders tables - derive from workspace/link context
+   - Clean parent-child relationships with proper null handling
+
 ## 📚 Documentation
 
 This project follows documentation-first development with comprehensive planning:
@@ -119,14 +143,15 @@ This project follows documentation-first development with comprehensive planning
 
 ### Database Foundation ✅ Complete
 
-**Database-First Architecture (95% Complete)**:
+**Database-First Architecture (100% Complete)**:
 
-- ✅ **Schema Design**: 6-table PostgreSQL schema with multi-link architecture
+- ✅ **Schema Design**: 8-table PostgreSQL schema with multi-link architecture
 - ✅ **Type System**: Complete TypeScript types generated from database schema
 - ✅ **Drizzle ORM**: Configured with Supabase integration and migrations
 - ✅ **Row Level Security**: Implemented with Clerk JWT authentication
 - ✅ **File Types Support**: Added `allowedFileTypes` field for MIME type restrictions
-- ✅ **MVP Simplification**: Removed tasks table, simplified folders for core functionality
+- ✅ **Schema Updates**: Streamlined file/folder ownership model for cleaner context separation
+- ✅ **CASCADE Rules**: Proper CASCADE UPDATE rules across all foreign key relationships
 
 ### Next Development Phase
 

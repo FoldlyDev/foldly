@@ -4,6 +4,30 @@
 > **Schema Version**: 2025.1 Simplified MVP  
 > **Last Updated**: January 2025
 
+## 🔄 **Latest Schema Changes (Migration 0016)**
+
+### **Key Schema Refinements**:
+
+1. **Streamlined Ownership Model**:
+   - Removed `userId` from files, folders, and batches tables
+   - Files/folders now belong to EITHER workspace OR link context
+   - User ID derived from parent context (workspace.userId or link.userId)
+
+2. **Batch Table Simplification**:
+   - Removed redundant `name` and `displayName` fields
+   - Renamed `folderId` to `targetFolderId` for clarity
+   - Field specifically used for generated links to route uploads
+
+3. **Generated Link Support**:
+   - Added `sourceFolderId` to links table
+   - Enforces one generated link per workspace folder
+   - Enables direct folder upload routing
+
+4. **Improved Foreign Key Constraints**:
+   - All foreign keys now have proper CASCADE UPDATE rules
+   - Files table: folder deletion sets folderId to NULL (preserves files)
+   - Consistent cascade behavior across all relationships
+
 ## 🗄️ **Complete Table Reference**
 
 ### **Subscription System Architecture (2025 Clerk Integration)**
@@ -77,7 +101,6 @@
 | `require_email`      | BOOLEAN      | NOT NULL                    | FALSE             | Email requirement toggle          |
 | `require_password`   | BOOLEAN      | NOT NULL                    | FALSE             | Password protection toggle        |
 | `password_hash`      | TEXT         | NULLABLE                    | -                 | Hashed password for protection    |
-| `is_public`          | BOOLEAN      | NOT NULL                    | TRUE              | Public visibility setting         |
 | `is_active`          | BOOLEAN      | NOT NULL                    | TRUE              | Link enabled/disabled             |
 | `max_files`          | INTEGER      | NOT NULL                    | 100               | Maximum files per upload          |
 | `max_file_size`      | BIGINT       | NOT NULL                    | 104857600         | Max file size (100MB)             |
@@ -91,12 +114,16 @@
 | `last_upload_at`     | TIMESTAMP    | NULLABLE                    | -                 | Last upload timestamp             |
 | `storage_used`       | BIGINT       | NOT NULL                    | 0                 | Current storage usage             |
 | `storage_limit`      | BIGINT       | NOT NULL                    | 524288000         | Storage limit (500MB)             |
+| `unread_uploads`     | INTEGER      | NOT NULL                    | 0                 | Unread upload notifications       |
+| `last_notification_at` | TIMESTAMP  | NULLABLE                    | -                 | Last notification timestamp       |
+| `source_folder_id`   | UUID         | NULLABLE                    | -                 | Source folder for generated links |
 | `created_at`         | TIMESTAMP    | NOT NULL                    | NOW()             | Creation timestamp                |
 | `updated_at`         | TIMESTAMP    | NOT NULL                    | NOW()             | Last update timestamp             |
 
 **Constraints:**
 
 - `links_slug_topic_unique` (UNIQUE) on `(user_id, slug, topic)` - Ensures unique URLs
+- `links_source_folder_idx` (UNIQUE) on `source_folder_id` - One generated link per folder
 
 **Indexes:**
 
@@ -104,7 +131,7 @@
 - `links_workspace_id_idx` on `workspace_id`
 - `links_slug_topic_idx` (UNIQUE) on `(user_id, slug, topic)`
 - `links_active_idx` on `is_active`
-- `links_stats_idx` on `(user_id, is_active, created_at DESC)`
+- `links_source_folder_idx` (UNIQUE) on `source_folder_id`
 
 ---
 
@@ -113,43 +140,60 @@
 | Field              | Type         | Constraints                 | Default           | Description                      |
 | ------------------ | ------------ | --------------------------- | ----------------- | -------------------------------- |
 | `id`               | UUID         | PRIMARY KEY, NOT NULL       | gen_random_uuid() | Folder unique identifier         |
-| `user_id`          | TEXT         | FK users(id), NOT NULL      | -                 | Folder owner user ID             |
-| `workspace_id`     | UUID         | FK workspaces(id), NOT NULL | -                 | Associated workspace             |
-| `link_id`          | UUID         | FK links(id), NULLABLE      | -                 | Associated link (if any)         |
+| `workspace_id`     | UUID         | FK workspaces(id), NULLABLE | -                 | Associated workspace (for personal folders) |
+| `link_id`          | UUID         | FK links(id), NULLABLE      | -                 | Associated link (for shared folders) |
 | `parent_folder_id` | UUID         | FK folders(id), NULLABLE    | -                 | Parent folder (for hierarchy)    |
 | `name`             | VARCHAR(255) | NOT NULL                    | -                 | Folder display name              |
 | `path`             | TEXT         | NOT NULL                    | -                 | Materialized path (/docs/images) |
-| `depth`            | SMALLINT     | NOT NULL                    | 0                 | Hierarchy depth level            |
+| `depth`            | INTEGER      | NOT NULL                    | 0                 | Hierarchy depth level            |
+| `is_archived`      | BOOLEAN      | NOT NULL                    | FALSE             | Archive status                   |
+| `sort_order`       | INTEGER      | NOT NULL                    | 0                 | Sort position                    |
+| `file_count`       | INTEGER      | NOT NULL                    | 0                 | Number of files in folder        |
+| `total_size`       | BIGINT       | NOT NULL                    | 0                 | Total size of files in bytes     |
 | `created_at`       | TIMESTAMP    | NOT NULL                    | NOW()             | Creation timestamp               |
+| `updated_at`       | TIMESTAMP    | NOT NULL                    | NOW()             | Last update timestamp            |
+
+**Note**: Folders belong to EITHER workspace OR link context, never both. Child folders inherit parent context.
 
 **Indexes:**
 
-- `folders_parent_id_idx` on `parent_folder_id`
-- `folders_link_path_idx` on `(link_id, path)`
 - `folders_workspace_id_idx` on `workspace_id`
-- `folders_tree_idx` on `(link_id, parent_folder_id, path)`
+- `folders_parent_idx` on `parent_folder_id`
+- `folders_link_id_idx` on `link_id`
+- `folders_path_idx` on `path`
+- `folders_depth_idx` on `depth`
 
 ---
 
 ### **Batches Table**
 
-| Field            | Type         | Constraints            | Default           | Description                               |
-| ---------------- | ------------ | ---------------------- | ----------------- | ----------------------------------------- |
-| `id`             | UUID         | PRIMARY KEY, NOT NULL  | gen_random_uuid() | Batch unique identifier                   |
-| `link_id`        | UUID         | FK links(id), NOT NULL | -                 | Associated link                           |
-| `user_id`        | TEXT         | FK users(id), NOT NULL | -                 | Link owner user ID                        |
-| `uploader_name`  | VARCHAR(255) | NOT NULL               | -                 | Name of person uploading                  |
-| `uploader_email` | VARCHAR(255) | NULLABLE               | -                 | Optional uploader email                   |
-| `status`         | ENUM         | NOT NULL               | 'uploading'       | Batch status (uploading/completed/failed) |
-| `total_files`    | INTEGER      | NOT NULL               | 0                 | Number of files in batch                  |
-| `total_size`     | BIGINT       | NOT NULL               | 0                 | Total batch size in bytes                 |
-| `created_at`     | TIMESTAMP    | NOT NULL               | NOW()             | Creation timestamp                        |
+| Field                | Type         | Constraints            | Default           | Description                               |
+| -------------------- | ------------ | ---------------------- | ----------------- | ----------------------------------------- |
+| `id`                 | UUID         | PRIMARY KEY, NOT NULL  | gen_random_uuid() | Batch unique identifier                   |
+| `link_id`            | UUID         | FK links(id), NOT NULL | -                 | Associated link                           |
+| `target_folder_id`   | UUID         | NULLABLE               | -                 | Target folder for generated links         |
+| `uploader_name`      | VARCHAR(255) | NOT NULL               | -                 | Name of person uploading                  |
+| `uploader_email`     | VARCHAR(255) | NULLABLE               | -                 | Optional uploader email                   |
+| `uploader_message`   | TEXT         | NULLABLE               | -                 | Optional message from uploader            |
+| `status`             | ENUM         | NOT NULL               | 'uploading'       | Batch status (uploading/completed/failed) |
+| `total_files`        | INTEGER      | NOT NULL               | 0                 | Number of files in batch                  |
+| `processed_files`    | INTEGER      | NOT NULL               | 0                 | Number of processed files                 |
+| `total_size`         | BIGINT       | NOT NULL               | 0                 | Total batch size in bytes                 |
+| `upload_completed_at`| TIMESTAMP    | NULLABLE               | -                 | Upload completion timestamp               |
+| `created_at`         | TIMESTAMP    | NOT NULL               | NOW()             | Creation timestamp                        |
+| `updated_at`         | TIMESTAMP    | NOT NULL               | NOW()             | Last update timestamp                     |
+
+**Note**: 
+- All external uploads require a batch record for tracking
+- `targetFolderId` is used for generated links to route uploads to specific workspace folders
+- Base/Custom links always have NULL `targetFolderId` (uploads go to link root)
 
 **Indexes:**
 
 - `batches_link_id_idx` on `link_id`
+- `batches_target_folder_id_idx` on `target_folder_id`
 - `batches_status_idx` on `status`
-- `batches_created_at_idx` on `created_at DESC`
+- `batches_created_at_idx` on `created_at`
 
 ---
 
@@ -158,27 +202,48 @@
 | Field               | Type         | Constraints              | Default           | Description                   |
 | ------------------- | ------------ | ------------------------ | ----------------- | ----------------------------- |
 | `id`                | UUID         | PRIMARY KEY, NOT NULL    | gen_random_uuid() | File unique identifier        |
-| `link_id`           | UUID         | FK links(id), NOT NULL   | -                 | Associated link               |
-| `batch_id`          | UUID         | FK batches(id), NOT NULL | -                 | Associated batch              |
-| `user_id`           | TEXT         | FK users(id), NOT NULL   | -                 | Link owner user ID            |
+| `link_id`           | UUID         | FK links(id), NULLABLE   | -                 | Associated link (for shared files) |
+| `batch_id`          | UUID         | FK batches(id), NULLABLE | -                 | Associated batch (required for link uploads) |
+| `workspace_id`      | UUID         | FK workspaces(id), NULLABLE | -           | Associated workspace (for personal files) |
 | `folder_id`         | UUID         | FK folders(id), NULLABLE | -                 | Folder location (NULL = root) |
 | `file_name`         | VARCHAR(255) | NOT NULL                 | -                 | Sanitized filename            |
 | `original_name`     | VARCHAR(255) | NOT NULL                 | -                 | Original upload filename      |
 | `file_size`         | BIGINT       | NOT NULL                 | -                 | File size in bytes            |
-| `mime_type`         | VARCHAR(100) | NOT NULL                 | -                 | File MIME type                |
+| `mime_type`         | VARCHAR(255) | NOT NULL                 | -                 | File MIME type                |
+| `extension`         | VARCHAR(10)  | NULLABLE                 | -                 | File extension                |
 | `storage_path`      | TEXT         | NOT NULL                 | -                 | Supabase storage path         |
-| `processing_status` | ENUM         | NOT NULL                 | 'pending'         | Processing status             |
+| `storage_provider`  | VARCHAR(50)  | NOT NULL                 | 'supabase'        | Storage provider              |
+| `checksum`          | VARCHAR(64)  | NULLABLE                 | -                 | File checksum                 |
 | `is_safe`           | BOOLEAN      | NOT NULL                 | TRUE              | Security scan result          |
+| `virus_scan_result` | VARCHAR(50)  | NOT NULL                 | 'clean'           | Virus scan status             |
+| `processing_status` | ENUM         | NOT NULL                 | 'pending'         | Processing status             |
+| `thumbnail_path`    | TEXT         | NULLABLE                 | -                 | Thumbnail storage path        |
+| `is_organized`      | BOOLEAN      | NOT NULL                 | FALSE             | Organization status           |
+| `needs_review`      | BOOLEAN      | NOT NULL                 | FALSE             | Review flag                   |
+| `sort_order`        | INTEGER      | NOT NULL                 | 0                 | Sort position                 |
+| `download_count`    | INTEGER      | NOT NULL                 | 0                 | Download counter              |
+| `last_accessed_at`  | TIMESTAMP    | NULLABLE                 | -                 | Last access timestamp         |
 | `uploaded_at`       | TIMESTAMP    | NOT NULL                 | NOW()             | Upload timestamp              |
+| `created_at`        | TIMESTAMP    | NOT NULL                 | NOW()             | Creation timestamp            |
+| `updated_at`        | TIMESTAMP    | NOT NULL                 | NOW()             | Last update timestamp         |
+
+**Note**: 
+- Files belong to EITHER workspace (personal) OR link (shared) context, never both
+- Personal files: `workspaceId` set, `linkId` null, `batchId` null
+- Link uploads: `linkId` set, `workspaceId` null, `batchId` set
+- Generated link uploads: `workspaceId` set, `linkId` null, `batchId` set (go to workspace folder)
 
 **Indexes:**
 
 - `files_link_id_idx` on `link_id`
 - `files_batch_id_idx` on `batch_id`
+- `files_workspace_id_idx` on `workspace_id`
 - `files_folder_id_idx` on `folder_id`
-- `files_link_status_idx` on `(link_id, processing_status)`
-- `files_uploaded_at_idx` on `uploaded_at DESC`
-- `files_listing_idx` on `(link_id, folder_id, uploaded_at DESC)`
+- `files_file_name_idx` on `file_name`
+- `files_mime_type_idx` on `mime_type`
+- `files_processing_status_idx` on `processing_status`
+- `files_uploaded_at_idx` on `uploaded_at`
+- `files_checksum_idx` on `checksum`
 
 ---
 
@@ -386,9 +451,23 @@ CREATE POLICY "links_public_read" ON links
 
 **Folders Table**:
 ```sql
--- Hierarchical access control via link permissions
-CREATE POLICY "folders_owner_access" ON folders
-  FOR ALL USING (user_id = auth.uid()::text);
+-- Workspace folder access control
+CREATE POLICY "folders_workspace_access" ON folders
+  FOR ALL USING (
+    workspace_id IN (
+      SELECT id FROM workspaces 
+      WHERE user_id = auth.uid()::text
+    )
+  );
+
+-- Link folder access via link ownership
+CREATE POLICY "folders_link_access" ON folders
+  FOR ALL USING (
+    link_id IN (
+      SELECT id FROM links 
+      WHERE user_id = auth.uid()::text
+    )
+  );
 
 -- Public folder access for public links
 CREATE POLICY "folders_public_read" ON folders
@@ -402,9 +481,23 @@ CREATE POLICY "folders_public_read" ON folders
 
 **Files Table**:
 ```sql
--- File access tied to link permissions and ownership
-CREATE POLICY "files_owner_access" ON files
-  FOR ALL USING (user_id = auth.uid()::text);
+-- Workspace file access control
+CREATE POLICY "files_workspace_access" ON files
+  FOR ALL USING (
+    workspace_id IN (
+      SELECT id FROM workspaces 
+      WHERE user_id = auth.uid()::text
+    )
+  );
+
+-- Link file access via link ownership
+CREATE POLICY "files_link_access" ON files
+  FOR ALL USING (
+    link_id IN (
+      SELECT id FROM links 
+      WHERE user_id = auth.uid()::text
+    )
+  );
 
 -- Public file access for public links
 CREATE POLICY "files_public_read" ON files
@@ -418,9 +511,14 @@ CREATE POLICY "files_public_read" ON files
 
 **Batches Table**:
 ```sql
--- Upload batch isolation per user and link
-CREATE POLICY "batches_owner_access" ON batches
-  FOR ALL USING (user_id = auth.uid()::text);
+-- Batch access via link ownership
+CREATE POLICY "batches_link_access" ON batches
+  FOR ALL USING (
+    link_id IN (
+      SELECT id FROM links 
+      WHERE user_id = auth.uid()::text
+    )
+  );
 ```
 
 **Subscription Plans Table**:

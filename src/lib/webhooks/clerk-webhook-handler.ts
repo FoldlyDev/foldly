@@ -7,26 +7,13 @@ interface ClerkWebhookEvent {
   data: any;
 }
 
-// Enhanced subscription event data interfaces
+// Subscription event data interfaces
 interface ClerkSubscriptionEvent {
   id: string;
   object: 'subscription' | 'commerce_subscription';
-  status:
-    | 'active'
-    | 'canceled'
-    | 'incomplete'
-    | 'incomplete_expired'
-    | 'past_due'
-    | 'trialing'
-    | 'unpaid';
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
   created_at: number;
   updated_at: number;
-  current_period_start?: number;
-  current_period_end?: number;
-  active_at?: number;
-  canceled_at?: number;
-  ended_at?: number;
-  past_due_at?: number;
   plan?: {
     id: string;
     name: string;
@@ -49,22 +36,8 @@ interface ClerkSubscriptionItemEvent {
     name: string;
     nickname?: string;
     slug?: string;
-    amount?: number;
-    currency?: string;
-    is_recurring?: boolean;
   };
-  quantity?: number;
-  interval?: string;
-  period_start?: number;
-  period_end?: number;
-  status:
-    | 'active'
-    | 'canceled'
-    | 'incomplete'
-    | 'ended'
-    | 'upcoming'
-    | 'abandoned'
-    | 'past_due';
+  status: 'active' | 'canceled' | 'incomplete' | 'ended' | 'upcoming' | 'abandoned' | 'past_due';
   created_at: number;
   updated_at: number;
   user_id?: string;
@@ -72,9 +45,6 @@ interface ClerkSubscriptionItemEvent {
   payer?: {
     user_id?: string;
     organization_id?: string;
-    email?: string;
-    first_name?: string;
-    last_name?: string;
   };
 }
 
@@ -82,12 +52,6 @@ interface ClerkSubscriptionItemEvent {
 interface ClerkEmailAddress {
   id: string;
   email_address: string;
-  verification?: {
-    status: string;
-    strategy?: string;
-  };
-  linked_to?: any[];
-  object: 'email_address';
 }
 
 // Clerk user data structure from webhooks
@@ -101,7 +65,6 @@ interface ClerkUserData {
   profile_image_url?: string;
   created_at: number;
   updated_at: number;
-  object: 'user';
 }
 
 // Webhook user data includes the ID from Clerk
@@ -142,22 +105,10 @@ export async function validateClerkWebhook(
 export function transformClerkUserData(
   clerkUser: ClerkUserData
 ): WebhookUserData {
-  // Log multi-email scenarios for debugging
-  if (clerkUser.email_addresses?.length > 1) {
-    console.log(
-      `📧 MULTI_EMAIL_USER: User ${clerkUser.id} has ${clerkUser.email_addresses.length} email addresses`,
-      {
-        emails: clerkUser.email_addresses.map(e => e.email_address),
-        primaryId: clerkUser.primary_email_address_id,
-      }
-    );
-  }
-
-  // Handle missing email gracefully - use Clerk's primary_email_address_id to find primary email
+  // Find primary email
   let primaryEmail: string | undefined;
 
   if (clerkUser.primary_email_address_id && clerkUser.email_addresses) {
-    // Find the primary email using the primary_email_address_id (Clerk's official method)
     const primaryEmailObj = clerkUser.email_addresses.find(
       (email: ClerkEmailAddress) =>
         email.id === clerkUser.primary_email_address_id
@@ -167,9 +118,6 @@ export function transformClerkUserData(
 
   // Fallback to first available email if primary not found
   if (!primaryEmail && clerkUser.email_addresses?.length > 0) {
-    console.log(
-      `⚠️ PRIMARY_EMAIL_FALLBACK: Using first email for user ${clerkUser.id}`
-    );
     primaryEmail = clerkUser.email_addresses[0]?.email_address;
   }
 
@@ -188,13 +136,12 @@ export function transformClerkUserData(
 }
 
 function generateUsername(clerkUser: ClerkUserData): string {
-  // Generate username from primary email first, then fallback to first email, then ID
-  let email: string | undefined;
-
   // Try to get primary email first
+  let email: string | undefined;
+  
   if (clerkUser.primary_email_address_id && clerkUser.email_addresses) {
     const primaryEmailObj = clerkUser.email_addresses.find(
-      (emailObj: any) => emailObj.id === clerkUser.primary_email_address_id
+      (emailObj: ClerkEmailAddress) => emailObj.id === clerkUser.primary_email_address_id
     );
     email = primaryEmailObj?.email_address;
   }
@@ -207,6 +154,19 @@ function generateUsername(clerkUser: ClerkUserData): string {
   // Extract username from email or use ID as last resort
   const emailPrefix = email?.split('@')[0];
   return emailPrefix || `user_${clerkUser.id.slice(-8)}`;
+}
+
+/**
+ * Convert Clerk timestamp to Date
+ * Clerk timestamps can be either seconds (10 digits) or milliseconds (13 digits)
+ */
+function convertClerkTimestamp(timestamp: number): Date {
+  // If timestamp has more than 10 digits, it's likely already in milliseconds
+  if (timestamp > 9999999999) {
+    return new Date(timestamp);
+  }
+  // Otherwise it's in seconds, convert to milliseconds
+  return new Date(timestamp * 1000);
 }
 
 /**
@@ -231,26 +191,53 @@ export function transformSubscriptionEventData(
   let toPlan: string | null = null;
 
   if ('plan' in event && event.plan) {
-    // For subscription items, the plan is directly available
-    // Prioritize slug, then nickname, then name
     const planIdentifier = ('slug' in event.plan && event.plan.slug) || event.plan.nickname || event.plan.name;
     toPlan = normalizePlanName(planIdentifier);
-  } else if ('status' in event && (event.object === 'commerce_subscription' || event.object === 'subscription')) {
-    // For subscriptions, we might need to infer from metadata or status
-    // This would require additional context from your subscription flow
-    toPlan = event.status === 'active' ? 'pro' : 'free'; // Simplified logic
+  } else if ('status' in event) {
+    // Default to 'free' unless we have specific plan information
+    toPlan = 'free';
   }
 
   // Determine event type for analytics
   let analyticsEventType = 'unknown';
-  if (eventType.includes('created')) {
-    analyticsEventType = toPlan === 'free' ? 'reactivate' : 'upgrade';
-  } else if (eventType.includes('canceled') || eventType.includes('ended')) {
-    analyticsEventType = 'cancel';
-    fromPlan = toPlan;
-    toPlan = 'free';
-  } else if (eventType.includes('updated')) {
-    analyticsEventType = 'change';
+  
+  // For subscription events (not subscriptionItem)
+  if (eventType.startsWith('subscription.')) {
+    if (eventType === 'subscription.created') {
+      // If fromPlan is null and toPlan is 'free', this is the initial free plan assignment
+      analyticsEventType = (!fromPlan && toPlan === 'free') ? 'initial' : 
+                          (toPlan === 'free' ? 'downgrade' : 'upgrade');
+    } else if (eventType === 'subscription.updated') {
+      analyticsEventType = 'change';
+    } else if (eventType === 'subscription.canceled') {
+      analyticsEventType = 'cancel';
+      fromPlan = toPlan;
+      toPlan = 'free';
+    } else if (eventType === 'subscription.past_due') {
+      analyticsEventType = 'past_due';
+    } else if (eventType === 'subscription.active') {
+      // Active status typically means reactivation after past_due or similar
+      analyticsEventType = 'reactivate';
+    }
+  }
+  // For subscriptionItem events
+  else if (eventType.startsWith('subscriptionItem.')) {
+    // Skip subscriptionItem events - we'll only track subscription events to avoid duplicates
+    // Clerk sends both subscription and subscriptionItem events for the same action
+    return {
+      userId,
+      eventType: 'skip', // Special marker to skip this event
+      fromPlan,
+      toPlan,
+      source: 'clerk_webhook',
+      metadata: {
+        clerkEventId: event.id,
+        clerkEventType: eventType,
+        subscriptionId: 'subscription_id' in event ? event.subscription_id : event.id,
+        reason: 'duplicate_subscriptionItem_event',
+      },
+      occurredAt: convertClerkTimestamp(event.updated_at),
+    };
   }
 
   return {
@@ -262,14 +249,13 @@ export function transformSubscriptionEventData(
     metadata: {
       clerkEventId: event.id,
       clerkEventType: eventType,
-      subscriptionId:
-        'subscription_id' in event ? event.subscription_id : event.id,
+      subscriptionId: 'subscription_id' in event ? event.subscription_id : event.id,
       planId: 'plan' in event ? event.plan?.id : undefined,
-      status: event.status || 'unknown',
-      createdAt: new Date(event.created_at * 1000).toISOString(),
-      updatedAt: new Date(event.updated_at * 1000).toISOString(),
+      status: event.status,
+      createdAt: convertClerkTimestamp(event.created_at).toISOString(),
+      updatedAt: convertClerkTimestamp(event.updated_at).toISOString(),
     },
-    occurredAt: new Date(event.updated_at * 1000),
+    occurredAt: convertClerkTimestamp(event.updated_at),
   };
 }
 
@@ -279,7 +265,6 @@ export function transformSubscriptionEventData(
 function normalizePlanName(planName: string): string {
   const normalized = planName.toLowerCase().trim();
 
-  // Map common variations to standard plan names
   const planMap: Record<string, string> = {
     free: 'free',
     free_user: 'free',
@@ -321,16 +306,16 @@ export function validateSubscriptionEvent(
 }
 
 /**
- * Extract user identifier from subscription event (handles both user and organization subscriptions)
+ * Extract user identifier from subscription event
  */
 export function extractUserIdentifier(
   event: ClerkSubscriptionEvent | ClerkSubscriptionItemEvent
 ): string | null {
-  // First try direct user_id/organization_id fields
+  // Try direct user_id/organization_id fields
   if (event.user_id) return event.user_id;
   if (event.organization_id) return event.organization_id;
   
-  // For commerce events, check the payer field
+  // Check the payer field
   if ('payer' in event && event.payer) {
     if (event.payer.user_id) return event.payer.user_id;
     if (event.payer.organization_id) return event.payer.organization_id;

@@ -22,7 +22,7 @@ export const users = pgTable(
   'users',
   {
     id: text('id').primaryKey().notNull(), // Clerk user ID (string format)
-    email: varchar('email', { length: 255 }).unique().notNull(),
+    email: varchar('email', { length: 255 }).notNull(), // Removed unique constraint for organization support
     username: varchar('username', { length: 100 }).unique().notNull(),
     firstName: varchar('first_name', { length: 100 }),
     lastName: varchar('last_name', { length: 100 }),
@@ -58,6 +58,7 @@ export const users = pgTable(
   },
   table => ({
     usersUsernameIdx: uniqueIndex('users_username_idx').on(table.username),
-    usersEmailIdx: index('users_email_idx').on(table.email),
+    usersEmailIdx: index('users_email_idx').on(table.email), // Non-unique index for performance
+    usersIdEmailIdx: uniqueIndex('users_id_email_idx').on(table.id, table.email), // Compound unique constraint
   })
 );

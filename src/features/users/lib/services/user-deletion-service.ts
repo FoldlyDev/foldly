@@ -36,10 +36,28 @@ export class UserDeletionService {
         const workspaceIds = userWorkspaces.map(w => w.id);
 
         // Delete all files in user's workspaces
-        const filesDeleted = await tx
-          .delete(files)
-          .where(eq(files.userId, userId))
-          .returning({ id: files.id });
+        let filesDeleted: { id: string }[] = [];
+        for (const workspaceId of workspaceIds) {
+          const deleted = await tx
+            .delete(files)
+            .where(eq(files.workspaceId, workspaceId))
+            .returning({ id: files.id });
+          filesDeleted = [...filesDeleted, ...deleted];
+        }
+
+        // Also delete files from user's links
+        const userLinks = await tx
+          .select({ id: links.id })
+          .from(links)
+          .where(eq(links.userId, userId));
+        
+        for (const link of userLinks) {
+          const deleted = await tx
+            .delete(files)
+            .where(eq(files.linkId, link.id))
+            .returning({ id: files.id });
+          filesDeleted = [...filesDeleted, ...deleted];
+        }
 
         // Delete all folders in user's workspaces
         let foldersDeleted: { id: string }[] = [];
@@ -51,11 +69,18 @@ export class UserDeletionService {
           foldersDeleted = [...foldersDeleted, ...deleted];
         }
 
-        // Delete all batches owned by user
-        const batchesDeleted = await tx
-          .delete(batches)
-          .where(eq(batches.userId, userId))
-          .returning({ id: batches.id });
+        // Also delete folders from user's links
+        for (const link of userLinks) {
+          const deleted = await tx
+            .delete(folders)
+            .where(eq(folders.linkId, link.id))
+            .returning({ id: folders.id });
+          foldersDeleted = [...foldersDeleted, ...deleted];
+        }
+
+        // Delete all batches (they belong to links which will be deleted)
+        let batchesDeleted: { id: string }[] = [];
+        // Batches are deleted via CASCADE when links are deleted
 
         // Delete all links owned by user
         const linksDeleted = await tx

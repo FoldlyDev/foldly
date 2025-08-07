@@ -19,7 +19,6 @@ export class UserWorkspaceService {
   async createUserWithWorkspace(
     userData: WebhookUserData
   ): Promise<DatabaseResult<UserWorkspaceCreateResult>> {
-    const startTime = Date.now();
 
     try {
       return await db.transaction(async tx => {
@@ -27,58 +26,59 @@ export class UserWorkspaceService {
         // Handle conflicts on multiple unique constraints (id, email, username)
         let user;
 
-        // Strategy: Check for existing user first, then handle conflicts gracefully
-        const existingUserByEmail = await tx
+        // Strategy: Check by Clerk ID first (most reliable)
+        const existingUserById = await tx
           .select()
           .from(users)
-          .where(eq(users.email, userData.email))
+          .where(eq(users.id, userData.id))
           .limit(1);
 
-        if (existingUserByEmail.length > 0) {
-          const existingUser = existingUserByEmail[0];
-
-          if (!existingUser) {
-            throw new Error('Unexpected: existing user not found');
-          }
-
-          // If the existing user has the same Clerk ID, just return it
-          if (existingUser.id === userData.id) {
-            user = existingUser;
-          } else {
-            // Different Clerk ID - UPDATE existing user instead of deleting (prevents webhook race condition)
-
-            // Update the existing user with the new Clerk ID - preserves all relationships and workspace
-            [user] = await tx
-              .update(users)
-              .set({
-                id: userData.id, // Update to new Clerk ID
-                email: userData.email,
-                username: userData.username,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                avatarUrl: userData.avatarUrl,
-                // Storage tracking now handled by real-time calculation
-                updatedAt: new Date(),
-                // Keep original createdAt to preserve user history
-              })
-              .where(eq(users.id, existingUser.id))
-              .returning();
-
-            // Update workspace to maintain user connection with new Clerk ID
-            await tx
-              .update(workspaces)
-              .set({
-                userId: userData.id, // Update workspace to reference new user ID
-              })
-              .where(eq(workspaces.userId, existingUser.id));
-
-            if (!user) {
-              throw new Error(
-                'Failed to create user after conflict resolution'
-              );
-            }
-          }
+        if (existingUserById.length > 0) {
+          // User with this Clerk ID already exists - update their info
+          user = existingUserById[0];
+          
+          // Update user info if needed (email might have changed in Clerk)
+          const [updatedUser] = await tx
+            .update(users)
+            .set({
+              email: userData.email,
+              username: userData.username,
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              avatarUrl: userData.avatarUrl,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, userData.id))
+            .returning();
+          
+          user = updatedUser || user;
         } else {
+          // No existing user with this ID - check for email conflicts before creating
+          const existingUserByEmail = await tx
+            .select()
+            .from(users)
+            .where(eq(users.email, userData.email))
+            .limit(1);
+
+          if (existingUserByEmail.length > 0) {
+            // Email conflict - different Clerk ID with same email
+            const existingUser = existingUserByEmail[0];
+            if (!existingUser) {
+              throw new Error('Unexpected: existing user not found');
+            }
+            console.error(
+              `EMAIL_CONFLICT: Email ${userData.email} already exists with different Clerk ID`,
+              {
+                existingUserId: existingUser.id,
+                newUserId: userData.id,
+              }
+            );
+            
+            // For organization users, this might be expected - throw specific error
+            throw new Error(
+              `Email ${userData.email} is already registered to another account`
+            );
+          }
           // No existing user - try to create new one
           try {
             [user] = await tx
@@ -94,63 +94,19 @@ export class UserWorkspaceService {
                 createdAt: new Date(),
                 updatedAt: new Date(),
               })
-              .onConflictDoUpdate({
-                target: users.id,
-                set: {
-                  email: userData.email,
-                  username: userData.username,
-                  firstName: userData.firstName,
-                  lastName: userData.lastName,
-                  avatarUrl: userData.avatarUrl,
-                  updatedAt: new Date(),
-                },
-              })
+              .onConflictDoNothing()
               .returning();
           } catch (insertError: any) {
-            // Final fallback - if any constraint violation, try to find by email/username and use cascade deletion
+            // If we get a constraint violation at this point, it's likely a username conflict
             if (insertError?.code === '23505') {
-
-              // Try to find by email or username
-              const [existingUser] = await tx
-                .select()
-                .from(users)
-                .where(eq(users.email, userData.email))
-                .limit(1);
-
-              if (existingUser) {
-                // Update the existing user instead of deleting (prevents webhook race condition)
-                [user] = await tx
-                  .update(users)
-                  .set({
-                    id: userData.id, // Update to new Clerk ID
-                    email: userData.email,
-                    username: userData.username,
-                    firstName: userData.firstName,
-                    lastName: userData.lastName,
-                    avatarUrl: userData.avatarUrl,
-                    // Storage tracking now handled by real-time calculation
-                    updatedAt: new Date(),
-                    // Keep original createdAt to preserve user history
-                  })
-                  .where(eq(users.id, existingUser.id))
-                  .returning();
-
-                // Update workspace to maintain user connection with new Clerk ID
-                await tx
-                  .update(workspaces)
-                  .set({
-                    userId: userData.id, // Update workspace to reference new user ID
-                  })
-                  .where(eq(workspaces.userId, existingUser.id));
-              } else {
-                // This should rarely happen, but handle gracefully
+              // Check if it's a username conflict
+              if (insertError.message?.includes('username')) {
                 throw new Error(
-                  'Could not create user - constraint violation with no matching record'
+                  `Username ${userData.username} is already taken`
                 );
               }
-            } else {
-              throw insertError;
             }
+            throw insertError;
           }
         }
 
@@ -251,22 +207,19 @@ export class UserWorkspaceService {
     try {
       let user;
 
-      // Strategy: Check for existing user by Clerk ID first, then by email
-      // This handles cases where users have multiple emails or changed their primary email
-      const [existingUserById, existingUserByEmail] = await Promise.all([
-        // Check by Clerk ID first (most reliable)
-        db.select().from(users).where(eq(users.id, userData.id)).limit(1),
-        // Check by email (for conflict resolution)
-        db.select().from(users).where(eq(users.email, userData.email)).limit(1),
-      ]);
+      // Check by Clerk ID first (most reliable)
+      const existingUserById = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userData.id))
+        .limit(1);
 
       if (existingUserById.length > 0) {
-        // User exists with same Clerk ID - simple update (user might have changed primary email)
-
+        // User exists with same Clerk ID - simple update
         [user] = await db
           .update(users)
           .set({
-            email: userData.email, // Update to current primary email
+            email: userData.email,
             username: userData.username,
             firstName: userData.firstName,
             lastName: userData.lastName,
@@ -275,63 +228,55 @@ export class UserWorkspaceService {
           })
           .where(eq(users.id, userData.id))
           .returning();
-      } else if (existingUserByEmail.length > 0) {
-        // Different Clerk ID but same email - potential conflict or email change
-        const existingUser = existingUserByEmail[0];
-        if (!existingUser) {
-          throw new Error('Unexpected: existing user by email not found');
-        }
-
-        // Conflict resolution: User exists with email, updating with new Clerk ID
-
-        [user] = await db
-          .update(users)
-          .set({
-            id: userData.id, // Update to new Clerk ID
-            email: userData.email,
-            username: userData.username,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            avatarUrl: userData.avatarUrl,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.email, userData.email))
-          .returning();
-
-        // Update workspace to maintain user connection with new Clerk ID
-        await db
-          .update(workspaces)
-          .set({
-            userId: userData.id, // Update workspace to reference new user ID
-          })
-          .where(eq(workspaces.userId, existingUser.id));
       } else {
+        // Check for email conflict before creating
+        const existingUserByEmail = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, userData.email))
+          .limit(1);
+
+        if (existingUserByEmail.length > 0) {
+          // Different Clerk ID but same email - error
+          const existingUser = existingUserByEmail[0];
+          if (!existingUser) {
+            throw new Error('Unexpected: existing user not found');
+          }
+          console.error(
+            `EMAIL_CONFLICT_IN_CREATE_USER: Email ${userData.email} already exists`,
+            {
+              existingUserId: existingUser.id,
+              attemptedUserId: userData.id,
+            }
+          );
+          
+          throw new Error(
+            `Email ${userData.email} is already registered to another account`
+          );
+        }
+        
         // No existing user - create new one
-        [user] = await db
-          .insert(users)
-          .values({
-            id: userData.id,
-            email: userData.email,
-            username: userData.username,
-            firstName: userData.firstName,
-            lastName: userData.lastName,
-            avatarUrl: userData.avatarUrl,
-            // Storage tracking now handled by real-time calculation
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .onConflictDoUpdate({
-            target: users.id,
-            set: {
+        try {
+          [user] = await db
+            .insert(users)
+            .values({
+              id: userData.id,
               email: userData.email,
               username: userData.username,
               firstName: userData.firstName,
               lastName: userData.lastName,
               avatarUrl: userData.avatarUrl,
+              createdAt: new Date(),
               updatedAt: new Date(),
-            },
-          })
-          .returning();
+            })
+            .returning();
+        } catch (insertError: any) {
+          // Handle username conflicts
+          if (insertError?.code === '23505' && insertError.message?.includes('username')) {
+            throw new Error(`Username ${userData.username} is already taken`);
+          }
+          throw insertError;
+        }
       }
 
       if (!user) {

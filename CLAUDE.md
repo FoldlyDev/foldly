@@ -163,20 +163,27 @@ src/
 
 **Migration Files** (in `drizzle/` directory):
 
-- `0000_sad_vanisher.sql` through `0008_calm_black_widow.sql`
-- `0009_flexible_subscription_system.sql` (latest)
+- `0000_uneven_viper.sql` through `0015_overjoyed_karen_page.sql`
+- `0016_keen_moon_knight.sql` (latest - schema refinements)
 - Migration metadata in `drizzle/meta/` directory
 
 **8-Table PostgreSQL Schema:**
 
 1. **users**: User accounts with Clerk integration, storage quotas, and usage tracking
-2. **workspaces**: User workspaces for file organization
-3. **links**: Multi-link types (base/custom/generated) with usage stats and storage limits
-4. **folders**: Hierarchical folder structure with materialized paths
-5. **batches**: Upload batch tracking with progress status
-6. **files**: File metadata, storage paths, and processing status
-7. **subscriptionTiers**: Available subscription plans and feature limits
-8. **userSubscriptions**: User subscription state and billing management
+2. **workspaces**: User workspaces for file organization (1:1 with user)
+3. **links**: Multi-link types (base/custom/generated) with usage stats, storage limits, and sourceFolderId for generated links
+4. **folders**: Hierarchical folder structure with materialized paths (belongs to workspace OR link context)
+5. **batches**: Upload batch tracking with progress status and targetFolderId for generated links
+6. **files**: File metadata, storage paths, and processing status (belongs to workspace OR link context)
+7. **subscriptionPlans**: Available subscription plans with UI metadata and feature limits
+8. **subscriptionAnalytics**: Business intelligence and subscription tracking
+
+**Key Schema Changes (Latest Migration):**
+- Removed `userId` from files, folders, and batches tables - derive from context
+- Removed `name` and `displayName` from batches - redundant with uploader info
+- Renamed `folderId` to `targetFolderId` in batches for clarity
+- Added `sourceFolderId` to links table for generated link support
+- Updated all foreign keys with proper CASCADE UPDATE rules
 
 ### Authentication Flow
 
@@ -187,13 +194,21 @@ src/
 
 ### File Upload System
 
-- Multiple link types:
-  - Base links: `foldly.com/[any-slug]` (user can set any slug they want)
-  - Custom links: `foldly.com/[any-slug]/[topic]` (base slug with topic)
-  - Generated links: `foldly.com/[any-slug]/[generated-slug]` (base slug + generated slug)
-- Batch upload processing with progress tracking
-- File security validation pipeline
-- Automatic organization by uploader name and date
+- **Three distinct link types with different behaviors**:
+  - **Base links**: `foldly.com/[any-slug]` - uploads go to link root
+  - **Custom links** (Topic Links in UI): `foldly.com/[any-slug]/[topic]` - uploads go to link root, topic for categorization
+  - **Generated links**: `foldly.com/[any-slug]/[generated-slug]` - created from workspace folders, uploads go directly to that folder
+
+- **File contexts**:
+  - **Personal workspace files**: Only accessible by owner (workspaceId set, linkId null)
+  - **Link-shared files**: Uploaded by external users (linkId set, workspaceId null)
+  - **Generated link uploads**: Go to workspace folders but tracked via batch
+
+- **Upload behavior**:
+  - External uploaders cannot see previously uploaded files
+  - All link uploads require a batch record for tracking
+  - Generated links set targetFolderId to route uploads to specific folders
+  - Batch processing with real-time progress tracking
 
 ### Testing Strategy
 

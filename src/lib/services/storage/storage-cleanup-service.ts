@@ -1,6 +1,6 @@
 import { db } from '@/lib/database/connection';
-import { files } from '@/lib/database/schemas';
-import { eq, and, lt, isNull } from 'drizzle-orm';
+import { files, workspaces, links } from '@/lib/database/schemas';
+import { eq, and, lt, isNull, or } from 'drizzle-orm';
 import { StorageService } from '@/features/files/lib/services/storage-service';
 import { createClient } from '@supabase/supabase-js';
 import type { DatabaseResult } from '@/lib/database/types/common';
@@ -102,12 +102,20 @@ export class StorageCleanupService {
         };
       }
 
-      // Get all database records for this user
-      const dbFiles = await db
+      // Get all database records for this user through workspace and link relationships
+      const workspaceFiles = await db
         .select({ storagePath: files.storagePath })
         .from(files)
-        .where(eq(files.userId, userId));
+        .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+        .where(eq(workspaces.userId, userId));
 
+      const linkFiles = await db
+        .select({ storagePath: files.storagePath })
+        .from(files)
+        .innerJoin(links, eq(files.linkId, links.id))
+        .where(eq(links.userId, userId));
+
+      const dbFiles = [...workspaceFiles, ...linkFiles];
       const dbPaths = new Set(dbFiles.map(f => f.storagePath).filter(Boolean));
       let cleanedCount = 0;
 
@@ -132,6 +140,60 @@ export class StorageCleanupService {
       };
     } catch (error) {
       console.error('Failed to cleanup orphaned files:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Cleanup failed',
+      };
+    }
+  }
+
+  /**
+   * Clean up files by workspace ID
+   */
+  async cleanupWorkspaceFiles(
+    workspaceId: string
+  ): Promise<DatabaseResult<{ cleaned: number }>> {
+    try {
+      const cutoffTime = new Date(Date.now() - this.PARTIAL_UPLOAD_TIMEOUT);
+      
+      // Find partial uploads for this workspace
+      const partialFiles = await db
+        .select()
+        .from(files)
+        .where(
+          and(
+            eq(files.workspaceId, workspaceId),
+            isNull(files.checksum),
+            lt(files.uploadedAt, cutoffTime),
+            eq(files.processingStatus, 'pending')
+          )
+        );
+
+      let cleanedCount = 0;
+
+      for (const file of partialFiles) {
+        try {
+          // Delete from storage if path exists
+          if (file.storagePath) {
+            await this.storageService.deleteFile(file.storagePath, 'workspace');
+          }
+
+          // Delete from database
+          await db.delete(files).where(eq(files.id, file.id));
+          cleanedCount++;
+          
+          console.log(`🧹 CLEANED_WORKSPACE_FILE: ${file.fileName} (${file.id})`);
+        } catch (error) {
+          console.error(`Failed to clean workspace file ${file.id}:`, error);
+        }
+      }
+
+      return {
+        success: true,
+        data: { cleaned: cleanedCount },
+      };
+    } catch (error) {
+      console.error('Failed to cleanup workspace files:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Cleanup failed',

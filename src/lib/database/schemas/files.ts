@@ -23,24 +23,31 @@ import { workspaces } from './workspaces';
 
 /**
  * Files table - Complete file metadata with processing status and root folder support
- * NULL folderId means file is stored at workspace root level
+ * 
+ * File contexts:
+ * 1. Personal upload: workspaceId set, linkId null, batchId null
+ * 2. Link upload: linkId set, workspaceId null, batchId set
+ * 3. Generated link upload: workspaceId set, linkId null, batchId set (goes to workspace folder)
+ * 
+ * NULL folderId means file is stored at workspace/link root level
  */
 export const files = pgTable(
   'files',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    linkId: uuid('link_id').references(() => links.id, { onDelete: 'cascade' }), // Optional - null for personal workspace files
+    linkId: uuid('link_id').references(() => links.id, { onDelete: 'cascade', onUpdate: 'cascade' }), // Optional - null for personal workspace files
     batchId: uuid('batch_id').references(() => batches.id, {
       onDelete: 'cascade',
-    }), // Optional - null for personal workspace files
-    userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
-      .notNull(),
+      onUpdate: 'cascade',
+    }), // Required when linkId is set, null for workspace files
+    // userId removed - derive from workspace.userId or link.userId
     workspaceId: uuid('workspace_id').references(() => workspaces.id, {
       onDelete: 'cascade',
-    }), // Optional - null for link-only files
+      onUpdate: 'cascade',
+    }), // For personal workspace files
     folderId: uuid('folder_id').references(() => folders.id, {
       onDelete: 'set null',
+      onUpdate: 'cascade',
     }), // NULL for root folder files
 
     // File identification
@@ -94,7 +101,7 @@ export const files = pgTable(
   table => ({
     filesLinkIdIdx: index('files_link_id_idx').on(table.linkId),
     filesBatchIdIdx: index('files_batch_id_idx').on(table.batchId),
-    filesUserIdIdx: index('files_user_id_idx').on(table.userId),
+    // filesUserIdIdx removed - userId field removed
     filesWorkspaceIdIdx: index('files_workspace_id_idx').on(table.workspaceId),
     filesFolderIdIdx: index('files_folder_id_idx').on(table.folderId),
     filesFileNameIdx: index('files_file_name_idx').on(table.fileName),
@@ -104,15 +111,6 @@ export const files = pgTable(
     ),
     filesUploadedAtIdx: index('files_uploaded_at_idx').on(table.uploadedAt),
     filesChecksumIdx: index('files_checksum_idx').on(table.checksum),
-    // Composite index for storage calculations - speeds up SUM queries by user
-    filesUserIdUploadedAtIdx: index('files_user_id_uploaded_at_idx').on(
-      table.userId,
-      table.uploadedAt
-    ),
-    // Performance optimization: Composite index for storage quota calculations
-    filesUserIdFileSizeIdx: index('files_user_id_file_size_idx').on(
-      table.userId,
-      table.fileSize
-    ),
+    // Storage calculation indexes will need to be updated to use workspace/link joins
   })
 );

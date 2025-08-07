@@ -144,23 +144,39 @@ export class BillingAnalyticsService {
         .from(links)
         .where(eq(links.userId, userId));
 
-      // Get file statistics (using new file schema)
-      const fileStats = await db
+      // Get file statistics through workspace and link relationships
+      const workspaceFileStats = await db
         .select({
           totalFileSize: sum(files.fileSize),
           fileCount: count(files.id),
         })
         .from(files)
-        .where(eq(files.userId, userId));
+        .innerJoin(workspaces, eq(files.workspaceId, workspaces.id))
+        .where(eq(workspaces.userId, userId));
 
-      // Get batch statistics
+      const linkFileStats = await db
+        .select({
+          totalFileSize: sum(files.fileSize),
+          fileCount: count(files.id),
+        })
+        .from(files)
+        .innerJoin(links, eq(files.linkId, links.id))
+        .where(eq(links.userId, userId));
+
+      const fileStats = [{
+        totalFileSize: (Number(workspaceFileStats[0]?.totalFileSize) || 0) + (Number(linkFileStats[0]?.totalFileSize) || 0),
+        fileCount: (Number(workspaceFileStats[0]?.fileCount) || 0) + (Number(linkFileStats[0]?.fileCount) || 0),
+      }];
+
+      // Get batch statistics through link relationships
       const batchStats = await db
         .select({
           totalBatches: count(batches.id),
           successfulBatches: sql<number>`COUNT(CASE WHEN ${batches.status} = 'completed' THEN 1 END)`,
         })
         .from(batches)
-        .where(eq(batches.userId, userId));
+        .innerJoin(links, eq(batches.linkId, links.id))
+        .where(eq(links.userId, userId));
 
       // Get upload statistics from links
       const uploadStats = await db

@@ -19,29 +19,28 @@ import { users } from './users';
 // Removed circular import - folders references batches, not vice versa
 
 /**
- * Batches table - Organizes file uploads into batches for better management
+ * Batches table - Tracks external uploads via links (base, custom, or generated)
+ * 
+ * targetFolderId usage:
+ * - Base/Custom links: Always NULL (uploads go to link root)
+ * - Generated links: Set to link.sourceFolderId (uploads go to workspace folder)
  */
 export const batches = pgTable(
   'batches',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
     linkId: uuid('link_id')
-      .references(() => links.id, { onDelete: 'cascade' })
+      .references(() => links.id, { onDelete: 'cascade', onUpdate: 'cascade' })
       .notNull(),
-    userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
-      .notNull(),
-    folderId: uuid('folder_id'), // NULL for root folder uploads
-    // Note: Foreign key constraint handled at database level to avoid circular dependency
+    // userId removed - derive from link.userId
+    targetFolderId: uuid('target_folder_id'), // For generated links: the workspace folder to upload to
 
     // Uploader information (form data)
     uploaderName: varchar('uploader_name', { length: 255 }).notNull(),
     uploaderEmail: varchar('uploader_email', { length: 255 }),
     uploaderMessage: text('uploader_message'),
 
-    // Batch metadata
-    name: varchar('name', { length: 255 }),
-    displayName: varchar('display_name', { length: 255 }),
+    // Batch metadata - removed redundant name/displayName fields
 
     // Processing status and statistics
     status: batchStatusEnum('status').default('uploading').notNull(),
@@ -62,8 +61,7 @@ export const batches = pgTable(
   },
   table => ({
     batchesLinkIdIdx: index('batches_link_id_idx').on(table.linkId),
-    batchesUserIdIdx: index('batches_user_id_idx').on(table.userId),
-    batchesFolderIdIdx: index('batches_folder_id_idx').on(table.folderId),
+    batchesTargetFolderIdIdx: index('batches_target_folder_id_idx').on(table.targetFolderId),
     batchesStatusIdx: index('batches_status_idx').on(table.status),
     batchesCreatedAtIdx: index('batches_created_at_idx').on(table.createdAt),
   })

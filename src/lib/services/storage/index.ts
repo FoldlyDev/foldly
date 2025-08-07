@@ -11,6 +11,9 @@ export { storageQuotaService } from './storage-quota-service';
 export { storageBackgroundService } from './storage-background-service';
 export { storageCleanupService } from './storage-cleanup-service';
 
+// Helper functions
+export * from './helpers/ownership-helpers';
+
 // Utilities
 export * from './utils';
 

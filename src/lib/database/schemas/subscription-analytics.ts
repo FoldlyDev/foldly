@@ -27,11 +27,11 @@ export const subscriptionAnalytics = pgTable(
 
     // User reference
     userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
+      .references(() => users.id, { onDelete: 'cascade', onUpdate: 'cascade' })
       .notNull(),
 
     // Event details
-    eventType: varchar('event_type', { length: 50 }).notNull(), // 'upgrade', 'downgrade', 'cancel', 'reactivate'
+    eventType: varchar('event_type', { length: 50 }).notNull(), // 'initial', 'upgrade', 'downgrade', 'cancel', 'reactivate'
     fromPlan: varchar('from_plan', { length: 50 }), // 'free', 'pro', 'business' or null for first subscription
     toPlan: varchar('to_plan', { length: 50 }), // 'free', 'pro', 'business' or null for cancellation
 

@@ -25,9 +25,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 
   // One-to-many relationships
   links: many(links),
-  folders: many(folders),
-  batches: many(batches),
-  files: many(files),
   subscriptionAnalytics: many(subscriptionAnalytics),
 }));
 
@@ -45,6 +42,7 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
   // One-to-many relationships
   links: many(links),
   folders: many(folders),
+  files: many(files),
 }));
 
 // =============================================================================
@@ -74,10 +72,6 @@ export const linksRelations = relations(links, ({ one, many }) => ({
 
 export const foldersRelations = relations(folders, ({ one, many }) => ({
   // Many-to-one relationships
-  user: one(users, {
-    fields: [folders.userId],
-    references: [users.id],
-  }),
   workspace: one(workspaces, {
     fields: [folders.workspaceId],
     references: [workspaces.id],
@@ -98,7 +92,6 @@ export const foldersRelations = relations(folders, ({ one, many }) => ({
   }),
 
   // One-to-many relationships
-  batches: many(batches),
   files: many(files),
 }));
 
@@ -112,14 +105,7 @@ export const batchesRelations = relations(batches, ({ one, many }) => ({
     fields: [batches.linkId],
     references: [links.id],
   }),
-  user: one(users, {
-    fields: [batches.userId],
-    references: [users.id],
-  }),
-  folder: one(folders, {
-    fields: [batches.folderId],
-    references: [folders.id],
-  }),
+  // targetFolderId is for generated links only, no direct relation needed
 
   // One-to-many relationships
   files: many(files),
@@ -139,9 +125,9 @@ export const filesRelations = relations(files, ({ one }) => ({
     fields: [files.batchId],
     references: [batches.id],
   }),
-  user: one(users, {
-    fields: [files.userId],
-    references: [users.id],
+  workspace: one(workspaces, {
+    fields: [files.workspaceId],
+    references: [workspaces.id],
   }),
   folder: one(folders, {
     fields: [files.folderId],

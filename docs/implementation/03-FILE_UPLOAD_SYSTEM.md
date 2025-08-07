@@ -24,9 +24,28 @@ Foldly's **File Upload System** provides a comprehensive file processing pipelin
 
 The public link upload feature allows external users to upload files to user-created links without authentication. This system supports three link types:
 
-- **Base Links**: `foldly.com/{username}` - General file collection
-- **Custom Links**: `foldly.com/{username}/{topic}` - Topic-specific uploads
-- **Generated Links**: Created from folder shares - Automatic organization
+- **Base Links**: `foldly.com/{any-slug}` - Uploads go to link root
+- **Custom Links**: `foldly.com/{any-slug}/{topic}` - Uploads go to link root, topic for categorization
+- **Generated Links**: `foldly.com/{any-slug}/{generated-slug}` - Created from workspace folders, uploads go directly to that folder
+
+### **File Contexts & Upload Rules**
+
+1. **Personal Workspace Files**: 
+   - `workspaceId` set, `linkId` null, `batchId` null
+   - Only accessible by owner
+   - No batch record required
+
+2. **Link-Shared Files**:
+   - `linkId` set, `workspaceId` null, `batchId` required
+   - Uploaded by external users via links
+   - Always require batch record for tracking
+
+3. **Generated Link Uploads**:
+   - `workspaceId` set, `linkId` null, `batchId` required
+   - Go directly to workspace folders
+   - Batch has `targetFolderId` set to route uploads
+
+**Important**: External uploaders cannot see previously uploaded files - they only see their own upload interface.
 
 ### **Route Structure**
 
@@ -50,18 +69,18 @@ interface LinkUploadPageProps {
 ```typescript
 // src/features/link-upload/lib/actions/validate-link-access.ts
 export async function validateLinkAccessAction({
-  username,
   slug,
+  topic,
 }: ValidateLinkAccessParams): Promise<ActionResult<LinkWithOwner>> {
   // 1. Resolve link based on URL pattern
-  const conditions = slug
+  const conditions = topic
     ? and(
-        eq(links.slug, username),
-        eq(links.topic, slug),
-        eq(links.link_type, 'custom')
+        eq(links.slug, slug),
+        eq(links.topic, topic),
+        or(eq(links.link_type, 'custom'), eq(links.link_type, 'generated'))
       )
     : and(
-        eq(links.slug, username),
+        eq(links.slug, slug),
         eq(links.link_type, 'base')
       );
 
@@ -265,16 +284,11 @@ export async function uploadFileToLinkAction(
     originalName: file.name,
     fileSize: file.size,
     mimeType: file.type,
-    userId: link.userId,
-    linkId,
-    folderId,
+    linkId, // Files uploaded via links have linkId set
+    batchId: uploaderInfo.batchId, // Required for all link uploads
+    folderId, // NULL for root uploads, set for folder uploads
     storagePath: uploadResult.data.path,
-    metadata: {
-      uploaderName: uploaderInfo.name,
-      uploaderEmail: uploaderInfo.email,
-      uploaderMessage: uploaderInfo.message,
-      uploadedViaLink: true,
-    },
+    // Note: userId not set on files table - derived from link.userId
   };
 
   const createResult = await fileService.createFile(fileData);
@@ -507,15 +521,18 @@ export async function validateLinkForUploadAction(
 export async function createUploadBatchAction(
   linkId: string,
   fileCount: number,
-  uploaderInfo: UploaderInfo
+  uploaderInfo: UploaderInfo,
+  targetFolderId?: string // For generated links
 ): Promise<DatabaseResult<{ batchId: string }>> {
   const batchId = `batch_${Date.now()}_${linkId}`;
   
   await db.insert(batches).values({
     id: batchId,
     linkId,
+    targetFolderId, // Set for generated links to route uploads
     uploaderName: uploaderInfo.name,
     uploaderEmail: uploaderInfo.email,
+    uploaderMessage: uploaderInfo.message,
     totalFiles: fileCount,
     uploadedFiles: 0,
     status: 'in_progress',

@@ -25,10 +25,8 @@ export class LinkFilesTreeService {
           const linkFolders = await db
             .select({
               folder: folders,
-              batch: batches,
             })
             .from(folders)
-            .leftJoin(batches, eq(folders.batchId, batches.id))
             .where(eq(folders.linkId, link.id))
             .execute();
 
@@ -69,14 +67,14 @@ export class LinkFilesTreeService {
    * Build hierarchical tree structure from flat folders and files
    */
   buildFileTree(
-    foldersData: Array<{ folder: any; batch: any }>,
+    foldersData: Array<{ folder: any }>,
     filesData: Array<{ file: any; batch: any }>
   ): TreeNode[] {
     const nodeMap = new Map<string, TreeNode>();
     const rootNodes: TreeNode[] = [];
 
     // Create folder nodes
-    foldersData.forEach(({ folder, batch }) => {
+    foldersData.forEach(({ folder }) => {
       const node: TreeNode = {
         id: folder.id,
         name: folder.name,
@@ -84,12 +82,6 @@ export class LinkFilesTreeService {
         parentId: folder.parentFolderId,
         path: folder.path,
         children: [],
-        ...(batch && {
-          metadata: {
-            uploaderName: batch.uploaderName,
-            uploaderEmail: batch.uploaderEmail,
-          }
-        }),
       };
       nodeMap.set(folder.id, node);
     });

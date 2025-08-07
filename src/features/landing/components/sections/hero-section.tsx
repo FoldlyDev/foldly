@@ -125,18 +125,6 @@ export function HeroSection() {
 
   return (
     <section className='hero' id='home'>
-      <BubbleBackground
-        className='absolute inset-0 z-0'
-        interactive
-        colors={{
-          first: '154,190,222', // var(--secondary) - medium blue
-          second: '45,79,107', // var(--quaternary) - very dark blue
-          third: '123,165,199', // var(--secondary-dark) - darker medium blue
-          fourth: '74,107,133', // var(--tertiary-light) - lighter dark blue
-          fifth: '195,225,247', // var(--primary) - light blue
-          sixth: '45,111,171', // var(--tertiary) - dark blue
-        }}
-      />
       <div className='absolute inset-0 bg-white/5 z-10' />
       <div className='home-services-top-bar relative z-20'>
         <div className='container'>

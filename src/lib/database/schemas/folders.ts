@@ -14,10 +14,8 @@ import {
   uuid,
   index,
 } from 'drizzle-orm/pg-core';
-import { users } from './users';
 import { workspaces } from './workspaces';
 import { links } from './links';
-import { batches } from './batches';
 
 /**
  * Folders table - Simplified hierarchical structure with root folder support
@@ -27,19 +25,16 @@ export const folders = pgTable(
   'folders',
   {
     id: uuid('id').defaultRandom().primaryKey().notNull(),
-    userId: text('user_id')
-      .references(() => users.id, { onDelete: 'cascade' })
-      .notNull(),
+    // userId removed - derive from workspace.userId or link.userId
     workspaceId: uuid('workspace_id')
-      .references(() => workspaces.id, { onDelete: 'cascade' }),
+      .references(() => workspaces.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     parentFolderId: uuid('parent_folder_id'),
     // Self-referential foreign key handled at database level
     linkId: uuid('link_id').references(() => links.id, {
       onDelete: 'cascade',
+      onUpdate: 'cascade',
     }),
-    batchId: uuid('batch_id').references(() => batches.id, {
-      onDelete: 'cascade',
-    }), // Optional - tracks which upload batch created this folder
+    // batchId removed - folders aren't created by batches
 
     // Folder information - Simplified for MVP
     name: varchar('name', { length: 255 }).notNull(),
@@ -63,7 +58,7 @@ export const folders = pgTable(
       .notNull(),
   },
   table => ({
-    foldersUserIdIdx: index('folders_user_id_idx').on(table.userId),
+    // foldersUserIdIdx removed - userId field removed
     foldersWorkspaceIdIdx: index('folders_workspace_id_idx').on(
       table.workspaceId
     ),
