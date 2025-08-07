@@ -82,18 +82,18 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ClerkProvider>
-          <ThemeProvider
+          {/* <ThemeProvider
             attribute='class'
             enableSystem
             disableTransitionOnChange
-          >
-            <QueryProvider>
-              <NotificationProvider>{children}</NotificationProvider>
-            </QueryProvider>
-            <Toaster />
-            <SpeedInsights />
-            <PerformanceMonitor />
-          </ThemeProvider>
+          > */}
+          <QueryProvider>
+            <NotificationProvider>{children}</NotificationProvider>
+          </QueryProvider>
+          <Toaster />
+          <SpeedInsights />
+          <PerformanceMonitor />
+          {/* </ThemeProvider> */}
         </ClerkProvider>
       </body>
     </html>

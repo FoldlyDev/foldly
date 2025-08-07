@@ -1,0 +1,168 @@
+'use client';
+
+import { forwardRef } from 'react';
+import {
+  IoDocumentOutline,
+  IoFolderOpenOutline,
+  IoLinkOutline,
+  IoPeopleOutline,
+  IoSparklesOutline,
+} from 'react-icons/io5';
+import { Spotlight } from '../ui/spotlight';
+
+interface IntroSectionProps {}
+
+interface IntroSectionRefs {
+  introRef: React.RefObject<HTMLElement | null>;
+  heroHeaderRef: React.RefObject<HTMLDivElement | null>;
+  animatedIconsRef: React.RefObject<HTMLDivElement | null>;
+  iconRefs: React.RefObject<HTMLDivElement | null>[];
+  textSegmentRefs: React.RefObject<HTMLSpanElement | null>[];
+  placeholderIconRefs: React.RefObject<HTMLDivElement | null>[];
+  duplicateIconsContainerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+// Icon data - using React Icons Ionicons5 (thin outline style) that match the text content
+const iconData = [
+  { Icon: IoDocumentOutline, alt: 'File Icon' },
+  { Icon: IoFolderOpenOutline, alt: 'Collection Icon' },
+  { Icon: IoLinkOutline, alt: 'Link Icon' },
+  { Icon: IoPeopleOutline, alt: 'Client Icon' },
+  { Icon: IoSparklesOutline, alt: 'Platform Icon' },
+];
+
+// Text segments for the animated text
+const textSegments = [
+  'Effortless file ',
+  ' collection without clutter. ',
+  'Create custom links ',
+  ' for every client ',
+  ' published on the Foldly ',
+  ' platform.',
+];
+
+export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
+  (props, ref) => {
+    const refs = ref as React.RefObject<IntroSectionRefs>;
+
+    return (
+      <section className='intro-hero' ref={refs?.current?.introRef}>
+        <Spotlight />
+
+        {/* SVG Gradient Definition */}
+        <svg width='0' height='0' style={{ position: 'absolute' }}>
+          <defs>
+            <linearGradient
+              id='icon-gradient'
+              x1='0%'
+              y1='0%'
+              x2='100%'
+              y2='100%'
+            >
+              <stop offset='0%' stopColor='var(--foldly-gradient-start)' />
+              <stop offset='100%' stopColor='var(--foldly-gradient-end)' />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* All content wrapped in relative container with higher z-index */}
+        <div className='relative z-10'>
+          {/* Hero Header - Initially visible, fades out */}
+          <div className='intro-hero-header' ref={refs?.current?.heroHeaderRef}>
+            <h1 className='mt-8 foldly-gradient-text py-4 text-center text-6xl! font-medium tracking-tight md:text-9xl!'>
+              Foldly
+            </h1>
+            <p>One platform, endless file collection possibilities.</p>
+          </div>
+
+          {/* Animated Icons Container */}
+          <div
+            className='intro-animated-icons'
+            ref={refs?.current?.animatedIconsRef}
+          >
+            {iconData.map((icon, index) => (
+              <div
+                key={index}
+                className={`intro-animated-icon intro-icon-${index + 1}`}
+                ref={refs?.current?.iconRefs[index]}
+              >
+                <icon.Icon
+                  className='w-full h-full'
+                  style={{ stroke: 'url(#icon-gradient)', fill: 'none' }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Container for duplicate icons that will be created by GSAP */}
+          <div
+            className='intro-duplicate-icons-container'
+            ref={refs?.current?.duplicateIconsContainerRef}
+          />
+
+          {/* Animated Text with Placeholder Icons */}
+          <h1 className='intro-animated-text'>
+            <div
+              className='intro-placeholder-icon'
+              ref={refs?.current?.placeholderIconRefs[0]}
+            />
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] font-normal!'
+              ref={refs?.current?.textSegmentRefs[0]}
+            >
+              {textSegments[0]}
+            </span>{' '}
+            <div
+              className='intro-placeholder-icon'
+              ref={refs?.current?.placeholderIconRefs[1]}
+            />
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              ref={refs?.current?.textSegmentRefs[1]}
+            >
+              {textSegments[1]}
+            </span>{' '}
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              ref={refs?.current?.textSegmentRefs[2]}
+            >
+              {textSegments[2]}
+            </span>{' '}
+            <div
+              className='intro-placeholder-icon'
+              ref={refs?.current?.placeholderIconRefs[2]}
+            />
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              ref={refs?.current?.textSegmentRefs[3]}
+            >
+              {textSegments[3]}
+            </span>{' '}
+            <div
+              className='intro-placeholder-icon'
+              ref={refs?.current?.placeholderIconRefs[3]}
+            />
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              ref={refs?.current?.textSegmentRefs[4]}
+            >
+              {textSegments[4]}
+            </span>{' '}
+            <div
+              className='intro-placeholder-icon'
+              ref={refs?.current?.placeholderIconRefs[4]}
+            />
+            <span
+              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              ref={refs?.current?.textSegmentRefs[5]}
+            >
+              {textSegments[5]}
+            </span>
+          </h1>
+        </div>
+      </section>
+    );
+  }
+);
+
+IntroSection.displayName = 'IntroSection';

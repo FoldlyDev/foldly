@@ -1,193 +1,25 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import type { RefObject } from 'react';
-import type { OutroStrip } from '../../types';
-import {
-  useGsapAnimation,
-  useScrollAnimations,
-  useTextAnimations,
-  useListRefs,
-  smootherStep,
-  mapRange,
-} from '../../hooks/animations';
-
-const outroStrips: OutroStrip[] = [
-  {
-    id: 'os-1',
-    speed: 0.3,
-    skills: [
-      { text: 'Frontend', variant: 'skill-var-1' },
-      { text: 'UX', variant: 'skill-var-2' },
-      { text: 'Vibe Check', variant: 'skill-var-3' },
-      { text: 'Clean Code', variant: 'skill-var-1' },
-      { text: 'Creative Flow', variant: 'skill-var-3' },
-      { text: 'Pixel Logic', variant: 'skill-var-1' },
-    ],
-  },
-  {
-    id: 'os-2',
-    speed: 0.4,
-    skills: [
-      { text: 'Motion', variant: 'skill-var-2' },
-      { text: 'Taste', variant: 'skill-var-3' },
-      { text: 'Grid Game', variant: 'skill-var-1' },
-    ],
-  },
-  {
-    id: 'os-3',
-    speed: 0.25,
-    skills: [
-      { text: 'Details', variant: 'skill-var-2' },
-      { text: 'Toronto Core', variant: 'skill-var-3' },
-      { text: 'Builds', variant: 'skill-var-1' },
-      { text: 'Case Studies', variant: 'skill-var-2' },
-      { text: 'Scroll Love', variant: 'skill-var-3' },
-      { text: 'Easings', variant: 'skill-var-3' },
-      { text: 'HTML Mindset', variant: 'skill-var-1' },
-    ],
-  },
-  {
-    id: 'os-4',
-    speed: 0.35,
-    skills: [
-      { text: 'Type Systems', variant: 'skill-var-1' },
-      { text: 'Keyframes', variant: 'skill-var-2' },
-      { text: 'Component Life', variant: 'skill-var-3' },
-    ],
-  },
-  {
-    id: 'os-5',
-    speed: 0.2,
-    skills: [
-      { text: 'Side Projects', variant: 'skill-var-1' },
-      { text: 'Studio Vibes', variant: 'skill-var-2' },
-      { text: 'GSAP Fanboy', variant: 'skill-var-3' },
-      { text: 'No Filler', variant: 'skill-var-1' },
-      { text: 'Live Sites', variant: 'skill-var-2' },
-      { text: 'Canada Mode', variant: 'skill-var-3' },
-      { text: 'Launch Ready', variant: 'skill-var-1' },
-      { text: 'CodegridPRO', variant: 'skill-var-2' },
-    ],
-  },
-  {
-    id: 'os-6',
-    speed: 0.25,
-    skills: [
-      { text: 'UI Nerd', variant: 'skill-var-3' },
-      { text: 'Quietly Bold', variant: 'skill-var-1' },
-      { text: 'Shipped', variant: 'skill-var-2' },
-      { text: 'Real CSS', variant: 'skill-var-3' },
-    ],
-  },
-];
+import Link from 'next/link';
+import { GradientButton } from '@/components/ui/core/gradient-button';
 
 export function OutroSection() {
-  // Refs for animations
-  const sectionRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLHeadingElement>(null);
-  const { itemRefs: stripRefs } = useListRefs<HTMLDivElement>(outroStrips.length);
-  
-  // Animation hooks
-  const { setRef } = useGsapAnimation();
-  const { createPinnedAnimation, createCustomScrollAnimation } = useScrollAnimations();
-  const { createSplitText, cleanupSplitTexts } = useTextAnimations();
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Create split text for header
-    let outroSplit: any = null;
-    if (headerRef.current) {
-      outroSplit = createSplitText(headerRef as RefObject<HTMLElement>, 'words', {
-        wordsClass: 'outro-word',
-      });
-
-      if (outroSplit) {
-        setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 0 });
-      }
-    }
-
-    // Create pinned animation for the section
-    if (sectionRef.current) {
-      createPinnedAnimation(sectionRef as RefObject<HTMLElement>, {
-        start: 'top top',
-        end: `+=${window.innerHeight * 3}px`,
-        pin: true,
-        pinSpacing: true,
-        scrub: 1,
-        onUpdate: (progress) => {
-          // EXACT template header text animation
-          if (outroSplit && outroSplit.words.length > 0) {
-            if (progress >= 0.25 && progress <= 0.75) {
-              const textProgress = (progress - 0.25) / 0.5; // Template calculation
-              const totalWords = outroSplit.words.length;
-
-              outroSplit.words.forEach((word: Element, index: number) => {
-                const wordRevealProgress = index / totalWords;
-
-                if (textProgress >= wordRevealProgress) {
-                  setRef({ current: word as HTMLElement }, { opacity: 1 });
-                } else {
-                  setRef({ current: word as HTMLElement }, { opacity: 0 });
-                }
-              });
-            } else if (progress < 0.25) {
-              setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 0 });
-            } else if (progress > 0.75) {
-              setRef({ current: outroSplit.words as unknown as HTMLElement }, { opacity: 1 });
-            }
-          }
-        },
-      });
-
-      // EXACT template scroll animation for strips
-      createCustomScrollAnimation(
-        sectionRef as RefObject<HTMLElement>,
-        (progress) => {
-          // Template strips all move in the same direction with individual speeds
-          stripRefs.forEach((stripRef, index) => {
-            if (!stripRef.current) return;
-            
-            const stripData = outroStrips[index];
-            if (stripData) {
-              // Template: movement = progress * 100 * speed (no direction alternation)
-              const movement = progress * 100 * stripData.speed;
-              
-              setRef(stripRef, {
-                x: `${movement}%`,
-              });
-            }
-          });
-        },
-        {
-          start: 'top bottom',
-          end: `+=${window.innerHeight * 6}px`, // Template adds 'px'
-          scrub: 1,
-        }
-      );
-    }
-
-    return () => {
-      cleanupSplitTexts();
-    };
-  }, [createPinnedAnimation, createCustomScrollAnimation, createSplitText, setRef, cleanupSplitTexts, stripRefs]);
-
   return (
-    <section ref={sectionRef} className="outro">
-      <div className="container">
-        <h3 ref={headerRef}>Scroll ends but ideas don't</h3>
-      </div>
-      <div className="outro-strips">
-        {outroStrips.map((strip, index) => (
-          <div key={strip.id} ref={stripRefs[index]} className={`outro-strip ${strip.id}`}>
-            {strip.skills.map((skill, skillIndex) => (
-              <div key={skillIndex} className={`skill ${skill.variant}`}>
-                <p className="mono">{skill.text}</p>
-              </div>
-            ))}
-          </div>
-        ))}
+    <section className='outro'>
+      <div className='outro-content'>
+        <h1>Ready to simplify file collection?</h1>
+        <div className='cta-buttons'>
+          <Link href='/sign-up' className='no-underline'>
+            <GradientButton variant='primary' size='lg'>
+              Start Free
+            </GradientButton>
+          </Link>
+          <Link href='/sign-in' className='no-underline'>
+            <GradientButton variant='secondary' size='lg'>
+              Sign In
+            </GradientButton>
+          </Link>
+        </div>
       </div>
     </section>
   );

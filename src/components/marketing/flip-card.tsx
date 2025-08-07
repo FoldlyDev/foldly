@@ -43,13 +43,56 @@ export const FlipCard = forwardRef<HTMLDivElement, FlipCardProps>(
     return (
       <div className={`card ${className}`} id={id} ref={ref}>
         <div className='hero-card-inner'>
-          <div className='card-title'>
-            <p className='mono'>{title}</p>
-            <p className='mono'>{number}</p>
-          </div>
-          <div className='card-title'>
-            <p className='mono'>{number}</p>
-            <p className='mono'>{title}</p>
+          <div className='card-wrapper'>
+            <div className='flip-card-inner' ref={flipCardInnerRef}>
+              <div className='flip-card-front'>
+                {/* Corner Diamonds */}
+                <div className='card-corner-icons'>
+                  <Diamond size={8} className='text-neutral-600' />
+                  <Diamond size={8} className='text-neutral-600' />
+                  <Diamond size={8} className='text-neutral-600' />
+                  <Diamond size={8} className='text-neutral-600' />
+                </div>
+
+                {/* Card Title Top */}
+                <div className='card-title'>
+                  <span>{title}</span>
+                  <span>{number}</span>
+                </div>
+
+                {/* Animated Icon Center */}
+                <div className='card-icon-center'>
+                  <UseAnimations
+                    animation={getAnimation()}
+                    size={48}
+                    strokeColor='currentColor'
+                    autoplay={false}
+                    loop={false}
+                  />
+                </div>
+
+                {/* Card Title Bottom */}
+                <div className='card-title'>
+                  <span>{number}</span>
+                  <span>{title}</span>
+                </div>
+              </div>
+              <div className='flip-card-back'>
+                <div className='card-title'>
+                  <span>{title}</span>
+                  <span>{number}</span>
+                </div>
+                <div className='card-copy'>
+                  {features.map((feature, index) => (
+                    <p key={index}>{feature}</p>
+                  ))}
+                </div>
+                <div className='card-title'>
+                  <span>{number}</span>
+                  <span>{title}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

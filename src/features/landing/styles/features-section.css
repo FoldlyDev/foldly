@@ -1,0 +1,332 @@
+/* =============================================================================
+   FEATURES SECTION COMPONENT STYLES
+   ============================================================================= */
+
+/* Features Section */
+.features-section {
+  padding: 8rem 2rem;
+  overflow: hidden;
+  /* Same semi-transparent gradient background as hero section */
+  background: linear-gradient(
+    135deg,
+    rgba(195, 225, 247, 0.3) 0%,
+    /* Primary with 30% opacity */ rgba(154, 190, 222, 0.4) 50%,
+    /* Secondary with 40% opacity */ rgba(45, 79, 107, 0.5) 100%
+      /* Tertiary with 50% opacity */
+  );
+  position: relative;
+  z-index: 1;
+}
+
+.features-header {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  transform: translateY(400%);
+  will-change: transform;
+  z-index: 50;
+  margin: auto;
+}
+
+.features-header h1 {
+  /* Similar to hero title but smaller to avoid conflict with cards */
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+  color: var(--quaternary); /* Same dark blue as hero */
+  text-shadow: 6px 6px 10px rgba(45, 79, 107, 0.4); /* Same shadow as hero */
+  max-width: 800px;
+  margin: 0;
+  width: 100%;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+  .features-section {
+    min-height: 100vh;
+    height: auto;
+    padding: 3rem 1rem;
+  }
+
+  .features-header {
+    transform: translateY(0%);
+    margin-bottom: 2rem;
+  }
+
+  .features-header h1 {
+    font-size: clamp(1.5rem, 8vw, 2.5rem);
+  }
+
+  /* Mobile cards container - similar to template approach */
+  .cards {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    background-color: transparent !important;
+    z-index: auto !important;
+  }
+
+  .cards-container {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    display: block !important;
+    gap: 0 !important;
+    z-index: 50 !important;
+  }
+
+  .cards .card {
+    opacity: 1 !important;
+    transform: none !important;
+    position: relative !important;
+    /* Remove margin overrides - let Tailwind handle spacing */
+  }
+
+  .cards .card .flip-card-inner {
+    animation: none !important;
+  }
+
+  .cards .card .flip-card-front {
+    transform: rotateY(180deg) !important;
+  }
+
+  .cards .flip-card-back {
+    transform: rotateY(0deg) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .features-section {
+    padding: 2rem 0.5rem;
+  }
+
+  .features-header h1 {
+    font-size: clamp(1.25rem, 10vw, 2rem);
+  }
+
+  .cards .card {
+    /* Let Tailwind handle spacing and sizing */
+  }
+}
+
+/* =============================================================================
+   FEATURES SECTION STYLES - Dark Professional Theme
+   ============================================================================= */
+
+.features {
+  padding: 6rem 2rem;
+  background: linear-gradient(
+    135deg,
+    var(--secondary) 0%,
+    var(--quaternary) 50%,
+    var(--quinary) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.features-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rem;
+}
+
+/* Features Header */
+.features-header {
+  text-align: center;
+  max-width: 600px;
+}
+
+.features-title {
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  color: var(--quaternary); /* Very dark blue for main headings */
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.features-subtitle {
+  font-size: 1.125rem;
+  color: var(--neutral-600); /* Optimal body text color */
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* Features Grid */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  width: 100%;
+  max-width: 1000px;
+}
+
+/* Individual Feature Cards */
+.feature-card {
+  background: var(--neutral-50);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(15, 25, 34, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid var(--neutral-200);
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(15, 25, 34, 0.15);
+  border-color: var(--primary);
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1.5rem;
+  color: var(--primary);
+}
+
+.feature-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--tertiary); /* Dark blue for section headings */
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.feature-card p {
+  color: var(--neutral-600); /* Optimal body text color */
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Floating Animation for Feature Cards */
+@keyframes floating {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.features-section .flip-card {
+  animation: floating 3s infinite ease-in-out;
+}
+
+.features-section .flip-card:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.features-section .flip-card:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+.features-section .flip-card:nth-child(3) {
+  animation-delay: 1s;
+}
+
+/* CTA Section within Features */
+.features-cta {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.features-cta-button {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
+  color: var(--quaternary);
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+  border: 2px solid var(--primary);
+  box-shadow: 0 4px 15px rgba(195, 225, 247, 0.3);
+}
+
+.features-cta-button:hover {
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark) 0%,
+    var(--secondary) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(195, 225, 247, 0.4);
+  border-color: var(--primary-dark);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .features {
+    padding: 4rem 1rem;
+  }
+
+  .features-container {
+    gap: 3rem;
+  }
+
+  .features-title {
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .feature-card {
+    padding: 1.5rem;
+  }
+
+  .features-cta {
+    margin-top: 2rem;
+  }
+
+  .features-cta-button {
+    padding: 0.875rem 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .features {
+    padding: 3rem 1rem;
+  }
+
+  .features-container {
+    gap: 2rem;
+  }
+
+  .feature-card {
+    padding: 1.25rem;
+  }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .feature-card h3 {
+    font-size: 1.125rem;
+  }
+
+  .features-cta-button {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}

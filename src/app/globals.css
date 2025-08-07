@@ -1,6 +1,4 @@
-/* Font Imports */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap');
 @import 'tailwindcss';
 
 /* =============================================================================
@@ -19,10 +17,7 @@
 
   /* Font Families */
   --font-sans:
-    'Host Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  --font-barlow: 'Barlow Condensed', sans-serif;
-  --font-mono: 'DM Mono', monospace;
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
   --color-primary: #c3e1f7;
@@ -49,11 +44,6 @@
   --color-quinary-dark: #050607;
   --color-quinary-light: #1a1d20;
   --color-quinary-subtle: #f8f9f9;
-
-  /* Juno Watts Accent Colors */
-  --accent-1: #b1c1ef;
-  --accent-2: #f2acac;
-  --accent-3: #ffdd94;
 
   /* Status Colors */
   --color-success: #10b981;
@@ -146,14 +136,13 @@
    ============================================================================= */
 
 /* 🚀 Landing Feature Styles */
-@import '../features/landing/styles/home.css';
-@import '../features/landing/styles/about.css';
-@import '../features/landing/styles/work.css';
-@import '../features/landing/styles/project.css';
-@import '../features/landing/styles/contact.css';
-@import '../features/landing/styles/menu.css';
-@import '../features/landing/styles/footer.css';
-@import '../features/landing/styles/transition.css';
+@import '../features/landing/styles/intro-section.css';
+@import '../features/landing/styles/hero-section.css';
+@import '../features/landing/styles/about-section.css';
+@import '../features/landing/styles/features-section.css';
+@import '../features/landing/styles/outro-section.css';
+@import '../features/landing/styles/cards.css';
+@import '../features/landing/styles/sections.css';
 
 /* 🔐 Auth Feature Styles */
 @import '../features/auth/styles/auth-pages.css';
@@ -174,18 +163,6 @@
    ============================================================================= */
 
 :root {
-  /* JUNO WATTS TEMPLATE COLORS - Properly Integrated with Foldly Brand */
-  --base-100: #f9f4eb; /* Original cream background */
-  --base-200: #efece5; /* Slightly darker cream */
-  --base-300: #0a0a0a; /* Near black for text */
-  --base-secondary-dark: #686560; /* Muted brown for secondary text */
-  --base-secondary-fade: rgba(249, 244, 235, 0.15); /* Transparent base-100 */
-
-  /* JUNO WATTS ACCENT COLORS - Maintain original palette */
-  --accent-1: #b1c1ef; /* Light blue accent */
-  --accent-2: #f2acac; /* Light red/pink accent */
-  --accent-3: #ffdd94; /* Light yellow accent */
-
   /* FOLDLY BRAND COLORS - Dark Professional Theme */
 
   /* Primary Brand Colors - Light Blue Accent */
@@ -235,6 +212,14 @@
   --neutral-700: #3f3f46; /* Subheadings */
   --neutral-800: #27272a; /* Headings */
   --neutral-900: #18181b; /* High contrast text */
+
+  /* Foldly Brand Gradients */
+  --foldly-gradient-start: #cbd5e1; /* slate-300 */
+  --foldly-gradient-end: #64748b;   /* slate-500 */
+  --foldly-gradient: linear-gradient(to bottom right, var(--foldly-gradient-start), var(--foldly-gradient-end));
+  --foldly-gradient-reverse: linear-gradient(to top left, var(--foldly-gradient-start), var(--foldly-gradient-end));
+  --foldly-gradient-horizontal: linear-gradient(to right, var(--foldly-gradient-start), var(--foldly-gradient-end));
+  --foldly-gradient-vertical: linear-gradient(to bottom, var(--foldly-gradient-start), var(--foldly-gradient-end));
 
   /* Legacy Colors - Updated to new semantic system */
   --light: var(--neutral-50);
@@ -367,141 +352,35 @@
   }
 
   body {
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     font-family:
-      'Host Grotesk',
       'Inter',
       -apple-system,
       BlinkMacSystemFont,
       'Segoe UI',
       sans-serif;
     overflow-x: hidden;
-    touch-action: auto;
     max-width: 100%;
   }
 }
 
-/* Typography */
-/* JUNO WATTS TYPOGRAPHY SYSTEM */
-h1,
-h2,
-h3,
-h4 {
-  text-transform: uppercase;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  line-height: 0.85;
-  letter-spacing: -0.02rem;
-}
-
 h1 {
-  font-size: 12rem;
-}
-
-h2 {
-  font-size: 8rem;
-}
-
-h3 {
-  font-size: 6rem;
-}
-
-h4 {
-  font-size: 2.5rem;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 p {
-  font-family: 'Host Grotesk', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 1rem;
-}
-
-p.md {
-  font-size: 1.3rem;
-}
-
-p.lg {
-  font-size: 1.5rem;
-}
-
-p.mono {
-  text-transform: uppercase;
-  font-family: 'DM Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-p.mono span,
-a span {
-  position: relative;
-  top: -0.1rem;
-}
-
-a {
-  text-decoration: none;
 }
 
 span {
   font-size: 0.875rem;
   color: inherit;
-}
-
-/* JUNO WATTS SPECIFIC STYLES */
-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  user-select: none;
-}
-
-.container {
-  width: 100%;
-  height: 100%;
-  padding: 2.75rem;
-  max-width: 2000px;
-  margin: 0 auto;
-}
-
-.symbols-container {
-  display: flex;
-  gap: 0.5rem;
-  height: 1.125rem;
-  z-index: 1;
-}
-
-.symbols-container .symbol {
-  width: 1.125rem;
-}
-
-/* Responsive Typography - Matching Juno Watts */
-@media (max-width: 1000px) {
-  h1 {
-    font-size: 6rem;
-  }
-  h2 {
-    font-size: 5rem;
-  }
-  h3 {
-    font-size: 3rem;
-  }
-  h4 {
-    font-size: 2rem;
-  }
-  p {
-    font-size: 1rem;
-  }
-  p.md {
-    font-size: 1.125rem;
-  }
-  p.lg {
-    font-size: 1.25rem;
-  }
-  p.mono {
-    font-size: 0.8rem;
-  }
-  .container {
-    padding: 2rem;
-  }
 }
 
 :focus-visible {
@@ -1056,92 +935,6 @@ button[data-state],
   pointer-events: auto !important;
 }
 
-/* Fix toast container structure and hover states */
-[data-sonner-toast] {
-  position: relative !important;
-  display: flex !important;
-  align-items: flex-start !important;
-  min-height: 48px !important;
-}
-
-/* Remove double container effect */
-[data-sonner-toast] > div:first-child {
-  background: transparent !important;
-  border: none !important;
-  padding: 0 !important;
-}
-
-/* Ensure close button is properly positioned */
-[data-sonner-toast] [data-close-button] {
-  position: absolute !important;
-  left: 8px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  width: 20px !important;
-  height: 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 !important;
-  border-radius: 4px !important;
-  opacity: 0.7 !important;
-  transition: opacity 0.2s !important;
-}
-
-[data-sonner-toast] [data-close-button]:hover {
-  opacity: 1 !important;
-}
-
-/* Success toast specific fixes */
-[data-sonner-toast][data-type='success'] {
-  padding: 12px 16px 12px 48px !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-[data-sonner-toast][data-type='success'] [data-content] {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-  width: 100% !important;
-}
-
-/* Fix success icon alignment - vertically centered */
-[data-sonner-toast][data-type='success'] > svg {
-  position: absolute !important;
-  left: 16px !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  flex-shrink: 0 !important;
-  width: 16px !important;
-  height: 16px !important;
-}
-
-/* Ensure all toast types have proper padding for close button */
-[data-sonner-toast] {
-  padding-left: 48px !important;
-}
-
-/* Toast content should not overflow */
-[data-sonner-toast] [data-content] {
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-/* Fix hover state container placement */
-[data-sonner-toast]:hover {
-  transform: translateY(-2px) !important;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Ensure proper content spacing with close button */
-[data-sonner-toast] [data-title] {
-  padding-right: 0 !important;
-  margin-right: 0 !important;
-}
-
 /* Ensure notifications section doesn't create layout space */
 section[aria-label*='Notifications'] {
   position: fixed !important;
@@ -1160,24 +953,20 @@ section[aria-label*='Notifications'] > * {
 }
 
 /* ===================================================================== */
-/* ANIMATIONS */
+/* FOLDLY BRAND UTILITIES - Gradient Text and Backgrounds */
 /* ===================================================================== */
 
-/* Shimmer effect for loading states and progress bars */
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+@utility foldly-gradient-text {
+  background: var(--foldly-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
-.animate-shimmer {
-  animation: shimmer 2s ease-in-out infinite;
+@utility foldly-gradient-bg {
+  background: var(--foldly-gradient);
 }
 
-/* ===================================================================== */
 /* MODAL UTILITY CLASSES - Tailwind v4+ CSS-First Approach (Hybrid) */
 /* ===================================================================== */
 
