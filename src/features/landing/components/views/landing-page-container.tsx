@@ -216,11 +216,16 @@ export function LandingPageContainer() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className='space-y-6'
             >
-              <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'>
-                <ChefHat className='w-5 h-5 text-gray-700 dark:text-gray-300 animate-bounce' />
-                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
-                  Something amazing is brewing
-                </span>
+              <div className='space-y-3'>
+                <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'>
+                  <ChefHat className='w-5 h-5 text-gray-700 dark:text-gray-300 animate-bounce' />
+                  <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                    Something amazing is brewing
+                  </span>
+                </div>
+                <p className='text-sm text-gray-600 dark:text-gray-400 max-w-lg mx-auto'>
+                  Please bear with us and ignore the temporary colors and styling across the platform pages
+                </p>
               </div>
 
               {/* <h2 className='text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 dark:text-gray-200'>
