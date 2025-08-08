@@ -181,12 +181,12 @@ export function LandingPageContainer() {
         <FeaturesSection ref={featuresSectionRefs} />
         <OutroSection />
       </div> */}
-      <div className='min-h-screen relative overflow-hidden' style={{ background: 'var(--foldly-light-gradient-radial)' }}>
+      <div className='min-h-screen relative overflow-hidden bg-white dark:bg-gray-950'>
         {/* Animated background elements */}
         <div className='absolute inset-0'>
-          <div className='absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full filter blur-3xl animate-pulse' />
-          <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/10 rounded-full filter blur-3xl animate-pulse delay-700' />
-          <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-tertiary/5 rounded-full filter blur-3xl animate-pulse delay-300' />
+          <div className='absolute top-0 left-1/4 w-96 h-96 bg-blue-500/5 dark:bg-blue-400/5 rounded-full filter blur-3xl animate-pulse' />
+          <div className='absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/5 dark:bg-purple-400/5 rounded-full filter blur-3xl animate-pulse delay-700' />
+          <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 dark:bg-indigo-400/5 rounded-full filter blur-3xl animate-pulse delay-300' />
         </div>
 
         {/* Main content */}
@@ -204,11 +204,9 @@ export function LandingPageContainer() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className='mb-12'
             >
-              <div className='inline-flex items-center justify-center p-4 rounded-2xl bg-white/50 dark:bg-black/50 backdrop-blur-lg border border-neutral-200 dark:border-neutral-800 shadow-xl'>
-                <h1 className='text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-tertiary bg-clip-text text-transparent'>
-                  Foldly
-                </h1>
-              </div>
+              <h1 className='text-7xl md:text-8xl font-bold text-gray-900 dark:text-white'>
+                Foldly
+              </h1>
             </motion.div>
 
             {/* Announcement */}
@@ -218,25 +216,19 @@ export function LandingPageContainer() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className='space-y-6'
             >
-              <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30'>
-                <ChefHat className='w-5 h-5 text-primary animate-bounce' />
-                <span className='text-sm font-medium text-primary dark:text-primary'>
-                  Something amazing is cooking
+              <div className='inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700'>
+                <ChefHat className='w-5 h-5 text-gray-700 dark:text-gray-300 animate-bounce' />
+                <span className='text-sm font-medium text-gray-700 dark:text-gray-300'>
+                  Something amazing is brewing
                 </span>
               </div>
 
-              <h2 className='text-4xl md:text-5xl font-bold text-neutral-900 dark:text-neutral-100'>
-                Top-notch landing page
-                <span className='block text-3xl md:text-4xl mt-2 text-neutral-700 dark:text-neutral-300'>
-                  coming soon
-                </span>
+              <h2 className='text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 dark:text-gray-200'>
+                Coming Soon
               </h2>
 
-              <p className='text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed'>
-                In the meantime, you can sign in and use the platform as normal.
-                <span className='block mt-2 text-base'>
-                  The team behind Foldly is cooking up something exquisite 🤤
-                </span>
+              <p className='text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed'>
+                Sign in now to experience the platform while we craft something extraordinary.
               </p>
             </motion.div>
 
@@ -252,7 +244,7 @@ export function LandingPageContainer() {
                   <Button
                     size='lg'
                     onClick={() => router.push('/sign-in')}
-                    className='group min-w-[200px] bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg hover:shadow-xl transition-all duration-300'
+                    className='group min-w-[200px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg hover:shadow-xl transition-all duration-300'
                   >
                     <LogIn className='w-5 h-5 mr-2' />
                     Sign In
@@ -263,34 +255,35 @@ export function LandingPageContainer() {
                     size='lg'
                     variant='outline'
                     onClick={() => router.push('/sign-up')}
-                    className='group min-w-[200px] border-2 border-gray-300 dark:border-gray-700 hover:border-cyan-500 dark:hover:border-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/20 transition-all duration-300'
+                    className='group min-w-[200px] border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all duration-300'
                   >
-                    <UserPlus className='w-5 h-5 mr-2 text-gray-600 dark:text-gray-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400' />
+                    <UserPlus className='w-5 h-5 mr-2 text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400' />
                     Create Account
-                    <Sparkles className='w-5 h-5 ml-2 text-cyan-600 dark:text-cyan-400 group-hover:animate-pulse' />
+                    <Sparkles className='w-5 h-5 ml-2 text-blue-600 dark:text-blue-400 group-hover:animate-pulse' />
                   </Button>
                 </>
               ) : isLoaded && isSignedIn ? (
                 <>
                   <Button
                     size='lg'
-                    onClick={() => router.push('/dashboard')}
-                    className='group min-w-[200px] bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300'
+                    onClick={handleAuthenticatedNavigation}
+                    disabled={checkingOnboarding}
+                    className='group min-w-[200px] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed'
                   >
-                    <Home className='w-5 h-5 mr-2' />
-                    Go to Dashboard
-                    <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform' />
+                    {checkingOnboarding ? (
+                      <>
+                        <div className='w-5 h-5 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin' />
+                        Checking status...
+                      </>
+                    ) : (
+                      <>
+                        <Home className='w-5 h-5 mr-2' />
+                        Continue to Platform
+                        <ArrowRight className='w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform' />
+                      </>
+                    )}
                   </Button>
 
-                  <Button
-                    size='lg'
-                    variant='outline'
-                    onClick={() => router.push('/onboarding')}
-                    className='group min-w-[200px] border-2 hover:bg-primary/5 dark:hover:bg-primary/10 transition-all duration-300'
-                  >
-                    <Sparkles className='w-5 h-5 mr-2 text-primary' />
-                    Onboarding
-                  </Button>
                 </>
               ) : (
                 <div className='flex items-center gap-3'>
@@ -306,7 +299,7 @@ export function LandingPageContainer() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
-              className='text-sm text-gray-500 dark:text-gray-500 mt-16'
+              className='text-sm text-gray-600 dark:text-gray-400 mt-16'
             >
               The team behind Foldly is crafting something exquisite 🎨
             </motion.p>
