@@ -223,12 +223,13 @@ export function LandingPageContainer() {
                 </span>
               </div>
 
-              <h2 className='text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 dark:text-gray-200'>
+              {/* <h2 className='text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 dark:text-gray-200'>
                 Coming Soon
-              </h2>
+              </h2> */}
 
               <p className='text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed'>
-                Sign in now to experience the platform while we craft something extraordinary.
+                Our landing page is temporarily unavailable as we work on bringing you an exceptional experience. 
+                We apologize for any inconvenience. You can still access the full platform by signing in below.
               </p>
             </motion.div>
 
@@ -283,7 +284,6 @@ export function LandingPageContainer() {
                       </>
                     )}
                   </Button>
-
                 </>
               ) : (
                 <div className='flex items-center gap-3'>
