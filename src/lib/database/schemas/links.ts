@@ -81,7 +81,8 @@ export const links = pgTable(
 
     // Generated Link Support
     sourceFolderId: uuid('source_folder_id'),
-    // Note: Foreign key reference to folders.id handled at database level to avoid circular dependency
+    // Foreign key reference to folders.id with CASCADE DELETE
+    // When a folder is deleted, any generated links pointing to it are automatically deleted
     
     // Timestamps
     createdAt: timestamp('created_at', { withTimezone: true })
