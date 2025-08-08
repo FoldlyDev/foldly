@@ -229,7 +229,14 @@ export function LandingPageContainer() {
 
               <p className='text-lg md:text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed'>
                 Our landing page is temporarily unavailable as we work on bringing you an exceptional experience. 
-                We apologize for any inconvenience. You can still access the full platform by signing in below.
+                We apologize for any inconvenience.
+                {!isLoaded ? (
+                  <span className='block mt-2'>Loading...</span>
+                ) : !isSignedIn ? (
+                  <span className='block mt-2'>You can still access the full platform by signing in below.</span>
+                ) : (
+                  <span className='block mt-2'>Click below to continue to your workspace.</span>
+                )}
               </p>
             </motion.div>
 
