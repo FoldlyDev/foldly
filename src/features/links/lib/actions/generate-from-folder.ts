@@ -108,8 +108,16 @@ export async function generateLinkFromFolderAction(
       };
     }
 
-    // 6. Generate a unique suffix for the generated link
-    const generatedSuffix = nanoid(8).toLowerCase();
+    // 6. Use folder name as the suffix for the generated link
+    // Clean the folder name to make it URL-safe
+    const generatedSuffix = folder.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
+      .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
+      .substring(0, 50); // Limit length
+    
+    // If the cleaned name is empty, fall back to a random ID
+    const finalSuffix = generatedSuffix || nanoid(8).toLowerCase();
 
     // 7. Create the generated link
     const [newLink] = await db
@@ -118,7 +126,7 @@ export async function generateLinkFromFolderAction(
         userId: user.id,
         workspaceId: folder.workspaceId,
         slug: baseLink.slug,
-        topic: generatedSuffix,
+        topic: finalSuffix,
         linkType: 'generated',
         title: `Link for ${folder.name}`,
         description: `Uploads to this link go directly to the "${folder.name}" folder`,
@@ -164,7 +172,7 @@ export async function generateLinkFromFolderAction(
         folderId,
         folderName: folder.name,
         linkType: 'generated',
-        generatedSuffix,
+        generatedSuffix: finalSuffix,
       },
     });
 

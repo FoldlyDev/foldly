@@ -91,7 +91,7 @@ export class LinkAccessService {
         if (customResult.length > 0) {
           linkResult = customResult[0];
         } else {
-          // Try generated link (base slug + generated slug)
+          // Try generated link (base slug + generated topic)
           const generatedResult = await db
             .select({
               links: links,
@@ -101,7 +101,8 @@ export class LinkAccessService {
             .innerJoin(users, eq(links.userId, users.id))
             .where(
               and(
-                eq(links.slug, secondSlug), // The generated slug is the second part
+                eq(links.slug, firstSlug), // Base slug is the first part
+                eq(links.topic, secondSlug), // Generated suffix (folder name) is the second part
                 eq(links.linkType, 'generated')
               )
             )
