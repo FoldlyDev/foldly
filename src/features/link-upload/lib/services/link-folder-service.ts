@@ -113,12 +113,13 @@ export class LinkFolderService {
       }
 
       // Create the actual folder in the database with sort order
-      // For link uploads, folders belong to the link, NOT a workspace
+      // For generated links, folders belong to the workspace
+      // For base/custom links, folders belong to the link
       const result = await this.folderService.createFolder({
         name: folderName,
         parentFolderId: parentFolderId || null,
-        workspaceId: null,  // No workspace for link-upload folders
-        linkId: linkId,     // Associate with the link ONLY
+        workspaceId: link.linkType === 'generated' ? link.workspaceId : null,
+        linkId: link.linkType === 'generated' ? null : linkId,
         userId: userId,
         path: folderPath,
         depth: depth,

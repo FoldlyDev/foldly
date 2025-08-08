@@ -57,6 +57,13 @@ export interface Link extends TimestampFields {
   // Storage Quota Management
   storageUsed: number;
   storageLimit: number;
+
+  // Notification tracking
+  unreadUploads: number;
+  lastNotificationAt: Date | null;
+
+  // Generated Link Support
+  sourceFolderId: DatabaseId | null;
 }
 
 /**
@@ -81,6 +88,9 @@ export type LinkUpdate = PartialBy<
   | 'totalUploads'
   | 'totalFiles'
   | 'totalSize'
+  | 'storageUsed'
+  | 'storageLimit'
+  | 'unreadUploads'
 >;
 
 // =============================================================================

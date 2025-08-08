@@ -195,16 +195,23 @@ export async function POST(req: NextRequest) {
       // Step 2: Create all folders in hierarchical order
       // Get link owner for real-time broadcasting
       let linkOwnerId: string | undefined;
+      let linkInfo: { userId: string; linkType: string; sourceFolderId: string | null; workspaceId: string | null } | undefined;
       if (folders.length > 0 || files.length > 0) {
         try {
           const [link] = await db
-            .select({ userId: links.userId })
+            .select({ 
+              userId: links.userId,
+              linkType: links.linkType,
+              sourceFolderId: links.sourceFolderId,
+              workspaceId: links.workspaceId
+            })
             .from(links)
             .where(eq(links.id, linkId))
             .limit(1);
           linkOwnerId = link?.userId;
+          linkInfo = link;
         } catch (err) {
-          console.log('Could not fetch link owner:', err);
+          console.log('Could not fetch link info:', err);
         }
       }
       
@@ -244,6 +251,9 @@ export async function POST(req: NextRequest) {
               } else {
                 parentFolderId = folder.parentFolderId;
               }
+            } else if (linkInfo?.linkType === 'generated' && linkInfo.sourceFolderId) {
+              // For generated links, root-level folders should be placed inside the source folder
+              parentFolderId = linkInfo.sourceFolderId;
             }
             
             const result = await createLinkFolderAction(
@@ -312,6 +322,7 @@ export async function POST(req: NextRequest) {
 
       // Step 3: Upload all files grouped by parent folder to maintain sort order
       console.log(`📊 Starting file upload phase: ${files.length} files to process, batchId: ${batchId}`);
+      console.log('📊 LinkInfo for files:', linkInfo);
       if (files.length > 0 && batchId) {
         // Group files by parent folder
         const filesByParent = new Map<string | undefined, Array<{file: File, metadata: any, index: number}>>();
@@ -352,6 +363,9 @@ export async function POST(req: NextRequest) {
               let parentFolderId = metadata?.parentFolderId;
               if (parentFolderId && folderIdMap.has(parentFolderId)) {
                 parentFolderId = folderIdMap.get(parentFolderId);
+              } else if (!parentFolderId && linkInfo?.linkType === 'generated' && linkInfo.sourceFolderId) {
+                // For generated links, root-level files should be placed inside the source folder
+                parentFolderId = linkInfo.sourceFolderId;
               }
             
             // Get batch info for user ID
@@ -397,11 +411,22 @@ export async function POST(req: NextRequest) {
             const fileExtension = file.name.split('.').pop() || '';
             const fileId = crypto.randomUUID();
             
+            console.log('📊 File insert params:', {
+              linkType: linkInfo?.linkType,
+              isGenerated: linkInfo?.linkType === 'generated',
+              linkId: linkInfo?.linkType === 'generated' ? null : linkId,
+              workspaceId: linkInfo?.linkType === 'generated' ? linkInfo.workspaceId : null,
+              batchId: batchId,
+              parentFolderId: parentFolderId || null
+            });
+
             const [fileRecord] = await db
               .insert(filesTable)
               .values({
                 id: fileId,
-                linkId: linkId,
+                // For generated links, files belong to workspace
+                linkId: linkInfo?.linkType === 'generated' ? null : linkId,
+                workspaceId: linkInfo?.linkType === 'generated' ? linkInfo.workspaceId : null,
                 batchId: batchId,
                 fileName: file.name,
                 originalName: file.name,
@@ -606,7 +631,7 @@ export async function POST(req: NextRequest) {
                     fileCount: results.uploadedFiles,
                     folderCount: results.createdFolders,
                     uploaderName: uploaderName,
-                    uploaderEmail: uploaderEmail || undefined,
+                    ...(uploaderEmail && { uploaderEmail }),
                   },
                 });
                 

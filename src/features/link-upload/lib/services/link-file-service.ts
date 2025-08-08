@@ -4,12 +4,9 @@
  */
 
 import { db } from '@/lib/database/connection';
-import { files, batches, links, users, folders } from '@/lib/database/schemas';
-import { eq, and, sql } from 'drizzle-orm';
+import { files, batches, users, links } from '@/lib/database/schemas';
+import { eq, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
-import { createClient } from '@supabase/supabase-js';
-import { FileService } from '@/features/files/lib/services/file-service';
-import { StorageService } from '@/features/files/lib/services/storage-service';
 import { generateUniqueFileName } from '@/lib/upload/utils/file-processing';
 import type { FileTreeNode } from '../../types';
 
@@ -17,6 +14,7 @@ import type { FileTreeNode } from '../../types';
 import { linkFileValidationService } from './link-file-validation-service';
 import { linkFileOperationsService } from './link-file-operations-service';
 import { linkFileMetadataService } from './link-file-metadata-service';
+import { BillingService } from '@/features/billing/lib/services';
 
 interface PreviousUpload {
   id: string;
@@ -43,17 +41,9 @@ interface FileUploadResult {
 }
 
 export class LinkFileService {
-  private supabase: ReturnType<typeof createClient>;
   private validationService = linkFileValidationService;
   private operationsService = linkFileOperationsService;
   private metadataService = linkFileMetadataService;
-
-  constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-  }
 
   /**
    * Upload a file to storage and update database records
@@ -113,14 +103,28 @@ export class LinkFileService {
         };
       }
 
+      if (!validation.link) {
+        return {
+          success: false,
+          error: 'Link not found',
+        };
+      }
+      
       const link = validation.link;
+
+      // For generated links, ensure sourceFolderId exists
+      if (link.linkType === 'generated' && !link.sourceFolderId) {
+        return {
+          success: false,
+          error: 'Generated link is missing source folder information',
+        };
+      }
 
       // Get link owner info for quota tracking
       const [linkOwner] = await db
         .select({
           id: users.id,
           storageUsed: users.storageUsed,
-          storageLimit: users.storageLimit,
         })
         .from(users)
         .where(eq(users.id, link.userId))
@@ -133,10 +137,22 @@ export class LinkFileService {
         };
       }
 
+      // Get user's storage limit from subscription
+      const billingResult = await BillingService.getUserBillingData(link.userId);
+      
+      let storageLimit: number;
+      if (!billingResult.success) {
+        console.warn('Failed to get billing data, using free plan defaults:', billingResult.error);
+        // Fallback to free plan defaults if billing service fails
+        storageLimit = 50 * 1024 * 1024 * 1024; // 50GB in bytes
+      } else {
+        storageLimit = billingResult.data.storageLimit;
+      }
+
       // Check storage quota
-      const wouldExceedQuota = linkOwner.storageUsed + file.size > linkOwner.storageLimit;
+      const wouldExceedQuota = linkOwner.storageUsed + file.size > storageLimit;
       if (wouldExceedQuota) {
-        const remainingMB = Math.round((linkOwner.storageLimit - linkOwner.storageUsed) / (1024 * 1024));
+        const remainingMB = Math.round((storageLimit - linkOwner.storageUsed) / (1024 * 1024));
         return {
           success: false,
           error: `The link owner has insufficient storage space. Only ${remainingMB}MB remaining. Please contact the link owner.`,
@@ -165,9 +181,8 @@ export class LinkFileService {
           uploaderMessage: uploaderInfo.message,
           totalFiles: 1,
           processedFiles: 0,
-          failedFiles: 0,
           totalSize: file.size,
-          processingStatus: 'processing',
+          status: 'uploading',
         })
         .returning();
 
@@ -179,22 +194,28 @@ export class LinkFileService {
       }
 
       // Generate unique file name
-      const uniqueFileName = generateUniqueFileName(file.name);
+      const uniqueFileName = generateUniqueFileName(file.name, []);
+
+      // Generate storage path
+      const extension = file.name.split('.').pop() || '';
+      const storagePath = `uploads/${linkId}/${fileId}${extension ? `.${extension}` : ''}`;
 
       // Create file record
       const [fileRecord] = await db
         .insert(files)
         .values({
-          id: fileId,
           batchId,
-          linkId,
-          workspaceId: link.workspaceId,
+          // For generated links, linkId should be null (files belong to workspace)
+          linkId: link.linkType === 'generated' ? null : linkId,
+          // For generated links, workspaceId should be set
+          workspaceId: link.linkType === 'generated' ? link.workspaceId : null,
           fileName: uniqueFileName,
           originalName: file.name,
           fileSize: file.size,
           mimeType: file.type || 'application/octet-stream',
-          folderId: link.linkType === 'generated' && link.sourceFolderId ? link.sourceFolderId : folderId,
-          processingStatus: 'pending',
+          extension: extension || null,
+          folderId: link.linkType === 'generated' ? link.sourceFolderId : (folderId || null),
+          storagePath,
         })
         .returning();
 
@@ -206,18 +227,27 @@ export class LinkFileService {
       }
 
       // Upload the file
-      const uploadResult = await this.operationsService.uploadFile({
+      const uploadParams: UploadFileParams = {
         batchId,
         fileId,
         file,
-        folderId: folderId || undefined,
-      });
+      };
+      
+      // Only add folderId if it's provided
+      if (folderId) {
+        uploadParams.folderId = folderId;
+      }
+      
+      const uploadResult = await this.operationsService.uploadFile(uploadParams);
 
       if (!uploadResult.success) {
         // Clean up on failure
         await db.delete(files).where(eq(files.id, fileId));
         await db.delete(batches).where(eq(batches.id, batchId));
-        return uploadResult as any;
+        return {
+          success: false,
+          error: uploadResult.error || 'Upload failed',
+        };
       }
 
       // Update batch status
@@ -259,8 +289,8 @@ export class LinkFileService {
           uploadedAt: new Date(),
           quotaInfo: {
             storageUsed: linkOwner.storageUsed + file.size,
-            storageLimit: linkOwner.storageLimit,
-            percentageUsed: ((linkOwner.storageUsed + file.size) / linkOwner.storageLimit) * 100,
+            storageLimit: storageLimit,
+            percentageUsed: ((linkOwner.storageUsed + file.size) / storageLimit) * 100,
           },
         },
       };
