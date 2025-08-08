@@ -9,6 +9,8 @@ export type WorkspaceTreeItem = {
   name: string;
   children?: string[];
   isFile?: boolean;
+  hasGeneratedLink?: boolean;
+  isGeneratingLink?: boolean;
 };
 
 // Simple data store - direct mutation like in library examples

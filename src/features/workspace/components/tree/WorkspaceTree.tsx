@@ -5,6 +5,9 @@ import { motion } from 'framer-motion';
 import { generateLinkFromFolderAction } from '@/features/links/lib/actions';
 import { generateLinkUrl } from '@/lib/config/url-config';
 import { showWorkspaceNotification, showWorkspaceError } from '@/features/notifications/utils';
+import { showGeneratedLinkNotification } from '@/features/notifications/utils/link-notifications';
+import { useGeneratingLinksStore } from '../../store/generating-links-store';
+import { useFoldersWithLinks } from '../../hooks/use-folders-with-links';
 import {
   dragAndDropFeature,
   hotkeysCoreFeature,
@@ -60,6 +63,8 @@ import {
   ChevronDown,
   CheckSquare,
   Square,
+  Link2,
+  Loader2,
 } from 'lucide-react';
 
 import type { FeatureImplementation } from '@headless-tree/core';
@@ -138,31 +143,47 @@ export default function WorkspaceTree({
     });
 
   const queryClient = useQueryClient();
+  
+  // Get generating links state
+  const { 
+    addGeneratingItem, 
+    removeGeneratingItem, 
+    addFolderWithLink,
+    hasFolderLink,
+    isGenerating 
+  } = useGeneratingLinksStore();
+  
+  // Fetch folders with links
+  useFoldersWithLinks();
 
   // Get drag preview configuration
   const dragPreviewConfig = useDragPreview();
 
   // Handle generating link for a folder
   const handleGenerateLinkForFolder = async (folderId: string, folderName: string) => {
+    // Add to generating state
+    addGeneratingItem(folderId);
+    
     try {
       const result = await generateLinkFromFolderAction({ folderId });
 
       if (result.success && result.data) {
-        // Invalidate links query to refresh the links list
+        // Add folder to links set
+        addFolderWithLink(folderId);
+        
+        // Invalidate queries
         await queryClient.invalidateQueries({ queryKey: ['links'] });
+        await queryClient.invalidateQueries({ queryKey: ['folders-with-links'] });
         
         // Build the link URL
         const linkUrl = generateLinkUrl(result.data.slug, result.data.topic || null, { absolute: true });
         
-        // Show success notification
-        showWorkspaceNotification('link_generated', {
-          itemName: folderName,
-          itemType: 'folder',
-          targetLocation: linkUrl,
+        // Show interactive notification
+        showGeneratedLinkNotification({
+          linkId: result.data.id,
+          linkUrl,
+          folderName,
         });
-
-        // TODO: Add notification support for generated links
-        // This requires extending the notification system beyond upload notifications
       } else {
         showWorkspaceError('link_generated', {
           itemName: folderName,
@@ -175,6 +196,9 @@ export default function WorkspaceTree({
         itemName: folderName,
         itemType: 'folder',
       }, 'Failed to generate link. Please try again.');
+    } finally {
+      // Remove from generating state
+      removeGeneratingItem(folderId);
     }
   };
 
@@ -637,6 +661,17 @@ export default function WorkspaceTree({
 
                     {/* Item name */}
                     <span className='truncate'>{item.getItemName()}</span>
+
+                    {/* Link indicator for folders with generated links */}
+                    {item.isFolder() && (hasFolderLink(itemId) || isGenerating(itemId)) && (
+                      <span className='flex-shrink-0 ml-1'>
+                        {isGenerating(itemId) ? (
+                          <Loader2 className='size-3 text-primary animate-spin' />
+                        ) : (
+                          <Link2 className='size-3 text-primary' />
+                        )}
+                      </span>
+                    )}
                   </div>
                   </button>
                 </WorkspaceContextMenu>
@@ -706,6 +741,17 @@ export default function WorkspaceTree({
 
                     {/* Item name */}
                     <span className='truncate'>{item.getItemName()}</span>
+
+                    {/* Link indicator for folders with generated links */}
+                    {item.isFolder() && (hasFolderLink(itemId) || isGenerating(itemId)) && (
+                      <span className='flex-shrink-0 ml-1'>
+                        {isGenerating(itemId) ? (
+                          <Loader2 className='size-3 text-primary animate-spin' />
+                        ) : (
+                          <Link2 className='size-3 text-primary' />
+                        )}
+                      </span>
+                    )}
                   </div>
                 </button>
               )}
