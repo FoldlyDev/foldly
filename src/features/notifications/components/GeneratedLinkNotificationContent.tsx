@@ -20,7 +20,8 @@ export function GeneratedLinkNotificationContent({
   const router = useRouter();
   
   const handleViewLink = () => {
-    router.push(`/dashboard/links/${linkId}`);
+    // Open the actual link in a new tab
+    window.open(linkUrl, '_blank');
     toast.dismiss(toastId);
   };
   
@@ -75,7 +76,7 @@ export function GeneratedLinkNotificationContent({
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm font-medium"
         >
           <ExternalLink className="w-4 h-4" />
-          View Link
+          Visit Link
         </button>
         <button
           onClick={handleCopyLink}
