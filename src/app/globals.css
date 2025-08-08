@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=DM+Mono:wght@500&display=swap');
+
 @import 'tailwindcss';
 
 /* =============================================================================
@@ -15,102 +17,44 @@
   --breakpoint-2xl: 96rem; /* 1536px - 2X Extra large devices */
   --breakpoint-3xl: 120rem; /* 1920px - Ultra wide screens */
 
-  /* Font Families */
+  /* Font Families with Apple Device Compatibility */
   --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    'Host Grotesk', 'Barlow', -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+    'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-display:
+    'Host Grotesk', -apple-system, BlinkMacSystemFont, 'SF Pro Display',
+    system-ui, sans-serif;
+  --font-body:
+    'Barlow', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
+    sans-serif;
 
-  /* Custom Colors - Foldly Brand System (Dark Professional Theme) */
+  /* Font Weights */
+  --font-weight-thin: 100;
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* FOLDLY BRAND COLORS - Core Palette */
   --color-primary: #c3e1f7;
-  --color-primary-dark: #9abede;
-  --color-primary-light: #e1f0fc;
-  --color-primary-subtle: #f0f8fe;
-
   --color-secondary: #9abede;
-  --color-secondary-dark: #7ba5c7;
-  --color-secondary-light: #b8d1e8;
-  --color-secondary-subtle: #e8f3fa;
-
   --color-tertiary: #2d4f6b;
-  --color-tertiary-dark: #1e3a52;
-  --color-tertiary-light: #4a6b85;
-  --color-tertiary-subtle: #e6edf3;
-
   --color-quaternary: #0f1922;
-  --color-quaternary-dark: #0a0d0f;
-  --color-quaternary-light: #1a2a35;
-  --color-quaternary-subtle: #f5f6f7;
-
   --color-quinary: #0a0d0f;
-  --color-quinary-dark: #050607;
-  --color-quinary-light: #1a1d20;
-  --color-quinary-subtle: #f8f9f9;
 
   /* Status Colors */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #c3e1f7;
-
-  /* Extended Neutral Palette - Professional Dark Theme */
-  --color-neutral-50: #fafafa;
-  --color-neutral-100: #f4f4f5;
-  --color-neutral-200: #e4e4e7;
-  --color-neutral-300: #d4d4d8;
-  --color-neutral-400: #a1a1aa;
-  --color-neutral-500: #71717a;
-  --color-neutral-600: #52525b;
-  --color-neutral-700: #3f3f46;
-  --color-neutral-800: #27272a;
-  --color-neutral-900: #18181b;
-  --color-neutral-950: #09090b;
-
-  /* Shadcn/ui Colors - Optimized for Foldly Brand with Professional Contrast */
-  --color-background: white;
-  --color-foreground: #0f1922; /* quaternary - excellent contrast on white */
-  --color-card: white;
-  --color-card-foreground: #0f1922; /* quaternary - excellent readability */
-  --color-popover: white;
-  --color-popover-foreground: #0f1922; /* quaternary - excellent readability */
-
-  /* Primary - Using tertiary for strong, professional presence */
-  --color-primary: #2d4f6b; /* tertiary - professional dark blue, excellent contrast */
-  --color-primary-foreground: white; /* white text on dark blue - perfect contrast */
-
-  /* Secondary - Using secondary for secondary actions */
-  --color-secondary: #9abede; /* secondary - professional medium blue */
-  --color-secondary-foreground: #0f1922; /* quaternary - excellent contrast on medium blue */
-
-  /* Muted - Using neutral tones with subtle brand influence */
-  --color-muted: #f0f8fe; /* primary-subtle - very subtle brand presence */
-  --color-muted-foreground: #52525b; /* neutral-600 - good contrast for secondary text */
-
-  /* Accent - Using light brand color for interactive elements */
-  --color-accent: #e1f0fc; /* primary-light - subtle brand highlight */
-  --color-accent-foreground: #0f1922; /* quaternary - excellent contrast */
-
-  /* Destructive - Professional red with excellent contrast */
-  --color-destructive: #dc2626; /* slightly darker red for better professionalism */
-  --color-destructive-foreground: white; /* white text on red - perfect contrast */
-
-  /* Borders and Inputs - Subtle with brand influence */
-  --color-border: #d1d5db; /* neutral-300 - subtle, professional borders */
-  --color-input: #f9fafb; /* neutral-50 - clean input backgrounds */
-
-  /* Ring - Using primary brand color for focus states */
-  --color-ring: #c3e1f7; /* primary - brand color for focus rings */
-
-  /* Additional Professional Utility Colors */
-  --color-success: #059669; /* professional green - excellent contrast */
-  --color-success-foreground: white; /* white text on green - perfect contrast */
-  --color-warning: #d97706; /* professional amber - excellent contrast */
-  --color-warning-foreground: white; /* white text on amber - perfect contrast */
-  --color-info: #0369a1; /* professional blue - excellent contrast */
-  --color-info-foreground: white; /* white text on blue - perfect contrast */
-
-  /* Hover States - Slightly darker versions for interactions */
-  --color-primary-hover: #1e3a52; /* tertiary-dark - darker on hover */
-  --color-secondary-hover: #7ba5c7; /* secondary-dark - darker on hover */
-  --color-accent-hover: #c3e1f7; /* primary - lighter on hover */
+  
+  /* Notification Glass Colors - For dark mode overlays */
+  --notification-success-glass: rgba(16, 185, 129, 0.1);
+  --notification-warning-glass: rgba(245, 158, 11, 0.1);
+  --notification-error-glass: rgba(239, 68, 68, 0.1);
+  --notification-info-glass: rgba(195, 225, 247, 0.1);
 
   /* Custom Spacing */
   --spacing-18: 4.5rem;
@@ -163,181 +107,125 @@
    ============================================================================= */
 
 :root {
-  /* FOLDLY BRAND COLORS - Dark Professional Theme */
+  /* Font System Variables for Cross-Device Compatibility */
+  --system-font-stack: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-primary: 'Host Grotesk', var(--system-font-stack);
+  --font-secondary: 'Barlow', var(--system-font-stack);
+  --font-mono: 'DM Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  --font-condensed: 'Barlow Condensed', var(--system-font-stack);
+  
+  /* FOLDLY BRAND COLORS - CSS Variables for theme-independent usage */
+  --primary: #c3e1f7;
+  --secondary: #9abede;
+  --tertiary: #2d4f6b;
+  --quaternary: #0f1922;
+  --quinary: #0a0d0f;
 
-  /* Primary Brand Colors - Light Blue Accent */
-  --primary: #c3e1f7; /* Light blue - CTAs, highlights, interactive elements */
-  --primary-dark: #9abede; /* Hover states, pressed buttons */
-  --primary-light: #e1f0fc; /* Light interactions, subtle highlights */
-  --primary-subtle: #f0f8fe; /* Backgrounds, very subtle highlights */
-
-  /* Secondary Brand Colors - Medium Blue */
-  --secondary: #9abede; /* Medium blue - secondary actions, accents */
-  --secondary-dark: #7ba5c7; /* Hover states */
-  --secondary-light: #b8d1e8; /* Light interactions */
-  --secondary-subtle: #e8f3fa; /* Backgrounds */
-
-  /* Tertiary Brand Colors - Dark Blue */
-  --tertiary: #2d4f6b; /* Dark blue - text, borders, important elements */
-  --tertiary-dark: #1e3a52; /* Darker variant */
-  --tertiary-light: #4a6b85; /* Lighter variant */
-  --tertiary-subtle: #e6edf3; /* Light background */
-
-  /* Quaternary Brand Colors - Very Dark Blue */
-  --quaternary: #0f1922; /* Very dark blue - main text, headings */
-  --quaternary-dark: #0a0d0f; /* Darkest variant */
-  --quaternary-light: #1a2a35; /* Lighter variant */
-  --quaternary-subtle: #f5f6f7; /* Light background */
-
-  /* Quinary Brand Colors - Near Black */
-  --quinary: #0a0d0f; /* Near black - maximum contrast, backgrounds */
-  --quinary-dark: #050607; /* Darkest possible */
-  --quinary-light: #1a1d20; /* Lighter variant */
-  --quinary-subtle: #f8f9f9; /* Light background */
-
-  /* Success & Status Colors - Professional */
-  --success-green: #10b981; /* Professional success */
-  --warning-amber: #f59e0b; /* Professional warning */
-  --error-red: #ef4444; /* Professional error */
-  --info-blue: var(--primary);
-
-  /* Neutral Colors - Professional Grays */
-  --neutral-50: #fafafa; /* Lightest background */
-  --neutral-100: #f4f4f5; /* Light background */
-  --neutral-200: #e4e4e7; /* Borders, dividers */
-  --neutral-300: #d4d4d8; /* Disabled states */
-  --neutral-400: #a1a1aa; /* Placeholder text */
-  --neutral-500: #71717a; /* Secondary text */
-  --neutral-600: #52525b; /* Body text */
-  --neutral-700: #3f3f46; /* Subheadings */
-  --neutral-800: #27272a; /* Headings */
-  --neutral-900: #18181b; /* High contrast text */
+  /* Neutral Palette */
+  --neutral-50: #fafafa;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
 
   /* Foldly Brand Gradients */
   --foldly-gradient-start: #cbd5e1; /* slate-300 */
-  --foldly-gradient-end: #64748b;   /* slate-500 */
-  --foldly-gradient: linear-gradient(to bottom right, var(--foldly-gradient-start), var(--foldly-gradient-end));
-  --foldly-gradient-reverse: linear-gradient(to top left, var(--foldly-gradient-start), var(--foldly-gradient-end));
-  --foldly-gradient-horizontal: linear-gradient(to right, var(--foldly-gradient-start), var(--foldly-gradient-end));
-  --foldly-gradient-vertical: linear-gradient(to bottom, var(--foldly-gradient-start), var(--foldly-gradient-end));
+  --foldly-gradient-end: #64748b; /* slate-500 */
+  --foldly-gradient: linear-gradient(
+    to bottom right,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-reverse: linear-gradient(
+    to top left,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-horizontal: linear-gradient(
+    to right,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-vertical: linear-gradient(
+    to bottom,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  
+  /* Dark Mode Gradient - Deep Ocean with Cyan Glow */
+  --foldly-dark-gradient: linear-gradient(
+    135deg,
+    #020618 0%,
+    #0a1628 25%,
+    #0f2847 50%,
+    #22d3ee20 75%,
+    #22d3ee10 100%
+  );
+  --foldly-dark-gradient-radial: radial-gradient(
+    ellipse at top,
+    #22d3ee15 0%,
+    #0a1628 40%,
+    #020618 100%
+  );
+  --foldly-dark-gradient-spotlight: conic-gradient(
+    from 180deg at 50% 50%,
+    #020618 0deg,
+    #22d3ee20 45deg,
+    #0f2847 90deg,
+    #020618 180deg,
+    #22d3ee10 270deg,
+    #020618 360deg
+  );
+  
+  /* Foldly Glass Morphism Background - Reusable component style */
+  --foldly-glass-bg: rgba(2, 6, 24, 0.85);
+  --foldly-glass-bg-solid: rgba(2, 6, 24, 0.95);
+  --foldly-glass-border: rgba(255, 255, 255, 0.1);
+  --foldly-glass-blur: 12px;
 
-  /* Legacy Colors - Updated to new semantic system */
+  /* Legacy Color Aliases */
   --light: var(--neutral-50);
-  --light2: var(--neutral-100);
-  --dark: var(--quaternary); /* Main dark color */
+  --dark: var(--quaternary);
   --accent-1: var(--primary);
   --accent-2: var(--secondary);
   --accent-3: var(--tertiary);
 
   /* Chart colors for data visualization */
-  --chart-1: var(--primary);
-  --chart-2: var(--secondary);
-  --chart-3: var(--tertiary);
-  --chart-4: var(--success-green);
-  --chart-5: var(--warning-amber);
+  --chart-1: #c3e1f7;
+  --chart-2: #9abede;
+  --chart-3: #2d4f6b;
+  --chart-4: #10b981;
+  --chart-5: #f59e0b;
 }
 
 .dark {
-  /* Dark Mode Brand Colors - Inverted for dark backgrounds */
-  --primary: #9abede; /* Slightly dimmed for dark backgrounds */
-  --primary-dark: #7ba5c7; /* Darker hover */
-  --primary-light: #b8d1e8; /* Lighter interactions */
-  --primary-subtle: #1a2a35; /* Dark background */
+  /* Dark Mode Color Overrides */
+  --primary: #9abede;
+  --secondary: #7ba5c7;
+  --tertiary: #4a6b85;
+  --quaternary: #c3e1f7;
+  --quinary: #e1f0fc;
 
-  --secondary: #7ba5c7; /* Dimmed secondary */
-  --secondary-dark: #5a8caf; /* Darker hover */
-  --secondary-light: #9abede; /* Light interactions */
-  --secondary-subtle: #1e3a52; /* Dark background */
+  /* Dark Neutrals - Inverted */
+  --neutral-50: #09090b;
+  --neutral-100: #18181b;
+  --neutral-200: #27272a;
+  --neutral-300: #3f3f46;
+  --neutral-400: #52525b;
+  --neutral-500: #71717a;
+  --neutral-600: #a1a1aa;
+  --neutral-700: #d4d4d8;
+  --neutral-800: #e4e4e7;
+  --neutral-900: #fafafa;
 
-  --tertiary: #4a6b85; /* Lighter tertiary for dark mode */
-  --tertiary-dark: #2d4f6b; /* Darker hover */
-  --tertiary-light: #6b8ba5; /* Light interactions */
-  --tertiary-subtle: #0f1922; /* Dark background */
-
-  --quaternary: #c3e1f7; /* Light text on dark backgrounds */
-  --quaternary-dark: #9abede; /* Darker variant */
-  --quaternary-light: #e1f0fc; /* Lighter variant */
-  --quaternary-subtle: #0a0d0f; /* Dark background */
-
-  --quinary: #e1f0fc; /* Very light text on dark backgrounds */
-  --quinary-dark: #c3e1f7; /* Darker variant */
-  --quinary-light: #f0f8fe; /* Lighter variant */
-  --quinary-subtle: #050607; /* Darkest background */
-
-  /* Dark Neutrals */
-  --neutral-50: #09090b; /* Darkest background */
-  --neutral-100: #18181b; /* Dark background */
-  --neutral-200: #27272a; /* Borders, dividers */
-  --neutral-300: #3f3f46; /* Disabled states */
-  --neutral-400: #52525b; /* Placeholder text */
-  --neutral-500: #71717a; /* Secondary text */
-  --neutral-600: #a1a1aa; /* Body text */
-  --neutral-700: #d4d4d8; /* Subheadings */
-  --neutral-800: #e4e4e7; /* Headings */
-  --neutral-900: #fafafa; /* Maximum contrast */
-
-  /* Legacy Colors - Updated for dark mode */
+  /* Legacy Aliases */
   --light: var(--neutral-100);
-  --light2: var(--neutral-200);
   --dark: var(--neutral-800);
-  --accent-1: var(--primary);
-  --accent-2: var(--secondary);
-  --accent-3: var(--tertiary);
-
-  /* Dark Mode Shadcn Colors - Optimized for Brand Consistency */
-  --color-background: #0a0d0f; /* quinary - darkest background */
-  --color-foreground: #c3e1f7; /* primary - excellent contrast on dark */
-  --color-card: #1a2a35; /* quaternary-light - elevated surface */
-  --color-card-foreground: #c3e1f7; /* primary - excellent readability */
-  --color-popover: #1a2a35; /* quaternary-light - elevated surface */
-  --color-popover-foreground: #c3e1f7; /* primary - excellent readability */
-
-  /* Primary - Brighter for dark mode visibility */
-  --color-primary: #9abede; /* secondary - more vibrant on dark */
-  --color-primary-foreground: #0f1922; /* quaternary - excellent contrast */
-
-  /* Secondary - Adjusted for dark mode */
-  --color-secondary: #4a6b85; /* tertiary-light - visible on dark */
-  --color-secondary-foreground: #c3e1f7; /* primary - excellent contrast */
-
-  /* Muted - Dark mode appropriate */
-  --color-muted: #1e3a52; /* tertiary-dark - subtle dark background */
-  --color-muted-foreground: #9abede; /* secondary - good contrast for secondary text */
-
-  /* Accent - Dark mode highlight */
-  --color-accent: #2d4f6b; /* tertiary - professional accent */
-  --color-accent-foreground: #c3e1f7; /* primary - excellent contrast */
-
-  /* Destructive - Consistent across modes */
-  --color-destructive: #ef4444; /* slightly brighter red for dark backgrounds */
-  --color-destructive-foreground: white; /* white text - perfect contrast */
-
-  /* Borders and Inputs - Dark mode appropriate */
-  --color-border: #2d4f6b; /* tertiary - subtle, visible borders */
-  --color-input: #1a2a35; /* quaternary-light - input backgrounds */
-
-  /* Ring - Brand color for focus states */
-  --color-ring: #c3e1f7; /* primary - consistent brand focus */
-
-  /* Additional Professional Utility Colors - Dark Mode */
-  --color-success: #10b981; /* brighter green for dark backgrounds */
-  --color-success-foreground: #0a0d0f; /* dark text on bright green */
-  --color-warning: #f59e0b; /* brighter amber for dark backgrounds */
-  --color-warning-foreground: #0a0d0f; /* dark text on bright amber */
-  --color-info: #3b82f6; /* brighter blue for dark backgrounds */
-  --color-info-foreground: #0a0d0f; /* dark text on bright blue */
-
-  /* Hover States - Dark Mode */
-  --color-primary-hover: #b8d1e8; /* secondary-light - brighter on hover */
-  --color-secondary-hover: #5a8caf; /* secondary-dark - darker on hover */
-  --color-accent-hover: #4a6b85; /* tertiary-light - lighter on hover */
-
-  /* Chart colors for data visualization */
-  --chart-1: var(--primary);
-  --chart-2: var(--secondary);
-  --chart-3: var(--tertiary);
-  --chart-4: var(--success-green);
-  --chart-5: var(--warning-amber);
 }
 
 /* =============================================================================
@@ -345,42 +233,67 @@
    ============================================================================= */
 
 @layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
-
   body {
+    font-family: var(--font-sans);
+    @apply antialiased;
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
-    font-family:
-      'Inter',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
     overflow-x: hidden;
-    max-width: 100%;
+  }
+
+  /* Headings use display font */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  /* Body text uses body font */
+  p,
+  li,
+  span {
+    font-family: var(--font-body);
+  }
+  
+  /* Monospace elements */
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-weight: 500;
   }
 }
 
-h1 {
-  font-size: 3rem;
-  font-weight: 700;
-  line-height: 1.2;
+/* iOS-specific font optimizations */
+@supports (-webkit-touch-callout: none) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Optimize font rendering on Retina displays */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    body {
+      -webkit-font-smoothing: subpixel-antialiased;
+    }
+  }
 }
 
-p {
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
-
-span {
-  font-size: 0.875rem;
-  color: inherit;
+/* macOS-specific font optimizations */
+@media (hover: hover) and (pointer: fine) {
+  body {
+    font-weight: 400;
+    letter-spacing: -0.011em;
+  }
 }
 
 :focus-visible {
@@ -448,17 +361,9 @@ button[data-state],
   color: var(--light);
 }
 
+/* Animation utilities */
 .char {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(100%);
-}
-
-@media (max-width: 1000px) {
-  .tags-overlay {
-    flex-direction: column;
-    gap: 1rem;
-  }
+  @apply inline-block opacity-0 translate-y-full;
 }
 
 .animate-pulse-slow {
@@ -490,6 +395,7 @@ button[data-state],
    GRADIENT UTILITIES - Using New Color System
    ============================================================================= */
 
+/* Brand gradient utilities */
 .bg-gradient-brand {
   background: linear-gradient(
     135deg,
@@ -499,90 +405,30 @@ button[data-state],
   );
 }
 
-.bg-gradient-brand-subtle {
-  background: linear-gradient(
-    135deg,
-    var(--primary-subtle) 0%,
-    var(--secondary-subtle) 50%,
-    var(--tertiary-subtle) 100%
-  );
-}
-
 .bg-gradient-subtle {
   background: linear-gradient(
     to bottom,
     var(--neutral-50) 0%,
-    color-mix(in srgb, var(--neutral-50) 40%, transparent) 100%
+    transparent 100%
   );
 }
 
-.bg-gradient-primary {
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--primary-light) 100%
-  );
-}
-
-.bg-gradient-secondary {
-  background: linear-gradient(
-    135deg,
-    var(--secondary) 0%,
-    var(--secondary-light) 100%
-  );
-}
-
-.bg-gradient-accent {
-  background: linear-gradient(
-    135deg,
-    var(--tertiary) 0%,
-    var(--tertiary-light) 100%
-  );
-}
-
-.text-balance {
+@utility text-balance {
   text-wrap: balance;
 }
 
-.container-xs {
-  max-width: 480px;
-}
-
-.container-sm {
-  max-width: 640px;
-}
-
+/* Animation delays */
 .delay-75 {
   animation-delay: 75ms;
 }
-
 .delay-150 {
   animation-delay: 150ms;
 }
-
 .delay-300 {
   animation-delay: 300ms;
 }
 
-@theme inline {
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
+/* Sidebar theme variables handled by component */
 
 /* Modal Typography Fix - Override Tailwind preflight in modal contexts */
 [role='dialog'] p,
@@ -675,31 +521,6 @@ button[data-state],
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Premium gradient borders */
-.gradient-border {
-  position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 1px;
-  border-radius: 12px;
-}
-
-.gradient-border::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.1) 0%,
-    rgba(118, 75, 162, 0.1) 50%,
-    rgba(59, 130, 246, 0.1) 100%
-  );
-  border-radius: 12px;
-  z-index: -1;
-}
-
 /* Interactive card hover effects - Only for truly interactive cards */
 .interactive-card {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -728,37 +549,14 @@ button[data-state],
     0 0 0 1px rgba(59, 130, 246, 0.05);
 }
 
-/* Premium button styles with micro-interactions */
-.premium-button {
-  position: relative;
-  overflow: hidden;
+/* Premium button styles */
+@utility premium-button {
+  @apply relative overflow-hidden transition-all duration-300;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.premium-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.2),
-    transparent
-  );
-  transition: left 0.5s;
-}
-
-.premium-button:hover::before {
-  left: 100%;
 }
 
 .premium-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px -5px rgba(102, 126, 234, 0.4);
+  @apply -translate-y-px shadow-lg;
 }
 
 /* Status indicators with glow effects */
@@ -777,24 +575,13 @@ button[data-state],
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
 }
 
-/* Data visualization enhancements */
-.stats-card {
-  background: linear-gradient(
-    135deg,
-    rgba(59, 130, 246, 0.05) 0%,
-    rgba(147, 51, 234, 0.05) 100%
-  );
-  border: 1px solid rgba(59, 130, 246, 0.1);
-  /* Remove backdrop-filter to prevent text blur */
-  /* backdrop-filter: blur(10px); */
-}
-
-.stats-number {
+/* Stats utilities */
+@utility stats-number {
   background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  font-weight: 700;
+  @apply font-bold;
 }
 
 /* Form field enhancements */
@@ -935,6 +722,39 @@ button[data-state],
   pointer-events: auto !important;
 }
 
+/* Toast Icon Colors */
+[data-sonner-toast][data-type="success"] [data-icon] {
+  color: rgb(34 197 94) !important; /* green-500 */
+}
+
+.dark [data-sonner-toast][data-type="success"] [data-icon] {
+  color: rgb(74 222 128) !important; /* green-400 */
+}
+
+[data-sonner-toast][data-type="error"] [data-icon] {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+.dark [data-sonner-toast][data-type="error"] [data-icon] {
+  color: rgb(248 113 113) !important; /* red-400 */
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon] {
+  color: rgb(245 158 11) !important; /* amber-500 */
+}
+
+.dark [data-sonner-toast][data-type="warning"] [data-icon] {
+  color: rgb(251 191 36) !important; /* amber-400 */
+}
+
+[data-sonner-toast][data-type="info"] [data-icon] {
+  color: rgb(59 130 246) !important; /* blue-500 */
+}
+
+.dark [data-sonner-toast][data-type="info"] [data-icon] {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
 /* Ensure notifications section doesn't create layout space */
 section[aria-label*='Notifications'] {
   position: fixed !important;
@@ -967,166 +787,93 @@ section[aria-label*='Notifications'] > * {
   background: var(--foldly-gradient);
 }
 
-/* MODAL UTILITY CLASSES - Tailwind v4+ CSS-First Approach (Hybrid) */
+/* Glass Morphism Utilities */
+@utility foldly-glass {
+  background: var(--foldly-glass-bg);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+}
+
+@utility foldly-glass-solid {
+  background: var(--foldly-glass-bg-solid);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+}
+
+@utility foldly-glass-light {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Font utility classes */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
+
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+
+@utility font-condensed {
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* MODAL UTILITIES - Consolidated Tailwind v4 approach */
 /* ===================================================================== */
 
-/* Common gradient backgrounds that are repeated across modals */
-@utility modal-gradient-blue {
+/* Modal gradient backgrounds */
+@utility modal-gradient {
+  --gradient-from: rgb(248 250 252);
+  --gradient-via: rgb(238 242 255);
+  --gradient-to: rgb(226 232 240);
   background: linear-gradient(
     to bottom right,
-    rgb(248 250 252),
-    rgb(226 232 240),
-    rgb(238 242 255)
+    var(--gradient-from),
+    var(--gradient-via),
+    var(--gradient-to)
   );
 }
 
-@utility modal-gradient-purple {
+/* Modal text utilities */
+@utility modal-subtitle {
+  @apply text-sm text-gray-600 text-center max-w-md mx-auto sm:text-base;
+}
+
+/* Modal icon gradients */
+@utility modal-icon-gradient {
+  --icon-from: rgb(59 130 246);
+  --icon-to: rgb(147 51 234);
   background: linear-gradient(
     to bottom right,
-    rgb(250 245 255),
-    rgb(238 242 255),
-    rgb(239 246 255)
-  );
-}
-
-@utility modal-gradient-indigo {
-  background: linear-gradient(
-    to bottom right,
-    rgb(238 242 255),
-    rgb(250 245 255),
-    rgb(252 231 243)
-  );
-}
-
-@utility modal-gradient-slate {
-  background: linear-gradient(
-    to bottom right,
-    rgb(248 250 252),
-    rgb(243 244 246)
-  );
-}
-
-@utility modal-gradient-red {
-  background: linear-gradient(
-    to bottom right,
-    rgb(254 242 242),
-    rgb(252 231 243),
-    rgb(255 241 242)
-  );
-}
-
-/* Common decorative overlay pattern */
-@utility modal-decoration-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to right,
-    rgb(59 130 246 / 0.05),
-    rgb(147 51 234 / 0.05),
-    rgb(236 72 153 / 0.05)
-  );
-}
-
-/* Modal subtitle centering wrapper */
-@utility modal-subtitle-wrapper {
-  display: flex;
-  justify-content: center;
-}
-
-/* Modal subtitle text */
-@utility modal-subtitle-text {
-  font-size: 0.875rem;
-  color: rgb(75 85 99);
-  text-align: center;
-  max-width: 28rem;
-
-  @media (min-width: 640px) {
-    font-size: 1rem;
-  }
-}
-
-/* Common gradient icon containers */
-@utility modal-icon-blue {
-  background: linear-gradient(
-    to bottom right,
-    rgb(59 130 246),
-    rgb(147 51 234)
+    var(--icon-from),
+    var(--icon-to)
   );
   box-shadow: 0 25px 50px -12px rgb(59 130 246 / 0.25);
 }
 
-@utility modal-icon-purple {
-  background: linear-gradient(
-    to bottom right,
-    rgb(147 51 234),
-    rgb(99 102 241)
-  );
-  box-shadow: 0 25px 50px -12px rgb(147 51 234 / 0.25);
-}
-
-@utility modal-icon-indigo {
-  background: linear-gradient(
-    to bottom right,
-    rgb(99 102 241),
-    rgb(147 51 234)
-  );
-  box-shadow: 0 25px 50px -12px rgb(99 102 241 / 0.25);
-}
-
-@utility modal-icon-red {
-  background: linear-gradient(to bottom right, rgb(239 68 68), rgb(220 38 38));
-  box-shadow: 0 25px 50px -12px rgb(239 68 68 / 0.25);
-}
-
-/* Common title gradients */
-@utility modal-title-gradient-blue {
+/* Modal title gradients */
+@utility modal-title-gradient {
+  --title-from: rgb(17 24 39);
+  --title-via: rgb(99 102 241);
+  --title-to: rgb(107 33 168);
   background: linear-gradient(
     to right,
-    rgb(17 24 39),
-    rgb(30 58 138),
-    rgb(107 33 168)
+    var(--title-from),
+    var(--title-via),
+    var(--title-to)
   );
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  line-height: 1.5; /* Better spacing for gradient text */
-}
-
-@utility modal-title-gradient-purple {
-  background: linear-gradient(
-    to right,
-    rgb(17 24 39),
-    rgb(107 33 168),
-    rgb(99 102 241)
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  line-height: 1.5; /* Better spacing for gradient text */
-}
-
-@utility modal-title-gradient-indigo {
-  background: linear-gradient(
-    to right,
-    rgb(17 24 39),
-    rgb(99 102 241),
-    rgb(107 33 168)
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  line-height: 1.5; /* Better spacing for gradient text */
-}
-
-@utility modal-title-gradient-red {
-  background: linear-gradient(
-    to right,
-    rgb(17 24 39),
-    rgb(220 38 38),
-    rgb(239 68 68)
-  );
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  line-height: 1.5; /* Better spacing for gradient text */
+  line-height: 1.5;
 }

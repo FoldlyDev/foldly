@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { useUserSettingsStore, type ThemeMode } from '@/features/settings/store/user-settings-store';
+import { useTheme } from '@/lib/providers/theme-provider';
+import { useUserSettingsStore } from '@/features/settings/store/user-settings-store';
 import { 
-  updateThemeAction, 
   updateDoNotDisturbAction, 
   updateSilentNotificationsAction 
 } from '@/features/settings/lib/actions/user-settings-actions';
@@ -32,30 +32,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function SettingsDropdown() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const { 
-    theme, 
     doNotDisturb, 
     silentNotifications, 
-    setTheme, 
     setDoNotDisturb, 
     setSilentNotifications,
     isSaving 
   } = useUserSettingsStore();
 
-  const handleThemeChange = async (newTheme: ThemeMode) => {
-    // Update local state immediately for responsive UI
+  const handleThemeChange = async (newTheme: string) => {
+    // The useTheme hook from theme-provider handles both local state and database sync
     setTheme(newTheme);
-    
-    // Update in database
-    const result = await updateThemeAction(newTheme);
-    
-    if (result.success) {
-      toast.success(`Theme changed to ${newTheme} mode`);
-    } else {
-      // Revert on error
-      setTheme(theme);
-      toast.error('Failed to update theme');
-    }
+    toast.success(`Theme changed to ${newTheme} mode`);
   };
 
   const handleDNDToggle = async () => {
@@ -114,14 +103,14 @@ export function SettingsDropdown() {
         </motion.button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent className="w-72 mr-2">
+      <DropdownMenuContent className="w-72 mr-2 dark:foldly-glass-solid">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs text-muted-foreground px-2 py-1">
+          <DropdownMenuLabel className="text-xs text-muted-foreground dark:text-white/50 px-2 py-1">
             Theme
           </DropdownMenuLabel>
           
           <div className="px-2 pb-2">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted dark:bg-white/5">
               <button
                 onClick={() => handleThemeChange('light')}
                 className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${

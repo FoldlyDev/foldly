@@ -15,7 +15,7 @@ export function Skeleton({
   return (
     <div
       className={cn(
-        'animate-pulse rounded-md bg-muted/60 dark:bg-muted/60 transition-opacity duration-300',
+        'animate-pulse rounded-md bg-muted/60 dark:bg-white/5 transition-opacity duration-300',
         className
       )}
       {...props}

@@ -24,13 +24,13 @@ export function WorkspaceToolbarSkeleton() {
     <div className='workspace-toolbar'>
       <div className='workspace-toolbar-main'>
         <div className='workspace-toolbar-left'>
-          <Skeleton className='h-8 w-28 rounded-md' />
+          <Skeleton className='h-8 w-28 rounded-md dark:bg-white/10' />
         </div>
         <div className='workspace-toolbar-right'>
           <div className='workspace-search-container'>
-            <Skeleton className='h-8 w-full rounded-md' />
+            <Skeleton className='h-8 w-full rounded-md dark:bg-white/10' />
           </div>
-          <Skeleton className='h-8 w-8 rounded-md' />
+          <Skeleton className='h-8 w-8 rounded-md dark:bg-white/10' />
         </div>
       </div>
     </div>
@@ -46,9 +46,9 @@ export function WorkspaceTreeSkeleton() {
           <div className='space-y-1'>
             {[...Array(2)].map((_, i) => (
               <div key={i} className='flex items-center gap-2 p-2'>
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 flex-1 max-w-40' />
+                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 flex-1 max-w-40 dark:bg-white/10' />
               </div>
             ))}
 
@@ -56,8 +56,8 @@ export function WorkspaceTreeSkeleton() {
             <div className='ml-6 space-y-1'>
               {[...Array(1)].map((_, i) => (
                 <div key={i} className='flex items-center gap-2 p-2'>
-                  <Skeleton className='h-4 w-4' />
-                  <Skeleton className='h-4 flex-1 max-w-32' />
+                  <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                  <Skeleton className='h-4 flex-1 max-w-32 dark:bg-white/10' />
                 </div>
               ))}
             </div>
@@ -65,16 +65,16 @@ export function WorkspaceTreeSkeleton() {
             {/* More root items */}
             {[...Array(1)].map((_, i) => (
               <div key={i + 2} className='flex items-center gap-2 p-2'>
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 w-4' />
-                <Skeleton className='h-4 flex-1 max-w-36' />
+                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 flex-1 max-w-36 dark:bg-white/10' />
               </div>
             ))}
           </div>
         </div>
 
         <div className='workspace-tree-footer'>
-          <Skeleton className='h-3 w-48 mx-auto' />
+          <Skeleton className='h-3 w-48 mx-auto dark:bg-white/10' />
         </div>
       </div>
     </div>

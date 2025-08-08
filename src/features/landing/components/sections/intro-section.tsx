@@ -69,7 +69,7 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
         <div className='relative z-10'>
           {/* Hero Header - Initially visible, fades out */}
           <div className='intro-hero-header' ref={refs?.current?.heroHeaderRef}>
-            <h1 className='mt-8 foldly-gradient-text py-4 text-center text-6xl! font-medium tracking-tight md:text-9xl!'>
+            <h1 className='mt-8 foldly-gradient-text py-4 text-center text-6xl! font-bold tracking-tight md:text-9xl!'>
               Foldly
             </h1>
             <p>One platform, endless file collection possibilities.</p>

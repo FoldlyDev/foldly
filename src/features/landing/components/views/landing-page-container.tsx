@@ -8,8 +8,9 @@ import { HeroSection } from '../sections/hero-section';
 import { AboutSection } from '../sections/about-section';
 import { FeaturesSection } from '../sections/features-section';
 import { OutroSection } from '../sections/outro-section';
-import { Navigation } from '@/components/ui/layout/navigation';
+import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
+import '../../styles/menu.css';
 import { useHeroSectionAnimation } from '../../hooks/useHeroSectionAnimation';
 import { useFeaturesSectionAnimation } from '../../hooks/useFeaturesSectionAnimation';
 
@@ -136,7 +137,7 @@ export function LandingPageContainer() {
 
   return (
     <>
-      <Navigation />
+      <LandingNavigation />
       <div className='landing-page'>
         <IntroSection ref={introSectionRefs} />
         <HeroSection ref={heroSectionRefs} />

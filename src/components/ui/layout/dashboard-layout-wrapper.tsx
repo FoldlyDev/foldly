@@ -32,15 +32,22 @@ export function DashboardLayoutWrapper({
   return (
     <NavigationContext.Provider value={{ isExpanded, setIsExpanded }}>
       <div 
-        className='min-h-screen' 
+        className='min-h-screen relative overflow-hidden' 
         style={{ 
-          background: 'linear-gradient(135deg, var(--tertiary) 0%, var(--neutral-800) 50%, var(--quaternary) 100%)'
+          background: 'var(--foldly-dark-gradient-radial)'
         }}
       >
+        {/* Subtle gradient overlay for depth */}
+        <div 
+          className='absolute inset-0 opacity-30 pointer-events-none'
+          style={{
+            background: 'var(--foldly-dark-gradient)',
+          }}
+        />
         <DashboardNavigation />
         <main
           className={`
-            min-h-screen transition-all duration-300 ease-in-out
+            relative min-h-screen transition-all duration-300 ease-in-out
             ${isExpanded ? 'lg:ml-64' : 'lg:ml-20'}
           `}
         >

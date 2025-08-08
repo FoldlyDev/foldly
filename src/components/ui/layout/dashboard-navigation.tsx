@@ -168,7 +168,7 @@ export function DashboardNavigation() {
     return (
       <>
         {/* Header with Logo */}
-        <div className='p-4 border-b border-border'>
+        <div className='p-4 border-b border-border dark:border-white/10'>
           <div className='flex items-center justify-center mb-4'>
             <AnimatePresence mode='wait'>
               {shouldExpand ? (
@@ -215,6 +215,7 @@ export function DashboardNavigation() {
           <div
             className={`
               flex items-center gap-3 p-2 rounded-lg bg-muted hover:bg-muted/80 
+              dark:bg-white/5 dark:hover:bg-white/10 
               transition-colors cursor-pointer
               ${shouldExpand ? '' : 'justify-center'}
             `}
@@ -238,7 +239,7 @@ export function DashboardNavigation() {
                   <div className='w-2 h-2 bg-[var(--success-green)] rounded-full'></div>
                   <div className='flex items-center justify-center h-8'>
                     <p
-                      className='text-sm leading-none m-0 p-0 text-foreground'
+                      className='text-sm leading-none m-0 p-0 text-foreground dark:text-white/90'
                       style={{ lineHeight: '1', margin: '0', padding: '0' }}
                     >
                       Online
@@ -265,7 +266,7 @@ export function DashboardNavigation() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className='text-xs font-semibold uppercase tracking-wider mb-2 px-2 text-muted-foreground'
+                  className='text-xs font-semibold uppercase tracking-wider mb-2 px-2 text-muted-foreground dark:text-white/50'
                 >
                   {section.title}
                 </motion.h3>
@@ -325,7 +326,7 @@ export function DashboardNavigation() {
                               <p
                                 className={`
                                 font-medium text-sm transition-colors leading-none m-0 p-0
-                                ${isActive ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'}
+                                ${isActive ? 'text-foreground dark:text-white' : 'text-muted-foreground dark:text-white/70 group-hover:text-foreground dark:group-hover:text-white'}
                               `}
                                 style={{
                                   lineHeight: '1',
@@ -381,8 +382,10 @@ export function DashboardNavigation() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className='lg:hidden fixed top-4 left-4 z-50 p-3 bg-card rounded-xl border border-border 
-                 shadow-lg hover:shadow-xl transition-all duration-200'
+        className='lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl border border-border
+                 shadow-lg hover:shadow-xl transition-all duration-200
+                 bg-card dark:bg-[rgba(2,6,24,0.85)]
+                 dark:backdrop-blur-[12px] dark:border-white/10'
       >
         <AnimatePresence mode='wait'>
           {isOpen ? (
@@ -393,7 +396,7 @@ export function DashboardNavigation() {
               exit={{ rotate: 90, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <X className='w-6 h-6 text-foreground' />
+              <X className='w-6 h-6 text-foreground dark:text-white' />
             </motion.div>
           ) : (
             <motion.div
@@ -403,7 +406,7 @@ export function DashboardNavigation() {
               exit={{ rotate: -90, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Menu className='w-6 h-6 text-foreground' />
+              <Menu className='w-6 h-6 text-foreground dark:text-white' />
             </motion.div>
           )}
         </AnimatePresence>
@@ -428,12 +431,14 @@ export function DashboardNavigation() {
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsDesktopExpanded(!isDesktopExpanded)}
         style={{
-          left: isDesktopExpanded ? '240px' : '64px',
+          left: isDesktopExpanded ? '240px' : '64px'
         }}
         className='hidden lg:flex fixed top-4 z-50 transition-all duration-300
-                   w-8 h-8 bg-card border border-border rounded-full
+                   w-8 h-8 rounded-full border border-border
                    items-center justify-center shadow-lg hover:shadow-xl
-                   hover:bg-primary/10 hover:border-primary'
+                   bg-card hover:bg-primary/10 hover:border-primary
+                   dark:bg-[rgba(2,6,24,0.85)] dark:backdrop-blur-[12px]
+                   dark:border-white/10 dark:hover:bg-white/5 dark:hover:border-white/20'
       >
         <AnimatePresence mode='wait'>
           {isDesktopExpanded ? (
@@ -444,7 +449,7 @@ export function DashboardNavigation() {
               exit={{ rotate: 180, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronLeft className='w-4 h-4 text-muted-foreground' />
+              <ChevronLeft className='w-4 h-4 text-muted-foreground dark:text-white/70' />
             </motion.div>
           ) : (
             <motion.div
@@ -454,7 +459,7 @@ export function DashboardNavigation() {
               exit={{ rotate: -180, opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <ChevronRight className='w-4 h-4 text-muted-foreground' />
+              <ChevronRight className='w-4 h-4 text-muted-foreground dark:text-white/70' />
             </motion.div>
           )}
         </AnimatePresence>
@@ -465,10 +470,9 @@ export function DashboardNavigation() {
         animate={{ width: isDesktopExpanded ? 256 : 80 }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         className='hidden lg:flex fixed left-0 top-0 bottom-0 border-r border-border
-                   shadow-sm z-40 flex-col overflow-hidden'
-        style={{
-          background: 'var(--color-background)'
-        }}
+                   shadow-sm z-40 flex-col overflow-hidden
+                   bg-background dark:bg-[rgba(2,6,24,0.85)]
+                   dark:backdrop-blur-[12px] dark:border-white/10'
       >
         <NavigationContent isMobile={false} />
       </motion.nav>
@@ -482,10 +486,9 @@ export function DashboardNavigation() {
             exit={{ x: -256 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className='lg:hidden fixed left-0 top-0 bottom-0 w-64 border-r border-border
-                     shadow-xl z-40 flex flex-col'
-            style={{
-              background: 'var(--color-background)'
-            }}
+                     shadow-xl z-40 flex flex-col
+                     bg-background dark:bg-[rgba(2,6,24,0.85)]
+                     dark:backdrop-blur-[12px] dark:border-white/10'
           >
             <NavigationContent isMobile={true} />
           </motion.nav>

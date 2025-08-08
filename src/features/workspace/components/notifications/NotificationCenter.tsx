@@ -58,6 +58,28 @@ function NotificationItem({
   const { metadata } = notification;
   const hasFiles = metadata?.fileCount && metadata.fileCount > 0;
   
+  // Determine notification type based on content
+  const getNotificationType = () => {
+    const title = notification.title.toLowerCase();
+    const description = notification.description?.toLowerCase() || '';
+    
+    if (title.includes('error') || title.includes('failed') || 
+        description.includes('error') || description.includes('failed')) {
+      return 'error';
+    }
+    if (title.includes('warning') || title.includes('alert') ||
+        description.includes('warning') || description.includes('limit')) {
+      return 'warning';
+    }
+    if (title.includes('success') || title.includes('complete') ||
+        description.includes('success') || description.includes('uploaded')) {
+      return 'success';
+    }
+    return 'info'; // Default for file uploads
+  };
+  
+  const notificationType = getNotificationType();
+  
   // Format description if it shows "0 files and 1 folders"
   const formatDescription = (desc: string | null) => {
     if (!desc) return null;
@@ -89,18 +111,33 @@ function NotificationItem({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       className={cn(
-        "relative p-4 border-b border-border/50 hover:bg-accent/50 transition-colors group cursor-pointer",
-        !notification.isRead && "bg-primary/5"
+        "relative p-4 border-b border-border/50 dark:border-white/5 transition-all duration-200 group cursor-pointer",
+        // Glass morphism hover effect with type-based coloring
+        notificationType === 'error' && "hover:bg-red-50 dark:hover:bg-[var(--notification-error-glass)]",
+        notificationType === 'warning' && "hover:bg-amber-50 dark:hover:bg-[var(--notification-warning-glass)]",
+        notificationType === 'success' && "hover:bg-green-50 dark:hover:bg-[var(--notification-success-glass)]",
+        notificationType === 'info' && "hover:bg-blue-50 dark:hover:bg-[var(--notification-info-glass)]",
+        // Unread notification styling with type-based background
+        !notification.isRead && notificationType === 'error' && "bg-red-50/50 dark:bg-[var(--notification-error-glass)]",
+        !notification.isRead && notificationType === 'warning' && "bg-amber-50/50 dark:bg-[var(--notification-warning-glass)]",
+        !notification.isRead && notificationType === 'success' && "bg-green-50/50 dark:bg-[var(--notification-success-glass)]",
+        !notification.isRead && notificationType === 'info' && "bg-blue-50/50 dark:bg-[var(--notification-info-glass)]"
       )}
       onClick={handleViewUploads}
     >
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="flex-shrink-0 mt-0.5">
-          {hasFiles ? (
-            <FileUp className="w-4 h-4 text-primary dark:text-primary" />
+          {notificationType === 'error' ? (
+            <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+          ) : notificationType === 'warning' ? (
+            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          ) : notificationType === 'success' ? (
+            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+          ) : hasFiles ? (
+            <FileUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           ) : (
-            <FolderUp className="w-4 h-4 text-secondary dark:text-secondary" />
+            <FolderUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           )}
         </div>
         
@@ -173,7 +210,13 @@ function NotificationItem({
         
         {/* Unread indicator */}
         {!notification.isRead && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary dark:bg-primary rounded-r" />
+          <div className={cn(
+            "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r",
+            notificationType === 'error' && "bg-red-600 dark:bg-red-400",
+            notificationType === 'warning' && "bg-amber-600 dark:bg-amber-400",
+            notificationType === 'success' && "bg-green-600 dark:bg-green-400",
+            notificationType === 'info' && "bg-blue-600 dark:bg-blue-400"
+          )} />
         )}
       </div>
     </motion.div>
@@ -311,12 +354,12 @@ export function NotificationCenter({
             exit={{ opacity: 0, x: 20, scale: 0.95 }}
             transition={{ type: "spring", duration: 0.3 }}
             className={cn(
-              "fixed right-4 top-20 w-96 max-w-[calc(100vw-2rem)] bg-background rounded-lg border shadow-xl z-50",
+              "fixed right-4 top-20 w-96 max-w-[calc(100vw-2rem)] bg-background dark:foldly-glass-solid rounded-lg border shadow-xl z-50",
               className
             )}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center justify-between p-4 border-b dark:border-white/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-5 h-5" />
                 <h3 className="font-semibold">Notifications</h3>
