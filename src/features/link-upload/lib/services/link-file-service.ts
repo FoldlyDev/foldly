@@ -147,12 +147,19 @@ export class LinkFileService {
       const batchId = crypto.randomUUID();
       const fileId = crypto.randomUUID();
       
+      // For generated links, set targetFolderId to the source folder
+      let targetFolderId: string | null = null;
+      if (link.linkType === 'generated' && link.sourceFolderId) {
+        targetFolderId = link.sourceFolderId;
+      }
+
       // Create batch record
       const [batch] = await db
         .insert(batches)
         .values({
           id: batchId,
           linkId,
+          targetFolderId,
           uploaderName: uploaderInfo.name,
           uploaderEmail: uploaderInfo.email,
           uploaderMessage: uploaderInfo.message,
@@ -186,7 +193,7 @@ export class LinkFileService {
           originalName: file.name,
           fileSize: file.size,
           mimeType: file.type || 'application/octet-stream',
-          folderId,
+          folderId: link.linkType === 'generated' && link.sourceFolderId ? link.sourceFolderId : folderId,
           processingStatus: 'pending',
         })
         .returning();

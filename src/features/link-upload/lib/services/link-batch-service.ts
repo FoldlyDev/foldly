@@ -77,13 +77,13 @@ export class LinkBatchService {
       const totalSize = params.files.reduce((sum, file) => sum + file.fileSize, 0);
       const totalFiles = params.files.length;
 
-      // For generated links, we need to set targetFolderId
+      // For generated links, we need to set targetFolderId to the source folder
       // For base/custom links, targetFolderId should be null
       let targetFolderId: string | null = null;
       
-      // Check if this is a generated link by checking if it has a sourceFolderId
-      if (link.sourceFolderId && params.folderId) {
-        targetFolderId = params.folderId;
+      // Check if this is a generated link - if so, uploads go to the source folder
+      if (link.linkType === 'generated' && link.sourceFolderId) {
+        targetFolderId = link.sourceFolderId;
       }
 
       // Create the batch record
@@ -110,8 +110,9 @@ export class LinkBatchService {
         };
       }
 
-      // Create folder if needed for link uploads (not for generated links)
-      if (needToCreateFolder && params.folderId && !link.sourceFolderId) {
+      // Create folder if needed for non-generated link uploads only
+      // Generated links upload directly to their source folder
+      if (needToCreateFolder && params.folderId && link.linkType !== 'generated') {
         const createResult = await this.folderService.createFolder({
           name: `Upload_${new Date().toISOString().split('T')[0]}`,
           parentFolderId: null,
@@ -121,15 +122,7 @@ export class LinkBatchService {
           depth: 0
         });
         
-        if (createResult.success && createResult.data) {
-          // Update the batch with the created folder ID if it's a generated link
-          if (link.sourceFolderId) {
-            await db
-              .update(batches)
-              .set({ targetFolderId: createResult.data.id })
-              .where(eq(batches.id, batch.id));
-          }
-        } else {
+        if (!createResult.success || !createResult.data) {
           // If folder creation fails, continue without folder
           console.warn('Failed to create folder for upload, continuing without folder');
         }
