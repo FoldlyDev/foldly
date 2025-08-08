@@ -49,7 +49,7 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-info: #c3e1f7;
-  
+
   /* Notification Glass Colors - For dark mode overlays */
   --notification-success-glass: rgba(16, 185, 129, 0.1);
   --notification-warning-glass: rgba(245, 158, 11, 0.1);
@@ -96,6 +96,7 @@
 
 /* 🏗️ Dashboard Feature Styles */
 @import '../styles/components/layout/dashboard-navigation.css';
+@import '../styles/components/layout/dashboard-layout.css';
 @import '../styles/features/dashboard-container.css';
 @import '../features/links/styles/links-page.css';
 
@@ -108,12 +109,15 @@
 
 :root {
   /* Font System Variables for Cross-Device Compatibility */
-  --system-font-stack: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --system-font-stack:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+    'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
   --font-primary: 'Host Grotesk', var(--system-font-stack);
   --font-secondary: 'Barlow', var(--system-font-stack);
-  --font-mono: 'DM Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  --font-mono:
+    'DM Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
   --font-condensed: 'Barlow Condensed', var(--system-font-stack);
-  
+
   /* FOLDLY BRAND COLORS - CSS Variables for theme-independent usage */
   --primary: #c3e1f7;
   --secondary: #9abede;
@@ -156,7 +160,7 @@
     var(--foldly-gradient-start),
     var(--foldly-gradient-end)
   );
-  
+
   /* Dark Mode Gradient - Deep Ocean with Cyan Glow */
   --foldly-dark-gradient: linear-gradient(
     135deg,
@@ -166,10 +170,19 @@
     #22d3ee20 75%,
     #22d3ee10 100%
   );
+
+  /* Light Mode Gradient - Warm with Cyan Glow */
+  --foldly-light-gradient-radial: radial-gradient(
+    ellipse at top,
+    oklch(71.5% 0.143 215.221) 0%,
+    #e3e3db 10%,
+    #ffffff 100%
+  );
+
   --foldly-dark-gradient-radial: radial-gradient(
     ellipse at top,
-    #22d3ee15 0%,
-    #0a1628 40%,
+    oklch(71.5% 0.143 215.221) 0%,
+    #0a1628 50%,
     #020618 100%
   );
   --foldly-dark-gradient-spotlight: conic-gradient(
@@ -181,8 +194,17 @@
     #22d3ee10 270deg,
     #020618 360deg
   );
-  
-  /* Foldly Glass Morphism Background - Reusable component style */
+
+  /* Foldly Glass Morphism Background - Light version */
+  --foldly-glass-bg-light: rgba(12, 13, 13, 0.4);
+  --foldly-glass-bg-light-solid: rgba(12, 13, 13, 0.6);
+  --foldly-glass-gradient-light: radial-gradient(
+    circle 280px at 0% 0%,
+    rgba(68, 68, 68, 0.4),
+    rgba(12, 13, 13, 0.4)
+  );
+
+  /* Foldly Glass Morphism Background - Dark version */
   --foldly-glass-bg: rgba(2, 6, 24, 0.85);
   --foldly-glass-bg-solid: rgba(2, 6, 24, 0.95);
   --foldly-glass-border: rgba(255, 255, 255, 0.1);
@@ -226,6 +248,10 @@
   /* Legacy Aliases */
   --light: var(--neutral-100);
   --dark: var(--neutral-800);
+
+  /* Override glass morphism for dark mode */
+  --foldly-glass-bg-light: var(--foldly-glass-bg);
+  --foldly-glass-bg-light-solid: var(--foldly-glass-bg-solid);
 }
 
 /* =============================================================================
@@ -243,6 +269,13 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
+    /* Smooth theme transitions for all children */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  /* Apply transitions to all elements for smooth theme changes */
+  body * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
   }
 
   /* Headings use display font */
@@ -262,7 +295,7 @@
   span {
     font-family: var(--font-body);
   }
-  
+
   /* Monospace elements */
   code,
   pre,
@@ -279,7 +312,7 @@
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
   }
-  
+
   /* Optimize font rendering on Retina displays */
   @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
     body {
@@ -723,35 +756,35 @@ button[data-state],
 }
 
 /* Toast Icon Colors */
-[data-sonner-toast][data-type="success"] [data-icon] {
+[data-sonner-toast][data-type='success'] [data-icon] {
   color: rgb(34 197 94) !important; /* green-500 */
 }
 
-.dark [data-sonner-toast][data-type="success"] [data-icon] {
+.dark [data-sonner-toast][data-type='success'] [data-icon] {
   color: rgb(74 222 128) !important; /* green-400 */
 }
 
-[data-sonner-toast][data-type="error"] [data-icon] {
+[data-sonner-toast][data-type='error'] [data-icon] {
   color: rgb(239 68 68) !important; /* red-500 */
 }
 
-.dark [data-sonner-toast][data-type="error"] [data-icon] {
+.dark [data-sonner-toast][data-type='error'] [data-icon] {
   color: rgb(248 113 113) !important; /* red-400 */
 }
 
-[data-sonner-toast][data-type="warning"] [data-icon] {
+[data-sonner-toast][data-type='warning'] [data-icon] {
   color: rgb(245 158 11) !important; /* amber-500 */
 }
 
-.dark [data-sonner-toast][data-type="warning"] [data-icon] {
+.dark [data-sonner-toast][data-type='warning'] [data-icon] {
   color: rgb(251 191 36) !important; /* amber-400 */
 }
 
-[data-sonner-toast][data-type="info"] [data-icon] {
+[data-sonner-toast][data-type='info'] [data-icon] {
   color: rgb(59 130 246) !important; /* blue-500 */
 }
 
-.dark [data-sonner-toast][data-type="info"] [data-icon] {
+.dark [data-sonner-toast][data-type='info'] [data-icon] {
   color: rgb(96 165 250) !important; /* blue-400 */
 }
 
@@ -803,10 +836,41 @@ section[aria-label*='Notifications'] > * {
 }
 
 @utility foldly-glass-light {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(var(--foldly-glass-blur));
-  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: var(--foldly-glass-gradient-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(32, 34, 34, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+@utility foldly-glass-light-solid {
+  background: radial-gradient(
+    circle 280px at 0% 0%,
+    rgba(68, 68, 68, 0.6),
+    rgba(12, 13, 13, 0.6)
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(32, 34, 34, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glass highlight effect class - apply alongside glass utilities */
+.glass-highlight::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(136, 136, 136, 0.5) 30%,
+    rgba(29, 31, 31, 0.5) 70%
+  );
+  pointer-events: none;
 }
 
 /* Font utility classes */

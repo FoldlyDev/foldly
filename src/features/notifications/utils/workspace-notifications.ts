@@ -103,6 +103,40 @@ function generateNotificationConfig(
         variant: 'success',
       };
 
+    case 'cloud_already_connected':
+      return {
+        event,
+        title: 'Already connected',
+        description: `${itemName} is already connected to your account`,
+        variant: 'info',
+      };
+
+    case 'cloud_connection_failed':
+      return {
+        event,
+        title: 'Connection failed',
+        description: `Failed to connect ${itemName}`,
+        variant: 'error',
+      };
+
+    case 'cloud_verification_cancelled':
+      return {
+        event,
+        title: 'Verification cancelled',
+        description: `Verification cancelled for ${itemName}`,
+        variant: 'warning',
+      };
+
+    case 'link_generated':
+      return {
+        event,
+        title: 'Link generated successfully',
+        description: targetLocation
+          ? `Generated link for ${itemName}: ${targetLocation}`
+          : `Generated link for ${itemName}`,
+        variant: 'success',
+      };
+
     default:
       return {
         event,

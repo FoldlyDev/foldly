@@ -21,6 +21,9 @@ export { toggleLinkActiveAction } from './toggle';
 // Duplicate actions
 export { duplicateLinkAction } from './duplicate';
 
+// Generate link actions
+export { generateLinkFromFolderAction, checkFolderHasGeneratedLinkAction } from './generate-from-folder';
+
 // Validation actions
 export { checkSlugAvailabilityAction } from './check-slug-availability';
 export type {

@@ -5,6 +5,7 @@ import React, { useState, lazy, Suspense } from 'react';
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import { UploadModal } from '../modals/upload-modal';
+import { CloudProviderButtons } from '../cloud/cloud-provider-buttons';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
@@ -27,7 +28,7 @@ const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 export function WorkspaceContainer() {
   // Get workspace data with loading states
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
-  
+
   // Mobile detection
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -144,32 +145,41 @@ export function WorkspaceContainer() {
         />
       </div>
 
-      <div className='workspace-tree-container'>
-        <div className='workspace-tree-wrapper'>
-          <div className='workspace-tree-content'>
-            <Suspense
-              fallback={
-                <div className='flex items-center justify-center h-64'>
-                  <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
-                </div>
-              }
-            >
-              <WorkspaceTree
-                onTreeReady={setTreeInstance}
-                searchQuery={searchQuery}
-                selectedItems={selectedItems}
-                onSelectionChange={setSelectedItems}
-                selectionMode={selectionMode}
-                onSelectionModeChange={setSelectionMode}
-              />
-            </Suspense>
+      <div className='workspace-tree-container mt-4 h-screen'>
+        <div className='flex gap-4 h-full'>
+          <div className='workspace-tree-wrapper flex-1'>
+            <div className='workspace-tree-content'>
+              <Suspense
+                fallback={
+                  <div className='flex items-center justify-center h-64'>
+                    <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+                  </div>
+                }
+              >
+                <WorkspaceTree
+                  onTreeReady={setTreeInstance}
+                  searchQuery={searchQuery}
+                  selectedItems={selectedItems}
+                  onSelectionChange={setSelectedItems}
+                  selectionMode={selectionMode}
+                  onSelectionModeChange={setSelectionMode}
+                />
+              </Suspense>
+            </div>
+
+            <div className='workspace-tree-footer'>
+              <p className='workspace-tree-footer-text'>
+                Drag items to workspace root or between folders
+              </p>
+            </div>
           </div>
 
-          <div className='workspace-tree-footer'>
-            <p className='workspace-tree-footer-text'>
-              Drag items to workspace root or between folders
-            </p>
-          </div>
+          {/* Cloud Provider Buttons - Desktop Only */}
+          {/* {!isMobile && (
+            <div className='flex-shrink-0  my-auto'>
+              <CloudProviderButtons className='sticky my-auto' />
+            </div>
+          )} */}
         </div>
       </div>
 

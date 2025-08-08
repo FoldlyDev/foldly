@@ -31,27 +31,16 @@ export function DashboardLayoutWrapper({
 
   return (
     <NavigationContext.Provider value={{ isExpanded, setIsExpanded }}>
-      <div 
-        className='min-h-screen relative overflow-hidden' 
-        style={{ 
-          background: 'var(--foldly-dark-gradient-radial)'
-        }}
-      >
+      <div className='dashboard-layout-wrapper'>
         {/* Subtle gradient overlay for depth */}
-        <div 
-          className='absolute inset-0 opacity-30 pointer-events-none'
-          style={{
-            background: 'var(--foldly-dark-gradient)',
-          }}
-        />
+        <div className='dashboard-gradient-overlay' />
         <DashboardNavigation />
         <main
-          className={`
-            relative min-h-screen transition-all duration-300 ease-in-out
-            ${isExpanded ? 'lg:ml-64' : 'lg:ml-20'}
-          `}
+          className={`dashboard-main ${
+            isExpanded ? 'dashboard-main-expanded' : 'dashboard-main-collapsed'
+          }`}
         >
-          <div className='p-6 pt-20 lg:pt-6'>{children}</div>
+          <div className='dashboard-content'>{children}</div>
         </main>
       </div>
     </NavigationContext.Provider>

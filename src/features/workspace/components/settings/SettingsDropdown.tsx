@@ -44,7 +44,14 @@ export function SettingsDropdown() {
   const handleThemeChange = async (newTheme: string) => {
     // The useTheme hook from theme-provider handles both local state and database sync
     setTheme(newTheme);
-    toast.success(`Theme changed to ${newTheme} mode`);
+    
+    const themeMessages = {
+      light: "Let there be light! ☀️",
+      dark: "Welcome to the dark side 🌙",
+      system: "Going with the flow 🤖"
+    };
+    
+    toast.success(themeMessages[newTheme as keyof typeof themeMessages] || `Switched to ${newTheme} mode`);
   };
 
   const handleDNDToggle = async () => {
@@ -53,15 +60,25 @@ export function SettingsDropdown() {
     // Update local state immediately
     setDoNotDisturb(newValue);
     
+    // If enabling DND, also disable silent notifications (since there won't be any notifications)
+    if (newValue && silentNotifications) {
+      setSilentNotifications(false);
+      // Update silent notifications in database too
+      updateSilentNotificationsAction(false);
+    }
+    
     // Update in database
     const result = await updateDoNotDisturbAction(newValue);
     
     if (result.success) {
-      toast.success(newValue ? 'Do not disturb enabled' : 'Notifications enabled');
+      toast.success(newValue 
+        ? "Alright, going ghost mode 👻" 
+        : "Back in action! Let's get those notifications 🔔"
+      );
     } else {
       // Revert on error
       setDoNotDisturb(doNotDisturb);
-      toast.error('Failed to update do not disturb');
+      toast.error('Oops! Something went wrong with that toggle');
     }
   };
 
@@ -75,16 +92,19 @@ export function SettingsDropdown() {
     const result = await updateSilentNotificationsAction(newValue);
     
     if (result.success) {
-      toast.success(newValue ? 'Silent notifications enabled' : 'Notification sounds enabled');
+      toast.success(newValue 
+        ? "Shhh... let's keep it quiet 🤫" 
+        : "Sound's back on! Let's make some noise 🔊"
+      );
     } else {
       // Revert on error
       setSilentNotifications(silentNotifications);
-      toast.error('Failed to update silent notifications');
+      toast.error('Uh oh! Couldn\'t update the sound settings');
     }
   };
 
   const handleAccountSettings = () => {
-    router.push('/settings/account');
+    router.push('/dashboard/settings');
   };
 
   return (
@@ -113,10 +133,10 @@ export function SettingsDropdown() {
             <div className="flex items-center justify-between p-2 rounded-lg bg-muted dark:bg-white/5">
               <button
                 onClick={() => handleThemeChange('light')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   theme === 'light' 
-                    ? 'bg-primary shadow-sm text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <Sun className="w-3.5 h-3.5" />
@@ -125,10 +145,10 @@ export function SettingsDropdown() {
               
               <button
                 onClick={() => handleThemeChange('dark')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   theme === 'dark' 
-                    ? 'bg-primary shadow-sm text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" />
@@ -137,10 +157,10 @@ export function SettingsDropdown() {
               
               <button
                 onClick={() => handleThemeChange('system')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all ${
+                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   theme === 'system' 
-                    ? 'bg-primary shadow-sm text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <Monitor className="w-3.5 h-3.5" />
@@ -153,8 +173,11 @@ export function SettingsDropdown() {
         <DropdownMenuSeparator />
         
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={handleDNDToggle}>
-            <div className="flex items-center justify-between w-full">
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <div 
+              className="flex items-center justify-between w-full cursor-pointer"
+              onClick={handleDNDToggle}
+            >
               <div className="flex items-center gap-2">
                 <BellOff size={16} className="opacity-60" />
                 <span>Do not disturb</span>
@@ -167,21 +190,27 @@ export function SettingsDropdown() {
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ duration: 0.15 }}
                   className={`w-10 h-5 rounded-full relative transition-colors ${
-                    doNotDisturb ? 'bg-[var(--primary)]' : 'bg-[var(--neutral-300)]'
+                    doNotDisturb ? 'bg-muted dark:bg-white/10' : 'bg-muted dark:bg-white/5'
                   }`}
                 >
                   <motion.div
                     animate={{ x: doNotDisturb ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-background rounded-full absolute top-0.5 left-0.5 shadow-sm"
+                    className={`w-4 h-4 rounded-full absolute top-0.5 left-0.5 shadow-sm transition-colors ${
+                      doNotDisturb ? 'bg-primary dark:bg-primary' : 'bg-gray-400 dark:bg-gray-500'
+                    }`}
                   />
                 </motion.div>
               </AnimatePresence>
             </div>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleSilentModeToggle}>
-            <div className="flex items-center justify-between w-full">
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <div 
+              className={`flex items-center justify-between w-full ${doNotDisturb ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              onClick={doNotDisturb ? undefined : handleSilentModeToggle}
+              title={doNotDisturb ? "Enable notifications first" : undefined}
+            >
               <div className="flex items-center gap-2">
                 {silentNotifications ? <VolumeX size={16} className="opacity-60" /> : <Volume2 size={16} className="opacity-60" />}
                 <span>Silent notifications</span>
@@ -194,20 +223,33 @@ export function SettingsDropdown() {
                   exit={{ scale: 0.8, opacity: 0 }}
                   transition={{ duration: 0.15 }}
                   className={`w-10 h-5 rounded-full relative transition-colors ${
-                    silentNotifications ? 'bg-[var(--primary)]' : 'bg-[var(--neutral-300)]'
+                    doNotDisturb 
+                      ? 'bg-gray-200 dark:bg-gray-700' 
+                      : silentNotifications 
+                        ? 'bg-muted dark:bg-white/10' 
+                        : 'bg-muted dark:bg-white/5'
                   }`}
                 >
                   <motion.div
-                    animate={{ x: silentNotifications ? 20 : 0 }}
+                    animate={{ x: silentNotifications && !doNotDisturb ? 20 : 0 }}
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className="w-4 h-4 bg-background rounded-full absolute top-0.5 left-0.5 shadow-sm"
+                    className={`w-4 h-4 rounded-full absolute top-0.5 left-0.5 shadow-sm transition-colors ${
+                      doNotDisturb 
+                        ? 'bg-gray-400 dark:bg-gray-600' 
+                        : silentNotifications 
+                          ? 'bg-primary dark:bg-primary' 
+                          : 'bg-gray-400 dark:bg-gray-500'
+                    }`}
                   />
                 </motion.div>
               </AnimatePresence>
             </div>
           </DropdownMenuItem>
           
-          <DropdownMenuItem onClick={handleAccountSettings}>
+          <DropdownMenuItem 
+            onClick={handleAccountSettings}
+            className="cursor-pointer active:scale-[0.98] transition-transform"
+          >
             <User size={16} className="opacity-60" />
             <span>Account settings</span>
           </DropdownMenuItem>

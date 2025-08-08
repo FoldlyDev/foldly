@@ -18,6 +18,7 @@ import {
 import type { ActionItem } from '@/components/ui/core/types';
 import type { LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
 interface LinkCardMobileProps {
   link: LinkWithStats;
@@ -30,6 +31,8 @@ interface LinkCardMobileProps {
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
+  unreadCount?: number;
+  onClearNotifications?: () => void;
 }
 
 export const LinkCardMobile = memo(
@@ -44,6 +47,8 @@ export const LinkCardMobile = memo(
     actions,
     quickActions,
     searchQuery,
+    unreadCount = 0,
+    onClearNotifications,
   }: LinkCardMobileProps) => {
     const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
@@ -101,8 +106,19 @@ export const LinkCardMobile = memo(
               </div>
             </div>
 
-            {/* Status Badge */}
-            <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
+            {/* Status Badge and Notification Badge */}
+            <div className='flex items-center gap-2'>
+              {unreadCount > 0 && (
+                <NotificationBadge
+                  count={unreadCount}
+                  onClick={(e) => {
+                    e?.stopPropagation();
+                    onClearNotifications?.();
+                  }}
+                />
+              )}
+              <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
+            </div>
           </div>
 
           {/* Expiry Date Row */}

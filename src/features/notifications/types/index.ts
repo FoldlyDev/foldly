@@ -10,7 +10,11 @@ export type NotificationEvent =
   | 'folder_renamed'
   | 'folder_deleted'
   | 'folder_created'
-  | 'items_reordered';
+  | 'items_reordered'
+  | 'link_generated'
+  | 'cloud_already_connected'
+  | 'cloud_connection_failed'
+  | 'cloud_verification_cancelled';
 
 export interface NotificationConfig {
   event: NotificationEvent;
@@ -21,7 +25,7 @@ export interface NotificationConfig {
 
 export interface WorkspaceNotificationData {
   itemName: string;
-  itemType: 'file' | 'folder';
+  itemType: 'file' | 'folder' | 'cloud_provider';
   targetLocation?: string;
   sourcePath?: string;
   targetPath?: string;

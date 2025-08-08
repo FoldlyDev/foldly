@@ -112,10 +112,12 @@ export function WorkspaceHeader({
           {/* Notification dot - only show if there are unread notifications */}
           {totalUnread > 0 && (
             <div
-              className='absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-destructive 
-                          rounded-full border-2 border-card flex items-center justify-center'
+              className='absolute -top-1.5 -right-1.5 min-w-[24px] h-6 px-1.5 bg-destructive 
+                          dark:bg-[var(--foldly-glass-bg-solid)] dark:backdrop-blur-[12px]
+                          rounded-full border-2 border-card dark:border-white/10 
+                          flex items-center justify-center shadow-sm dark:shadow-xl'
             >
-              <span className='text-[10px] font-bold text-destructive-foreground'>
+              <span className='text-xs font-bold text-destructive-foreground dark:text-blue-300'>
                 {totalUnread > 99 ? '99+' : totalUnread}
               </span>
             </div>

@@ -15,6 +15,7 @@ import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
 interface LinkCardDesktopProps {
   link: LinkWithStats;
@@ -30,6 +31,8 @@ interface LinkCardDesktopProps {
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
+  unreadCount?: number;
+  onClearNotifications?: () => void;
 }
 
 export const LinkCardDesktop = memo(
@@ -47,6 +50,8 @@ export const LinkCardDesktop = memo(
     actions,
     quickActions,
     searchQuery,
+    unreadCount = 0,
+    onClearNotifications,
   }: LinkCardDesktopProps) => {
     const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
@@ -105,6 +110,15 @@ export const LinkCardDesktop = memo(
 
           {/* Status */}
           <div className='flex items-center gap-3 flex-shrink-0'>
+            {unreadCount > 0 && (
+              <NotificationBadge
+                count={unreadCount}
+                onClick={(e) => {
+                  e?.stopPropagation();
+                  onClearNotifications?.();
+                }}
+              />
+            )}
             <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
           </div>
 

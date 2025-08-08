@@ -437,9 +437,9 @@ export function WorkspaceToolbar({
 
       {/* Mini-actions toolbar - shows when items are selected or in selection mode */}
       {(selectedItems.length > 0 || (isMobile && isSelectionMode)) && (
-        <div className='flex items-center justify-between px-6 py-2 bg-primary/10 dark:bg-primary/10 border-b border-border'>
+        <div className='flex items-center justify-between px-6 py-2 bg-tertiary/10 dark:bg-primary/10 border-b border-neutral-200 dark:border-border'>
           <div className='flex items-center gap-3'>
-            <span className='text-sm font-medium text-primary dark:text-primary'>
+            <span className='text-sm font-medium text-tertiary dark:text-primary'>
               {selectedItems.length > 0 ? (
                 <>
                   {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}

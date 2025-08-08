@@ -17,6 +17,7 @@ import {
   Download,
   Info,
   X,
+  Link2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,7 +28,8 @@ export type WorkspaceAction =
   | 'delete'
   | 'download'
   | 'info'
-  | 'createFolder';
+  | 'createFolder'
+  | 'generateLink';
 
 export interface WorkspaceItem {
   id: string;
@@ -97,6 +99,14 @@ export function MobileWorkspaceActionsModal({
       label: 'Create Folder Inside',
       icon: FolderPlus,
       onClick: () => handleAction('createFolder'),
+      visible: isSingleItem && isOnlyFolders,
+      className: '',
+    },
+    {
+      id: 'generateLink',
+      label: 'Generate link for this folder',
+      icon: Link2,
+      onClick: () => handleAction('generateLink'),
       visible: isSingleItem && isOnlyFolders,
       className: '',
     },

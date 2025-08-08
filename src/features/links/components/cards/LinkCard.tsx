@@ -179,6 +179,8 @@ const LinkCardComponent = ({
         actions={dropdownActions}
         quickActions={quickActions}
         searchQuery={searchQuery}
+        unreadCount={unreadCount}
+        onClearNotifications={() => clearLinkNotifications(link.id)}
       />
     );
   }
@@ -198,6 +200,8 @@ const LinkCardComponent = ({
       searchQuery={searchQuery}
       actions={dropdownActions}
       quickActions={quickActions}
+      unreadCount={unreadCount}
+      onClearNotifications={() => clearLinkNotifications(link.id)}
     />
   );
 };

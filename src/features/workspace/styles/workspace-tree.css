@@ -1,17 +1,25 @@
 /* Workspace tree styles - Following headless-tree library patterns */
 
 :root {
-  --tree-selected-color: var(--color-muted);
-  --tree-primary-blue: var(--color-primary);
-  --tree-drop-target-color: var(--color-primary);
-  --tree-search-match-color: var(--color-accent);
+  /* Light mode tree colors */
+  --tree-selected-color: rgba(0, 0, 0, 0.05);
+  --tree-primary-blue: #2d4f6b;
+  --tree-drop-target-color: rgba(45, 79, 107, 0.1);
+  --tree-search-match-color: rgba(195, 225, 247, 0.3);
+  --tree-hover-color: rgba(0, 0, 0, 0.04);
+  --tree-active-color: rgba(0, 0, 0, 0.08);
+  --tree-focus-ring: #2d4f6b;
 }
 
 [data-theme="dark"] {
-  --tree-selected-color: var(--color-muted);
-  --tree-primary-blue: var(--color-primary);
-  --tree-drop-target-color: var(--color-primary);
-  --tree-search-match-color: var(--color-accent);
+  /* Dark mode tree colors */
+  --tree-selected-color: rgba(255, 255, 255, 0.1);
+  --tree-primary-blue: #9abede;
+  --tree-drop-target-color: rgba(195, 225, 247, 0.2);
+  --tree-search-match-color: rgba(195, 225, 247, 0.2);
+  --tree-hover-color: rgba(255, 255, 255, 0.08);
+  --tree-active-color: rgba(255, 255, 255, 0.15);
+  --tree-focus-ring: #9abede;
 }
 
 .tree {
@@ -44,16 +52,16 @@
 }
 
 .treeitem:hover {
-  background-color: var(--color-accent);
+  background-color: var(--tree-hover-color);
 }
 
 .treeitem.focused {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 1px;
+  /* Remove focus styles - keyboard navigation will still work */
+  outline: none;
 }
 
 .treeitem.selected {
-  background-color: var(--color-accent);
+  background-color: var(--tree-selected-color);
 }
 
 /* Selection indicator - blue left border */
@@ -82,8 +90,12 @@
   background-color: var(--tree-search-match-color);
 }
 
-/* Focus visible for keyboard navigation */
-.tree button:focus-visible .treeitem.focused,
+/* Focus visible for keyboard navigation - only show when actually focused via keyboard */
+.tree button:focus-visible .treeitem.focused {
+  outline: 2px solid var(--tree-primary-blue);
+  outline-offset: 1px;
+}
+
 .treeitem.searchmatch.focused {
   outline: 2px solid var(--tree-primary-blue);
   outline-offset: 1px;
@@ -171,7 +183,7 @@
   
   /* Better visual feedback for touch */
   .treeitem:active {
-    background-color: var(--tree-selected-color);
+    background-color: var(--tree-active-color);
     transform: scale(0.98);
     transition: transform 0.1s ease;
   }
