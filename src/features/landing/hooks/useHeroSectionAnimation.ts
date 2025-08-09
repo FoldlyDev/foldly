@@ -12,6 +12,7 @@ interface HeroAnimationRefs {
   heroCard1Ref: React.RefObject<HTMLDivElement | null>;
   heroCard2Ref: React.RefObject<HTMLDivElement | null>;
   heroCard3Ref: React.RefObject<HTMLDivElement | null>;
+  isEnabled?: boolean;
 }
 
 /**
@@ -25,10 +26,11 @@ export function useHeroSectionAnimation(refs: HeroAnimationRefs) {
   useEffect(() => {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
+    if (!refs.isEnabled) return;
 
-    // Check if all required refs are available
-    const requiredRefs = Object.values(refs);
-    const allRefsReady = requiredRefs.every(ref => ref.current !== null);
+    // Check if all required refs are available (excluding isEnabled)
+    const requiredRefs = Object.values(refs).filter(ref => ref !== refs.isEnabled);
+    const allRefsReady = requiredRefs.every(ref => ref && ref.current !== null);
 
     if (!allRefsReady) return;
 
@@ -38,32 +40,34 @@ export function useHeroSectionAnimation(refs: HeroAnimationRefs) {
     // Create custom ease
     CustomEase.create('hop', '.8, 0, .3, 1');
 
-    // Initial hero cards scale animation (from 0 to 1)
-    const heroCardRefs = [
-      refs.heroCard1Ref,
-      refs.heroCard2Ref,
-      refs.heroCard3Ref,
-    ];
+    // Create GSAP context for proper cleanup
+    const ctx = gsap.context(() => {
+      // Initial hero cards scale animation (from 0 to 1)
+      const heroCardRefs = [
+        refs.heroCard1Ref,
+        refs.heroCard2Ref,
+        refs.heroCard3Ref,
+      ];
 
-    // Set transform origin for cards
-    heroCardRefs.forEach(ref => {
-      if (ref.current) {
-        gsap.set(ref.current, { transformOrigin: "center center", scale: 0 });
-      }
-    });
-    
-    // Initial scale animation matching Juno Watts
-    gsap.to(heroCardRefs.map(ref => ref.current).filter(Boolean), {
-      scale: 1,
-      duration: 0.75,
-      delay: 0.25,
-      stagger: 0.1,
-      ease: "power4.out",
-      onComplete: () => {
-        if (refs.heroCard1Ref.current) gsap.set(refs.heroCard1Ref.current, { transformOrigin: "top right" });
-        if (refs.heroCard3Ref.current) gsap.set(refs.heroCard3Ref.current, { transformOrigin: "top left" });
-      }
-    });
+      // Set transform origin for cards
+      heroCardRefs.forEach(ref => {
+        if (ref.current) {
+          gsap.set(ref.current, { transformOrigin: "center center", scale: 0 });
+        }
+      });
+      
+      // Initial scale animation matching Juno Watts
+      gsap.to(heroCardRefs.map(ref => ref.current).filter(Boolean), {
+        scale: 1,
+        duration: 0.75,
+        delay: 0.25,
+        stagger: 0.1,
+        ease: "power4.out",
+        onComplete: () => {
+          if (refs.heroCard1Ref.current) gsap.set(refs.heroCard1Ref.current, { transformOrigin: "top right" });
+          if (refs.heroCard3Ref.current) gsap.set(refs.heroCard3Ref.current, { transformOrigin: "top left" });
+        }
+      });
 
     // Desktop animations only
     if (window.innerWidth > 1000) {
@@ -151,18 +155,20 @@ export function useHeroSectionAnimation(refs: HeroAnimationRefs) {
         },
       });
 
-      scrollTriggersRef.current.push(heroScrollTrigger);
-    }
+        scrollTriggersRef.current.push(heroScrollTrigger);
+      }
+    }); // End of GSAP context
 
     isInitialized.current = true;
 
     // Cleanup function
     return () => {
+      ctx.revert(); // Clean up all GSAP animations in context
       scrollTriggersRef.current.forEach(trigger => trigger.kill());
       scrollTriggersRef.current = [];
       isInitialized.current = false;
     };
-  }, [refs]);
+  }, [refs, refs.isEnabled]);
 
   // Additional cleanup on unmount
   useEffect(() => {

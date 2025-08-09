@@ -9,7 +9,7 @@ export const Spotlight = ({
   className?: string;
 }) => {
   return (
-    <div className={cn('absolute inset-0 pointer-events-none', className)}>
+    <div className={cn('absolute inset-0 pointer-events-none z-10', className)}>
       {/* Main spotlight beam */}
       <motion.div
         initial={{ opacity: 0 }}

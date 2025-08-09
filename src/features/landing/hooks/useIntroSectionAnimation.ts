@@ -12,6 +12,7 @@ interface IntroAnimationRefs {
   textSegmentRefs: React.RefObject<HTMLSpanElement | null>[];
   placeholderIconRefs: React.RefObject<HTMLDivElement | null>[];
   duplicateIconsContainerRef: React.RefObject<HTMLDivElement | null>;
+  isEnabled?: boolean;
 }
 
 export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
@@ -22,6 +23,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
   useEffect(() => {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
+    if (!refs.isEnabled) return;
 
     // Create a small delay to ensure React has finished rendering
     const timer = setTimeout(() => {
@@ -46,6 +48,11 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
       const heroHeader = refs.heroHeaderRef.current;
       const heroSection = refs.introRef.current;
       const duplicateContainer = refs.duplicateIconsContainerRef.current!;
+
+      // Text segments should start invisible as per original design
+      textSegments.forEach(segment => {
+        gsap.set(segment, { opacity: 0 });
+      });
 
       // Create randomized text animation order (exact same logic as template)
       const textAnimationOrder: {
@@ -397,7 +404,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
         isInitialized.current = false;
       };
     }, 100); // Small delay to let React settle
-  }, [refs]);
+  }, [refs, refs.isEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {

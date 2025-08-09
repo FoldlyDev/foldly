@@ -14,6 +14,7 @@ interface FeaturesAnimationRefs {
   flipCard1InnerRef: React.RefObject<HTMLDivElement | null>;
   flipCard2InnerRef: React.RefObject<HTMLDivElement | null>;
   flipCard3InnerRef: React.RefObject<HTMLDivElement | null>;
+  isEnabled?: boolean; // Control when animation should start
 }
 
 /**
@@ -27,17 +28,18 @@ export function useFeaturesSectionAnimation(refs: FeaturesAnimationRefs) {
   useEffect(() => {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
+    
+    // Wait for animation to be enabled by orchestrator
+    if (!refs.isEnabled) return;
 
-    // Add a delay to let intro section initialize first
-    const timer = setTimeout(() => {
-      // Check if all required refs are available
-      const requiredRefs = Object.values(refs);
-      const allRefsReady = requiredRefs.every(ref => ref.current !== null);
+    // Check if all required refs are available (excluding isEnabled)
+    const requiredRefs = Object.values(refs).filter(ref => ref !== refs.isEnabled);
+    const allRefsReady = requiredRefs.every(ref => ref && ref.current !== null);
 
-      if (!allRefsReady) return;
+    if (!allRefsReady) return;
 
-      // Register GSAP plugins
-      gsap.registerPlugin(ScrollTrigger);
+    // Register GSAP plugins
+    gsap.registerPlugin(ScrollTrigger);
 
     // Desktop animations only
     if (window.innerWidth > 1000) {
@@ -66,15 +68,6 @@ export function useFeaturesSectionAnimation(refs: FeaturesAnimationRefs) {
           invalidateOnRefresh: true,
           onUpdate: self => {
             const progress = self.progress;
-            
-            // Skip animation if we're still in the intro section
-            const introSection = document.querySelector('.intro-hero');
-            if (introSection) {
-              const introRect = introSection.getBoundingClientRect();
-              if (introRect.bottom > window.innerHeight * 0.5) {
-                return; // Don't animate if intro is still visible
-              }
-            }
 
           // Header animation - matching Juno Watts
           const headerProgress = gsap.utils.clamp(0, 1, progress / 0.9);
@@ -207,26 +200,20 @@ export function useFeaturesSectionAnimation(refs: FeaturesAnimationRefs) {
         },
       });
 
-        scrollTriggersRef.current.push(cardsScrollTrigger);
+          scrollTriggersRef.current.push(cardsScrollTrigger);
       });
 
       // Store context for cleanup
+      isInitialized.current = true;
+      
       return () => {
         ctx.revert();
+        scrollTriggersRef.current.forEach(trigger => trigger.kill());
+        scrollTriggersRef.current = [];
+        isInitialized.current = false;
       };
     }
-
-      isInitialized.current = true;
-    }, 300); // 300ms delay to let intro section set up first
-
-    // Cleanup function
-    return () => {
-      clearTimeout(timer);
-      scrollTriggersRef.current.forEach(trigger => trigger.kill());
-      scrollTriggersRef.current = [];
-      isInitialized.current = false;
-    };
-  }, [refs]);
+  }, [refs.isEnabled]); // Re-run when isEnabled changes
 
   // Additional cleanup on unmount
   useEffect(() => {

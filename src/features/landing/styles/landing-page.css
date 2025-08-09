@@ -1,0 +1,43 @@
+/* =============================================================================
+   LANDING PAGE CONTAINER STYLES
+   ============================================================================= */
+
+.landing-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #020618; /* Match intro section background */
+}
+
+/* Ensure sections have proper dimensions */
+.landing-page > section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Hero section specific */
+.hero {
+  background-color: #020618; /* Ensure background is set */
+  position: relative;
+}
+
+/* About section specific */
+.about-section {
+  background-color: #020618;
+  padding: 4rem 2rem;
+}
+
+/* Features section specific */
+.features-section {
+  background-color: #020618;
+  min-height: 100vh;
+}
+
+/* Outro section specific */
+.outro-section {
+  background-color: #020618;
+  min-height: 100vh;
+  padding: 4rem 2rem;
+}

@@ -259,8 +259,15 @@
    ============================================================================= */
 
 @layer base {
+  html {
+    /* Fallback background color to prevent flash of unstyled content */
+    background-color: #020618;
+  }
+  
   body {
     font-family: var(--font-sans);
+    background-color: #020618; /* Match intro section initial color */
+    color: #ffffff;
     @apply antialiased;
     font-feature-settings:
       'rlig' 1,
