@@ -125,6 +125,7 @@ export const HeroSection = forwardRef<HeroSectionRefs, HeroSectionProps>(
                 features={card.features}
                 iconType={card.iconType}
                 className='hero-flip-card'
+                wrapperType='hero'
                 ref={
                   index === 0
                     ? refs?.current?.heroCard1Ref

@@ -43,8 +43,62 @@ export function useFeaturesSectionAnimation(refs: FeaturesAnimationRefs) {
 
     // Desktop animations only
     if (window.innerWidth > 1000) {
+      // Check if features section is already in viewport on load
+      const featuresRect = refs.featuresRef.current?.getBoundingClientRect();
+      const isInViewport = featuresRect && featuresRect.top < window.innerHeight;
+      
       // Create a context for better cleanup
       const ctx = gsap.context(() => {
+        // Only set initial states if section is not already in viewport
+        if (!isInViewport) {
+          // Set initial states for all elements to prevent flash
+          if (refs.featuresHeaderRef.current) {
+            gsap.set(refs.featuresHeaderRef.current, { y: '300%' });
+          }
+          
+          const cardRefs = [refs.card1Ref, refs.card2Ref, refs.card3Ref];
+          cardRefs.forEach((cardRef, index) => {
+            if (cardRef.current) {
+              gsap.set(cardRef.current, {
+                opacity: 0,
+                y: '-100%',
+                x: index === 0 ? '100%' : index === 1 ? '0%' : '-100%',
+                rotate: index === 0 ? -5 : index === 1 ? 0 : 5,
+                scale: 0.25
+              });
+            }
+          });
+        } else {
+          // If in viewport, set to final state
+          if (refs.featuresHeaderRef.current) {
+            gsap.set(refs.featuresHeaderRef.current, { y: '0%' });
+          }
+          
+          const cardRefs = [refs.card1Ref, refs.card2Ref, refs.card3Ref];
+          cardRefs.forEach((cardRef) => {
+            if (cardRef.current) {
+              gsap.set(cardRef.current, {
+                opacity: 1,
+                y: '0%',
+                x: '0%',
+                rotate: 0,
+                scale: 1
+              });
+            }
+          });
+          
+          const flipCardInnerRefs = [
+            refs.flipCard1InnerRef,
+            refs.flipCard2InnerRef,
+            refs.flipCard3InnerRef,
+          ];
+          flipCardInnerRefs.forEach((ref) => {
+            if (ref?.current) {
+              gsap.set(ref.current, { rotationY: 180 });
+            }
+          });
+        }
+
         // Features section pinning
         const featuresPinTrigger = ScrollTrigger.create({
           trigger: refs.featuresRef.current,
@@ -58,14 +112,15 @@ export function useFeaturesSectionAnimation(refs: FeaturesAnimationRefs) {
 
         scrollTriggersRef.current.push(featuresPinTrigger);
 
-        // Cards and header animation - delayed to avoid conflicts
+        // Cards and header animation - separate trigger matching Juno Watts template
         const cardsScrollTrigger = ScrollTrigger.create({
           trigger: refs.featuresRef.current,
-          start: 'top center', // Start when section is more centered
-          end: 'bottom top+=400px',
+          start: 'top bottom-=100', // Add 100px buffer to prevent premature trigger
+          end: () => `+=${window.innerHeight * 4}`,
           scrub: 1,
           id: 'features-cards',
           invalidateOnRefresh: true,
+          immediateRender: false, // Prevent initial render at progress 0
           onUpdate: self => {
             const progress = self.progress;
 

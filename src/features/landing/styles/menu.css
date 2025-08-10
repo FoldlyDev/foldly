@@ -1,10 +1,10 @@
 /* Copied exactly from Juno Watts template */
 
-/* CSS Variables from template */
+/* CSS Variables - Updated to use global color system */
 :root {
-  --base-100: #fff;
-  --base-300: #1a1a1a;
-  --base-secondary-dark: #6b7280;
+  --base-100: var(--neutral-100);
+  --base-300: var(--neutral-900);
+  --base-secondary-dark: var(--neutral-600);
 }
 
 .menu {

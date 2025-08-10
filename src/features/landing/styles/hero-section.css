@@ -63,8 +63,8 @@
   text-shadow: 6px 6px 10px rgba(45, 79, 107, 0.4);
 }
 
-/* Hero Cards Container */
-.hero-cards {
+/* Hero Cards Container - Matching Juno Watts template structure */
+.hero .hero-cards {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -74,6 +74,139 @@
   justify-content: center;
   gap: 1rem;
   z-index: 10;
+}
+
+/* Individual Hero Cards - Initial state */
+.hero .hero-cards .card {
+  flex: 1;
+  position: relative;
+  aspect-ratio: 5/7;
+  transform: scale(0); /* GSAP will animate this */
+}
+
+/* Hero Card Inner - Replaces card-wrapper for hero section */
+.hero .hero-cards .card .hero-card-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border-radius: 8px;
+  animation: floating 2s infinite ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* Softer shadow effect */
+  filter: drop-shadow(6px 6px 12px rgba(45, 79, 107, 0.3));
+}
+
+/* Animation delays for staggered floating effect */
+.hero .hero-cards .card#hero-card-1 .hero-card-inner {
+  animation-delay: 0;
+}
+
+.hero .hero-cards .card#hero-card-2 .hero-card-inner {
+  animation-delay: 0.25s;
+}
+
+.hero .hero-cards .card#hero-card-3 .hero-card-inner {
+  animation-delay: 0.5s;
+}
+
+/* Card Title Structure */
+.hero .hero-cards .card .card-title {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.hero .hero-cards .card .card-title span {
+  font-size: 0.8rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--neutral-100);
+}
+
+/* Hero Card Backgrounds - User's custom colors */
+.hero .hero-cards .card#hero-card-1 .hero-card-inner {
+  background: linear-gradient(
+    135deg,
+    var(--tertiary) 0%,
+    var(--quaternary) 40%,
+    var(--quinary) 100%
+  );
+  z-index: 2;
+}
+
+.hero .hero-cards .card#hero-card-2 .hero-card-inner {
+  background: linear-gradient(
+    135deg,
+    var(--secondary) 0%,
+    var(--quaternary) 50%,
+    var(--quinary) 100%
+  );
+  z-index: 1;
+}
+
+.hero .hero-cards .card#hero-card-3 .hero-card-inner {
+  background: linear-gradient(
+    135deg,
+    var(--quinary) 0%,
+    var(--quaternary) 40%,
+    var(--tertiary) 100%
+  );
+  z-index: 0;
+}
+
+/* Icon styling for hero cards */
+.hero .hero-cards .card .card-icon-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neutral-100);
+  transition: transform 0.3s ease;
+}
+
+.hero .hero-cards .card:hover .card-icon-center {
+  transform: scale(1.1);
+}
+
+/* Corner icons for hero cards */
+.hero .hero-cards .card .card-corner-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.hero .hero-cards .card .card-corner-icons svg:nth-child(1) {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+}
+
+.hero .hero-cards .card .card-corner-icons svg:nth-child(2) {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.hero .hero-cards .card .card-corner-icons svg:nth-child(3) {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+}
+
+.hero .hero-cards .card .card-corner-icons svg:nth-child(4) {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
 }
 
 /* Hero Description */
@@ -109,44 +242,7 @@
   align-self: flex-start;
 }
 
-/* Flip Cards in Hero */
-.hero-flip-card {
-  flex: 1;
-  position: relative;
-  aspect-ratio: 5/7;
-  transform: scale(0);
-}
-
-.hero-flip-card .hero-card-inner {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-  animation: floating 2s infinite ease-in-out;
-}
-
-.hero-flip-card .card-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  height: 100%;
-}
-
-.hero-flip-card .flip-card-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  transition: transform 0.6s;
-  transform-style: preserve-3d;
-  cursor: pointer;
-}
-
-/* Floating animation keyframes */
+/* Floating animation keyframes for hero cards */
 @keyframes floating {
   0% {
     transform: translate(-50%, -50%);
@@ -157,124 +253,6 @@
   100% {
     transform: translate(-50%, -50%);
   }
-}
-
-/* Animation delays for staggered floating effect */
-.hero-flip-card:nth-child(1) .hero-card-inner {
-  animation-delay: 0s;
-}
-
-.hero-flip-card:nth-child(2) .hero-card-inner {
-  animation-delay: 0.25s;
-}
-
-.hero-flip-card:nth-child(3) .hero-card-inner {
-  animation-delay: 0.5s;
-}
-
-/* Z-index for layering */
-.hero-flip-card:nth-child(1) {
-  z-index: 2;
-}
-
-.hero-flip-card:nth-child(2) {
-  z-index: 1;
-}
-
-.hero-flip-card:nth-child(3) {
-  z-index: 0;
-}
-
-.hero-flip-card:hover .flip-card-inner {
-  transform: rotateY(180deg);
-}
-
-.hero-flip-card .flip-card-front,
-.hero-flip-card .flip-card-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  backface-visibility: hidden;
-  border-radius: 1rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  box-shadow: 0 10px 30px rgba(15, 25, 34, 0.1);
-}
-
-/* Front Face - Using brand colors for visual hierarchy */
-.hero-flip-card .flip-card-front {
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--primary-light) 100%
-  );
-  color: var(--quaternary); /* Dark text on light background */
-}
-
-.hero-flip-card:nth-child(2) .flip-card-front {
-  background: linear-gradient(
-    135deg,
-    var(--secondary) 0%,
-    var(--secondary-light) 100%
-  );
-  color: var(--quaternary);
-}
-
-.hero-flip-card:nth-child(3) .flip-card-front {
-  background: linear-gradient(
-    135deg,
-    var(--tertiary) 0%,
-    var(--tertiary-light) 100%
-  );
-  color: var(--primary-subtle); /* Light text on dark background */
-}
-
-/* Back Face - Consistent neutral background for readability */
-.hero-flip-card .flip-card-back {
-  background: var(--neutral-50);
-  color: var(--quaternary);
-  transform: rotateY(180deg);
-  border: 2px solid var(--primary-light);
-}
-
-/* Card Content Styling */
-.hero-flip-card .card-number {
-  font-size: 0.875rem;
-  font-weight: 700;
-  opacity: 0.8;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.1em;
-}
-
-.hero-flip-card .card-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  letter-spacing: -0.01em;
-}
-
-.hero-flip-card .card-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hero-flip-card .card-features li {
-  padding: 0.25rem 0;
-  font-size: 0.875rem;
-  font-weight: 500;
-  opacity: 0.9;
-}
-
-/* Icon Container */
-.hero-flip-card .icon-container {
-  margin-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Responsive Design */
@@ -299,7 +277,7 @@
     font-size: clamp(2rem, 10vw, 3.5rem);
   }
 
-  .hero-cards {
+  .hero .hero-cards {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -312,25 +290,15 @@
     max-width: 500px;
   }
 
-  .hero-flip-card {
+  .hero .hero-cards .card {
     flex: 1;
     position: relative;
     aspect-ratio: 5/7;
   }
-
-  .hero-flip-card .flip-card-front,
-  .hero-flip-card .flip-card-back {
-    padding: 1rem;
-  }
-
-  .hero-flip-card .card-title {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .hero-flip-card .card-features li {
+  
+  .hero .hero-cards .card .hero-card-inner {
+    padding: 0.8rem;
     font-size: 0.7rem;
-    padding: 0.15rem 0;
   }
 
   .hero-description {
@@ -405,20 +373,20 @@
 }
 
 @media (max-width: 800px) {
-  .hero-cards {
+  .hero .hero-cards {
     width: 65%;
   }
 }
 
 @media (max-width: 600px) {
-  .hero-cards {
+  .hero .hero-cards {
     top: 65%;
     width: 75%;
   }
 }
 
 @media (max-width: 500px) {
-  .hero-cards {
+  .hero .hero-cards {
     width: 85%;
   }
 }
@@ -454,29 +422,19 @@
     font-size: 0.6rem;
   }
 
-  .hero-cards {
+  .hero .hero-cards {
     gap: 0.75rem;
   }
 
-  .hero-flip-card {
+  .hero .hero-cards .card {
     height: 180px;
     width: 120px;
     max-width: 120px;
   }
 
-  .hero-flip-card .flip-card-front,
-  .hero-flip-card .flip-card-back {
-    padding: 0.75rem;
-  }
-
-  .hero-flip-card .card-title {
-    font-size: 0.9rem;
-    margin-bottom: 0.4rem;
-  }
-
-  .hero-flip-card .card-features li {
+  .hero .hero-cards .card .hero-card-inner {
+    padding: 0.6rem;
     font-size: 0.65rem;
-    padding: 0.1rem 0;
   }
 
   .hero-description {

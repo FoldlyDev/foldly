@@ -24,9 +24,6 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
     if (!refs.isEnabled) return;
-
-    // Create a small delay to ensure React has finished rendering
-    const timer = setTimeout(() => {
       // Check if all required refs are available
       const allRefsReady =
         refs.introRef?.current &&
@@ -87,7 +84,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
           end: `+=${window.innerHeight * 8}px`,
           pin: true,
           pinSpacing: true,
-          scrub: 0.8, // Reduced for faster response, smooth easing
+          scrub: 1, // Match reference template timing
           invalidateOnRefresh: true,
           anticipatePin: 0.5, // Reduced for less aggressive pinning
           fastScrollEnd: 3000, // Prevent jumpiness on fast scrolling
@@ -95,7 +92,21 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
           onUpdate: self => {
             const progress = self.progress;
 
-            // Reset text segments opacity
+            // Handle initial state (progress = 0)
+            if (progress === 0) {
+              // Ensure hero header is visible at start
+              gsap.set(heroHeader, {
+                transform: `translate(-50%, -50%)`,
+                opacity: 1,
+              });
+              gsap.set(animatedIcons, {
+                opacity: 1,
+              });
+              // Don't hide text segments at start
+              return;
+            }
+
+            // Reset text segments opacity after animation has started
             textSegments.forEach(segment => {
               gsap.set(segment, { opacity: 0 });
             });
@@ -388,7 +399,6 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
       // Cleanup function
       return () => {
-        clearTimeout(timer);
         ctx.revert(); // This will properly clean up all GSAP instances
         if (scrollTriggerRef.current) {
           scrollTriggerRef.current.kill();
@@ -403,7 +413,6 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
         duplicateIconsRef.current = [];
         isInitialized.current = false;
       };
-    }, 100); // Small delay to let React settle
   }, [refs, refs.isEnabled]);
 
   // Cleanup on unmount

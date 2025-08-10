@@ -80,13 +80,14 @@
    ============================================================================= */
 
 /* 🚀 Landing Feature Styles */
+@import '../features/landing/styles/menu.css';
+@import '../features/landing/styles/landing-page.css';
 @import '../features/landing/styles/intro-section.css';
 @import '../features/landing/styles/hero-section.css';
 @import '../features/landing/styles/about-section.css';
 @import '../features/landing/styles/features-section.css';
 @import '../features/landing/styles/outro-section.css';
 @import '../features/landing/styles/cards.css';
-@import '../features/landing/styles/sections.css';
 
 /* 🔐 Auth Feature Styles */
 @import '../features/auth/styles/auth-pages.css';

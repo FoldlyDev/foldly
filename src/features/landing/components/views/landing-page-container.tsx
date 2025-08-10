@@ -10,8 +10,6 @@ import { FeaturesSection } from '../sections/features-section';
 import { OutroSection } from '../sections/outro-section';
 import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
-import '../../styles/menu.css';
-import '../../styles/landing-page.css';
 import { useHeroSectionAnimation } from '../../hooks/useHeroSectionAnimation';
 import { useFeaturesSectionAnimation } from '../../hooks/useFeaturesSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
@@ -146,24 +144,27 @@ export function LandingPageContainer() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize animation orchestrator
+  // Initialize animation orchestrator - single source of truth
   const { animationState } = useLandingAnimationOrchestrator({
-    onIntroComplete: () => {
-      console.log('Intro animation completed');
+    isReady,
+    onHydrationComplete: () => {
+      console.log('Hydration completed');
     },
-    onHeroComplete: () => {
-      console.log('Hero animation completed');
+    onIntroReady: () => {
+      console.log('Intro animation ready');
+    },
+    onHeroReady: () => {
+      console.log('Hero animation ready');
     },
     onFeaturesReady: () => {
-      console.log('Features ready for animation');
-      ScrollTrigger.refresh(true);
+      console.log('Features animation ready');
     },
     onAnimationError: error => {
       console.error('Animation error:', error);
     },
   });
 
-  // Initialize section-specific animations with orchestration state
+  // Initialize section-specific animations with orchestrator state
   useIntroSectionAnimation({
     introRef,
     heroHeaderRef: introHeroHeaderRef,
@@ -172,7 +173,7 @@ export function LandingPageContainer() {
     textSegmentRefs: introTextSegmentRefs,
     placeholderIconRefs: introPlaceholderIconRefs,
     duplicateIconsContainerRef: introDuplicateIconsContainerRef,
-    isEnabled: isReady, // Only run when ready
+    isEnabled: animationState.introReady,
   });
 
   useHeroSectionAnimation({
@@ -181,7 +182,7 @@ export function LandingPageContainer() {
     heroCard1Ref,
     heroCard2Ref,
     heroCard3Ref,
-    isEnabled: isReady, // Only run when ready
+    isEnabled: animationState.heroReady,
   });
 
   useFeaturesSectionAnimation({
@@ -193,22 +194,26 @@ export function LandingPageContainer() {
     flipCard1InnerRef,
     flipCard2InnerRef,
     flipCard3InnerRef,
-    isEnabled: isReady && animationState.featuresReady, // Both conditions must be true
+    isEnabled: animationState.featuresReady,
   });
 
   return (
     <>
-      {/* <LandingNavigation /> */}
       {!isReady && (
         <div className='fixed inset-0 bg-[#020618] z-50 flex items-center justify-center'>
           <div className='animate-pulse text-white'>Loading...</div>
         </div>
       )}
-      <div className='landing-page' style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease' }}>
+      <div
+        className='landing-page'
+        style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease' }}
+      >
+        <LandingNavigation />
+
         <IntroSection ref={introSectionRefs} />
         <HeroSection ref={heroSectionRefs} />
         <AboutSection />
-        <FeaturesSection ref={featuresSectionRefs} />
+        {/* <FeaturesSection ref={featuresSectionRefs} /> */}
         <OutroSection />
       </div>
     </>

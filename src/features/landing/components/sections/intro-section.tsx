@@ -9,6 +9,7 @@ import {
   IoSparklesOutline,
 } from 'react-icons/io5';
 import { Spotlight } from '../ui/spotlight';
+import { ShimmeringText } from '@/components/marketing/animate-ui/components/shimmering';
 
 interface IntroSectionProps {}
 
@@ -46,7 +47,10 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
     const refs = ref as React.RefObject<IntroSectionRefs>;
 
     return (
-      <section className='intro-hero' ref={refs?.current?.introRef}>
+      <section
+        className='intro-hero min-h-[100svh]!'
+        ref={refs?.current?.introRef}
+      >
         <Spotlight />
 
         {/* SVG Gradient Definition */}

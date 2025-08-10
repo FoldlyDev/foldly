@@ -5,147 +5,150 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 export interface AnimationState {
-  introComplete: boolean;
-  heroComplete: boolean;
+  isHydrated: boolean;
+  introReady: boolean;
+  heroReady: boolean;
   featuresReady: boolean;
   isAnimating: boolean;
 }
 
-export interface AnimationCallbacks {
-  onIntroComplete?: () => void;
-  onHeroComplete?: () => void;
+export interface AnimationOrchestratorProps {
+  isReady: boolean;
+  onHydrationComplete?: () => void;
+  onIntroReady?: () => void;
+  onHeroReady?: () => void;
   onFeaturesReady?: () => void;
   onAnimationError?: (error: Error) => void;
 }
 
 /**
  * Centralized animation orchestrator for the landing page
- * Coordinates all section animations to prevent conflicts and race conditions
+ * Single source of truth for all animation states and timing
  */
-export function useLandingAnimationOrchestrator(callbacks?: AnimationCallbacks) {
+export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProps) {
   const [animationState, setAnimationState] = useState<AnimationState>({
-    introComplete: false,
-    heroComplete: false,
+    isHydrated: false,
+    introReady: false,
+    heroReady: false,
     featuresReady: false,
     isAnimating: false,
   });
 
-  const contextRef = useRef<gsap.Context | null>(null);
-  const masterTimelineRef = useRef<GSAPTimeline | null>(null);
-  const recoveryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const callbacksRef = useRef(callbacks);
+  const propsRef = useRef(props);
 
-  // Update callbacks ref when they change
+  // Update props ref when they change
   useEffect(() => {
-    callbacksRef.current = callbacks;
-  }, [callbacks]);
+    propsRef.current = props;
+  }, [props]);
 
-  // Initialize GSAP plugins
+  // Initialize GSAP plugins once
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
   }, []);
 
-  // Main orchestration logic
+  // Stage 1: Handle hydration - wait for parent component's isReady
   useEffect(() => {
-    // Wait longer before marking features as ready
-    // This ensures intro animation has time to properly initialize
-    const timer = setTimeout(() => {
-      setAnimationState(prev => ({ 
-        ...prev, 
-        introComplete: true,
-        heroComplete: true,
-        featuresReady: true 
-      }));
-      callbacksRef.current?.onFeaturesReady?.();
-      console.log('[Orchestrator] Features section ready for animation');
-    }, 1500); // Wait 1.5 seconds to ensure intro is fully initialized
+    if (!props.isReady) return;
 
-    // Disable recovery mechanism for now - it might be interfering
-    // Emergency recovery mechanism
-    /*recoveryTimeoutRef.current = setTimeout(() => {
-      console.log('[Orchestrator] Running recovery check...');
+    setAnimationState(prev => ({ ...prev, isHydrated: true }));
+    propsRef.current?.onHydrationComplete?.();
+    console.log('[Orchestrator] Hydration complete');
+  }, [props.isReady]);
+
+  // Stage 2: Enable intro animation after hydration
+  useEffect(() => {
+    if (!animationState.isHydrated) return;
+
+    // Give intro animation time to initialize
+    const introTimer = setTimeout(() => {
+      setAnimationState(prev => ({ ...prev, introReady: true }));
+      propsRef.current?.onIntroReady?.();
+      console.log('[Orchestrator] Intro animation ready');
+    }, 200);
+
+    return () => clearTimeout(introTimer);
+  }, [animationState.isHydrated]);
+
+  // Stage 3: Enable hero animation after intro is ready
+  useEffect(() => {
+    if (!animationState.introReady) return;
+
+    // Hero can start immediately after intro
+    setAnimationState(prev => ({ ...prev, heroReady: true }));
+    propsRef.current?.onHeroReady?.();
+    console.log('[Orchestrator] Hero animation ready');
+  }, [animationState.introReady]);
+
+  // Stage 4: Enable features animation after hero is ready
+  useEffect(() => {
+    if (!animationState.heroReady) return;
+
+    // Features section needs minimal delay to ensure DOM is ready
+    const featuresTimer = setTimeout(() => {
+      setAnimationState(prev => ({ ...prev, featuresReady: true }));
+      propsRef.current?.onFeaturesReady?.();
+      console.log('[Orchestrator] Features animation ready');
       
-      // Check for invisible sections
-      const sections = document.querySelectorAll('.intro-hero, .hero-section, .features-section');
-      let recoveryNeeded = false;
+      // Refresh ScrollTrigger after all animations are initialized
+      ScrollTrigger.refresh(true);
+    }, 300); // Reduced from 1000ms to prevent timing issues
 
-      sections.forEach((section) => {
-        const computed = window.getComputedStyle(section);
-        const opacity = parseFloat(computed.opacity);
-        const visibility = computed.visibility;
-        const display = computed.display;
+    return () => clearTimeout(featuresTimer);
+  }, [animationState.heroReady]);
 
-        if (opacity === 0 || visibility === 'hidden' || display === 'none') {
-          console.warn(`[Orchestrator] Found invisible section: ${section.className}`, {
-            opacity,
-            visibility,
-            display
-          });
+  // Emergency fallback - force everything ready after 3 seconds
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      setAnimationState(prev => {
+        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.heroReady || !prev.featuresReady;
+        
+        if (needsFallback) {
+          console.warn('[Orchestrator] Fallback activated - forcing all animations ready');
+          propsRef.current?.onAnimationError?.(new Error('Animation initialization timeout'));
           
-          // Force visibility
-          gsap.set(section, {
-            opacity: 1,
-            visibility: 'visible',
-            display: 'block',
-            clearProps: 'opacity,visibility,display'
-          });
-          
-          recoveryNeeded = true;
+          return {
+            isHydrated: true,
+            introReady: true,
+            heroReady: true,
+            featuresReady: true,
+            isAnimating: false,
+          };
         }
+        
+        return prev;
       });
+    }, 3000);
 
-      if (recoveryNeeded) {
-        // Force animation state to complete
-        setAnimationState({
-          introComplete: true,
-          heroComplete: true,
-          featuresReady: true,
-          isAnimating: false,
-        });
-        
-        // Refresh ScrollTrigger after recovery
-        ScrollTrigger.refresh(true);
-        
-        callbacksRef.current?.onAnimationError?.(new Error('Animation recovery was needed'));
-      }
-    }, 2000); // Run after 2 seconds to catch any stuck animations*/
-
-    // Cleanup
-    return () => {
-      clearTimeout(timer);
-      /*if (recoveryTimeoutRef.current) {
-        clearTimeout(recoveryTimeoutRef.current);
-      }*/
-    };
-  }, []); // Remove callbacks dependency to prevent re-runs
+    return () => clearTimeout(fallbackTimer);
+  }, []);
 
   // Provide manual control methods
-  const forceComplete = () => {
+  const forceReady = () => {
     setAnimationState({
-      introComplete: true,
-      heroComplete: true,
+      isHydrated: true,
+      introReady: true,
+      heroReady: true,
       featuresReady: true,
       isAnimating: false,
     });
     ScrollTrigger.refresh(true);
+    console.log('[Orchestrator] Manually forced all animations ready');
   };
 
   const reset = () => {
     setAnimationState({
-      introComplete: false,
-      heroComplete: false,
+      isHydrated: false,
+      introReady: false,
+      heroReady: false,
       featuresReady: false,
       isAnimating: false,
     });
-    
-    if (masterTimelineRef.current) {
-      masterTimelineRef.current.restart();
-    }
+    console.log('[Orchestrator] Reset animation states');
   };
 
   return {
     animationState,
-    forceComplete,
+    forceReady,
     reset,
   };
 }
