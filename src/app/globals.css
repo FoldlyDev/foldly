@@ -250,6 +250,30 @@
   --light: var(--neutral-100);
   --dark: var(--neutral-800);
 
+  /* Dark Mode Gradients */
+  /* --foldly-gradient-start: #020618; 
+  --foldly-gradient-end: #4a6b85; 
+  --foldly-gradient: linear-gradient(
+    135deg,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-reverse: linear-gradient(
+    315deg,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-horizontal: linear-gradient(
+    90deg,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-vertical: linear-gradient(
+    180deg,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  ); */
+
   /* Override glass morphism for dark mode */
   --foldly-glass-bg-light: var(--foldly-glass-bg);
   --foldly-glass-bg-light-solid: var(--foldly-glass-bg-solid);
@@ -264,7 +288,7 @@
     /* Fallback background color to prevent flash of unstyled content */
     background-color: #020618;
   }
-  
+
   body {
     font-family: var(--font-sans);
     background-color: #020618; /* Match intro section initial color */
@@ -278,12 +302,19 @@
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
     /* Smooth theme transitions for all children */
-    transition: background-color 0.3s ease, color 0.3s ease;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
   }
-  
+
   /* Apply transitions to all elements for smooth theme changes */
   body * {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease,
+      border-color 0.3s ease,
+      fill 0.3s ease,
+      stroke 0.3s ease;
   }
 
   /* Headings use display font */
@@ -902,7 +933,8 @@ section[aria-label*='Notifications'] > * {
 
 /* Animated gradient effect for landing page */
 @keyframes gradient {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {

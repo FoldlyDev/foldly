@@ -66,6 +66,16 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               <stop offset='0%' stopColor='var(--foldly-gradient-start)' />
               <stop offset='100%' stopColor='var(--foldly-gradient-end)' />
             </linearGradient>
+            <linearGradient
+              id='icon-gradient-dark'
+              x1='0%'
+              y1='0%'
+              x2='100%'
+              y2='100%'
+            >
+              <stop offset='0%' stopColor='#020618' />
+              <stop offset='100%' stopColor='#4a6b85' />
+            </linearGradient>
           </defs>
         </svg>
 

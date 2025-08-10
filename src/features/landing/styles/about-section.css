@@ -1,45 +1,493 @@
 /* =============================================================================
    ABOUT SECTION COMPONENT STYLES
+   Includes both home-about section (from landing page) and about page sections
    ============================================================================= */
 
-/* About Section */
-.about {
+/* Template color variables - Juno Watts theme */
+:root {
+  --base-100: #f9f4eb;
+  --base-200: #efece5;
+  --base-300: #020618; /* Updated to match intro section dark blue */
+  --base-secondary-dark: #9ca3af; /* Lightened for better contrast with dark background */
+  --base-secondary-fade: rgba(249, 244, 235, 0.15);
+}
+
+/* Ensure consistent heading styles for about sections */
+.home-about h3,
+.home-about h4,
+.about-hero h2,
+.about-hero h3,
+.about-skills h3,
+.about-sticky-cards h3 {
+  text-transform: uppercase;
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+}
+
+/* =============================================================================
+   HOME ABOUT SECTION (Landing Page)
+   ============================================================================= */
+
+.home-about {
   position: relative;
   width: 100vw;
   height: 100svh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--dark);
-  color: var(--light);
-  padding: 2rem;
-  text-align: center;
+  background: var(--foldly-dark-gradient-radial);
+  color: var(--base-100);
+  overflow: hidden;
 }
 
-.about h1 {
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
+.home-about .container {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  height: 100%;
+  padding: 2.75rem;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.home-about .home-about-col:nth-child(1) {
+  flex: 4;
+}
+
+.home-about .home-about-col:nth-child(1) .home-about-header {
+  width: 90%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2rem;
+  padding-bottom: 1rem;
+}
+
+.home-about .home-about-col:nth-child(1) .home-about-header h3 {
+  font-size: 6rem;
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
+}
+
+.home-about .home-about-col:nth-child(2) {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2rem;
+  width: 100%;
+}
+
+.home-about .home-about-col-row {
+  display: flex;
+  flex: 1;
+  gap: 2rem;
+  width: 100%;
+}
+
+.home-about .home-about-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  border: 1px dashed var(--base-secondary-fade);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.home-about .home-about-card p.mono {
+  color: var(--base-secondary-dark);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
   font-weight: 500;
-  line-height: 1.2;
-  max-width: 800px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.home-about .home-about-card h4 {
+  font-size: 2.5rem;
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
+  color: var(--base-100);
+}
+
+/* Symbols container specific to home-about */
+.home-about .symbols-container {
+  display: flex;
+  gap: 0.5rem;
+  height: 1.125rem;
+  z-index: 1;
+}
+
+.home-about .symbols-container .symbol {
+  width: 1.125rem;
+}
+
+.home-about .mono {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.home-about .mono span {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/* =============================================================================
+   ABOUT PAGE SECTIONS
+   ============================================================================= */
+
+
+/* Skills Section */
+.about-skills {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  background-color: var(--neutral-300);
+  color: var(--dark);
+}
+
+.about-skills .container {
+  display: flex;
+  gap: 2rem;
+  height: 100%;
+  padding: 4rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.about-skills .about-skills-col {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+}
+
+.about-skills .about-skills-col:nth-child(1) {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.about-skills .about-skills-col:nth-child(1) h3 {
+  width: 80%;
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
+}
+
+.about-skills .about-skills-col .object-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #101010;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.about-skills .object-container .object {
+  position: absolute;
+  width: max-content;
+  font-size: 2rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  background-color: var(--light);
+  color: var(--dark);
+  padding: 1.5rem 3rem;
+  border-radius: 10px;
+  user-select: none;
+  pointer-events: auto;
+  z-index: 2;
+  border: 2px solid #101010;
+  cursor: grab;
+}
+
+.about-skills .object-container .object:active {
+  cursor: grabbing;
+}
+
+.about-skills .object-container .os-1 {
+  background-color: var(--primary);
+  color: var(--dark);
+}
+
+.about-skills .object-container .os-2 {
+  background-color: var(--secondary);
+  color: var(--dark);
+}
+
+.about-skills .object-container .os-3 {
+  background-color: var(--tertiary);
+  color: var(--light);
+}
+
+.about-skills-copy-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Gallery Section */
+.about-sticky-cards {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--foldly-dark-gradient-radial);
+  color: var(--light);
+}
+
+.about-sticky-cards .sticky-cards-header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  text-align: center;
+  z-index: 1;
+}
+
+.about-sticky-cards .sticky-cards-header h3 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
+}
+
+.about-sticky-cards .gallery-card {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  width: 25%;
+  height: 50%;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  border-radius: 12px;
+  background-color: var(--neutral-300);
+  color: var(--dark);
+}
+
+.about-sticky-cards .gallery-card-img {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.about-sticky-cards .gallery-card-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--secondary) 50%,
+    var(--tertiary) 100%
+  );
+  opacity: 0.3;
+}
+
+.about-sticky-cards .gallery-card-content {
+  flex: 0 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+.about-sticky-cards .gallery-card-content p.mono {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+/* Common Elements */
+.home-spotlight-top-bar,
+.home-spotlight-bottom-bar {
+  position: absolute;
+  width: 100%;
+  padding: 1rem 0;
+  z-index: 10;
+}
+
+.home-spotlight-top-bar {
+  top: 2rem;
+}
+
+.home-spotlight-bottom-bar {
+  bottom: 2rem;
+}
+
+.home-spotlight-top-bar .container,
+.home-spotlight-bottom-bar .container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.symbols-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+}
+
+.symbol-icon {
+  font-size: 1.5rem;
+  color: var(--neutral-600); /* Lightened for better visibility */
+  font-weight: 300;
+}
+
+.symbol-icon.light {
+  color: var(--light);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--neutral-500); /* Using lighter gray for better contrast */
+}
+
+.mono span {
+  position: relative;
+  top: -0.1rem;
+}
+
+.about-skills-callout .mono {
+  color: var(--dark);
+  opacity: 0.8;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .about {
-    padding: 3rem 1rem;
+@media (max-width: 1000px) {
+  /* Home About Section Responsive */
+  .home-about {
+    height: max-content;
   }
 
-  .about h1 {
-    font-size: clamp(1.25rem, 6vw, 2rem);
+  .home-about .container {
+    flex-direction: column;
+    padding: 2rem;
+  }
+
+  .home-about .symbols-container {
+    margin-bottom: 8rem;
+  }
+
+  .home-about .home-about-col:nth-child(1) .home-about-header {
+    width: 100%;
+  }
+
+  .home-about .home-about-col:nth-child(1) .home-about-header h3 {
+    font-size: 3rem;
+  }
+
+  .home-about .home-about-col:nth-child(2),
+  .home-about .home-about-col-row {
+    flex-direction: column;
+  }
+
+  .home-about .home-about-card {
+    aspect-ratio: 1;
+    max-height: 400px;
+  }
+
+  /* About Page Sections Responsive */
+  .about-sticky-cards .gallery-card {
+    width: 75%;
+  }
+
+
+  .about-hero .about-header {
+    width: 90%;
+    top: 50%;
+    bottom: unset;
+    transform: translate(-50%, -50%);
+  }
+
+  .about-skills {
+    height: 100svh;
+  }
+
+  .about-skills .about-skills-col:nth-child(1) h3 {
+    width: 100%;
+  }
+
+  .about-skills .container {
+    flex-direction: column;
+  }
+
+  .about-skills .about-skills-col:nth-child(1) {
+    justify-content: flex-start;
+    gap: 4rem;
+  }
+
+  .skills-playground {
+    flex: 2 !important;
+  }
+
+  .about-skills .object-container .object {
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+  }
+
+  .about-sticky-cards .gallery-card {
+    top: 50%;
+    width: 50%;
+    height: 25svh;
+  }
+
+  .about-sticky-cards .sticky-cards-header {
+    width: 90%;
   }
 }
 
-@media (max-width: 480px) {
-  .about {
-    padding: 2rem 0.5rem;
+/* Floating animation */
+@keyframes floating {
+  0% {
+    transform: translate(-50%, -50%);
   }
-
-  .about h1 {
-    font-size: clamp(1rem, 8vw, 1.5rem);
+  50% {
+    transform: translate(-50%, -55%);
+  }
+  100% {
+    transform: translate(-50%, -50%);
   }
 }

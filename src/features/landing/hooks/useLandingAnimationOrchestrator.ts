@@ -8,6 +8,7 @@ export interface AnimationState {
   isHydrated: boolean;
   introReady: boolean;
   heroReady: boolean;
+  aboutReady: boolean;
   featuresReady: boolean;
   isAnimating: boolean;
 }
@@ -17,6 +18,7 @@ export interface AnimationOrchestratorProps {
   onHydrationComplete?: () => void;
   onIntroReady?: () => void;
   onHeroReady?: () => void;
+  onAboutReady?: () => void;
   onFeaturesReady?: () => void;
   onAnimationError?: (error: Error) => void;
 }
@@ -30,6 +32,7 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     isHydrated: false,
     introReady: false,
     heroReady: false,
+    aboutReady: false,
     featuresReady: false,
     isAnimating: false,
   });
@@ -79,9 +82,19 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     console.log('[Orchestrator] Hero animation ready');
   }, [animationState.introReady]);
 
-  // Stage 4: Enable features animation after hero is ready
+  // Stage 4: Enable about animation after hero is ready
   useEffect(() => {
     if (!animationState.heroReady) return;
+
+    // About section can start immediately after hero
+    setAnimationState(prev => ({ ...prev, aboutReady: true }));
+    propsRef.current?.onAboutReady?.();
+    console.log('[Orchestrator] About animation ready');
+  }, [animationState.heroReady]);
+
+  // Stage 5: Enable features animation after about is ready
+  useEffect(() => {
+    if (!animationState.aboutReady) return;
 
     // Features section needs minimal delay to ensure DOM is ready
     const featuresTimer = setTimeout(() => {
@@ -94,13 +107,13 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     }, 300); // Reduced from 1000ms to prevent timing issues
 
     return () => clearTimeout(featuresTimer);
-  }, [animationState.heroReady]);
+  }, [animationState.aboutReady]);
 
   // Emergency fallback - force everything ready after 3 seconds
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       setAnimationState(prev => {
-        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.heroReady || !prev.featuresReady;
+        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.heroReady || !prev.aboutReady || !prev.featuresReady;
         
         if (needsFallback) {
           console.warn('[Orchestrator] Fallback activated - forcing all animations ready');
@@ -110,6 +123,7 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
             isHydrated: true,
             introReady: true,
             heroReady: true,
+            aboutReady: true,
             featuresReady: true,
             isAnimating: false,
           };
@@ -128,6 +142,7 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       isHydrated: true,
       introReady: true,
       heroReady: true,
+      aboutReady: true,
       featuresReady: true,
       isAnimating: false,
     });
@@ -140,6 +155,7 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       isHydrated: false,
       introReady: false,
       heroReady: false,
+      aboutReady: false,
       featuresReady: false,
       isAnimating: false,
     });

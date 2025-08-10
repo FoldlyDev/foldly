@@ -268,6 +268,12 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                     duplicate.style.height = headerIconSize + 'px';
                     duplicate.style.zIndex = '10';
 
+                    // Apply dark gradient to duplicate icons
+                    const svg = duplicate.querySelector('svg');
+                    if (svg) {
+                      svg.style.stroke = 'url(#icon-gradient-dark)';
+                    }
+
                     document.body.appendChild(duplicate);
                     duplicateIconsRef.current.push(duplicate);
                   }

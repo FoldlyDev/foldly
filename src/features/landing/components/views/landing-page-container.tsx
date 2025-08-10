@@ -1,32 +1,24 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useRef, useEffect, useState } from 'react';
 import { IntroSection } from '../sections/intro-section';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
 import { HeroSection } from '../sections/hero-section';
-import { AboutSection } from '../sections/about-section';
+import {
+  HomeAboutSection,
+  type HomeAboutSectionRefs,
+} from '../sections/home-about-section';
 import { FeaturesSection } from '../sections/features-section';
 import { OutroSection } from '../sections/outro-section';
 import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
 import { useHeroSectionAnimation } from '../../hooks/useHeroSectionAnimation';
 import { useFeaturesSectionAnimation } from '../../hooks/useFeaturesSectionAnimation';
+import { useHomeAboutSectionAnimation } from '../../hooks/useHomeAboutSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/core/shadcn/button';
-import {
-  ArrowRight,
-  LogIn,
-  UserPlus,
-  Sparkles,
-  Home,
-  ChefHat,
-} from 'lucide-react';
 import { checkOnboardingStatusAction } from '@/features/onboarding/lib/actions';
-import { useState } from 'react';
 
 /**
  * Client-side container component for the landing page
@@ -90,6 +82,9 @@ export function LandingPageContainer() {
   const heroCard1Ref = useRef<HTMLDivElement>(null);
   const heroCard2Ref = useRef<HTMLDivElement>(null);
   const heroCard3Ref = useRef<HTMLDivElement>(null);
+
+  // Home About section refs
+  const homeAboutSectionRefs = useRef<HomeAboutSectionRefs>(null);
 
   // Features section refs
   const featuresRef = useRef<HTMLElement>(null);
@@ -197,6 +192,11 @@ export function LandingPageContainer() {
     isEnabled: animationState.featuresReady,
   });
 
+  useHomeAboutSectionAnimation({
+    refs: homeAboutSectionRefs.current!,
+    isEnabled: animationState.heroReady && !!homeAboutSectionRefs.current,
+  });
+
   return (
     <>
       {!isReady && (
@@ -211,8 +211,8 @@ export function LandingPageContainer() {
         <LandingNavigation />
 
         <IntroSection ref={introSectionRefs} />
-        <HeroSection ref={heroSectionRefs} />
-        <AboutSection />
+        {/* <HeroSection ref={heroSectionRefs} /> */}
+        <HomeAboutSection ref={homeAboutSectionRefs} />
         {/* <FeaturesSection ref={featuresSectionRefs} /> */}
         <OutroSection />
       </div>
