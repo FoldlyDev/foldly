@@ -6,9 +6,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Matter from 'matter-js';
 
 interface AboutSectionRefs {
-  aboutRef: React.RefObject<HTMLElement | null>;
-  heroImageRef: React.RefObject<HTMLDivElement | null>;
-  animeTextContainerRef: React.RefObject<HTMLDivElement | null>;
   skillsContainerRef: React.RefObject<HTMLDivElement | null>;
   objectContainerRef: React.RefObject<HTMLDivElement | null>;
   galleryCardsContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -26,129 +23,19 @@ export function useAboutSectionAnimation({
 }: UseAboutSectionAnimationProps) {
   const engineRef = useRef<Matter.Engine | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
-  const bodiesRef = useRef<Array<{
-    body: Matter.Body;
-    element: HTMLElement;
-    width: number;
-    height: number;
-  }>>([]);
+  const bodiesRef = useRef<
+    Array<{
+      body: Matter.Body;
+      element: HTMLElement;
+      width: number;
+      height: number;
+    }>
+  >([]);
 
   useEffect(() => {
     if (!isEnabled) return;
 
     gsap.registerPlugin(ScrollTrigger);
-
-    // Animated text effect
-    const animeTextContainer = refs.animeTextContainerRef.current;
-    if (animeTextContainer) {
-      const paragraphs = animeTextContainer.querySelectorAll('.anime-text .anime-text-paragraph');
-      const wordHighlightBgColor = '191, 188, 180'; // Match template color
-
-      paragraphs.forEach((paragraph) => {
-        const words = Array.from(paragraph.querySelectorAll('.word'));
-        
-        ScrollTrigger.create({
-          trigger: animeTextContainer,
-          pin: animeTextContainer,
-          start: 'top top',
-          end: `+=${window.innerHeight * 4}`,
-          pinSpacing: true,
-          onUpdate: (self) => {
-            const progress = self.progress;
-            const totalWords = words.length;
-
-            words.forEach((word, index) => {
-              const wordElement = word as HTMLElement;
-              const wordText = word.querySelector('span') as HTMLElement;
-
-              if (progress <= 0.7) {
-                const progressTarget = 0.7;
-                const revealProgress = Math.min(1, progress / progressTarget);
-
-                const overlapWords = 15;
-                const totalAnimationLength = 1 + overlapWords / totalWords;
-
-                const wordStart = index / totalWords;
-                const wordEnd = wordStart + overlapWords / totalWords;
-
-                const timelineScale =
-                  1 /
-                  Math.min(
-                    totalAnimationLength,
-                    1 + (totalWords - 1) / totalWords + overlapWords / totalWords
-                  );
-
-                const adjustedStart = wordStart * timelineScale;
-                const adjustedEnd = wordEnd * timelineScale;
-                const duration = adjustedEnd - adjustedStart;
-
-                const wordProgress =
-                  revealProgress <= adjustedStart
-                    ? 0
-                    : revealProgress >= adjustedEnd
-                    ? 1
-                    : (revealProgress - adjustedStart) / duration;
-
-                wordElement.style.opacity = String(wordProgress);
-
-                const backgroundFadeStart =
-                  wordProgress >= 0.9 ? (wordProgress - 0.9) / 0.1 : 0;
-                const backgroundOpacity = Math.max(0, 1 - backgroundFadeStart);
-                wordElement.style.backgroundColor = `rgba(${wordHighlightBgColor}, ${backgroundOpacity})`;
-
-                const textRevealThreshold = 0.9;
-                const textRevealProgress =
-                  wordProgress >= textRevealThreshold
-                    ? (wordProgress - textRevealThreshold) /
-                      (1 - textRevealThreshold)
-                    : 0;
-                if (wordText) {
-                  wordText.style.opacity = String(Math.pow(textRevealProgress, 0.5));
-                }
-              } else {
-                const reverseProgress = (progress - 0.7) / 0.3;
-                wordElement.style.opacity = '1';
-                const targetTextOpacity = 1;
-
-                const reverseOverlapWords = 5;
-                const reverseWordStart = index / totalWords;
-                const reverseWordEnd =
-                  reverseWordStart + reverseOverlapWords / totalWords;
-
-                const reverseTimelineScale =
-                  1 /
-                  Math.max(
-                    1,
-                    (totalWords - 1) / totalWords + reverseOverlapWords / totalWords
-                  );
-
-                const reverseAdjustedStart =
-                  reverseWordStart * reverseTimelineScale;
-                const reverseAdjustedEnd = reverseWordEnd * reverseTimelineScale;
-                const reverseDuration = reverseAdjustedEnd - reverseAdjustedStart;
-
-                const reverseWordProgress =
-                  reverseProgress <= reverseAdjustedStart
-                    ? 0
-                    : reverseProgress >= reverseAdjustedEnd
-                    ? 1
-                    : (reverseProgress - reverseAdjustedStart) / reverseDuration;
-
-                if (reverseWordProgress > 0 && wordText) {
-                  wordText.style.opacity = String(
-                    targetTextOpacity * (1 - reverseWordProgress)
-                  );
-                  wordElement.style.backgroundColor = `rgba(${wordHighlightBgColor}, ${reverseWordProgress})`;
-                } else if (wordText) {
-                  wordText.style.opacity = String(targetTextOpacity);
-                  wordElement.style.backgroundColor = `rgba(${wordHighlightBgColor}, 0)`;
-                }
-              }
-            });
-          },
-        });
-      });
-    }
 
     // Skills section physics animation
     const initPhysics = (container: HTMLElement) => {
@@ -255,7 +142,10 @@ export function useAboutSectionAnimation({
       // Random forces
       const forceInterval = setInterval(() => {
         if (bodiesRef.current.length > 0 && Math.random() < 0.3) {
-          const randomBody = bodiesRef.current[Math.floor(Math.random() * bodiesRef.current.length)];
+          const randomBody =
+            bodiesRef.current[
+              Math.floor(Math.random() * bodiesRef.current.length)
+            ];
           if (randomBody) {
             const randomForce = {
               x: (Math.random() - 0.5) * 0.02,
@@ -332,7 +222,9 @@ export function useAboutSectionAnimation({
     }
 
     // Gallery cards animation
-    const galleryCards = refs.galleryCardRefs.map(ref => ref.current).filter(Boolean);
+    const galleryCards = refs.galleryCardRefs
+      .map(ref => ref.current)
+      .filter(Boolean);
     const rotations = [-12, 10, -5, 5, -5, -2];
 
     galleryCards.forEach((galleryCard, index) => {
@@ -353,14 +245,14 @@ export function useAboutSectionAnimation({
         pin: true,
         pinSpacing: true,
         scrub: 1,
-        onUpdate: (self) => {
+        onUpdate: self => {
           const progress = self.progress;
           const totalCards = galleryCards.length;
           const progressPerCard = 1 / totalCards;
 
           galleryCards.forEach((galleryCard, index) => {
             if (!galleryCard) return;
-            
+
             const galleryCardStart = index * progressPerCard;
             let galleryCardProgress =
               (progress - galleryCardStart) / progressPerCard;
@@ -376,7 +268,10 @@ export function useAboutSectionAnimation({
               if (remainingProgress > 0) {
                 const distanceMultiplier = 1 - index * 0.15;
                 xPos =
-                  -window.innerWidth * 0.3 * distanceMultiplier * remainingProgress;
+                  -window.innerWidth *
+                  0.3 *
+                  distanceMultiplier *
+                  remainingProgress;
                 yPos =
                   -window.innerHeight *
                   0.3 *
@@ -399,16 +294,16 @@ export function useAboutSectionAnimation({
     // Cleanup
     return () => {
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
-      
+
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
-      
+
       if (engineRef.current) {
         Matter.World.clear(engineRef.current.world, false);
         Matter.Engine.clear(engineRef.current);
       }
-      
+
       bodiesRef.current = [];
     };
   }, [isEnabled, refs]);
