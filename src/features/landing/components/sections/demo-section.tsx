@@ -67,22 +67,6 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>((_, ref
       </div>
       <div ref={bottomBarRef} className="home-spotlight-bottom-bar">
         <div className="container">
-          <p
-            className="mono"
-            data-animate-type="scramble"
-            data-animate-delay="0.2"
-            data-animate-on-scroll="true"
-          >
-            <span>▶</span> Visual logs
-          </p>
-          <p
-            className="mono"
-            data-animate-type="scramble"
-            data-animate-delay="0.25"
-            data-animate-on-scroll="true"
-          >
-            / Portfolio Arc
-          </p>
         </div>
       </div>
       <div className="container">

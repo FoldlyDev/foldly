@@ -3,24 +3,26 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { useNavigationAnimation } from '../../hooks/useNavigationAnimation';
+import { useOnboardingStatus } from '@/features/onboarding/hooks/use-onboarding-status';
 
 interface NavLink {
   href: string;
   label: string;
+  requiresAuth?: boolean;
+  dynamicLink?: boolean;
 }
-
-const navLinks: NavLink[] = [
-  { href: '/', label: 'Index' },
-  { href: '/about', label: 'The Dev' },
-  { href: '/work', label: 'Cool Stuff' },
-  { href: '/project', label: 'Log 01' },
-  { href: '/contact', label: 'Ping Me' },
-];
 
 export function LandingNavigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const { data: onboardingData, isLoading: isOnboardingLoading } = useOnboardingStatus();
+  
+  const hasCompletedOnboarding = onboardingData?.hasWorkspace ?? null;
+  const isAuthReady = isLoaded && !isOnboardingLoading;
   
   // Refs for animation - matching template structure
   const menuRef = useRef<HTMLElement>(null);
@@ -32,6 +34,21 @@ export function LandingNavigation() {
   const menuLogoImgRef = useRef<HTMLImageElement>(null);
   const hamburgerMenuRef = useRef<HTMLDivElement>(null);
   const menuTimeRef = useRef<HTMLDivElement>(null);
+
+
+  // Compute dynamic link values
+  const authLink = {
+    href: isSignedIn ? (hasCompletedOnboarding ? '/dashboard/workspace' : '/onboarding') : '/sign-in',
+    label: isSignedIn ? (hasCompletedOnboarding ? 'Your Space' : 'Get Started') : 'Jump In',
+  };
+
+  // Static nav links structure to prevent re-initialization
+  const navLinks: NavLink[] = [
+    { href: '/', label: 'Home' },
+    { href: authLink.href, label: authLink.label, dynamicLink: true },
+    { href: '/pricing', label: 'The Deets' },
+    { href: '/contact', label: 'Hit Us Up' },
+  ];
 
   // Initialize animation hook
   useNavigationAnimation(
@@ -48,6 +65,7 @@ export function LandingNavigation() {
       isOpen,
       onAnimatingChange: setIsAnimating,
       onOpenChange: setIsOpen,
+      isReady: isAuthReady,
     }
   );
 
@@ -77,29 +95,46 @@ export function LandingNavigation() {
   return (
     <nav ref={menuRef} className="menu">
       <div ref={menuHeaderRef} className="menu-header" onClick={handleToggle}>
-        <Link href="/" className="menu-logo">
-          <Image
-            ref={menuLogoImgRef}
-            src="/assets/img/logo/foldly_logo_sm.png"
-            alt=""
-            width={32}
-            height={32}
-            priority
-          />
-        </Link>
+        <div className="menu-logo-wrapper">
+          <Link href="/" className="menu-logo">
+            <Image
+              ref={menuLogoImgRef}
+              src="/assets/img/logo/foldly_logo_sm.png"
+              alt=""
+              width={32}
+              height={32}
+              priority
+            />
+          </Link>
+          {isSignedIn && user?.imageUrl && (
+            <div className="menu-user-avatar">
+              <Image
+                src={user.imageUrl}
+                alt={user.firstName || 'User'}
+                width={32}
+                height={32}
+                className="menu-user-avatar-img"
+              />
+            </div>
+          )}
+        </div>
         <button ref={menuToggleRef} className="menu-toggle" aria-label="Toggle menu">
-          <div ref={hamburgerMenuRef} className="menu menu-hamburger-icon">
-            <span className="menu-item"></span>
-            <span className="menu-item"></span>
-          </div>
+          {!isAuthReady ? (
+            <div className="menu-spinner" />
+          ) : (
+            <div ref={hamburgerMenuRef} className="menu menu-hamburger-icon">
+              <span className="menu-item"></span>
+              <span className="menu-item"></span>
+            </div>
+          )}
         </button>
       </div>
       <div ref={menuOverlayRef} className="menu-overlay">
         <nav className="menu-nav">
-          <ul>
+          <ul key={isAuthReady ? 'ready' : 'loading'}>
             {navLinks.map((link, index) => (
               <li
-                key={link.href}
+                key={index}
                 ref={(el) => {
                   if (el) menuItemsRef.current[index] = el;
                 }}

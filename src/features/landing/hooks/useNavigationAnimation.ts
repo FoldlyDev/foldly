@@ -20,6 +20,7 @@ interface NavigationAnimationOptions {
   onOpenChange?: (isOpen: boolean) => void;
   scrollHideThreshold?: number;
   scrollUpThreshold?: number;
+  isReady?: boolean;
 }
 
 /**
@@ -33,7 +34,8 @@ export function useNavigationAnimation(
     onAnimatingChange, 
     onOpenChange,
     scrollHideThreshold = 50,
-    scrollUpThreshold = 3 
+    scrollUpThreshold = 3,
+    isReady = true
   }: NavigationAnimationOptions
 ) {
   const isInitialized = useRef(false);
@@ -45,6 +47,8 @@ export function useNavigationAnimation(
   // Scroll hide states
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const scrollStartY = useRef(0);
+  const hasScrolledEnough = useRef(false);
   const ticking = useRef(false);
   const rafId = useRef<number | null>(null);
   const navShowHideTimeline = useRef<gsap.core.Timeline | null>(null);
@@ -303,11 +307,28 @@ export function useNavigationAnimation(
   }, [scrollHideThreshold, scrollUpThreshold]);
 
   const handleScroll = useCallback(() => {
+    const lenis = (window as any).lenis;
+    const currentScrollY = lenis ? lenis.scroll : window.scrollY;
+    
+    // Close menu if it's open and user has scrolled more than 30px
+    if (isOpenRef.current) {
+      if (!hasScrolledEnough.current) {
+        // First scroll event when menu is open - record starting position
+        scrollStartY.current = currentScrollY;
+        hasScrolledEnough.current = true;
+      } else if (Math.abs(currentScrollY - scrollStartY.current) > 30) {
+        // User has scrolled enough, close the menu
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+      }
+    }
+    
     if (!ticking.current) {
       rafId.current = window.requestAnimationFrame(updateScrollDirection);
       ticking.current = true;
     }
-  }, [updateScrollDirection]);
+  }, [updateScrollDirection, onOpenChange]);
 
   // Initialize scroll listener
   useEffect(() => {
@@ -397,6 +418,7 @@ export function useNavigationAnimation(
   useEffect(() => {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
+    if (!isReady) return;
 
     const timer = setTimeout(() => {
       initMenu();
@@ -423,7 +445,7 @@ export function useNavigationAnimation(
     return () => {
       clearTimeout(timer);
     };
-  }, [refs]);
+  }, [refs, isReady]);
 
   // Handle open/close
   useEffect(() => {
@@ -432,6 +454,11 @@ export function useNavigationAnimation(
     // Reset animation flag to ensure we can always animate
     isAnimatingRef.current = false;
     isOpenRef.current = isOpen;
+    
+    // Reset scroll tracking when menu state changes
+    if (!isOpen) {
+      hasScrolledEnough.current = false;
+    }
     
     if (isOpen) {
       openMenu();

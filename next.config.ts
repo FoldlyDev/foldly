@@ -20,6 +20,22 @@ const nextConfig: NextConfig = {
   // Server configuration
   serverExternalPackages: ['postgres'],
 
+  // Image configuration
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.clerk.dev',
+        pathname: '/**',
+      },
+    ],
+  },
+
   // Compiler optimizations
   compiler: {
     // Remove console statements in production

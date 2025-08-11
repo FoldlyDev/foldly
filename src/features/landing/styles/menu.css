@@ -39,9 +39,17 @@
   transition: opacity 0.3s ease;
 }
 
+.menu-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .menu-logo {
   font-size: 1.25rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
 }
 
 .menu-logo img {
@@ -52,6 +60,26 @@
 
 .menu-logo img.rotated {
   transform: rotate(180deg);
+}
+
+.menu-user-avatar {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.menu-user-avatar:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.menu-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .menu-toggle {
@@ -116,6 +144,8 @@
   transform-origin: top;
   overflow: hidden;
   will-change: transform;
+  /* Hide initially to prevent flash */
+  transform: scaleY(0);
 }
 
 .menu-nav {
@@ -189,6 +219,25 @@
 .menu-time {
   width: max-content;
   color: var(--base-secondary-dark);
+}
+
+/* Loading Spinner - matches landing page loading animation */
+.menu-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-bottom-color: var(--base-100);
+  animation: menu-spin 1s linear infinite;
+}
+
+@keyframes menu-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 1000px) {

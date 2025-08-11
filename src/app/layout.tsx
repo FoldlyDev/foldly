@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { QueryProvider } from '@/lib/providers/query-client-provider';
-import { ThemeProvider } from '@/lib/providers/theme-provider';
 import { Toaster } from '@/components/ui/core/shadcn/sonner';
 import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor';
-import { NotificationProvider } from '@/features/notifications/providers/NotificationProvider';
+import { Providers } from './providers';
 import './globals.css';
 
 const geistSans = Geist({
@@ -81,20 +78,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ClerkProvider>
-          <ThemeProvider
-            attribute='class'
-            enableSystem
-            disableTransitionOnChange
-          >
-            <QueryProvider>
-              <NotificationProvider>{children}</NotificationProvider>
-            </QueryProvider>
-            <Toaster />
-            <SpeedInsights />
-            <PerformanceMonitor />
-          </ThemeProvider>
-        </ClerkProvider>
+        <Providers>
+          {children}
+          <Toaster />
+          <SpeedInsights />
+          <PerformanceMonitor />
+        </Providers>
       </body>
     </html>
   );
