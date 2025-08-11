@@ -11,7 +11,6 @@ import Lenis from 'lenis';
  */
 export function useLenisScroll() {
   const lenisRef = useRef<Lenis | null>(null);
-  const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -43,28 +42,31 @@ export function useLenisScroll() {
     // Make Lenis globally accessible for debugging
     (window as any).lenis = lenis;
 
-    // Simple ScrollTrigger update on scroll - more stable than ticker integration
-    lenis.on('scroll', () => {
-      ScrollTrigger.update();
-    });
+    // Synchronize Lenis scrolling with GSAP's ScrollTrigger plugin
+    lenis.on('scroll', ScrollTrigger.update);
 
-    // Use requestAnimationFrame for Lenis updates instead of GSAP ticker
-    function raf(time: number) {
-      lenis.raf(time);
-      rafIdRef.current = requestAnimationFrame(raf);
-    }
-    rafIdRef.current = requestAnimationFrame(raf);
+    // Add Lenis's raf method to GSAP's ticker
+    // This ensures Lenis's smooth scroll animation updates on each GSAP tick
+    const lenisRaf = (time: number) => {
+      lenis.raf(time * 1000); // Convert time from seconds to milliseconds
+    };
+    gsap.ticker.add(lenisRaf);
+
+    // Disable lag smoothing in GSAP to prevent any delay in scroll animations
+    gsap.ticker.lagSmoothing(0);
 
     // No need to refresh ScrollTrigger - the template doesn't do this
 
     // Start Lenis
     lenis.start();
 
+    // No focus/blur handling needed - works fine in incognito mode
+    // The issue in normal mode is likely caused by browser extensions
+    // Following the Juno Watts template pattern of no visibility handling
+
     // Cleanup function
     return () => {
-      if (rafIdRef.current) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
+      gsap.ticker.remove(lenisRaf);
       lenis.destroy();
       lenisRef.current = null;
     };
