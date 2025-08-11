@@ -47,6 +47,9 @@ export function useNavigationAnimation(
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
   const rafId = useRef<number | null>(null);
+  const navShowHideTimeline = useRef<gsap.core.Timeline | null>(null);
+  const isNavAnimating = useRef(false);
+  const scrollDebounceTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Scramble text function from template
   const scrambleText = (elements: any[], duration = 0.4) => {
@@ -343,19 +346,51 @@ export function useNavigationAnimation(
     }
   }, [handleScroll]);
 
-  // Apply visibility to menu
+  // Apply visibility to menu with smooth animation
   useEffect(() => {
     if (!refs.menuRef?.current || !isInitialized.current) return;
     
-    requestAnimationFrame(() => {
-      if (refs.menuRef.current) {
-        if (isVisible) {
-          refs.menuRef.current.classList.remove('hidden');
-        } else {
-          refs.menuRef.current.classList.add('hidden');
+    // Kill any existing animation
+    if (navShowHideTimeline.current) {
+      navShowHideTimeline.current.kill();
+    }
+    
+    // Prevent overlapping animations
+    if (isNavAnimating.current) return;
+    isNavAnimating.current = true;
+    
+    const menu = refs.menuRef.current;
+    
+    // Create a new timeline for smooth show/hide
+    navShowHideTimeline.current = gsap.timeline({
+      onComplete: () => {
+        isNavAnimating.current = false;
+        if (!isVisible) {
+          menu.style.pointerEvents = 'none';
         }
       }
     });
+    
+    if (isVisible) {
+      // Show animation
+      menu.style.pointerEvents = 'auto';
+      navShowHideTimeline.current
+        .to(menu, {
+          yPercent: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'power3.out'
+        });
+    } else {
+      // Hide animation
+      navShowHideTimeline.current
+        .to(menu, {
+          yPercent: -120,
+          opacity: 0,
+          duration: 0.4,
+          ease: 'power3.inOut'
+        });
+    }
   }, [isVisible, refs.menuRef]);
 
   // Initialize
@@ -373,6 +408,15 @@ export function useNavigationAnimation(
         });
       }
 
+      // Set initial state for menu to be visible
+      if (refs.menuRef?.current) {
+        gsap.set(refs.menuRef.current, {
+          yPercent: 0,
+          opacity: 1,
+          xPercent: -50, // Maintain center alignment
+        });
+      }
+      
       isInitialized.current = true;
     }, 100);
 
@@ -395,6 +439,19 @@ export function useNavigationAnimation(
       closeMenu();
     }
   }, [isOpen]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Kill navigation show/hide animation
+      if (navShowHideTimeline.current) {
+        navShowHideTimeline.current.kill();
+      }
+      // Kill any open/close animations
+      splitTextsRef.current.forEach(st => st?.revert?.());
+      footerSplitTextsRef.current.forEach(st => st?.revert?.());
+    };
+  }, []);
 
   // Return visibility state
   return { isVisible };

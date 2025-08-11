@@ -17,17 +17,11 @@
   width: 50%;
   max-width: 600px;
   z-index: 1000;
-  transition: transform var(--menu-transition-duration) var(--menu-transition-easing), 
-              opacity var(--menu-transition-duration) var(--menu-transition-easing);
+  /* Remove CSS transitions - GSAP handles animations */
   will-change: transform, opacity;
-  opacity: 1;
 }
 
-.menu.hidden {
-  transform: translateX(-50%) translateY(-120%);
-  opacity: 0;
-  pointer-events: none;
-}
+/* Remove .menu.hidden class - GSAP handles visibility */
 
 .menu-header {
   position: relative;
