@@ -3,6 +3,21 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
+import { TextPlugin } from 'gsap/TextPlugin';
+
+// Extend Navigator interface for Network Information API
+declare global {
+  interface Navigator {
+    deviceMemory?: number;
+    connection?: {
+      effectiveType?: 'slow-2g' | '2g' | '3g' | '4g';
+      downlink?: number;
+      rtt?: number;
+      saveData?: boolean;
+    };
+  }
+}
 
 export interface AnimationState {
   isHydrated: boolean;
@@ -11,6 +26,10 @@ export interface AnimationState {
   featureHighlightReady: boolean;
   demoReady: boolean;
   isAnimating: boolean;
+  hasError: boolean;
+  prefersReducedMotion: boolean;
+  isMobile: boolean;
+  isLowEndDevice: boolean;
 }
 
 export interface AnimationOrchestratorProps {
@@ -35,41 +54,132 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     featureHighlightReady: false,
     demoReady: false,
     isAnimating: false,
+    hasError: false,
+    prefersReducedMotion: false,
+    isMobile: false,
+    isLowEndDevice: false,
   });
 
   const propsRef = useRef(props);
+  const gsapInitialized = useRef(false);
+  const activeScrollTriggers = useRef<Set<any>>(new Set()); // ScrollTrigger type issues with Set
+  const cleanupFunctions = useRef<(() => void)[]>([]);
 
   // Update props ref when they change
   useEffect(() => {
     propsRef.current = props;
   }, [props]);
 
-  // Initialize GSAP plugins once
+  // Initialize GSAP plugins once and handle reduced motion
   useEffect(() => {
-    gsap.registerPlugin(ScrollTrigger);
+    if (gsapInitialized.current) return;
+
+    try {
+      // Check for reduced motion preference
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      
+      // Check if mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+        window.innerWidth < 768;
+      
+      // Check for low-end device indicators
+      const isLowEndDevice = 
+        (typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false) || // Low CPU cores
+        (typeof navigator !== 'undefined' && navigator.deviceMemory ? navigator.deviceMemory <= 4 : false) || // Low RAM (in GB)
+        (typeof navigator !== 'undefined' && navigator.connection ? 
+          (navigator.connection.effectiveType === 'slow-2g' ||
+           navigator.connection.effectiveType === '2g' ||
+           navigator.connection.effectiveType === '3g') : false)
+      
+      setAnimationState(prev => ({ 
+        ...prev, 
+        prefersReducedMotion,
+        isMobile,
+        isLowEndDevice 
+      }));
+
+      if (!prefersReducedMotion && !isLowEndDevice) {
+        // Register all required plugins once
+        gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin);
+        
+        // Configure GSAP for optimal performance
+        gsap.config({
+          nullTargetWarn: false,
+          force3D: true,
+          autoSleep: 60, // Auto-sleep after 60 ticks of inactivity
+        });
+        
+        // Adjust performance based on device
+        if (isMobile) {
+          gsap.ticker.fps(30); // Reduce FPS on mobile
+          // ScrollTrigger doesn't have a direct config method for these settings
+          // Instead, we'll adjust the refresh strategy
+          ScrollTrigger.defaults({
+            scroller: window,
+            invalidateOnRefresh: true,
+          });
+        } else {
+          gsap.ticker.lagSmoothing(0);
+        }
+      }
+      
+      gsapInitialized.current = true;
+    } catch (error) {
+      console.error('[Orchestrator] Failed to initialize GSAP:', error);
+      setAnimationState(prev => ({ ...prev, hasError: true }));
+      propsRef.current?.onAnimationError?.(error as Error);
+    }
   }, []);
 
   // Stage 1: Handle hydration - wait for parent component's isReady
   useEffect(() => {
     if (!props.isReady) return;
 
-    setAnimationState(prev => ({ ...prev, isHydrated: true }));
-    propsRef.current?.onHydrationComplete?.();
-    console.log('[Orchestrator] Hydration complete');
+    // Ensure we're at a stable scroll position before starting animations
+    const checkScrollStability = () => {
+      const currentScroll = window.pageYOffset || window.scrollY;
+      
+      // Small delay to ensure scroll position is stable
+      setTimeout(() => {
+        const newScroll = window.pageYOffset || window.scrollY;
+        if (Math.abs(currentScroll - newScroll) < 1) {
+          // Scroll is stable, proceed with hydration
+          setAnimationState(prev => ({ ...prev, isHydrated: true }));
+          propsRef.current?.onHydrationComplete?.();
+          console.log('[Orchestrator] Hydration complete at stable scroll position:', newScroll);
+        } else {
+          // Scroll is still changing, check again
+          checkScrollStability();
+        }
+      }, 50);
+    };
+
+    checkScrollStability();
   }, [props.isReady]);
 
   // Stage 2: Enable intro animation after hydration
   useEffect(() => {
     if (!animationState.isHydrated) return;
 
-    // Give intro animation time to initialize
-    const introTimer = setTimeout(() => {
-      setAnimationState(prev => ({ ...prev, introReady: true }));
-      propsRef.current?.onIntroReady?.();
-      console.log('[Orchestrator] Intro animation ready');
-    }, 200);
+    let introTimer: NodeJS.Timeout;
 
-    return () => clearTimeout(introTimer);
+    // Wait for DOM to be fully ready and ScrollTrigger to initialize
+    requestAnimationFrame(() => {
+      // Give intro animation time to initialize
+      introTimer = setTimeout(() => {
+        // Ensure ScrollTrigger is ready
+        if (typeof ScrollTrigger !== 'undefined') {
+          ScrollTrigger.refresh();
+        }
+        setAnimationState(prev => ({ ...prev, introReady: true }));
+        propsRef.current?.onIntroReady?.();
+        console.log('[Orchestrator] Intro animation ready');
+      }, 200);
+    });
+
+    return () => {
+      if (introTimer) clearTimeout(introTimer);
+    };
   }, [animationState.isHydrated]);
 
   // Stage 3: Enable about animation after intro is ready
@@ -119,6 +229,10 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
             featureHighlightReady: true,
             demoReady: true,
             isAnimating: false,
+            hasError: false,
+            prefersReducedMotion: prev.prefersReducedMotion,
+            isMobile: prev.isMobile,
+            isLowEndDevice: prev.isLowEndDevice,
           };
         }
         
@@ -131,33 +245,100 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
 
   // Provide manual control methods
   const forceReady = () => {
-    setAnimationState({
+    setAnimationState(prev => ({
+      ...prev,
       isHydrated: true,
       introReady: true,
       aboutReady: true,
       featureHighlightReady: true,
       demoReady: true,
       isAnimating: false,
-    });
+      hasError: false,
+    }));
     // No need to refresh ScrollTrigger - the template doesn't do this
     console.log('[Orchestrator] Manually forced all animations ready');
   };
 
   const reset = () => {
-    setAnimationState({
+    setAnimationState(prev => ({
+      ...prev,
       isHydrated: false,
       introReady: false,
       aboutReady: false,
       featureHighlightReady: false,
       demoReady: false,
       isAnimating: false,
-    });
+      hasError: false,
+    }));
     console.log('[Orchestrator] Reset animation states');
   };
+
+  // Centralized cleanup function
+  const cleanup = () => {
+    try {
+      // Kill all ScrollTriggers
+      ScrollTrigger.getAll().forEach(st => st.kill());
+      activeScrollTriggers.current.clear();
+      
+      // Run all registered cleanup functions
+      cleanupFunctions.current.forEach(fn => {
+        try {
+          fn();
+        } catch (error) {
+          console.error('[Orchestrator] Cleanup error:', error);
+        }
+      });
+      cleanupFunctions.current = [];
+      
+      // Kill all GSAP animations
+      gsap.killTweensOf('*');
+    } catch (error) {
+      console.error('[Orchestrator] Failed to cleanup:', error);
+    }
+  };
+
+  // Register a ScrollTrigger for tracking
+  const registerScrollTrigger = (st: any) => { // ScrollTrigger type from GSAP
+    activeScrollTriggers.current.add(st);
+  };
+
+  // Register a cleanup function
+  const registerCleanup = (fn: () => void) => {
+    cleanupFunctions.current.push(fn);
+  };
+
+  // Handle component unmount
+  useEffect(() => {
+    return () => {
+      try {
+        // Kill all ScrollTriggers
+        ScrollTrigger.getAll().forEach(st => st.kill());
+        activeScrollTriggers.current.clear();
+        
+        // Run all registered cleanup functions
+        cleanupFunctions.current.forEach(fn => {
+          try {
+            fn();
+          } catch (error) {
+            console.error('[Orchestrator] Cleanup error:', error);
+          }
+        });
+        cleanupFunctions.current = [];
+        
+        // Kill all GSAP animations
+        gsap.killTweensOf('*');
+      } catch (error) {
+        console.error('[Orchestrator] Failed to cleanup on unmount:', error);
+      }
+    };
+  }, []);
 
   return {
     animationState,
     forceReady,
     reset,
+    cleanup,
+    registerScrollTrigger,
+    registerCleanup,
   };
 }

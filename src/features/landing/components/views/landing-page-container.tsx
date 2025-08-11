@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { IntroSection } from '../sections/intro-section';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
+import { AnimationErrorBoundary } from '../ui/animation-error-boundary';
 import { FeatureHighlightSection, type FeatureHighlightSectionRefs } from '../sections/feature-highlight-section';
 import {
   AboutSection,
@@ -119,9 +120,6 @@ export function LandingPageContainer() {
       history.scrollRestoration = 'manual';
     }
     
-    // Ensure we start at the top on page load
-    window.scrollTo(0, 0);
-    
     return () => {
       // Re-enable scroll restoration when leaving the page
       if ('scrollRestoration' in history) {
@@ -131,7 +129,7 @@ export function LandingPageContainer() {
   }, []);
 
   // Initialize animation orchestrator - single source of truth
-  const { animationState } = useLandingAnimationOrchestrator({
+  const { animationState, registerScrollTrigger, registerCleanup } = useLandingAnimationOrchestrator({
     isReady,
     onHydrationComplete: () => {
       console.log('Hydration completed');
@@ -163,34 +161,53 @@ export function LandingPageContainer() {
     placeholderIconRefs: introPlaceholderIconRefs,
     duplicateIconsContainerRef: introDuplicateIconsContainerRef,
     isEnabled: animationState.introReady,
+    registerScrollTrigger,
+    registerCleanup,
+    prefersReducedMotion: animationState.prefersReducedMotion,
   });
 
   useFeatureHighlightSectionAnimation({
     refs: featureHighlightSectionRefs.current!,
-    isEnabled: animationState.featureHighlightReady && !!featureHighlightSectionRefs.current,
+    isEnabled: animationState.featureHighlightReady && !!featureHighlightSectionRefs.current && !animationState.prefersReducedMotion,
   });
 
   useDemoSectionAnimation({
     refs: demoSectionRefs.current!,
-    isEnabled: animationState.demoReady && !!demoSectionRefs.current,
+    isEnabled: animationState.demoReady && !!demoSectionRefs.current && !animationState.prefersReducedMotion,
   });
 
   useAboutSectionAnimation({
     refs: aboutSectionRefs.current!,
-    isEnabled: animationState.aboutReady && !!aboutSectionRefs.current,
+    isEnabled: animationState.aboutReady && !!aboutSectionRefs.current && !animationState.prefersReducedMotion,
   });
 
 
   return (
-    <>
+    <AnimationErrorBoundary>
       {!isReady && (
         <div className='fixed inset-0 bg-[#020618] z-50 flex items-center justify-center'>
-          <div className='animate-pulse text-white'>Loading...</div>
+          <div className='text-white'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
+            <p className='text-lg'>Initializing animations...</p>
+          </div>
+        </div>
+      )}
+      {animationState.hasError && (
+        <div className='fixed inset-0 bg-[#020618] z-50 flex items-center justify-center'>
+          <div className='text-white text-center'>
+            <p className='text-xl mb-4'>Failed to load animations</p>
+            <button
+              onClick={() => window.location.reload()}
+              className='px-6 py-2 bg-white text-black rounded hover:bg-gray-100'
+            >
+              Refresh Page
+            </button>
+          </div>
         </div>
       )}
       <div
         className='landing-page'
-        style={{ opacity: isReady ? 1 : 0, transition: 'opacity 0.3s ease' }}
+        style={{ opacity: isReady && !animationState.hasError ? 1 : 0, transition: 'opacity 0.3s ease' }}
       >
         <LandingNavigation />
 
@@ -201,6 +218,6 @@ export function LandingPageContainer() {
         <OutroSection />
         <FooterSection ref={footerSectionRefs} />
       </div>
-    </>
+    </AnimationErrorBoundary>
   );
 }

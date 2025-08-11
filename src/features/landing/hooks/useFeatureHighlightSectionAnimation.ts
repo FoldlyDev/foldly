@@ -23,7 +23,7 @@ export function useFeatureHighlightSectionAnimation({
   useEffect(() => {
     if (!isEnabled || !refs) return;
 
-    gsap.registerPlugin(ScrollTrigger, SplitText);
+    // GSAP plugins are registered by the orchestrator
 
     const section = refs.sectionRef.current;
     const header = refs.headerRef.current;

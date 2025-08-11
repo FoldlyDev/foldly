@@ -13,6 +13,9 @@ interface IntroAnimationRefs {
   placeholderIconRefs: React.RefObject<HTMLDivElement | null>[];
   duplicateIconsContainerRef: React.RefObject<HTMLDivElement | null>;
   isEnabled?: boolean;
+  registerScrollTrigger?: (st: ScrollTrigger) => void;
+  registerCleanup?: (fn: () => void) => void;
+  prefersReducedMotion?: boolean;
 }
 
 export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
@@ -24,6 +27,8 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
     if (isInitialized.current) return;
     if (typeof window === 'undefined') return;
     if (!refs.isEnabled) return;
+    if (refs.prefersReducedMotion) return; // Skip animations if reduced motion is preferred
+    
     // Check if all required refs are available
     const allRefsReady =
       refs.introRef?.current &&
@@ -36,7 +41,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
     if (!allRefsReady) return;
 
-    gsap.registerPlugin(ScrollTrigger);
+    // GSAP should already be registered by the orchestrator
 
     const animatedIcons = refs.animatedIconsRef.current;
     const iconElements = refs.iconRefs.map(ref => ref.current!);
@@ -83,8 +88,9 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
     // Use gsap.context for better cleanup
     const ctx = gsap.context(() => {
-      // Create the main scroll trigger animation
-      scrollTriggerRef.current = ScrollTrigger.create({
+      try {
+        // Create the main scroll trigger animation
+        scrollTriggerRef.current = ScrollTrigger.create({
         trigger: heroSection,
         start: 'top top',
         end: `+=${window.innerHeight * 8}px`,
@@ -242,7 +248,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
             });
 
             // Create duplicate icons if not already created
-            if (duplicateIconsRef.current.length === 0) {
+            if (duplicateIconsRef.current.length === 0 && duplicateContainer) {
               iconElements.forEach((icon, index) => {
                 if (index < placeholders.length) {
                   const duplicate = icon.cloneNode(true) as HTMLDivElement;
@@ -251,14 +257,18 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                   duplicate.style.width = headerIconSize + 'px';
                   duplicate.style.height = headerIconSize + 'px';
                   duplicate.style.zIndex = '10';
+                  duplicate.style.opacity = '0'; // Start with hidden
+                  duplicate.style.display = 'none'; // Initially hidden
 
                   // Apply dark gradient to duplicate icons
                   const svg = duplicate.querySelector('svg');
                   if (svg) {
                     svg.style.stroke = 'url(#icon-gradient-dark)';
+                    svg.style.fill = 'none'; // Ensure no fill
                   }
 
-                  document.body.appendChild(duplicate);
+                  // Append to the container instead of document.body
+                  duplicateContainer.appendChild(duplicate);
                   duplicateIconsRef.current.push(duplicate);
                 }
               });
@@ -271,15 +281,17 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                 if (!iconRect) return;
                 const startCenterX = iconRect.left + iconRect.width / 2;
                 const startCenterY = iconRect.top + iconRect.height / 2;
-                const startPageX = startCenterX + window.pageXOffset;
-                const startPageY = startCenterY + window.pageYOffset;
+                // Since container is fixed positioned, we use viewport coordinates
+                const startPageX = startCenterX;
+                const startPageY = startCenterY;
 
                 const targetRect = placeholders[index]?.getBoundingClientRect();
                 if (!targetRect) return;
                 const targetCenterX = targetRect.left + targetRect.width / 2;
                 const targetCenterY = targetRect.top + targetRect.height / 2;
-                const targetPageX = targetCenterX + window.pageXOffset;
-                const targetPageY = targetCenterY + window.pageYOffset;
+                // Since container is fixed positioned, we use viewport coordinates
+                const targetPageX = targetCenterX;
+                const targetPageY = targetCenterY;
 
                 const moveX = targetPageX - startPageX;
                 const moveY = targetPageY - startPageY;
@@ -299,8 +311,8 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                 const finalPageX = startPageX + currentX;
                 const finalPageY = startPageY + currentY;
 
-                duplicate.style.left = finalPageX - headerIconSize / 2 + 'px';
-                duplicate.style.top = finalPageY - headerIconSize / 2 + 'px';
+                duplicate.style.left = (finalPageX - headerIconSize / 2) + 'px';
+                duplicate.style.top = (finalPageY - headerIconSize / 2) + 'px';
                 // Fade in the duplicate icons smoothly
                 const fadeInProgress = Math.max(
                   0,
@@ -328,11 +340,12 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                 if (!targetRect) return;
                 const targetCenterX = targetRect.left + targetRect.width / 2;
                 const targetCenterY = targetRect.top + targetRect.height / 2;
-                const targetPageX = targetCenterX + window.pageXOffset;
-                const targetPageY = targetCenterY + window.pageYOffset;
+                // Since container is fixed positioned, we use viewport coordinates
+                const targetPageX = targetCenterX;
+                const targetPageY = targetCenterY;
 
-                duplicate.style.left = targetPageX - headerIconSize / 2 + 'px';
-                duplicate.style.top = targetPageY - headerIconSize / 2 + 'px';
+                duplicate.style.left = (targetPageX - headerIconSize / 2) + 'px';
+                duplicate.style.top = (targetPageY - headerIconSize / 2) + 'px';
 
                 // Fade out icons when scrolling back to phase 3
                 const fadeOutStart = 0.75; // Start fading only when leaving phase 4
@@ -381,12 +394,20 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
           }
         },
       });
+      
+      // Register with orchestrator if available
+      if (refs.registerScrollTrigger && scrollTriggerRef.current) {
+        refs.registerScrollTrigger(scrollTriggerRef.current);
+      }
+      } catch (error) {
+        console.error('[IntroAnimation] Failed to create animation:', error);
+      }
     });
 
     isInitialized.current = true;
 
-    // Cleanup function
-    return () => {
+    // Register cleanup with orchestrator
+    const cleanup = () => {
       ctx.revert(); // This will properly clean up all GSAP instances
       if (scrollTriggerRef.current) {
         scrollTriggerRef.current.kill();
@@ -394,13 +415,18 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
       }
       // Clean up duplicate icons
       duplicateIconsRef.current.forEach(duplicate => {
-        if (duplicate.parentNode) {
-          duplicate.parentNode.removeChild(duplicate);
-        }
+        duplicate?.remove(); // Safer removal
       });
       duplicateIconsRef.current = [];
       isInitialized.current = false;
     };
+    
+    if (refs.registerCleanup) {
+      refs.registerCleanup(cleanup);
+    }
+
+    // Return cleanup function
+    return cleanup;
   }, [refs, refs.isEnabled]);
 
   // Cleanup on unmount

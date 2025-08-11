@@ -28,7 +28,7 @@ export function useDemoSectionAnimation({
   useEffect(() => {
     if (!isEnabled || !refs) return;
 
-    gsap.registerPlugin(ScrollTrigger, SplitText);
+    // GSAP plugins are registered by the orchestrator
 
     const section = refs.sectionRef.current;
     const spotlightImages = refs.imagesRef.current;

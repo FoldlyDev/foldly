@@ -22,7 +22,7 @@ export function useAboutSectionAnimation({
   useEffect(() => {
     if (!isEnabled || !refs) return;
 
-    gsap.registerPlugin(ScrollTrigger);
+    // GSAP plugins are registered by the orchestrator
 
     const section = refs.sectionRef.current;
     const header = refs.headerRef.current;

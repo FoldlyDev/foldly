@@ -80,7 +80,7 @@ export function useNavigationAnimation(
   const initMenu = () => {
     if (!refs.menuOverlayRef?.current || !refs.menuItemsRef?.current || !refs.menuFooterRef?.current) return;
 
-    gsap.registerPlugin(SplitText);
+    // GSAP plugins are registered by the orchestrator
 
     gsap.set(refs.menuOverlayRef.current, {
       scaleY: 0,

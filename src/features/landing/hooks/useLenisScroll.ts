@@ -12,12 +12,14 @@ import Lenis from 'lenis';
 export function useLenisScroll() {
   const lenisRef = useRef<Lenis | null>(null);
   const rafIdRef = useRef<number | null>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastValidScrollRef = useRef<number>(0);
+  const scrollValidationRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Register GSAP plugins
-    gsap.registerPlugin(ScrollTrigger);
+    // GSAP plugins are registered by the orchestrator
 
     // Initialize Lenis with balanced settings
     const lenis = new Lenis({
@@ -37,8 +39,54 @@ export function useLenisScroll() {
     // Make Lenis globally accessible for debugging
     (window as any).lenis = lenis;
 
-    // Update ScrollTrigger on scroll
-    lenis.on('scroll', ScrollTrigger.update);
+    // Throttled ScrollTrigger update to prevent excessive recalculations
+    const throttledUpdate = () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      updateTimeoutRef.current = setTimeout(() => {
+        ScrollTrigger.update();
+      }, 16); // ~60fps throttle
+    };
+
+    // Scroll validation to detect and fix unexpected jumps
+    const validateScroll = (e: any) => {
+      const currentScroll = e.scroll || window.pageYOffset;
+      const scrollDiff = Math.abs(currentScroll - lastValidScrollRef.current);
+      
+      // Detect unexpected large jumps (more than 1000px in a single frame)
+      if (scrollDiff > 1000 && lastValidScrollRef.current > 0) {
+        console.warn('[Lenis] Detected unexpected scroll jump:', {
+          from: lastValidScrollRef.current,
+          to: currentScroll,
+          diff: scrollDiff
+        });
+        
+        // Schedule a recovery check
+        if (scrollValidationRef.current) {
+          clearTimeout(scrollValidationRef.current);
+        }
+        scrollValidationRef.current = setTimeout(() => {
+          // If still in an invalid position, smoothly return to last valid position
+          const recoveryScroll = window.pageYOffset;
+          if (Math.abs(recoveryScroll - lastValidScrollRef.current) > 1000) {
+            lenis.scrollTo(lastValidScrollRef.current, {
+              duration: 0.5,
+              easing: t => t,
+            });
+          }
+        }, 100);
+      } else {
+        // Update last valid scroll position
+        lastValidScrollRef.current = currentScroll;
+      }
+      
+      // Call the throttled update
+      throttledUpdate();
+    };
+
+    // Update ScrollTrigger on scroll with validation and throttling
+    lenis.on('scroll', validateScroll);
 
     // GSAP ticker integration for smooth animation
     gsap.ticker.add(time => {
@@ -55,6 +103,12 @@ export function useLenisScroll() {
 
     // Cleanup function
     return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      if (scrollValidationRef.current) {
+        clearTimeout(scrollValidationRef.current);
+      }
       lenis.destroy();
       gsap.ticker.remove(time => {
         lenis.raf(time * 1000);
