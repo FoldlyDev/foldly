@@ -96,6 +96,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
         end: `+=${window.innerHeight * 8}px`,
         pin: true,
         pinSpacing: true,
+        anticipatePin: 1, // Helps prevent jumping with smooth scroll
         scrub: 1, // Match reference template timing
         onUpdate: self => {
           const progress = self.progress;
