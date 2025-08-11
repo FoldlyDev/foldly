@@ -3,18 +3,21 @@
 import { useRef, useEffect, useState } from 'react';
 import { IntroSection } from '../sections/intro-section';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
-import { HeroSection } from '../sections/hero-section';
+import { SkillsOutroSection, type SkillsOutroSectionRefs } from '../sections/skills-outro-section';
 import {
-  HomeAboutSection,
-  type HomeAboutSectionRefs,
-} from '../sections/home-about-section';
+  AboutSection,
+  type AboutSectionRefs,
+} from '../sections/about-section';
+import { DemoSection, type DemoSectionRefs } from '../sections/demo-section';
 import { FeaturesSection } from '../sections/features-section';
 import { OutroSection } from '../sections/outro-section';
+import { FooterSection, type FooterSectionRefs } from '../sections/footer-section';
 import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
-import { useHeroSectionAnimation } from '../../hooks/useHeroSectionAnimation';
+import { useSkillsOutroSectionAnimation } from '../../hooks/useSkillsOutroSectionAnimation';
+import { useDemoSectionAnimation } from '../../hooks/useDemoSectionAnimation';
 import { useFeaturesSectionAnimation } from '../../hooks/useFeaturesSectionAnimation';
-import { useHomeAboutSectionAnimation } from '../../hooks/useHomeAboutSectionAnimation';
+import { useAboutSectionAnimation } from '../../hooks/useAboutSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
@@ -76,15 +79,14 @@ export function LandingPageContainer() {
   ];
   const introDuplicateIconsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Hero section refs
-  const heroRef = useRef<HTMLElement>(null);
-  const heroCardsRef = useRef<HTMLDivElement>(null);
-  const heroCard1Ref = useRef<HTMLDivElement>(null);
-  const heroCard2Ref = useRef<HTMLDivElement>(null);
-  const heroCard3Ref = useRef<HTMLDivElement>(null);
+  // Skills Outro section refs
+  const skillsOutroSectionRefs = useRef<SkillsOutroSectionRefs>(null);
 
-  // Home About section refs
-  const homeAboutSectionRefs = useRef<HomeAboutSectionRefs>(null);
+  // About section refs
+  const aboutSectionRefs = useRef<AboutSectionRefs>(null);
+
+  // Demo section refs
+  const demoSectionRefs = useRef<DemoSectionRefs>(null);
 
   // Features section refs
   const featuresRef = useRef<HTMLElement>(null);
@@ -95,6 +97,9 @@ export function LandingPageContainer() {
   const flipCard1InnerRef = useRef<HTMLDivElement>(null);
   const flipCard2InnerRef = useRef<HTMLDivElement>(null);
   const flipCard3InnerRef = useRef<HTMLDivElement>(null);
+
+  // Footer section refs
+  const footerSectionRefs = useRef<FooterSectionRefs>(null);
 
   // Create ref objects that match component expectations
   const introSectionRefs = useRef({
@@ -107,13 +112,6 @@ export function LandingPageContainer() {
     duplicateIconsContainerRef: introDuplicateIconsContainerRef,
   });
 
-  const heroSectionRefs = useRef({
-    heroRef,
-    heroCardsRef,
-    heroCard1Ref,
-    heroCard2Ref,
-    heroCard3Ref,
-  });
 
   const featuresSectionRefs = useRef({
     featuresRef,
@@ -139,6 +137,23 @@ export function LandingPageContainer() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Disable browser scroll restoration to prevent conflicts with ScrollTrigger animations
+  useEffect(() => {
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    
+    // Ensure we start at the top on page load
+    window.scrollTo(0, 0);
+    
+    return () => {
+      // Re-enable scroll restoration when leaving the page
+      if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
+
   // Initialize animation orchestrator - single source of truth
   const { animationState } = useLandingAnimationOrchestrator({
     isReady,
@@ -148,8 +163,14 @@ export function LandingPageContainer() {
     onIntroReady: () => {
       console.log('Intro animation ready');
     },
-    onHeroReady: () => {
-      console.log('Hero animation ready');
+    onAboutReady: () => {
+      console.log('About animation ready');
+    },
+    onSkillsOutroReady: () => {
+      console.log('Skills Outro animation ready');
+    },
+    onDemoReady: () => {
+      console.log('Demo animation ready');
     },
     onFeaturesReady: () => {
       console.log('Features animation ready');
@@ -171,13 +192,14 @@ export function LandingPageContainer() {
     isEnabled: animationState.introReady,
   });
 
-  useHeroSectionAnimation({
-    heroRef,
-    heroCardsRef,
-    heroCard1Ref,
-    heroCard2Ref,
-    heroCard3Ref,
-    isEnabled: animationState.heroReady,
+  useSkillsOutroSectionAnimation({
+    refs: skillsOutroSectionRefs.current!,
+    isEnabled: animationState.skillsOutroReady && !!skillsOutroSectionRefs.current,
+  });
+
+  useDemoSectionAnimation({
+    refs: demoSectionRefs.current!,
+    isEnabled: animationState.demoReady && !!demoSectionRefs.current,
   });
 
   useFeaturesSectionAnimation({
@@ -192,10 +214,11 @@ export function LandingPageContainer() {
     isEnabled: animationState.featuresReady,
   });
 
-  useHomeAboutSectionAnimation({
-    refs: homeAboutSectionRefs.current!,
-    isEnabled: animationState.heroReady && !!homeAboutSectionRefs.current,
+  useAboutSectionAnimation({
+    refs: aboutSectionRefs.current!,
+    isEnabled: animationState.aboutReady && !!aboutSectionRefs.current,
   });
+
 
   return (
     <>
@@ -211,10 +234,12 @@ export function LandingPageContainer() {
         <LandingNavigation />
 
         <IntroSection ref={introSectionRefs} />
-        {/* <HeroSection ref={heroSectionRefs} /> */}
-        <HomeAboutSection ref={homeAboutSectionRefs} />
+        <AboutSection ref={aboutSectionRefs} />
+        <SkillsOutroSection ref={skillsOutroSectionRefs} />
+        <DemoSection ref={demoSectionRefs} />
         {/* <FeaturesSection ref={featuresSectionRefs} /> */}
         <OutroSection />
+        <FooterSection ref={footerSectionRefs} />
       </div>
     </>
   );

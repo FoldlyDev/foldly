@@ -1,0 +1,252 @@
+/* Template color variables from Juno Watts */
+:root {
+  --base-100: #f9f4eb;
+  --base-200: #efece5;
+  --base-300: #0a0a0a;
+  --base-secondary-dark: #686560;
+  --base-secondary-fade: rgba(249, 244, 235, 0.15);
+}
+
+/* Home Spotlight Section - Matching Juno Watts Template Exactly */
+.home-spotlight {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  background: var(--foldly-dark-gradient-radial);
+  color: var(--base-100, #f9f4eb);
+  overflow: hidden;
+}
+
+/* Top Bar */
+.home-spotlight-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 20;
+}
+
+.home-spotlight-top-bar .container {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem;
+}
+
+.symbols-container {
+  display: flex;
+  gap: 1rem;
+}
+
+.symbol {
+  width: 24px;
+  height: 24px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.symbol:hover {
+  opacity: 1;
+}
+
+.symbol img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Bottom Bar */
+.home-spotlight-bottom-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 20;
+}
+
+.home-spotlight-bottom-bar .container {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.home-spotlight-bottom-bar p {
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* Mono text style from template */
+.home-spotlight p.mono {
+  text-transform: uppercase;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.home-spotlight p.mono span,
+.home-spotlight-bottom-bar p span {
+  position: relative;
+  top: -0.1rem;
+  margin-right: 0.5rem;
+}
+
+/* Intro Header */
+.spotlight-intro-header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 50%;
+  z-index: 5;
+}
+
+.spotlight-intro-header h3 {
+  font-size: 6rem;
+  font-weight: 900;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  margin: 0;
+}
+
+/* Spotlight Images */
+.home-spotlight-images {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 300svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transform: translateY(5%);
+  will-change: transform;
+  z-index: 1;
+}
+
+.home-spotlight-images-row {
+  width: 100%;
+  padding: 2rem;
+  display: flex;
+  gap: 2rem;
+}
+
+.home-spotlight-image {
+  flex: 1;
+  aspect-ratio: 5/7;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.home-spotlight-image.image-holder {
+  opacity: 0.75;
+}
+
+.home-spotlight-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Mask Container */
+.spotlight-mask-image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  z-index: 10;
+  -webkit-mask: url(/assets/landing/global/spotlight-mask.svg) center/contain
+    no-repeat;
+  mask: url(/assets/landing/global/spotlight-mask.svg) center/contain no-repeat;
+  -webkit-mask-size: 0%;
+  mask-size: 0%;
+}
+
+.spotlight-mask-image {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform: scale(1.25);
+}
+
+.spotlight-mask-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Mask Header */
+.spotlight-mask-header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  text-align: center;
+  color: var(--base-100, #ffffff);
+  z-index: 15;
+}
+
+.spotlight-mask-header h3 {
+  font-size: 6rem;
+  font-weight: 900;
+  font-family: 'Barlow Condensed', sans-serif;
+  text-transform: uppercase;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  margin: 0;
+}
+
+/* Spotlight word class for split text */
+.spotlight-word {
+  display: inline-block;
+  margin: 0 0.2em;
+}
+
+/* Container styling for consistency */
+.home-spotlight .container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* Responsive adjustments - matching template */
+@media (max-width: 1000px) {
+  .spotlight-intro-header h3,
+  .spotlight-mask-header h3 {
+    font-size: 3rem;
+  }
+
+  .home-spotlight p.mono {
+    font-size: 0.8rem;
+  }
+
+  .home-spotlight .container {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotlight-mask-header,
+  .spotlight-intro-header {
+    width: 90%;
+    text-align: center;
+  }
+
+  .home-spotlight-images-row {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .home-spotlight-image {
+    aspect-ratio: 4/6;
+  }
+}

@@ -83,10 +83,12 @@
 @import '../features/landing/styles/menu.css';
 @import '../features/landing/styles/landing-page.css';
 @import '../features/landing/styles/intro-section.css';
-@import '../features/landing/styles/hero-section.css';
+@import '../features/landing/styles/skills-outro-section.css';
 @import '../features/landing/styles/about-section.css';
+@import '../features/landing/styles/demo-section.css';
 @import '../features/landing/styles/features-section.css';
 @import '../features/landing/styles/outro-section.css';
+@import '../features/landing/styles/footer-section.css';
 @import '../features/landing/styles/cards.css';
 
 /* 🔐 Auth Feature Styles */
@@ -174,9 +176,9 @@
 
   /* Light Mode Gradient - Warm with Cyan Glow */
   --foldly-light-gradient-radial: radial-gradient(
-    ellipse at top,
+    ellipse at bottom,
     oklch(71.5% 0.143 215.221) 0%,
-    #e3e3db 10%,
+    #f5f5f0 50%,
     #ffffff 100%
   );
 

@@ -75,13 +75,14 @@
   max-width: 1000px;
   text-align: center;
   color: #141414;
-  font-size: clamp(48px, 7vw, 96px) !important;
-  font-weight: 800 !important;
-  line-height: 1.2 !important;
+  font-size: clamp(1.5rem, 3vw, 2.5rem) !important;
+  font-family: var(--font-condensed);
+  font-weight: 900 !important;
+  line-height: 0.85 !important;
+  text-transform: uppercase;
   margin: 0;
   padding: 0;
   word-wrap: break-word;
-  font-family: 'Host Grotesk', sans-serif;
 }
 
 /* Text segments that reveal */
@@ -145,7 +146,7 @@
   }
 
   .intro-animated-text {
-    font-size: clamp(32px, 8vw, 48px) !important;
+    font-size: clamp(1.25rem, 2.5vw, 2rem) !important;
   }
 
   .intro-placeholder-icon {

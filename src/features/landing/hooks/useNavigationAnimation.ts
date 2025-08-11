@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { gsap } from 'gsap';
 import { SplitText } from 'gsap/SplitText';
 
@@ -18,6 +18,8 @@ interface NavigationAnimationOptions {
   isOpen: boolean;
   onAnimatingChange?: (isAnimating: boolean) => void;
   onOpenChange?: (isOpen: boolean) => void;
+  scrollHideThreshold?: number;
+  scrollUpThreshold?: number;
 }
 
 /**
@@ -26,15 +28,25 @@ interface NavigationAnimationOptions {
  */
 export function useNavigationAnimation(
   refs: NavigationAnimationRefs,
-  { isOpen, onAnimatingChange, onOpenChange }: NavigationAnimationOptions
+  { 
+    isOpen, 
+    onAnimatingChange, 
+    onOpenChange,
+    scrollHideThreshold = 50,
+    scrollUpThreshold = 3 
+  }: NavigationAnimationOptions
 ) {
   const isInitialized = useRef(false);
   const splitTextsRef = useRef<any[]>([]);
   const footerSplitTextsRef = useRef<any[]>([]);
-  const lastScrollYRef = useRef(0);
-  const isMenuVisibleRef = useRef(true);
   const isAnimatingRef = useRef(false);
   const isOpenRef = useRef(false);
+  
+  // Scroll hide states
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+  const rafId = useRef<number | null>(null);
 
   // Scramble text function from template
   const scrambleText = (elements: any[], duration = 0.4) => {
@@ -252,32 +264,99 @@ export function useNavigationAnimation(
     );
   };
 
-  // Handle scroll - EXACT copy from template
-  const handleScroll = () => {
-    if (!refs.menuRef?.current) return;
-
-    const currentScrollY = window.scrollY;
-
-    if (currentScrollY > lastScrollYRef.current && currentScrollY > 100) {
-      // Scrolling down
-      if (isOpenRef.current) {
-        // Close menu if it's open
-        onOpenChange?.(false);
-      }
-      if (isMenuVisibleRef.current) {
-        refs.menuRef.current.classList.add("hidden");
-        isMenuVisibleRef.current = false;
-      }
-    } else if (currentScrollY < lastScrollYRef.current) {
-      // Scrolling up
-      if (!isMenuVisibleRef.current) {
-        refs.menuRef.current.classList.remove("hidden");
-        isMenuVisibleRef.current = true;
-      }
+  // Scroll hide logic
+  const updateScrollDirection = useCallback(() => {
+    // Get scroll position from Lenis if available, fallback to window.scrollY
+    const lenis = (window as any).lenis;
+    const scrollY = lenis ? lenis.scroll : window.scrollY;
+    
+    // Don't hide if menu is open
+    if (isOpenRef.current) {
+      setIsVisible(true);
+      lastScrollY.current = scrollY;
+      ticking.current = false;
+      return;
     }
 
-    lastScrollYRef.current = currentScrollY;
-  };
+    const direction = scrollY > lastScrollY.current ? 'down' : 'up';
+    const scrollDifference = Math.abs(scrollY - lastScrollY.current);
+
+    // Only update if scroll difference is significant
+    if (scrollDifference < scrollUpThreshold) {
+      ticking.current = false;
+      return;
+    }
+
+    if (direction === 'down' && scrollY > scrollHideThreshold) {
+      // Hide navbar when scrolling down past threshold
+      setIsVisible(false);
+    } else if (direction === 'up' || scrollY <= scrollHideThreshold) {
+      // Show navbar when scrolling up or near top
+      setIsVisible(true);
+    }
+
+    lastScrollY.current = scrollY;
+    ticking.current = false;
+  }, [scrollHideThreshold, scrollUpThreshold]);
+
+  const handleScroll = useCallback(() => {
+    if (!ticking.current) {
+      rafId.current = window.requestAnimationFrame(updateScrollDirection);
+      ticking.current = true;
+    }
+  }, [updateScrollDirection]);
+
+  // Initialize scroll listener
+  useEffect(() => {
+    // Initialize scroll position
+    const initializeScrollPosition = () => {
+      const lenis = (window as any).lenis;
+      const currentScrollY = lenis ? lenis.scroll : window.scrollY;
+      lastScrollY.current = currentScrollY;
+    };
+
+    requestAnimationFrame(initializeScrollPosition);
+
+    // Check if Lenis is available
+    const lenis = (window as any).lenis;
+    
+    if (lenis) {
+      // Use Lenis scroll events
+      lenis.on('scroll', handleScroll);
+      
+      return () => {
+        lenis.off('scroll', handleScroll);
+        if (rafId.current) {
+          window.cancelAnimationFrame(rafId.current);
+        }
+      };
+    } else {
+      // Fallback to window scroll
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        if (rafId.current) {
+          window.cancelAnimationFrame(rafId.current);
+        }
+      };
+    }
+  }, [handleScroll]);
+
+  // Apply visibility to menu
+  useEffect(() => {
+    if (!refs.menuRef?.current || !isInitialized.current) return;
+    
+    requestAnimationFrame(() => {
+      if (refs.menuRef.current) {
+        if (isVisible) {
+          refs.menuRef.current.classList.remove('hidden');
+        } else {
+          refs.menuRef.current.classList.add('hidden');
+        }
+      }
+    });
+  }, [isVisible, refs.menuRef]);
 
   // Initialize
   useEffect(() => {
@@ -294,13 +373,11 @@ export function useNavigationAnimation(
         });
       }
 
-      window.addEventListener("scroll", handleScroll);
       isInitialized.current = true;
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("scroll", handleScroll);
     };
   }, [refs]);
 
@@ -319,5 +396,6 @@ export function useNavigationAnimation(
     }
   }, [isOpen]);
 
-  // No return needed - using callback for state communication
+  // Return visibility state
+  return { isVisible };
 }

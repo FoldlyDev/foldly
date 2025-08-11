@@ -82,8 +82,8 @@ export function LandingNavigation() {
             ref={menuLogoImgRef}
             src="/assets/img/logo/foldly_logo_sm.png"
             alt=""
-            width={20}
-            height={20}
+            width={32}
+            height={32}
             priority
           />
         </Link>

@@ -121,7 +121,7 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               ref={refs?.current?.placeholderIconRefs[0]}
             />
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] font-normal!'
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[0]}
             >
               {textSegments[0]}
@@ -131,13 +131,13 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               ref={refs?.current?.placeholderIconRefs[1]}
             />
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[1]}
             >
               {textSegments[1]}
             </span>{' '}
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[2]}
             >
               {textSegments[2]}
@@ -147,7 +147,7 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               ref={refs?.current?.placeholderIconRefs[2]}
             />
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[3]}
             >
               {textSegments[3]}
@@ -157,7 +157,7 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               ref={refs?.current?.placeholderIconRefs[3]}
             />
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[4]}
             >
               {textSegments[4]}
@@ -167,7 +167,7 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
               ref={refs?.current?.placeholderIconRefs[4]}
             />
             <span
-              className='intro-text-segment !text-[2rem] sm:!text-[2.5rem] md:!text-[3rem] lg:!text-[3.5rem] xl:!text-[4rem] '
+              className='intro-text-segment'
               ref={refs?.current?.textSegmentRefs[5]}
             >
               {textSegments[5]}

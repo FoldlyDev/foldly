@@ -7,8 +7,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 export interface AnimationState {
   isHydrated: boolean;
   introReady: boolean;
-  heroReady: boolean;
   aboutReady: boolean;
+  skillsOutroReady: boolean;
+  demoReady: boolean;
   featuresReady: boolean;
   isAnimating: boolean;
 }
@@ -17,8 +18,9 @@ export interface AnimationOrchestratorProps {
   isReady: boolean;
   onHydrationComplete?: () => void;
   onIntroReady?: () => void;
-  onHeroReady?: () => void;
   onAboutReady?: () => void;
+  onSkillsOutroReady?: () => void;
+  onDemoReady?: () => void;
   onFeaturesReady?: () => void;
   onAnimationError?: (error: Error) => void;
 }
@@ -31,8 +33,9 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
   const [animationState, setAnimationState] = useState<AnimationState>({
     isHydrated: false,
     introReady: false,
-    heroReady: false,
     aboutReady: false,
+    skillsOutroReady: false,
+    demoReady: false,
     featuresReady: false,
     isAnimating: false,
   });
@@ -72,29 +75,39 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     return () => clearTimeout(introTimer);
   }, [animationState.isHydrated]);
 
-  // Stage 3: Enable hero animation after intro is ready
+  // Stage 3: Enable about animation after intro is ready
   useEffect(() => {
     if (!animationState.introReady) return;
 
-    // Hero can start immediately after intro
-    setAnimationState(prev => ({ ...prev, heroReady: true }));
-    propsRef.current?.onHeroReady?.();
-    console.log('[Orchestrator] Hero animation ready');
-  }, [animationState.introReady]);
-
-  // Stage 4: Enable about animation after hero is ready
-  useEffect(() => {
-    if (!animationState.heroReady) return;
-
-    // About section can start immediately after hero
+    // About can start immediately after intro
     setAnimationState(prev => ({ ...prev, aboutReady: true }));
     propsRef.current?.onAboutReady?.();
     console.log('[Orchestrator] About animation ready');
-  }, [animationState.heroReady]);
+  }, [animationState.introReady]);
 
-  // Stage 5: Enable features animation after about is ready
+  // Stage 4: Enable skills outro animation after about is ready
   useEffect(() => {
     if (!animationState.aboutReady) return;
+
+    // Skills outro section can start immediately after about
+    setAnimationState(prev => ({ ...prev, skillsOutroReady: true }));
+    propsRef.current?.onSkillsOutroReady?.();
+    console.log('[Orchestrator] Skills Outro animation ready');
+  }, [animationState.aboutReady]);
+
+  // Stage 5: Enable demo animation after skills outro is ready
+  useEffect(() => {
+    if (!animationState.skillsOutroReady) return;
+
+    // Demo section can start immediately after skills outro
+    setAnimationState(prev => ({ ...prev, demoReady: true }));
+    propsRef.current?.onDemoReady?.();
+    console.log('[Orchestrator] Demo animation ready');
+  }, [animationState.skillsOutroReady]);
+
+  // Stage 6: Enable features animation after demo is ready
+  useEffect(() => {
+    if (!animationState.demoReady) return;
 
     // Features section needs minimal delay to ensure DOM is ready
     const featuresTimer = setTimeout(() => {
@@ -102,18 +115,17 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       propsRef.current?.onFeaturesReady?.();
       console.log('[Orchestrator] Features animation ready');
       
-      // Refresh ScrollTrigger after all animations are initialized
-      ScrollTrigger.refresh(true);
+      // No need to refresh ScrollTrigger - the template doesn't do this
     }, 300); // Reduced from 1000ms to prevent timing issues
 
     return () => clearTimeout(featuresTimer);
-  }, [animationState.aboutReady]);
+  }, [animationState.demoReady]);
 
   // Emergency fallback - force everything ready after 3 seconds
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       setAnimationState(prev => {
-        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.heroReady || !prev.aboutReady || !prev.featuresReady;
+        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.aboutReady || !prev.skillsOutroReady || !prev.demoReady || !prev.featuresReady;
         
         if (needsFallback) {
           console.warn('[Orchestrator] Fallback activated - forcing all animations ready');
@@ -122,8 +134,9 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
           return {
             isHydrated: true,
             introReady: true,
-            heroReady: true,
             aboutReady: true,
+            skillsOutroReady: true,
+            demoReady: true,
             featuresReady: true,
             isAnimating: false,
           };
@@ -141,12 +154,13 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     setAnimationState({
       isHydrated: true,
       introReady: true,
-      heroReady: true,
       aboutReady: true,
+      skillsOutroReady: true,
+      demoReady: true,
       featuresReady: true,
       isAnimating: false,
     });
-    ScrollTrigger.refresh(true);
+    // No need to refresh ScrollTrigger - the template doesn't do this
     console.log('[Orchestrator] Manually forced all animations ready');
   };
 
@@ -154,8 +168,9 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     setAnimationState({
       isHydrated: false,
       introReady: false,
-      heroReady: false,
       aboutReady: false,
+      skillsOutroReady: false,
+      demoReady: false,
       featuresReady: false,
       isAnimating: false,
     });

@@ -48,8 +48,7 @@ export function useLenisScroll() {
     // Disable lag smoothing for consistent performance
     gsap.ticker.lagSmoothing(0);
 
-    // Ensure ScrollTrigger refreshes after Lenis is initialized
-    ScrollTrigger.refresh();
+    // No need to refresh ScrollTrigger - the template doesn't do this
 
     // Start Lenis
     lenis.start();
