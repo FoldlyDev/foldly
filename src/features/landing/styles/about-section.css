@@ -8,7 +8,7 @@
   --base-100: #f9f4eb;
   --base-200: #efece5;
   --base-300: #020618; /* Updated to match intro section dark blue */
-  --base-secondary-dark: #9ca3af; /* Lightened for better contrast with dark background */
+  --base-secondary-dark: #d4d4d8; /* Using neutral-300 for better contrast with dark background */
   --base-secondary-fade: rgba(249, 244, 235, 0.15);
 }
 
@@ -100,7 +100,7 @@
 }
 
 .home-about .home-about-card p.mono {
-  color: var(--base-secondary-dark);
+  color: var(--neutral-300); /* Lighter gray for better contrast */
   font-size: 0.85rem;
   font-family: var(--font-mono);
   font-weight: 500;
@@ -136,6 +136,7 @@
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  color: var(--neutral-300); /* Lighter gray for better contrast */
 }
 
 .home-about .mono span {

@@ -8,9 +8,8 @@ export interface AnimationState {
   isHydrated: boolean;
   introReady: boolean;
   aboutReady: boolean;
-  skillsOutroReady: boolean;
+  featureHighlightReady: boolean;
   demoReady: boolean;
-  featuresReady: boolean;
   isAnimating: boolean;
 }
 
@@ -19,9 +18,8 @@ export interface AnimationOrchestratorProps {
   onHydrationComplete?: () => void;
   onIntroReady?: () => void;
   onAboutReady?: () => void;
-  onSkillsOutroReady?: () => void;
+  onFeatureHighlightReady?: () => void;
   onDemoReady?: () => void;
-  onFeaturesReady?: () => void;
   onAnimationError?: (error: Error) => void;
 }
 
@@ -34,9 +32,8 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     isHydrated: false,
     introReady: false,
     aboutReady: false,
-    skillsOutroReady: false,
+    featureHighlightReady: false,
     demoReady: false,
-    featuresReady: false,
     isAnimating: false,
   });
 
@@ -85,47 +82,31 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     console.log('[Orchestrator] About animation ready');
   }, [animationState.introReady]);
 
-  // Stage 4: Enable skills outro animation after about is ready
+  // Stage 4: Enable feature highlight animation after about is ready
   useEffect(() => {
     if (!animationState.aboutReady) return;
 
-    // Skills outro section can start immediately after about
-    setAnimationState(prev => ({ ...prev, skillsOutroReady: true }));
-    propsRef.current?.onSkillsOutroReady?.();
-    console.log('[Orchestrator] Skills Outro animation ready');
+    // Feature highlight section can start immediately after about
+    setAnimationState(prev => ({ ...prev, featureHighlightReady: true }));
+    propsRef.current?.onFeatureHighlightReady?.();
+    console.log('[Orchestrator] Feature Highlight animation ready');
   }, [animationState.aboutReady]);
 
-  // Stage 5: Enable demo animation after skills outro is ready
+  // Stage 5: Enable demo animation after feature highlight is ready
   useEffect(() => {
-    if (!animationState.skillsOutroReady) return;
+    if (!animationState.featureHighlightReady) return;
 
-    // Demo section can start immediately after skills outro
+    // Demo section can start immediately after feature highlight
     setAnimationState(prev => ({ ...prev, demoReady: true }));
     propsRef.current?.onDemoReady?.();
     console.log('[Orchestrator] Demo animation ready');
-  }, [animationState.skillsOutroReady]);
-
-  // Stage 6: Enable features animation after demo is ready
-  useEffect(() => {
-    if (!animationState.demoReady) return;
-
-    // Features section needs minimal delay to ensure DOM is ready
-    const featuresTimer = setTimeout(() => {
-      setAnimationState(prev => ({ ...prev, featuresReady: true }));
-      propsRef.current?.onFeaturesReady?.();
-      console.log('[Orchestrator] Features animation ready');
-      
-      // No need to refresh ScrollTrigger - the template doesn't do this
-    }, 300); // Reduced from 1000ms to prevent timing issues
-
-    return () => clearTimeout(featuresTimer);
-  }, [animationState.demoReady]);
+  }, [animationState.featureHighlightReady]);
 
   // Emergency fallback - force everything ready after 3 seconds
   useEffect(() => {
     const fallbackTimer = setTimeout(() => {
       setAnimationState(prev => {
-        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.aboutReady || !prev.skillsOutroReady || !prev.demoReady || !prev.featuresReady;
+        const needsFallback = !prev.isHydrated || !prev.introReady || !prev.aboutReady || !prev.featureHighlightReady || !prev.demoReady;
         
         if (needsFallback) {
           console.warn('[Orchestrator] Fallback activated - forcing all animations ready');
@@ -135,9 +116,8 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
             isHydrated: true,
             introReady: true,
             aboutReady: true,
-            skillsOutroReady: true,
+            featureHighlightReady: true,
             demoReady: true,
-            featuresReady: true,
             isAnimating: false,
           };
         }
@@ -155,9 +135,8 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       isHydrated: true,
       introReady: true,
       aboutReady: true,
-      skillsOutroReady: true,
+      featureHighlightReady: true,
       demoReady: true,
-      featuresReady: true,
       isAnimating: false,
     });
     // No need to refresh ScrollTrigger - the template doesn't do this
@@ -169,9 +148,8 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       isHydrated: false,
       introReady: false,
       aboutReady: false,
-      skillsOutroReady: false,
+      featureHighlightReady: false,
       demoReady: false,
-      featuresReady: false,
       isAnimating: false,
     });
     console.log('[Orchestrator] Reset animation states');

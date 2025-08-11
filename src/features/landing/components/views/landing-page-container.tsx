@@ -3,20 +3,18 @@
 import { useRef, useEffect, useState } from 'react';
 import { IntroSection } from '../sections/intro-section';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
-import { SkillsOutroSection, type SkillsOutroSectionRefs } from '../sections/skills-outro-section';
+import { FeatureHighlightSection, type FeatureHighlightSectionRefs } from '../sections/feature-highlight-section';
 import {
   AboutSection,
   type AboutSectionRefs,
 } from '../sections/about-section';
 import { DemoSection, type DemoSectionRefs } from '../sections/demo-section';
-import { FeaturesSection } from '../sections/features-section';
 import { OutroSection } from '../sections/outro-section';
 import { FooterSection, type FooterSectionRefs } from '../sections/footer-section';
 import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
-import { useSkillsOutroSectionAnimation } from '../../hooks/useSkillsOutroSectionAnimation';
+import { useFeatureHighlightSectionAnimation } from '../../hooks/useFeatureHighlightSectionAnimation';
 import { useDemoSectionAnimation } from '../../hooks/useDemoSectionAnimation';
-import { useFeaturesSectionAnimation } from '../../hooks/useFeaturesSectionAnimation';
 import { useAboutSectionAnimation } from '../../hooks/useAboutSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
 import { useAuth } from '@clerk/nextjs';
@@ -79,24 +77,14 @@ export function LandingPageContainer() {
   ];
   const introDuplicateIconsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Skills Outro section refs
-  const skillsOutroSectionRefs = useRef<SkillsOutroSectionRefs>(null);
+  // Feature Highlight section refs
+  const featureHighlightSectionRefs = useRef<FeatureHighlightSectionRefs>(null);
 
   // About section refs
   const aboutSectionRefs = useRef<AboutSectionRefs>(null);
 
   // Demo section refs
   const demoSectionRefs = useRef<DemoSectionRefs>(null);
-
-  // Features section refs
-  const featuresRef = useRef<HTMLElement>(null);
-  const featuresHeaderRef = useRef<HTMLDivElement>(null);
-  const card1Ref = useRef<HTMLDivElement>(null);
-  const card2Ref = useRef<HTMLDivElement>(null);
-  const card3Ref = useRef<HTMLDivElement>(null);
-  const flipCard1InnerRef = useRef<HTMLDivElement>(null);
-  const flipCard2InnerRef = useRef<HTMLDivElement>(null);
-  const flipCard3InnerRef = useRef<HTMLDivElement>(null);
 
   // Footer section refs
   const footerSectionRefs = useRef<FooterSectionRefs>(null);
@@ -110,18 +98,6 @@ export function LandingPageContainer() {
     textSegmentRefs: introTextSegmentRefs,
     placeholderIconRefs: introPlaceholderIconRefs,
     duplicateIconsContainerRef: introDuplicateIconsContainerRef,
-  });
-
-
-  const featuresSectionRefs = useRef({
-    featuresRef,
-    featuresHeaderRef,
-    card1Ref,
-    card2Ref,
-    card3Ref,
-    flipCard1InnerRef,
-    flipCard2InnerRef,
-    flipCard3InnerRef,
   });
 
   // Initialize Lenis smooth scrolling
@@ -166,14 +142,11 @@ export function LandingPageContainer() {
     onAboutReady: () => {
       console.log('About animation ready');
     },
-    onSkillsOutroReady: () => {
-      console.log('Skills Outro animation ready');
+    onFeatureHighlightReady: () => {
+      console.log('Feature Highlight animation ready');
     },
     onDemoReady: () => {
       console.log('Demo animation ready');
-    },
-    onFeaturesReady: () => {
-      console.log('Features animation ready');
     },
     onAnimationError: error => {
       console.error('Animation error:', error);
@@ -192,26 +165,14 @@ export function LandingPageContainer() {
     isEnabled: animationState.introReady,
   });
 
-  useSkillsOutroSectionAnimation({
-    refs: skillsOutroSectionRefs.current!,
-    isEnabled: animationState.skillsOutroReady && !!skillsOutroSectionRefs.current,
+  useFeatureHighlightSectionAnimation({
+    refs: featureHighlightSectionRefs.current!,
+    isEnabled: animationState.featureHighlightReady && !!featureHighlightSectionRefs.current,
   });
 
   useDemoSectionAnimation({
     refs: demoSectionRefs.current!,
     isEnabled: animationState.demoReady && !!demoSectionRefs.current,
-  });
-
-  useFeaturesSectionAnimation({
-    featuresRef,
-    featuresHeaderRef,
-    card1Ref,
-    card2Ref,
-    card3Ref,
-    flipCard1InnerRef,
-    flipCard2InnerRef,
-    flipCard3InnerRef,
-    isEnabled: animationState.featuresReady,
   });
 
   useAboutSectionAnimation({
@@ -235,9 +196,8 @@ export function LandingPageContainer() {
 
         <IntroSection ref={introSectionRefs} />
         <AboutSection ref={aboutSectionRefs} />
-        <SkillsOutroSection ref={skillsOutroSectionRefs} />
+        <FeatureHighlightSection ref={featureHighlightSectionRefs} />
         <DemoSection ref={demoSectionRefs} />
-        {/* <FeaturesSection ref={featuresSectionRefs} /> */}
         <OutroSection />
         <FooterSection ref={footerSectionRefs} />
       </div>

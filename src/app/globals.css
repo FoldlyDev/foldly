@@ -83,10 +83,9 @@
 @import '../features/landing/styles/menu.css';
 @import '../features/landing/styles/landing-page.css';
 @import '../features/landing/styles/intro-section.css';
-@import '../features/landing/styles/skills-outro-section.css';
+@import '../features/landing/styles/feature-highlight-section.css';
 @import '../features/landing/styles/about-section.css';
 @import '../features/landing/styles/demo-section.css';
-@import '../features/landing/styles/features-section.css';
 @import '../features/landing/styles/outro-section.css';
 @import '../features/landing/styles/footer-section.css';
 @import '../features/landing/styles/cards.css';

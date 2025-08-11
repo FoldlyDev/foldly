@@ -7,6 +7,5 @@ export { useLenisScroll, smoothStep } from './useLenisScroll';
 // Section-specific animation hooks
 export { useIntroSectionAnimation } from './useIntroSectionAnimation';
 export { useAboutSectionAnimation } from './useAboutSectionAnimation';
-export { useFeaturesSectionAnimation } from './useFeaturesSectionAnimation';
-export { useSkillsOutroSectionAnimation } from './useSkillsOutroSectionAnimation';
+export { useFeatureHighlightSectionAnimation } from './useFeatureHighlightSectionAnimation';
 export { useDemoSectionAnimation } from './useDemoSectionAnimation';

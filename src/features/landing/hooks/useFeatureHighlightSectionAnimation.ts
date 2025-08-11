@@ -5,21 +5,21 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 
-interface SkillsOutroSectionRefs {
+interface FeatureHighlightSectionRefs {
   sectionRef: React.RefObject<HTMLElement | null>;
   headerRef: React.RefObject<HTMLHeadingElement | null>;
   stripRefs: React.RefObject<HTMLDivElement | null>[];
 }
 
-interface UseSkillsOutroSectionAnimationProps {
-  refs: SkillsOutroSectionRefs;
+interface UseFeatureHighlightSectionAnimationProps {
+  refs: FeatureHighlightSectionRefs;
   isEnabled: boolean;
 }
 
-export function useSkillsOutroSectionAnimation({
+export function useFeatureHighlightSectionAnimation({
   refs,
   isEnabled,
-}: UseSkillsOutroSectionAnimationProps) {
+}: UseFeatureHighlightSectionAnimationProps) {
   useEffect(() => {
     if (!isEnabled || !refs) return;
 
@@ -36,7 +36,7 @@ export function useSkillsOutroSectionAnimation({
     if (header) {
       headerSplit = SplitText.create(header, {
         type: 'words',
-        wordsClass: 'outro-word',
+        wordsClass: 'highlight-word',
       });
       gsap.set(headerSplit.words, { opacity: 0 });
     }

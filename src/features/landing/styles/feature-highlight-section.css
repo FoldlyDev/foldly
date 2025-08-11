@@ -1,5 +1,5 @@
-/* Skills Outro Section */
-.skills-outro {
+/* Feature Highlight Section */
+.feature-highlight {
   position: relative;
   width: 100vw;
   height: 100svh;
@@ -8,7 +8,7 @@
   background: var(--foldly-light-gradient-radial);
 }
 
-.skills-outro .container {
+.feature-highlight .container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -19,7 +19,7 @@
   margin: 0 auto;
 }
 
-.skills-outro h3 {
+.feature-highlight h3 {
   width: 50%;
   text-align: center;
   font-size: 6rem;
@@ -29,7 +29,7 @@
   line-height: 1.2;
 }
 
-.skills-outro .outro-word {
+.feature-highlight .highlight-word {
   display: inline-block;
   margin: 0 0.15em;
   /* Ensure words don't break layout */
@@ -42,7 +42,7 @@
   text-fill-color: transparent;
 }
 
-.skills-outro .skills-outro-strips {
+.feature-highlight .feature-highlight-strips {
   position: absolute;
   top: 0;
   left: 50%;
@@ -55,7 +55,7 @@
   justify-content: space-around;
 }
 
-.skills-outro .skills-outro-strip {
+.feature-highlight .feature-highlight-strip {
   position: relative;
   transform: translateX(0%);
   display: flex;
@@ -64,7 +64,7 @@
   gap: 1rem;
 }
 
-.skills-outro .skill {
+.feature-highlight .feature {
   width: max-content;
   padding: 4px 8px;
   border-radius: 6px;
@@ -72,39 +72,39 @@
   transition: all 0.3s ease;
 }
 
-.skills-outro .skill p {
+.feature-highlight .feature p {
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.025em;
 }
 
 /* Strip positioning for visual variation */
-.skills-outro .os-1 {
+.feature-highlight .fhs-1 {
   margin-top: 10rem;
 }
 
-.skills-outro .os-2 {
+.feature-highlight .fhs-2 {
   margin-top: -2rem;
 }
 
-.skills-outro .os-3 {
+.feature-highlight .fhs-3 {
   margin-top: 16rem;
 }
 
-.skills-outro .os-4 {
+.feature-highlight .fhs-4 {
   margin-top: -2rem;
 }
 
-.skills-outro .os-5 {
+.feature-highlight .fhs-5 {
   margin-top: 1rem;
 }
 
-.skills-outro .os-6 {
+.feature-highlight .fhs-6 {
   margin-top: 2rem;
 }
 
-/* Skill color variants with light mode styles */
-.skills-outro .skill.skill-var-1 {
+/* Feature color variants with light mode styles */
+.feature-highlight .feature.feature-var-1 {
   background: linear-gradient(135deg, 
     rgba(59, 130, 246, 0.95) 0%, 
     rgba(59, 130, 246, 0.85) 100%
@@ -113,7 +113,7 @@
   color: #ffffff;
 }
 
-.skills-outro .skill.skill-var-2 {
+.feature-highlight .feature.feature-var-2 {
   background: linear-gradient(135deg, 
     rgba(139, 92, 246, 0.95) 0%, 
     rgba(139, 92, 246, 0.85) 100%
@@ -122,7 +122,7 @@
   color: #ffffff;
 }
 
-.skills-outro .skill.skill-var-3 {
+.feature-highlight .feature.feature-var-3 {
   background: linear-gradient(135deg, 
     rgba(16, 185, 129, 0.95) 0%, 
     rgba(16, 185, 129, 0.85) 100%
@@ -132,12 +132,12 @@
 }
 
 /* Hover effects */
-.skills-outro .skill:hover {
+.feature-highlight .feature:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
-.skills-outro .skill.skill-var-1:hover {
+.feature-highlight .feature.feature-var-1:hover {
   background: linear-gradient(135deg, 
     rgba(59, 130, 246, 1) 0%, 
     rgba(59, 130, 246, 0.9) 100%
@@ -146,7 +146,7 @@
   transform: translateY(-3px) scale(1.02);
 }
 
-.skills-outro .skill.skill-var-2:hover {
+.feature-highlight .feature.feature-var-2:hover {
   background: linear-gradient(135deg, 
     rgba(139, 92, 246, 1) 0%, 
     rgba(139, 92, 246, 0.9) 100%
@@ -155,7 +155,7 @@
   transform: translateY(-3px) scale(1.02);
 }
 
-.skills-outro .skill.skill-var-3:hover {
+.feature-highlight .feature.feature-var-3:hover {
   background: linear-gradient(135deg, 
     rgba(16, 185, 129, 1) 0%, 
     rgba(16, 185, 129, 0.9) 100%
@@ -166,39 +166,39 @@
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {
-  .skills-outro h3 {
+  .feature-highlight h3 {
     width: 90%;
   }
   
-  .skills-outro .skills-outro-strips {
+  .feature-highlight .feature-highlight-strips {
     width: 300vw;
   }
   
-  .skills-outro .os-1 {
+  .feature-highlight .fhs-1 {
     margin-top: 2.5rem;
   }
   
-  .skills-outro .os-3 {
+  .feature-highlight .fhs-3 {
     margin-top: 10rem;
   }
 }
 
 @media (max-width: 800px) {
-  .skills-outro h3 {
+  .feature-highlight h3 {
     font-size: 3rem;
   }
   
-  .skills-outro .skill p {
+  .feature-highlight .feature p {
     font-size: 0.8rem;
   }
   
-  .skills-outro .skill {
+  .feature-highlight .feature {
     padding: 4px 8px;
   }
 }
 
 @media (max-width: 600px) {
-  .skills-outro .skills-outro-strips {
+  .feature-highlight .feature-highlight-strips {
     width: 400vw;
   }
 }
