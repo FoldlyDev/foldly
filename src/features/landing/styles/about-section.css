@@ -100,7 +100,7 @@
 }
 
 .home-about .home-about-card p.mono {
-  color: var(--neutral-300); /* Lighter gray for better contrast */
+  color: var(--neutral-600); /* Light gray for feature numbers on dark background */
   font-size: 0.85rem;
   font-family: var(--font-mono);
   font-weight: 500;
@@ -116,6 +116,14 @@
   letter-spacing: -0.02rem;
   text-transform: uppercase;
   color: var(--base-100);
+}
+
+/* Feature description styling */
+.home-about .home-about-card .feature-description {
+  font-size: 1rem; /* Increased from text-sm (0.875rem) to text-base (1rem) */
+  line-height: 1.5;
+  color: var(--neutral-700); /* Light gray for good contrast on dark background */
+  margin-top: 0.5rem;
 }
 
 /* Symbols container specific to home-about */
@@ -136,7 +144,7 @@
   font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--neutral-300); /* Lighter gray for better contrast */
+  color: var(--neutral-600); /* Light gray for "Why Foldly" text */
 }
 
 .home-about .mono span {

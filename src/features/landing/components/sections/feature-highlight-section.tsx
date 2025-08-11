@@ -31,12 +31,12 @@ export const FeatureHighlightSection = forwardRef<FeatureHighlightSectionRefs, F
   return (
     <section ref={sectionRef} className="feature-highlight">
       <div className="container">
-        <h3 ref={headerRef}>The Complete File Collection Platform</h3>
+        <h3 ref={headerRef}>Everything you need, nothing you don't</h3>
       </div>
       <div className="feature-highlight-strips">
         <div ref={stripRefs[0]} className="feature-highlight-strip fhs-1">
           <div className="feature feature-var-1"><p className="mono">Custom Upload URLs</p></div>
-          <div className="feature feature-var-2"><p className="mono">Zero-Friction Design</p></div>
+          <div className="feature feature-var-2"><p className="mono">Drag-Drop Interface</p></div>
           <div className="feature feature-var-3"><p className="mono">File Versioning</p></div>
           <div className="feature feature-var-1"><p className="mono">Bulk Operations</p></div>
           <div className="feature feature-var-3"><p className="mono">Collaborative Workflows</p></div>
@@ -48,7 +48,7 @@ export const FeatureHighlightSection = forwardRef<FeatureHighlightSectionRefs, F
           <div className="feature feature-var-1"><p className="mono">URL Controls</p></div>
         </div>
         <div ref={stripRefs[2]} className="feature-highlight-strip fhs-3">
-          <div className="feature feature-var-2"><p className="mono">Smart Organization</p></div>
+          <div className="feature feature-var-2"><p className="mono">Folder Templates</p></div>
           <div className="feature feature-var-3"><p className="mono">Scale-Ready</p></div>
           <div className="feature feature-var-1"><p className="mono">Cloud Storage</p></div>
           <div className="feature feature-var-2"><p className="mono">Access Control</p></div>
@@ -65,19 +65,19 @@ export const FeatureHighlightSection = forwardRef<FeatureHighlightSectionRefs, F
         </div>
         <div ref={stripRefs[4]} className="feature-highlight-strip fhs-5">
           <div className="feature feature-var-1"><p className="mono">Personal Hub</p></div>
-          <div className="feature feature-var-2"><p className="mono">Modern Infrastructure</p></div>
-          <div className="feature feature-var-3"><p className="mono">Latest Tech Stack</p></div>
-          <div className="feature feature-var-1"><p className="mono">Unlimited Potential</p></div>
+          <div className="feature feature-var-2"><p className="mono">Email Notifications</p></div>
+          <div className="feature feature-var-3"><p className="mono">Batch Downloads</p></div>
+          <div className="feature feature-var-1"><p className="mono">QR Code Sharing</p></div>
           <div className="feature feature-var-2"><p className="mono">Optimized Speed</p></div>
           <div className="feature feature-var-3"><p className="mono">Worldwide Delivery</p></div>
           <div className="feature feature-var-1"><p className="mono">Production-Ready</p></div>
           <div className="feature feature-var-2"><p className="mono">Pro Features</p></div>
         </div>
         <div ref={stripRefs[5]} className="feature-highlight-strip fhs-6">
-          <div className="feature feature-var-3"><p className="mono">Smart Detection</p></div>
+          <div className="feature feature-var-3"><p className="mono">Virus Scanning</p></div>
           <div className="feature feature-var-1"><p className="mono">Intuitive Interface</p></div>
-          <div className="feature feature-var-2"><p className="mono">Reliable Delivery</p></div>
-          <div className="feature feature-var-3"><p className="mono">Cutting-Edge Tech</p></div>
+          <div className="feature feature-var-2"><p className="mono">Mobile Responsive</p></div>
+          <div className="feature feature-var-3"><p className="mono">Instant Previews</p></div>
         </div>
       </div>
     </section>

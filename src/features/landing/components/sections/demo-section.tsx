@@ -76,7 +76,7 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>((_, ref
             data-animate-delay="0.3"
             data-animate-on-scroll="true"
           >
-            Trends shout but Juno whispers
+            See Foldly in Action
           </h3>
         </div>
       </div>
@@ -136,7 +136,7 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>((_, ref
         </div>
         <div className="container">
           <div ref={maskHeaderRef} className="spotlight-mask-header">
-            <h3>Built This Face with Flexbox</h3>
+            <h3>Experience the Simplicity</h3>
           </div>
         </div>
       </div>

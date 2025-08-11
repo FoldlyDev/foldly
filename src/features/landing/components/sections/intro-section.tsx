@@ -25,21 +25,21 @@ interface IntroSectionRefs {
 
 // Icon data - using React Icons Ionicons5 (thin outline style) that match the text content
 const iconData = [
-  { Icon: IoDocumentOutline, alt: 'File Icon' },
-  { Icon: IoFolderOpenOutline, alt: 'Collection Icon' },
-  { Icon: IoLinkOutline, alt: 'Link Icon' },
-  { Icon: IoPeopleOutline, alt: 'Client Icon' },
-  { Icon: IoSparklesOutline, alt: 'Platform Icon' },
+  { Icon: IoDocumentOutline, alt: 'File Icon' },        // "Collect files from"
+  { Icon: IoPeopleOutline, alt: 'People Icon' },        // "anyone. No logins."
+  { Icon: IoLinkOutline, alt: 'Link Icon' },            // "Create smart links"
+  { Icon: IoFolderOpenOutline, alt: 'Organize Icon' },  // "that organize"
+  { Icon: IoSparklesOutline, alt: 'Platform Icon' },    // "automatically on Foldly."
 ];
 
 // Text segments for the animated text
 const textSegments = [
-  'Effortless file ',
-  ' collection without clutter. ',
-  'Create custom links ',
-  ' for every client ',
-  ' published on the Foldly ',
-  ' platform.',
+  'Collect files from ',
+  'anyone with ',
+  'shareable links ',
+  'that organize ',
+  'automatically on ',
+  'Foldly.',
 ];
 
 export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
