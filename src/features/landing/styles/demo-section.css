@@ -7,15 +7,87 @@
   --base-secondary-fade: rgba(249, 244, 235, 0.15);
 }
 
-/* Home Spotlight Section - Matching Juno Watts Template Exactly */
-.home-spotlight {
+/* Demo Spotlight Section - Combined Gallery and Video */
+.demo-spotlight {
   position: relative;
   width: 100vw;
   height: 100svh;
+  overflow: hidden;
   background: var(--foldly-dark-gradient-radial);
   color: var(--base-100, #f9f4eb);
-  overflow: hidden;
 }
+
+/* Gallery Subsection */
+.gallery-subsection {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.demo-spotlight .sticky-cards-header {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  text-align: center;
+  z-index: 5;
+}
+
+.demo-spotlight .sticky-cards-header h3 {
+  font-size: 6rem;
+  font-weight: 900;
+  font-family: var(--font-condensed);
+  text-transform: uppercase;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  margin: 0;
+  color: var(--base-100, #f9f4eb);
+}
+
+/* Gallery Cards */
+.demo-spotlight .gallery-card {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+  width: 25%;
+  height: 50%;
+  padding: 0.5em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  border-radius: 12px;
+  background-color: var(--base-100, #f9f4eb);
+  color: var(--base-300, #0a0a0a);
+  z-index: 10;
+}
+
+.demo-spotlight .gallery-card-img {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.demo-spotlight .gallery-card-content {
+  flex: 0 0 12px;
+  display: flex;
+  align-items: center;
+}
+
+.demo-spotlight .gallery-card-content p.mono {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--base-300, #0a0a0a);
+}
+
 
 /* Top Bar */
 .home-spotlight-top-bar {
@@ -76,9 +148,10 @@
 }
 
 /* Mono text style from template */
-.home-spotlight p.mono {
+.home-spotlight p.mono,
+.demo-spotlight p.mono {
   text-transform: uppercase;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   font-weight: 500;
 }
@@ -197,7 +270,7 @@
 .spotlight-mask-header h3 {
   font-size: 6rem;
   font-weight: 900;
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: var(--font-condensed);
   text-transform: uppercase;
   line-height: 0.85;
   letter-spacing: -0.02rem;
@@ -220,33 +293,38 @@
 
 /* Responsive adjustments - matching template */
 @media (max-width: 1000px) {
-  .spotlight-intro-header h3,
+  .demo-spotlight .gallery-card {
+    width: 75%;
+  }
+
+  .demo-spotlight .sticky-cards-header {
+    width: 90%;
+  }
+
+  .demo-spotlight .sticky-cards-header h3,
   .spotlight-mask-header h3 {
     font-size: 3rem;
   }
 
+  .demo-spotlight p.mono,
   .home-spotlight p.mono {
     font-size: 0.8rem;
   }
 
-  .home-spotlight .container {
+  .demo-spotlight .container {
     padding: 2rem;
   }
 }
 
 @media (max-width: 768px) {
-  .spotlight-mask-header,
-  .spotlight-intro-header {
+  .demo-spotlight .gallery-card {
+    top: 50%;
+    width: 50%;
+    height: 25svh;
+  }
+
+  .spotlight-mask-header {
     width: 90%;
     text-align: center;
-  }
-
-  .home-spotlight-images-row {
-    padding: 1rem;
-    gap: 1rem;
-  }
-
-  .home-spotlight-image {
-    aspect-ratio: 4/6;
   }
 }
