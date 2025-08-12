@@ -93,7 +93,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
         scrollTriggerRef.current = ScrollTrigger.create({
         trigger: heroSection,
         start: 'top top',
-        end: `+=${window.innerHeight * 8}px`,
+        end: `+=${window.innerHeight * 4}px`, // Reduced from 8x to 4x
         pin: true,
         pinSpacing: true,
         anticipatePin: 1, // Helps prevent jumping with smooth scroll

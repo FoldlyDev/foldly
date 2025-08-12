@@ -23,14 +23,17 @@
   width: 50%;
   text-align: center;
   font-size: 6rem;
-  font-weight: 700;
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
   /* Dark gradient text - opposite of intro section light gradient */
   background: linear-gradient(135deg, #020618 0%, #2d4f6b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   /* For SplitText word animation */
-  line-height: 1.2;
 }
 
 .feature-highlight .highlight-word {
@@ -72,14 +75,25 @@
   width: max-content;
   padding: 4px 8px;
   border-radius: 6px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  background: rgba(0, 0, 0, 0.05); /* Very subtle dark background */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(195, 225, 247, 0.2); /* Using primary color with 20% opacity */
+  box-shadow: 
+    0 12px 20px #ffffff08 inset,
+    0 0 40px #ffffff14 inset,
+    0 0 8px #ffffff08 inset,
+    0 0 12px #ffffff0d inset,
+    0 1px 1px #ffffff1f inset;
+  position: relative;
+  overflow: hidden;
 }
 
 .feature-highlight .feature p {
   font-size: 0.8rem;
   font-weight: 500;
   letter-spacing: 0.025em;
+  color: #000000; /* Black text */
 }
 
 /* Strip positioning for visual variation */
@@ -107,66 +121,14 @@
   margin-top: 2rem;
 }
 
-/* Feature color variants with light mode styles */
-.feature-highlight .feature.feature-var-1 {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 0.95) 0%, 
-    rgba(59, 130, 246, 0.85) 100%
-  );
-  border: 1px solid rgba(59, 130, 246, 1);
-  color: #ffffff;
-}
-
-.feature-highlight .feature.feature-var-2 {
-  background: linear-gradient(135deg, 
-    rgba(139, 92, 246, 0.95) 0%, 
-    rgba(139, 92, 246, 0.85) 100%
-  );
-  border: 1px solid rgba(139, 92, 246, 1);
-  color: #ffffff;
-}
-
+/* Feature variants - all using the same glass background */
+.feature-highlight .feature.feature-var-1,
+.feature-highlight .feature.feature-var-2,
 .feature-highlight .feature.feature-var-3 {
-  background: linear-gradient(135deg, 
-    rgba(16, 185, 129, 0.95) 0%, 
-    rgba(16, 185, 129, 0.85) 100%
-  );
-  border: 1px solid rgba(16, 185, 129, 1);
-  color: #ffffff;
+  /* Inherit glass styles from parent .feature class - no need to override */
 }
 
-/* Hover effects */
-.feature-highlight .feature:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-}
-
-.feature-highlight .feature.feature-var-1:hover {
-  background: linear-gradient(135deg, 
-    rgba(59, 130, 246, 1) 0%, 
-    rgba(59, 130, 246, 0.9) 100%
-  );
-  border-color: rgba(59, 130, 246, 1);
-  transform: translateY(-3px) scale(1.02);
-}
-
-.feature-highlight .feature.feature-var-2:hover {
-  background: linear-gradient(135deg, 
-    rgba(139, 92, 246, 1) 0%, 
-    rgba(139, 92, 246, 0.9) 100%
-  );
-  border-color: rgba(139, 92, 246, 1);
-  transform: translateY(-3px) scale(1.02);
-}
-
-.feature-highlight .feature.feature-var-3:hover {
-  background: linear-gradient(135deg, 
-    rgba(16, 185, 129, 1) 0%, 
-    rgba(16, 185, 129, 0.9) 100%
-  );
-  border-color: rgba(16, 185, 129, 1);
-  transform: translateY(-3px) scale(1.02);
-}
+/* No hover effects - features remain static */
 
 /* Responsive adjustments */
 @media (max-width: 1200px) {
@@ -190,6 +152,7 @@
 @media (max-width: 800px) {
   .feature-highlight h3 {
     font-size: 3rem;
+    line-height: 0.85;
   }
   
   .feature-highlight .feature p {

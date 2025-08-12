@@ -7,65 +7,126 @@ import Lenis from 'lenis';
 
 /**
  * Hook for managing Lenis smooth scrolling integration with GSAP ScrollTrigger
- * This hook provides a shared Lenis instance that can be used across different animations
+ * Based on Juno Watts template implementation for optimal performance
  */
 export function useLenisScroll() {
   const lenisRef = useRef<Lenis | null>(null);
+  const isMobileRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     // GSAP plugins are registered by the orchestrator
 
-    // Configure ScrollTrigger for better Lenis integration
-    ScrollTrigger.normalizeScroll(false); // Disable normalize scroll as Lenis handles it
-    ScrollTrigger.config({
-      ignoreMobileResize: true, // Prevent issues on mobile
-    });
+    let isMobile = window.innerWidth <= 900;
+    isMobileRef.current = isMobile;
 
-    // Initialize Lenis with balanced settings
-    const lenis = new Lenis({
-      duration: 1.2, // Balanced duration
-      easing: t => 1 - Math.pow(1 - t, 3), // Cubic ease-out for smooth deceleration
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      wheelMultiplier: 1, // Back to default for normal scroll speed
-      touchMultiplier: 2, // Back to default for responsive touch
-      infinite: false,
-      lerp: 0.1, // Slightly reduced for more stability with pinned elements
-      syncTouch: true, // Better touch device support
-    });
+    // Match template's easing function for better performance
+    const easingFunction = (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
 
+    // Device-specific settings matching the template
+    const scrollSettings = isMobile
+      ? {
+          duration: 0.8,
+          easing: easingFunction,
+          direction: 'vertical' as const,
+          gestureDirection: 'vertical' as const,
+          smooth: true,
+          smoothTouch: true,
+          touchMultiplier: 1.5,
+          infinite: false,
+          lerp: 0.09,
+          wheelMultiplier: 1,
+          orientation: 'vertical' as const,
+          smoothWheel: true,
+          syncTouch: true,
+        }
+      : {
+          duration: 1.2,
+          easing: easingFunction,
+          direction: 'vertical' as const,
+          gestureDirection: 'vertical' as const,
+          smooth: true,
+          smoothTouch: false,
+          touchMultiplier: 2,
+          infinite: false,
+          lerp: 0.1,
+          wheelMultiplier: 1,
+          orientation: 'vertical' as const,
+          smoothWheel: true,
+          syncTouch: true,
+        };
+
+    // Initialize Lenis with appropriate settings
+    let lenis = new Lenis(scrollSettings);
     lenisRef.current = lenis;
 
-    // Make Lenis globally accessible for debugging
-    (window as any).lenis = lenis;
-
-    // Synchronize Lenis scrolling with GSAP's ScrollTrigger plugin
+    // Synchronize with ScrollTrigger (matching template pattern)
     lenis.on('scroll', ScrollTrigger.update);
 
-    // Add Lenis's raf method to GSAP's ticker
-    // This ensures Lenis's smooth scroll animation updates on each GSAP tick
+    // Add to GSAP ticker
     const lenisRaf = (time: number) => {
-      lenis.raf(time * 1000); // Convert time from seconds to milliseconds
+      lenis.raf(time * 1000);
     };
     gsap.ticker.add(lenisRaf);
 
-    // Disable lag smoothing in GSAP to prevent any delay in scroll animations
+    // Match template's lag smoothing setting
     gsap.ticker.lagSmoothing(0);
 
-    // No need to refresh ScrollTrigger - the template doesn't do this
+    // Handle resize events to recreate Lenis with appropriate settings
+    const handleResize = () => {
+      const wasMobile = isMobile;
+      isMobile = window.innerWidth <= 900;
+      isMobileRef.current = isMobile;
 
-    // Start Lenis
-    lenis.start();
+      if (wasMobile !== isMobile) {
+        // Destroy current instance
+        lenis.destroy();
 
-    // No focus/blur handling needed - works fine in incognito mode
-    // The issue in normal mode is likely caused by browser extensions
-    // Following the Juno Watts template pattern of no visibility handling
+        // Create new instance with updated settings
+        const newScrollSettings = isMobile
+          ? {
+              duration: 1,
+              easing: easingFunction,
+              direction: 'vertical' as const,
+              gestureDirection: 'vertical' as const,
+              smooth: true,
+              smoothTouch: true,
+              touchMultiplier: 1.5,
+              infinite: false,
+              lerp: 0.05,
+              wheelMultiplier: 1,
+              orientation: 'vertical' as const,
+              smoothWheel: true,
+              syncTouch: true,
+            }
+          : {
+              duration: 1.2,
+              easing: easingFunction,
+              direction: 'vertical' as const,
+              gestureDirection: 'vertical' as const,
+              smooth: true,
+              smoothTouch: false,
+              touchMultiplier: 2,
+              infinite: false,
+              lerp: 0.1,
+              wheelMultiplier: 1,
+              orientation: 'vertical' as const,
+              smoothWheel: true,
+              syncTouch: true,
+            };
+
+        lenis = new Lenis(newScrollSettings);
+        lenisRef.current = lenis;
+        lenis.on('scroll', ScrollTrigger.update);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
 
     // Cleanup function
     return () => {
+      window.removeEventListener('resize', handleResize);
       gsap.ticker.remove(lenisRaf);
       lenis.destroy();
       lenisRef.current = null;

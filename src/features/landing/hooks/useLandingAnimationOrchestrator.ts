@@ -112,12 +112,6 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
         // Adjust performance based on device
         if (isMobile) {
           gsap.ticker.fps(30); // Reduce FPS on mobile
-          // ScrollTrigger doesn't have a direct config method for these settings
-          // Instead, we'll adjust the refresh strategy
-          ScrollTrigger.defaults({
-            scroller: window,
-            invalidateOnRefresh: true,
-          });
         } else {
           gsap.ticker.lagSmoothing(0);
         }
@@ -163,14 +157,10 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
 
     let introTimer: NodeJS.Timeout;
 
-    // Wait for DOM to be fully ready and ScrollTrigger to initialize
+    // Wait for DOM to be fully ready
     requestAnimationFrame(() => {
       // Give intro animation time to initialize
       introTimer = setTimeout(() => {
-        // Ensure ScrollTrigger is ready
-        if (typeof ScrollTrigger !== 'undefined') {
-          ScrollTrigger.refresh();
-        }
         setAnimationState(prev => ({ ...prev, introReady: true }));
         propsRef.current?.onIntroReady?.();
         console.log('[Orchestrator] Intro animation ready');
@@ -255,7 +245,6 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       isAnimating: false,
       hasError: false,
     }));
-    // No need to refresh ScrollTrigger - the template doesn't do this
     console.log('[Orchestrator] Manually forced all animations ready');
   };
 

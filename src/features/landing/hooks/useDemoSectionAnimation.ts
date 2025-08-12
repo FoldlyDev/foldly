@@ -58,7 +58,7 @@ export function useDemoSectionAnimation({
     ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 7}px`,
+      end: `+=${window.innerHeight * 3.5}px`, // Reduced from 7x to 3.5x
       pin: true,
       pinSpacing: true,
       scrub: 1,

@@ -28,12 +28,12 @@
   will-change: transform, opacity;
 }
 
-/* .intro-hero-header h1 {
+.intro-hero-header h1 {
   font-size: 7vw !important;
   font-weight: 800 !important;
   line-height: 1 !important;
-  font-family: 'Host Grotesk', sans-serif;
-} */
+  font-family: 'Host Grotesk', sans-serif !important;
+}
 
 .intro-hero-header p {
   font-size: 1.5rem !important;
@@ -135,6 +135,7 @@
   .intro-hero-header h1 {
     font-size: 12vw !important;
     text-align: center;
+    line-height: 1 !important;
   }
 
   .intro-hero-header p {

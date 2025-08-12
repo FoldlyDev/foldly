@@ -36,8 +36,8 @@ export const AboutSection = forwardRef<AboutSectionRefs, AboutSectionProps>((_, 
               <Image 
                 src="/assets/img/logo/foldly_logo_sm.png" 
                 alt="Foldly Logo" 
-                width={18} 
-                height={18}
+                width={32} 
+                height={32}
                 className="symbol-icon"
               />
             </div>
@@ -78,9 +78,6 @@ export const AboutSection = forwardRef<AboutSectionRefs, AboutSectionProps>((_, 
               >
                 Multi-Link System
               </h4>
-              <p className="feature-description text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Your base link, unlimited topic links for projects, plus auto-generated links from any workspace folder.
-              </p>
             </div>
             <div ref={cardRefs[1]} className="home-about-card">
               <p
@@ -98,9 +95,6 @@ export const AboutSection = forwardRef<AboutSectionRefs, AboutSectionProps>((_, 
               >
                 Zero Barriers
               </h4>
-              <p className="feature-description text-sm text-gray-600 dark:text-gray-400 mt-2">
-                People just type their name and upload. No sign-ups, no apps to download - sharing files as it should be.
-              </p>
             </div>
           </div>
           <div className="home-about-col-row">
@@ -120,9 +114,6 @@ export const AboutSection = forwardRef<AboutSectionRefs, AboutSectionProps>((_, 
               >
                 Smart Organization
               </h4>
-              <p className="feature-description text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Files organize themselves by sender and date. Move them to your workspace to arrange exactly how you like.
-              </p>
             </div>
             <div ref={cardRefs[3]} className="home-about-card">
               <p
@@ -140,9 +131,6 @@ export const AboutSection = forwardRef<AboutSectionRefs, AboutSectionProps>((_, 
               >
                 Secure & Flexible
               </h4>
-              <p className="feature-description text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Add passwords when needed, require email verification, set file limits - security options that stay simple.
-              </p>
             </div>
           </div>
         </div>
