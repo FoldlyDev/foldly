@@ -171,7 +171,8 @@
 
 .home-spotlight-bottom-bar p {
   margin: 0;
-  opacity: 0.7;
+  color: var(--neutral-700);
+  opacity: 1;
 }
 
 /* Mono text style from template */
