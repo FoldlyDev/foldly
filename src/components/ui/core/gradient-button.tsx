@@ -51,25 +51,25 @@ const GradientButton = forwardRef<HTMLButtonElement, GradientButtonProps>(
     const variantClasses = {
       primary: [
         // Primary gradient (light blue) - inspired by collect card
-        'bg-gradient-to-br from-[var(--primary)] via-[var(--primary-light)] to-[var(--primary)]',
+        'bg-gradient-to-br from-[var(--primary)] via-[var(--primary)] to-[var(--secondary)]',
         'text-[var(--quaternary)]', // Dark text on light background
-        'hover:from-[var(--primary-dark)] hover:via-[var(--primary)] hover:to-[var(--primary-dark)]',
+        'hover:bg-gradient-to-br hover:from-[var(--secondary)] hover:via-[var(--primary)] hover:to-[var(--secondary)]',
         'focus-visible:ring-[var(--primary)]/50',
         'shadow-[var(--primary)]/20 hover:shadow-[var(--primary)]/30',
       ],
       secondary: [
         // Secondary gradient (medium blue) - inspired by organize card
-        'bg-gradient-to-br from-[var(--secondary)] via-[var(--secondary-light)] to-[var(--secondary)]',
+        'bg-gradient-to-br from-[var(--secondary)] via-[var(--secondary)] to-[var(--tertiary)]',
         'text-[var(--quaternary)]', // Dark text on light background
-        'hover:from-[var(--secondary-dark)] hover:via-[var(--secondary)] hover:to-[var(--secondary-dark)]',
+        'hover:bg-gradient-to-br hover:from-[var(--tertiary)] hover:via-[var(--secondary)] hover:to-[var(--tertiary)]',
         'focus-visible:ring-[var(--secondary)]/50',
         'shadow-[var(--secondary)]/20 hover:shadow-[var(--secondary)]/30',
       ],
       tertiary: [
         // Tertiary gradient (dark blue) - inspired by automate card
-        'bg-gradient-to-br from-[var(--tertiary)] via-[var(--tertiary-light)] to-[var(--tertiary)]',
-        'text-[var(--primary-subtle)]', // Light text on dark background
-        'hover:from-[var(--tertiary-dark)] hover:via-[var(--tertiary)] hover:to-[var(--tertiary-dark)]',
+        'bg-gradient-to-br from-[var(--tertiary)] via-[var(--tertiary)] to-[var(--quaternary)]',
+        'text-[var(--primary)]', // Light text on dark background
+        'hover:bg-gradient-to-br hover:from-[var(--quaternary)] hover:via-[var(--tertiary)] hover:to-[var(--quaternary)]',
         'focus-visible:ring-[var(--tertiary)]/50',
         'shadow-[var(--tertiary)]/20 hover:shadow-[var(--tertiary)]/30',
       ],

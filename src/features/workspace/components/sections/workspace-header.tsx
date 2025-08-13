@@ -75,7 +75,6 @@ export function WorkspaceHeader({
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className='text-2xl sm:text-3xl font-bold text-foreground mb-2'
         >
           {getGreeting()}, {firstName}
         </motion.h1>
@@ -158,7 +157,7 @@ export function WorkspaceHeader({
           <SettingsDropdown />
         </div>
       </motion.div>
-      
+
       {/* Notification Center */}
       <NotificationCenter
         isOpen={showNotifications}

@@ -87,7 +87,7 @@ export function LinksContainer({
 
   if (componentError && !isComponentLoading) {
     return (
-      <div className='min-h-screen bg-[var(--neutral-50)] flex items-center justify-center'>
+      <div className='min-h-screen flex items-center justify-center'>
         <div className='error-container'>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -129,9 +129,9 @@ export function LinksContainer({
       isLoading={isComponentLoading}
       loadingComponent={<LinksSkeleton />}
       duration={300}
-      className='min-h-screen bg-[var(--neutral-50)]'
+      className='min-h-screen'
     >
-      <div className='min-h-screen bg-[var(--neutral-50)]'>
+      <div className='min-h-screen'>
         <div className='home-container w-full mx-auto'>
           <div className='space-y-8'>
             {/* Only show empty state if user has no links at all */}

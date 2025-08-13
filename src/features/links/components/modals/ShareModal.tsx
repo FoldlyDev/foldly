@@ -268,13 +268,14 @@ export function ShareModal() {
                     <span className='font-medium text-gray-600 text-sm'>
                       QR Code
                     </span>
-                    <span className='text-xs text-gray-500'>Upgrade to Pro</span>
+                    <span className='text-xs text-gray-500'>
+                      Upgrade to Pro
+                    </span>
                   </div>
                 </motion.div>
               )}
             </div>
           </motion.div>
-
         </div>
       </DialogContent>
     </Dialog>

@@ -10,10 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
-import {
-  LinkStatusIndicator,
-  LinkTypeIcon,
-} from '../indicators';
+import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
 import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
 import { SearchHighlight } from '@/components/ui/core/search-highlight';
 import { ActionButton } from '@/components/ui/core/action-button';
@@ -115,9 +112,7 @@ export const LinkCardGrid = memo(
               </div>
 
               <div className='flex items-center gap-1 text-slate-500 text-sm'>
-                <span className='truncate'>
-                  {displayUrl}
-                </span>
+                <span className='truncate'>{displayUrl}</span>
                 <ExternalLink className='w-3 h-3 flex-shrink-0' />
               </div>
             </div>
@@ -127,7 +122,7 @@ export const LinkCardGrid = memo(
                 <NotificationBadge
                   count={unreadCount}
                   className='mt-1'
-                  onClick={(e) => {
+                  onClick={e => {
                     e?.stopPropagation();
                     onClearNotifications?.();
                   }}

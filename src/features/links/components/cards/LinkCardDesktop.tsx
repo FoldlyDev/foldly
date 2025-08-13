@@ -4,10 +4,7 @@ import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
-import {
-  LinkStatusIndicator,
-  LinkTypeIcon,
-} from '../indicators';
+import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
 import { SearchHighlight } from '@/components/ui/core/search-highlight';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
@@ -102,9 +99,7 @@ export const LinkCardDesktop = memo(
                   />
                 </h3>
               </div>
-              <p className='text-xs text-gray-500 truncate'>
-                {displayUrl}
-              </p>
+              <p className='text-xs text-gray-500 truncate'>{displayUrl}</p>
             </div>
           </div>
 
@@ -113,7 +108,7 @@ export const LinkCardDesktop = memo(
             {unreadCount > 0 && (
               <NotificationBadge
                 count={unreadCount}
-                onClick={(e) => {
+                onClick={e => {
                   e?.stopPropagation();
                   onClearNotifications?.();
                 }}

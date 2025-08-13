@@ -1,0 +1,431 @@
+/* =============================================================================
+   PRIMARY CTA BUTTON - Animated Call-to-Action Button
+   ============================================================================= */
+
+.primary-cta-button {
+  /* Foldly consistent dark design colors */
+  --white: #ffffff; /* Pure white text */
+  --purple-100: #141414; /* Near black from landing page */
+  --purple-200: #020618; /* Very dark blue from landing page */
+  --purple-300: var(--quaternary); /* #0f1922 */
+  --purple-400: #020618; /* Very dark blue */
+  --purple-500: #141414; /* Near black */
+  --radius: 18px;
+
+  border-radius: var(--radius);
+  outline: none;
+  cursor: pointer;
+  font-size: 23px;
+  font-family: var(--font-display); /* Host Grotesk */
+  background: transparent;
+  letter-spacing: -1px;
+  border: 0;
+  position: relative;
+  width: 220px;
+  height: 80px;
+  transform: rotate(353deg) skewX(4deg);
+}
+
+.primary-cta-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  filter: blur(1px);
+}
+.primary-cta-bg::before,
+.primary-cta-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--radius) * 1.1);
+  background: var(--purple-500);
+}
+.primary-cta-bg::before {
+  filter: blur(5px);
+  transition: all 0.3s ease;
+  box-shadow:
+    -7px 6px 0 0 rgb(2 6 24 / 40%),
+    -14px 12px 0 0 rgb(2 6 24 / 30%),
+    -21px 18px 4px 0 rgb(2 6 24 / 25%),
+    -28px 24px 8px 0 rgb(2 6 24 / 15%),
+    -35px 30px 12px 0 rgb(2 6 24 / 12%),
+    -42px 36px 16px 0 rgb(2 6 24 / 8%),
+    -56px 42px 20px 0 rgb(2 6 24 / 5%);
+}
+
+.primary-cta-wrap {
+  border-radius: inherit;
+  overflow: hidden;
+  height: 100%;
+  transform: translate(6px, -6px);
+  padding: 3px;
+  background: linear-gradient(
+    to bottom,
+    #020618 0%,
+    #141414 100%
+  );
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.primary-cta-outline {
+  position: absolute;
+  overflow: hidden;
+  inset: 0;
+  opacity: 0;
+  outline: none;
+  border-radius: inherit;
+  transition: all 0.4s ease;
+}
+.primary-cta-outline::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  width: 120px;
+  height: 300px;
+  margin: auto;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    white 50%,
+    transparent 100%
+  );
+  animation: spin 3s linear infinite;
+  animation-play-state: paused;
+}
+
+.primary-cta-content {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  position: relative;
+  height: 100%;
+  gap: 16px;
+  border-radius: calc(var(--radius) * 0.85);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: linear-gradient(
+    to bottom,
+    #0f1922 0%,
+    #020618 100%
+  );
+  box-shadow:
+    inset -2px 12px 11px -5px rgba(15, 25, 34, 0.5),
+    inset 1px -3px 11px 0px rgb(0 0 0 / 35%);
+}
+.primary-cta-content::before {
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: 10;
+  width: 80%;
+  top: 45%;
+  bottom: 35%;
+  opacity: 0.7;
+  margin: auto;
+  background: linear-gradient(to bottom, transparent, var(--purple-400));
+  filter: brightness(1.3) blur(5px);
+}
+
+.primary-cta-char {
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.primary-cta-char span {
+  display: block;
+  color: transparent;
+  position: relative;
+}
+.primary-cta-char span:nth-child(5) {
+  margin-left: 5px;
+}
+.primary-cta-char.state-1 span:nth-child(5) {
+  margin-right: -3px;
+}
+.primary-cta-char.state-1 span {
+  animation: charAppear 1.2s ease backwards calc(var(--i) * 0.03s);
+}
+.primary-cta-char.state-1 span::before,
+.primary-cta-char span::after {
+  content: attr(data-label);
+  position: absolute;
+  color: var(--white); /* Light blue for contrast */
+  text-shadow: -1px 1px 2px var(--purple-500);
+  left: 0;
+}
+.primary-cta-char span::before {
+  opacity: 0;
+  transform: translateY(-100%);
+}
+.primary-cta-char.state-2 {
+  position: absolute;
+  left: 80px;
+}
+.primary-cta-char.state-2 span::after {
+  opacity: 1;
+}
+
+.primary-cta-icon {
+  animation: resetArrow 0.8s cubic-bezier(0.7, -0.5, 0.3, 1.2) forwards;
+  z-index: 10;
+}
+.primary-cta-icon div,
+.primary-cta-icon div::before,
+.primary-cta-icon div::after {
+  height: 3px;
+  border-radius: 1px;
+  background-color: var(--white); /* Light blue for contrast */
+}
+.primary-cta-icon div::before,
+.primary-cta-icon div::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  transform-origin: center right;
+  width: 14px;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+.primary-cta-icon div {
+  position: relative;
+  width: 24px;
+  box-shadow: -2px 2px 5px var(--purple-400);
+  transform: scale(0.9);
+  background: var(--white);
+  animation: swingArrow 1s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.primary-cta-icon div::before {
+  transform: rotate(44deg);
+  top: 1px;
+  box-shadow: 1px -2px 3px -1px var(--purple-400);
+  animation: rotateArrowLine 1s linear infinite;
+  animation-play-state: paused;
+}
+.primary-cta-icon div::after {
+  bottom: 1px;
+  transform: rotate(316deg);
+  box-shadow: -2px 2px 3px 0 var(--purple-400);
+  background: var(--white);
+  animation: rotateArrowLine2 1s linear infinite;
+  animation-play-state: paused;
+}
+
+.primary-cta-path {
+  position: absolute;
+  z-index: 12;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  stroke-dasharray: 150 480;
+  stroke-dashoffset: 150;
+  pointer-events: none;
+}
+.primary-cta-path path {
+  stroke: var(--white);
+}
+
+.primary-cta-splash {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  stroke-dasharray: 60 60;
+  stroke-dashoffset: 60;
+  transform: translate(-17%, -31%);
+  stroke: var(--purple-300);
+}
+.primary-cta-splash path {
+  stroke: var(--tertiary);
+}
+
+/** STATES */
+
+.primary-cta-button:hover .primary-cta-words {
+  opacity: 1;
+}
+.primary-cta-button:hover .primary-cta-words span {
+  animation-play-state: running;
+}
+
+.primary-cta-button:hover .primary-cta-char.state-1 span::before {
+  animation: charAppear 0.7s ease calc(var(--i) * 0.03s);
+}
+
+.primary-cta-button:hover .primary-cta-char.state-1 span::after {
+  opacity: 1;
+  animation: charDisappear 0.7s ease calc(var(--i) * 0.03s);
+}
+
+.primary-cta-button:hover .primary-cta-wrap {
+  transform: translate(8px, -8px);
+}
+
+.primary-cta-button:hover .primary-cta-outline {
+  opacity: 1;
+}
+
+.primary-cta-button:hover .primary-cta-outline::before,
+.primary-cta-button:hover .primary-cta-icon div::before,
+.primary-cta-button:hover .primary-cta-icon div::after,
+.primary-cta-button:hover .primary-cta-icon div {
+  animation-play-state: running;
+}
+
+.primary-cta-button:active .primary-cta-bg::before {
+  filter: blur(5px);
+  opacity: 0.7;
+  box-shadow:
+    -7px 6px 0 0 rgb(2 6 24 / 40%),
+    -14px 12px 0 0 rgb(2 6 24 / 25%),
+    -21px 18px 4px 0 rgb(2 6 24 / 15%);
+}
+.primary-cta-button:active .primary-cta-content {
+  box-shadow:
+    inset -1px 12px 8px -5px rgba(2, 6, 24, 0.4),
+    inset 0px -3px 8px 0px #020618;
+}
+
+.primary-cta-button:active .primary-cta-words,
+.primary-cta-button:active .primary-cta-outline {
+  opacity: 0;
+}
+
+.primary-cta-button:active .primary-cta-wrap {
+  transform: translate(3px, -3px);
+}
+
+.primary-cta-button:active .primary-cta-splash {
+  animation: splash 0.8s cubic-bezier(0.3, 0, 0, 1) forwards 0.05s;
+}
+
+.primary-cta-button:focus .primary-cta-path {
+  animation: path 1.6s ease forwards 0.2s;
+}
+
+.primary-cta-button:focus .primary-cta-icon {
+  animation: arrow 1s cubic-bezier(0.7, -0.5, 0.3, 1.5) forwards;
+}
+
+.primary-cta-char.state-2 span::after,
+.primary-cta-button:focus .primary-cta-char.state-1 span {
+  animation: charDisappear 0.5s ease forwards calc(var(--i) * 0.03s);
+}
+
+.primary-cta-button:focus .primary-cta-char.state-2 span::after {
+  animation: charAppear 1s ease backwards calc(var(--i) * 0.03s);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes charAppear {
+  0% {
+    transform: translateY(50%);
+    opacity: 0;
+    filter: blur(20px);
+  }
+  20% {
+    transform: translateY(70%);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-15%);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes charDisappear {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-70%);
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+@keyframes arrow {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(60px);
+    opacity: 0;
+  }
+  51% {
+    transform: translateX(-200px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-128px);
+    opacity: 1;
+  }
+}
+
+@keyframes swingArrow {
+  50% {
+    transform: translateX(5px) scale(0.9);
+  }
+}
+
+@keyframes rotateArrowLine {
+  50% {
+    transform: rotate(30deg);
+  }
+  80% {
+    transform: rotate(55deg);
+  }
+}
+
+@keyframes rotateArrowLine2 {
+  50% {
+    transform: rotate(330deg);
+  }
+  80% {
+    transform: rotate(300deg);
+  }
+}
+
+@keyframes resetArrow {
+  0% {
+    transform: translateX(-128px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes path {
+  from {
+    stroke: white;
+  }
+  to {
+    stroke-dashoffset: -480;
+    stroke: #f9c6fe;
+  }
+}
+
+@keyframes splash {
+  to {
+    stroke-dasharray: 2 60;
+    stroke-dashoffset: -60;
+  }
+}

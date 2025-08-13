@@ -8,7 +8,7 @@ import { NotificationProvider } from '@/features/notifications/providers/Notific
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={{ theme: dark }}>
       <ThemeProvider attribute='class' enableSystem disableTransitionOnChange>
         <QueryProvider>
           <NotificationProvider>{children}</NotificationProvider>

@@ -38,19 +38,24 @@ export function useDemoSectionAnimation({
 
     if (!section || galleryCards.length === 0) return;
 
+    // Mobile optimizations
+    const isMobile = window.innerWidth < 1200;
+    const scrollMultiplier = isMobile ? 0.6 : 1; // Shorter scroll distance on mobile
+
     // Setup gallery cards initial positions and rotations
-    const rotations = [-12, 10, -5, 5, -5, -2];
+    const rotations = isMobile ? [0, 0, 0, 0, 0, 0] : [-12, 10, -5, 5, -5, -2]; // No rotation on mobile
     
     galleryCards.forEach((galleryCard, index) => {
       gsap.set(galleryCard, {
         y: window.innerHeight,
         rotate: rotations[index] || 0,
+        willChange: 'transform', // Optimize for animation
       });
     });
 
-    // Split text for mask header animation
+    // Split text for mask header animation (skip on mobile)
     let headerSplit: any = null;
-    if (spotlightHeader) {
+    if (spotlightHeader && !isMobile) {
       headerSplit = SplitText.create(spotlightHeader, {
         type: 'words',
         wordsClass: 'spotlight-word',
@@ -58,14 +63,14 @@ export function useDemoSectionAnimation({
       gsap.set(headerSplit.words, { opacity: 0 });
     }
 
-    // Create the unified animation - matching template exactly
+    // Create the unified animation - optimized for mobile
     ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 7}px`, // Reduced from 10x to 7x for faster progression
+      end: `+=${window.innerHeight * 7 * scrollMultiplier}px`, // Shorter on mobile
       pin: true,
       pinSpacing: true,
-      scrub: 1,
+      scrub: isMobile ? 0.5 : 1, // Smoother scrub on mobile
       onUpdate: (self) => {
         const progress = self.progress;
         
@@ -102,9 +107,10 @@ export function useDemoSectionAnimation({
 
             gsap.to(galleryCard, {
               y: yPos,
-              x: xPos,
+              x: isMobile ? 0 : xPos, // No horizontal movement on mobile
               duration: 0,
               ease: 'none',
+              force3D: true, // Force hardware acceleration
             });
           });
         }
@@ -137,8 +143,8 @@ export function useDemoSectionAnimation({
           }
         }
 
-        // Text reveal animation (75% to 95% of scroll)
-        if (headerSplit && headerSplit.words.length > 0) {
+        // Text reveal animation (75% to 95% of scroll) - skip on mobile
+        if (!isMobile && headerSplit && headerSplit.words.length > 0) {
           if (progress >= 0.75 && progress <= 0.95) {
             const textProgress = (progress - 0.75) / 0.2;
             const totalWords = headerSplit.words.length;
@@ -157,6 +163,13 @@ export function useDemoSectionAnimation({
           } else if (progress > 0.95) {
             gsap.set(headerSplit.words, { opacity: 1 });
           }
+        } else if (isMobile && spotlightHeader) {
+          // Simple fade in for mobile
+          if (progress >= 0.75) {
+            gsap.set(spotlightHeader, { opacity: 1 });
+          } else {
+            gsap.set(spotlightHeader, { opacity: 0 });
+          }
         }
       },
     });
@@ -164,6 +177,11 @@ export function useDemoSectionAnimation({
 
     // Cleanup
     return () => {
+      // Reset will-change to auto
+      galleryCards.forEach((card) => {
+        gsap.set(card, { willChange: 'auto' });
+      });
+      
       if (headerSplit) {
         headerSplit.revert();
       }

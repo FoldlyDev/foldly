@@ -5,12 +5,10 @@
 // CORE UI COMPONENTS (Explicit exports following ADR004)
 // =============================================================================
 
-export { ActionButton } from './action-button';
 export { AnimatedCopyButton } from './animated-copy-button';
 export { StatusBadge } from './status-badge';
 export { CopyButton } from './copy-button';
 export { CardActionsMenu, defaultActions } from './card-actions-menu';
-export { BulkActionsBar } from '../composite/bulk-actions-bar';
 export { ConfigurableModal } from '../composite/configurable-modal';
 export { ContentLoader } from '../feedback/content-loader';
 export { FilterSystem } from '../composite/filter-system';
@@ -24,7 +22,6 @@ export {
   StaggerItem,
 } from './motion-wrappers';
 export { SearchInput } from './search-input';
-export { TemplatesModal } from './templates-modal';
 export { ViewToggle } from './view-toggle';
 export { FileUpload } from '../composite/file-upload';
 export { SearchHighlight } from './search-highlight';

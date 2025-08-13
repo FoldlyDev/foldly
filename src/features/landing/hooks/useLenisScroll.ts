@@ -12,9 +12,12 @@ import Lenis from 'lenis';
 export function useLenisScroll() {
   const lenisRef = useRef<Lenis | null>(null);
   const isMobileRef = useRef(false);
+  const rafIdRef = useRef<gsap.TickerCallback | null>(null);
+  const isInitializedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (isInitializedRef.current) return; // Prevent re-initialization
 
     // GSAP plugins are registered by the orchestrator
 
@@ -22,7 +25,8 @@ export function useLenisScroll() {
     isMobileRef.current = isMobile;
 
     // Match template's easing function for better performance
-    const easingFunction = (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t));
+    const easingFunction = (t: number) =>
+      Math.min(1, 1.001 - Math.pow(2, -10 * t));
 
     // Device-specific settings matching the template
     const scrollSettings = isMobile
@@ -60,6 +64,9 @@ export function useLenisScroll() {
     // Initialize Lenis with appropriate settings
     let lenis = new Lenis(scrollSettings);
     lenisRef.current = lenis;
+    
+    // Make Lenis available globally for other components
+    (window as any).lenis = lenis;
 
     // Synchronize with ScrollTrigger (matching template pattern)
     lenis.on('scroll', ScrollTrigger.update);
@@ -67,11 +74,15 @@ export function useLenisScroll() {
     // Add to GSAP ticker
     const lenisRaf = (time: number) => {
       lenis.raf(time * 1000);
+      ScrollTrigger.update();
     };
-    gsap.ticker.add(lenisRaf);
+    rafIdRef.current = gsap.ticker.add(lenisRaf);
 
     // Match template's lag smoothing setting
     gsap.ticker.lagSmoothing(0);
+
+    // Mark as initialized
+    isInitializedRef.current = true;
 
     // Handle resize events to recreate Lenis with appropriate settings
     const handleResize = () => {
@@ -118,6 +129,7 @@ export function useLenisScroll() {
 
         lenis = new Lenis(newScrollSettings);
         lenisRef.current = lenis;
+        (window as any).lenis = lenis;
         lenis.on('scroll', ScrollTrigger.update);
       }
     };
@@ -130,8 +142,10 @@ export function useLenisScroll() {
       gsap.ticker.remove(lenisRaf);
       lenis.destroy();
       lenisRef.current = null;
+      (window as any).lenis = null;
+      isInitializedRef.current = false;
     };
-  }, []);
+  }, []); // Empty dependency array ensures this only runs once
 
   return lenisRef.current;
 }

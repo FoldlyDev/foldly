@@ -95,6 +95,7 @@
 
 /* 🌐 Global UI Component Styles */
 @import '../styles/components/ui/content-loader.css';
+@import '../styles/components/core/primary-cta.css';
 
 /* 🏗️ Dashboard Feature Styles */
 @import '../styles/components/layout/dashboard-navigation.css';

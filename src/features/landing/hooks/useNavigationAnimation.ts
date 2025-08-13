@@ -435,7 +435,7 @@ export function useNavigationAnimation(
         gsap.set(refs.menuRef.current, {
           yPercent: 0,
           opacity: 1,
-          xPercent: -50, // Maintain center alignment
+          // Don't set xPercent - CSS already handles centering with translateX(-50%)
         });
       }
       

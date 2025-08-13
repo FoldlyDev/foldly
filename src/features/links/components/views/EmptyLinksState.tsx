@@ -42,7 +42,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
 
   // Fallback username for display purposes
   const displayUsername = username || 'your-username';
-  
+
   // Get the display domain from centralized configuration
   const displayDomain = getDisplayDomain();
 

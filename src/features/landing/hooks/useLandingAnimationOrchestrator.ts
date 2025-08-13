@@ -109,12 +109,9 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
           autoSleep: 60, // Auto-sleep after 60 ticks of inactivity
         });
         
-        // Adjust performance based on device
-        if (isMobile) {
-          gsap.ticker.fps(30); // Reduce FPS on mobile
-        } else {
-          gsap.ticker.lagSmoothing(0);
-        }
+        // Set consistent FPS for all devices
+        gsap.ticker.fps(120); // Allow up to 120 FPS for devices that support it
+        // Note: lagSmoothing is set to 0 in useLenisScroll hook to prevent scrollbar jumping
       }
       
       gsapInitialized.current = true;
@@ -201,6 +198,39 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     propsRef.current?.onDemoReady?.();
     console.log('[Orchestrator] Demo animation ready');
   }, [animationState.featureHighlightReady]);
+
+  // Refresh ScrollTrigger when all animations are ready
+  useEffect(() => {
+    if (!animationState.demoReady) return;
+    
+    // Give animations time to initialize, then refresh ScrollTrigger
+    const refreshTimer = setTimeout(() => {
+      ScrollTrigger.refresh();
+      console.log('[Orchestrator] ScrollTrigger refreshed after all animations ready');
+    }, 100);
+
+    return () => clearTimeout(refreshTimer);
+  }, [animationState.demoReady]);
+
+  // Handle window resize with debounced ScrollTrigger refresh
+  useEffect(() => {
+    if (!animationState.isHydrated) return;
+
+    let resizeTimer: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        ScrollTrigger.refresh();
+        console.log('[Orchestrator] ScrollTrigger refreshed after resize');
+      }, 250);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [animationState.isHydrated]);
 
   // Emergency fallback - force everything ready after 3 seconds
   useEffect(() => {
