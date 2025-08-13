@@ -27,56 +27,44 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
     {
       title: METRICS_LABELS.totalLinks,
       value: safeData.totalLinks,
-      subtitle: METRICS_LABELS.uploadLinksCreated,
       icon: Link2,
       color: 'primary' as ColorType,
-      trend: { value: 12, isPositive: true, label: 'vs last month' },
     },
     {
       title: METRICS_LABELS.activeLinks,
       value: safeData.activeLinks,
-      subtitle: METRICS_LABELS.currentlyAcceptingFiles,
       icon: TrendingUp,
       color: 'success' as ColorType,
-      trend: { value: 8, isPositive: true, label: 'this week' },
     },
     {
       title: METRICS_LABELS.totalUploads,
       value: safeData.totalUploads,
-      subtitle: METRICS_LABELS.filesCollected,
       icon: FileText,
       color: 'secondary' as ColorType,
-      trend: { value: 15, isPositive: true, label: 'vs last month' },
     },
     {
       title: METRICS_LABELS.totalViews,
       value: safeData.totalViews,
-      subtitle: METRICS_LABELS.linkPageVisits,
       icon: Eye,
       color: 'tertiary' as ColorType,
-      trend: { value: 23, isPositive: true, label: 'vs last month' },
     },
   ];
 
   const colorClasses = {
     primary: {
       icon: 'text-[var(--primary)] bg-[var(--primary-subtle)]',
-      trend: 'text-[var(--primary)]',
       accent: 'border-l-[var(--primary)]',
     },
     secondary: {
       icon: 'text-[var(--secondary)] bg-[var(--secondary-subtle)]',
-      trend: 'text-[var(--secondary)]',
       accent: 'border-l-[var(--secondary)]',
     },
     tertiary: {
       icon: 'text-[var(--tertiary)] bg-[var(--tertiary-subtle)]',
-      trend: 'text-[var(--tertiary)]',
       accent: 'border-l-[var(--tertiary)]',
     },
     success: {
       icon: 'text-[var(--success-green)] bg-green-50',
-      trend: 'text-[var(--success-green)]',
       accent: 'border-l-[var(--success-green)]',
     },
   };
@@ -149,30 +137,10 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
                 </motion.div>
               </div>
 
-              {/* Title and Subtitle */}
-              <div className='space-y-0.5 md:space-y-1'>
-                <h3 className='font-semibold text-[var(--quaternary)] text-xs md:text-sm leading-tight'>
-                  {card.title}
-                </h3>
-                <p className='text-[var(--neutral-500)] text-xs leading-tight hidden md:block'>
-                  {card.subtitle}
-                </p>
-              </div>
-
-              {/* Trend Indicator - Desktop only */}
-              {card.trend && (
-                <div
-                  className={`
-                  hidden md:flex items-center gap-1 mt-2 md:mt-3 pt-2 md:pt-3 border-t border-[var(--neutral-100)]
-                  ${colors.trend}
-                `}
-                >
-                  <TrendingUp className='w-3 h-3' />
-                  <span className='text-xs font-medium'>
-                    +{card.trend.value}% {card.trend.label}
-                  </span>
-                </div>
-              )}
+              {/* Title */}
+              <h3 className='font-semibold text-[var(--quaternary)] text-xs md:text-sm leading-tight'>
+                {card.title}
+              </h3>
             </div>
           </motion.div>
         );
