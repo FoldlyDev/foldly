@@ -311,12 +311,8 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
                 duplicate.style.left = (finalPageX - headerIconSize / 2) + 'px';
                 duplicate.style.top = (finalPageY - headerIconSize / 2) + 'px';
-                // Fade in the duplicate icons smoothly
-                const fadeInProgress = Math.max(
-                  0,
-                  Math.min(1, moveProgress * 2)
-                ); // Faster fade in
-                duplicate.style.opacity = fadeInProgress.toString();
+                // Set icons to full opacity immediately (matching template)
+                duplicate.style.opacity = '1';
                 duplicate.style.display = 'flex';
               }
             });
@@ -345,18 +341,9 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
                 duplicate.style.left = (targetPageX - headerIconSize / 2) + 'px';
                 duplicate.style.top = (targetPageY - headerIconSize / 2) + 'px';
 
-                // Fade out icons when scrolling back to phase 3
-                const fadeOutStart = 0.75; // Start fading only when leaving phase 4
-                let iconOpacity = 1;
-
-                if (progress < fadeOutStart) {
-                  // Fade out smoothly as we scroll back
-                  const fadeRange = 0.05; // Fade over a small range for smooth transition
-                  iconOpacity = Math.max(0, (progress - (fadeOutStart - fadeRange)) / fadeRange);
-                }
-
-                duplicate.style.opacity = iconOpacity.toString();
-                duplicate.style.display = iconOpacity > 0 ? 'flex' : 'none';
+                // Keep icons fully visible in phase 4 (matching template behavior)
+                duplicate.style.opacity = '1';
+                duplicate.style.display = 'flex';
               }
             });
 
