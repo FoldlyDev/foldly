@@ -22,7 +22,6 @@ import {
   DialogDescription,
 } from '@/components/marketing/animate-ui/radix/dialog';
 import { CopyButton } from '@/components/ui/core/copy-button';
-import { ActionButton } from '@/components/ui/core/action-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { useUserPlan } from '@/features/link-upload/hooks/use-user-plan';
@@ -133,7 +132,8 @@ export function ShareModal() {
 
             <div className='flex items-center gap-3 p-4 bg-gray-50/80 rounded-xl border border-gray-200/50'>
               <code className='flex-1 text-sm font-mono text-gray-800 break-all'>
-                {fullUrl}
+                {/* {fullUrl} */}
+                https://foldly.io/hollydaze
               </code>
               <CopyButton
                 value={fullUrl}

@@ -15,7 +15,7 @@ export function OutroSection() {
             <PrimaryCta />
           </Link>
         </div>
-        <div className='trust-signals text-sm text-gray-600'>
+        <div className='trust-signals text-sm text-black'>
           <p className='flex items-center justify-center gap-6'>
             <span>✓ No credit card</span>
             <span>✓ Free forever tier</span>

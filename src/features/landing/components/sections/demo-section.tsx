@@ -38,12 +38,42 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>((_, ref
   }));
 
   const galleryImages = [
-    { id: 'X01-842', src: '/assets/landing/gallery-images/gallery-img-1.jpg' },
-    { id: 'V9-372K', src: '/assets/landing/gallery-images/gallery-img-2.jpg' },
-    { id: 'Z84-Q17', src: '/assets/landing/gallery-images/gallery-img-3.jpg' },
-    { id: 'L56-904', src: '/assets/landing/gallery-images/gallery-img-4.jpg' },
-    { id: 'A23-7P1', src: '/assets/landing/gallery-images/gallery-img-5.jpg' },
-    { id: 'T98-462', src: '/assets/landing/gallery-images/gallery-img-6.jpg' },
+    { 
+      id: 'STEP-01', 
+      src: '/assets/img/landing_page/step_1.png',
+      title: 'Step 1',
+      description: 'Hit JUMP IN and let\'s get rollin\' 🚀'
+    },
+    { 
+      id: 'STEP-02', 
+      src: '/assets/img/landing_page/step_2.png',
+      title: 'Step 2',
+      description: 'Log in or signup like a pro.'
+    },
+    { 
+      id: 'STEP-03', 
+      src: '/assets/img/landing_page/step_3.png',
+      title: 'Step 3',
+      description: 'Drop your username (bonus points if it\'s spicy).'
+    },
+    { 
+      id: 'STEP-04', 
+      src: '/assets/img/landing_page/step_4.png',
+      title: 'Step 4',
+      description: 'Cruise to the Links section.'
+    },
+    { 
+      id: 'STEP-05', 
+      src: '/assets/img/landing_page/step_5.png',
+      title: 'Step 5',
+      description: 'Setup your Base Link, your VIP file drop-off spot 📦✨'
+    },
+    { 
+      id: 'STEP-06', 
+      src: '/assets/img/landing_page/step_6.png',
+      title: 'Step 6',
+      description: 'Share it and watch the magic happen ✨'
+    },
   ];
 
   return (
@@ -114,10 +144,11 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>((_, ref
             }}
           >
             <div className="gallery-card-img">
-              <Image src={image.src} alt="" fill style={{ objectFit: 'cover' }} />
+              <Image src={image.src} alt="" fill style={{ objectFit: 'contain' }} />
             </div>
             <div className="gallery-card-content">
-              <p className="mono">{image.id}</p>
+              <h4>{image.title}</h4>
+              <p>{image.description}</p>
             </div>
           </div>
         ))}
