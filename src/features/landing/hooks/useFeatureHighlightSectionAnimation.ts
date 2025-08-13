@@ -48,7 +48,7 @@ export function useFeatureHighlightSectionAnimation({
     const textRevealTrigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 1.5}px`, // Reduced from 3x to 1.5x
+      end: `+=${window.innerHeight * 1}px`, // Reduced from 1.5x to 1x for faster animation
       pin: true,
       pinSpacing: true,
       scrub: 1,
@@ -82,7 +82,7 @@ export function useFeatureHighlightSectionAnimation({
     const stripMovementTrigger = ScrollTrigger.create({
       trigger: section,
       start: 'top bottom',
-      end: `+=${window.innerHeight * 3}px`, // Reduced from 6x to 3x
+      end: `+=${window.innerHeight * 2}px`, // Reduced from 3x to 2x for faster animation
       scrub: 1,
       onUpdate: (self) => {
         const progress = self.progress;

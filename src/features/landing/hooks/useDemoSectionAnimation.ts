@@ -71,7 +71,7 @@ export function useDemoSectionAnimation({
     ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 7 * scrollMultiplier}px`, // Shorter on mobile
+      end: `+=${window.innerHeight * 4 * scrollMultiplier}px`, // Reduced from 7x to 4x for faster animation
       pin: true,
       pinSpacing: true,
       scrub: isMobile ? 0.5 : 1, // Smoother scrub on mobile
