@@ -1,0 +1,27 @@
+/* =============================================================================
+   CARD STYLES - Interactive and Display Card Components
+   ============================================================================= */
+
+/* Interactive card hover effects - Only for truly interactive cards */
+.interactive-card {
+  transition: var(--transition-all);
+  transform-origin: center;
+  cursor: pointer;
+}
+
+.interactive-card:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Display card styles - For informational cards without interaction */
+.display-card {
+  transition: var(--transition-all);
+  transform-origin: center;
+  cursor: default;
+}
+
+.display-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-display-hover);
+}

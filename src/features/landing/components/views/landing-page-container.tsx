@@ -105,7 +105,7 @@ export function LandingPageContainer() {
   });
 
   // Initialize Lenis smooth scrolling
-  // useLenisScroll(); // TEMPORARILY DISABLED FOR TESTING
+  useLenisScroll();
 
   // Wait for client-side hydration to complete
   useEffect(() => {

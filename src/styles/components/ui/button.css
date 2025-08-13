@@ -1,0 +1,14 @@
+/* =============================================================================
+   BUTTON STYLES - Premium Button Components
+   ============================================================================= */
+
+/* Premium button styles */
+@utility premium-button {
+  @apply relative overflow-hidden;
+  background: var(--gradient-premium);
+  transition: var(--transition-all);
+}
+
+.premium-button:hover {
+  @apply -translate-y-px shadow-lg;
+}

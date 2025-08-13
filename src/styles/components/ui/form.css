@@ -1,0 +1,27 @@
+/* =============================================================================
+   FORM STYLES - Premium Form Field Components
+   ============================================================================= */
+
+/* Form field enhancements */
+.premium-input {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  transition: var(--transition-all);
+}
+
+.premium-input:focus {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #3b82f6;
+  box-shadow: var(--shadow-focus-md);
+  transform: translateY(-1px);
+}
+
+.dark .premium-input {
+  background: rgba(15, 15, 15, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .premium-input:focus {
+  background: rgba(15, 15, 15, 0.95);
+  border-color: #3b82f6;
+}

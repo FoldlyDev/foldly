@@ -4,6 +4,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
+import { initTextAnimations, cleanupTextAnimations } from '../utils/text-animations';
 
 interface DemoSectionRefs {
   sectionRef: React.RefObject<HTMLElement | null>;
@@ -37,6 +38,9 @@ export function useDemoSectionAnimation({
     const spotlightHeader = refs.maskHeaderRef?.current?.querySelector('h3');
 
     if (!section || galleryCards.length === 0) return;
+
+    // Initialize text animations for scramble and line-reveal
+    initTextAnimations();
 
     // Mobile optimizations
     const isMobile = window.innerWidth < 1200;
@@ -185,6 +189,10 @@ export function useDemoSectionAnimation({
       if (headerSplit) {
         headerSplit.revert();
       }
+      
+      // Cleanup text animations
+      cleanupTextAnimations();
+      
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
   }, {

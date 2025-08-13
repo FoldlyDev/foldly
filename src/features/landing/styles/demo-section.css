@@ -356,3 +356,8 @@
     text-align: center;
   }
 }
+
+/* Line reveal animation styles */
+.line-mask {
+  overflow: hidden;
+}

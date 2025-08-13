@@ -1,0 +1,68 @@
+/* =============================================================================
+   TOAST & SONNER NOTIFICATION STYLES
+   ============================================================================= */
+
+/* ===================================================================== */
+/* SONNER TOASTER FIX - Prevent space below pages */
+/* ===================================================================== */
+
+/* Fix Sonner toaster positioning to prevent layout issues */
+[data-sonner-toaster] {
+  position: fixed !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+[data-sonner-toaster] > * {
+  pointer-events: auto !important;
+}
+
+/* Toast Icon Colors */
+[data-sonner-toast][data-type='success'] [data-icon] {
+  color: rgb(34 197 94) !important; /* green-500 */
+}
+
+.dark [data-sonner-toast][data-type='success'] [data-icon] {
+  color: rgb(74 222 128) !important; /* green-400 */
+}
+
+[data-sonner-toast][data-type='error'] [data-icon] {
+  color: rgb(239 68 68) !important; /* red-500 */
+}
+
+.dark [data-sonner-toast][data-type='error'] [data-icon] {
+  color: rgb(248 113 113) !important; /* red-400 */
+}
+
+[data-sonner-toast][data-type='warning'] [data-icon] {
+  color: rgb(245 158 11) !important; /* amber-500 */
+}
+
+.dark [data-sonner-toast][data-type='warning'] [data-icon] {
+  color: rgb(251 191 36) !important; /* amber-400 */
+}
+
+[data-sonner-toast][data-type='info'] [data-icon] {
+  color: rgb(59 130 246) !important; /* blue-500 */
+}
+
+.dark [data-sonner-toast][data-type='info'] [data-icon] {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* Ensure notifications section doesn't create layout space */
+section[aria-label*='Notifications'] {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+section[aria-label*='Notifications'] > * {
+  pointer-events: auto !important;
+}

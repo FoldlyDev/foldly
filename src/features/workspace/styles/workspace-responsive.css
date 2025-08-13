@@ -53,14 +53,6 @@
      WORKSPACE TOOLBAR RESPONSIVE
      ============================================================================= */
 
-  .workspace-toolbar {
-    @apply foldly-glass-light rounded-lg overflow-hidden;
-  }
-
-  .dark .workspace-toolbar {
-    @apply foldly-glass;
-  }
-
   .workspace-toolbar-main {
     display: flex;
     flex-direction: column;
@@ -121,11 +113,8 @@
   }
 
   .workspace-tree-wrapper {
-    @apply flex-1 flex flex-col foldly-glass-light rounded-lg overflow-hidden;
-  }
-
-  .dark .workspace-tree-wrapper {
-    @apply foldly-glass;
+    @apply flex-1 flex flex-col;
+    /* Layout only - no styling */
   }
 
   .workspace-tree-content {
@@ -137,27 +126,17 @@
 
   .workspace-tree-footer {
     padding: 0.75rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(0, 0, 0, 0.05);
     text-align: center;
-  }
-
-  .dark .workspace-tree-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(0, 0, 0, 0.2);
+    /* Layout only - no styling */
   }
 
   .workspace-tree-footer-text {
     font-size: 0.6875rem !important; /* 11px */
-    color: rgba(0, 0, 0, 0.5);
     margin: 0;
     letter-spacing: 0.01em;
     font-family: var(--font-body);
     line-height: 1.4;
-  }
-
-  .dark .workspace-tree-footer-text {
-    color: rgba(255, 255, 255, 0.4);
+    /* Typography only - no colors */
   }
 
   /* =============================================================================
@@ -258,7 +237,11 @@
     }
 
     .workspace-toolbar {
-      border-radius: 1rem;
+      @apply foldly-glass-light foldly-custom-bg rounded-lg overflow-hidden;
+    }
+
+    .dark .workspace-toolbar {
+      @apply foldly-glass rounded-lg overflow-hidden;
     }
 
     .workspace-search-container {

@@ -206,8 +206,29 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     
     // Give animations time to initialize, then refresh ScrollTrigger
     const refreshTimer = setTimeout(() => {
+      // Save current scroll position and progress
+      const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+      const triggers = ScrollTrigger.getAll();
+      const savedProgress = triggers.map(t => ({ trigger: t, progress: t.progress }));
+      
+      // Refresh ScrollTrigger
       ScrollTrigger.refresh();
-      console.log('[Orchestrator] ScrollTrigger refreshed after all animations ready');
+      
+      // Restore progress to prevent jumping
+      savedProgress.forEach(({ trigger, progress }) => {
+        if (trigger && typeof trigger.progress === 'function') {
+          trigger.progress(progress);
+        }
+      });
+      
+      // Ensure scroll position is maintained
+      if (window.lenis) {
+        window.lenis.scrollTo(currentScroll, { immediate: true });
+      } else {
+        window.scrollTo(0, currentScroll);
+      }
+      
+      console.log('[Orchestrator] ScrollTrigger refreshed after all animations ready - position preserved');
     }, 100);
 
     return () => clearTimeout(refreshTimer);
@@ -221,8 +242,21 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
+        // Save current progress of all ScrollTriggers
+        const triggers = ScrollTrigger.getAll();
+        const savedProgress = triggers.map(t => ({ trigger: t, progress: t.progress }));
+        
+        // Refresh ScrollTrigger
         ScrollTrigger.refresh();
-        console.log('[Orchestrator] ScrollTrigger refreshed after resize');
+        
+        // Restore progress after refresh
+        savedProgress.forEach(({ trigger, progress }) => {
+          if (trigger && typeof trigger.progress === 'function') {
+            trigger.progress(progress);
+          }
+        });
+        
+        console.log('[Orchestrator] ScrollTrigger refreshed after resize with progress preserved');
       }, 250);
     };
 
@@ -231,6 +265,49 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimer);
     };
+  }, [animationState.isHydrated]);
+
+  // Handle tab visibility changes to prevent scroll jumping
+  useEffect(() => {
+    if (!animationState.isHydrated) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Tab is now visible - preserve scroll position
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        
+        // Get all ScrollTriggers and save their progress
+        const triggers = ScrollTrigger.getAll();
+        const savedStates = triggers.map(trigger => ({
+          trigger,
+          progress: trigger.progress,
+          scroll: trigger.scroll()
+        }));
+        
+        // Update Lenis if it exists
+        if (window.lenis) {
+          window.lenis.scrollTo(currentScroll, { immediate: true });
+        }
+        
+        // Refresh ScrollTrigger
+        ScrollTrigger.refresh();
+        
+        // Restore states
+        savedStates.forEach(({ trigger, progress }) => {
+          if (trigger && typeof trigger.progress === 'function') {
+            trigger.progress(progress);
+          }
+        });
+        
+        // Ensure scroll position is maintained
+        window.scrollTo(0, currentScroll);
+        
+        console.log('[Orchestrator] Tab visibility restored - scroll position preserved');
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [animationState.isHydrated]);
 
   // Emergency fallback - force everything ready after 3 seconds

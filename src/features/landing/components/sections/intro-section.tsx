@@ -79,101 +79,98 @@ export const IntroSection = forwardRef<IntroSectionRefs, IntroSectionProps>(
           </defs>
         </svg>
 
-        {/* All content wrapped in relative container with higher z-index */}
-        <div className='relative z-10'>
-          {/* Hero Header - Initially visible, fades out */}
-          <div className='intro-hero-header' ref={refs?.current?.heroHeaderRef}>
-            <h1 className='mt-8 foldly-gradient-text py-4 text-center text-6xl! font-bold tracking-tight md:text-9xl!'>
-              Foldly
-            </h1>
-            <p>One platform, endless file collection possibilities.</p>
-          </div>
-
-          {/* Animated Icons Container */}
-          <div
-            className='intro-animated-icons'
-            ref={refs?.current?.animatedIconsRef}
-          >
-            {iconData.map((icon, index) => (
-              <div
-                key={index}
-                className={`intro-animated-icon intro-icon-${index + 1}`}
-                ref={refs?.current?.iconRefs[index]}
-              >
-                <icon.Icon
-                  className='w-full h-full'
-                  style={{ stroke: 'url(#icon-gradient)', fill: 'none' }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Container for duplicate icons that will be created by GSAP */}
-          <div
-            className='intro-duplicate-icons-container'
-            ref={refs?.current?.duplicateIconsContainerRef}
-          />
-
-          {/* Animated Text with Placeholder Icons */}
-          <h1 className='intro-animated-text'>
-            <div
-              className='intro-placeholder-icon'
-              ref={refs?.current?.placeholderIconRefs[0]}
-            />
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[0]}
-            >
-              {textSegments[0]}
-            </span>{' '}
-            <div
-              className='intro-placeholder-icon'
-              ref={refs?.current?.placeholderIconRefs[1]}
-            />
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[1]}
-            >
-              {textSegments[1]}
-            </span>{' '}
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[2]}
-            >
-              {textSegments[2]}
-            </span>{' '}
-            <div
-              className='intro-placeholder-icon'
-              ref={refs?.current?.placeholderIconRefs[2]}
-            />
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[3]}
-            >
-              {textSegments[3]}
-            </span>{' '}
-            <div
-              className='intro-placeholder-icon'
-              ref={refs?.current?.placeholderIconRefs[3]}
-            />
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[4]}
-            >
-              {textSegments[4]}
-            </span>{' '}
-            <div
-              className='intro-placeholder-icon'
-              ref={refs?.current?.placeholderIconRefs[4]}
-            />
-            <span
-              className='intro-text-segment'
-              ref={refs?.current?.textSegmentRefs[5]}
-            >
-              {textSegments[5]}
-            </span>
+        {/* Hero Header - Initially visible, fades out */}
+        <div className='intro-hero-header' ref={refs?.current?.heroHeaderRef}>
+          <h1 className='mt-8 foldly-gradient-text py-4 text-center text-6xl! font-bold tracking-tight md:text-9xl!'>
+            Foldly
           </h1>
+          <p>One platform, endless file collection possibilities.</p>
         </div>
+
+        {/* Animated Icons Container */}
+        <div
+          className='intro-animated-icons'
+          ref={refs?.current?.animatedIconsRef}
+        >
+          {iconData.map((icon, index) => (
+            <div
+              key={index}
+              className={`intro-animated-icon intro-icon-${index + 1}`}
+              ref={refs?.current?.iconRefs[index]}
+            >
+              <icon.Icon
+                className='w-full h-full'
+                style={{ stroke: 'url(#icon-gradient)', fill: 'none' }}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Container for duplicate icons that will be created by GSAP */}
+        <div
+          className='intro-duplicate-icons-container'
+          ref={refs?.current?.duplicateIconsContainerRef}
+        />
+
+        {/* Animated Text with Placeholder Icons */}
+        <h1 className='intro-animated-text'>
+          <div
+            className='intro-placeholder-icon'
+            ref={refs?.current?.placeholderIconRefs[0]}
+          />
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[0]}
+          >
+            {textSegments[0]}
+          </span>{' '}
+          <div
+            className='intro-placeholder-icon'
+            ref={refs?.current?.placeholderIconRefs[1]}
+          />
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[1]}
+          >
+            {textSegments[1]}
+          </span>{' '}
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[2]}
+          >
+            {textSegments[2]}
+          </span>{' '}
+          <div
+            className='intro-placeholder-icon'
+            ref={refs?.current?.placeholderIconRefs[2]}
+          />
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[3]}
+          >
+            {textSegments[3]}
+          </span>{' '}
+          <div
+            className='intro-placeholder-icon'
+            ref={refs?.current?.placeholderIconRefs[3]}
+          />
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[4]}
+          >
+            {textSegments[4]}
+          </span>{' '}
+          <div
+            className='intro-placeholder-icon'
+            ref={refs?.current?.placeholderIconRefs[4]}
+          />
+          <span
+            className='intro-text-segment'
+            ref={refs?.current?.textSegmentRefs[5]}
+          >
+            {textSegments[5]}
+          </span>
+        </h1>
       </section>
     );
   }

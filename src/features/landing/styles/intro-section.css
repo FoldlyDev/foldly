@@ -75,10 +75,10 @@
   max-width: 1000px;
   text-align: center;
   color: #141414;
-  font-size: clamp(1.5rem, 3vw, 2.5rem) !important;
+  font-size: clamp(2rem, 5vw, 4rem) !important;
   font-family: var(--font-condensed);
-  font-weight: 900 !important;
-  line-height: 0.85 !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
   text-transform: uppercase;
   margin: 0;
   padding: 0;
@@ -148,7 +148,7 @@
   }
 
   .intro-animated-text {
-    font-size: clamp(1.25rem, 2.5vw, 2rem) !important;
+    font-size: clamp(1.75rem, 4vw, 3rem) !important;
   }
 
   .intro-placeholder-icon {

@@ -1,0 +1,50 @@
+/* =============================================================================
+   PERFORMANCE OPTIMIZATIONS - Production-Ready Enhancements
+   ============================================================================= */
+
+/* Optimize font loading with font-display */
+@font-face {
+  font-display: swap; /* Ensures text remains visible during font load */
+}
+
+/* GPU Acceleration for animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Reduce repaints for fixed elements */
+.fixed-optimized {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimize image rendering */
+img {
+  content-visibility: auto;
+  contain-intrinsic-size: 512px; /* Adjust based on your images */
+}
+
+/* Reduce layout shifts */
+.aspect-stable {
+  aspect-ratio: attr(width) / attr(height);
+}
+
+/* Performance hints for browsers */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Critical CSS for above-the-fold content */
+.critical {
+  /* Marked for inline critical CSS extraction */
+  contain: layout style paint;
+}
