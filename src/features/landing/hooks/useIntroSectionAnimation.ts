@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -19,12 +20,10 @@ interface IntroAnimationRefs {
 }
 
 export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
-  const isInitialized = useRef(false);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
   const duplicateIconsRef = useRef<HTMLDivElement[]>([]);
 
-  useEffect(() => {
-    if (isInitialized.current) return;
+  useGSAP(() => {
     if (typeof window === 'undefined') return;
     if (!refs.isEnabled) return;
     if (refs.prefersReducedMotion) return; // Skip animations if reduced motion is preferred
@@ -86,11 +85,9 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
       iconElements[0]?.getBoundingClientRect().width || 60;
     const exactScale = headerIconSize / currentIconSize;
 
-    // Use gsap.context for better cleanup
-    const ctx = gsap.context(() => {
-      try {
-        // Create the main scroll trigger animation
-        scrollTriggerRef.current = ScrollTrigger.create({
+    try {
+      // Create the main scroll trigger animation
+      scrollTriggerRef.current = ScrollTrigger.create({
         trigger: heroSection,
         start: 'top top',
         end: `+=${window.innerHeight * 4}px`, // Reduced from 8x to 4x
@@ -400,42 +397,25 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
       if (refs.registerScrollTrigger && scrollTriggerRef.current) {
         refs.registerScrollTrigger(scrollTriggerRef.current);
       }
-      } catch (error) {
-        console.error('[IntroAnimation] Failed to create animation:', error);
-      }
-    });
+    } catch (error) {
+      console.error('[IntroAnimation] Failed to create animation:', error);
+    }
 
-    isInitialized.current = true;
-
-    // Register cleanup with orchestrator
-    const cleanup = () => {
-      ctx.revert(); // This will properly clean up all GSAP instances
+    // Cleanup function for useGSAP
+    return () => {
       if (scrollTriggerRef.current) {
         scrollTriggerRef.current.kill();
         scrollTriggerRef.current = null;
       }
       // Clean up duplicate icons
       duplicateIconsRef.current.forEach(duplicate => {
-        duplicate?.remove(); // Safer removal
+        duplicate?.remove();
       });
       duplicateIconsRef.current = [];
-      isInitialized.current = false;
     };
-    
-    if (refs.registerCleanup) {
-      refs.registerCleanup(cleanup);
-    }
-
-    // Return cleanup function
-    return cleanup;
-  }, [refs, refs.isEnabled]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (scrollTriggerRef.current) {
-        scrollTriggerRef.current.kill();
-      }
-    };
-  }, []);
+  }, {
+    dependencies: [refs.isEnabled, refs],
+    scope: refs.introRef,
+    revertOnUpdate: true
+  });
 }

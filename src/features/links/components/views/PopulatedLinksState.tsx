@@ -188,7 +188,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
           {/* No Results Message */}
           <div className='text-center py-12'>
-            <p className='text-[var(--neutral-600)]'>
+            <p>
               No links found matching "{searchQuery}"
             </p>
             <button
@@ -212,7 +212,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         {/* Header with Search and Filters */}
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <div className='flex items-center gap-3'>
-            <h2 className='text-xl font-semibold text-[var(--quaternary)]'>
+            <h2>
               Your Links ({links.length})
             </h2>
 

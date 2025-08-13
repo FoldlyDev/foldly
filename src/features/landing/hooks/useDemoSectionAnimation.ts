@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
@@ -25,16 +25,16 @@ export function useDemoSectionAnimation({
   refs,
   isEnabled,
 }: UseDemoSectionAnimationProps) {
-  useEffect(() => {
-    if (!isEnabled || !refs) return;
+  useGSAP(() => {
+    if (!isEnabled || !refs || !refs.sectionRef) return;
 
     // GSAP plugins are registered by the orchestrator
 
     const section = refs.sectionRef.current;
-    const galleryCards = refs.galleryCardsRef.current;
-    const maskContainer = refs.maskContainerRef.current;
-    const maskImage = refs.maskImageRef.current;
-    const spotlightHeader = refs.maskHeaderRef.current?.querySelector('h3');
+    const galleryCards = refs.galleryCardsRef?.current || [];
+    const maskContainer = refs.maskContainerRef?.current;
+    const maskImage = refs.maskImageRef?.current;
+    const spotlightHeader = refs.maskHeaderRef?.current?.querySelector('h3');
 
     if (!section || galleryCards.length === 0) return;
 
@@ -187,5 +187,9 @@ export function useDemoSectionAnimation({
       }
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
-  }, [isEnabled, refs]);
+  }, {
+    dependencies: [isEnabled, refs],
+    scope: refs.sectionRef || undefined,
+    revertOnUpdate: true
+  });
 }

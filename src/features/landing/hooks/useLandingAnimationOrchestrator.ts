@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import { TextPlugin } from 'gsap/TextPlugin';
+import { useGSAP } from '@gsap/react';
 
 // Extend Navigator interface for Network Information API
 declare global {
@@ -100,7 +101,7 @@ export function useLandingAnimationOrchestrator(props: AnimationOrchestratorProp
 
       if (!prefersReducedMotion && !isLowEndDevice) {
         // Register all required plugins once
-        gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin);
+        gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin, useGSAP);
         
         // Configure GSAP for optimal performance
         gsap.config({

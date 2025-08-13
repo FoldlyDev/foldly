@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import ClientOnlyUserButton from '@/components/ui/core/client-only-user-button';
+import { AnimatedLogoButton } from '@/components/ui/core';
 import { useNavigationContext } from './dashboard-layout-wrapper';
 import {
   LayoutDashboard,
@@ -170,45 +171,7 @@ export function DashboardNavigation() {
         {/* Header with Logo */}
         <div className='p-4 border-b border-border dark:border-white/10'>
           <div className='flex items-center justify-center mb-4'>
-            <AnimatePresence mode='wait'>
-              {shouldExpand ? (
-                <motion.div
-                  key='large-logo'
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                  className='bg-white/90 dark:bg-white/95 rounded-lg p-2 shadow-sm'
-                >
-                  <Image
-                    src='/assets/img/logo/foldly_logo_lg.png'
-                    alt='Foldly'
-                    width={100}
-                    height={32}
-                    className='h-6 w-auto'
-                    priority
-                  />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key='small-logo'
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.2 }}
-                  className='bg-white/90 dark:bg-white/95 rounded-lg p-1.5 shadow-sm'
-                >
-                  <Image
-                    src='/assets/img/logo/foldly_logo_sm.png'
-                    alt='Foldly'
-                    width={32}
-                    height={32}
-                    className='h-8 w-8'
-                    priority
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <AnimatedLogoButton href='/' className='nav-logo-button' />
           </div>
 
           {/* User Profile */}

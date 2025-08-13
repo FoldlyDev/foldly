@@ -13,7 +13,7 @@
 
     min-height: 100vh;
     padding: var(--container-padding);
-    background: linear-gradient(135deg, var(--neutral-50) 0%, white 100%);
+    background: transparent;
     max-width: var(--container-max-width);
     margin: 0 auto;
     width: 100%;
@@ -23,7 +23,7 @@
   /* =========================================================================
      RESPONSIVE TYPOGRAPHY - Mobile First with REM units
      ========================================================================= */
-  
+
   /* Base Typography - Mobile First (320px+) */
   .dashboard-container h1 {
     font-family: var(--font-display);

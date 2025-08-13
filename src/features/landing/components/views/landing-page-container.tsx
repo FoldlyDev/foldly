@@ -4,14 +4,17 @@ import { useRef, useEffect, useState } from 'react';
 import { IntroSection } from '../sections/intro-section';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
 import { AnimationErrorBoundary } from '../ui/animation-error-boundary';
-import { FeatureHighlightSection, type FeatureHighlightSectionRefs } from '../sections/feature-highlight-section';
 import {
-  AboutSection,
-  type AboutSectionRefs,
-} from '../sections/about-section';
+  FeatureHighlightSection,
+  type FeatureHighlightSectionRefs,
+} from '../sections/feature-highlight-section';
+import { AboutSection, type AboutSectionRefs } from '../sections/about-section';
 import { DemoSection, type DemoSectionRefs } from '../sections/demo-section';
 import { OutroSection } from '../sections/outro-section';
-import { FooterSection, type FooterSectionRefs } from '../sections/footer-section';
+import {
+  FooterSection,
+  type FooterSectionRefs,
+} from '../sections/footer-section';
 import { LandingNavigation } from '../navigation/landing-navigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
 import { useFeatureHighlightSectionAnimation } from '../../hooks/useFeatureHighlightSectionAnimation';
@@ -102,7 +105,7 @@ export function LandingPageContainer() {
   });
 
   // Initialize Lenis smooth scrolling
-  useLenisScroll();
+  // useLenisScroll(); // TEMPORARILY DISABLED FOR TESTING
 
   // Wait for client-side hydration to complete
   useEffect(() => {
@@ -119,7 +122,7 @@ export function LandingPageContainer() {
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    
+
     return () => {
       // Re-enable scroll restoration when leaving the page
       if ('scrollRestoration' in history) {
@@ -129,27 +132,28 @@ export function LandingPageContainer() {
   }, []);
 
   // Initialize animation orchestrator - single source of truth
-  const { animationState, registerScrollTrigger, registerCleanup } = useLandingAnimationOrchestrator({
-    isReady,
-    onHydrationComplete: () => {
-      console.log('Hydration completed');
-    },
-    onIntroReady: () => {
-      console.log('Intro animation ready');
-    },
-    onAboutReady: () => {
-      console.log('About animation ready');
-    },
-    onFeatureHighlightReady: () => {
-      console.log('Feature Highlight animation ready');
-    },
-    onDemoReady: () => {
-      console.log('Demo animation ready');
-    },
-    onAnimationError: error => {
-      console.error('Animation error:', error);
-    },
-  });
+  const { animationState, registerScrollTrigger, registerCleanup } =
+    useLandingAnimationOrchestrator({
+      isReady,
+      onHydrationComplete: () => {
+        console.log('Hydration completed');
+      },
+      onIntroReady: () => {
+        console.log('Intro animation ready');
+      },
+      onAboutReady: () => {
+        console.log('About animation ready');
+      },
+      onFeatureHighlightReady: () => {
+        console.log('Feature Highlight animation ready');
+      },
+      onDemoReady: () => {
+        console.log('Demo animation ready');
+      },
+      onAnimationError: error => {
+        console.error('Animation error:', error);
+      },
+    });
 
   // Initialize section-specific animations with orchestrator state
   useIntroSectionAnimation({
@@ -167,20 +171,28 @@ export function LandingPageContainer() {
   });
 
   useFeatureHighlightSectionAnimation({
-    refs: featureHighlightSectionRefs.current!,
-    isEnabled: animationState.featureHighlightReady && !!featureHighlightSectionRefs.current && !animationState.prefersReducedMotion,
+    refs: featureHighlightSectionRefs.current || {},
+    isEnabled:
+      animationState.featureHighlightReady &&
+      !!featureHighlightSectionRefs.current &&
+      !animationState.prefersReducedMotion,
   });
 
   useDemoSectionAnimation({
-    refs: demoSectionRefs.current!,
-    isEnabled: animationState.demoReady && !!demoSectionRefs.current && !animationState.prefersReducedMotion,
+    refs: demoSectionRefs.current || {},
+    isEnabled:
+      animationState.demoReady &&
+      !!demoSectionRefs.current &&
+      !animationState.prefersReducedMotion,
   });
 
   useAboutSectionAnimation({
-    refs: aboutSectionRefs.current!,
-    isEnabled: animationState.aboutReady && !!aboutSectionRefs.current && !animationState.prefersReducedMotion,
+    refs: aboutSectionRefs.current || {},
+    isEnabled:
+      animationState.aboutReady &&
+      !!aboutSectionRefs.current &&
+      !animationState.prefersReducedMotion,
   });
-
 
   return (
     <AnimationErrorBoundary>
@@ -207,7 +219,10 @@ export function LandingPageContainer() {
       )}
       <div
         className='landing-page'
-        style={{ opacity: isReady && !animationState.hasError ? 1 : 0, transition: 'opacity 0.3s ease' }}
+        style={{
+          opacity: isReady && !animationState.hasError ? 1 : 0,
+          transition: 'opacity 0.3s ease',
+        }}
       >
         <LandingNavigation />
 

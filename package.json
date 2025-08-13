@@ -28,6 +28,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.23.1",
     "@clerk/themes": "^2.4.6",
+    "@gsap/react": "^2.1.2",
     "@headless-tree/core": "^1.2.1",
     "@headless-tree/react": "^1.2.1",
     "@heroui/react": "^2.7.11",

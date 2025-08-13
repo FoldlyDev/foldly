@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -19,17 +19,17 @@ export function useAboutSectionAnimation({
   refs,
   isEnabled,
 }: UseAboutSectionAnimationProps) {
-  useEffect(() => {
-    if (!isEnabled || !refs) return;
+  useGSAP(() => {
+    if (!isEnabled || !refs || !refs.sectionRef) return;
 
     // GSAP plugins are registered by the orchestrator
 
     const section = refs.sectionRef.current;
-    const header = refs.headerRef.current;
+    const header = refs.headerRef?.current;
     if (!section) return;
 
     // Simple reveal animation without pinning (matching template)
-    const cards = refs.cardRefs.map(ref => ref.current).filter(Boolean);
+    const cards = refs.cardRefs?.map(ref => ref.current).filter(Boolean) || [];
     
     // Set initial state
     cards.forEach((card) => {
@@ -69,5 +69,9 @@ export function useAboutSectionAnimation({
         }
       });
     };
-  }, [isEnabled, refs]);
+  }, {
+    dependencies: [isEnabled, refs],
+    scope: refs.sectionRef || undefined,
+    revertOnUpdate: true
+  });
 }

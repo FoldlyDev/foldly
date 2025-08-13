@@ -1,3 +1,246 @@
+/* =============================================================================
+   DASHBOARD NAVIGATION - RESPONSIVE TEXT SYSTEM
+   ============================================================================= */
+
+@layer components {
+  /* =========================================================================
+     RESPONSIVE TYPOGRAPHY - Mobile First with REM units
+     Based on best practices: 14-17px base size for navigation
+     ========================================================================= */
+  
+  /* Base Navigation Typography - Mobile First (320px+) */
+  .nav-item-label {
+    font-family: var(--font-body);
+    font-size: 0.875rem; /* 14px - Recommended minimum for mobile navigation */
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    transition: all 0.2s ease;
+  }
+
+  .nav-section-header {
+    font-family: var(--font-display);
+    font-size: 0.6875rem; /* 11px */
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .nav-badge {
+    font-family: var(--font-body);
+    font-size: 0.625rem; /* 10px */
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .nav-user-status {
+    font-family: var(--font-body);
+    font-size: 0.75rem; /* 12px */
+    line-height: 1;
+    font-weight: 500;
+  }
+
+  /* Small Mobile (xs: 480px+) */
+  @media (min-width: 30rem) {
+    .nav-item-label {
+      font-size: 0.9375rem; /* 15px - Sweet spot for readability */
+    }
+
+    .nav-section-header {
+      font-size: 0.75rem; /* 12px */
+    }
+
+    .nav-badge {
+      font-size: 0.6875rem; /* 11px */
+    }
+
+    .nav-user-status {
+      font-size: 0.8125rem; /* 13px */
+    }
+  }
+
+  /* Tablet (sm: 640px+) */
+  @media (min-width: 40rem) {
+    .nav-item-label {
+      font-size: 0.9375rem; /* 15px - Maintain readability */
+      font-weight: 500;
+    }
+
+    .nav-section-header {
+      font-size: 0.75rem; /* 12px */
+      letter-spacing: 0.1em;
+    }
+
+    .nav-badge {
+      font-size: 0.6875rem; /* 11px */
+    }
+
+    .nav-user-status {
+      font-size: 0.875rem; /* 14px */
+    }
+  }
+
+  /* Medium Screens (md: 768px+) */
+  @media (min-width: 48rem) {
+    .nav-item-label {
+      font-size: 1rem; /* 16px - Material Design standard */
+      font-weight: 500;
+    }
+
+    .nav-section-header {
+      font-size: 0.8125rem; /* 13px */
+    }
+
+    .nav-badge {
+      font-size: 0.75rem; /* 12px */
+    }
+
+    .nav-user-status {
+      font-size: 0.875rem; /* 14px */
+    }
+  }
+
+  /* Large Screens (lg: 1024px+) - Desktop breakpoint */
+  @media (min-width: 64rem) {
+    .nav-item-label {
+      font-size: 1rem; /* 16px - Optimal for desktop */
+      font-weight: 500;
+      letter-spacing: -0.015em;
+    }
+
+    .nav-section-header {
+      font-size: 0.8125rem; /* 13px */
+      letter-spacing: 0.12em;
+      font-weight: 700;
+    }
+
+    .nav-badge {
+      font-size: 0.75rem; /* 12px */
+      font-weight: 600;
+    }
+
+    .nav-user-status {
+      font-size: 0.9375rem; /* 15px */
+    }
+  }
+
+  /* Extra Large (xl: 1280px+) */
+  @media (min-width: 80rem) {
+    .nav-item-label {
+      font-size: 1.0625rem; /* 17px - iOS standard, max recommended */
+      font-weight: 500;
+    }
+
+    .nav-section-header {
+      font-size: 0.875rem; /* 14px */
+    }
+
+    .nav-badge {
+      font-size: 0.8125rem; /* 13px */
+    }
+
+    .nav-user-status {
+      font-size: 1rem; /* 16px */
+    }
+  }
+
+  /* 2XL Screens (2xl: 1536px+) */
+  @media (min-width: 96rem) {
+    .nav-item-label {
+      font-size: 1.0625rem; /* 17px - Keep at max recommended */
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-section-header {
+      font-size: 0.875rem; /* 14px */
+      letter-spacing: 0.14em;
+    }
+
+    .nav-badge {
+      font-size: 0.8125rem; /* 13px */
+    }
+
+    .nav-user-status {
+      font-size: 1rem; /* 16px */
+    }
+  }
+
+  /* Ultra Wide (3xl: 1920px+) */
+  @media (min-width: 120rem) {
+    .nav-item-label {
+      font-size: 1.125rem; /* 18px - Slightly larger for ultra-wide */
+      font-weight: 500;
+    }
+
+    .nav-section-header {
+      font-size: 0.9375rem; /* 15px */
+    }
+
+    .nav-badge {
+      font-size: 0.875rem; /* 14px */
+    }
+
+    .nav-user-status {
+      font-size: 1.0625rem; /* 17px */
+    }
+  }
+
+  /* =========================================================================
+     NAVIGATION STATE VARIATIONS
+     ========================================================================= */
+  
+  /* Active state typography */
+  .nav-item-label--active {
+    font-weight: 600;
+  }
+
+  /* Hover state typography */
+  @media (hover: hover) {
+    .nav-item-label:hover {
+      font-weight: 600;
+    }
+  }
+
+  /* Collapsed sidebar adjustments */
+  .nav-collapsed .nav-item-label,
+  .nav-collapsed .nav-section-header,
+  .nav-collapsed .nav-user-status {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  /* =========================================================================
+     ACCESSIBILITY & PERFORMANCE
+     ========================================================================= */
+  
+  /* High contrast mode */
+  @media (prefers-contrast: high) {
+    .nav-item-label {
+      font-weight: 600;
+    }
+
+    .nav-section-header {
+      font-weight: 700;
+      opacity: 0.9;
+    }
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .nav-item-label,
+    .nav-section-header,
+    .nav-badge,
+    .nav-user-status {
+      transition: none;
+    }
+  }
+}
+
 /* Custom Scrollbar Styles for Dashboard Navigation */
 .scrollbar-thin {
   scrollbar-width: thin;

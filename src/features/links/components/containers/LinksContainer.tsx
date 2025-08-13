@@ -87,17 +87,17 @@ export function LinksContainer({
 
   if (componentError && !isComponentLoading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
+      <div className='dashboard-container min-h-screen flex items-center justify-center !bg-transparent'>
         <div className='error-container'>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className='analytics-card w-full max-w-md mx-auto text-center'
+            className='analytics-card w-full max-w-md mx-auto text-center !bg-transparent'
           >
-            <h2 className='text-lg sm:text-xl font-semibold text-[var(--quaternary)] mb-2'>
+            <h2 className='mb-2'>
               Links Unavailable
             </h2>
-            <p className='text-sm sm:text-base text-[var(--neutral-600)] mb-4 px-2'>
+            <p className='mb-4 px-2'>
               {componentError}
             </p>
             <button
@@ -131,8 +131,8 @@ export function LinksContainer({
       duration={300}
       className='min-h-screen'
     >
-      <div className='min-h-screen'>
-        <div className='home-container w-full mx-auto'>
+      <div className='dashboard-container min-h-screen !bg-transparent'>
+        <div className='w-full mx-auto'>
           <div className='space-y-8'>
             {/* Only show empty state if user has no links at all */}
             {hasNoLinksAtAll ? (
