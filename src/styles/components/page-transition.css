@@ -1,0 +1,24 @@
+/* =============================================================================
+   PAGE TRANSITION STYLES
+   ============================================================================= */
+
+/* Transition overlay container */
+.transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100svh;
+  display: flex;
+  pointer-events: none;
+  z-index: 999999;
+}
+
+/* Individual transition blocks */
+.block {
+  flex: 1;
+  height: 100%;
+  background: #222;
+  transform: scaleX(0);
+  transform-origin: left;
+}

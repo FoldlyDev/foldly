@@ -105,7 +105,7 @@ export function WorkspaceHeader({
           className='relative p-2.5 sm:p-3 rounded-xl bg-card border border-border 
                    shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
                    focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/20 flex-shrink-0
-                   flex items-center justify-center'
+                   flex items-center justify-center foldly-glass-shadow-bg'
         >
           <Bell className='w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground' />
           {/* Notification dot - only show if there are unread notifications */}

@@ -1,0 +1,40 @@
+/* =============================================================================
+   BASE ELEMENT STYLES - Focus, Selection, and Interactive Element Defaults
+   ============================================================================= */
+
+/* Focus Visible Styles */
+:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+
+/* Remove focus outlines for modal triggers and interactive elements to prevent unwanted outlines */
+[data-state='open'] *:focus,
+[data-state='open'] *:focus-visible,
+[aria-expanded='true'] *:focus,
+[aria-expanded='true'] *:focus-visible,
+.modal-open *:focus,
+.modal-open *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure buttons and interactive elements still have focus when they should */
+button:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+[role='button']:focus-visible:not([data-state='open'] *):not(
+    [aria-expanded='true'] *
+  ):not(.modal-open *),
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}
+
+/* Selection Styles */
+::selection {
+  background-color: var(--accent-1);
+  color: var(--light);
+}

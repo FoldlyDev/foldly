@@ -1,5 +1,5 @@
 /* =============================================================================
-   WORKSPACE RESPONSIVE STYLES - Mobile-First Design
+   WORKSPACE RESPONSIVE STYLES - Mobile-First Design with Tailwind Utilities
    ============================================================================= */
 
 @layer components {
@@ -8,281 +8,237 @@
      ============================================================================= */
 
   .workspace-layout {
-    /* Base - Mobile First (320px+) */
+    @apply flex flex-col gap-4 p-3 min-h-screen bg-transparent;
+    
+    /* CSS Variables for responsive values */
     --workspace-padding: 0.75rem;
     --workspace-gap: 1rem;
     --header-spacing: 1.5rem;
     --toolbar-height: auto;
     --tree-container-height: calc(100vh - 200px);
-
-    display: flex;
-    flex-direction: column;
-    gap: var(--workspace-gap);
-    padding: var(--workspace-padding);
-    min-height: 100vh;
-    background: transparent;
   }
 
   /* =============================================================================
-     WORKSPACE HEADER RESPONSIVE
+     WORKSPACE HEADER
      ============================================================================= */
 
   .workspace-header {
-    margin-bottom: var(--header-spacing);
+    @apply mb-6;
   }
 
   .workspace-header-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    @apply flex flex-col gap-4;
   }
 
   .workspace-header-text {
-    flex: 1;
+    @apply flex-1;
   }
 
   .workspace-header-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
+    @apply flex flex-wrap items-center justify-between gap-2;
   }
 
   /* =============================================================================
-     WORKSPACE TOOLBAR RESPONSIVE
+     WORKSPACE TOOLBAR
      ============================================================================= */
 
+  .workspace-toolbar {
+    @apply foldly-glass rounded-lg overflow-hidden;
+  }
+
   .workspace-toolbar-main {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    @apply flex flex-col gap-3 p-3;
   }
 
   .workspace-toolbar-left {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
+    @apply flex flex-wrap items-center gap-2;
   }
 
   .workspace-toolbar-right {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
+    @apply flex flex-wrap items-center gap-2;
   }
 
   .workspace-search-container {
-    position: relative;
-    min-width: 200px;
-    flex: 1;
-    max-width: 300px;
+    @apply relative min-w-[200px] flex-1 max-w-[300px];
   }
 
   .workspace-folder-creation {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    width: 100%;
+    @apply flex flex-col gap-2 w-full;
   }
 
   .workspace-folder-input-group {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    @apply flex items-center gap-2 flex-wrap;
   }
 
   .workspace-folder-input {
-    min-width: 200px;
-    flex: 1;
+    @apply min-w-[200px] flex-1;
   }
 
   /* =============================================================================
-     WORKSPACE TREE CONTAINER RESPONSIVE
+     WORKSPACE TREE CONTAINER
      ============================================================================= */
 
   .workspace-tree-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
+    @apply flex flex-col flex-1 foldly-glass rounded-lg overflow-hidden;
     min-height: var(--tree-container-height);
     max-height: var(--tree-container-height);
   }
 
   .workspace-tree-wrapper {
     @apply flex-1 flex flex-col;
-    /* Layout only - no styling */
   }
 
   .workspace-tree-content {
-    flex: 1;
-    padding: 1rem;
-    overflow: auto;
+    @apply flex-1 p-4 overflow-auto;
     min-height: 0; /* Important for flex scrolling */
   }
 
   .workspace-tree-footer {
-    padding: 0.75rem;
-    text-align: center;
-    /* Layout only - no styling */
+    @apply p-3 text-center;
   }
 
   .workspace-tree-footer-text {
-    font-size: 0.6875rem !important; /* 11px */
-    margin: 0;
-    letter-spacing: 0.01em;
-    font-family: var(--font-body);
-    line-height: 1.4;
-    /* Typography only - no colors */
+    @apply text-[0.6875rem] m-0 tracking-[0.01em] font-body leading-[1.4];
   }
 
   /* =============================================================================
-     RESPONSIVE BREAKPOINTS
+     THEME VARIANTS
+     ============================================================================= */
+
+  /* Light Theme */
+  .light .workspace-toolbar {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  .light .workspace-tree-container {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  /* Dark Theme - using default foldly-glass */
+  .dark .workspace-tree-container {
+    @apply foldly-glass;
+  }
+
+  /* =============================================================================
+     RESPONSIVE BREAKPOINTS - Mobile First
      ============================================================================= */
 
   /* Small Mobile (xs: 480px+) */
   @media (min-width: 30rem) {
     .workspace-layout {
-      --workspace-padding: 1rem;
-      --workspace-gap: 1.25rem;
+      @apply p-4 gap-5;
       --tree-container-height: calc(100vh - 220px);
     }
 
     .workspace-search-container {
-      min-width: 240px;
-      max-width: 350px;
+      @apply min-w-[240px] max-w-[350px];
     }
 
     .workspace-folder-input {
-      min-width: 240px;
+      @apply min-w-[240px];
     }
   }
 
   /* Tablet Portrait (sm: 640px+) */
   @media (min-width: 40rem) {
     .workspace-layout {
-      --workspace-padding: 1.5rem;
-      --workspace-gap: 1.5rem;
+      @apply p-6 gap-6;
       --header-spacing: 2rem;
       --tree-container-height: calc(100vh - 240px);
     }
 
     .workspace-tree-footer-text {
-      font-size: 0.75rem !important; /* 12px */
+      @apply text-xs;
     }
 
     .workspace-header-content {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
+      @apply flex-row items-center justify-between;
     }
 
     .workspace-toolbar-main {
-      flex-direction: row;
-      align-items: center;
-      justify-content: space-between;
-      padding: 1rem;
+      @apply flex-row items-center justify-between p-4;
     }
 
     .workspace-search-container {
-      min-width: 280px;
-      max-width: 400px;
+      @apply min-w-[280px] max-w-[400px];
     }
 
     .workspace-folder-creation {
-      width: auto;
+      @apply w-auto;
     }
 
     .workspace-folder-input-group {
-      flex-wrap: nowrap;
+      @apply flex-nowrap;
     }
   }
 
   /* Tablet Landscape (md: 768px+) */
   @media (min-width: 48rem) {
     .workspace-layout {
-      --workspace-padding: 2rem;
-      --workspace-gap: 2rem;
+      @apply p-8 gap-8;
       --tree-container-height: calc(100vh - 260px);
     }
 
     .workspace-header-actions {
-      justify-content: flex-end;
-      flex-wrap: nowrap;
+      @apply justify-end flex-nowrap;
     }
 
     .workspace-search-container {
-      min-width: 320px;
-      max-width: 450px;
+      @apply min-w-[320px] max-w-[450px];
     }
   }
 
   /* Desktop (lg: 1024px+) */
   @media (min-width: 64rem) {
     .workspace-layout {
-      --workspace-padding: 2.5rem;
-      --workspace-gap: 2.5rem;
+      @apply p-10 gap-10;
       --tree-container-height: calc(100vh - 280px);
     }
 
     .workspace-tree-footer-text {
-      font-size: 0.6875rem !important; /* 11px */
+      @apply text-[0.6875rem];
     }
 
     .workspace-tree-wrapper {
-      border-radius: 1rem;
-    }
-
-    .workspace-toolbar {
-      @apply foldly-glass-light foldly-custom-bg rounded-lg overflow-hidden;
-    }
-
-    .dark .workspace-toolbar {
-      @apply foldly-glass rounded-lg overflow-hidden;
+      @apply rounded-2xl;
     }
 
     .workspace-search-container {
-      min-width: 360px;
-      max-width: 500px;
+      @apply min-w-[360px] max-w-[500px];
     }
   }
 
   /* Large Desktop (xl: 1280px+) */
   @media (min-width: 80rem) {
     .workspace-layout {
-      --workspace-padding: 3rem;
+      @apply p-12;
       --tree-container-height: calc(100vh - 300px);
     }
 
     .workspace-tree-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
+      @apply max-w-[1200px] mx-auto w-full;
     }
   }
 
   /* Extra Large Desktop (2xl: 1536px+) */
   @media (min-width: 96rem) {
     .workspace-layout {
-      --workspace-padding: 3.5rem;
+      @apply p-14;
     }
 
     .workspace-tree-container {
-      max-width: 1400px;
+      @apply max-w-[1400px];
     }
   }
 
   /* Ultra Wide (3xl: 1920px+) */
   @media (min-width: 120rem) {
     .workspace-layout {
-      --workspace-padding: 4rem;
+      @apply p-16;
     }
 
     .workspace-tree-container {
-      max-width: 1600px;
+      @apply max-w-[1600px];
     }
   }
 
@@ -290,35 +246,35 @@
      ACCESSIBILITY & PERFORMANCE
      ============================================================================= */
 
+  /* Reduced Motion */
   @media (prefers-reduced-motion: reduce) {
     .workspace-header-content,
     .workspace-toolbar-main {
-      transition: none;
+      @apply transition-none;
     }
   }
 
+  /* High Contrast */
   @media (prefers-contrast: high) {
     .workspace-toolbar,
     .workspace-tree-wrapper {
-      border-width: 2px;
+      @apply border-2;
     }
   }
 
   /* Print Styles */
   @media print {
     .workspace-layout {
-      padding: 1rem;
-      gap: 1rem;
+      @apply p-4 gap-4;
     }
 
     .workspace-header-actions,
     .workspace-toolbar {
-      display: none;
+      @apply hidden;
     }
 
     .workspace-tree-container {
-      max-height: none;
-      height: auto;
+      @apply max-h-none h-auto;
     }
   }
 
@@ -329,8 +285,8 @@
   /* Mobile Landscape */
   @media (max-height: 500px) and (orientation: landscape) {
     .workspace-layout {
+      @apply gap-3;
       --tree-container-height: calc(100vh - 150px);
-      --workspace-gap: 0.75rem;
       --header-spacing: 1rem;
     }
   }
@@ -338,17 +294,16 @@
   /* Touch Device Optimizations */
   @media (hover: none) and (pointer: coarse) {
     .workspace-toolbar-main {
-      padding: 1rem;
+      @apply p-4;
     }
 
     .workspace-tree-content {
-      padding: 1.25rem;
+      @apply p-5;
     }
 
     /* Larger tap targets on mobile */
     .workspace-header-actions button {
-      min-height: 44px;
-      min-width: 44px;
+      @apply min-h-[44px] min-w-[44px];
     }
   }
 }

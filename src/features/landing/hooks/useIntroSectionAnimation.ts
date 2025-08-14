@@ -221,7 +221,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
               opacity: 0,
             });
 
-            if (heroSection) heroSection.style.backgroundColor = '#e3e3db';
+            if (heroSection) heroSection.style.backgroundColor = '#e3e4d8';
 
             // Hide original icons container
             const targetCenterY = window.innerHeight / 2;
@@ -322,7 +322,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
               opacity: 0,
             });
 
-            if (heroSection) heroSection.style.backgroundColor = '#e3e3db';
+            if (heroSection) heroSection.style.backgroundColor = '#e3e4d8';
 
             gsap.set(animatedIcons, { opacity: 0 });
 

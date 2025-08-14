@@ -5,7 +5,7 @@
   height: 100svh;
   overflow: hidden;
   z-index: 1;
-  background: var(--foldly-light-gradient-radial);
+  background: var(--light-bg);
 }
 
 .feature-highlight .container {
@@ -79,7 +79,7 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(195, 225, 247, 0.2); /* Using primary color with 20% opacity */
-  box-shadow: 
+  box-shadow:
     0 12px 20px #ffffff08 inset,
     0 0 40px #ffffff14 inset,
     0 0 8px #ffffff08 inset,
@@ -135,15 +135,15 @@
   .feature-highlight h3 {
     width: 90%;
   }
-  
+
   .feature-highlight .feature-highlight-strips {
     width: 300vw;
   }
-  
+
   .feature-highlight .fhs-1 {
     margin-top: 2.5rem;
   }
-  
+
   .feature-highlight .fhs-3 {
     margin-top: 10rem;
   }
@@ -154,11 +154,11 @@
     font-size: 3rem;
     line-height: 0.85;
   }
-  
+
   .feature-highlight .feature p {
     font-size: 0.8rem;
   }
-  
+
   .feature-highlight .feature {
     padding: 4px 8px;
   }

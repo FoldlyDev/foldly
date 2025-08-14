@@ -95,7 +95,7 @@ export const UserProfileSkeleton: React.FC<UserProfileSkeletonProps> = ({
                   {[...Array(2)].map((_, fieldIndex) => (
                     <div key={fieldIndex} className='space-y-2'>
                       <Skeleton className='h-4 w-20' />
-                      <Skeleton className='h-10 w-full' />
+                      <Skeleton className='h-10 w-full dark:bg-white/10' />
                     </div>
                   ))}
                 </div>

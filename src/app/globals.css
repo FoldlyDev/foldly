@@ -5,6 +5,7 @@
 
 /* Shared CSS Values - Must be imported first for variable availability */
 @import '../styles/utilities/shared-values.css';
+@import '../styles/utilities/base-elements.css';
 
 /* =============================================================================
    TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
@@ -30,15 +31,6 @@
   --font-body:
     'Barlow', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui,
     sans-serif;
-
-  /* Font Weights */
-  --font-weight-thin: 100;
-  --font-weight-light: 300;
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
 
   /* FOLDLY BRAND COLORS - Core Palette */
   --color-primary: #c3e1f7;
@@ -105,6 +97,7 @@
 @import '../styles/components/ui/indicators.css';
 @import '../styles/components/core/primary-cta.css';
 @import '../styles/features/animated-logo-button.css';
+@import '../styles/components/page-transition.css';
 
 /* 🏗️ Dashboard Feature Styles */
 @import '../styles/components/layout/dashboard-navigation.css';
@@ -134,11 +127,11 @@
   --font-condensed: 'Barlow Condensed', var(--system-font-stack);
 
   /* FOLDLY BRAND COLORS - CSS Variables for theme-independent usage */
-  --primary: #c3e1f7;
-  --secondary: #9abede;
-  --tertiary: #2d4f6b;
-  --quaternary: #0f1922;
-  --quinary: #0a0d0f;
+  --primary: var(--color-primary);
+  --secondary: var(--color-secondary);
+  --tertiary: var(--color-tertiary);
+  --quaternary: var(--color-quaternary);
+  --quinary: var(--color-quinary);
 
   /* Neutral Palette */
   --neutral-50: #fafafa;
@@ -151,6 +144,9 @@
   --neutral-700: #3f3f46;
   --neutral-800: #27272a;
   --neutral-900: #18181b;
+
+  /* Base Light Background color */
+  --light-bg: #e3e4d8;
 
   /* Foldly Brand Gradients */
   --foldly-gradient-start: #cbd5e1; /* slate-300 */
@@ -191,7 +187,7 @@
     ellipse at bottom,
     oklch(71.5% 0.143 215.221) 0%,
     #f5f5f0 50%,
-    #ffffff 100%
+    #e3e4d8 100%
   );
 
   --foldly-dark-gradient-radial: radial-gradient(
@@ -264,30 +260,6 @@
   --light: var(--neutral-100);
   --dark: var(--neutral-800);
 
-  /* Dark Mode Gradients */
-  /* --foldly-gradient-start: #020618; 
-  --foldly-gradient-end: #4a6b85; 
-  --foldly-gradient: linear-gradient(
-    135deg,
-    var(--foldly-gradient-start),
-    var(--foldly-gradient-end)
-  );
-  --foldly-gradient-reverse: linear-gradient(
-    315deg,
-    var(--foldly-gradient-start),
-    var(--foldly-gradient-end)
-  );
-  --foldly-gradient-horizontal: linear-gradient(
-    90deg,
-    var(--foldly-gradient-start),
-    var(--foldly-gradient-end)
-  );
-  --foldly-gradient-vertical: linear-gradient(
-    180deg,
-    var(--foldly-gradient-start),
-    var(--foldly-gradient-end)
-  ); */
-
   /* Override glass morphism for dark mode */
   --foldly-glass-bg-light: var(--foldly-glass-bg);
   --foldly-glass-bg-light-solid: var(--foldly-glass-bg-solid);
@@ -321,7 +293,10 @@
 
   /* Apply transitions to all elements for smooth theme changes */
   body * {
-    transition: var(--transition-colors), fill var(--duration-normal) var(--ease-default), stroke var(--duration-normal) var(--ease-default);
+    transition:
+      var(--transition-colors),
+      fill var(--duration-normal) var(--ease-default),
+      stroke var(--duration-normal) var(--ease-default);
   }
 
   /* Headings use display font */
@@ -374,173 +349,6 @@
     letter-spacing: -0.011em;
   }
 }
-
-:focus-visible {
-  outline: 2px solid var(--accent-1);
-  outline-offset: 2px;
-}
-
-/* Remove focus outlines for modal triggers and interactive elements to prevent unwanted outlines */
-[data-state='open'] *:focus,
-[data-state='open'] *:focus-visible,
-[aria-expanded='true'] *:focus,
-[aria-expanded='true'] *:focus-visible,
-.modal-open *:focus,
-.modal-open *:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Remove unwanted focus outlines on bulk selection checkboxes */
-[data-bulk-select] input[type='checkbox']:focus,
-[data-bulk-select] input[type='checkbox']:focus-visible,
-.bulk-select-mode input[type='checkbox']:focus,
-.bulk-select-mode input[type='checkbox']:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Ensure buttons and interactive elements still have focus when they should */
-button:focus-visible:not([data-state='open'] *):not(
-    [aria-expanded='true'] *
-  ):not(.modal-open *),
-[role='button']:focus-visible:not([data-state='open'] *):not(
-    [aria-expanded='true'] *
-  ):not(.modal-open *),
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--accent-1);
-  outline-offset: 2px;
-}
-
-/* Ensure all checkboxes have cursor pointer and are visible */
-[role='checkbox'],
-input[type='checkbox'],
-[data-state='checked'],
-[data-state='unchecked'],
-button[data-state],
-[role='button'][data-state] {
-  cursor: pointer !important;
-}
-
-/* Make sure checkboxes are always visible with proper borders */
-[role='checkbox'] {
-  border: 2px solid #52525b !important;
-  background-color: white !important;
-}
-
-[role='checkbox'][data-state='checked'] {
-  background-color: #2d4f6b !important;
-  border-color: #2d4f6b !important;
-}
-
-::selection {
-  background-color: var(--accent-1);
-  color: var(--light);
-}
-
-/* Animation utilities */
-.char {
-  @apply inline-block opacity-0 translate-y-full;
-}
-
-.animate-pulse-slow {
-  animation: pulse 3s var(--ease-default) infinite;
-}
-
-.scrollbar-thin {
-  scrollbar-width: thin;
-}
-
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: var(--neutral-300);
-  border-radius: 3px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: var(--neutral-500);
-}
-
-/* =============================================================================
-   GRADIENT UTILITIES - Using New Color System
-   ============================================================================= */
-
-/* Brand gradient utilities */
-.bg-gradient-brand {
-  background: linear-gradient(
-    135deg,
-    var(--primary) 0%,
-    var(--secondary) 50%,
-    var(--tertiary) 100%
-  );
-}
-
-.bg-gradient-subtle {
-  background: linear-gradient(
-    to bottom,
-    var(--neutral-50) 0%,
-    transparent 100%
-  );
-}
-
-@utility text-balance {
-  text-wrap: balance;
-}
-
-/* Animation delays */
-.delay-75 {
-  animation-delay: 75ms;
-}
-.delay-150 {
-  animation-delay: 150ms;
-}
-.delay-300 {
-  animation-delay: 300ms;
-}
-
-/* Sidebar theme variables handled by component */
-
-
-
-
-
-
-
-
-/* Workspace Tree Styles */
-.tree {
-  position: relative;
-}
-
-.dragline {
-  height: 2px;
-  margin-top: -1px;
-  background-color: #10b981;
-  position: relative;
-}
-
-.dragline::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: -3px;
-  height: 8px;
-  width: 8px;
-  background: #fff;
-  border: 2px solid #10b981;
-  border-radius: 50%;
-}
-
-
 
 /* ===================================================================== */
 /* FOLDLY BRAND UTILITIES - Gradient Text and Backgrounds */
@@ -595,18 +403,20 @@ button[data-state],
 }
 
 /* Custom Foldly Background Style */
-@utility foldly-custom-bg {
+@utility foldly-glass-shadow-bg {
   border-top-width: 1px;
   border-right-width: 1px;
   border-left-width: 1px;
   border-style: solid;
   border-color: oklab(100% 0 5.96046e-8 / 0.2);
-  --tw-shadow: 0 12px 20px var(--tw-shadow-color, #ffffff08) inset,
+  --tw-shadow:
+    0 12px 20px var(--tw-shadow-color, #ffffff08) inset,
     0 0 40px var(--tw-shadow-color, #ffffff14) inset,
     0 0 8px var(--tw-shadow-color, #ffffff08) inset,
     0 0 12px var(--tw-shadow-color, #ffffff0d) inset,
     0 1px 1px var(--tw-shadow-color, #ffffff1f) inset;
-  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
     var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
 }
 
@@ -655,9 +465,3 @@ button[data-state],
     background-position: 100% 50%;
   }
 }
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 3s ease infinite;
-}
-

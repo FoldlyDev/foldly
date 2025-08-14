@@ -46,8 +46,8 @@ export function WorkspaceTreeSkeleton() {
           <div className='space-y-1'>
             {[...Array(2)].map((_, i) => (
               <div key={i} className='flex items-center gap-2 p-2'>
-                <Skeleton className='h-4 w-4 dark:bg-white/10' />
-                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 w-4' />
                 <Skeleton className='h-4 flex-1 max-w-40 dark:bg-white/10' />
               </div>
             ))}
@@ -56,7 +56,7 @@ export function WorkspaceTreeSkeleton() {
             <div className='ml-6 space-y-1'>
               {[...Array(1)].map((_, i) => (
                 <div key={i} className='flex items-center gap-2 p-2'>
-                  <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                  <Skeleton className='h-4 w-4' />
                   <Skeleton className='h-4 flex-1 max-w-32 dark:bg-white/10' />
                 </div>
               ))}
@@ -65,8 +65,8 @@ export function WorkspaceTreeSkeleton() {
             {/* More root items */}
             {[...Array(1)].map((_, i) => (
               <div key={i + 2} className='flex items-center gap-2 p-2'>
-                <Skeleton className='h-4 w-4 dark:bg-white/10' />
-                <Skeleton className='h-4 w-4 dark:bg-white/10' />
+                <Skeleton className='h-4 w-4' />
+                <Skeleton className='h-4 w-4' />
                 <Skeleton className='h-4 flex-1 max-w-36 dark:bg-white/10' />
               </div>
             ))}

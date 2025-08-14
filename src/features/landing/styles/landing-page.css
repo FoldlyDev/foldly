@@ -18,3 +18,8 @@
 }
 
 /* Section-specific styles moved to individual CSS files */
+
+/* Animation utilities for text animations */
+.char {
+  @apply inline-block opacity-0 translate-y-full;
+}

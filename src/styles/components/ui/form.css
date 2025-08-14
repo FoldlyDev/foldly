@@ -25,3 +25,37 @@
   background: rgba(15, 15, 15, 0.95);
   border-color: #3b82f6;
 }
+
+/* =============================================================================
+   CHECKBOX STYLES
+   ============================================================================= */
+
+/* Remove unwanted focus outlines on bulk selection checkboxes */
+[data-bulk-select] input[type='checkbox']:focus,
+[data-bulk-select] input[type='checkbox']:focus-visible,
+.bulk-select-mode input[type='checkbox']:focus,
+.bulk-select-mode input[type='checkbox']:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure all checkboxes have cursor pointer and are visible */
+[role='checkbox'],
+input[type='checkbox'],
+[data-state='checked'],
+[data-state='unchecked'],
+button[data-state],
+[role='button'][data-state] {
+  cursor: pointer !important;
+}
+
+/* Make sure checkboxes are always visible with proper borders */
+[role='checkbox'] {
+  border: 2px solid #52525b !important;
+  background-color: white !important;
+}
+
+[role='checkbox'][data-state='checked'] {
+  background-color: #2d4f6b !important;
+  border-color: #2d4f6b !important;
+}

@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: center;
   background-color: #020618;
-  color: #e3e3db;
+  color: #e3e4d8;
   overflow: hidden;
   flex-direction: column;
   transition: background-color 0.3s ease;
@@ -61,7 +61,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #e3e3db;
+  color: #e3e4d8;
 }
 
 .intro-animated-icon svg {
