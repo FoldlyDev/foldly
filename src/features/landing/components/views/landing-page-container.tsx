@@ -21,37 +21,14 @@ import { useFeatureHighlightSectionAnimation } from '../../hooks/useFeatureHighl
 import { useDemoSectionAnimation } from '../../hooks/useDemoSectionAnimation';
 import { useAboutSectionAnimation } from '../../hooks/useAboutSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
-import { useAuth } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { checkOnboardingStatusAction } from '@/features/onboarding/lib/actions';
 
 /**
  * Client-side container component for the landing page
  * Handles all hooks and client-side logic while keeping the page component as Server Component
  */
 export function LandingPageContainer() {
-  // Auth and routing
-  const { isLoaded, isSignedIn } = useAuth();
-  const router = useRouter();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(false);
+  // State
   const [isReady, setIsReady] = useState(false);
-
-  // Check onboarding status and redirect
-  const handleAuthenticatedNavigation = async () => {
-    setCheckingOnboarding(true);
-    try {
-      const status = await checkOnboardingStatusAction();
-      if (!status.hasWorkspace) {
-        router.push('/onboarding');
-      } else {
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-      router.push('/dashboard'); // Fallback to dashboard
-    }
-    setCheckingOnboarding(false);
-  };
 
   // Intro section refs
   const introRef = useRef<HTMLElement>(null);
@@ -81,14 +58,31 @@ export function LandingPageContainer() {
   ];
   const introDuplicateIconsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Feature Highlight section refs
-  const featureHighlightSectionRefs = useRef<FeatureHighlightSectionRefs>(null);
+  // Feature Highlight section refs with default empty object
+  const featureHighlightSectionRefs = useRef<FeatureHighlightSectionRefs>({
+    sectionRef: { current: null },
+    headerRef: { current: null },
+    stripRefs: []
+  } as FeatureHighlightSectionRefs);
 
-  // About section refs
-  const aboutSectionRefs = useRef<AboutSectionRefs>(null);
+  // About section refs with default empty object
+  const aboutSectionRefs = useRef<AboutSectionRefs>({
+    sectionRef: { current: null },
+    headerRef: { current: null },
+    cardRefs: []
+  } as AboutSectionRefs);
 
-  // Demo section refs
-  const demoSectionRefs = useRef<DemoSectionRefs>(null);
+  // Demo section refs with default empty object
+  const demoSectionRefs = useRef<DemoSectionRefs>({
+    sectionRef: { current: null },
+    topBarRef: { current: null },
+    bottomBarRef: { current: null },
+    stickyCardsHeaderRef: { current: null },
+    galleryCardsRef: { current: [] },
+    maskContainerRef: { current: null },
+    maskImageRef: { current: null },
+    maskHeaderRef: { current: null }
+  } as DemoSectionRefs);
 
   // Footer section refs
   const footerSectionRefs = useRef<FooterSectionRefs>(null);
@@ -171,26 +165,23 @@ export function LandingPageContainer() {
   });
 
   useFeatureHighlightSectionAnimation({
-    refs: featureHighlightSectionRefs.current || {},
+    refs: featureHighlightSectionRefs.current,
     isEnabled:
       animationState.featureHighlightReady &&
-      !!featureHighlightSectionRefs.current &&
       !animationState.prefersReducedMotion,
   });
 
   useDemoSectionAnimation({
-    refs: demoSectionRefs.current || {},
+    refs: demoSectionRefs.current,
     isEnabled:
       animationState.demoReady &&
-      !!demoSectionRefs.current &&
       !animationState.prefersReducedMotion,
   });
 
   useAboutSectionAnimation({
-    refs: aboutSectionRefs.current || {},
+    refs: aboutSectionRefs.current,
     isEnabled:
       animationState.aboutReady &&
-      !!aboutSectionRefs.current &&
       !animationState.prefersReducedMotion,
   });
 

@@ -71,7 +71,7 @@ export function useAboutSectionAnimation({
     };
   }, {
     dependencies: [isEnabled, refs],
-    scope: refs.sectionRef || undefined,
+    scope: refs.sectionRef?.current || undefined,
     revertOnUpdate: true
   });
 }

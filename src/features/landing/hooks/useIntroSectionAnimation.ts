@@ -215,7 +215,6 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
           } else if (progress <= 0.75) {
             // Phase 3: Move icons to placeholders (with cloning)
             const moveProgress = (progress - 0.6) / 0.15;
-            const fadeOutProgress = 1 - moveProgress; // For reverse scrolling
 
             gsap.set(heroHeader, {
               transform: `translate(-50%, calc(-50% + -50px))`,
@@ -402,7 +401,7 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
     };
   }, {
     dependencies: [refs.isEnabled, refs],
-    scope: refs.introRef,
+    scope: refs.introRef?.current,
     revertOnUpdate: true
-  });
+  } as any);
 }

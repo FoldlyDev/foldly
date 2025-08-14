@@ -110,7 +110,7 @@ export function useFeatureHighlightSectionAnimation({
     };
   }, {
     dependencies: [isEnabled, refs],
-    scope: refs.sectionRef || undefined,
+    scope: refs.sectionRef?.current,
     revertOnUpdate: true
-  });
+  } as any);
 }
