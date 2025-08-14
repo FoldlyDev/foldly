@@ -11,6 +11,7 @@ import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useRealtimeLinkUpdates } from '../../hooks/use-realtime-link-updates';
 import { FadeTransitionWrapper } from '@/components/ui/feedback';
+import { TertiaryCTAButton } from '@/components/ui/core';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -94,21 +95,21 @@ export function LinksContainer({
             animate={{ opacity: 1, scale: 1 }}
             className='analytics-card w-full max-w-md mx-auto text-center !bg-transparent'
           >
-            <h2 className='mb-2'>
+            <h2>
               Links Unavailable
             </h2>
-            <p className='mb-4 px-2'>
+            <p>
               {componentError}
             </p>
-            <button
+            <TertiaryCTAButton
               onClick={() => {
                 refetchAllLinks();
                 refetchFiltered();
               }}
-              className='px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors'
+              className='cta'
             >
               Retry
-            </button>
+            </TertiaryCTAButton>
           </motion.div>
         </div>
       </div>

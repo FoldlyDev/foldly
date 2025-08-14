@@ -15,7 +15,7 @@ import {
   FileText,
   Link2,
 } from 'lucide-react';
-import { GradientButton } from '@/components/ui/core/gradient-button';
+import { TertiaryCTAButton } from '@/components/ui/core';
 import { FadeTransitionWrapper } from '@/components/ui/feedback';
 import { AnalyticsSkeleton } from '../skeletons/analytics-skeleton';
 import type { DashboardOverview } from '../../types';
@@ -85,8 +85,8 @@ export function AnalyticsContainer({
 
   if (error && !isLoading) {
     return (
-      <div className='min-h-screen bg-[var(--neutral-50)] flex items-center justify-center'>
-        <div className='error-container'>
+      <div className='dashboard-container bg-background'>
+        <div className='flex items-center justify-center h-64'>
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -101,12 +101,12 @@ export function AnalyticsContainer({
             <p className='text-sm sm:text-base text-[var(--neutral-600)] mb-4 px-2'>
               {error}
             </p>
-            <button
+            <TertiaryCTAButton
               onClick={() => window.location.reload()}
-              className='w-full sm:w-auto px-6 py-2.5 bg-[var(--primary)] text-[var(--quaternary)] rounded-lg font-medium hover:bg-[var(--primary-dark)] transition-colors text-sm sm:text-base'
+              className='cta'
             >
               Retry
-            </button>
+            </TertiaryCTAButton>
           </motion.div>
         </div>
       </div>
@@ -118,10 +118,8 @@ export function AnalyticsContainer({
       isLoading={isLoading}
       loadingComponent={<AnalyticsSkeleton />}
       duration={300}
-      className='min-h-screen bg-[var(--neutral-50)]'
+      className='dashboard-container bg-background'
     >
-      <div className='min-h-screen bg-[var(--neutral-50)]'>
-        <div className='home-container w-full mx-auto'>
         <AnimatePresence>
           {showContent && (
             <motion.div
@@ -137,35 +135,25 @@ export function AnalyticsContainer({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.6 }}
               >
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8'>
-                  <div>
-                    <h1 className='text-3xl font-bold text-[var(--quaternary)] mb-2'>
-                      Analytics & Insights
-                    </h1>
-                    <p className='text-[var(--neutral-600)]'>
-                      Track your file collection performance and growth
-                    </p>
-                  </div>
-
-                  <div className='flex items-center gap-3'>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={handleViewLinks}
-                      className='px-4 py-2 border border-[var(--neutral-200)] rounded-lg hover:border-[var(--neutral-300)] transition-colors text-[var(--neutral-600)] hover:text-[var(--quaternary)]'
-                    >
-                      Manage Links
-                    </motion.button>
-
-                    <GradientButton
-                      variant='primary'
-                      size='md'
-                      onClick={handleCreateLink}
-                      className='shadow-brand'
-                    >
-                      <Upload className='w-4 h-4 mr-2' />
-                      Create Link
-                    </GradientButton>
+                <div className='dashboard-header'>
+                  <div className='dashboard-header-content'>
+                    <div className='dashboard-header-text'>
+                      <motion.h1
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.7, delay: 0.1 }}
+                      >
+                        Analytics Dashboard
+                      </motion.h1>
+                      <motion.p
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.7, delay: 0.2 }}
+                        className='text-muted-foreground text-base sm:text-lg'
+                      >
+                        We're cooking up something awesome! Check back soon 🚀
+                      </motion.p>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -178,8 +166,8 @@ export function AnalyticsContainer({
                   className='space-y-8'
                 >
                   {/* Analytics Cards */}
-                  <div className='analytics-grid'>
-                    <div className='analytics-card'>
+                  <div className='dashboard-grid'>
+                    <div className='dashboard-card'>
                       <div className='flex items-center justify-between mb-4'>
                         <h3 className='card-title'>Total Views</h3>
                         <div className='card-icon bg-blue-50 rounded-lg flex items-center justify-center'>
@@ -194,7 +182,7 @@ export function AnalyticsContainer({
                       </p>
                     </div>
 
-                    <div className='analytics-card'>
+                    <div className='dashboard-card'>
                       <div className='flex items-center justify-between mb-4'>
                         <h3 className='card-title'>File Uploads</h3>
                         <div className='card-icon bg-green-50 rounded-lg flex items-center justify-center'>
@@ -209,7 +197,7 @@ export function AnalyticsContainer({
                       </p>
                     </div>
 
-                    <div className='analytics-card'>
+                    <div className='dashboard-card'>
                       <div className='flex items-center justify-between mb-4'>
                         <h3 className='card-title'>Conversion Rate</h3>
                         <div className='card-icon bg-purple-50 rounded-lg flex items-center justify-center'>
@@ -227,7 +215,7 @@ export function AnalyticsContainer({
                       </p>
                     </div>
 
-                    <div className='analytics-card'>
+                    <div className='dashboard-card'>
                       <div className='flex items-center justify-between mb-4'>
                         <h3 className='card-title'>Total Files</h3>
                         <div className='card-icon bg-orange-50 rounded-lg flex items-center justify-center'>
@@ -246,7 +234,7 @@ export function AnalyticsContainer({
                   {/* Additional Analytics Content */}
                   <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                     {/* Top Performing Links */}
-                    <div className='analytics-card'>
+                    <div className='dashboard-card'>
                       <h3 className='card-title mb-6'>Top Performing Links</h3>
                       <div className='space-y-4'>
                         {(analyticsData?.topPerformingLinks?.length || 0) >
@@ -285,7 +273,7 @@ export function AnalyticsContainer({
                     </div>
 
                     {/* Recent Activity */}
-                    <div className='analytics-card'>
+                    <div className='dashboard-card'>
                       <h3 className='card-title mb-6'>Recent Activity</h3>
                       <div className='space-y-4'>
                         {(analyticsData?.recentActivity?.length || 0) > 0 ? (
@@ -330,45 +318,19 @@ export function AnalyticsContainer({
                       <BarChart3 className='w-12 h-12 text-[var(--primary)]' />
                     </div>
 
-                    <h2 className='text-2xl font-bold text-[var(--quaternary)] mb-3'>
-                      Analytics Coming Soon
+                    <h2 className='text-2xl font-bold text-foreground mb-3'>
+                      Analytics Under Construction 🏗️
                     </h2>
 
-                    <p className='text-[var(--neutral-600)] mb-8 leading-relaxed max-w-md mx-auto'>
-                      Analytics will be available once you start collecting
-                      files through your upload links. Let's get your first link
-                      created!
+                    <p className='text-muted-foreground mb-8 leading-relaxed max-w-md mx-auto'>
+                      We're building something epic for you! Soon you'll be able to track all your uploads, views, and file stats in this space. Stay tuned!
                     </p>
-
-                    <div className='flex flex-col sm:flex-row gap-4 items-center justify-center'>
-                      <GradientButton
-                        variant='primary'
-                        size='lg'
-                        onClick={handleCreateLink}
-                        className='shadow-brand'
-                      >
-                        <Upload className='w-5 h-5 mr-2' />
-                        Create Upload Link
-                        <ArrowRight className='w-5 h-5 ml-2' />
-                      </GradientButton>
-
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleViewLinks}
-                        className='px-6 py-3 text-[var(--neutral-600)] hover:text-[var(--quaternary)] font-medium transition-colors duration-200'
-                      >
-                        View All Links
-                      </motion.button>
-                    </div>
                   </div>
                 </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </div>
     </FadeTransitionWrapper>
   );
 }

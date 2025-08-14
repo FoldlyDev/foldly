@@ -36,21 +36,65 @@ export const SecondaryCTAButton = React.forwardRef<
     },
     ref
   ) => {
-    const baseClasses = 'relative cursor-pointer py-4 px-8 text-center font-bold inline-flex justify-center text-base text-white rounded-lg border-[3px] border-[#149CEA] border-solid bg-transparent transition-all duration-[1s] group outline-none hover:shadow-[inset_0px_0px_25px_#1479EA] overflow-hidden';
+    const baseClasses = 'secondary-cta-btn cta foldly-glass';
     const combinedClasses = cn(baseClasses, className);
 
     const content = (
       <>
+        {/* Content */}
         <span className='relative z-20 flex items-center gap-2'>
           {Icon && <Icon className='w-5 h-5' />}
           {children}
         </span>
 
-        {/* Top border mask - uses parent background color */}
-        <span className='absolute -top-[3px] left-[5%] w-[90%] h-[6px] bg-white dark:bg-gray-900 transition-transform duration-500 origin-center group-hover:scale-x-0'></span>
-
-        {/* Bottom border mask - uses parent background color */}
-        <span className='absolute -bottom-[3px] left-[5%] w-[90%] h-[6px] bg-white dark:bg-gray-900 transition-transform duration-500 origin-center group-hover:scale-x-0'></span>
+        {/* Particles */}
+        <div
+          className='secondary-cta-particle'
+          style={
+            {
+              '--tx': '-20px',
+              '--ty': '-15px',
+              left: '25%',
+              top: '25%',
+            } as React.CSSProperties
+          }
+        />
+        <div
+          className='secondary-cta-particle'
+          style={
+            {
+              '--tx': '15px',
+              '--ty': '-20px',
+              left: '75%',
+              top: '25%',
+              animationDelay: '0.2s',
+            } as React.CSSProperties
+          }
+        />
+        <div
+          className='secondary-cta-particle'
+          style={
+            {
+              '--tx': '-15px',
+              '--ty': '15px',
+              left: '25%',
+              top: '75%',
+              animationDelay: '0.4s',
+            } as React.CSSProperties
+          }
+        />
+        <div
+          className='secondary-cta-particle'
+          style={
+            {
+              '--tx': '20px',
+              '--ty': '15px',
+              left: '75%',
+              top: '75%',
+              animationDelay: '0.6s',
+            } as React.CSSProperties
+          }
+        />
       </>
     );
 

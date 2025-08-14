@@ -70,28 +70,6 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
             </div>
           </div>
         </motion.div>
-
-        {/* Loading Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className='max-w-md mx-auto space-y-4'
-        >
-          <h2>Setting up your base link...</h2>
-
-          <p>
-            Creating your personalized collection hub at{' '}
-            <span className='font-mono text-[var(--primary)]'>
-              {displayDomain}/{displayUsername}
-            </span>
-          </p>
-
-          <div className='flex items-center justify-center gap-2 text-sm text-[var(--neutral-500)]'>
-            <div className='w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse' />
-            <span>This will only take a moment</span>
-          </div>
-        </motion.div>
       </motion.div>
     );
   }
@@ -164,10 +142,6 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         className='max-w-2xl mx-auto mb-8'
       >
         <h1 className='mb-6'>Create Your Base Link</h1>
-
-        <p className='leading-relaxed max-w-lg mx-auto'>
-          Your personal hub for collecting files from clients and collaborators.
-        </p>
       </motion.div>
 
       {/* URL Preview */}
@@ -175,16 +149,14 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
-        className='bg-gradient-to-br from-[var(--primary-subtle)] to-[var(--secondary-subtle)] 
-                   border border-[var(--primary)]/30 rounded-xl p-5 mb-10 max-w-md mx-auto'
+        className='foldly-glass-light foldly-glass-shadow-bg border border-[var(--primary)]/30 rounded-xl p-5 mb-10 max-w-md mx-auto'
       >
-        <div className='flex items-center justify-center gap-2 text-sm text-[var(--tertiary)] mb-3'>
+        <div className='flex items-center justify-center gap-2 text-sm mb-3'>
           <Globe className='w-4 h-4' />
-          <span>Your Link</span>
+          <span>Preview</span>
         </div>
-        <div className='text-xl font-mono text-[var(--quaternary)] font-bold'>
-          {displayDomain}/
-          <span className='text-[var(--primary)]'>{displayUsername}</span>
+        <div className='font-mono text-lg'>
+          {displayDomain}/<span className=''>{displayUsername}</span>
         </div>
       </motion.div>
 
@@ -218,7 +190,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               )}
             </SecondaryCTAButton>
             <div className='space-y-1'>
-              <h5 className='text-2xl'>⚡ Ready in seconds</h5>
+              <h5>⚡ Ready in seconds</h5>
               <p className='text-sm'>
                 We'll set up "{displayUsername}" as your link and get you
                 started right away
@@ -241,7 +213,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               Custom Setup
             </TertiaryCTAButton>
             <div className='space-y-1'>
-              <h5 className='text-2xl'>👑 Make it yours</h5>
+              <h5>👑 Make it yours</h5>
               <p className='text-sm'>
                 Choose your perfect URL and configure everything to your liking
               </p>
@@ -250,7 +222,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         </div>
 
         {/* Reassurance Message */}
-        <div className='text-[var(--neutral-500)] text-sm max-w-md mx-auto pt-4 border-t border-[var(--neutral-200)]'>
+        <div className='text-muted-foreground max-w-md mx-auto pt-4 border-t border-[var(--neutral-200)]'>
           <p>Don't worry—you can always change everything later! ✨</p>
         </div>
       </motion.div>

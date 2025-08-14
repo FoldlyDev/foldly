@@ -166,12 +166,6 @@ export function WorkspaceContainer() {
                 />
               </Suspense>
             </div>
-
-            <div className='workspace-tree-footer'>
-              <p className='workspace-tree-footer-text'>
-                Drag items to workspace root or between folders
-              </p>
-            </div>
           </div>
 
           {/* Cloud Provider Buttons - Desktop Only */}

@@ -118,7 +118,7 @@ export function SettingsDropdown() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className='p-2.5 sm:p-3 rounded-xl border border-border 
+          className='cta p-2.5 sm:p-3 rounded-xl border border-border 
                    shadow-sm hover:shadow-md transition-all duration-200 
                    focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/20 
                    flex items-center justify-center foldly-glass-shadow-bg bg-[foldly-glass-light] dark:bg-[foldly-glass]'
@@ -128,48 +128,36 @@ export function SettingsDropdown() {
         </motion.button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className='w-72 mr-2 dark:bg-[foldly-glass-solid] foldly-glass bg-[foldly-glass-shadow-bg] rounded-xl'>
+      <DropdownMenuContent className='context-menu w-72 mr-2 rounded-xl cta foldly-glass-light dark:foldly-glass'>
         <DropdownMenuGroup>
           <DropdownMenuLabel className='text-xs text-muted-foreground dark:text-white/50 px-2 py-1'>
             Theme
           </DropdownMenuLabel>
 
           <div className='px-2 pb-2'>
-            <div className='flex items-center justify-between p-2 rounded-xl bg-muted dark:bg-white/5'>
+            <div className='context-menu-theme-selector'>
               <button
                 onClick={() => handleThemeChange('light')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'light'
-                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                className={`context-menu-theme-button ${theme === 'light' ? 'active' : ''}`}
               >
-                <Sun className='w-3.5 h-3.5' />
-                <span className='text-xs font-medium'>Light</span>
+                <Sun />
+                <span>Light</span>
               </button>
 
               <button
                 onClick={() => handleThemeChange('dark')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'dark'
-                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                className={`context-menu-theme-button ${theme === 'dark' ? 'active' : ''}`}
               >
-                <Moon className='w-3.5 h-3.5' />
-                <span className='text-xs font-medium'>Dark</span>
+                <Moon />
+                <span>Dark</span>
               </button>
 
               <button
                 onClick={() => handleThemeChange('system')}
-                className={`flex-1 py-1.5 px-2 rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  theme === 'system'
-                    ? 'bg-primary dark:bg-white/20 shadow-sm text-primary-foreground dark:text-white'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                }`}
+                className={`context-menu-theme-button ${theme === 'system' ? 'active' : ''}`}
               >
-                <Monitor className='w-3.5 h-3.5' />
-                <span className='text-xs font-medium'>System</span>
+                <Monitor />
+                <span>System</span>
               </button>
             </div>
           </div>
@@ -187,30 +175,12 @@ export function SettingsDropdown() {
                 <BellOff size={16} className='opacity-60' />
                 <span>Do not disturb</span>
               </div>
-              <AnimatePresence mode='wait'>
-                <motion.div
-                  key={doNotDisturb ? 'on' : 'off'}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${
-                    doNotDisturb
-                      ? 'bg-muted dark:bg-white/10'
-                      : 'bg-muted dark:bg-white/5'
-                  }`}
-                >
-                  <motion.div
-                    animate={{ x: doNotDisturb ? 20 : 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className={`w-4 h-4 rounded-full absolute top-0.5 left-0.5 shadow-sm transition-colors ${
-                      doNotDisturb
-                        ? 'bg-primary dark:bg-primary'
-                        : 'bg-gray-400 dark:bg-gray-500'
-                    }`}
-                  />
-                </motion.div>
-              </AnimatePresence>
+              <div 
+                className='context-menu-toggle' 
+                data-state={doNotDisturb ? 'checked' : 'unchecked'}
+              >
+                <div className='context-menu-toggle-thumb' />
+              </div>
             </div>
           </DropdownMenuItem>
 
@@ -228,36 +198,13 @@ export function SettingsDropdown() {
                 )}
                 <span>Silent notifications</span>
               </div>
-              <AnimatePresence mode='wait'>
-                <motion.div
-                  key={silentNotifications ? 'on' : 'off'}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className={`w-10 h-5 rounded-full relative transition-colors ${
-                    doNotDisturb
-                      ? 'bg-gray-200 dark:bg-gray-700'
-                      : silentNotifications
-                        ? 'bg-muted dark:bg-white/10'
-                        : 'bg-muted dark:bg-white/5'
-                  }`}
-                >
-                  <motion.div
-                    animate={{
-                      x: silentNotifications && !doNotDisturb ? 20 : 0,
-                    }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    className={`w-4 h-4 rounded-full absolute top-0.5 left-0.5 shadow-sm transition-colors ${
-                      doNotDisturb
-                        ? 'bg-gray-400 dark:bg-gray-600'
-                        : silentNotifications
-                          ? 'bg-primary dark:bg-primary'
-                          : 'bg-gray-400 dark:bg-gray-500'
-                    }`}
-                  />
-                </motion.div>
-              </AnimatePresence>
+              <div 
+                className='context-menu-toggle' 
+                data-state={silentNotifications ? 'checked' : 'unchecked'}
+                data-disabled={doNotDisturb ? '' : undefined}
+              >
+                <div className='context-menu-toggle-thumb' />
+              </div>
             </div>
           </DropdownMenuItem>
 

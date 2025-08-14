@@ -23,6 +23,7 @@ import {
 } from '@headless-tree/core';
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
 import { cn } from '@/lib/utils';
+import { UploadHighlight } from '@/components/ui/feedback/upload-highlight';
 
 import { useWorkspaceTree } from '../../hooks/use-workspace-tree';
 import { useTreeHandlers } from '../../hooks/use-tree-handlers';
@@ -541,11 +542,9 @@ export default function WorkspaceTree({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.2 }}
-        className='flex h-full items-center justify-center'
+        className='flex h-full items-center justify-center p-8'
       >
-        <span className='text-sm text-muted-foreground'>
-          No files or folders found. Create some to get started.
-        </span>
+        <UploadHighlight />
       </motion.div>
     );
   }

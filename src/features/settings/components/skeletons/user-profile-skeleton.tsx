@@ -1,17 +1,7 @@
-// =============================================================================
-// USER PROFILE SKELETON - Enhanced Loading Component for Settings
-// =============================================================================
-// 🎯 Professional skeleton loader for UserProfile components
-
 'use client';
 
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from '@/components/ui/core/shadcn/card';
-import { Skeleton } from '@/components/ui/core/shadcn/skeleton';
+import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfileSkeletonProps {
@@ -55,29 +45,29 @@ export const UserProfileSkeleton: React.FC<UserProfileSkeletonProps> = ({
 
   return (
     <div className='w-full max-w-4xl'>
-      <Card className='animate-pulse border border-[var(--neutral-200)]'>
-        <CardHeader className={config.cardPadding}>
+      <div className='rounded-lg border foldly-glass'>
+        <div className={config.cardPadding}>
           {/* Navigation Tabs */}
-          <div className='flex gap-2 p-2 bg-[var(--neutral-50)] rounded-lg mb-6'>
+          <div className='flex gap-2 p-2 rounded-lg foldly-glass mb-6'>
             {[...Array(config.tabsCount)].map((_, i) => (
               <Skeleton
                 key={i}
-                className={`h-8 ${i === 0 ? 'w-24' : i === 1 ? 'w-20' : 'w-16'}`}
+                className={`h-8 ${i === 0 ? 'w-24' : i === 1 ? 'w-20' : 'w-16'} dark:bg-white/10`}
               />
             ))}
           </div>
-        </CardHeader>
+        </div>
 
-        <CardContent className={`${config.cardPadding} pt-0`}>
+        <div className={`${config.cardPadding} pt-0`}>
           <div className={config.spacing}>
             {/* Profile Header Section */}
             <div className='space-y-4'>
-              <Skeleton className='h-6 w-48' />
+              <Skeleton className='h-6 w-48 dark:bg-white/10' />
               <div className='flex items-center gap-4'>
                 <Skeleton className='h-16 w-16 rounded-full flex-shrink-0' />
                 <div className='space-y-2 flex-1'>
-                  <Skeleton className='h-4 w-32' />
-                  <Skeleton className='h-3 w-48' />
+                  <Skeleton className='h-4 w-32 dark:bg-white/10' />
+                  <Skeleton className='h-3 w-48 dark:bg-white/10' />
                 </div>
               </div>
             </div>
@@ -86,16 +76,16 @@ export const UserProfileSkeleton: React.FC<UserProfileSkeletonProps> = ({
             {[...Array(config.sectionsCount)].map((_, sectionIndex) => (
               <div
                 key={sectionIndex}
-                className='space-y-4 pt-6 border-t border-[var(--neutral-200)]'
+                className='space-y-4 pt-6 border-t'
               >
-                <Skeleton className='h-5 w-40' />
+                <Skeleton className='h-5 w-40 dark:bg-white/10' />
 
                 {/* Form Fields */}
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                   {[...Array(2)].map((_, fieldIndex) => (
                     <div key={fieldIndex} className='space-y-2'>
-                      <Skeleton className='h-4 w-20' />
-                      <Skeleton className='h-10 w-full dark:bg-white/10' />
+                      <Skeleton className='h-4 w-20 dark:bg-white/10' />
+                      <Skeleton className='h-10 w-full rounded-md dark:bg-white/10' />
                     </div>
                   ))}
                 </div>
@@ -103,49 +93,49 @@ export const UserProfileSkeleton: React.FC<UserProfileSkeletonProps> = ({
                 {/* Additional Content for Some Sections */}
                 {sectionIndex === 0 && (
                   <div className='space-y-2'>
-                    <Skeleton className='h-4 w-24' />
-                    <Skeleton className='h-10 w-full' />
+                    <Skeleton className='h-4 w-24 dark:bg-white/10' />
+                    <Skeleton className='h-10 w-full rounded-md dark:bg-white/10' />
                   </div>
                 )}
 
                 {/* Section Actions */}
                 <div className='flex justify-end'>
-                  <Skeleton className='h-9 w-20' />
+                  <Skeleton className='h-9 w-20 rounded-md dark:bg-white/10' />
                 </div>
               </div>
             ))}
 
             {/* Security Section (if detailed) */}
             {variant === 'detailed' && (
-              <div className='space-y-4 pt-6 border-t border-[var(--neutral-200)]'>
-                <Skeleton className='h-5 w-36' />
+              <div className='space-y-4 pt-6 border-t'>
+                <Skeleton className='h-5 w-36 dark:bg-white/10' />
                 <div className='space-y-3'>
                   {[...Array(3)].map((_, i) => (
                     <div
                       key={i}
-                      className='flex items-center justify-between p-3 border border-[var(--neutral-200)] rounded-lg'
+                      className='flex items-center justify-between p-3 border rounded-lg'
                     >
                       <div className='flex items-center gap-3'>
                         <Skeleton className='w-5 h-5 rounded-full' />
                         <div className='space-y-1'>
-                          <Skeleton className='h-3 w-24' />
-                          <Skeleton className='h-3 w-32' />
+                          <Skeleton className='h-3 w-24 dark:bg-white/10' />
+                          <Skeleton className='h-3 w-32 dark:bg-white/10' />
                         </div>
                       </div>
-                      <Skeleton className='h-8 w-16' />
+                      <Skeleton className='h-8 w-16 rounded-md dark:bg-white/10' />
                     </div>
                   ))}
                 </div>
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Loading Message */}
       {showLoadingMessage && (
         <div className='text-center mt-6'>
-          <div className='inline-flex items-center gap-2 text-[var(--neutral-600)] text-sm'>
+          <div className='inline-flex items-center gap-2 text-muted-foreground text-sm'>
             <Loader2 className='w-4 h-4 animate-spin' />
             {loadingMessage}
           </div>

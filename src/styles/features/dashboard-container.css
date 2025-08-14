@@ -112,7 +112,6 @@
     margin-bottom: var(--content-spacing);
   }
 
-
   /* Dashboard Section Grids */
   .dashboard-actions-grid {
     display: grid;
@@ -164,6 +163,14 @@
     height: 48px;
     margin: 0 auto 1rem;
     color: var(--neutral-300);
+  }
+
+  .light .cta {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  .dark .cta {
+    @apply foldly-glass;
   }
 
   /* Small Mobile (xs: 480px+) */
@@ -325,7 +332,6 @@
     .dashboard-actions-grid {
       grid-template-columns: repeat(2, 1fr);
     }
-
   }
 
   /* Large Screens (lg: 1024px+) */
@@ -376,7 +382,6 @@
     .dashboard-actions-grid {
       grid-template-columns: repeat(4, 1fr);
     }
-
   }
 
   /* Extra Large (xl: 1280px+) */
@@ -458,7 +463,6 @@
     .dashboard-container p {
       font-size: 1.25rem; /* 20px */
     }
-
   }
 
   /* Ultra Wide (3xl: 1920px+) */
@@ -510,7 +514,6 @@
       background: white;
       padding: 1rem;
     }
-
   }
 
   /* Hover Effects - Only on devices that support hover */

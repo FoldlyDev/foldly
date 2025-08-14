@@ -111,7 +111,7 @@ export function WorkspaceContextMenu({
       <ContextMenuTrigger asChild>
         {children}
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
+      <ContextMenuContent className="context-menu w-56">
         <ContextMenuItem
           onClick={handleGenerateLink}
           disabled={isGeneratingLink || hasGeneratedLink || isCheckingLink}

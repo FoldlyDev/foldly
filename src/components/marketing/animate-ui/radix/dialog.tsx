@@ -190,7 +190,7 @@ function DialogContent({
             >
               {children}
               <DialogPrimitive.Close className='absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm border border-white/20 opacity-70 transition-all duration-200 hover:opacity-100 hover:scale-110 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none cursor-pointer icon-hover'>
-                <X size={16} className='text-gray-600 hover:text-gray-800' />
+                <X size={16} className='text-white' />
                 <span className='sr-only'>Close</span>
               </DialogPrimitive.Close>
             </motion.div>

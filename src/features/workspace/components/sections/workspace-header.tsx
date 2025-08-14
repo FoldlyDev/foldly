@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { SettingsDropdown } from '../settings/SettingsDropdown';
+import { TertiaryCTAButton } from '@/components/ui/core';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;
@@ -32,9 +33,9 @@ export function WorkspaceHeader({
   // Get appropriate greeting based on time of day
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'Morning vibes';
+    if (hour < 17) return 'Hey there';
+    return 'Welcome back';
   };
 
   // Get user's first name or fallback to "there"
@@ -86,8 +87,8 @@ export function WorkspaceHeader({
           className='text-muted-foreground text-base sm:text-lg'
         >
           {totalLinks === 0 && totalFiles === 0
-            ? 'Organize and manage your collected files in one place'
-            : `You've collected ${totalFiles} files across ${totalLinks} links. Keep going!`}
+            ? 'Ready to drop some files? This is your space 🚀'
+            : `Looking good! ${totalFiles} files uploaded across ${totalLinks} links`}
         </motion.p>
       </div>
 
@@ -102,7 +103,7 @@ export function WorkspaceHeader({
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowNotifications(!showNotifications)}
-          className='relative p-2.5 sm:p-3 rounded-xl bg-card border border-border 
+          className='cta relative p-2.5 sm:p-3 rounded-xl bg-card border border-border 
                    shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer
                    focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-primary/20 flex-shrink-0
                    flex items-center justify-center foldly-glass-shadow-bg'
@@ -130,21 +131,19 @@ export function WorkspaceHeader({
 
         {/* Primary CTA - Always visible with responsive sizing */}
         <div className='relative'>
-          <GradientButton
-            variant={isUploadDisabled ? 'secondary' : 'primary'}
-            size='md'
-            className='shadow-brand flex-shrink-0 px-4 sm:px-6 relative'
+          <TertiaryCTAButton
+            className='flex-shrink-0 px-4 sm:px-6 relative cta'
             onClick={handleUploadClick}
             disabled={isUploadDisabled}
+            icon={Plus}
           >
             {showStorageWarning && !isUploadDisabled && (
               <AlertTriangle className='w-3 h-3 sm:w-4 sm:h-4 mr-1 text-warning' />
             )}
-            <Plus className='w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2' />
             <span className='text-sm sm:text-base'>
-              {isUploadDisabled ? 'Storage Full' : 'Upload File'}
+              {isUploadDisabled ? 'Storage Full' : 'Upload Files'}
             </span>
-          </GradientButton>
+          </TertiaryCTAButton>
 
           {/* Storage warning indicator */}
           {showStorageWarning && (

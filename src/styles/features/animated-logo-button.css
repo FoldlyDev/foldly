@@ -1,23 +1,27 @@
-.button-container {
+/* =============================================================================
+   ANIMATED LOGO BUTTON - Dashboard Navigation Brand Button
+   ============================================================================= */
+
+.animated-logo-container {
   display: flex;
   justify-content: center;
-  gap: 20px; /* Adjust this value to increase or decrease space between buttons */
+  gap: 20px;
   padding: 20px;
 }
 
-.brutalist-button {
+.animated-logo-button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border: 3px solid #000000;
+  border: 3px solid #0f1922;
   border-radius: 12px;
   padding: 0;
   text-decoration: none;
-  color: #000000;
+  color: #ffffff;
   font-weight: bold;
   position: relative;
-  box-shadow: 4px 4px 0px #000000;
+  box-shadow: 4px 4px 0px rgba(2, 6, 24, 0.5);
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   height: 130px;
@@ -25,16 +29,11 @@
   cursor: pointer;
 }
 
-.brutalist-button.foldly {
-  background-color: white;
+.animated-logo-button.brand-foldly {
+  background: linear-gradient(135deg, #0f1922 0%, #020618 100%);
 }
 
-/* Dark mode background */
-.dark .brutalist-button.foldly {
-  background-color: var(--quaternary); /* #0f1922 - dark blue */
-}
-
-.brutalist-button::before {
+.animated-logo-button::before {
   content: '';
   position: absolute;
   left: 50%;
@@ -47,25 +46,34 @@
   z-index: 1;
 }
 
-.brutalist-button.foldly::before {
-  background-color: var(--secondary);
+.animated-logo-button.brand-foldly::before {
+  background: radial-gradient(circle at center, rgba(195, 225, 247, 0.2) 0%, transparent 70%);
 }
 
-.brutalist-button:hover::before {
+.animated-logo-button.brand-claude::before {
+  background-color: #e3d19c;
+}
+
+.animated-logo-button:hover::before {
   transform: translateX(-50%) scale(1);
 }
 
-.brutalist-button:hover {
+.animated-logo-button:hover {
   transform: translate(-4px, -4px);
-  box-shadow: 8px 8px 0px #000000;
+  box-shadow: 
+    -7px 6px 0 0 rgb(2 6 24 / 40%),
+    -14px 12px 0 0 rgb(2 6 24 / 30%),
+    -21px 18px 4px 0 rgb(2 6 24 / 25%);
 }
 
-.brutalist-button:active {
+.animated-logo-button:active {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #000000;
+  box-shadow: 
+    -3px 3px 0 0 rgb(2 6 24 / 40%),
+    -6px 6px 0 0 rgb(2 6 24 / 25%);
 }
 
-.logo-container {
+.animated-logo-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,30 +86,20 @@
   height: 90px;
   border-radius: 50%;
   transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  /* Foldly glass background for light mode */
-  background: var(--foldly-glass-gradient-light);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--foldly-glass-border);
+  box-shadow: 
+    inset -2px 12px 11px -5px rgba(15, 25, 34, 0.5),
+    inset 1px -3px 11px 0px rgb(0 0 0 / 35%);
+  background: linear-gradient(135deg, #141414 0%, #020618 100%);
 }
 
-/* Dark mode glass background for logo container */
-.dark .logo-container {
-  background: var(--foldly-glass-bg);
-  backdrop-filter: blur(var(--foldly-glass-blur));
-  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
-  border: 1px solid var(--foldly-glass-border);
-}
-
-.logo-icon {
-  width: 64px;
-  height: 64px;
+.animated-logo-icon {
+  width: 54px;
+  height: 54px;
+  fill: #ffffff;
   transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  object-fit: contain;
 }
 
-@keyframes spin {
+@keyframes animated-logo-spin {
   0% {
     transform: translate(-50%, -50%) rotate(0deg);
   }
@@ -110,18 +108,18 @@
   }
 }
 
-.brutalist-button:hover .logo-container {
-  animation: spin 5s linear infinite;
+.animated-logo-button:hover .animated-logo-wrapper {
+  animation: animated-logo-spin 5s linear infinite;
   width: 50px;
   height: 50px;
   top: 28%;
 }
 
-.brutalist-button:hover .logo-icon {
-  transform: scale(0.7);
+.animated-logo-button:hover .animated-logo-icon {
+  transform: scale(0.6);
 }
 
-.button-text {
+.animated-logo-text {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -137,99 +135,80 @@
   right: 0;
 }
 
-.button-text span {
+.animated-logo-text-label {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  color: rgba(195, 225, 247, 0.8);
+}
+
+.animated-logo-text-brand {
   font-size: 16px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #ffffff;
-  font-family: var(--font-display);
+  color: #c3e1f7;
+  text-shadow: -1px 1px 2px rgba(2, 6, 24, 0.5);
 }
 
-.brutalist-button:hover .button-text {
+.animated-logo-button:hover .animated-logo-text {
   opacity: 1;
   transform: translateY(0);
 }
 
-.brutalist-button.foldly:hover .button-text {
+.animated-logo-button.brand-foldly:hover .animated-logo-text {
   color: #ffffff;
 }
 
-.brutalist-button.foldly:hover .button-text span {
+.animated-logo-button.brand-foldly:hover .animated-logo-text-brand {
   color: #ffffff;
+  text-shadow: 0 0 10px rgba(195, 225, 247, 0.5);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .brutalist-button:hover {
-    transform: translate(-4px, -4px);
-    box-shadow: 8px 8px 0px #000000;
-  }
+/* Collapsed state styles */
+.animated-logo-container.collapsed {
+  padding: 10px;
 }
 
-/* Navigation sidebar specific styles */
-.nav-logo-button .button-container {
-  padding: 0;
+.animated-logo-button.collapsed {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  border-width: 2px;
 }
 
-.nav-logo-button .brutalist-button {
-  width: 100px;
-  height: 100px;
-  border: 2px solid var(--tertiary);
-  box-shadow: 3px 3px 0px var(--tertiary);
-}
-
-.nav-logo-button .brutalist-button:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 6px 6px 0px var(--tertiary);
-}
-
-.nav-logo-button .logo-container {
-  width: 70px;
-  height: 70px;
-}
-
-.nav-logo-button .logo-icon {
-  width: 48px;
-  height: 48px;
-}
-
-.nav-logo-button .button-text {
-  bottom: 12px;
-}
-
-.nav-logo-button .button-text span {
-  font-size: 14px;
-  letter-spacing: 0.6px;
-}
-
-.nav-logo-button .brutalist-button:hover .logo-container {
+.animated-logo-button.collapsed .animated-logo-wrapper {
   width: 40px;
   height: 40px;
-  top: 25%;
 }
 
-.nav-logo-button .brutalist-button:hover .logo-icon {
-  transform: scale(0.7);
+.animated-logo-button.collapsed .animated-logo-icon {
+  width: 28px;
+  height: 28px;
 }
 
-/* Responsive adjustments for collapsed sidebar */
-@media (max-width: 1024px) {
-  .nav-logo-button .brutalist-button {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .nav-logo-button .logo-container {
-    width: 60px;
-    height: 60px;
-  }
-  
-  .nav-logo-button .logo-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .nav-logo-button .button-text span {
-    font-size: 12px;
+.animated-logo-button.collapsed .animated-logo-text {
+  display: none;
+}
+
+.animated-logo-button.collapsed:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 
+    -3px 3px 0 0 rgb(2 6 24 / 40%),
+    -6px 6px 0 0 rgb(2 6 24 / 25%);
+}
+
+.animated-logo-button.collapsed:hover .animated-logo-wrapper {
+  animation: animated-logo-spin 3s linear infinite;
+  width: 35px;
+  height: 35px;
+  top: 50%;
+}
+
+/* Responsive hover states */
+@media (hover: hover) and (pointer: fine) {
+  .animated-logo-button:hover {
+    transform: translate(-4px, -4px);
+    box-shadow: 8px 8px 0px #000000;
   }
 }

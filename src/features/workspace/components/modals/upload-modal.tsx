@@ -112,7 +112,7 @@ export function UploadModal({
           }
         >
           {/* Modal Header */}
-          <div className='relative border-b border-border/50 bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 shrink-0'>
+          <div className='modal-header relative shrink-0'>
             <div className='p-4 sm:p-6 lg:p-8'>
               <div className='flex items-center gap-3 sm:gap-4'>
                 <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
@@ -232,7 +232,7 @@ export function UploadModal({
         </div>
 
         {/* Modal Footer */}
-        <div className='mt-auto border-t border-gray-200/50 bg-gray-50/50 p-4 sm:p-6 lg:p-8 shrink-0'>
+        <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
           <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
             {/* Action Buttons */}
             <Button

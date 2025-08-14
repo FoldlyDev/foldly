@@ -36,7 +36,8 @@ export const TertiaryCTAButton = React.forwardRef<
     },
     ref
   ) => {
-    const baseClasses = 'relative cursor-pointer py-4 px-8 text-center font-barlow inline-flex justify-center text-base uppercase text-white rounded-lg border-solid transition-transform duration-300 ease-in-out group outline-offset-4 focus:outline focus:outline-2 focus:outline-white focus:outline-offset-4 overflow-hidden';
+    const baseClasses =
+      'cta relative cursor-pointer py-4 px-8 text-center font-barlow inline-flex justify-center text-base uppercase text-white rounded-lg border-solid transition-transform duration-300 ease-in-out group outline-offset-4 focus:outline focus:outline-2 focus:outline-white focus:outline-offset-4 overflow-hidden';
     const combinedClasses = cn(baseClasses, className);
 
     const content = (
