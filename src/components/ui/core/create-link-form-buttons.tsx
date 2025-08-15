@@ -1,7 +1,7 @@
 'use client';
 
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { GradientButton } from '@/components/ui/core/gradient-button';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/core/shadcn/button';
 
 interface CreateLinkFormButtonsProps {
   canGoNext: boolean;
@@ -29,31 +29,40 @@ export const CreateLinkFormButtons = ({
   showPrevious = true,
 }: CreateLinkFormButtonsProps) => {
   return (
-    <div className='flex justify-between items-center pt-6 border-t'>
+    <div className='modal-footer flex justify-between items-center'>
       {/* Previous Button */}
       {showPrevious ? (
-        <GradientButton
+        <Button
           onClick={onPrevious}
           disabled={!canGoPrevious || isSubmitting}
-          variant='secondary'
+          variant='outline'
           className='flex items-center gap-2'
         >
           <ArrowLeft className='w-4 h-4' />
           {previousLabel}
-        </GradientButton>
+        </Button>
       ) : (
         <div /> // Spacer
       )}
 
       {/* Next Button */}
-      <GradientButton
+      <Button
         onClick={onNext}
         disabled={!canGoNext || isSubmitting}
         className='flex items-center gap-2'
       >
-        {isSubmitting ? nextLabel : nextLabel}
-        {!isSubmitting && <ArrowRight className='w-4 h-4' />}
-      </GradientButton>
+        {isSubmitting ? (
+          <>
+            <Loader2 className='w-4 h-4 animate-spin' />
+            {nextLabel}
+          </>
+        ) : (
+          <>
+            {nextLabel}
+            <ArrowRight className='w-4 h-4' />
+          </>
+        )}
+      </Button>
     </div>
   );
 };

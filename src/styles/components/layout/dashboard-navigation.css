@@ -7,7 +7,7 @@
   /* =========================================================================
      BASE LAYOUT & STRUCTURE
      ========================================================================= */
-  
+
   .dashboard-navigation {
     /* Base Layout Variables - Mobile First (320px+) */
     --nav-padding: 0.75rem;
@@ -17,20 +17,20 @@
     --nav-width-expanded: 16rem; /* 256px */
     --nav-width-collapsed: 5rem; /* 80px */
     --nav-mobile-width: 16rem; /* 256px */
-    
+
     /* Base Typography Variables */
     --nav-text-size: 0.875rem; /* 14px */
     --nav-text-weight: 500;
     --nav-section-text-size: 0.6875rem; /* 11px */
     --nav-section-text-weight: 600;
     --nav-badge-text-size: 0.625rem; /* 10px */
-    
+
     /* Icon Variables */
     --nav-icon-size: 1rem;
     --nav-icon-container-size: 2rem;
     --nav-icon-radius: 0.5rem;
     --nav-transition: all 0.2s ease;
-    
+
     position: relative;
     display: flex;
     flex-direction: column;
@@ -41,34 +41,45 @@
   /* =========================================================================
      COLOR SYSTEM - Light Mode
      ========================================================================= */
-  
+
   .dashboard-navigation {
+    /* Define RGB values for primary color */
+    --primary-rgb: 195, 225, 247; /* #c3e1f7 in RGB */
+    
+    /* Define missing base variables */
+    --background: #ffffff;
+    --border: #e5e7eb;
+    --card: #ffffff;
+    --success-green: #10b981;
+    --primary: #c3e1f7;
+    
     /* Background & Borders */
     --nav-sidebar-bg: var(--background);
     --nav-sidebar-border: var(--border);
     --nav-sidebar-blur: 12px;
-    --nav-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    
+    --nav-shadow:
+      0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
     /* Text Colors */
     --nav-text-default: var(--neutral-700);
     --nav-text-muted: var(--neutral-500);
     --nav-text-hover: var(--neutral-900);
     --nav-text-active: var(--neutral-900);
     --nav-section-text: var(--neutral-500);
-    
+
     /* Icon Colors by Type */
     --nav-icon-default: var(--neutral-700);
     --nav-icon-primary: #5580a3;
     --nav-icon-secondary: #6b8ca6;
     --nav-icon-tertiary: #3a5f7d;
     --nav-icon-success: #14a074;
-    
+
     /* Icon Backgrounds */
     --nav-icon-bg-primary: rgba(195, 225, 247, 0.15);
     --nav-icon-bg-secondary: rgba(154, 190, 222, 0.15);
     --nav-icon-bg-tertiary: rgba(45, 79, 107, 0.15);
     --nav-icon-bg-success: rgba(16, 185, 129, 0.15);
-    
+
     /* Icon Hover States */
     --nav-icon-hover-primary: #4470a0;
     --nav-icon-hover-secondary: #5a7c99;
@@ -78,18 +89,18 @@
     --nav-icon-hover-bg-secondary: rgba(154, 190, 222, 0.25);
     --nav-icon-hover-bg-tertiary: rgba(45, 79, 107, 0.25);
     --nav-icon-hover-bg-success: rgba(16, 185, 129, 0.25);
-    
+
     /* Icon Active States */
     --nav-icon-active-primary: #c3e1f7;
     --nav-icon-active-secondary: #9abede;
     --nav-icon-active-tertiary: #2d4f6b;
     --nav-icon-active-success: #10b981;
-    
+
     /* Navigation Item States */
     --nav-item-hover-bg: var(--neutral-100);
     --nav-item-active-bg: rgba(var(--primary-rgb), 0.1);
     --nav-active-indicator: var(--primary);
-    
+
     /* Toggle Button */
     --nav-toggle-icon: var(--neutral-600);
     --nav-toggle-icon-hover: var(--neutral-800);
@@ -102,33 +113,44 @@
   /* =========================================================================
      COLOR SYSTEM - Dark Mode
      ========================================================================= */
-  
+
   .dark .dashboard-navigation {
+    /* Define RGB values for primary color in dark mode */
+    --primary-rgb: 154, 190, 222; /* #9abede in RGB */
+    
+    /* Define missing base variables for dark mode */
+    --background: #09090b;
+    --border: rgba(255, 255, 255, 0.1);
+    --card: rgba(255, 255, 255, 0.05);
+    --success-green: #10b981;
+    --primary: #9abede;
+    
     /* Background & Borders */
     --nav-sidebar-bg: rgba(2, 6, 24, 0.85);
     --nav-sidebar-border: rgba(255, 255, 255, 0.1);
-    --nav-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    
+    --nav-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+
     /* Text Colors */
     --nav-text-default: rgba(255, 255, 255, 0.85);
     --nav-text-muted: rgba(255, 255, 255, 0.4);
     --nav-text-hover: white;
     --nav-text-active: white;
     --nav-section-text: rgba(255, 255, 255, 0.4);
-    
+
     /* Icon Colors by Type */
     --nav-icon-default: rgba(255, 255, 255, 0.8);
     --nav-icon-primary: #a8d0ea;
     --nav-icon-secondary: #8fb5d6;
     --nav-icon-tertiary: #9bb8d3;
     --nav-icon-success: #34d399;
-    
+
     /* Icon Backgrounds */
     --nav-icon-bg-primary: rgba(195, 225, 247, 0.12);
     --nav-icon-bg-secondary: rgba(154, 190, 222, 0.12);
     --nav-icon-bg-tertiary: rgba(123, 165, 199, 0.12);
     --nav-icon-bg-success: rgba(16, 185, 129, 0.12);
-    
+
     /* Icon Hover States */
     --nav-icon-hover-primary: #c3e1f7;
     --nav-icon-hover-secondary: #9abede;
@@ -138,18 +160,18 @@
     --nav-icon-hover-bg-secondary: rgba(154, 190, 222, 0.18);
     --nav-icon-hover-bg-tertiary: rgba(123, 165, 199, 0.18);
     --nav-icon-hover-bg-success: rgba(16, 185, 129, 0.18);
-    
+
     /* Icon Active States */
     --nav-icon-active-primary: #9abede;
     --nav-icon-active-secondary: #7ba5c7;
     --nav-icon-active-tertiary: #4a6b85;
     --nav-icon-active-success: #10b981;
-    
+
     /* Navigation Item States */
     --nav-item-hover-bg: rgba(255, 255, 255, 0.05);
     --nav-item-active-bg: rgba(var(--primary-rgb), 0.2);
     --nav-active-indicator: var(--primary);
-    
+
     /* Toggle Button */
     --nav-toggle-icon: rgba(255, 255, 255, 0.6);
     --nav-toggle-icon-hover: rgba(255, 255, 255, 0.8);
@@ -162,7 +184,7 @@
   /* =========================================================================
      NAVIGATION SIDEBAR BACKGROUNDS
      ========================================================================= */
-  
+
   /* Base Sidebar Styles */
   .nav-sidebar-desktop,
   .nav-sidebar-mobile {
@@ -173,7 +195,7 @@
     box-shadow: var(--nav-shadow);
     transition: var(--nav-transition);
   }
-  
+
   /* Mobile Menu Button */
   .nav-menu-button {
     background: var(--nav-sidebar-bg);
@@ -182,14 +204,14 @@
     border: 1px solid var(--nav-sidebar-border);
     transition: var(--nav-transition);
   }
-  
+
   /* Desktop Toggle Button */
   .nav-toggle-button {
     background: var(--nav-toggle-bg);
     border: 1px solid var(--nav-toggle-border);
     transition: var(--nav-transition);
   }
-  
+
   .nav-toggle-button:hover {
     background: var(--nav-toggle-bg-hover);
     border-color: var(--nav-toggle-border-hover);
@@ -198,7 +220,7 @@
   /* =========================================================================
      NAVIGATION ICON SYSTEM
      ========================================================================= */
-  
+
   /* Base Icon Styles */
   .nav-icon {
     width: var(--nav-icon-size);
@@ -227,17 +249,21 @@
   .nav-icon-container::after {
     content: '';
     position: absolute;
-    inset: -2px;
-    border-radius: calc(var(--nav-icon-radius) + 0.125rem);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% + 8px);
+    height: calc(100% + 8px);
+    border-radius: calc(var(--nav-icon-radius) + 0.25rem);
     background: inherit;
     opacity: 0;
-    filter: blur(8px);
+    filter: blur(10px);
     transition: opacity 0.2s ease;
     z-index: -1;
   }
 
   .nav-icon-container:hover::after {
-    opacity: 0.4;
+    opacity: 0.5;
   }
 
   /* Icon Type Variants */
@@ -322,7 +348,7 @@
   /* =========================================================================
      RESPONSIVE TYPOGRAPHY - Mobile First with REM units
      ========================================================================= */
-  
+
   /* Base Typography - Mobile First (320px+) */
   .nav-item-label {
     font-family: var(--font-body);
@@ -333,15 +359,16 @@
     transition: var(--nav-transition);
     color: var(--nav-text-default);
   }
-  
+
   /* Active state */
   .nav-item-label--active {
     color: var(--nav-text-active);
     font-weight: 600;
   }
-  
+
   /* Hover state */
-  .nav-item:hover .nav-item-label {
+  .nav-item:hover .nav-item-label,
+  a.nav-item:hover .nav-item-label {
     color: var(--nav-text-hover);
   }
 
@@ -378,7 +405,7 @@
       --nav-item-spacing: 0.125rem; /* Keep tight */
       --nav-section-spacing: 1rem;
     }
-    
+
     .dashboard-navigation {
       --nav-icon-size: 1.125rem;
       --nav-icon-container-size: 2.25rem;
@@ -407,9 +434,10 @@
     .dashboard-navigation {
       --nav-padding: 1.25rem; /* Sidebar doesn't need huge padding */
       --nav-section-spacing: 1.25rem;
-      --nav-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --nav-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
-    
+
     .dashboard-navigation {
       --nav-icon-size: 1.25rem;
       --nav-icon-container-size: 2.5rem;
@@ -441,14 +469,14 @@
   /* =========================================================================
      NAVIGATION LAYOUT COMPONENTS
      ========================================================================= */
-  
+
   /* Navigation Header */
   .nav-header {
     padding: var(--nav-padding);
     padding-bottom: calc(var(--nav-padding) * 0.75);
     border-bottom: 1px solid var(--nav-sidebar-border);
   }
-  
+
   /* Navigation Body */
   .nav-body {
     flex: 1;
@@ -457,50 +485,62 @@
     overflow-y: auto;
     overflow-x: hidden;
   }
-  
+
   /* Navigation Footer */
   .nav-footer {
     padding: var(--nav-padding);
     border-top: 1px solid var(--nav-sidebar-border);
   }
-  
+
   /* Navigation Sections */
   .nav-section {
     margin-bottom: var(--nav-section-spacing);
   }
-  
+
   .nav-section:last-child {
     margin-bottom: 0;
   }
-  
+
   /* Ensure section content is visible */
   .nav-section > div {
     display: block;
   }
-  
+
+  /* Navigation Items Container */
+  .nav-items-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--nav-item-spacing);
+  }
+
   /* Navigation Items */
   .nav-item {
-    display: block;
     margin-bottom: var(--nav-item-spacing);
+    width: 100%;
   }
-  
+
+  /* Ensure Link component renders properly */
+  .nav-item a {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
+
   .nav-item:last-child {
     margin-bottom: 0;
   }
-  
+
   /* Navigation Item States */
   .nav-item > div {
     position: relative;
   }
-  
-  .nav-item > div:hover {
-    background: var(--nav-item-hover-bg);
+
+  /* Since Link component is the .nav-item, target the direct child div */
+  a.nav-item > div {
+    position: relative;
   }
-  
-  .nav-item > div.active {
-    background: var(--nav-item-active-bg);
-  }
-  
+
+
   /* Active Indicator */
   .nav-active-indicator {
     position: absolute;
@@ -515,7 +555,7 @@
   /* =========================================================================
      NAVIGATION STATE VARIATIONS
      ========================================================================= */
-  
+
   /* Active state typography */
   .nav-item-label--active {
     font-weight: 600;
@@ -533,14 +573,16 @@
     opacity: 0;
     width: 0;
     overflow: hidden;
-    transition: opacity 0.2s ease, width 0.2s ease;
+    transition:
+      opacity 0.2s ease,
+      width 0.2s ease;
   }
-  
+
   .nav-expanded .nav-show-expanded {
     opacity: 1;
     width: auto;
   }
-  
+
   /* Collapsed State Adjustments */
   .nav-collapsed .nav-item-label,
   .nav-collapsed .nav-section-header,
@@ -549,19 +591,15 @@
     width: 0;
     overflow: hidden;
   }
-  
+
   .nav-collapsed .nav-icon-container {
     margin: 0 auto;
-  }
-  
-  .nav-collapsed .nav-active-indicator {
-    display: none;
   }
 
   /* =========================================================================
      CUSTOM SCROLLBAR STYLES
      ========================================================================= */
-  
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--neutral-300) var(--neutral-100);
@@ -606,7 +644,7 @@
   /* =========================================================================
      ANIMATIONS
      ========================================================================= */
-  
+
   /* Navigation Item Animations */
   .nav-item-entrance {
     animation: slideInFromLeft 0.3s ease-out;
@@ -654,7 +692,7 @@
   /* =========================================================================
      ACCESSIBILITY & PERFORMANCE
      ========================================================================= */
-  
+
   /* High contrast mode */
   @media (prefers-contrast: high) {
     .nav-item-label {
@@ -681,11 +719,11 @@
     .nav-icon-container {
       transition: none;
     }
-    
+
     .nav-item-entrance {
       animation: none;
     }
-    
+
     .badge-bounce {
       animation: none;
     }
@@ -696,31 +734,49 @@
     .dashboard-navigation {
       -webkit-overflow-scrolling: touch;
     }
+    
+    /* Improve mobile sidebar performance */
+    .nav-sidebar-mobile {
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      perspective: 1000;
+      -webkit-perspective: 1000;
+    }
+    
+    /* Prevent text selection during swipe */
+    .nav-sidebar-mobile * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
   }
-  
+
   /* Print Styles */
   @media print {
     .dashboard-navigation {
       display: none;
     }
   }
-  
+
   /* Performance Optimizations */
   .dashboard-navigation {
     will-change: width;
   }
-  
+
   .nav-icon-container {
     will-change: transform, background-color;
   }
-  
+
   /* Navigation Responsive Utilities */
   .nav-hide-mobile {
     @media (max-width: 1023px) {
       display: none;
     }
   }
-  
+
   .nav-hide-desktop {
     @media (min-width: 1024px) {
       display: none;

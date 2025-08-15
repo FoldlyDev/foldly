@@ -9,7 +9,7 @@ import { SearchHighlight } from '@/components/ui/core/search-highlight';
 import { ActionButton } from '@/components/ui/core/action-button';
 import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
 import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
-import type { Link, LinkWithStats } from '@/lib/database/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { ActionItem } from '@/components/ui/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
@@ -38,11 +38,11 @@ export const LinkCardDesktop = memo(
     index,
     isBaseLink,
     formattedDate,
-    isMultiSelectMode,
+    isMultiSelectMode: _isMultiSelectMode,
     isMultiSelected,
     onOpenDetails,
-    onCopyLink,
-    onShare,
+    onCopyLink: _onCopyLink,
+    onShare: _onShare,
     onSelectionChange,
     actions,
     quickActions,
@@ -58,21 +58,15 @@ export const LinkCardDesktop = memo(
         transition={{ delay: index * 0.1 }}
         onClick={onOpenDetails}
         className={`
-        relative bg-white rounded-lg hover:bg-gray-50 
-        transition-all duration-200 group cursor-pointer
-        ${
-          isBaseLink
-            ? 'border-l-4 border-l-purple-400 shadow-sm' // Special base link styling
-            : 'border border-gray-200 hover:border-gray-300' // Regular topic link styling
-        }
-        ${
-          isMultiSelected && !isBaseLink
-            ? 'ring-2 ring-blue-400 ring-opacity-50' // Selection ring only for topic links
-            : ''
-        }
+        link-card group
+        ${isBaseLink ? 'link-card--base' : 'link-card--regular'}
+        ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
+        style={{
+          borderLeftColor: link.brandEnabled && link.brandColor ? link.brandColor : undefined
+        }}
       >
-        <div className='flex items-center gap-4 px-4 py-3 min-h-[72px]'>
+        <div className='link-card-content'>
           {/* Selection checkbox (desktop only) */}
           {!isBaseLink && onSelectionChange && (
             <div className='flex-shrink-0'>
@@ -92,39 +86,38 @@ export const LinkCardDesktop = memo(
 
             <div className='min-w-0 flex-1'>
               <div className='flex items-center gap-2'>
-                <h3 className='font-medium text-gray-900 text-sm truncate'>
+                <h3 className='link-card-title'>
                   <SearchHighlight
                     text={link.title}
                     searchQuery={searchQuery || ''}
                   />
                 </h3>
               </div>
-              <p className='text-xs text-gray-500 truncate'>{displayUrl}</p>
+              <p className='link-card-url'>{displayUrl}</p>
             </div>
           </div>
 
           {/* Status */}
           <div className='flex items-center gap-3 flex-shrink-0'>
             {unreadCount > 0 && (
-              <NotificationBadge
-                count={unreadCount}
-                onClick={e => {
-                  e?.stopPropagation();
-                  onClearNotifications?.();
-                }}
-              />
+              <div onClick={e => e.stopPropagation()}>
+                <NotificationBadge
+                  count={unreadCount}
+                  {...(onClearNotifications && { onClick: onClearNotifications })}
+                />
+              </div>
             )}
             <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
           </div>
 
           {/* Metrics */}
-          <div className='flex items-center gap-4 text-sm text-gray-500 flex-shrink-0'>
-            <span className='flex items-center gap-1'>
-              <FileText className='w-3.5 h-3.5' />
+          <div className='link-card-metadata flex-shrink-0'>
+            <span className='link-card-metadata-item'>
+              <FileText className='link-card-metadata-icon' />
               {link.stats?.fileCount ?? 0}
             </span>
-            <span className='flex items-center gap-1'>
-              <Eye className='w-3.5 h-3.5' />
+            <span className='link-card-metadata-item'>
+              <Eye className='link-card-metadata-icon' />
               {link.stats?.totalViewCount ?? 0}
             </span>
           </div>

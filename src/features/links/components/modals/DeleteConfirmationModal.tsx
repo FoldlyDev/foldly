@@ -68,29 +68,30 @@ export function DeleteConfirmationModal() {
           Permanently delete your link and all associated files and data
         </DialogDescription>
 
-        {/* Header - Consistent with other modals */}
-        <div className='relative bg-gradient-to-r from-red-50 to-rose-50 border-b border-red-100'>
-          <div className='px-6 py-6 text-center'>
-            <div className='flex justify-center mb-4'>
-              <div className='w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center shadow-lg'>
-                <AlertTriangle className='w-6 h-6 text-white' />
+        {/* Modal Header */}
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-red-600 shadow-lg'>
+                <AlertTriangle className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
               </div>
-            </div>
-            <h1 className='text-xl font-bold text-gray-900 leading-tight mb-2'>
-              Delete{' '}
-              {link.linkType === 'base'
-                ? 'Personal Collection'
-                : 'Custom Topic'}
-            </h1>
-            <div className='flex justify-center'>
-              <p className='text-sm text-gray-600 text-center max-w-sm'>
-                "{link.title}" will be permanently removed
-              </p>
+              <div className='min-w-0 flex-1'>
+                <h1 className='text-lg sm:text-xl font-bold text-foreground truncate'>
+                  Delete{' '}
+                  {link.linkType === 'base'
+                    ? 'Personal Collection'
+                    : 'Custom Topic'}
+                </h1>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5'>
+                  "{link.title}" will be permanently removed
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className='p-6 space-y-4'>
+        {/* Content Area */}
+        <div className='px-4 sm:px-6 py-4 sm:py-6 space-y-4'>
           {/* Compact Link Info */}
           <div className='bg-gray-50 rounded-xl p-4 border border-gray-200'>
             <div className='flex items-center gap-3'>

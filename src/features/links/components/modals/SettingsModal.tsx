@@ -247,35 +247,27 @@ export function SettingsModal() {
           Configure how "{link.title}" works for uploaders including privacy,
           security, and upload restrictions
         </DialogDescription>
-        {/* Premium Header with Gradient Background */}
-        <div className='relative overflow-hidden modal-gradient-purple border-b border-gray-200/50'>
-          {/* Decorative Background */}
-          <div className='modal-decoration-overlay' />
-          <div className='absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-transparent rounded-full -translate-y-32 -translate-x-32' />
-
-          <div className='relative p-4 sm:p-6 pb-4'>
-            <div className='text-center mb-4'>
-              <div className='flex justify-center mb-4'>
-                <div className='p-3 sm:p-4 rounded-2xl modal-icon-purple'>
-                  <Sliders className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
-                </div>
+        {/* Modal Header */}
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6 lg:p-8'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                <Sliders className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
               </div>
-              <div className='text-center'>
-                <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-purple mb-2'>
+              <div className='min-w-0 flex-1'>
+                <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
                   Link Settings
                 </h1>
-                <div className='flex justify-center'>
-                  <p className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
-                    Configure how "{link.title}" works for uploaders
-                  </p>
-                </div>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                  Configure how "{link.title}" works for uploaders
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Premium Form Content */}
-        <div className='p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12'>
+        {/* Content Area */}
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6'>
           <form
             onSubmit={handleSubmit(onSubmit)}
             className='space-y-6 max-w-2xl mx-auto'
@@ -301,24 +293,28 @@ export function SettingsModal() {
               form={form}
             />
 
-            {/* Premium Action Buttons */}
-            <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200/50'>
-              <ActionButton
-                type='button'
-                variant='outline'
-                onClick={handleCancel}
-                disabled={isSubmitting}
-                className='flex-1 bg-white hover:bg-gray-50 border-gray-300 text-gray-700 transition-colors duration-200'
-              >
-                Cancel
-              </ActionButton>
+          </form>
+        </div>
 
-              <ActionButton
-                type='submit'
-                variant='default'
-                disabled={!canSubmit}
-                className='flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border-0 shadow-lg transition-all duration-200 disabled:opacity-50'
-              >
+        {/* Modal Footer */}
+        <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
+          <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
+            <ActionButton
+              type='button'
+              variant='outline'
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
+            >
+              Cancel
+            </ActionButton>
+
+            <ActionButton
+              onClick={handleSubmit(onSubmit)}
+              variant='default'
+              disabled={!canSubmit}
+              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
+            >
                 {isSubmitting ? (
                   <>
                     <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
@@ -330,9 +326,8 @@ export function SettingsModal() {
                     Save Settings
                   </>
                 )}
-              </ActionButton>
-            </div>
-          </form>
+            </ActionButton>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

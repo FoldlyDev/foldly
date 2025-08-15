@@ -54,7 +54,7 @@ export function LinkExpirationDate({
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='w-auto p-0'>
+        <PopoverContent className='w-auto p-0' align='end'>
           <CalendarComponent
             mode='single'
             selected={formData.expiresAt || undefined}

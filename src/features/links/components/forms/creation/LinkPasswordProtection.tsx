@@ -24,12 +24,12 @@ export function LinkPasswordProtection({
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-3'>
         <div className='space-y-1'>
           <div className='flex items-center gap-2'>
-            <Lock className='h-4 w-4 text-purple-600' />
-            <p className='text-sm font-medium text-foreground'>
+            <Lock className='h-4 w-4 text-primary' />
+            <label className='form-label mb-0'>
               Password Protection
-            </p>
+            </label>
           </div>
-          <p className='text-xs text-muted-foreground'>
+          <p className='form-helper text-xs'>
             Require a password to access this link
           </p>
         </div>
@@ -55,10 +55,10 @@ export function LinkPasswordProtection({
               }}
               placeholder='Enter password (8+ characters)'
               disabled={isLoading}
-              className={`w-full px-3 py-2 pr-10 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`premium-input pr-10 ${
                 formData.password && formData.password.length < 8
-                  ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                  : 'border-border focus:ring-ring'
+                  ? 'form-input-error'
+                  : ''
               }`}
             />
             <button
@@ -75,12 +75,12 @@ export function LinkPasswordProtection({
             </button>
           </div>
           {formData.password && formData.password.length < 8 && (
-            <p className='text-xs text-red-600 flex items-center gap-1'>
+            <p className='text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1'>
               <span>⚠️</span>
               Password must be at least 8 characters long
             </p>
           )}
-          <p className='text-xs text-muted-foreground'>
+          <p className='form-helper text-xs'>
             Visitors will need this password to access your link
           </p>
         </div>

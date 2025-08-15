@@ -190,7 +190,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               )}
             </SecondaryCTAButton>
             <div className='space-y-1'>
-              <h5>⚡ Ready in seconds</h5>
+              <h5 className='text-xl'>⚡ Ready in seconds</h5>
               <p className='text-sm'>
                 We'll set up "{displayUsername}" as your link and get you
                 started right away
@@ -213,7 +213,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
               Custom Setup
             </TertiaryCTAButton>
             <div className='space-y-1'>
-              <h5>👑 Make it yours</h5>
+              <h5 className='text-xl'>👑 Make it yours</h5>
               <p className='text-sm'>
                 Choose your perfect URL and configure everything to your liking
               </p>

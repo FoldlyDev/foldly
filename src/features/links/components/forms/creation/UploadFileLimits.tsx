@@ -56,7 +56,7 @@ export function UploadFileLimits({
               />
             </svg>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-full min-w-[200px]'>
+          <DropdownMenuContent align='end' className='w-full min-w-[200px]'>
             {fileOptions.map(option => (
               <DropdownMenuItem
                 key={option}
@@ -99,7 +99,7 @@ export function UploadFileLimits({
               />
             </svg>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-full min-w-[200px]'>
+          <DropdownMenuContent align='end' className='w-full min-w-[200px]'>
             {fileSizeOptions.map(option => (
               <DropdownMenuItem
                 key={option.value}

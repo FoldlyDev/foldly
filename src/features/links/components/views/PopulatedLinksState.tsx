@@ -288,7 +288,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
                     <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
                     <SelectValue placeholder='Type' />
                   </SelectTrigger>
-                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
+                  <SelectContent align='end' className='bg-white border-[var(--neutral-200)]'>
                     <SelectItem value='all'>All Types</SelectItem>
                     <SelectItem value='base'>Base</SelectItem>
                     <SelectItem value='custom'>Custom</SelectItem>
@@ -310,7 +310,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
                     <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
                     <SelectValue placeholder='Status' />
                   </SelectTrigger>
-                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
+                  <SelectContent align='end' className='bg-white border-[var(--neutral-200)]'>
                     <SelectItem value='all'>All Status</SelectItem>
                     <SelectItem value='active'>Active</SelectItem>
                     <SelectItem value='paused'>Paused</SelectItem>

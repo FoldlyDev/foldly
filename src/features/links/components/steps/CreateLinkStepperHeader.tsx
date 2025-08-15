@@ -64,7 +64,7 @@ export const CreateLinkStepperHeader = ({
 
   return (
     <DialogHeader>
-      <div className='space-y-4 pt-6'>
+      <div className='space-y-2'>
         {/* Progress Steps */}
         <div className='flex flex-col items-center'>
           {/* Icons and connecting lines */}
@@ -82,19 +82,14 @@ export const CreateLinkStepperHeader = ({
                     <motion.div
                       className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center ${
                         isCompleted
-                          ? 'bg-green-500 text-white'
+                          ? 'bg-green-500 dark:bg-green-600 text-white'
                           : isCurrent
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-400'
+                            ? 'bg-blue-500 dark:bg-blue-600 text-white'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500'
                       }`}
                       initial={false}
                       animate={{
                         scale: isCurrent ? 1.1 : 1,
-                        backgroundColor: isCompleted
-                          ? '#10b981'
-                          : isCurrent
-                            ? '#3b82f6'
-                            : '#e5e7eb',
                       }}
                       transition={{ duration: 0.2 }}
                     >
@@ -108,7 +103,7 @@ export const CreateLinkStepperHeader = ({
                   {index < steps.length - 1 && (
                     <div
                       className={`w-12 sm:w-20 h-0.5 mx-3 sm:mx-6 ${
-                        isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                        isCompleted ? 'bg-green-500 dark:bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                     />
                   )}
@@ -118,7 +113,7 @@ export const CreateLinkStepperHeader = ({
           </div>
 
           {/* Labels below icons */}
-          <div className='flex justify-center mt-2'>
+          <div className='flex justify-center mt-1'>
             {steps.map((step, index) => {
               const isCurrent = index === currentStepIndex;
 
@@ -129,8 +124,8 @@ export const CreateLinkStepperHeader = ({
                     <span
                       className={`text-xs whitespace-nowrap ${
                         isCurrent
-                          ? 'text-blue-600 font-medium'
-                          : 'text-gray-500'
+                          ? 'text-blue-600 dark:text-blue-400 font-medium'
+                          : 'text-gray-500 dark:text-gray-400'
                       }`}
                     >
                       {step.label}

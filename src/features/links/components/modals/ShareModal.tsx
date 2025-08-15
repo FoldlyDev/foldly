@@ -91,31 +91,27 @@ export function ShareModal() {
           {link.title}
         </DialogDescription>
 
-        {/* Premium Header */}
-        <div className='relative overflow-hidden modal-gradient-indigo border-b border-gray-200/50'>
-          {/* Animated Background */}
-          <div className='modal-decoration-overlay' />
-          <div className='absolute top-0 left-0 w-32 h-32 bg-gradient-to-br from-indigo-400/10 to-transparent rounded-full -translate-x-16 -translate-y-16' />
-          <div className='absolute bottom-0 right-0 w-24 h-24 bg-gradient-to-tl from-purple-400/10 to-transparent rounded-full translate-x-12 translate-y-12' />
-
-          <div className='relative p-6 text-center'>
-            <div className='flex justify-center mb-4'>
-              <div className='p-3 rounded-2xl modal-icon-indigo'>
-                <Share2 className='w-7 h-7 text-white' />
+        {/* Modal Header */}
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6 lg:p-8'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                <Share2 className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
               </div>
-            </div>
-            <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-indigo mb-2'>
-              Share Collection Link
-            </h1>
-            <div className='flex justify-center'>
-              <p className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
-                Get your link in front of the right people
-              </p>
+              <div className='min-w-0 flex-1'>
+                <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
+                  Share Collection Link
+                </h1>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                  Get your link in front of the right people
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className='p-6 space-y-8 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto pb-20 sm:pb-12'>
+        {/* Content Area */}
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
           {/* URL Copy Section */}
           <motion.div
             className='display-card bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6'

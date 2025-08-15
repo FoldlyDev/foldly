@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
+import { Link2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -65,7 +66,11 @@ export const CreateLinkModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className='w-[calc(100vw-1rem)] max-w-md sm:max-w-lg lg:max-w-3xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'>
+      <DialogContent
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-lg lg:max-w-3xl h-[90vh] sm:h-[85vh] md:h-[80vh] max-h-[90vh] p-0 overflow-hidden flex flex-col'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
+      >
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>
           {linkType === 'base'
@@ -78,38 +83,36 @@ export const CreateLinkModal = () => {
             : 'Create a dedicated Custom Topic Link for collecting specific types of files'}
         </DialogDescription>
 
-        {/* Compact Header with Responsive Design */}
-        <div className='relative overflow-hidden modal-gradient-blue border-b border-gray-200/50'>
-          {/* Static Decorative Background - responsive */}
-          <div className='modal-decoration-overlay' />
-          <div className='absolute top-0 right-0 w-48 sm:w-64 lg:w-96 h-48 sm:h-64 lg:h-96 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full -translate-y-24 sm:-translate-y-32 lg:-translate-y-48 translate-x-24 sm:translate-x-32 lg:translate-x-48' />
-
-          {/* Compact Header with Gradient Title */}
-          <div className='relative p-4 sm:p-6'>
-            <div className='text-center mb-6'>
-              <h1 className='text-lg sm:text-xl lg:text-2xl font-bold leading-normal modal-title-gradient-blue mb-2'>
+        {/* Modal Header */}
+        <div className='modal-header'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+              <Link2 className='w-5 h-5 text-primary-foreground' />
+            </div>
+            <div className='min-w-0 flex-1'>
+              <h1 className='text-xl font-bold'>
                 {linkType === 'base'
                   ? 'Create Your Personal Collection Link'
                   : 'Create Custom Topic Link'}
               </h1>
-              <div className='flex justify-center'>
-                <p className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
-                  {linkType === 'base'
-                    ? 'Set up your Personal Collection Link where people can upload files'
-                    : 'Create a dedicated Custom Topic Link for collecting specific types of files'}
-                </p>
-              </div>
+              <p className='text-sm text-muted-foreground mt-0.5'>
+                {linkType === 'base'
+                  ? 'Set up your Personal Collection Link where people can upload files'
+                  : 'Create a dedicated Custom Topic Link for collecting specific types of files'}
+              </p>
             </div>
-
-            <CreateLinkStepperHeader
-              currentStep={currentStep}
-              linkType={linkType}
-            />
           </div>
         </div>
 
-        {/* Content Area - Consistent with other modals */}
-        <div className='px-4 sm:px-6 lg:px-8 pt-6 pb-20 sm:pb-12 max-h-[65vh] sm:max-h-[70vh] lg:max-h-[75vh] overflow-y-auto'>
+        {/* Stepper Section */}
+        <div className='px-6'>
+          <CreateLinkStepperHeader
+            currentStep={currentStep}
+            linkType={linkType}
+          />
+        </div>
+        {/* Content Area */}
+        <div className='modal-body flex-1'>
           {/* Step content with clean animations - no extra containers */}
           <AnimatePresence mode='wait'>
             {currentStep === 'information' && (

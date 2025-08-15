@@ -59,28 +59,18 @@ export const LinkCardGrid = memo(
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         onClick={onOpenDetails}
         className={`
-        group relative bg-white rounded-2xl p-6 transition-all duration-300 cursor-pointer
-        ${
-          isBaseLink
-            ? 'border-2 border-purple-200 shadow-sm hover:shadow-lg hover:border-purple-300' // Special base link styling
-            : 'border border-gray-200 shadow-sm hover:shadow-lg' // Regular topic link styling
-        }
-        ${
-          isMultiSelected && !isBaseLink
-            ? 'ring-2 ring-blue-400 ring-opacity-50' // Selection ring only for topic links
-            : ''
-        }
+        link-card-grid group
+        ${isBaseLink ? 'link-card-grid--base' : ''}
+        ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
+        style={{
+          borderLeftColor: link.brandEnabled && link.brandColor ? link.brandColor : undefined
+        }}
       >
-        {/* Background Gradient */}
-        <div
-          className='absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50 
-                      rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300'
-        />
 
         <div className='relative z-10'>
           {/* Header */}
-          <div className='flex items-start justify-between mb-4'>
+          <div className='link-card-grid-header'>
             <div className='flex-1 min-w-0'>
               <div className='flex items-center gap-3 mb-2'>
                 <LinkTypeIcon isBaseLink={isBaseLink} size='lg' />
@@ -98,12 +88,12 @@ export const LinkCardGrid = memo(
                   >
                     <Checkbox
                       checked={isMultiSelected || false}
-                      onCheckedChange={checked => onMultiSelect(link.id)}
+                      onCheckedChange={() => onMultiSelect(link.id)}
                       className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
                     />
                   </div>
                 )}
-                <h3 className='font-bold text-slate-900 text-lg truncate flex-1 min-w-0'>
+                <h3 className='link-card-grid-title flex-1 min-w-0'>
                   <SearchHighlight
                     text={link.title}
                     searchQuery={searchQuery || ''}
@@ -122,10 +112,7 @@ export const LinkCardGrid = memo(
                 <NotificationBadge
                   count={unreadCount}
                   className='mt-1'
-                  onClick={e => {
-                    e?.stopPropagation();
-                    onClearNotifications?.();
-                  }}
+                  {...(onClearNotifications && { onClick: onClearNotifications })}
                 />
               )}
               <CardActionsMenu actions={actions} />

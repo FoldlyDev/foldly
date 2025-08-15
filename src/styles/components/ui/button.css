@@ -3,12 +3,16 @@
    ============================================================================= */
 
 /* Premium button styles */
-@utility premium-button {
-  @apply relative overflow-hidden;
-  background: var(--gradient-premium);
-  transition: var(--transition-all);
-}
+@layer utilities {
+  .premium-button {
+    position: relative;
+    overflow: hidden;
+    background: var(--gradient-premium);
+    transition: var(--transition-all);
+  }
 
-.premium-button:hover {
-  @apply -translate-y-px shadow-lg;
+  .premium-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  }
 }

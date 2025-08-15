@@ -2,18 +2,15 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Eye, Clock, Share2, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle } from 'lucide-react';
 import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
 import {
   LinkStatusIndicator,
-  LinkVisibilityIndicator,
   LinkTypeIcon,
 } from '../indicators';
 import {
   SearchHighlight,
   CardActionsMenu,
-  ActionButton,
-  AnimatedCopyButton,
 } from '@/components/ui/core';
 import type { ActionItem } from '@/components/ui/core/types';
 import type { LinkWithStats } from '@/lib/database/types';
@@ -29,7 +26,7 @@ interface LinkCardMobileProps {
   onOpenDetails: () => void;
   onMultiSelect?: ((linkId: string) => void) | undefined;
   actions: ActionItem[];
-  quickActions: ActionItem[];
+  quickActions?: ActionItem[];
   searchQuery?: string;
   unreadCount?: number;
   onClearNotifications?: () => void;
@@ -45,7 +42,7 @@ export const LinkCardMobile = memo(
     onOpenDetails,
     onMultiSelect,
     actions,
-    quickActions,
+    quickActions: _quickActions,
     searchQuery,
     unreadCount = 0,
     onClearNotifications,
@@ -81,7 +78,7 @@ export const LinkCardMobile = memo(
                 <div onClick={e => e.stopPropagation()}>
                   <Checkbox
                     checked={isMultiSelected || false}
-                    onCheckedChange={checked => onMultiSelect(link.id)}
+                    onCheckedChange={() => onMultiSelect(link.id)}
                     className='w-4 h-4 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
                   />
                 </div>
@@ -109,13 +106,12 @@ export const LinkCardMobile = memo(
             {/* Status Badge and Notification Badge */}
             <div className='flex items-center gap-2'>
               {unreadCount > 0 && (
-                <NotificationBadge
-                  count={unreadCount}
-                  onClick={(e) => {
-                    e?.stopPropagation();
-                    onClearNotifications?.();
-                  }}
-                />
+                <div onClick={e => e.stopPropagation()}>
+                  <NotificationBadge
+                    count={unreadCount}
+                    {...(onClearNotifications && { onClick: onClearNotifications })}
+                  />
+                </div>
               )}
               <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
             </div>

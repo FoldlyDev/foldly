@@ -142,24 +142,18 @@ export function LinkDetailsModal() {
           View analytics and manage your collection link for {link.title}
         </DialogDescription>
 
-        {/* Premium Header with Glass Effect - Standardized Layout */}
-        <div className='relative overflow-hidden modal-gradient-slate border-b border-gray-200/50'>
-          {/* Decorative Background */}
-          <div className='modal-decoration-overlay' />
-          <div className='absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full -translate-y-24 sm:-translate-y-32 translate-x-24 sm:translate-x-32' />
-
-          <div className='relative p-4 sm:p-6 pb-4'>
-            <div className='text-center mb-4'>
-              <div className='flex justify-center mb-4'>
-                <div className='p-3 sm:p-4 rounded-2xl modal-icon-blue'>
-                  <Link2 className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
-                </div>
+        {/* Modal Header */}
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6 lg:p-8'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                <Link2 className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
               </div>
-              <div className='text-center'>
-                <h1 className='text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-blue mb-2'>
-                  {link.title}
-                </h1>
-                <div className='flex justify-center mb-2'>
+              <div className='min-w-0 flex-1'>
+                <div className='flex items-center gap-3'>
+                  <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
+                    {link.title}
+                  </h1>
                   <div
                     className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-medium text-xs ${statusConfig.color}`}
                   >
@@ -169,18 +163,16 @@ export function LinkDetailsModal() {
                     {statusConfig.text}
                   </div>
                 </div>
-                <div className='flex justify-center'>
-                  <p className='text-sm sm:text-base text-gray-600 text-center max-w-md'>
-                    Link analytics and management overview
-                  </p>
-                </div>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                  Link analytics and management overview
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Premium Analytics Dashboard - Mobile Responsive */}
-        <div className='p-4 sm:p-6 space-y-6 sm:space-y-8 max-h-[70vh] sm:max-h-[75vh] lg:max-h-[80vh] overflow-y-auto pb-20 sm:pb-12'>
+        {/* Content Area */}
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
           {/* URL Section with Copy - Moved from header */}
           <div className='display-card p-3 sm:p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm'>
             <div className='flex items-center justify-between gap-3'>
