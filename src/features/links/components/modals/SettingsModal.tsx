@@ -47,8 +47,7 @@ export function SettingsModal() {
       maxFiles: 100,
       maxFileSize: 5, // 5MB (Supabase deployment limit)
       allowedFileTypes: [],
-      brandEnabled: false,
-      brandColor: '',
+      branding: { enabled: false },
       expiresAt: undefined,
     },
   });
@@ -170,8 +169,7 @@ export function SettingsModal() {
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
-        brandEnabled: link.brandEnabled,
-        brandColor: link.brandColor || '',
+        branding: link.branding || { enabled: false },
         expiresAt: link.expiresAt ? new Date(link.expiresAt) : undefined,
       });
 
@@ -201,9 +199,7 @@ export function SettingsModal() {
           ? data.allowedFileTypes
           : undefined,
         expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
-        brandEnabled: data.brandEnabled ?? false,
-        brandColor:
-          data.brandEnabled && data.brandColor ? data.brandColor : undefined,
+        branding: data.branding,
       };
 
       // Use React Query mutation with proper structure

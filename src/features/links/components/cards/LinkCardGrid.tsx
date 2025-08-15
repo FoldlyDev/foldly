@@ -64,7 +64,7 @@ export const LinkCardGrid = memo(
         ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
         style={{
-          borderLeftColor: link.brandEnabled && link.brandColor ? link.brandColor : undefined
+          borderLeftColor: link.branding?.enabled && link.branding?.color ? link.branding.color : undefined
         }}
       >
 

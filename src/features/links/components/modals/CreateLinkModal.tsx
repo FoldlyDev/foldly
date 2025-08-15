@@ -74,8 +74,8 @@ export const CreateLinkModal = () => {
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>
           {linkType === 'base'
-            ? 'Create Your Personal Collection Link'
-            : 'Create Custom Topic Link'}
+            ? 'Base link setup'
+            : 'Topic link setup'}
         </DialogTitle>
         <DialogDescription className='sr-only'>
           {linkType === 'base'
@@ -84,35 +84,37 @@ export const CreateLinkModal = () => {
         </DialogDescription>
 
         {/* Modal Header */}
-        <div className='modal-header'>
-          <div className='flex items-center gap-3'>
-            <div className='p-2.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
-              <Link2 className='w-5 h-5 text-primary-foreground' />
-            </div>
-            <div className='min-w-0 flex-1'>
-              <h1 className='text-xl font-bold'>
-                {linkType === 'base'
-                  ? 'Create Your Personal Collection Link'
-                  : 'Create Custom Topic Link'}
-              </h1>
-              <p className='text-sm text-muted-foreground mt-0.5'>
-                {linkType === 'base'
-                  ? 'Set up your Personal Collection Link where people can upload files'
-                  : 'Create a dedicated Custom Topic Link for collecting specific types of files'}
-              </p>
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6 lg:p-8'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                <Link2 className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
+              </div>
+              <div className='min-w-0 flex-1'>
+                <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground'>
+                  {linkType === 'base'
+                    ? 'Base link setup'
+                    : 'Topic link setup'}
+                </h1>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                  {linkType === 'base'
+                    ? 'Set up your Personal Collection Link where people can upload files'
+                    : 'Create a dedicated Custom Topic Link for collecting specific types of files'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stepper Section */}
-        <div className='px-6'>
+        <div className='px-4 sm:px-6 lg:px-8'>
           <CreateLinkStepperHeader
             currentStep={currentStep}
             linkType={linkType}
           />
         </div>
         {/* Content Area */}
-        <div className='modal-body flex-1'>
+        <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6'>
           {/* Step content with clean animations - no extra containers */}
           <AnimatePresence mode='wait'>
             {currentStep === 'information' && (

@@ -17,6 +17,7 @@ import {
   fileTypesSchema,
   hexColorSchema,
   withPasswordRequirement,
+  brandingSchema,
 } from './base';
 
 // =============================================================================
@@ -50,9 +51,8 @@ export const createLinkActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().default(false),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -79,9 +79,8 @@ export const updateLinkActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().optional(),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -134,9 +133,8 @@ export const updateSettingsActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().optional(),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -161,8 +159,11 @@ export type FlexibleLinkUpdate = Partial<{
   maxFileSize: number;
   allowedFileTypes: string[] | null;
   expiresAt: string | null;
-  brandEnabled: boolean;
-  brandColor: string | null;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }>;
 
 // =============================================================================

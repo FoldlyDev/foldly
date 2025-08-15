@@ -44,20 +44,29 @@ export const CreateLinkBrandingStep = () => {
   // Handle branding form changes
   const handleBrandingChange = useCallback(
     (updates: any) => {
-      // Update form fields individually
-      Object.entries(updates).forEach(([field, value]) => {
-        updateFormField(field as any, value);
-      });
+      // Map nested branding structure to flat form structure
+      if (updates.branding) {
+        if (updates.branding.enabled !== undefined) {
+          updateFormField('brandEnabled', updates.branding.enabled);
+        }
+        if (updates.branding.color !== undefined) {
+          updateFormField('brandColor', updates.branding.color);
+        }
+        if (updates.branding.image !== undefined) {
+          updateFormField('logoUrl', updates.branding.image);
+        }
+      }
     },
     [updateFormField]
   );
 
   // Prepare branding form data for the LinkBrandingSection
   const brandingFormData = {
-    brandEnabled: formData.brandEnabled || false,
-    brandColor: formData.brandColor || '#6c47ff',
-    logoUrl: formData.logoUrl || '',
-    logoFile: formData.logoFile || null,
+    branding: {
+      enabled: formData.brandEnabled || false,
+      color: formData.brandColor || '#6c47ff',
+      image: formData.logoUrl || '',
+    },
   };
 
   // Handle form submission
@@ -87,8 +96,11 @@ export const CreateLinkBrandingStep = () => {
         expiresAt: formData.expiresAt
           ? formData.expiresAt.toISOString()
           : undefined,
-        brandEnabled: formData.brandEnabled,
-        brandColor: formData.brandEnabled ? formData.brandColor : undefined,
+        branding: formData.brandEnabled ? {
+          enabled: formData.brandEnabled,
+          color: formData.brandColor,
+          image: formData.logoUrl,
+        } : undefined,
       };
 
       // Create link using React Query mutation

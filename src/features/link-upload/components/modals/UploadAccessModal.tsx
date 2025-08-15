@@ -144,19 +144,19 @@ export function UploadAccessModal({
             <h2 
               className="text-2xl font-bold"
               style={{
-                color: linkData.brandEnabled && linkData.brandColor 
-                  ? linkData.brandColor 
+                color: linkData.branding?.enabled && linkData.branding?.color 
+                  ? linkData.branding.color 
                   : undefined,
-                background: !linkData.brandEnabled || !linkData.brandColor 
+                background: !linkData.branding?.enabled || !linkData.branding?.color 
                   ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                   : undefined,
-                WebkitBackgroundClip: !linkData.brandEnabled || !linkData.brandColor 
+                WebkitBackgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
                   ? 'text' 
                   : undefined,
-                WebkitTextFillColor: !linkData.brandEnabled || !linkData.brandColor 
+                WebkitTextFillColor: !linkData.branding?.enabled || !linkData.branding?.color 
                   ? 'transparent' 
                   : undefined,
-                backgroundClip: !linkData.brandEnabled || !linkData.brandColor 
+                backgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
                   ? 'text' 
                   : undefined
               }}

@@ -117,20 +117,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Get the batch to get the user ID (link owner)
-    const [batch] = await db
-      .select()
+    const [batchWithLink] = await db
+      .select({
+        batch: batches,
+        link: links,
+      })
       .from(batches)
+      .innerJoin(links, eq(batches.linkId, links.id))
       .where(eq(batches.id, batchId))
       .limit(1);
 
-    if (!batch) {
+    if (!batchWithLink) {
       return NextResponse.json(
         createErrorResponse('Batch not found', ERROR_CODES.NOT_FOUND),
         { status: 404 }
       );
     }
 
-    const userId = batch.userId;
+    const { batch, link } = batchWithLink;
+    const userId = link.userId;
 
     // Generate unique file path
     const timestamp = Date.now();

@@ -1,4 +1,4 @@
-import { BaseCloudProvider, CloudFile, Result } from './types';
+import { BaseCloudProvider } from './types';\nimport type { CloudFile, Result } from './types';
 
 interface OneDriveFile {
   id: string;
@@ -193,9 +193,9 @@ export class OneDriveProvider extends BaseCloudProvider {
     id: file.id,
     name: file.name,
     mimeType: file.file?.mimeType || 'application/vnd.ms-folder',
-    size: file.size,
-    modifiedTime: file.lastModifiedDateTime,
-    createdTime: file.createdDateTime,
+    size: file.size || 0,
+    modifiedTime: file.lastModifiedDateTime || new Date().toISOString(),
+    createdTime: file.createdDateTime || new Date().toISOString(),
     parents: file.parentReference?.id ? [file.parentReference.id] : undefined,
     webViewLink: file.webUrl,
     downloadUrl: file['@microsoft.graph.downloadUrl'],

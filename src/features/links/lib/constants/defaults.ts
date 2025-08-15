@@ -24,10 +24,11 @@ export const FORM_DEFAULTS = {
   allowedFileTypes: [] as string[],
 
   // Branding defaults
-  brandingEnabled: false,
-  brandColor: '#3B82F6' as HexColor,
-  accentColor: '#10B981' as HexColor,
-  logoUrl: '',
+  branding: {
+    enabled: false,
+    color: '#3B82F6' as HexColor,
+    image: '',
+  },
 
   // Text defaults
   title: '',
@@ -103,10 +104,11 @@ export const LINK_DEFAULTS = {
   autoCreateFolders: false,
 
   // Branding
-  brandingEnabled: false,
-  brandColor: '#3B82F6' as HexColor,
-  accentColor: '#10B981' as HexColor,
-  logoUrl: '',
+  branding: {
+    enabled: false,
+    color: '#3B82F6' as HexColor,
+    image: '',
+  },
 
   // Timestamps
   lastActivity: new Date().toISOString(),
@@ -141,10 +143,11 @@ export const MODAL_DEFAULTS = {
   // Branding context
   brandingContext: null as 'creation' | 'settings' | null,
   brandingFormData: {
-    brandingEnabled: false,
-    brandColor: '',
-    accentColor: '',
-    logoUrl: '',
+    branding: {
+      enabled: false,
+      color: '',
+      image: '',
+    },
   },
 } as const;
 

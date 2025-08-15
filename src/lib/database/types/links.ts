@@ -45,8 +45,11 @@ export interface Link extends TimestampFields {
   expiresAt: Date | null;
 
   // Branding (Pro+ features)
-  brandEnabled: boolean;
-  brandColor: string | null;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 
   // Usage Stats
   totalUploads: number;
@@ -84,7 +87,7 @@ export type LinkUpdate = PartialBy<
   | 'isActive'
   | 'maxFiles'
   | 'maxFileSize'
-  | 'brandEnabled'
+  | 'branding'
   | 'totalUploads'
   | 'totalFiles'
   | 'totalSize'
@@ -211,8 +214,11 @@ export interface PublicLinkInfo {
   maxFiles: number;
   maxFileSize: number;
   expiresAt: Date | null;
-  brandEnabled: boolean;
-  brandColor: string | null;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
   user: {
     username: string;
     avatarUrl: string | null;
@@ -263,8 +269,11 @@ export interface LinkCreateForm {
   maxFileSize?: number;
   allowedFileTypes?: string[];
   expiresAt?: Date;
-  brandEnabled?: boolean;
-  brandColor?: string;
+  branding?: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }
 
 /**
@@ -281,18 +290,22 @@ export interface LinkUpdateForm {
   maxFileSize?: number;
   allowedFileTypes?: string[];
   expiresAt?: Date;
-  brandEnabled?: boolean;
-  brandColor?: string;
+  branding?: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }
 
 /**
  * Link branding form data
  */
 export interface LinkBrandingForm {
-  brandEnabled: boolean;
-  brandColor?: string;
-  customLogo?: string;
-  customBackground?: string;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }
 
 // =============================================================================
@@ -353,7 +366,7 @@ export interface LinkValidationErrors {
   maxFileSize?: string[];
   allowedFileTypes?: string[];
   expiresAt?: string[];
-  brandColor?: string[];
+  branding?: string[];
 }
 
 // =============================================================================
@@ -370,7 +383,7 @@ export interface LinkFilterOptions {
   isActive?: boolean;
   requireEmail?: boolean;
   requirePassword?: boolean;
-  brandEnabled?: boolean;
+  branding?: { enabled: boolean };
   isExpired?: boolean;
   createdDateRange?: { start: Date; end: Date };
   lastUploadDateRange?: { start: Date; end: Date };
@@ -515,4 +528,16 @@ export const isValidTopic = (topic: string): boolean => {
 export const isValidBrandColor = (color: string): boolean => {
   const colorPattern = /^#[0-9A-Fa-f]{6}$/;
   return colorPattern.test(color);
+};
+
+/**
+ * Validate brand image URL
+ */
+export const isValidBrandImageUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 };

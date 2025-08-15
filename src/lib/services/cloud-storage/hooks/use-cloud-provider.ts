@@ -1,12 +1,15 @@
 import { useAuth, useUser } from '@clerk/nextjs';
-import { CloudProvider } from '../providers/types';
+import type { CloudProvider } from '../providers/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-interface ProviderConnection {
+type ProviderConnection = {
   provider: CloudProvider['id'];
-  isConnected: boolean;
-  email?: string;
-  lastSync?: Date;
+  isConnected: true;
+  email: string;
+  lastSync: Date;
+} | {
+  provider: CloudProvider['id'];
+  isConnected: false;
 }
 
 export function useCloudProvider() {
@@ -26,11 +29,12 @@ export function useCloudProvider() {
       for (const provider of providers) {
         try {
           const token = await getToken({ template: provider });
-          if (token) {
+          const userEmail = user.emailAddresses[0]?.emailAddress;
+          if (token && userEmail) {
             connectionStatus.push({
               provider,
               isConnected: true,
-              email: user.emailAddresses[0]?.emailAddress,
+              email: userEmail,
               lastSync: new Date(),
             });
           } else {

@@ -16,6 +16,7 @@ import {
   maxFilesSchema,
   maxFileSizeSchema,
   withPasswordRequirement,
+  brandingSchema,
 } from './base';
 
 // =============================================================================
@@ -48,10 +49,8 @@ export const createLinkFormSchema = z
     allowedFileTypes: fileTypesSchema.default([]),
     expiresAt: z.date().optional(),
 
-    // Branding (aligned with database field names)
-    brandEnabled: z.boolean().default(false),
-    brandColor: hexColorSchema.optional(),
-    // Note: logoUrl and logoFile removed - not in current database schema
+    // Branding (aligned with database schema)
+    branding: brandingSchema.default({ enabled: false })
   })
   .refine(
     data => {
@@ -71,14 +70,14 @@ export const createLinkFormSchema = z
   )
   .refine(
     data => {
-      if (data.brandEnabled) {
-        return !!data.brandColor;
+      if (data.branding?.enabled) {
+        return !!data.branding?.color;
       }
       return true;
     },
     {
       message: 'Brand color must be configured when branding is enabled',
-      path: ['brandEnabled'],
+      path: ['branding', 'color'],
     }
   );
 
@@ -108,8 +107,7 @@ export const linkInformationSchema = withPasswordRequirement(
  * Aligned with database field names
  */
 export const linkBrandingSchema = z.object({
-  brandEnabled: z.boolean().default(false),
-  brandColor: hexColorSchema.optional(),
+  branding: brandingSchema.default({ enabled: false }),
 });
 
 /**
@@ -139,10 +137,8 @@ export const generalSettingsSchema = z
     maxFileSize: z.number().min(1).max(1000).optional(), // Form shows MB
     allowedFileTypes: z.array(z.string()).optional(),
 
-    // Branding settings (aligned with database field names)
-    brandEnabled: z.boolean().optional(),
-    brandColor: z.string().optional(),
-    // Note: logoUrl and logoFile removed - not in current database schema
+    // Branding settings (aligned with database schema)
+    branding: brandingSchema.optional()
   })
   .refine(
     data => {

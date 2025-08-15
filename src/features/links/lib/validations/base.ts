@@ -176,6 +176,15 @@ export function withPasswordRequirement<T extends z.ZodRawShape>(
 }
 
 /**
+ * Branding object schema
+ */
+export const brandingSchema = z.object({
+  enabled: z.boolean().default(false),
+  color: hexColorSchema.optional(),
+  image: urlSchema.optional(),
+});
+
+/**
  * Branding validation refinement
  * Use this to add conditional branding validation to any schema
  */
@@ -184,15 +193,15 @@ export function withBrandingValidation<T extends z.ZodRawShape>(
 ) {
   return schema.refine(
     (data: any) => {
-      if (data.brandEnabled) {
+      if (data.branding?.enabled) {
         // If branding is enabled, brand color must be provided
-        return !!data.brandColor;
+        return !!data.branding?.color;
       }
       return true;
     },
     {
       message: 'Brand color must be configured when branding is enabled',
-      path: ['brandEnabled'],
+      path: ['branding', 'color'],
     }
   );
 }

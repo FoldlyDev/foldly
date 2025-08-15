@@ -72,9 +72,14 @@ export class LinkCrudService {
         };
       }
 
+      const link = result[0]!;
       return {
         success: true,
-        data: result[0]!,
+        data: {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        },
       };
     } catch (error) {
       console.error('Failed to create link:', error);
@@ -112,7 +117,12 @@ export class LinkCrudService {
       const cleanUpdates = Object.entries(updates).reduce(
         (acc, [key, value]) => {
           if (value !== undefined) {
-            acc[key as keyof LinkUpdate] = value;
+            // Handle branding null values
+            if (key === 'branding' && value === null) {
+              (acc as any)[key] = { enabled: false };
+            } else {
+              (acc as any)[key] = value;
+            }
           }
           return acc;
         },
@@ -164,9 +174,14 @@ export class LinkCrudService {
         };
       }
 
+      const link = result[0]!;
       return {
         success: true,
-        data: result[0]!,
+        data: {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        },
       };
     } catch (error) {
       console.error('Failed to update link:', error);
@@ -213,9 +228,14 @@ export class LinkCrudService {
         };
       }
 
+      const link = result[0]!;
       return {
         success: true,
-        data: result[0]!,
+        data: {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        },
       };
     } catch (error) {
       console.error('Failed to soft delete link:', error);

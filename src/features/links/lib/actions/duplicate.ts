@@ -55,8 +55,7 @@ export async function duplicateLinkAction(
       maxFileSize: originalLink.data.maxFileSize,
       allowedFileTypes: originalLink.data.allowedFileTypes,
       expiresAt: originalLink.data.expiresAt,
-      brandEnabled: originalLink.data.brandEnabled,
-      brandColor: originalLink.data.brandColor,
+      branding: originalLink.data.branding,
       // Initialize stats fields
       totalUploads: 0,
       totalFiles: 0,

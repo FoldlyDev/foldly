@@ -28,7 +28,7 @@ export function UploadActions({
   onMainUpload,
 }: UploadActionsProps) {
   const { openUploadModal } = useLinkUI();
-  const brandColor = linkData.brandEnabled && linkData.brandColor ? linkData.brandColor : '#3b82f6';
+  const brandColor = linkData.branding?.enabled && linkData.branding?.color ? linkData.branding.color : '#3b82f6';
 
   return (
     <>
@@ -39,7 +39,7 @@ export function UploadActions({
           disabled={isUploading}
           className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-md"
           style={{
-            background: linkData.brandEnabled && linkData.brandColor && !isUploading
+            background: linkData.branding?.enabled && linkData.branding?.color && !isUploading
               ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
               : undefined
           }}
@@ -69,7 +69,7 @@ export function UploadActions({
         variant={hasStaged ? "outline" : "default"}
         className={hasStaged ? "gap-2" : "gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"}
         style={{
-          background: linkData.brandEnabled && linkData.brandColor && !hasStaged
+          background: linkData.branding?.enabled && linkData.branding?.color && !hasStaged
             ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
             : undefined
         }}

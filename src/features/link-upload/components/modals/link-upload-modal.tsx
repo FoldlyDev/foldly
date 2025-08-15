@@ -64,7 +64,7 @@ export function LinkUploadModal({
   }, [isOpen, clearFiles]);
 
   // Get brand color for theming
-  const brandColor = linkData.brandEnabled && linkData.brandColor ? linkData.brandColor : '#3b82f6';
+  const brandColor = linkData.branding?.enabled && linkData.branding?.color ? linkData.branding.color : '#3b82f6';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -83,7 +83,7 @@ export function LinkUploadModal({
         <div 
           className='relative border-b border-gray-200/50 shrink-0'
           style={{
-            background: linkData.brandEnabled 
+            background: linkData.branding?.enabled 
               ? `linear-gradient(135deg, ${brandColor}1a, ${brandColor}0d)`
               : 'linear-gradient(135deg, rgb(59 130 246 / 0.1), rgb(99 102 241 / 0.05))'
           }}
@@ -93,7 +93,7 @@ export function LinkUploadModal({
               <div 
                 className='p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg'
                 style={{
-                  background: linkData.brandEnabled 
+                  background: linkData.branding?.enabled 
                     ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
                     : 'linear-gradient(135deg, rgb(59 130 246), rgb(99 102 241))'
                 }}
@@ -214,7 +214,7 @@ export function LinkUploadModal({
               onClick={hasFilesToUpload ? handleStageFiles : handleClose}
               className='w-full sm:w-auto min-w-0 sm:min-w-[140px] text-white transition-all duration-200 cursor-pointer'
               style={{
-                background: linkData.brandEnabled && hasFilesToUpload
+                background: linkData.branding?.enabled && hasFilesToUpload
                   ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
                   : undefined
               }}

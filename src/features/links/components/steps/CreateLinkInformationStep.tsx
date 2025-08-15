@@ -81,8 +81,7 @@ export const CreateLinkInformationStep = () => {
       maxFileSize: formData.maxFileSize,
       allowedFileTypes: formData.allowedFileTypes,
       ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
-      brandEnabled: formData.brandEnabled,
-      ...(formData.brandColor && { brandColor: formData.brandColor }),
+      branding: formData.branding || { enabled: false },
 
       // Additional field for UI (now included in CreateLinkFormData)
       isActive: formData.isActive,
@@ -180,12 +179,8 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.expiresAt = updates.expiresAt;
       }
 
-      if (updates.brandEnabled !== undefined) {
-        convertedUpdates.brandEnabled = Boolean(updates.brandEnabled);
-      }
-
-      if (updates.brandColor !== undefined) {
-        convertedUpdates.brandColor = String(updates.brandColor);
+      if (updates.branding !== undefined) {
+        convertedUpdates.branding = updates.branding;
       }
 
       // Update form fields individually since updateMultipleFields doesn't exist

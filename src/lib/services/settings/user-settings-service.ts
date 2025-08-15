@@ -122,7 +122,11 @@ export class UserSettingsService {
     theme: ThemeMode
   ): Promise<DatabaseResult<void>> {
     const result = await this.updateUserSettings(userId, { theme });
-    return { success: result.success, data: undefined, error: result.error };
+    if (result.success) {
+      return { success: true, data: undefined };
+    } else {
+      return { success: false, error: result.error };
+    }
   }
 
   /**
@@ -133,7 +137,11 @@ export class UserSettingsService {
     enabled: boolean
   ): Promise<DatabaseResult<void>> {
     const result = await this.updateUserSettings(userId, { doNotDisturb: enabled });
-    return { success: result.success, data: undefined, error: result.error };
+    if (result.success) {
+      return { success: true, data: undefined };
+    } else {
+      return { success: false, error: result.error };
+    }
   }
 
   /**
@@ -144,7 +152,11 @@ export class UserSettingsService {
     enabled: boolean
   ): Promise<DatabaseResult<void>> {
     const result = await this.updateUserSettings(userId, { silentNotifications: enabled });
-    return { success: result.success, data: undefined, error: result.error };
+    if (result.success) {
+      return { success: true, data: undefined };
+    } else {
+      return { success: false, error: result.error };
+    }
   }
 
   /**
@@ -156,7 +168,11 @@ export class UserSettingsService {
     value: any
   ): Promise<DatabaseResult<void>> {
     const result = await this.updateUserSettings(userId, { [key]: value });
-    return { success: result.success, data: undefined, error: result.error };
+    if (result.success) {
+      return { success: true, data: undefined };
+    } else {
+      return { success: false, error: result.error };
+    }
   }
 }
 

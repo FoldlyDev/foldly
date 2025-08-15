@@ -28,7 +28,7 @@ export async function POST() {
     // For each link, count actual unread notifications and update the link
     for (const link of userLinks) {
       // Count unread notifications for this link
-      const [{ count }] = await db
+      const result = await db
         .select({ 
           count: sql<number>`COUNT(*)::int`
         })
@@ -41,11 +41,13 @@ export async function POST() {
           )
         );
 
+      const count = result[0]?.count || 0;
+
       // Update the link's unread count
       await db
         .update(links)
         .set({
-          unreadUploads: count || 0,
+          unreadUploads: count,
           updatedAt: new Date(),
         })
         .where(eq(links.id, link.id));

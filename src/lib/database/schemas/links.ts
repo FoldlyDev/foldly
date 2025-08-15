@@ -57,9 +57,12 @@ export const links = pgTable(
     allowedFileTypes: json('allowed_file_types').$type<string[]>(), // MIME types array
     expiresAt: timestamp('expires_at', { withTimezone: true }),
 
-    // Branding (Pro+ features)
-    brandEnabled: boolean('brand_enabled').default(false).notNull(),
-    brandColor: varchar('brand_color', { length: 7 }),
+    // Branding (Pro+ features) - JSON object for flexibility
+    branding: json('branding').$type<{
+      enabled: boolean;
+      color?: string;
+      image?: string; // URL to brand image/logo
+    }>().default({ enabled: false }),
 
     // Usage Stats
     totalUploads: integer('total_uploads').default(0).notNull(),

@@ -181,6 +181,8 @@ export class LinkFilesTreeService {
 
           return {
             ...link,
+            // Ensure branding is always an object, never null
+            branding: link.branding || { enabled: false },
             fileTree,
             totalFiles,
             totalSize,

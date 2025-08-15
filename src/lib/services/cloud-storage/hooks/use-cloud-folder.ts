@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/nextjs';
-import { CloudProvider, CloudTreeNode, CloudFile } from '../providers/types';
+import type { CloudProvider, CloudTreeNode, CloudFile } from '../providers/types';
 import { GoogleDriveProvider } from '../providers/google-drive';
 import { OneDriveProvider } from '../providers/onedrive';
 import { GoogleDriveTreeAdapter } from '../adapters/google-adapter';

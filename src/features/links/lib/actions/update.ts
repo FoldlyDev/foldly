@@ -109,6 +109,8 @@ export async function updateLinkAction(
         if (updateData.expiresAt !== undefined) {
           (otherUpdates as any).expiresAt = updateData.expiresAt;
         }
+        if (updateData.branding !== undefined)
+          otherUpdates.branding = updateData.branding;
 
         // If there are other updates, apply them to the base link
         if (Object.keys(otherUpdates).length > 0) {
@@ -182,6 +184,8 @@ export async function updateLinkAction(
       linkUpdate.expiresAt = updateData.expiresAt
         ? new Date(updateData.expiresAt)
         : null;
+    if (updateData.branding !== undefined)
+      linkUpdate.branding = updateData.branding;
 
     // 7. Update link in database
     const result = await linksDbService.update(id, linkUpdate as any);
@@ -273,8 +277,7 @@ export async function updateLinkSettingsAction(
         ? settings.maxFileSize * 1024 * 1024
         : undefined,
       allowedFileTypes: settings.allowedFileTypes || null,
-      brandEnabled: settings.brandEnabled,
-      brandColor: settings.brandColor || null,
+      branding: settings.branding,
     };
 
     // 5. Update link in database

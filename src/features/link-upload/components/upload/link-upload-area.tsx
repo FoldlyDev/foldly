@@ -75,7 +75,7 @@ export function LinkUploadArea({
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   
   const isDragging = externalIsDragging || localIsDragging;
-  const brandColor = linkData.brandEnabled && linkData.brandColor ? linkData.brandColor : '#3b82f6';
+  const brandColor = linkData.branding?.enabled && linkData.branding?.color ? linkData.branding.color : '#3b82f6';
 
   // Generate thumbnails for image files
   useEffect(() => {
@@ -161,8 +161,8 @@ export function LinkUploadArea({
           isUploading && 'cursor-not-allowed opacity-60'
         )}
         style={{
-          borderColor: isDragging && linkData.brandEnabled ? `${brandColor}66` : undefined,
-          backgroundColor: isDragging && linkData.brandEnabled ? `${brandColor}0d` : undefined,
+          borderColor: isDragging && linkData.branding?.enabled ? `${brandColor}66` : undefined,
+          backgroundColor: isDragging && linkData.branding?.enabled ? `${brandColor}0d` : undefined,
         }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -229,7 +229,7 @@ export function LinkUploadArea({
                   : 'bg-gradient-to-br from-gray-100 to-gray-200/50 group-hover:from-blue-50 group-hover:to-indigo-50 group-hover:shadow-lg'
               )}
               style={{
-                backgroundColor: linkData.brandEnabled && !isDragging 
+                backgroundColor: linkData.branding?.enabled && !isDragging 
                   ? `${brandColor}1a` 
                   : undefined
               }}
@@ -242,7 +242,7 @@ export function LinkUploadArea({
                     : 'text-gray-600 group-hover:text-blue-600'
                 )}
                 style={{ 
-                  color: linkData.brandEnabled && !isDragging 
+                  color: linkData.branding?.enabled && !isDragging 
                     ? brandColor 
                     : undefined 
                 }}
@@ -279,8 +279,8 @@ export function LinkUploadArea({
                 whileTap={{ scale: 0.95 }}
                 className='flex items-center gap-2 px-3 sm:px-4 py-2 bg-white/80 rounded-lg sm:rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-200 cursor-pointer'
                 style={{
-                  borderColor: linkData.brandEnabled ? `${brandColor}33` : undefined,
-                  color: linkData.brandEnabled ? brandColor : undefined,
+                  borderColor: linkData.branding?.enabled ? `${brandColor}33` : undefined,
+                  color: linkData.branding?.enabled ? brandColor : undefined,
                 }}
               >
                 <Folder className='w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-600' />

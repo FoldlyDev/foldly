@@ -45,9 +45,12 @@ export function BrandingSettingsSection({
             </div>
           </div>
           <Switch
-            checked={watchedValues.brandEnabled || false}
+            checked={watchedValues.branding?.enabled || false}
             onCheckedChange={checked =>
-              setValue('brandEnabled', checked, {
+              setValue('branding', {
+                ...watchedValues.branding,
+                enabled: checked,
+              }, {
                 shouldDirty: true,
                 shouldValidate: true,
               })
@@ -57,7 +60,7 @@ export function BrandingSettingsSection({
         </div>
 
         {/* Branding Options */}
-        {watchedValues.brandEnabled && (
+        {watchedValues.branding?.enabled && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -74,9 +77,12 @@ export function BrandingSettingsSection({
                 <div className='flex items-center gap-3'>
                   <input
                     type='color'
-                    value={watchedValues.brandColor || '#6c47ff'}
+                    value={watchedValues.branding?.color || '#6c47ff'}
                     onChange={e =>
-                      setValue('brandColor', e.target.value, {
+                      setValue('branding', {
+                        ...watchedValues.branding,
+                        color: e.target.value,
+                      }, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
@@ -85,9 +91,12 @@ export function BrandingSettingsSection({
                   />
                   <input
                     type='text'
-                    value={watchedValues.brandColor || ''}
+                    value={watchedValues.branding?.color || ''}
                     onChange={e =>
-                      setValue('brandColor', e.target.value, {
+                      setValue('branding', {
+                        ...watchedValues.branding,
+                        color: e.target.value,
+                      }, {
                         shouldDirty: true,
                         shouldValidate: true,
                       })
@@ -96,9 +105,9 @@ export function BrandingSettingsSection({
                     className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring'
                   />
                 </div>
-                {errors.brandColor && (
+                {errors.branding && (
                   <p className='text-sm text-destructive'>
-                    {errors.brandColor.message}
+                    Invalid branding configuration
                   </p>
                 )}
                 <p className='text-xs text-muted-foreground'>
@@ -119,15 +128,15 @@ export function BrandingSettingsSection({
               <div
                 className='w-full p-6 rounded-xl border border-gray-200/50 bg-gradient-to-br from-white to-gray-50/30'
                 style={{
-                  background: `linear-gradient(135deg, ${watchedValues.brandColor || '#6c47ff'}03 0%, ${watchedValues.brandColor || '#6c47ff'}08 100%)`,
-                  borderColor: `${watchedValues.brandColor || '#6c47ff'}20`,
+                  background: `linear-gradient(135deg, ${watchedValues.branding?.color || '#6c47ff'}03 0%, ${watchedValues.branding?.color || '#6c47ff'}08 100%)`,
+                  borderColor: `${watchedValues.branding?.color || '#6c47ff'}20`,
                 }}
               >
                 {/* Title with brand color */}
                 <div className='flex items-center gap-3 mb-4'>
                   <h3
                     className='text-xl font-semibold leading-tight'
-                    style={{ color: watchedValues.brandColor || '#6c47ff' }}
+                    style={{ color: watchedValues.branding?.color || '#6c47ff' }}
                   >
                     {link.title}
                   </h3>
@@ -144,7 +153,7 @@ export function BrandingSettingsSection({
                 <button
                   className='inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:scale-[1.02] disabled:cursor-not-allowed'
                   style={{
-                    backgroundColor: watchedValues.brandColor || '#6c47ff',
+                    backgroundColor: watchedValues.branding?.color || '#6c47ff',
                   }}
                   disabled
                 >

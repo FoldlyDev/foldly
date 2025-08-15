@@ -225,7 +225,7 @@ export class LinkFilesCopyService {
         workspaceId,
         name: folderNode.name,
         parentFolderId,
-        path: linkFilesTreeService.buildFolderPath(folderNode.name, parentFolderId, folderMapping),
+        path: linkFilesTreeService.buildFolderPath(folderNode.name, parentFolderId),
         sortOrder: 0,
         createdAt: new Date(),
         updatedAt: new Date(),

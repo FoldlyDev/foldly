@@ -3,13 +3,14 @@
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/core/shadcn/switch';
-import { FileUpload } from '@/components/ui/composite/file-upload';
+import { CentralizedFileUpload } from '@/components/ui/composite/centralized-file-upload';
 
 interface LinkBrandingFormData {
-  brandEnabled: boolean;
-  brandColor: string;
-  logoUrl?: string;
-  logoFile?: File | null;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }
 
 export interface LinkBrandingSectionProps {
@@ -34,7 +35,7 @@ export function LinkBrandingSection({
   isLoading = false,
 }: LinkBrandingSectionProps) {
   // Ensure controlled inputs by providing default values
-  const brandColor = formData.brandColor || '#6c47ff';
+  const brandColor = formData.branding?.color || '#6c47ff';
 
   const handleFileChange = (files: File[]) => {
     const file = files[0];
@@ -42,20 +43,23 @@ export function LinkBrandingSection({
       // Store the file and create blob URL
       const newLogoUrl = URL.createObjectURL(file);
       onDataChange({
-        logoFile: file,
-        logoUrl: newLogoUrl,
-      });
-    } else {
-      // Clear logo if no file selected
-      onDataChange({
-        logoFile: null,
-        logoUrl: '',
+        branding: {
+          ...formData.branding,
+          image: newLogoUrl,
+        },
       });
     }
   };
 
-  // Convert logoFile to array for FileUpload component
-  const logoFiles: File[] = formData.logoFile ? [formData.logoFile] : [];
+  const handleFileRemove = () => {
+    // Clear logo
+    onDataChange({
+      branding: {
+        ...formData.branding,
+        image: '',
+      },
+    });
+  };
 
   return (
     <div className='space-y-6'>
@@ -76,9 +80,14 @@ export function LinkBrandingSection({
             </div>
           </div>
           <Switch
-            checked={formData.brandEnabled || false}
+            checked={formData.branding?.enabled || false}
             onCheckedChange={checked => {
-              onDataChange({ brandEnabled: checked });
+              onDataChange({
+                branding: {
+                  ...formData.branding,
+                  enabled: checked,
+                },
+              });
             }}
             disabled={isLoading}
             className='data-[state=unchecked]:bg-muted-foreground/20'
@@ -86,7 +95,7 @@ export function LinkBrandingSection({
         </div>
 
         {/* Branding Options */}
-        {formData.brandEnabled && (
+        {formData.branding?.enabled && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -105,7 +114,10 @@ export function LinkBrandingSection({
                   value={brandColor}
                   onChange={e => {
                     onDataChange({
-                      brandColor: e.target.value,
+                      branding: {
+                        ...formData.branding,
+                        color: e.target.value,
+                      },
                     });
                   }}
                   disabled={isLoading}
@@ -116,7 +128,10 @@ export function LinkBrandingSection({
                   value={brandColor}
                   onChange={e => {
                     onDataChange({
-                      brandColor: e.target.value,
+                      branding: {
+                        ...formData.branding,
+                        color: e.target.value,
+                      },
                     });
                   }}
                   disabled={isLoading}
@@ -124,8 +139,8 @@ export function LinkBrandingSection({
                   className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed'
                 />
               </div>
-              {errors.brandColor && (
-                <p className='text-sm text-destructive'>{errors.brandColor}</p>
+              {errors.branding && (
+                <p className='text-sm text-destructive'>{errors.branding}</p>
               )}
               <p className='text-xs text-muted-foreground'>
                 This color will be used for buttons, highlights, and branding
@@ -138,10 +153,30 @@ export function LinkBrandingSection({
               <label className='text-sm font-medium text-foreground'>
                 Logo (Optional)
               </label>
-
-              <FileUpload onChange={handleFileChange} files={logoFiles} />
-              {errors.logoUrl && (
-                <p className='text-sm text-destructive'>{errors.logoUrl}</p>
+              <CentralizedFileUpload
+                onChange={handleFileChange}
+                onRemove={handleFileRemove}
+                files={[]}
+                multiple={false}
+                maxFiles={1}
+                maxFileSize={5 * 1024 * 1024} // 5MB limit for logos
+                allowedFileTypes={[
+                  'image/png',
+                  'image/jpeg',
+                  'image/jpg',
+                  'image/svg+xml',
+                  'image/webp',
+                ]}
+                uploadText='Upload Logo'
+                uploadDescription='Click or drag to upload your logo (PNG, JPG, SVG, WebP)'
+                showGrid={false}
+                className=''
+                disabled={isLoading}
+                showFileType={false}
+                showModifiedDate={false}
+              />
+              {errors.branding && (
+                <p className='text-sm text-destructive'>{errors.branding}</p>
               )}
             </div>
 
@@ -162,9 +197,9 @@ export function LinkBrandingSection({
               >
                 {/* Title with logo on the left if uploaded */}
                 <div className='flex items-center gap-3 mb-4'>
-                  {formData.logoUrl && (
+                  {formData.branding?.image && (
                     <img
-                      src={formData.logoUrl}
+                      src={formData.branding.image}
                       alt='Logo'
                       className='w-6 h-6 rounded object-cover'
                     />

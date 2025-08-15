@@ -128,8 +128,7 @@ export function ShareModal() {
 
             <div className='flex items-center gap-3 p-4 bg-gray-50/80 rounded-xl border border-gray-200/50'>
               <code className='flex-1 text-sm font-mono text-gray-800 break-all'>
-                {/* {fullUrl} */}
-                https://foldly.io/hollydaze
+                {displayUrl}
               </code>
               <CopyButton
                 value={fullUrl}

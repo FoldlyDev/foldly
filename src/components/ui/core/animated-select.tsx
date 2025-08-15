@@ -52,7 +52,7 @@ export function AnimatedSelect({
         <motion.button
           type='button'
           onClick={() => setIsOpen(!isOpen)}
-          className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-white text-left cursor-pointer flex items-center justify-between'
+          className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)] bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-left cursor-pointer flex items-center justify-between'
           whileTap={{ scale: 0.98 }}
           whileHover={{ borderColor: 'var(--primary)' }}
         >
@@ -89,7 +89,7 @@ export function AnimatedSelect({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.15 }}
-              className='absolute z-50 w-full mt-1 bg-white border border-[var(--neutral-200)] rounded-md shadow-lg max-h-60 overflow-y-auto'
+              className='absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-[var(--neutral-200)] dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto'
             >
               {options.map(option => {
                 const isSelected = selectedValues.includes(option.value);
@@ -98,21 +98,21 @@ export function AnimatedSelect({
                     key={option.value}
                     type='button'
                     onClick={() => handleOptionToggle(option.value)}
-                    className='w-full px-3 py-2 text-left text-sm hover:bg-[var(--neutral-50)] focus:bg-[var(--neutral-50)] focus:outline-none border-none bg-transparent cursor-pointer flex items-center gap-2'
-                    whileHover={{ backgroundColor: 'var(--neutral-50)' }}
+                    className='w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none border-none bg-transparent cursor-pointer flex items-center gap-2 text-gray-900 dark:text-gray-100'
+                    whileHover={{ backgroundColor: 'transparent' }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <div className='flex items-center justify-center w-4 h-4 border border-[var(--neutral-300)] rounded bg-white'>
+                    <div className='flex items-center justify-center w-4 h-4 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800'>
                       {isSelected && (
                         <Check className='w-3 h-3 text-[var(--primary)]' />
                       )}
                     </div>
                     <div className='flex flex-col flex-1'>
-                      <span className='font-medium text-[var(--quaternary)]'>
+                      <span className='font-medium text-gray-900 dark:text-gray-100'>
                         {option.label}
                       </span>
                       {option.description && (
-                        <span className='text-xs text-[var(--neutral-500)]'>
+                        <span className='text-xs text-gray-600 dark:text-gray-400'>
                           {option.description}
                         </span>
                       )}
@@ -192,7 +192,7 @@ export function AnimatedSelect({
                   onChange(option.value);
                   setIsOpen(false);
                 }}
-                className='w-full px-3 py-2 text-left text-sm hover:bg-[var(--neutral-50)] focus:bg-[var(--neutral-50)] focus:outline-none border-none bg-transparent cursor-pointer'
+                className='w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 focus:bg-gray-100 dark:focus:bg-gray-700 focus:outline-none border-none bg-transparent cursor-pointer text-gray-900 dark:text-gray-100'
                 whileHover={{ backgroundColor: 'var(--neutral-50)' }}
                 whileTap={{ scale: 0.98 }}
               >

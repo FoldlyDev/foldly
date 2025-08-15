@@ -10,9 +10,9 @@ export class GoogleDriveTreeAdapter {
       const node: CloudTreeNode = {
         id: file.id,
         name: file.name,
-        type: file.isFolder ? 'folder' : 'file',
+        type: file.isFolder ? 'folder' as const : 'file' as const,
         file,
-        children: file.isFolder ? [] : undefined,
+        ...(file.isFolder && { children: [] }),
         parentId: file.parents?.[0],
       };
       nodeMap.set(file.id, node);
@@ -52,9 +52,9 @@ export class GoogleDriveTreeAdapter {
         const childNodes = children.map(file => ({
           id: file.id,
           name: file.name,
-          type: file.isFolder ? 'folder' : 'file' as const,
+          type: file.isFolder ? 'folder' as const : 'file' as const,
           file,
-          children: file.isFolder ? [] : undefined,
+          ...(file.isFolder && { children: [] }),
           parentId: parentId,
         }));
         this.sortNodes(childNodes);

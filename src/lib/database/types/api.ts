@@ -204,7 +204,7 @@ export interface LinkQueryParams extends ListQueryParams {
   isActive?: boolean;
   requireEmail?: boolean;
   requirePassword?: boolean;
-  brandEnabled?: boolean;
+  branding?: { enabled: boolean };
   isExpired?: boolean;
   createdDateRange?: string;
   lastUploadDateRange?: string;

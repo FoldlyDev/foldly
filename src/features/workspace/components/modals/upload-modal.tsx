@@ -15,6 +15,7 @@ import { UploadProgress } from '../upload/upload-progress';
 import { UploadValidation, StorageWarning } from '../upload/upload-validation';
 import { StorageInfoDisplay } from '../storage/storage-info-display';
 import { FileUploadArea } from '../upload/file-upload-area';
+import { CentralizedFileUpload } from '@/components/ui/composite/centralized-file-upload';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
 import { useAuth, Protect } from '@clerk/nextjs';
 import { useStorageTracking } from '../../hooks/use-storage-tracking';

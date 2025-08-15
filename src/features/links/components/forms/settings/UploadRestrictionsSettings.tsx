@@ -55,7 +55,7 @@ export function UploadRestrictionsSettings({
             }
             placeholder='0 = unlimited'
             min='0'
-            className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+            className='premium-input'
           />
           {errors.maxFiles && (
             <p className='text-xs text-red-600'>{errors.maxFiles.message}</p>

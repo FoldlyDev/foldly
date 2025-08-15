@@ -1,4 +1,4 @@
-import { BaseCloudProvider, CloudFile, Result } from './types';
+import { BaseCloudProvider } from './types';\nimport type { CloudFile, Result } from './types';
 
 interface GoogleDriveFile {
   id: string;
@@ -157,9 +157,9 @@ export class GoogleDriveProvider extends BaseCloudProvider {
     id: file.id,
     name: file.name,
     mimeType: file.mimeType,
-    size: file.size ? parseInt(file.size) : undefined,
-    modifiedTime: file.modifiedTime,
-    createdTime: file.createdTime,
+    size: file.size ? parseInt(file.size) : 0,
+    modifiedTime: file.modifiedTime || new Date().toISOString(),
+    createdTime: file.createdTime || new Date().toISOString(),
     parents: file.parents,
     webViewLink: file.webViewLink,
     thumbnailLink: file.thumbnailLink,

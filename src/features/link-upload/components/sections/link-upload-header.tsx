@@ -14,7 +14,7 @@ interface LinkUploadHeaderProps {
 }
 
 export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
-  const brandColor = link.brandEnabled && link.brandColor ? link.brandColor : '#3b82f6';
+  const brandColor = link.branding?.enabled && link.branding?.color ? link.branding.color : '#3b82f6';
 
   // Calculate if link is expired
   const isExpired = link.expiresAt && new Date(link.expiresAt) < new Date();

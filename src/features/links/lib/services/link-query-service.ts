@@ -12,7 +12,14 @@ import { getBaseUrl } from '@/lib/config/url-config';
  * Database link with flat statistics (as returned by queries)
  * This matches what the database service naturally returns before UI transformation
  */
-interface DbLinkWithStats extends Link {
+interface DbLinkWithStats extends Omit<Link, 'branding'> {
+  // Branding can be null from database
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  } | null;
+
   // Flat statistics (as returned by SQL aggregations)
   fileCount: number;
   batchCount: number;
@@ -45,6 +52,8 @@ export class LinkQueryService {
   private adaptDbLinkForUI(dbLink: DbLinkWithStats): LinkWithStats {
     return {
       ...dbLink,
+      // Ensure branding is always an object, never null
+      branding: dbLink.branding || { enabled: false },
       stats: {
         fileCount: dbLink.fileCount,
         batchCount: dbLink.batchCount,
@@ -98,14 +107,16 @@ export class LinkQueryService {
           maxFileSize: links.maxFileSize,
           allowedFileTypes: links.allowedFileTypes,
           expiresAt: links.expiresAt,
-          brandEnabled: links.brandEnabled,
-          brandColor: links.brandColor,
+          branding: links.branding,
           totalUploads: links.totalUploads,
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
           storageUsed: links.storageUsed,
           storageLimit: links.storageLimit,
+          unreadUploads: links.unreadUploads,
+          lastNotificationAt: links.lastNotificationAt,
+          sourceFolderId: links.sourceFolderId,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info
@@ -184,14 +195,16 @@ export class LinkQueryService {
           maxFileSize: links.maxFileSize,
           allowedFileTypes: links.allowedFileTypes,
           expiresAt: links.expiresAt,
-          brandEnabled: links.brandEnabled,
-          brandColor: links.brandColor,
+          branding: links.branding,
           totalUploads: links.totalUploads,
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
           storageUsed: links.storageUsed,
           storageLimit: links.storageLimit,
+          unreadUploads: links.unreadUploads,
+          lastNotificationAt: links.lastNotificationAt,
+          sourceFolderId: links.sourceFolderId,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info
@@ -274,14 +287,16 @@ export class LinkQueryService {
           maxFileSize: links.maxFileSize,
           allowedFileTypes: links.allowedFileTypes,
           expiresAt: links.expiresAt,
-          brandEnabled: links.brandEnabled,
-          brandColor: links.brandColor,
+          branding: links.branding,
           totalUploads: links.totalUploads,
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
           storageUsed: links.storageUsed,
           storageLimit: links.storageLimit,
+          unreadUploads: links.unreadUploads,
+          lastNotificationAt: links.lastNotificationAt,
+          sourceFolderId: links.sourceFolderId,
           createdAt: links.createdAt,
           updatedAt: links.updatedAt,
           // User info
@@ -360,7 +375,11 @@ export class LinkQueryService {
 
       return {
         success: true,
-        data: link || null,
+        data: link ? {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        } : null,
       };
     } catch (error) {
       console.error('Failed to get link by user, slug and topic:', error);
@@ -419,6 +438,8 @@ export class LinkQueryService {
       // Create the response with accurate stats
       const linkWithStats: LinkWithStats = {
         ...linkData,
+        // Ensure branding is always an object, never null
+        branding: linkData.branding || { enabled: false },
         stats: {
           fileCount: fileCount,
           batchCount: batchCount,  // This is the actual number of upload sessions

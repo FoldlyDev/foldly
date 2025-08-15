@@ -53,9 +53,14 @@ export class LinkMetadataService {
         };
       }
 
+      const link = result[0]!;
       return {
         success: true,
-        data: result[0]!,
+        data: {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        },
       };
     } catch (error) {
       console.error('Failed to update link statistics:', error);
@@ -208,17 +213,17 @@ export class LinkMetadataService {
    */
   async updateBranding(
     linkId: string,
-    branding: {
-      brandEnabled?: boolean;
-      brandColor?: string;
-      brandLogoUrl?: string;
+    brandingUpdate: {
+      enabled: boolean;
+      color?: string;
+      image?: string;
     }
   ): Promise<DatabaseResult<Link>> {
     try {
       const result = await db
         .update(links)
         .set({
-          ...branding,
+          branding: brandingUpdate,
           updatedAt: new Date(),
         })
         .where(eq(links.id, linkId))
@@ -232,9 +237,14 @@ export class LinkMetadataService {
         };
       }
 
+      const link = result[0]!;
       return {
         success: true,
-        data: result[0]!,
+        data: {
+          ...link,
+          // Ensure branding is always an object, never null
+          branding: link.branding || { enabled: false },
+        },
       };
     } catch (error) {
       console.error('Failed to update branding:', error);

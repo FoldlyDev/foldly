@@ -315,6 +315,7 @@ button[data-state],
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgb(17 24 39); /* Ensure dark text in light mode */
 }
 
 /* Dark mode select trigger */
@@ -323,6 +324,7 @@ button[data-state],
   backdrop-filter: blur(var(--foldly-glass-blur));
   -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
   border: 1px solid var(--foldly-glass-border);
+  color: rgb(243 244 246); /* Ensure light text in dark mode */
 }
 
 /* Select content dropdown - matches context menu styling */
@@ -337,6 +339,7 @@ button[data-state],
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgb(17 24 39); /* Ensure dark text in light mode */
 }
 
 /* Dark mode select content */
@@ -345,16 +348,111 @@ button[data-state],
   backdrop-filter: blur(var(--foldly-glass-blur));
   -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
   border: 1px solid var(--foldly-glass-border);
+  color: rgb(243 244 246); /* Ensure light text in dark mode */
 }
 
 /* Select label - match dropdown menu labels */
 [data-slot='select-label'] {
-  @apply text-xs px-2 py-1 text-gray-500 dark:text-white/50;
+  @apply text-xs px-2 py-1;
+  color: rgb(107 114 128); /* gray-500 in light mode */
+}
+
+.dark [data-slot='select-label'] {
+  color: rgba(255, 255, 255, 0.5); /* white/50 in dark mode */
 }
 
 /* Select separator */
 [data-slot='select-separator'] {
   @apply h-px bg-gray-200 dark:bg-white/10 my-1;
+}
+
+/* Select items - ensure proper text colors */
+[data-slot='select-item'] {
+  color: rgb(17 24 39); /* Dark text in light mode */
+}
+
+.dark [data-slot='select-item'] {
+  color: rgb(243 244 246); /* Light text in dark mode */
+}
+
+/* Select value - ensure proper text colors */
+[data-slot='select-value'] {
+  color: inherit; /* Inherit from parent */
+}
+
+/* =============================================================================
+   SWITCH/TOGGLE STYLES - Enhanced light mode compatibility
+   ============================================================================= */
+
+/* Switch base styles with better light mode colors */
+[data-slot='switch'] {
+  position: relative;
+  transition: all 200ms ease;
+}
+
+/* Light mode switch unchecked state - better contrast */
+.light [data-slot='switch'][data-state='unchecked'] {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+  border: 1px solid rgb(209 213 219) !important; /* gray-300 */
+}
+
+.light [data-slot='switch'][data-state='unchecked']:hover {
+  background-color: rgb(209 213 219) !important; /* gray-300 */
+  border-color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+/* Light mode switch checked state */
+.light [data-slot='switch'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Dark mode switch states (keep existing behavior) */
+.dark [data-slot='switch'][data-state='unchecked'] {
+  background-color: rgba(107, 114, 128, 0.3) !important; /* gray-500/30 */
+  border-color: transparent !important;
+}
+
+.dark [data-slot='switch'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Switch thumb enhanced visibility */
+[data-slot='switch-thumb'] {
+  transition: transform 200ms ease, background-color 200ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Light mode thumb */
+.light [data-slot='switch-thumb'] {
+  background-color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode thumb */
+.dark [data-slot='switch-thumb'][data-state='unchecked'] {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark [data-slot='switch-thumb'][data-state='checked'] {
+  background-color: white !important;
+}
+
+/* Focus states for accessibility */
+[data-slot='switch']:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+[data-slot='switch']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-slot='switch']:disabled [data-slot='switch-thumb'] {
+  opacity: 0.8;
 }
 
 /* =============================================================================
@@ -380,6 +478,7 @@ button[data-state],
   border-top-color: rgba(0, 0, 0, 0.1);
   border-right-color: rgba(0, 0, 0, 0.08);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: rgb(17 24 39) !important; /* Ensure dark text in light mode */
 }
 
 /* Dark mode dropdown content */

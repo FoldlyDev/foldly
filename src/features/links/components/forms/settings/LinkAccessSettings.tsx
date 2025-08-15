@@ -11,7 +11,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Checkbox } from '@/components/ui/core/shadcn/checkbox';
+import { Switch } from '@/components/ui/core/shadcn/switch';
 import { HelpPopover } from '@/components/ui/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
@@ -66,7 +66,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
               >
                 {watchedValues.isActive ? 'Active' : 'Inactive'}
               </span>
-              <Checkbox
+              <Switch
                 checked={watchedValues.isActive ?? true}
                 onCheckedChange={(checked: boolean) =>
                   setValue('isActive', checked, {
@@ -74,6 +74,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
                     shouldValidate: true,
                   })
                 }
+                className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
               />
             </div>
           </label>
@@ -100,7 +101,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
                 Collect uploader contact info for tracking and follow-up
               </p>
             </div>
-            <Checkbox
+            <Switch
               checked={watchedValues.requireEmail ?? false}
               onCheckedChange={(checked: boolean) =>
                 setValue('requireEmail', checked, {
@@ -108,6 +109,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
                   shouldValidate: true,
                 })
               }
+              className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
             />
           </label>
         </div>
@@ -132,7 +134,7 @@ Share both:
                 Extra security layer - users need both link and password
               </p>
             </div>
-            <Checkbox
+            <Switch
               checked={watchedValues.requirePassword ?? false}
               onCheckedChange={(checked: boolean) =>
                 setValue('requirePassword', checked, {
@@ -140,6 +142,7 @@ Share both:
                   shouldValidate: true,
                 })
               }
+              className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
             />
           </label>
 
@@ -180,8 +183,12 @@ Share both:
                         shouldValidate: true,
                       })
                     }
-                    placeholder='Enter password (minimum 8 characters)'
-                    className='w-full px-3 py-2 pr-10 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+                    placeholder='Enter password (8+ characters)'
+                    className={`premium-input pr-10 ${
+                      watchedValues.password && watchedValues.password.length < 8
+                        ? 'form-input-error'
+                        : ''
+                    }`}
                   />
                   <button
                     type='button'
@@ -195,6 +202,12 @@ Share both:
                     )}
                   </button>
                 </div>
+                {watchedValues.password && watchedValues.password.length < 8 && (
+                  <p className='text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1'>
+                    <span>⚠️</span>
+                    Password must be at least 8 characters long
+                  </p>
+                )}
                 {errors.password && (
                   <p className='text-xs text-red-600'>
                     {errors.password.message}

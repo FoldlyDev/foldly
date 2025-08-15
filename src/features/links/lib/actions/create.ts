@@ -109,8 +109,7 @@ export async function createLinkAction(
       expiresAt: validatedData.expiresAt
         ? new Date(validatedData.expiresAt)
         : null,
-      brandEnabled: validatedData.brandEnabled,
-      brandColor: validatedData.brandColor || null,
+      branding: validatedData.branding || { enabled: false },
       // Initialize stats fields
       totalUploads: 0,
       totalFiles: 0,
