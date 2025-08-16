@@ -37,6 +37,7 @@ export function UploadActions({
         <Button
           onClick={onMainUpload}
           disabled={isUploading}
+          data-upload-trigger
           className="gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-md"
           style={{
             background: linkData.branding?.enabled && linkData.branding?.color && !isUploading

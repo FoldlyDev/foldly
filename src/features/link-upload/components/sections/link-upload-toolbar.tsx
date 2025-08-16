@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/shallow';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -48,6 +48,10 @@ interface LinkUploadToolbarProps {
   onClearSelection?: () => void;
   selectedFolderId?: string;
   selectedFolderName?: string;
+  hasProvidedInfo?: boolean;
+  onRequestUpload?: () => void;
+  shouldTriggerUpload?: boolean;
+  onUploadTriggered?: () => void;
 }
 
 export function LinkUploadToolbar({
@@ -60,6 +64,10 @@ export function LinkUploadToolbar({
   onClearSelection,
   selectedFolderId,
   selectedFolderName = 'Link Root',
+  hasProvidedInfo = false,
+  onRequestUpload,
+  shouldTriggerUpload = false,
+  onUploadTriggered,
 }: LinkUploadToolbarProps) {
   const [showBatchModal, setShowBatchModal] = useState(false);
   const [batchProgress, setBatchProgress] = useState<
@@ -142,10 +150,8 @@ export function LinkUploadToolbar({
     },
   });
 
-  // Handle main upload button
-  const handleMainUpload = async () => {
-    if (!hasStaged) return;
-
+  // Execute the actual upload
+  const executeUpload = React.useCallback(async () => {
     const allItems = getAllStagedItems();
     if (allItems.length === 0) return;
 
@@ -164,7 +170,37 @@ export function LinkUploadToolbar({
       setIsUploading(false);
       updateUploadProgress({ completed: 0, total: 0 });
     }
-  };
+  }, [getAllStagedItems, setIsUploading, updateUploadProgress, uploadBatch, uploaderName, uploaderEmail, uploaderMessage, queryClient, linkData.id, clearStaged]);
+
+  // Effect to handle upload after info is provided
+  React.useEffect(() => {
+    if (shouldTriggerUpload && hasProvidedInfo && hasStaged) {
+      executeUpload();
+      if (onUploadTriggered) {
+        onUploadTriggered();
+      }
+    }
+  }, [shouldTriggerUpload, hasProvidedInfo, hasStaged, executeUpload, onUploadTriggered]);
+
+  // Handle main upload button
+  const handleMainUpload = React.useCallback(async () => {
+    if (!hasStaged) return;
+
+    const allItems = getAllStagedItems();
+    if (allItems.length === 0) return;
+
+    // Check if user has provided their info
+    if (!hasProvidedInfo || !uploaderName) {
+      // Trigger the modal to collect user info
+      if (onRequestUpload) {
+        onRequestUpload();
+      }
+      return;
+    }
+
+    // If info is already provided, upload directly
+    await executeUpload();
+  }, [hasStaged, getAllStagedItems, hasProvidedInfo, uploaderName, onRequestUpload, executeUpload]);
 
   // Delete mutation
   const batchDeleteMutation = useMutation({
@@ -276,13 +312,12 @@ export function LinkUploadToolbar({
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
-      className={`${className}`}
+      className={`link-upload-toolbar ${className}`}
     >
       {/* Main toolbar */}
-      <div className='link-upload-toolbar-main bg-card border rounded-lg p-4 shadow-sm'>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Left side - Main actions */}
-          <div className='link-upload-toolbar-left flex flex-wrap items-center gap-3'>
+      <div className='link-upload-toolbar-main'>
+        {/* Left side - Main actions */}
+        <div className='link-upload-toolbar-left'>
             <UploadActions
               linkData={linkData}
               hasStaged={hasStaged}
@@ -303,10 +338,10 @@ export function LinkUploadToolbar({
               onExpandAll={treeInstance?.expandAll}
               onCollapseAll={treeInstance?.collapseAll}
             />
-          </div>
+        </div>
 
-          {/* Right side - Search and selection */}
-          <div className='link-upload-toolbar-right flex items-center gap-3'>
+        {/* Right side - Search and selection */}
+        <div className='link-upload-toolbar-right'>
             {/* Search */}
             {setSearchQuery && (
               <ToolbarSearch
@@ -322,7 +357,6 @@ export function LinkUploadToolbar({
               onClearSelection={onClearSelection || (() => {})}
               isDeleting={batchDeleteMutation.isPending}
             />
-          </div>
         </div>
       </div>
 

@@ -111,6 +111,9 @@
 /* 📁 Workspace Feature Styles */
 @import '../features/workspace/styles/workspace-responsive.css';
 
+/* 🔗 Link Upload Feature Styles */
+@import '../features/link-upload/styles/link-upload.css';
+
 /* 🔔 Notifications Feature Styles */
 @import '../features/notifications/styles/toast.css';
 

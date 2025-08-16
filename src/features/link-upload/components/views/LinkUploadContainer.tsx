@@ -30,16 +30,18 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Access control state
   const [uploadSession, setUploadSession] = useState<UploadSession | null>(null);
   const [showAccessModal, setShowAccessModal] = useState(false);
+  const [hasProvidedInfo, setHasProvidedInfo] = useState(false);
+  const [shouldTriggerUpload, setShouldTriggerUpload] = useState(false);
   
   // Get the staging store setter
   const { setUploaderInfo } = useStagingStore();
 
-  // Get link data with loading states - only if access is granted
+  // Get link data with loading states - allow browsing without full authentication
   const { data: linkTreeData, isLoading, isError, error } = useLinkTree(
     uploadSession ? linkData.id : ''
   );
 
-  // Set up real-time subscription for link changes - only if access is granted
+  // Set up real-time subscription for link changes - allow browsing without full authentication
   useLinkRealtime(uploadSession ? linkData.id : '');
 
   // UI state management - use store directly for modal state
@@ -102,19 +104,30 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     setSelectedItems([]);
   }, [treeInstance]);
 
-  // Always show access modal on mount
+  // Create a minimal session on mount to allow browsing
   React.useEffect(() => {
     // Clear any existing session from localStorage to ensure fresh entry
     localStorage.removeItem(`upload-session-${linkData.id}`);
     
-    // Show access modal for fresh uploader info
-    setShowAccessModal(true);
+    // Create minimal session to allow browsing without providing info upfront
+    const minimalSession: UploadSession = {
+      linkId: linkData.id,
+      uploaderName: '',
+      authenticated: false, // Not fully authenticated until info provided
+    };
+    setUploadSession(minimalSession);
   }, [linkData.id]);
 
-  const handleAccessGranted = (session: UploadSession) => {
+  const handleAccessGranted = React.useCallback((session: UploadSession) => {
     setUploadSession(session);
     setShowAccessModal(false);
-  };
+    setHasProvidedInfo(true);
+    setShouldTriggerUpload(true);
+  }, []);
+
+  const handleCancelUpload = React.useCallback(() => {
+    setShowAccessModal(false);
+  }, []);
 
   const handleClearSelection = () => {
     // Clear tree instance selection
@@ -164,33 +177,8 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     };
   }, [linkData.brandEnabled, linkData.brandColor]);
 
-  // Show access modal if no valid session
-  if (showAccessModal) {
-    return (
-      <>
-        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-          <LinkUploadHeader link={linkData} />
-          <div className='container mx-auto px-4 py-8 max-w-7xl'>
-            <div className='flex items-center justify-center h-64'>
-              <div className='text-center'>
-                <h3 className='text-lg font-semibold mb-2'>
-                  Loading Upload Link...
-                </h3>
-                <p className='text-muted-foreground'>
-                  Please wait while we prepare your upload experience.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <UploadAccessModal
-          isOpen={showAccessModal}
-          linkData={linkData}
-          onAccessGranted={handleAccessGranted}
-        />
-      </>
-    );
-  }
+  // Don't block the page while modal may be shown
+  // Modal will overlay when needed
 
   // Show error state (without loading)
   if (isError && !isLoading) {
@@ -224,15 +212,16 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
       isLoading={isLoading}
       loadingComponent={<LinkUploadSkeleton />}
       duration={300}
-      className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col"
+      className="min-h-screen flex flex-col"
+      style={{ background: 'var(--foldly-dark-gradient-radial)' }}
     >
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--foldly-dark-gradient-radial)' }}>
       <LinkUploadHeader 
         link={linkData}
       />
 
       <div className='container mx-auto px-4 py-8 max-w-7xl flex-1'>
-        <div className='link-upload-toolbar mb-6'>
+        <div className='mb-6'>
           <LinkUploadToolbar
             linkData={linkData}
             treeInstance={treeInstance}
@@ -242,6 +231,10 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
             onClearSelection={handleClearSelection}
             selectedFolderId={selectedFolderId}
             selectedFolderName={selectedFolderName}
+            hasProvidedInfo={hasProvidedInfo}
+            onRequestUpload={() => setShowAccessModal(true)}
+            shouldTriggerUpload={shouldTriggerUpload}
+            onUploadTriggered={() => setShouldTriggerUpload(false)}
           />
         </div>
 
@@ -278,6 +271,15 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
         isOpen={isUploadModalOpen}
         onClose={closeUploadModal}
         linkData={linkData}
+      />
+
+      {/* Access Modal - shown when user tries to upload */}
+      <UploadAccessModal
+        isOpen={showAccessModal}
+        linkData={linkData}
+        onAccessGranted={handleAccessGranted}
+        onCancel={handleCancelUpload}
+        isUploadContext={true}
       />
     </div>
     </FadeTransitionWrapper>
