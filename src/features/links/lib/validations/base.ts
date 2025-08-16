@@ -176,12 +176,14 @@ export function withPasswordRequirement<T extends z.ZodRawShape>(
 }
 
 /**
- * Branding object schema
+ * Branding object schema - matches database schema
  */
 export const brandingSchema = z.object({
-  enabled: z.boolean().default(false),
+  enabled: z.boolean(),
   color: hexColorSchema.optional(),
-  image: urlSchema.optional(),
+  image: z.string().optional(), // Legacy: base64 image data (deprecated)
+  imagePath: z.string().optional(), // Storage path in branding-images bucket
+  imageUrl: z.string().optional(), // Public URL for the branding image
 });
 
 /**

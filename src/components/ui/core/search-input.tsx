@@ -48,7 +48,7 @@ export function SearchInput({
   return (
     <div className={cn('relative flex-1', className)}>
       <div className='absolute left-3 top-1/2 transform -translate-y-1/2 z-10'>
-        <Search className='w-4 h-4 text-[var(--neutral-400)]' />
+        <Search className='w-4 h-4 text-gray-500 dark:text-gray-400' />
       </div>
 
       <Input
@@ -56,9 +56,10 @@ export function SearchInput({
         placeholder={placeholder}
         value={localValue}
         onChange={e => setLocalValue(e.target.value)}
-        className='pl-10 pr-10 border border-[var(--neutral-200)] rounded-lg 
+        className='pl-10 pr-10 border border-gray-200 dark:border-gray-700 rounded-lg 
                    focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent
-                   bg-white text-[var(--quaternary)]'
+                   bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100
+                   placeholder:text-gray-500 dark:placeholder:text-gray-400'
       />
 
       {showClearButton && localValue && (
@@ -72,9 +73,9 @@ export function SearchInput({
             variant='ghost'
             size='sm'
             onClick={handleClear}
-            className='h-6 w-6 p-0 hover:bg-[var(--neutral-100)] rounded-full cursor-pointer'
+            className='h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full cursor-pointer'
           >
-            <X className='w-3 h-3 text-[var(--neutral-500)]' />
+            <X className='w-3 h-3 text-gray-500 dark:text-gray-400' />
           </Button>
         </motion.div>
       )}

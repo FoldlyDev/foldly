@@ -48,8 +48,11 @@ export function BrandingSettingsSection({
             checked={watchedValues.branding?.enabled || false}
             onCheckedChange={checked =>
               setValue('branding', {
-                ...watchedValues.branding,
                 enabled: checked,
+                color: watchedValues.branding?.color,
+                image: watchedValues.branding?.image,
+                imagePath: watchedValues.branding?.imagePath,
+                imageUrl: watchedValues.branding?.imageUrl,
               }, {
                 shouldDirty: true,
                 shouldValidate: true,
@@ -80,8 +83,11 @@ export function BrandingSettingsSection({
                     value={watchedValues.branding?.color || '#6c47ff'}
                     onChange={e =>
                       setValue('branding', {
-                        ...watchedValues.branding,
+                        enabled: watchedValues.branding?.enabled || false,
                         color: e.target.value,
+                        image: watchedValues.branding?.image,
+                        imagePath: watchedValues.branding?.imagePath,
+                        imageUrl: watchedValues.branding?.imageUrl,
                       }, {
                         shouldDirty: true,
                         shouldValidate: true,
@@ -94,8 +100,11 @@ export function BrandingSettingsSection({
                     value={watchedValues.branding?.color || ''}
                     onChange={e =>
                       setValue('branding', {
-                        ...watchedValues.branding,
+                        enabled: watchedValues.branding?.enabled || false,
                         color: e.target.value,
+                        image: watchedValues.branding?.image,
+                        imagePath: watchedValues.branding?.imagePath,
+                        imageUrl: watchedValues.branding?.imageUrl,
                       }, {
                         shouldDirty: true,
                         shouldValidate: true,

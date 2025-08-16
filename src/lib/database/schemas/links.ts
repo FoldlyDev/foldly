@@ -61,7 +61,9 @@ export const links = pgTable(
     branding: json('branding').$type<{
       enabled: boolean;
       color?: string;
-      image?: string; // URL to brand image/logo
+      image?: string; // Legacy: base64 image data (deprecated)
+      imagePath?: string; // Storage path in branding-images bucket
+      imageUrl?: string; // Public URL for the branding image
     }>().default({ enabled: false }),
 
     // Usage Stats

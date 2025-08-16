@@ -59,7 +59,7 @@ export const LinkCardMobile = memo(
           transition-all duration-200 group cursor-pointer
           ${
             isBaseLink
-              ? 'border-l-4 border-l-purple-400 shadow-sm' // Special base link styling
+              ? 'border-l-4 shadow-sm' // Special base link styling
               : 'border border-gray-200 hover:border-gray-300' // Regular topic link styling
           }
           ${
@@ -68,6 +68,11 @@ export const LinkCardMobile = memo(
               : ''
           }
         `}
+        style={{
+          borderLeftColor: link.branding?.enabled && link.branding?.color 
+            ? link.branding.color 
+            : (isBaseLink ? '#c084fc' : undefined) // purple-400 as fallback for base links
+        }}
       >
         <div className='p-4 space-y-3'>
           {/* Header Row: Title + Status */}
@@ -85,7 +90,12 @@ export const LinkCardMobile = memo(
               )}
 
               {/* Icon */}
-              <LinkTypeIcon isBaseLink={isBaseLink} size='md' />
+              <LinkTypeIcon 
+                isBaseLink={isBaseLink} 
+                size='md' 
+                brandingEnabled={link.branding?.enabled}
+                {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+              />
 
               {/* Title & URL */}
               <div className='min-w-0 flex-1'>

@@ -108,6 +108,7 @@
 | `expires_at`         | TIMESTAMP    | NULLABLE                    | -                 | Optional expiration date          |
 | `brand_enabled`      | BOOLEAN      | NOT NULL                    | FALSE             | Custom branding toggle            |
 | `brand_color`        | VARCHAR(7)   | NULLABLE                    | -                 | Hex color code                    |
+| `brand_image_url`    | TEXT         | NULLABLE                    | -                 | Supabase Storage URL for logo     |
 | `total_uploads`      | INTEGER      | NOT NULL                    | 0                 | Total upload sessions             |
 | `total_files`        | INTEGER      | NOT NULL                    | 0                 | Total files uploaded              |
 | `total_size`         | BIGINT       | NOT NULL                    | 0                 | Total size uploaded               |

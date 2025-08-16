@@ -16,14 +16,14 @@ export function FileOrganizationSection({
 }: FileOrganizationSectionProps) {
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <FolderPlus className='w-4 h-4' />
         File Organization
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         <div className='space-y-3'>
-          <p className='text-sm text-[var(--neutral-600)]'>
+          <p className='text-sm text-muted-foreground'>
             File organization features are coming soon. Files will be
             automatically organized by upload date.
           </p>

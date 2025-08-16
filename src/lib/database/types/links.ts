@@ -48,7 +48,8 @@ export interface Link extends TimestampFields {
   branding: {
     enabled: boolean;
     color?: string;
-    image?: string;
+    imagePath?: string; // Storage path in branding-images bucket
+    imageUrl?: string; // Public URL for the branding image
   };
 
   // Usage Stats

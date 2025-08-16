@@ -127,7 +127,7 @@ Foldly introduces **three distinct link types** that cover every file collection
   - 1 active link, 2GB storage, basic branding
   - Target: Individual freelancers, students, small projects
 - **Pro**: $8/month
-  - 5 active links, 10GB storage, custom branding, email support
+  - 5 active links, 10GB storage, custom branding with logo uploads, email support
   - Target: Freelancers, small agencies, consultants
 - **Business**: $25/month
   - 25 active links, 100GB storage, team features, priority support

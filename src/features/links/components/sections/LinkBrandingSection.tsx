@@ -10,7 +10,10 @@ interface LinkBrandingFormData {
     enabled: boolean;
     color?: string;
     image?: string;
+    imagePath?: string;
+    imageUrl?: string;
   };
+  brandingFile?: File;
 }
 
 export interface LinkBrandingSectionProps {
@@ -25,8 +28,6 @@ export interface LinkBrandingSectionProps {
 }
 
 export function LinkBrandingSection({
-  linkType,
-  username,
   linkName,
   description,
   formData,
@@ -40,25 +41,32 @@ export function LinkBrandingSection({
   const handleFileChange = (files: File[]) => {
     const file = files[0];
     if (file) {
-      // Store the file and create blob URL
+      // Store the file and create blob URL for preview
       const newLogoUrl = URL.createObjectURL(file);
       onDataChange({
         branding: {
-          ...formData.branding,
+          enabled: formData.branding?.enabled || false,
+          ...(formData.branding?.color && { color: formData.branding.color }),
           image: newLogoUrl,
+          ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
+          ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
         },
+        brandingFile: file, // Pass the actual file
       });
     }
   };
 
   const handleFileRemove = () => {
-    // Clear logo
-    onDataChange({
+    // Clear logo and file
+    const update: Partial<LinkBrandingFormData> = {
       branding: {
-        ...formData.branding,
+        enabled: formData.branding?.enabled || false,
+        ...(formData.branding?.color && { color: formData.branding.color }),
         image: '',
       },
-    });
+    };
+    // Remove the file by omitting it from the update
+    onDataChange(update);
   };
 
   return (
@@ -84,8 +92,11 @@ export function LinkBrandingSection({
             onCheckedChange={checked => {
               onDataChange({
                 branding: {
-                  ...formData.branding,
                   enabled: checked,
+                  ...(formData.branding?.color && { color: formData.branding.color }),
+                  ...(formData.branding?.image && { image: formData.branding.image }),
+                  ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
+                  ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
                 },
               });
             }}
@@ -115,8 +126,11 @@ export function LinkBrandingSection({
                   onChange={e => {
                     onDataChange({
                       branding: {
-                        ...formData.branding,
+                        enabled: formData.branding?.enabled || false,
                         color: e.target.value,
+                        ...(formData.branding?.image && { image: formData.branding.image }),
+                        ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
+                        ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
                       },
                     });
                   }}
@@ -129,8 +143,11 @@ export function LinkBrandingSection({
                   onChange={e => {
                     onDataChange({
                       branding: {
-                        ...formData.branding,
+                        enabled: formData.branding?.enabled || false,
                         color: e.target.value,
+                        ...(formData.branding?.image && { image: formData.branding.image }),
+                        ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
+                        ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
                       },
                     });
                   }}

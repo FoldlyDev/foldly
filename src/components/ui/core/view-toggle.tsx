@@ -46,7 +46,7 @@ export function ViewToggle({
   return (
     <div
       className={cn(
-        'flex items-center bg-[var(--neutral-100)] rounded-lg relative border border-[var(--neutral-200)]',
+        'flex items-center bg-gray-50 dark:bg-gray-900 rounded-lg relative border border-gray-200 dark:border-gray-700',
         sizeClasses[size],
         className
       )}
@@ -63,8 +63,8 @@ export function ViewToggle({
               'relative rounded-md transition-all duration-300 font-medium flex items-center justify-center gap-2 cursor-pointer border-0 bg-transparent flex-1',
               buttonSizeClasses[size],
               isActive
-                ? 'text-[var(--quaternary)] z-10'
-                : 'text-[var(--neutral-500)] hover:text-[var(--quaternary)] z-20'
+                ? 'text-gray-900 dark:text-gray-100 z-10'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 z-20'
             )}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -74,7 +74,7 @@ export function ViewToggle({
             {isActive && (
               <motion.div
                 layoutId='activeBackground'
-                className='absolute inset-0 bg-white shadow-sm rounded-md border border-[var(--neutral-200)]'
+                className='absolute inset-0 bg-white dark:bg-gray-700 shadow-sm rounded-md border border-gray-200 dark:border-gray-600'
                 transition={{
                   type: 'spring',
                   stiffness: 500,

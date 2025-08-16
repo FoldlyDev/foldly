@@ -50,7 +50,7 @@ export const createLinkFormSchema = z
     expiresAt: z.date().optional(),
 
     // Branding (aligned with database schema)
-    branding: brandingSchema.default({ enabled: false })
+    branding: brandingSchema.optional()
   })
   .refine(
     data => {
@@ -107,7 +107,7 @@ export const linkInformationSchema = withPasswordRequirement(
  * Aligned with database field names
  */
 export const linkBrandingSchema = z.object({
-  branding: brandingSchema.default({ enabled: false }),
+  branding: brandingSchema.optional(),
 });
 
 /**

@@ -54,17 +54,17 @@ export function LinkIdentitySettings({
 
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <Info className='w-4 h-4' />
         Basic Information
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         {/* URL Path - Editable for base links only */}
         {isBaseLink && (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
-              <label className='text-sm font-medium text-[var(--neutral-700)]'>
+              <label className='form-label'>
                 Your Link URL
               </label>
               <HelpPopover
@@ -74,7 +74,7 @@ export function LinkIdentitySettings({
             </div>
             <div className='relative'>
               <div className='flex items-center'>
-                <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
+                <span className='px-3 py-2 bg-muted border border-r-0 border-input rounded-l-md text-sm text-muted-foreground'>
                   {displayDomain}/
                 </span>
                 <Input
@@ -88,25 +88,25 @@ export function LinkIdentitySettings({
                     });
                   }}
                   placeholder='your-name'
-                  className={`rounded-l-none pr-10 bg-white text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)] ${
+                  className={`form-input rounded-l-none pr-10 ${
                     watchedValues.slug
                       ? slugValidation.isAvailable
                         ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
                         : slugValidation.isUnavailable
                           ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                          : 'border-[var(--neutral-200)]'
-                      : 'border-[var(--neutral-200)]'
+                          : ''
+                      : ''
                   }`}
                 />
                 {/* Validation icon */}
                 {watchedValues.slug && (
                   <div className='absolute right-3 top-1/2 -translate-y-1/2'>
                     {slugValidation.isChecking ? (
-                      <div className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin' />
+                      <div className='w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
                     ) : slugValidation.isAvailable ? (
-                      <CheckCircle className='w-4 h-4 text-green-500' />
+                      <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400' />
                     ) : slugValidation.isUnavailable ? (
-                      <AlertCircle className='w-4 h-4 text-red-500' />
+                      <AlertCircle className='w-4 h-4 text-red-600 dark:text-red-400' />
                     ) : null}
                   </div>
                 )}
@@ -114,24 +114,24 @@ export function LinkIdentitySettings({
             </div>
             {/* Error feedback for unavailable URLs */}
             {watchedValues.slug && slugValidation.isUnavailable && (
-              <div className='flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-xs'>
-                <AlertCircle className='w-3 h-3 text-red-500 flex-shrink-0' />
-                <p className='text-red-700'>{slugValidation.message}</p>
+              <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded text-xs'>
+                <AlertCircle className='w-3 h-3 text-red-600 dark:text-red-400 flex-shrink-0' />
+                <p className='text-red-700 dark:text-red-400'>{slugValidation.message}</p>
               </div>
             )}
 
             {/* Success feedback for available URLs */}
             {watchedValues.slug && slugValidation.isAvailable && (
-              <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-xs'>
-                <CheckCircle className='w-3 h-3 text-green-600 flex-shrink-0' />
-                <p className='text-green-700'>This URL is available!</p>
+              <div className='flex items-center gap-2 p-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded text-xs'>
+                <CheckCircle className='w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0' />
+                <p className='text-green-700 dark:text-green-400'>This URL is available!</p>
               </div>
             )}
 
             {errors.slug && (
-              <p className='text-xs text-red-600'>{errors.slug.message}</p>
+              <p className='text-xs text-destructive'>{errors.slug.message}</p>
             )}
-            <p className='text-xs text-[var(--neutral-500)]'>
+            <p className='form-helper text-xs'>
               Use letters, numbers, hyphens, and underscores only
             </p>
           </div>
@@ -141,7 +141,7 @@ export function LinkIdentitySettings({
         {isTopicLink && (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
-              <label className='text-sm font-medium text-[var(--neutral-700)]'>
+              <label className='form-label'>
                 Collection URL
               </label>
               <HelpPopover
@@ -151,7 +151,7 @@ export function LinkIdentitySettings({
             </div>
             <div className='relative'>
               <div className='flex items-center'>
-                <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
+                <span className='px-3 py-2 bg-muted border border-r-0 border-input rounded-l-md text-sm text-muted-foreground'>
                   {displayDomain}/{link.slug}/
                 </span>
                 <Input
@@ -163,25 +163,25 @@ export function LinkIdentitySettings({
                     });
                   }}
                   placeholder='collection-name'
-                  className={`rounded-l-none pr-10 bg-white text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)] ${
+                  className={`form-input rounded-l-none pr-10 ${
                     watchedValues.topic
                       ? topicValidation.isAvailable
                         ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
                         : topicValidation.isUnavailable
                           ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                          : 'border-[var(--neutral-200)]'
-                      : 'border-[var(--neutral-200)]'
+                          : ''
+                      : ''
                   }`}
                 />
                 {/* Validation icon */}
                 {watchedValues.topic && (
                   <div className='absolute right-3 top-1/2 -translate-y-1/2'>
                     {topicValidation.isChecking ? (
-                      <div className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin' />
+                      <div className='w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
                     ) : topicValidation.isAvailable ? (
-                      <CheckCircle className='w-4 h-4 text-green-500' />
+                      <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400' />
                     ) : topicValidation.isUnavailable ? (
-                      <AlertCircle className='w-4 h-4 text-red-500' />
+                      <AlertCircle className='w-4 h-4 text-red-600 dark:text-red-400' />
                     ) : null}
                   </div>
                 )}
@@ -189,26 +189,26 @@ export function LinkIdentitySettings({
             </div>
             {/* Error feedback for unavailable collection names */}
             {watchedValues.topic && topicValidation.isUnavailable && (
-              <div className='flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-xs'>
-                <AlertCircle className='w-3 h-3 text-red-500 flex-shrink-0' />
-                <p className='text-red-700'>{topicValidation.message}</p>
+              <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded text-xs'>
+                <AlertCircle className='w-3 h-3 text-red-600 dark:text-red-400 flex-shrink-0' />
+                <p className='text-red-700 dark:text-red-400'>{topicValidation.message}</p>
               </div>
             )}
 
             {/* Success feedback for available collection names */}
             {watchedValues.topic && topicValidation.isAvailable && (
-              <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-xs'>
-                <CheckCircle className='w-3 h-3 text-green-600 flex-shrink-0' />
-                <p className='text-green-700'>
+              <div className='flex items-center gap-2 p-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded text-xs'>
+                <CheckCircle className='w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0' />
+                <p className='text-green-700 dark:text-green-400'>
                   This collection name is available!
                 </p>
               </div>
             )}
 
             {errors.topic && (
-              <p className='text-xs text-red-600'>{errors.topic.message}</p>
+              <p className='text-xs text-destructive'>{errors.topic.message}</p>
             )}
-            <p className='text-xs text-[var(--neutral-500)]'>
+            <p className='form-helper text-xs'>
               Use letters, numbers, spaces, hyphens, and underscores
             </p>
           </div>
@@ -217,7 +217,7 @@ export function LinkIdentitySettings({
         {/* Title - Editable for all links */}
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <label className='text-sm font-medium text-[var(--neutral-700)]'>
+            <label className='form-label'>
               Display Name
             </label>
             <HelpPopover
@@ -234,12 +234,12 @@ export function LinkIdentitySettings({
               })
             }
             placeholder={DEFAULT_BASE_LINK_TITLE}
-            className='bg-white border-[var(--neutral-200)] text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)]'
+            className='form-input'
           />
           {errors.title && (
             <p className='text-xs text-red-600'>{errors.title.message}</p>
           )}
-          <p className='text-xs text-[var(--neutral-500)]'>
+          <p className='form-helper text-xs'>
             This is what visitors see as your collection name
           </p>
         </div>
@@ -247,7 +247,7 @@ export function LinkIdentitySettings({
         {/* Description - Editable */}
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <label className='text-sm font-medium text-[var(--neutral-700)]'>
+            <label className='form-label'>
               Description
             </label>
             <HelpPopover
@@ -264,7 +264,7 @@ export function LinkIdentitySettings({
               })
             }
             placeholder='No description provided'
-            className='min-h-[80px] resize-none bg-white border-[var(--neutral-200)] text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)]'
+            className='form-textarea'
           />
           {errors.description && (
             <p className='text-xs text-red-600'>{errors.description.message}</p>

@@ -130,9 +130,9 @@ export function LinkDetailsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={closeModal}>
       <DialogContent
-        className='w-[calc(100vw-1rem)] max-w-sm sm:max-w-2xl lg:max-w-5xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'
-        from='left'
-        transition={{ type: 'spring', stiffness: 160, damping: 20 }}
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-lg lg:max-w-3xl h-[90vh] sm:h-[85vh] md:h-[80vh] max-h-[90vh] p-0 overflow-hidden flex flex-col'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
       >
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>
@@ -174,15 +174,15 @@ export function LinkDetailsModal() {
         {/* Content Area */}
         <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
           {/* URL Section with Copy - Moved from header */}
-          <div className='display-card p-3 sm:p-4 rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200/50 shadow-sm'>
+          <div className='overview-card'>
             <div className='flex items-center justify-between gap-3'>
               <div className='flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1'>
-                <Globe className='w-4 h-4 sm:w-5 sm:h-5 text-gray-500 flex-shrink-0' />
+                <Globe className='w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground flex-shrink-0' />
                 <div className='min-w-0 flex-1'>
-                  <p className='text-xs sm:text-sm text-gray-600 mb-1'>
+                  <p className='text-xs sm:text-sm text-muted-foreground mb-1'>
                     Live URL
                   </p>
-                  <code className='text-sm sm:text-base lg:text-lg font-mono font-semibold text-gray-900 break-all'>
+                  <code className='text-sm sm:text-base lg:text-lg font-mono font-semibold text-foreground break-all'>
                     {displayUrl}
                   </code>
                 </div>
@@ -192,7 +192,7 @@ export function LinkDetailsModal() {
                 size='sm'
                 showText
                 variant='default'
-                className='premium-button text-white border-0 px-3 sm:px-4 py-2 flex-shrink-0'
+                className='premium-button border-0 px-3 sm:px-4 py-2 flex-shrink-0'
               />
             </div>
           </div>
@@ -201,7 +201,7 @@ export function LinkDetailsModal() {
           <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4'>
             {/* Total Items Card - Now shows files + folders */}
             <motion.div
-              className='stats-card display-card p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl relative overflow-hidden'
+              className='overview-card'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -215,12 +215,12 @@ export function LinkDetailsModal() {
                     <div className='text-xl sm:text-2xl lg:text-3xl font-bold stats-number'>
                       {totalItems.toLocaleString()}
                     </div>
-                    <div className='text-xs sm:text-sm text-gray-600'>
+                    <div className='text-xs sm:text-sm text-muted-foreground'>
                       Total Items
                     </div>
                   </div>
                 </div>
-                <div className='text-xs text-gray-500 mt-2'>
+                <div className='text-xs text-muted-foreground mt-2'>
                   {((linkWithStats as LinkWithStats)?.stats?.fileCount || 0).toLocaleString()} files, {((linkWithStats as LinkWithStats)?.stats?.folderCount || 0).toLocaleString()} folders
                 </div>
               </div>
@@ -228,7 +228,7 @@ export function LinkDetailsModal() {
 
             {/* Upload Sessions Card - Now shows actual batch count */}
             <motion.div
-              className='stats-card display-card p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl relative overflow-hidden'
+              className='overview-card'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
@@ -242,12 +242,12 @@ export function LinkDetailsModal() {
                     <div className='text-xl sm:text-2xl lg:text-3xl font-bold stats-number'>
                       {uploadSessions.toLocaleString()}
                     </div>
-                    <div className='text-xs sm:text-sm text-gray-600'>
+                    <div className='text-xs sm:text-sm text-muted-foreground'>
                       Upload Sessions
                     </div>
                   </div>
                 </div>
-                <div className='text-xs text-gray-500 mt-2'>
+                <div className='text-xs text-muted-foreground mt-2'>
                   Times people uploaded to this link
                 </div>
               </div>
@@ -255,7 +255,7 @@ export function LinkDetailsModal() {
 
             {/* Storage Used Card - Now with real data */}
             <motion.div
-              className='stats-card display-card p-3 sm:p-4 lg:p-6 rounded-xl sm:rounded-2xl relative overflow-hidden'
+              className='overview-card'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
@@ -279,15 +279,15 @@ export function LinkDetailsModal() {
                     <div className='text-xl sm:text-2xl lg:text-3xl font-bold stats-number'>
                       {formatSize(link.totalSize)}
                     </div>
-                    <div className='text-xs sm:text-sm text-gray-600'>
+                    <div className='text-xs sm:text-sm text-muted-foreground'>
                       Link Storage
                     </div>
                   </div>
                 </div>
-                <div className='text-xs text-gray-500 mb-2'>
+                <div className='text-xs text-muted-foreground mb-2'>
                   {linkStoragePercentage.toFixed(1)}% of {formatSize(storageInfo.storageLimitBytes)} limit
                 </div>
-                <div className='w-full bg-gray-200 rounded-full h-1.5 sm:h-2'>
+                <div className='w-full bg-muted rounded-full h-1.5 sm:h-2'>
                   <div
                     className={`h-1.5 sm:h-2 rounded-full premium-progress bg-gradient-to-r ${
                       isStorageExceeded ? 'from-red-500 to-red-600' :
@@ -304,7 +304,7 @@ export function LinkDetailsModal() {
 
           {/* Account Storage Overview - New Section */}
           <motion.div
-            className='display-card bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50 rounded-xl sm:rounded-2xl p-4 sm:p-6'
+            className='overview-card'
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
@@ -314,11 +314,11 @@ export function LinkDetailsModal() {
                 <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/10'>
                   <Crown className='w-4 h-4 sm:w-5 sm:h-5 text-blue-600' />
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
+                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
                   Account Storage
                 </h3>
               </div>
-              <span className='text-xs sm:text-sm font-semibold text-blue-700 px-2 sm:px-3 py-1 bg-blue-100 rounded-full'>
+              <span className='text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 px-2 sm:px-3 py-1 bg-blue-100 dark:bg-blue-500/10 rounded-full'>
                 {planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan
               </span>
             </div>
@@ -327,12 +327,12 @@ export function LinkDetailsModal() {
               {/* Overall Storage Usage */}
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <span className='text-sm font-medium text-gray-700'>Total Usage</span>
-                  <span className='text-sm font-bold text-gray-900'>
+                  <span className='text-sm font-medium text-muted-foreground'>Total Usage</span>
+                  <span className='text-sm font-bold text-foreground'>
                     {formatSize(storageInfo.storageUsedBytes)} / {formatSize(storageInfo.storageLimitBytes)}
                   </span>
                 </div>
-                <div className='w-full bg-gray-200 rounded-full h-2'>
+                <div className='w-full bg-muted rounded-full h-2'>
                   <div
                     className={`h-2 rounded-full transition-all duration-500 bg-gradient-to-r ${
                       isStorageExceeded ? 'from-red-500 to-red-600' :
@@ -344,7 +344,7 @@ export function LinkDetailsModal() {
                   />
                 </div>
                 <div className='flex justify-between items-center mt-1'>
-                  <span className='text-xs text-gray-500'>
+                  <span className='text-xs text-muted-foreground'>
                     {storageInfo.filesCount} total files
                   </span>
                   <span className={`text-xs font-medium ${
@@ -380,7 +380,7 @@ export function LinkDetailsModal() {
                        isStorageCritical ? 'Storage almost full!' :
                        'Storage usage high'}
                     </p>
-                    <p className='text-xs text-gray-600 mt-1'>
+                    <p className='text-xs text-muted-foreground mt-1'>
                       {isStorageExceeded ? 
                         'Delete some files or upgrade your plan to continue uploading.' :
                         `Only ${formatSize(storageInfo.remainingBytes)} remaining on your ${planKey} plan.`
@@ -391,10 +391,10 @@ export function LinkDetailsModal() {
               )}
               
               {/* Link Contribution */}
-              <div className='pt-3 border-t border-gray-200'>
+              <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
                 <div className='flex justify-between items-center'>
-                  <span className='text-sm text-gray-600'>This link uses</span>
-                  <span className='text-sm font-semibold text-gray-900'>
+                  <span className='text-sm text-muted-foreground'>This link uses</span>
+                  <span className='text-sm font-semibold text-foreground'>
                     {formatSize(link.totalSize)} ({linkStoragePercentage.toFixed(1)}%)
                   </span>
                 </div>
@@ -406,7 +406,7 @@ export function LinkDetailsModal() {
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
             {/* Basic Information Card */}
             <motion.div
-              className='display-card bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl sm:rounded-2xl p-4 sm:p-6'
+              className='overview-card'
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
@@ -415,38 +415,38 @@ export function LinkDetailsModal() {
                 <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
                   <Calendar className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
+                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
                   Collection Link Details
                 </h3>
               </div>
 
               <div className='space-y-4'>
-                <div className='flex items-center justify-between py-3 border-b border-gray-100'>
-                  <span className='text-sm font-medium text-gray-600'>
+                <div className='flex items-center justify-between py-3 border-b border-border/50'>
+                  <span className='text-sm font-medium text-muted-foreground'>
                     Type
                   </span>
-                  <span className='text-sm font-semibold text-gray-900 px-3 py-1 bg-gray-100 rounded-lg'>
+                  <span className='text-sm font-semibold text-foreground px-3 py-1 bg-muted/50 rounded-lg'>
                     {link.linkType === 'base'
                       ? 'Personal Collection Link'
                       : 'Custom Topic Link'}
                   </span>
                 </div>
 
-                <div className='flex items-center justify-between py-3 border-b border-gray-100'>
-                  <span className='text-sm font-medium text-gray-600'>
+                <div className='flex items-center justify-between py-3 border-b border-border/50'>
+                  <span className='text-sm font-medium text-muted-foreground'>
                     Created
                   </span>
-                  <span className='text-sm font-semibold text-gray-900'>
+                  <span className='text-sm font-semibold text-foreground'>
                     {formatDate(link.createdAt)}
                   </span>
                 </div>
 
                 {link.expiresAt && (
-                  <div className='flex items-center justify-between py-3 border-b border-gray-100'>
-                    <span className='text-sm font-medium text-gray-600'>
+                  <div className='flex items-center justify-between py-3 border-b border-border/50'>
+                    <span className='text-sm font-medium text-muted-foreground'>
                       Expires
                     </span>
-                    <span className='text-sm font-semibold text-gray-900'>
+                    <span className='text-sm font-semibold text-foreground'>
                       {formatDate(link.expiresAt)}
                     </span>
                   </div>
@@ -454,10 +454,10 @@ export function LinkDetailsModal() {
 
                 {link.lastUploadAt && (
                   <div className='flex items-center justify-between py-3'>
-                    <span className='text-sm font-medium text-gray-600'>
+                    <span className='text-sm font-medium text-muted-foreground'>
                       Last Upload
                     </span>
-                    <span className='text-sm font-semibold text-gray-900'>
+                    <span className='text-sm font-semibold text-foreground'>
                       {formatDate(link.lastUploadAt)}
                     </span>
                   </div>
@@ -467,7 +467,7 @@ export function LinkDetailsModal() {
 
             {/* Security Settings Card */}
             <motion.div
-              className='display-card bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl sm:rounded-2xl p-4 sm:p-6'
+              className='overview-card'
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
@@ -476,25 +476,25 @@ export function LinkDetailsModal() {
                 <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/10'>
                   <Shield className='w-4 h-4 sm:w-5 sm:h-5 text-emerald-600' />
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
+                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
                   Security & Access
                 </h3>
               </div>
 
               <div className='space-y-4'>
 
-                <div className='flex items-center justify-between py-3 border-b border-gray-100'>
+                <div className='flex items-center justify-between py-3 border-b border-border/50'>
                   <div className='flex items-center gap-2'>
-                    <Mail className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-600'>
+                    <Mail className='w-4 h-4 text-muted-foreground' />
+                    <span className='text-sm font-medium text-muted-foreground'>
                       Email Required
                     </span>
                   </div>
                   <span
                     className={`text-sm font-semibold px-3 py-1 rounded-lg ${
                       link.requireEmail
-                        ? 'text-green-700 bg-green-100'
-                        : 'text-gray-700 bg-gray-100'
+                        ? 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/10'
+                        : 'text-muted-foreground bg-muted/50'
                     }`}
                   >
                     {link.requireEmail ? 'Yes' : 'No'}
@@ -503,16 +503,16 @@ export function LinkDetailsModal() {
 
                 <div className='flex items-center justify-between py-3'>
                   <div className='flex items-center gap-2'>
-                    <Lock className='w-4 h-4 text-gray-500' />
-                    <span className='text-sm font-medium text-gray-600'>
+                    <Lock className='w-4 h-4 text-muted-foreground' />
+                    <span className='text-sm font-medium text-muted-foreground'>
                       Password Protected
                     </span>
                   </div>
                   <span
                     className={`text-sm font-semibold px-3 py-1 rounded-lg ${
                       link.requirePassword
-                        ? 'text-green-700 bg-green-100'
-                        : 'text-gray-700 bg-gray-100'
+                        ? 'text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-500/10'
+                        : 'text-muted-foreground bg-muted/50'
                     }`}
                   >
                     {link.requirePassword ? 'Yes' : 'No'}
@@ -525,7 +525,7 @@ export function LinkDetailsModal() {
           {/* Description Section - Mobile Responsive */}
           {link.description && (
             <motion.div
-              className='display-card bg-white/80 backdrop-blur-sm border border-gray-200/50 rounded-xl sm:rounded-2xl p-4 sm:p-6'
+              className='overview-card'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
@@ -534,11 +534,11 @@ export function LinkDetailsModal() {
                 <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-pink-500/10'>
                   <Hash className='w-4 h-4 sm:w-5 sm:h-5 text-pink-600' />
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-gray-900'>
+                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
                   Description
                 </h3>
               </div>
-              <p className='text-sm sm:text-base text-gray-700 leading-relaxed bg-gray-50/50 p-3 sm:p-4 rounded-lg sm:rounded-xl'>
+              <p className='text-sm sm:text-base text-muted-foreground leading-relaxed bg-muted/30 p-3 sm:p-4 rounded-lg sm:rounded-xl'>
                 {link.description}
               </p>
             </motion.div>

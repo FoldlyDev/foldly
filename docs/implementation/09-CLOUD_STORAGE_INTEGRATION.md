@@ -1415,4 +1415,11 @@ if (process.env.NODE_ENV === 'development') {
 **Security**: OAuth 2.0 with Clerk integration  
 **Performance**: Optimized with caching and batch operations
 
+### **Storage Bucket Organization**
+
+Foldly uses multiple Supabase Storage buckets for different purposes:
+- **`workspace-files`**: Private user workspace files
+- **`shared-files`**: Files uploaded via public links
+- **`branding-images`**: Brand logos for custom links (doesn't count towards user quota)
+
 **Last Updated**: January 2025 - Complete implementation with transfer system

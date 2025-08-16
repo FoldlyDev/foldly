@@ -76,6 +76,7 @@ CREATE TABLE links (
   -- Branding (Pro+ features)
   brand_enabled BOOLEAN DEFAULT FALSE NOT NULL,
   brand_color VARCHAR(7),
+  brand_image_url TEXT,                    -- Supabase Storage URL for brand logo
 
   -- Usage Statistics
   total_uploads INTEGER DEFAULT 0 NOT NULL,
@@ -380,6 +381,7 @@ export class LinkDatabaseService {
         expiresAt: null, // Don't copy expiration
         brandEnabled: originalLink.brandEnabled,
         brandColor: originalLink.brandColor,
+        brandImageUrl: originalLink.brandImageUrl, // Copy brand image URL
       };
 
       return await this.createLink(duplicateData);
@@ -1489,4 +1491,78 @@ The Multi-Link System is now fully integrated with the File Upload System (see `
 **Performance Optimization**: ✅ Caching and analytics systems operational  
 **Public Upload Feature**: ✅ Fully integrated and production ready
 
-**Last Updated**: February 2025 - Added public upload feature integration
+---
+
+## 🎨 **Branding Feature Implementation**
+
+### **Overview**
+
+The branding feature allows Pro+ users to customize their upload links with custom colors and logo uploads. This feature enhances the professional appearance of file collection links and helps maintain brand consistency.
+
+### **Technical Implementation**
+
+#### **Database Schema**
+
+The links table includes branding fields:
+```sql
+-- Branding (Pro+ features)
+brand_enabled BOOLEAN DEFAULT FALSE NOT NULL,
+brand_color VARCHAR(7),                  -- Hex color code
+brand_image_url TEXT,                    -- Supabase Storage URL for brand logo
+```
+
+#### **Image Storage Architecture**
+
+Brand images are stored in a dedicated Supabase Storage bucket:
+- **Bucket**: `branding-images`
+- **Path Structure**: `{userId}/{linkId}/{filename}`
+- **Access**: Public read access for display on upload pages
+- **Quota**: Does not count towards user's storage quota
+
+#### **Upload Flow**
+
+1. **Link Creation**: User creates link with branding options
+2. **Image Upload**: If logo provided, upload happens after link creation
+3. **URL Storage**: Supabase Storage URL saved to `brand_image_url` field
+4. **Display**: Logo displayed on public upload pages with custom color theme
+
+#### **Implementation Details**
+
+```typescript
+// Brand image upload during link creation
+if (brandImage && createdLink) {
+  const { publicUrl } = await uploadBrandImage({
+    file: brandImage,
+    userId: user.id,
+    linkId: createdLink.id,
+  });
+  
+  // Update link with brand image URL
+  await updateLink(createdLink.id, {
+    brandImageUrl: publicUrl,
+  });
+}
+```
+
+#### **Cleanup Process**
+
+When a link is deleted:
+1. Database record deletion triggers cleanup
+2. Brand image removed from Supabase Storage
+3. Storage bucket remains clean and organized
+
+### **Security Considerations**
+
+- **Access Control**: Only link owner can upload/modify brand images
+- **File Validation**: Images validated for type and size before upload
+- **Public Access**: Brand images have public read access for display
+- **Quota Separation**: Brand images stored separately from user files
+
+### **User Experience**
+
+- **Upload Interface**: Drag-and-drop or file selection for logo
+- **Preview**: Real-time preview of branding on upload page
+- **Responsive**: Logo scales appropriately on all devices
+- **Fallback**: Graceful degradation if image fails to load
+
+**Last Updated**: February 2025 - Added branding feature with image upload support

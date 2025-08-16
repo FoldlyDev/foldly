@@ -13,6 +13,7 @@ import {
   updateSettingsActionSchema,
 } from '../validations';
 import type { Link } from '@/lib/database/types/links';
+import { brandingStorageService } from '../services/branding-storage-service';
 
 /**
  * Update an existing link
@@ -319,6 +320,130 @@ export async function updateLinkSettingsAction(
         fieldErrors: handleFieldErrors(error),
       };
     }
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Update link branding with image upload
+ * Handles file upload to Supabase Storage without affecting user quota
+ */
+export async function updateLinkBrandingAction(
+  linkId: string,
+  branding: {
+    enabled: boolean;
+    color?: string;
+    imageFile?: File;
+    removeImage?: boolean;
+  }
+): Promise<ActionResult<Link>> {
+  try {
+    // 1. Authenticate user
+    const user = await requireAuth();
+
+    // 2. Verify link ownership
+    const existingLink = await linksDbService.getById(linkId);
+    if (!existingLink.success || !existingLink.data) {
+      return {
+        success: false,
+        error: 'Link not found',
+      };
+    }
+
+    if (existingLink.data.userId !== user.id) {
+      return {
+        success: false,
+        error: 'Unauthorized: You can only update your own links',
+      };
+    }
+
+    // 3. Prepare branding update
+    interface BrandingUpdate {
+      enabled: boolean;
+      color?: string;
+      imagePath?: string | null;
+      imageUrl?: string | null;
+    }
+    
+    let brandingUpdate: BrandingUpdate = {
+      enabled: branding.enabled,
+      color: branding.color,
+    };
+
+    // 4. Handle image operations
+    if (branding.imageFile) {
+      // Upload new image
+      const uploadResult = await brandingStorageService.uploadBrandingImage(
+        branding.imageFile,
+        user.id,
+        linkId
+      );
+
+      if (!uploadResult.success) {
+        return {
+          success: false,
+          error: uploadResult.error || 'Failed to upload branding image',
+        };
+      }
+
+      // Delete old image if exists
+      if (existingLink.data.branding?.imagePath) {
+        await brandingStorageService.deleteBrandingImage(
+          existingLink.data.branding.imagePath
+        );
+      }
+
+      brandingUpdate.imagePath = uploadResult.data!.path;
+      brandingUpdate.imageUrl = uploadResult.data!.publicUrl;
+    } else if (branding.removeImage && existingLink.data.branding?.imagePath) {
+      // Remove existing image
+      await brandingStorageService.deleteBrandingImage(
+        existingLink.data.branding.imagePath
+      );
+      brandingUpdate.imagePath = null;
+      brandingUpdate.imageUrl = null;
+    } else if (existingLink.data.branding?.imagePath) {
+      // Keep existing image paths
+      brandingUpdate.imagePath = existingLink.data.branding.imagePath;
+      brandingUpdate.imageUrl = existingLink.data.branding.imageUrl;
+    }
+
+    // 5. Update link in database
+    const result = await linksDbService.update(linkId, {
+      branding: brandingUpdate,
+    } as any);
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error || 'Failed to update link branding',
+      };
+    }
+
+    // 6. Audit log
+    await logAudit({
+      userId: user.id,
+      action: 'updated_branding',
+      resource: 'link',
+      resourceId: linkId,
+      timestamp: new Date(),
+      details: { 
+        brandingEnabled: branding.enabled,
+        imageUploaded: !!branding.imageFile,
+        imageRemoved: !!branding.removeImage,
+      },
+    });
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error('Update link branding error:', error);
 
     return {
       success: false,

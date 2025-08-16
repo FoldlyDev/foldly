@@ -15,14 +15,14 @@ export function LinkWelcomeMessageSettings({
 }: LinkWelcomeMessageSettingsProps) {
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <MessageSquare className='w-4 h-4' />
         Welcome Message
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         <div className='space-y-3'>
-          <p className='text-sm text-[var(--neutral-600)]'>
+          <p className='text-sm text-muted-foreground'>
             Welcome message functionality coming soon. Use the description field
             in basic settings to customize your upload page message.
           </p>

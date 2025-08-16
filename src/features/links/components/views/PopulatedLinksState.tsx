@@ -1,22 +1,23 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Plus, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { memo, useMemo, useCallback, useState } from 'react';
 import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import { useModalStore, useUIStore } from '../../store';
 import { ActionButton } from '@/components/ui/core/action-button';
+import { SecondaryCTAButton } from '@/components/ui/core';
 import { SearchInput } from '@/components/ui/core/search-input';
 import { ViewToggle } from '@/components/ui/core/view-toggle';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/core/shadcn/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+import { Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LinkWithStats } from '@/lib/database/types';
 
@@ -74,10 +75,6 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     }, [links]);
 
     // Stabilize callbacks to prevent unnecessary re-renders
-    const handleTemplatesClick = useCallback(() => {
-      toast.info('Templates functionality coming soon');
-    }, []);
-
     const handleCreateClick = useCallback(() => {
       // Check if user has a base link already
       const hasBaseLink = links.some(link => link.linkType === 'base');
@@ -188,9 +185,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
           {/* No Results Message */}
           <div className='text-center py-12'>
-            <p>
-              No links found matching "{searchQuery}"
-            </p>
+            <p>No links found matching "{searchQuery}"</p>
             <button
               onClick={handleClearSearch}
               className='mt-2 text-[var(--primary)] hover:underline'
@@ -212,9 +207,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         {/* Header with Search and Filters */}
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <div className='flex items-center gap-3'>
-            <h2>
-              Your Links ({links.length})
-            </h2>
+            <h2>Your Links ({links.length})</h2>
 
             {/* Filter Badges */}
             {(filterType !== 'all' || filterStatus !== 'all') && (
@@ -235,28 +228,10 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className='flex items-center gap-2'>
-            <ActionButton
-              variant='outline'
-              size='sm'
-              onClick={handleTemplatesClick}
-              className='text-[var(--neutral-600)] border-[var(--neutral-200)]'
-            >
-              <SlidersHorizontal className='w-4 h-4' />
-              Templates
-            </ActionButton>
-
-            <ActionButton
-              variant='default'
-              size='sm'
-              onClick={handleCreateClick}
-              className='bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-[var(--quaternary)]'
-            >
-              <Plus className='w-4 h-4' />
-              Create Link
-            </ActionButton>
-          </div>
+          {/* Action Button */}
+          <SecondaryCTAButton onClick={handleCreateClick} icon={Plus}>
+            Create Link
+          </SecondaryCTAButton>
         </div>
 
         {/* Search and Filter Controls */}
@@ -276,48 +251,124 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             {/* Filter Buttons Row */}
             <div className='flex gap-2 lg:gap-3'>
               {/* Type Filter */}
-              <div className='flex-1 lg:w-36'>
-                <Select
-                  value={filterType}
-                  onValueChange={handleFilterTypeChange}
-                >
-                  <SelectTrigger
-                    size='sm'
-                    className='border-[var(--neutral-200)] w-full justify-between'
+              <DropdownMenu>
+                <DropdownMenuTrigger className='flex-1 lg:w-36 flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer'>
+                  <div className='flex items-center gap-2'>
+                    <Filter className='w-4 h-4 text-muted-foreground' />
+                    <span>
+                      {filterType === 'all'
+                        ? 'All Types'
+                        : filterType === 'base'
+                          ? 'Base'
+                          : filterType === 'custom'
+                            ? 'Custom'
+                            : 'Generated'}
+                    </span>
+                  </div>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                   >
-                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                    <SelectValue placeholder='Type' />
-                  </SelectTrigger>
-                  <SelectContent align='end' className='bg-white border-[var(--neutral-200)]'>
-                    <SelectItem value='all'>All Types</SelectItem>
-                    <SelectItem value='base'>Base</SelectItem>
-                    <SelectItem value='custom'>Custom</SelectItem>
-                    <SelectItem value='generated'>Generated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align='end'
+                  className='w-full min-w-[150px]'
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('all')}
+                    className='cursor-pointer'
+                  >
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('base')}
+                    className='cursor-pointer'
+                  >
+                    Base
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('custom')}
+                    className='cursor-pointer'
+                  >
+                    Custom
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('generated')}
+                    className='cursor-pointer'
+                  >
+                    Generated
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Status Filter */}
-              <div className='flex-1 lg:w-36'>
-                <Select
-                  value={filterStatus}
-                  onValueChange={handleFilterStatusChange}
-                >
-                  <SelectTrigger
-                    size='sm'
-                    className='border-[var(--neutral-200)] w-full justify-between'
+              <DropdownMenu>
+                <DropdownMenuTrigger className='flex-1 lg:w-36 flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer'>
+                  <div className='flex items-center gap-2'>
+                    <Filter className='w-4 h-4 text-muted-foreground' />
+                    <span>
+                      {filterStatus === 'all'
+                        ? 'All Status'
+                        : filterStatus === 'active'
+                          ? 'Active'
+                          : filterStatus === 'paused'
+                            ? 'Paused'
+                            : 'Expired'}
+                    </span>
+                  </div>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                   >
-                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                    <SelectValue placeholder='Status' />
-                  </SelectTrigger>
-                  <SelectContent align='end' className='bg-white border-[var(--neutral-200)]'>
-                    <SelectItem value='all'>All Status</SelectItem>
-                    <SelectItem value='active'>Active</SelectItem>
-                    <SelectItem value='paused'>Paused</SelectItem>
-                    <SelectItem value='expired'>Expired</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align='end'
+                  className='w-full min-w-[150px]'
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('all')}
+                    className='cursor-pointer'
+                  >
+                    All Status
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('active')}
+                    className='cursor-pointer'
+                  >
+                    Active
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('paused')}
+                    className='cursor-pointer'
+                  >
+                    Paused
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('expired')}
+                    className='cursor-pointer'
+                  >
+                    Expired
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* View Toggle */}

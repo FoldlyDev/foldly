@@ -3,20 +3,28 @@
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Sliders } from 'lucide-react';
+import { Save, Sliders, Palette } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
 } from '@/components/marketing/animate-ui/radix/dialog';
-import { ActionButton } from '@/components/ui/core/action-button';
+import { Button } from '@/components/ui/core/shadcn/button';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContents,
+  TabsContent,
+} from '@/components/marketing/animate-ui/components/tabs';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { LinkSettingsForm } from '../sections/LinkSettingsForm';
+import { BrandingSettingsForm } from '../sections/BrandingSettingsForm';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
-} from '../../lib/validations';
+} from '../../lib/validations/forms';
 import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
@@ -47,7 +55,7 @@ export function SettingsModal() {
       maxFiles: 100,
       maxFileSize: 5, // 5MB (Supabase deployment limit)
       allowedFileTypes: [],
-      branding: { enabled: false },
+      branding: undefined,
       expiresAt: undefined,
     },
   });
@@ -169,7 +177,7 @@ export function SettingsModal() {
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
-        branding: link.branding || { enabled: false },
+        branding: link.branding || undefined,
         expiresAt: link.expiresAt ? new Date(link.expiresAt) : undefined,
       });
 
@@ -231,9 +239,9 @@ export function SettingsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className='w-[calc(100vw-1rem)] max-w-sm sm:max-w-lg lg:max-w-4xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'
-        from='right'
-        transition={{ type: 'spring', stiffness: 160, damping: 20 }}
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-lg lg:max-w-4xl h-[90vh] sm:h-[85vh] md:h-[80vh] max-h-[90vh] p-0 overflow-hidden flex flex-col'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
       >
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>
@@ -262,67 +270,107 @@ export function SettingsModal() {
           </div>
         </div>
 
-        {/* Content Area */}
-        <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6'>
-          <form
-            onSubmit={handleSubmit(onSubmit)}
-            className='space-y-6 max-w-2xl mx-auto'
-          >
-            {/* General Settings Section */}
-            <LinkSettingsForm
-              link={{
-                ...link,
-                stats: {
-                  fileCount: link.totalFiles || 0,
-                  batchCount: 0,
-                  folderCount: 0,
-                  totalViewCount: 0,
-                  uniqueViewCount: 0,
-                  averageFileSize:
-                    link.totalFiles > 0
-                      ? (link.totalSize || 0) / link.totalFiles
-                      : 0,
-                  storageUsedPercentage: 0,
-                  isNearLimit: false,
-                },
-              }}
-              form={form}
-            />
+        {/* Content Area with Tabs */}
+        <div className='flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-4'>
+          <Tabs defaultValue='general' className='h-full flex flex-col'>
+            <TabsList className='grid w-full grid-cols-2 mb-6'>
+              <TabsTrigger value='general'>
+                <Sliders className='w-4 h-4 mr-2' />
+                General Settings
+              </TabsTrigger>
+              <TabsTrigger value='branding'>
+                <Palette className='w-4 h-4 mr-2' />
+                Branding
+              </TabsTrigger>
+            </TabsList>
 
-          </form>
+            <TabsContents className='flex-1 overflow-y-auto'>
+              <TabsContent value='general' className='h-full'>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className='space-y-6 max-w-2xl mx-auto pb-6'
+                >
+                  {/* General Settings Section */}
+                  <LinkSettingsForm
+                    link={{
+                      ...link,
+                      stats: {
+                        fileCount: link.totalFiles || 0,
+                        batchCount: 0,
+                        folderCount: 0,
+                        totalViewCount: 0,
+                        uniqueViewCount: 0,
+                        averageFileSize:
+                          link.totalFiles > 0
+                            ? (link.totalSize || 0) / link.totalFiles
+                            : 0,
+                        storageUsedPercentage: 0,
+                        isNearLimit: false,
+                      },
+                    }}
+                    form={form}
+                  />
+                </form>
+              </TabsContent>
+
+              <TabsContent value='branding' className='h-full'>
+                <div className='max-w-2xl mx-auto pb-6'>
+                  <BrandingSettingsForm 
+                    link={{
+                      ...link,
+                      stats: {
+                        fileCount: link.totalFiles || 0,
+                        batchCount: 0,
+                        folderCount: 0,
+                        totalViewCount: 0,
+                        uniqueViewCount: 0,
+                        averageFileSize:
+                          link.totalFiles > 0
+                            ? (link.totalSize || 0) / link.totalFiles
+                            : 0,
+                        storageUsedPercentage: 0,
+                        isNearLimit: false,
+                      },
+                    }}
+                    form={form} 
+                  />
+                </div>
+              </TabsContent>
+            </TabsContents>
+          </Tabs>
         </div>
 
         {/* Modal Footer */}
         <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
           <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
-            <ActionButton
+            <Button
               type='button'
               variant='outline'
               onClick={handleCancel}
               disabled={isSubmitting}
-              className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
+              className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-border hover:bg-muted/50 hover:border-border/80 transition-all duration-200'
             >
               Cancel
-            </ActionButton>
+            </Button>
 
-            <ActionButton
+            <Button
               onClick={handleSubmit(onSubmit)}
-              variant='default'
               disabled={!canSubmit}
-              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
+              variant='outline'
+              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] border-border hover:bg-muted/50 hover:border-border/80 transition-all duration-200'
             >
-                {isSubmitting ? (
-                  <>
-                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className='w-4 h-4' />
-                    Save Settings
-                  </>
-                )}
-            </ActionButton>
+              {isSubmitting ? (
+                <>
+                  <div className='w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin' />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className='w-4 h-4' />
+                  <span>Save Settings</span>
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </DialogContent>

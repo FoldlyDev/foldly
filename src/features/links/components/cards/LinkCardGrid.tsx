@@ -73,7 +73,12 @@ export const LinkCardGrid = memo(
           <div className='link-card-grid-header'>
             <div className='flex-1 min-w-0'>
               <div className='flex items-center gap-3 mb-2'>
-                <LinkTypeIcon isBaseLink={isBaseLink} size='lg' />
+                <LinkTypeIcon 
+                  isBaseLink={isBaseLink} 
+                  size='lg' 
+                  brandingEnabled={link.branding?.enabled}
+                  {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+                />
                 <LinkStatusIndicator
                   status={link.isActive ? 'active' : 'paused'}
                 />

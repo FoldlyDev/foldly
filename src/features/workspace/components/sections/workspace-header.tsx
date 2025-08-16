@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { SettingsDropdown } from '../settings/SettingsDropdown';
-import { TertiaryCTAButton } from '@/components/ui/core';
+import { SecondaryCTAButton } from '@/components/ui/core';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;
@@ -131,7 +131,7 @@ export function WorkspaceHeader({
 
         {/* Primary CTA - Always visible with responsive sizing */}
         <div className='relative'>
-          <TertiaryCTAButton
+          <SecondaryCTAButton
             className='flex-shrink-0 px-4 sm:px-6 relative cta'
             onClick={handleUploadClick}
             disabled={isUploadDisabled}
@@ -143,7 +143,7 @@ export function WorkspaceHeader({
             <span className='text-sm sm:text-base'>
               {isUploadDisabled ? 'Storage Full' : 'Upload Files'}
             </span>
-          </TertiaryCTAButton>
+          </SecondaryCTAButton>
 
           {/* Storage warning indicator */}
           {showStorageWarning && (

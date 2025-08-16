@@ -31,18 +31,18 @@ export function LinkAccessSettings({ form }: LinkAccessSettingsProps) {
 
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <Globe className='w-4 h-4' />
         Visibility & Access
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg transition-all duration-300 ease-in-out'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         {/* Active Status Toggle */}
-        <div className='space-y-3 pb-3 border-b border-[var(--neutral-200)]'>
+        <div className='space-y-3 pb-3 border-b border-border'>
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
+                <span className='form-label'>
                   Link Status
                 </span>
                 <HelpPopover
@@ -52,7 +52,7 @@ export function LinkAccessSettings({ form }: LinkAccessSettingsProps) {
 Inactive: Link is disabled - users see a 'Link unavailable' message."
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 {watchedValues.isActive
                   ? 'Link is active and accepting uploads'
                   : 'Link is disabled - no uploads allowed'}
@@ -85,7 +85,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
+                <span className='form-label'>
                   Require Email Address
                 </span>
                 <HelpPopover
@@ -97,7 +97,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
 • Export for follow-up'
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 Collect uploader contact info for tracking and follow-up
               </p>
             </div>
@@ -118,7 +118,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
+                <span className='form-label'>
                   Password Protection
                 </span>
                 <HelpPopover
@@ -130,7 +130,7 @@ Share both:
 • The password'
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 Extra security layer - users need both link and password
               </p>
             </div>
@@ -170,7 +170,7 @@ Share both:
                 }}
                 className='ml-4 space-y-2 overflow-hidden'
               >
-                <label className='block text-xs font-medium text-[var(--quaternary)]'>
+                <label className='form-label'>
                   Set Password
                 </label>
                 <div className='relative'>
@@ -184,7 +184,7 @@ Share both:
                       })
                     }
                     placeholder='Enter password (8+ characters)'
-                    className={`premium-input pr-10 ${
+                    className={`form-input pr-10 ${
                       watchedValues.password && watchedValues.password.length < 8
                         ? 'form-input-error'
                         : ''
@@ -193,7 +193,7 @@ Share both:
                   <button
                     type='button'
                     onClick={() => setShowPassword(!showPassword)}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 text-[var(--neutral-500)] hover:text-[var(--neutral-700)] transition-colors'
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
                   >
                     {showPassword ? (
                       <EyeOff className='w-4 h-4' />

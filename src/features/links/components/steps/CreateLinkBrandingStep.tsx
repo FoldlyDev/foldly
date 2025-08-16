@@ -55,6 +55,10 @@ export const CreateLinkBrandingStep = () => {
         if (updates.branding.image !== undefined) {
           updateFormField('logoUrl', updates.branding.image);
         }
+        // Handle file separately
+        if (updates.brandingFile !== undefined) {
+          updateFormField('logoFile', updates.brandingFile);
+        }
       }
     },
     [updateFormField]
@@ -99,11 +103,13 @@ export const CreateLinkBrandingStep = () => {
         branding: formData.brandEnabled ? {
           enabled: formData.brandEnabled,
           color: formData.brandColor,
-          image: formData.logoUrl,
+          // Don't include the base64 image in branding
         } : undefined,
+        // Include the file separately for upload
+        brandingImageFile: formData.logoFile || undefined,
       };
 
-      // Create link using React Query mutation
+      // Create link using React Query mutation (handles file upload)
       await createLink.mutateAsync(linkInput);
 
       // Close modal and reset form

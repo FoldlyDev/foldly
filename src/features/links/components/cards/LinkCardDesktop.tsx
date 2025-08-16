@@ -82,7 +82,12 @@ export const LinkCardDesktop = memo(
 
           {/* Icon + Title */}
           <div className='flex items-center gap-3 min-w-0 flex-1'>
-            <LinkTypeIcon isBaseLink={isBaseLink} size='sm' />
+            <LinkTypeIcon 
+              isBaseLink={isBaseLink} 
+              size='sm' 
+              brandingEnabled={link.branding?.enabled}
+              {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+            />
 
             <div className='min-w-0 flex-1'>
               <div className='flex items-center gap-2'>

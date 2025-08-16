@@ -13,6 +13,7 @@ import {
 import type { LinkInsert, Link } from '@/lib/database/types/links';
 import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
 import { getSupabaseClient } from '@/lib/config/supabase-client';
+import { brandingStorageService } from '../services/branding-storage-service';
 
 /**
  * Create a new link
@@ -179,6 +180,73 @@ export async function createLinkAction(
       };
     }
 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Create a new link with branding image
+ * This action handles both link creation and image upload in sequence
+ */
+export async function createLinkWithBrandingAction(
+  input: z.infer<typeof createLinkActionSchema> & { brandingImageFile?: File }
+): Promise<ActionResult<Link>> {
+  try {
+    // 1. Extract the image file from input
+    const { brandingImageFile, ...linkData } = input;
+    
+    // 2. Create the link first
+    const createResult = await createLinkAction(linkData);
+    
+    if (!createResult.success || !createResult.data) {
+      return createResult;
+    }
+    
+    // 3. If there's a branding image, upload it
+    if (brandingImageFile && linkData.branding?.enabled) {
+      const user = await requireAuth();
+      
+      try {
+        const uploadResult = await brandingStorageService.uploadBrandingImage(
+          brandingImageFile,
+          user.id,
+          createResult.data.id
+        );
+        
+        if (uploadResult.success) {
+          // Update the link with the image paths
+          const updatedBranding = {
+            ...createResult.data.branding,
+            imagePath: uploadResult.data!.path,
+            imageUrl: uploadResult.data!.publicUrl,
+          };
+          
+          // Update the link in the database
+          const updateResult = await linksDbService.update(createResult.data.id, {
+            branding: updatedBranding,
+          } as any);
+          
+          if (updateResult.success) {
+            return {
+              success: true,
+              data: updateResult.data,
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Failed to upload branding image during creation:', error);
+        // Don't fail the entire operation if image upload fails
+        // The link is already created successfully
+      }
+    }
+    
+    // Return the created link (with or without image)
+    return createResult;
+  } catch (error) {
+    console.error('Create link with branding error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

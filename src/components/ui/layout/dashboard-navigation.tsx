@@ -111,7 +111,7 @@ function UserProfileButton({ shouldExpand }: { shouldExpand: boolean }) {
     <button
       onClick={handleProfileClick}
       className={`
-        flex items-center gap-3 p-2 rounded-lg foldly-glass
+        flex items-center gap-3 p-3 rounded-lg foldly-glass
         hover:bg-neutral-100 dark:hover:bg-white/10 
         transition-colors cursor-pointer w-full
         ${shouldExpand ? '' : 'justify-center'}
