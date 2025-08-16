@@ -97,38 +97,42 @@ export default function LinkTree({
   onSelectionChange,
 }: LinkTreeProps) {
   const queryClient = useQueryClient();
-  const [localStagedItemIds, setLocalStagedItemIds] = React.useState<Set<string>>(new Set());
-  
+  const [localStagedItemIds, setLocalStagedItemIds] = React.useState<
+    Set<string>
+  >(new Set());
+
   // Hooks
   const { data: linkTreeData, error } = useLinkTree(linkData.id);
-  
+
   // Use atomic selectors to avoid infinite loops with Map->Array conversion
   const stagedFilesMap = useStagingStore(state => state.stagedFiles);
   const stagedFoldersMap = useStagingStore(state => state.stagedFolders);
   const version = useStagingStore(state => state.version);
-  
+
   // Convert Maps to arrays using useMemo to maintain stable references
-  const stagedFiles = React.useMemo(() => 
-    Array.from(stagedFilesMap || new Map()),
+  const stagedFiles = React.useMemo(
+    () => Array.from(stagedFilesMap || new Map()),
     [stagedFilesMap]
   );
-  
-  const stagedFolders = React.useMemo(() => 
-    Array.from(stagedFoldersMap || new Map()),
+
+  const stagedFolders = React.useMemo(
+    () => Array.from(stagedFoldersMap || new Map()),
     [stagedFoldersMap]
   );
 
   // Initialize tree - using a ref to break circular dependency
   const treeRef = React.useRef<TreeInstance<LinkTreeItem> | null>(null);
-  
+
   const tree = useTree<LinkTreeItem>({
     initialState: {
       expandedItems: linkData.id ? [linkData.id] : [],
       selectedItems: [],
     },
     rootItemId: linkData.id || '',
-    getItemName: (item: ItemInstance<LinkTreeItem>) => item.getItemData()?.name || 'Unknown',
-    isItemFolder: (item: ItemInstance<LinkTreeItem>) => !item.getItemData()?.isFile,
+    getItemName: (item: ItemInstance<LinkTreeItem>) =>
+      item.getItemData()?.name || 'Unknown',
+    isItemFolder: (item: ItemInstance<LinkTreeItem>) =>
+      !item.getItemData()?.isFile,
     canReorder: true,
     reorderAreaPercentage: 0.4,
     dataLoader,
@@ -145,7 +149,11 @@ export default function LinkTree({
     ],
     onDrop: async (items: ItemInstance<LinkTreeItem>[], target: any) => {
       if (treeRef.current) {
-        const context = { tree: treeRef.current, queryClient, linkId: linkData.id };
+        const context = {
+          tree: treeRef.current,
+          queryClient,
+          linkId: linkData.id,
+        };
         return handleLinkDrop({ items, target }, context);
       }
     },
@@ -167,7 +175,7 @@ export default function LinkTree({
     canDropForeignDragObject: canLinkDropForeignDragObject,
     createForeignDragObject: createLinkForeignDragObject,
   });
-  
+
   // Store tree reference
   React.useEffect(() => {
     treeRef.current = tree;
@@ -180,8 +188,10 @@ export default function LinkTree({
 
   // Apply search filter with expand/collapse behavior
   const [isSearching, setIsSearching] = React.useState(false);
-  const [preSearchExpandedItems, setPreSearchExpandedItems] = React.useState<string[]>([]);
-  
+  const [preSearchExpandedItems, setPreSearchExpandedItems] = React.useState<
+    string[]
+  >([]);
+
   React.useEffect(() => {
     if (!tree) return;
 
@@ -228,7 +238,7 @@ export default function LinkTree({
   const prevVersionRef = React.useRef(version);
   const prevStagedFilesRef = React.useRef(stagedFiles);
   const prevStagedFoldersRef = React.useRef(stagedFolders);
-  
+
   React.useEffect(() => {
     if (!linkTreeData || isDragActive) return;
 
@@ -236,26 +246,34 @@ export default function LinkTree({
     const versionChanged = prevVersionRef.current !== version;
     const stagedFilesChanged = prevStagedFilesRef.current !== stagedFiles;
     const stagedFoldersChanged = prevStagedFoldersRef.current !== stagedFolders;
-    
+
     // Update refs
     prevVersionRef.current = version;
     prevStagedFilesRef.current = stagedFiles;
     prevStagedFoldersRef.current = stagedFolders;
-    
+
     // Only sync if something actually changed
-    if (!versionChanged && !stagedFilesChanged && !stagedFoldersChanged && !linkTreeData) {
+    if (
+      !versionChanged &&
+      !stagedFilesChanged &&
+      !stagedFoldersChanged &&
+      !linkTreeData
+    ) {
       return;
     }
 
     const dataUpdated = populateFromDatabase(
-      { id: linkTreeData.link.id, ...(linkTreeData.link.title && { title: linkTreeData.link.title }) },
+      {
+        id: linkTreeData.link.id,
+        ...(linkTreeData.link.title && { title: linkTreeData.link.title }),
+      },
       linkTreeData.folders || [],
       linkTreeData.files || []
     );
 
     // Merge staging data after database data - we already have the Maps
     mergeStagedItemsWithTree(linkData.id, stagedFilesMap, stagedFoldersMap);
-    
+
     // Track staged item IDs for grouped display
     const newStagedIds = new Set<string>();
     stagedFiles.forEach(([id]) => newStagedIds.add(id));
@@ -272,7 +290,15 @@ export default function LinkTree({
         }, 0);
       }
     }
-  }, [linkTreeData, tree, linkData.id, stagedFiles, stagedFolders, version, isDragActive]);
+  }, [
+    linkTreeData,
+    tree,
+    linkData.id,
+    stagedFiles,
+    stagedFolders,
+    version,
+    isDragActive,
+  ]);
 
   // Track selection changes
   React.useEffect(() => {
@@ -298,7 +324,9 @@ export default function LinkTree({
   }, [tree, onTreeReady, handlers]);
 
   // Handle file download
-  const handleDownload = async (item: ItemInstance<LinkTreeItem>): Promise<void> => {
+  const handleDownload = async (
+    item: ItemInstance<LinkTreeItem>
+  ): Promise<void> => {
     const itemData = item.getItemData();
     if (!itemData?.isFile) return;
 
@@ -331,34 +359,39 @@ export default function LinkTree({
   }
 
   // Empty state
-  const hasNoItems = !linkTreeData.folders?.length && 
-                     !linkTreeData.files?.length && 
-                     stagedFolders.length === 0 && 
-                     stagedFiles.length === 0;
-                     
+  const hasNoItems =
+    !linkTreeData.folders?.length &&
+    !linkTreeData.files?.length &&
+    stagedFolders.length === 0 &&
+    stagedFiles.length === 0;
+
   if (hasNoItems) {
     return <EmptyTreeState />;
   }
 
   // Separate staged and non-staged items with better error handling
   const allItems = tree?.getItems ? tree.getItems() : [];
-  
+
   // Validate items and separate them
   const validItems: ItemInstance<LinkTreeItem>[] = [];
   const stagedItems: ItemInstance<LinkTreeItem>[] = [];
   const nonStagedItems: ItemInstance<LinkTreeItem>[] = [];
-  
+
   allItems.forEach((item: ItemInstance<LinkTreeItem>, index: number) => {
     // Validate item has required methods
-    if (!item || typeof item.getItemData !== 'function' || typeof item.getId !== 'function') {
+    if (
+      !item ||
+      typeof item.getItemData !== 'function' ||
+      typeof item.getId !== 'function'
+    ) {
       console.error(`Invalid tree item at index ${index}:`, item);
       return;
     }
-    
+
     try {
       const itemData = item.getItemData();
       const itemId = item.getId();
-      
+
       // Check if it's staged
       if (itemData?.isStaged || localStagedItemIds.has(itemId)) {
         stagedItems.push(item);
@@ -367,13 +400,19 @@ export default function LinkTree({
       }
       validItems.push(item);
     } catch (error) {
-      console.error(`Error processing tree item at index ${index}:`, error, item);
+      console.error(
+        `Error processing tree item at index ${index}:`,
+        error,
+        item
+      );
     }
   });
-  
+
   // Log any issues for debugging
   if (validItems.length !== allItems.length) {
-    console.warn(`Tree has ${allItems.length} items but only ${validItems.length} are valid`);
+    console.warn(
+      `Tree has ${allItems.length} items but only ${validItems.length} are valid`
+    );
   }
 
   return (
@@ -402,7 +441,7 @@ export default function LinkTree({
         <StagedItemsContainer items={stagedItems} onDownload={handleDownload} />
 
         {/* Non-staged Items */}
-        <div className="space-y-0.5">
+        <div className='space-y-0.5'>
           {nonStagedItems.map((item: ItemInstance<LinkTreeItem>) => (
             <LinkTreeNode
               key={item.getId()}
@@ -421,11 +460,13 @@ export default function LinkTree({
       <BatchOperationModal
         isOpen={batchOps.batchMoveModal.isOpen}
         onClose={batchOps.handleModalClose}
-        operation="move"
+        operation='move'
         items={batchOps.batchMoveModal.items}
         targetFolder={batchOps.batchMoveModal.targetFolder || 'Unknown'}
         onConfirm={batchOps.executeBatchMove}
-        {...(batchOps.batchMoveModal.progress && { progress: batchOps.batchMoveModal.progress })}
+        {...(batchOps.batchMoveModal.progress && {
+          progress: batchOps.batchMoveModal.progress,
+        })}
         isProcessing={batchOps.batchMoveModal.isProcessing}
       />
     </motion.div>

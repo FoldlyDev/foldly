@@ -10,7 +10,7 @@ export function EmptyTreeState() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className='flex h-full items-center justify-center p-8'
+      className='flex h-[50vh] items-center justify-center p-8'
     >
       <UploadHighlight />
     </motion.div>
