@@ -262,6 +262,5 @@ export class BrandingStorageService {
   }
 }
 
-// Export both the class and singleton instance
-export { BrandingStorageService };
+// Export singleton instance
 export const brandingStorageService = new BrandingStorageService();
