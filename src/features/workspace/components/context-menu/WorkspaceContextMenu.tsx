@@ -7,8 +7,11 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
-} from '@/components/ui/core/shadcn/context-menu';
-import { generateLinkFromFolderAction, checkFolderHasGeneratedLinkAction } from '@/features/links/lib/actions';
+} from '@/components/ui/shadcn/context-menu';
+import {
+  generateLinkFromFolderAction,
+  checkFolderHasGeneratedLinkAction,
+} from '@/features/links/lib/actions';
 import { useQueryClient } from '@tanstack/react-query';
 import { generateLinkUrl } from '@/lib/config/url-config';
 import { showWorkspaceError } from '@/features/notifications/utils';
@@ -32,9 +35,14 @@ export function WorkspaceContextMenu({
   const [isCheckingLink, setIsCheckingLink] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
-  
+
   // Use store for generating state
-  const { addGeneratingItem, removeGeneratingItem, addFolderWithLink, isGenerating } = useGeneratingLinksStore();
+  const {
+    addGeneratingItem,
+    removeGeneratingItem,
+    addFolderWithLink,
+    isGenerating,
+  } = useGeneratingLinksStore();
   const isGeneratingLink = isGenerating(folderId);
 
   // Check if folder already has a generated link when menu opens
@@ -61,21 +69,25 @@ export function WorkspaceContextMenu({
 
     // Add to generating state
     addGeneratingItem(folderId);
-    
+
     try {
       const result = await generateLinkFromFolderAction({ folderId });
 
       if (result.success && result.data) {
         // Invalidate links query to refresh the links list
         await queryClient.invalidateQueries({ queryKey: ['links'] });
-        
+
         // Mark that this folder now has a generated link
         setHasGeneratedLink(true);
         addFolderWithLink(folderId);
-        
+
         // Build the link URL
-        const linkUrl = generateLinkUrl(result.data.slug, result.data.topic || null, { absolute: true });
-        
+        const linkUrl = generateLinkUrl(
+          result.data.slug,
+          result.data.topic || null,
+          { absolute: true }
+        );
+
         // Show interactive notification
         showGeneratedLinkNotification({
           linkId: result.data.id,
@@ -83,17 +95,25 @@ export function WorkspaceContextMenu({
           folderName,
         });
       } else {
-        showWorkspaceError('link_generated', {
-          itemName: folderName,
-          itemType: 'folder',
-        }, result.error || 'An unexpected error occurred');
+        showWorkspaceError(
+          'link_generated',
+          {
+            itemName: folderName,
+            itemType: 'folder',
+          },
+          result.error || 'An unexpected error occurred'
+        );
       }
     } catch (error) {
       console.error('Error generating link:', error);
-      showWorkspaceError('link_generated', {
-        itemName: folderName,
-        itemType: 'folder',
-      }, 'Failed to generate link. Please try again.');
+      showWorkspaceError(
+        'link_generated',
+        {
+          itemName: folderName,
+          itemType: 'folder',
+        },
+        'Failed to generate link. Please try again.'
+      );
     } finally {
       // Remove from generating state
       removeGeneratingItem(folderId);
@@ -108,30 +128,30 @@ export function WorkspaceContextMenu({
 
   return (
     <ContextMenuRoot open={isOpen} onOpenChange={handleOpenChange}>
-      <ContextMenuTrigger asChild>
-        {children}
-      </ContextMenuTrigger>
-      <ContextMenuContent className="context-menu w-56">
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className='context-menu w-56'>
         <ContextMenuItem
           onClick={handleGenerateLink}
           disabled={isGeneratingLink || hasGeneratedLink || isCheckingLink}
-          className="flex items-center"
+          className='flex items-center'
         >
           {isCheckingLink ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              <span className="flex-1">Checking...</span>
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              <span className='flex-1'>Checking...</span>
             </>
           ) : isGeneratingLink ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              <span className="flex-1">Generating...</span>
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+              <span className='flex-1'>Generating...</span>
             </>
           ) : (
             <>
-              <Link2 className="mr-2 h-4 w-4" />
-              <span className="flex-1">
-                {hasGeneratedLink ? 'Link Already Generated' : 'Generate link for this folder'}
+              <Link2 className='mr-2 h-4 w-4' />
+              <span className='flex-1'>
+                {hasGeneratedLink
+                  ? 'Link Already Generated'
+                  : 'Generate link for this folder'}
               </span>
             </>
           )}

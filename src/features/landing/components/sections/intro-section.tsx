@@ -9,7 +9,7 @@ import {
   IoSparklesOutline,
 } from 'react-icons/io5';
 import { Spotlight } from '../ui/spotlight';
-import { ShimmeringText } from '@/components/marketing/animate-ui/components/shimmering';
+import { ShimmeringText } from '@/components/ui/animate-ui/components/shimmering';
 
 interface IntroSectionProps {}
 
@@ -25,11 +25,11 @@ interface IntroSectionRefs {
 
 // Icon data - using React Icons Ionicons5 (thin outline style) that match the text content
 const iconData = [
-  { Icon: IoDocumentOutline, alt: 'File Icon' },        // "Collect files from"
-  { Icon: IoPeopleOutline, alt: 'People Icon' },        // "anyone. No logins."
-  { Icon: IoLinkOutline, alt: 'Link Icon' },            // "Create smart links"
-  { Icon: IoFolderOpenOutline, alt: 'Organize Icon' },  // "that organize"
-  { Icon: IoSparklesOutline, alt: 'Platform Icon' },    // "automatically on Foldly."
+  { Icon: IoDocumentOutline, alt: 'File Icon' }, // "Collect files from"
+  { Icon: IoPeopleOutline, alt: 'People Icon' }, // "anyone. No logins."
+  { Icon: IoLinkOutline, alt: 'Link Icon' }, // "Create smart links"
+  { Icon: IoFolderOpenOutline, alt: 'Organize Icon' }, // "that organize"
+  { Icon: IoSparklesOutline, alt: 'Platform Icon' }, // "automatically on Foldly."
 ];
 
 // Text segments for the animated text

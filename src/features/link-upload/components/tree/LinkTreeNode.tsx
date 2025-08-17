@@ -10,7 +10,7 @@ import {
   ChevronDown,
   Download,
 } from 'lucide-react';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import type { ItemInstance } from '@headless-tree/core';
 import type { LinkTreeItem } from '../../lib/tree-data';
 
@@ -22,12 +22,12 @@ interface LinkTreeNodeProps {
   stagingStatus?: 'staged' | 'uploading' | 'completed' | 'failed';
 }
 
-export function LinkTreeNode({ 
-  item, 
-  onDownload, 
+export function LinkTreeNode({
+  item,
+  onDownload,
   isDragging = false,
   isStaged = false,
-  stagingStatus
+  stagingStatus,
 }: LinkTreeNodeProps) {
   const itemId = item.getId();
   const itemData = item.getItemData();
@@ -40,10 +40,7 @@ export function LinkTreeNode({
 
   if (item.isRenaming()) {
     return (
-      <div
-        className='renaming-item'
-        style={{ marginLeft: `${level * 20}px` }}
-      >
+      <div className='renaming-item' style={{ marginLeft: `${level * 20}px` }}>
         <input
           {...item.getRenameInputProps()}
           className='px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-primary'
@@ -58,12 +55,15 @@ export function LinkTreeNode({
       {...item.getProps()}
       className={cn(
         'tree-item relative flex items-center gap-2 px-2 py-1.5 text-sm rounded-md transition-all duration-200 w-full text-left cursor-pointer',
-        !isStaged && isSelected && 'bg-accent text-accent-foreground ring-1 ring-primary/20',
+        !isStaged &&
+          isSelected &&
+          'bg-accent text-accent-foreground ring-1 ring-primary/20',
         !isStaged && isFocused && 'ring-2 ring-primary/40',
         isDragTarget && 'bg-primary/10 ring-2 ring-primary',
         isDragging && 'opacity-40',
         stagingStatus === 'uploading' && 'animate-pulse',
-        stagingStatus === 'failed' && 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400',
+        stagingStatus === 'failed' &&
+          'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400',
         stagingStatus === 'completed' && 'bg-green-50 dark:bg-green-950/20'
       )}
       style={{ paddingLeft: `${level * 20 + 8}px` }}
@@ -72,7 +72,7 @@ export function LinkTreeNode({
       {/* Chevron for folders */}
       {isFolder && (
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             if (isExpanded) {
               item.collapse();
@@ -107,12 +107,17 @@ export function LinkTreeNode({
 
       {/* Staging status indicator - only show for uploading, completed, or failed states */}
       {isStaged && stagingStatus && stagingStatus !== 'staged' && (
-        <span className={cn(
-          'text-xs px-2 py-0.5 rounded-full',
-          stagingStatus === 'uploading' && 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-          stagingStatus === 'completed' && 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
-          stagingStatus === 'failed' && 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
-        )}>
+        <span
+          className={cn(
+            'text-xs px-2 py-0.5 rounded-full',
+            stagingStatus === 'uploading' &&
+              'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+            stagingStatus === 'completed' &&
+              'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+            stagingStatus === 'failed' &&
+              'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300'
+          )}
+        >
           {stagingStatus === 'uploading' && 'Uploading...'}
           {stagingStatus === 'completed' && 'Uploaded'}
           {stagingStatus === 'failed' && 'Failed'}
@@ -122,7 +127,7 @@ export function LinkTreeNode({
       {/* Download button for files */}
       {!isFolder && onDownload && !isStaged && (
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onDownload(item);
           }}

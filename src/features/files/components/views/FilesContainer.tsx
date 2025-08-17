@@ -6,7 +6,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useSearchParams } from 'next/navigation';
 import { TwoPanelLayout } from '../desktop/TwoPanelLayout';
 import { FilesSkeleton } from '../skeletons/files-skeleton';
-import { Alert, AlertDescription } from '@/components/ui/core/shadcn/alert';
+import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
 import { AlertCircle } from 'lucide-react';
 import { fetchLinksWithFilesAction } from '../../lib/actions';
 import { filesQueryKeys } from '../../lib/query-keys';
@@ -20,22 +20,22 @@ export function FilesContainer() {
   const { userId } = useAuth();
   const isDesktop = useMediaQuery('(min-width: 768px)');
   const searchParams = useSearchParams();
-  
+
   // Enable real-time updates for files
   useRealtimeFiles();
-  
+
   // Get linkId and highlight from URL params
   const linkIdFromUrl = searchParams.get('linkId');
   const shouldHighlight = searchParams.get('highlight') === 'true';
-  
+
   // Show skeleton during initial hydration to prevent flash
   const [hydrated, setHydrated] = useState(false);
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
-  
+
   useEffect(() => {
     setHydrated(true);
   }, []);
-  
+
   // Auto-select link when navigating from notification
   useEffect(() => {
     if (linkIdFromUrl && shouldHighlight) {
@@ -53,7 +53,7 @@ export function FilesContainer() {
       }, 100);
     }
   }, [linkIdFromUrl, shouldHighlight]);
-  
+
   // Get storage information
   const { storageInfo } = useStorageTracking();
 
@@ -78,9 +78,9 @@ export function FilesContainer() {
   // Error state
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center p-8">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
+      <div className='h-full flex items-center justify-center p-8'>
+        <Alert variant='destructive' className='max-w-md'>
+          <AlertCircle className='h-4 w-4' />
           <AlertDescription>
             {error instanceof Error ? error.message : 'Failed to load files'}
           </AlertDescription>
@@ -91,25 +91,25 @@ export function FilesContainer() {
 
   // Responsive layout with full height
   return (
-    <div className="files-layout">
-      <div className="files-container">
+    <div className='files-layout'>
+      <div className='files-container'>
         {!hydrated ? (
           // Minimal skeleton to prevent layout shift
-          <div className="h-full flex gap-4">
-            <div className="flex-1 rounded-lg border bg-card animate-pulse" />
-            <div className="flex-1 rounded-lg border bg-card animate-pulse hidden md:block" />
+          <div className='h-full flex gap-4'>
+            <div className='flex-1 rounded-lg border bg-card animate-pulse' />
+            <div className='flex-1 rounded-lg border bg-card animate-pulse hidden md:block' />
           </div>
         ) : isDesktop ? (
-          <TwoPanelLayout 
-            links={data || []} 
+          <TwoPanelLayout
+            links={data || []}
             storageUsed={storageInfo.storageUsedBytes}
             storageLimit={storageInfo.storageLimitBytes}
-            className="h-full"
+            className='h-full'
             selectedLinkId={selectedLinkId}
             onLinkSelect={setSelectedLinkId}
           />
         ) : (
-          <SinglePanelLayout 
+          <SinglePanelLayout
             links={data || []}
             selectedLinkId={selectedLinkId}
             onLinkSelect={setSelectedLinkId}

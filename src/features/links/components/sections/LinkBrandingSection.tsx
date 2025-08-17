@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
-import { CentralizedFileUpload } from '@/components/ui/composite/centralized-file-upload';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
 
 interface LinkBrandingFormData {
   branding: {
@@ -48,8 +48,12 @@ export function LinkBrandingSection({
           enabled: formData.branding?.enabled || false,
           ...(formData.branding?.color && { color: formData.branding.color }),
           image: newLogoUrl,
-          ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
-          ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
+          ...(formData.branding?.imagePath && {
+            imagePath: formData.branding.imagePath,
+          }),
+          ...(formData.branding?.imageUrl && {
+            imageUrl: formData.branding.imageUrl,
+          }),
         },
         brandingFile: file, // Pass the actual file
       });
@@ -93,10 +97,18 @@ export function LinkBrandingSection({
               onDataChange({
                 branding: {
                   enabled: checked,
-                  ...(formData.branding?.color && { color: formData.branding.color }),
-                  ...(formData.branding?.image && { image: formData.branding.image }),
-                  ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
-                  ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
+                  ...(formData.branding?.color && {
+                    color: formData.branding.color,
+                  }),
+                  ...(formData.branding?.image && {
+                    image: formData.branding.image,
+                  }),
+                  ...(formData.branding?.imagePath && {
+                    imagePath: formData.branding.imagePath,
+                  }),
+                  ...(formData.branding?.imageUrl && {
+                    imageUrl: formData.branding.imageUrl,
+                  }),
                 },
               });
             }}
@@ -128,9 +140,15 @@ export function LinkBrandingSection({
                       branding: {
                         enabled: formData.branding?.enabled || false,
                         color: e.target.value,
-                        ...(formData.branding?.image && { image: formData.branding.image }),
-                        ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
-                        ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
+                        ...(formData.branding?.image && {
+                          image: formData.branding.image,
+                        }),
+                        ...(formData.branding?.imagePath && {
+                          imagePath: formData.branding.imagePath,
+                        }),
+                        ...(formData.branding?.imageUrl && {
+                          imageUrl: formData.branding.imageUrl,
+                        }),
                       },
                     });
                   }}
@@ -145,9 +163,15 @@ export function LinkBrandingSection({
                       branding: {
                         enabled: formData.branding?.enabled || false,
                         color: e.target.value,
-                        ...(formData.branding?.image && { image: formData.branding.image }),
-                        ...(formData.branding?.imagePath && { imagePath: formData.branding.imagePath }),
-                        ...(formData.branding?.imageUrl && { imageUrl: formData.branding.imageUrl }),
+                        ...(formData.branding?.image && {
+                          image: formData.branding.image,
+                        }),
+                        ...(formData.branding?.imagePath && {
+                          imagePath: formData.branding.imagePath,
+                        }),
+                        ...(formData.branding?.imageUrl && {
+                          imageUrl: formData.branding.imageUrl,
+                        }),
                       },
                     });
                   }}

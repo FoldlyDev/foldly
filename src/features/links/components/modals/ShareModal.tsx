@@ -20,8 +20,8 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
-import { CopyButton } from '@/components/ui/core/copy-button';
+} from '@/components/ui/animate-ui/radix/dialog';
+import { CopyButton } from '@/components/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { useUserPlan } from '@/features/link-upload/hooks/use-user-plan';

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import { Minimize2, Maximize2 } from 'lucide-react';
 
 interface ViewControlsProps {
@@ -10,10 +10,10 @@ interface ViewControlsProps {
   disabled?: boolean;
 }
 
-export function ViewControls({ 
-  onExpandAll, 
+export function ViewControls({
+  onExpandAll,
   onCollapseAll,
-  disabled = false 
+  disabled = false,
 }: ViewControlsProps) {
   return (
     <div className='flex items-center gap-2'>

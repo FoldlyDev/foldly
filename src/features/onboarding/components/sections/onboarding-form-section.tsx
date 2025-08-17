@@ -3,15 +3,18 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser, useReverification } from '@clerk/nextjs';
-import { isClerkRuntimeError, isReverificationCancelledError } from '@clerk/clerk-react/errors';
+import {
+  isClerkRuntimeError,
+  isReverificationCancelledError,
+} from '@clerk/clerk-react/errors';
 import { motion, type Variants } from 'framer-motion';
-import { Card } from '@/components/ui/core/shadcn/card';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Card } from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from '@/components/ui/core/shadcn/avatar';
+} from '@/components/ui/shadcn/avatar';
 import { Loader2, AlertCircle, User } from 'lucide-react';
 import { UsernameField } from '../forms/username-field';
 import { useUsernameValidation } from '../../hooks/use-username-validation';
@@ -83,8 +86,8 @@ export function OnboardingFormSection({
   const [error, setError] = useState<string>('');
 
   // Use reverification for secure username update
-  const updateUsernameWithReverification = useReverification(
-    () => user?.update({ username: username.toLowerCase() })
+  const updateUsernameWithReverification = useReverification(() =>
+    user?.update({ username: username.toLowerCase() })
   );
 
   // Real-time username validation
@@ -100,76 +103,90 @@ export function OnboardingFormSection({
   );
 
   // Memoize handleSubmit to prevent recreation on each render
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    if (!canSubmit) return;
+      if (!canSubmit) return;
 
-    setIsSubmitting(true);
-    setError('');
+      setIsSubmitting(true);
+      setError('');
 
-    try {
-      // Update username in Clerk first - this is required
-      // Use lowercase to match Clerk's storage format
-      if (user) {
-        try {
-          // Use reverification-enhanced update method
-          await updateUsernameWithReverification();
-          console.log('Username successfully updated in Clerk');
-        } catch (clerkError: any) {
-          // Handle if user cancels the reverification process
-          if (isClerkRuntimeError(clerkError) && isReverificationCancelledError(clerkError)) {
-            setError('Verification was cancelled. Please try again.');
-            console.error('User cancelled reverification:', clerkError.code);
-          } else if (
-            clerkError.errors?.some(
-              (e: any) =>
-                e.code === 'form_identifier_exists' ||
-                e.message?.toLowerCase().includes('username') ||
-                e.message?.toLowerCase().includes('already taken') ||
-                e.message?.toLowerCase().includes('already exists')
-            )
-          ) {
-            setError('This username is already taken');
-          } else {
-            setError(
-              'Failed to update username. Please try again or contact support.'
-            );
-            console.error('Failed to update username in Clerk:', clerkError);
+      try {
+        // Update username in Clerk first - this is required
+        // Use lowercase to match Clerk's storage format
+        if (user) {
+          try {
+            // Use reverification-enhanced update method
+            await updateUsernameWithReverification();
+            console.log('Username successfully updated in Clerk');
+          } catch (clerkError: any) {
+            // Handle if user cancels the reverification process
+            if (
+              isClerkRuntimeError(clerkError) &&
+              isReverificationCancelledError(clerkError)
+            ) {
+              setError('Verification was cancelled. Please try again.');
+              console.error('User cancelled reverification:', clerkError.code);
+            } else if (
+              clerkError.errors?.some(
+                (e: any) =>
+                  e.code === 'form_identifier_exists' ||
+                  e.message?.toLowerCase().includes('username') ||
+                  e.message?.toLowerCase().includes('already taken') ||
+                  e.message?.toLowerCase().includes('already exists')
+              )
+            ) {
+              setError('This username is already taken');
+            } else {
+              setError(
+                'Failed to update username. Please try again or contact support.'
+              );
+              console.error('Failed to update username in Clerk:', clerkError);
+            }
+            setIsSubmitting(false);
+            return; // Stop here - no database interaction if Clerk update fails
           }
-          setIsSubmitting(false);
-          return; // Stop here - no database interaction if Clerk update fails
-        }
-      } else {
-        setError('User session not found. Please refresh and try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      // If parent provided onComplete callback, use that
-      if (onComplete) {
-        await onComplete(username);
-      } else {
-        // Otherwise use the default action
-        const result = await completeOnboardingAction(username);
-
-        if (result.success) {
-          router.push('/dashboard/workspace');
         } else {
-          const errorMsg = result.error || 'Failed to complete onboarding';
-          setError(errorMsg);
-          onError?.(errorMsg);
+          setError('User session not found. Please refresh and try again.');
+          setIsSubmitting(false);
+          return;
         }
+
+        // If parent provided onComplete callback, use that
+        if (onComplete) {
+          await onComplete(username);
+        } else {
+          // Otherwise use the default action
+          const result = await completeOnboardingAction(username);
+
+          if (result.success) {
+            router.push('/dashboard/workspace');
+          } else {
+            const errorMsg = result.error || 'Failed to complete onboarding';
+            setError(errorMsg);
+            onError?.(errorMsg);
+          }
+        }
+      } catch (err) {
+        const errorMsg = 'An unexpected error occurred. Please try again.';
+        setError(errorMsg);
+        onError?.(errorMsg);
+        console.error('Onboarding error:', err);
+      } finally {
+        setIsSubmitting(false);
       }
-    } catch (err) {
-      const errorMsg = 'An unexpected error occurred. Please try again.';
-      setError(errorMsg);
-      onError?.(errorMsg);
-      console.error('Onboarding error:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [canSubmit, user, username, updateUsernameWithReverification, onComplete, onError, router]);
+    },
+    [
+      canSubmit,
+      user,
+      username,
+      updateUsernameWithReverification,
+      onComplete,
+      onError,
+      router,
+    ]
+  );
 
   return (
     <motion.div

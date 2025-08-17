@@ -10,7 +10,7 @@ import { UserProfile, ClerkLoading, ClerkLoaded } from '@clerk/nextjs';
 import {
   MotionDiv,
   AnimatePresenceWrapper,
-} from '@/components/ui/core/motion-wrappers';
+} from '@/components/core/motion-wrappers';
 import { ClerkUserProfileSkeleton } from '../skeletons';
 
 // =============================================================================

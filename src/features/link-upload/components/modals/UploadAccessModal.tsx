@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
+import {
+  Dialog,
+  DialogContent,
   DialogTitle,
-  DialogDescription 
-} from '@/components/marketing/animate-ui/radix/dialog';
-import { Button } from '@/components/ui/core/shadcn';
-import { Input } from '@/components/ui/core/shadcn';
-import { Label } from '@/components/ui/core/shadcn';
+  DialogDescription,
+} from '@/components/ui/animate-ui/radix/dialog';
+import { Button } from '@/components/ui/shadcn';
+import { Input } from '@/components/ui/shadcn';
+import { Label } from '@/components/ui/shadcn';
 import { AlertCircle, Lock, Mail, User } from 'lucide-react';
 import { validateEmail } from '@/lib/utils/validation';
 import { useStagingStore } from '../../stores/staging-store';
@@ -36,7 +36,7 @@ export function UploadAccessModal({
   const [uploaderMessage, setUploaderMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   // Get the staging store setter
   const { setUploaderInfo } = useStagingStore();
 
@@ -45,15 +45,17 @@ export function UploadAccessModal({
 
     // Name is always required
     if (!uploaderName.trim()) {
-      newErrors.name = 'We\'d love to know what to call you!';
+      newErrors.name = "We'd love to know what to call you!";
     }
 
     // Email validation if required
     if (linkData.requireEmail) {
       if (!uploaderEmail.trim()) {
-        newErrors.email = 'Mind sharing your email? It helps keep things organized!';
+        newErrors.email =
+          'Mind sharing your email? It helps keep things organized!';
       } else if (!validateEmail(uploaderEmail)) {
-        newErrors.email = 'Hmm, that email looks a bit off. Can you double-check?';
+        newErrors.email =
+          'Hmm, that email looks a bit off. Can you double-check?';
       }
     }
 
@@ -70,7 +72,7 @@ export function UploadAccessModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -99,7 +101,9 @@ export function UploadAccessModal({
 
         const { isValid } = await response.json();
         if (!isValid) {
-          setErrors({ password: 'Oops! That doesn\'t seem right. Give it another shot?' });
+          setErrors({
+            password: "Oops! That doesn't seem right. Give it another shot?",
+          });
           return;
         }
       }
@@ -110,7 +114,7 @@ export function UploadAccessModal({
         uploaderName: uploaderName.trim(),
         authenticated: true,
       };
-      
+
       // Add optional fields only if they have values
       if (linkData.requireEmail && uploaderEmail.trim()) {
         session.uploaderEmail = uploaderEmail.trim();
@@ -118,19 +122,19 @@ export function UploadAccessModal({
       if (uploaderMessage.trim()) {
         session.uploaderMessage = uploaderMessage.trim();
       }
-      
+
       // Update the staging store with uploader info
       const uploaderInfo: { name: string; email?: string; message?: string } = {
         name: uploaderName.trim(),
       };
-      
+
       if (linkData.requireEmail && uploaderEmail.trim()) {
         uploaderInfo.email = uploaderEmail.trim();
       }
       if (uploaderMessage.trim()) {
         uploaderInfo.message = uploaderMessage.trim();
       }
-      
+
       setUploaderInfo(uploaderInfo);
 
       onAccessGranted(session);
@@ -147,227 +151,247 @@ export function UploadAccessModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent 
-        className="w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] p-6 overflow-y-auto"
-        from="bottom"
+      <DialogContent
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-[500px] max-h-[90vh] p-6 overflow-y-auto'
+        from='bottom'
       >
         {/* Accessibility Labels */}
-        <DialogTitle className="sr-only">
-          Upload Access
-        </DialogTitle>
-        <DialogDescription className="sr-only">
+        <DialogTitle className='sr-only'>Upload Access</DialogTitle>
+        <DialogDescription className='sr-only'>
           Provide your information to access the upload space
         </DialogDescription>
-        
-        <div className="text-xl font-semibold mb-4">
+
+        <div className='text-xl font-semibold mb-4'>
           {isUploadContext ? 'Almost ready! 🚀' : 'Hey there! 👋'}
         </div>
 
-        <div className="space-y-6">
-          <div className="text-center space-y-3">
+        <div className='space-y-6'>
+          <div className='text-center space-y-3'>
             {isUploadContext ? (
               <>
-                <p className="text-sm text-muted-foreground">
+                <p className='text-sm text-muted-foreground'>
                   Hold up! Before we send your files to
                 </p>
                 <div>
-                  <h2 
-                    className="text-2xl font-bold"
+                  <h2
+                    className='text-2xl font-bold'
                     style={{
-                      color: linkData.branding?.enabled && linkData.branding?.color 
-                        ? linkData.branding.color 
-                        : undefined,
-                      background: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        : undefined,
-                      WebkitBackgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'text' 
-                        : undefined,
-                      WebkitTextFillColor: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'transparent' 
-                        : undefined,
-                      backgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'text' 
-                        : undefined
+                      color:
+                        linkData.branding?.enabled && linkData.branding?.color
+                          ? linkData.branding.color
+                          : undefined,
+                      background:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                          : undefined,
+                      WebkitBackgroundClip:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'text'
+                          : undefined,
+                      WebkitTextFillColor:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'transparent'
+                          : undefined,
+                      backgroundClip:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'text'
+                          : undefined,
                     }}
                   >
                     {linkData.title || 'Upload Space'}
                   </h2>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  We just need to know who's sharing these awesome files - takes 2 seconds, promise!
+                <p className='text-sm text-muted-foreground'>
+                  We just need to know who's sharing these awesome files - takes
+                  2 seconds, promise!
                 </p>
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">
-                  Welcome to
-                </p>
+                <p className='text-sm text-muted-foreground'>Welcome to</p>
                 <div>
-                  <h2 
-                    className="text-2xl font-bold"
+                  <h2
+                    className='text-2xl font-bold'
                     style={{
-                      color: linkData.branding?.enabled && linkData.branding?.color 
-                        ? linkData.branding.color 
-                        : undefined,
-                      background: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                        : undefined,
-                      WebkitBackgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'text' 
-                        : undefined,
-                      WebkitTextFillColor: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'transparent' 
-                        : undefined,
-                      backgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                        ? 'text' 
-                        : undefined
+                      color:
+                        linkData.branding?.enabled && linkData.branding?.color
+                          ? linkData.branding.color
+                          : undefined,
+                      background:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                          : undefined,
+                      WebkitBackgroundClip:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'text'
+                          : undefined,
+                      WebkitTextFillColor:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'transparent'
+                          : undefined,
+                      backgroundClip:
+                        !linkData.branding?.enabled || !linkData.branding?.color
+                          ? 'text'
+                          : undefined,
                     }}
                   >
                     {linkData.title || 'Upload Space'}
                   </h2>
-                  <p className="text-sm mt-1">
-                    <span className="text-muted-foreground">- by </span>
+                  <p className='text-sm mt-1'>
+                    <span className='text-muted-foreground'>- by </span>
                     <span
                       style={{
-                        color: linkData.branding?.enabled && linkData.branding?.color 
-                          ? linkData.branding.color 
-                          : undefined,
-                        background: !linkData.branding?.enabled || !linkData.branding?.color 
-                          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                          : undefined,
-                        WebkitBackgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                          ? 'text' 
-                          : undefined,
-                        WebkitTextFillColor: !linkData.branding?.enabled || !linkData.branding?.color 
-                          ? 'transparent' 
-                          : undefined,
-                        backgroundClip: !linkData.branding?.enabled || !linkData.branding?.color 
-                          ? 'text' 
-                          : undefined
+                        color:
+                          linkData.branding?.enabled && linkData.branding?.color
+                            ? linkData.branding.color
+                            : undefined,
+                        background:
+                          !linkData.branding?.enabled ||
+                          !linkData.branding?.color
+                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                            : undefined,
+                        WebkitBackgroundClip:
+                          !linkData.branding?.enabled ||
+                          !linkData.branding?.color
+                            ? 'text'
+                            : undefined,
+                        WebkitTextFillColor:
+                          !linkData.branding?.enabled ||
+                          !linkData.branding?.color
+                            ? 'transparent'
+                            : undefined,
+                        backgroundClip:
+                          !linkData.branding?.enabled ||
+                          !linkData.branding?.color
+                            ? 'text'
+                            : undefined,
                       }}
                     >
                       {linkData.owner.username || 'anonymous'}
                     </span>
                   </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Just need a few quick details and you'll be all set to share your files!
+                <p className='text-sm text-muted-foreground'>
+                  Just need a few quick details and you'll be all set to share
+                  your files!
                 </p>
               </>
             )}
           </div>
 
           {errors.form && (
-            <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <div className='flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md'>
+              <AlertCircle className='h-4 w-4 flex-shrink-0' />
               {errors.form}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className='space-y-4'>
             {/* Name Field - Always Required */}
-            <div className="space-y-2">
-              <Label htmlFor="uploaderName" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
+            <div className='space-y-2'>
+              <Label htmlFor='uploaderName' className='flex items-center gap-2'>
+                <User className='h-4 w-4' />
                 What should we call you?
               </Label>
               <Input
-                id="uploaderName"
-                type="text"
+                id='uploaderName'
+                type='text'
                 value={uploaderName}
-                onChange={(e) => setUploaderName(e.target.value)}
-                placeholder="Your name or nickname"
+                onChange={e => setUploaderName(e.target.value)}
+                placeholder='Your name or nickname'
                 className={errors.name ? 'border-destructive' : ''}
                 maxLength={100}
               />
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
+                <p className='text-sm text-destructive'>{errors.name}</p>
               )}
             </div>
 
             {/* Email Field - Only if Required */}
             {showEmailField && (
-              <div className="space-y-2">
-                <Label htmlFor="uploaderEmail" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
+              <div className='space-y-2'>
+                <Label
+                  htmlFor='uploaderEmail'
+                  className='flex items-center gap-2'
+                >
+                  <Mail className='h-4 w-4' />
                   Drop your email
                 </Label>
                 <Input
-                  id="uploaderEmail"
-                  type="email"
+                  id='uploaderEmail'
+                  type='email'
                   value={uploaderEmail}
-                  onChange={(e) => setUploaderEmail(e.target.value)}
-                  placeholder="your.email@example.com"
+                  onChange={e => setUploaderEmail(e.target.value)}
+                  placeholder='your.email@example.com'
                   className={errors.email ? 'border-destructive' : ''}
                 />
                 {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
+                  <p className='text-sm text-destructive'>{errors.email}</p>
                 )}
               </div>
             )}
 
             {/* Password Field - Only if Required */}
             {showPasswordField && (
-              <div className="space-y-2">
-                <Label htmlFor="password" className="flex items-center gap-2">
-                  <Lock className="h-4 w-4" />
+              <div className='space-y-2'>
+                <Label htmlFor='password' className='flex items-center gap-2'>
+                  <Lock className='h-4 w-4' />
                   Got the magic word?
                 </Label>
                 <Input
-                  id="password"
-                  type="password"
+                  id='password'
+                  type='password'
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter the access code"
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder='Enter the access code'
                   className={errors.password ? 'border-destructive' : ''}
                 />
                 {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
+                  <p className='text-sm text-destructive'>{errors.password}</p>
                 )}
               </div>
             )}
 
             {/* Optional Message Field */}
-            <div className="space-y-2">
-              <Label htmlFor="uploaderMessage">
+            <div className='space-y-2'>
+              <Label htmlFor='uploaderMessage'>
                 Want to say something? (optional)
               </Label>
               <Input
-                id="uploaderMessage"
-                type="text"
+                id='uploaderMessage'
+                type='text'
                 value={uploaderMessage}
-                onChange={(e) => setUploaderMessage(e.target.value)}
+                onChange={e => setUploaderMessage(e.target.value)}
                 placeholder={`drop a lil note for ${linkData.owner.username || 'the owner'} - no cap, they\'ll appreciate it 💯`}
                 maxLength={500}
               />
             </div>
 
-            <div className="flex flex-col gap-3 pt-4">
+            <div className='flex flex-col gap-3 pt-4'>
               {isUploadContext ? (
-                <div className="flex gap-3">
+                <div className='flex gap-3'>
                   <Button
-                    type="button"
-                    variant="outline"
+                    type='button'
+                    variant='outline'
                     onClick={onCancel}
                     disabled={isSubmitting}
-                    className="flex-1"
+                    className='flex-1'
                   >
                     Cancel
                   </Button>
                   <Button
-                    type="submit"
+                    type='submit'
                     disabled={isSubmitting}
-                    className="flex-1"
+                    className='flex-1'
                   >
                     {isSubmitting ? 'Uploading...' : 'Upload Files'}
                   </Button>
                 </div>
               ) : (
                 <Button
-                  type="submit"
+                  type='submit'
                   disabled={isSubmitting}
-                  className="w-full"
+                  className='w-full'
                 >
                   {isSubmitting ? 'Getting you set up...' : "Let's go! 🚀"}
                 </Button>

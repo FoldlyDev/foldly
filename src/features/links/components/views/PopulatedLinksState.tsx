@@ -7,16 +7,16 @@ import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import { useModalStore, useUIStore } from '../../store';
-import { ActionButton } from '@/components/ui/core/action-button';
-import { SecondaryCTAButton } from '@/components/ui/core';
-import { SearchInput } from '@/components/ui/core/search-input';
-import { ViewToggle } from '@/components/ui/core/view-toggle';
+import { ActionButton } from '@/components/core/action-button';
+import { SecondaryCTAButton } from '@/components/core';
+import { SearchInput } from '@/components/core/search-input';
+import { ViewToggle } from '@/components/core/view-toggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 import { Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import type { LinkWithStats } from '@/lib/database/types';

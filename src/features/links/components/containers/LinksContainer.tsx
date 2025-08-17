@@ -10,8 +10,8 @@ import { useUIStore } from '../../store/ui-store';
 import { useLinksQuery } from '../../hooks/react-query/use-links-query';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useRealtimeLinkUpdates } from '../../hooks/use-realtime-link-updates';
-import { FadeTransitionWrapper } from '@/components/ui/feedback';
-import { TertiaryCTAButton } from '@/components/ui/core';
+import { FadeTransitionWrapper } from '@/components/feedback';
+import { TertiaryCTAButton } from '@/components/core';
 
 interface LinksContainerProps {
   readonly initialData?: {
@@ -37,10 +37,10 @@ export function LinksContainer({
   const filterStatus = useUIStore(state => state.filterStatus);
   const sortBy = useUIStore(state => state.sortBy);
   const sortDirection = useUIStore(state => state.sortDirection);
-  
+
   // Initialize real-time link updates (for file changes)
   useRealtimeLinkUpdates();
-  
+
   // Fetch and sync initial unread counts when component mounts
   useEffect(() => {
     // Use the store's refreshUnreadCounts which includes syncing
@@ -95,12 +95,8 @@ export function LinksContainer({
             animate={{ opacity: 1, scale: 1 }}
             className='analytics-card w-full max-w-md mx-auto text-center !bg-transparent'
           >
-            <h2>
-              Links Unavailable
-            </h2>
-            <p>
-              {componentError}
-            </p>
+            <h2>Links Unavailable</h2>
+            <p>{componentError}</p>
             <TertiaryCTAButton
               onClick={() => {
                 refetchAllLinks();

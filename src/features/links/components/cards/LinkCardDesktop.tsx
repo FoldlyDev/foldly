@@ -3,14 +3,14 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
-import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
-import { SearchHighlight } from '@/components/ui/core/search-highlight';
-import { ActionButton } from '@/components/ui/core/action-button';
-import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
-import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
+import { SearchHighlight } from '@/components/core/search-highlight';
+import { ActionButton } from '@/components/core/action-button';
+import { AnimatedCopyButton } from '@/components/core/animated-copy-button';
+import { CardActionsMenu } from '@/components/core/card-actions-menu';
 import type { LinkWithStats } from '@/lib/database/types';
-import type { ActionItem } from '@/components/ui/core/types';
+import type { ActionItem } from '@/components/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
@@ -63,7 +63,10 @@ export const LinkCardDesktop = memo(
         ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
         style={{
-          borderLeftColor: link.branding?.enabled && link.branding?.color ? link.branding.color : undefined
+          borderLeftColor:
+            link.branding?.enabled && link.branding?.color
+              ? link.branding.color
+              : undefined,
         }}
       >
         <div className='link-card-content'>
@@ -82,11 +85,13 @@ export const LinkCardDesktop = memo(
 
           {/* Icon + Title */}
           <div className='flex items-center gap-3 min-w-0 flex-1'>
-            <LinkTypeIcon 
-              isBaseLink={isBaseLink} 
-              size='sm' 
+            <LinkTypeIcon
+              isBaseLink={isBaseLink}
+              size='sm'
               brandingEnabled={link.branding?.enabled}
-              {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+              {...(link.branding?.imageUrl && {
+                brandingImageUrl: link.branding.imageUrl,
+              })}
             />
 
             <div className='min-w-0 flex-1'>
@@ -108,7 +113,9 @@ export const LinkCardDesktop = memo(
               <div onClick={e => e.stopPropagation()}>
                 <NotificationBadge
                   count={unreadCount}
-                  {...(onClearNotifications && { onClick: onClearNotifications })}
+                  {...(onClearNotifications && {
+                    onClick: onClearNotifications,
+                  })}
                 />
               </div>
             )}

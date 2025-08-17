@@ -1,7 +1,7 @@
 'use client';
 
 import { Mail } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
+import { Switch } from '@/components/ui/shadcn/switch';
 
 interface UploaderEmailRequirementProps {
   formData: {

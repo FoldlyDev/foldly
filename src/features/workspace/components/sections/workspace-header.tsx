@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
-import { GradientButton } from '@/components/ui/core/gradient-button';
+import { GradientButton } from '@/components/core/gradient-button';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useStorageQuotaStatus } from '../../hooks';
@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { SettingsDropdown } from '../settings/SettingsDropdown';
-import { SecondaryCTAButton } from '@/components/ui/core';
+import { SecondaryCTAButton } from '@/components/core';
 
 interface WorkspaceHeaderProps {
   totalLinks?: number;

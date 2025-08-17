@@ -4,7 +4,10 @@ import React, { Fragment, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { generateLinkFromFolderAction } from '@/features/links/lib/actions';
 import { generateLinkUrl } from '@/lib/config/url-config';
-import { showWorkspaceNotification, showWorkspaceError } from '@/features/notifications/utils';
+import {
+  showWorkspaceNotification,
+  showWorkspaceError,
+} from '@/features/notifications/utils';
 import { showGeneratedLinkNotification } from '@/features/notifications/utils/link-notifications';
 import { useGeneratingLinksStore } from '../../store/generating-links-store';
 import { useFoldersWithLinks } from '../../hooks/use-folders-with-links';
@@ -23,7 +26,7 @@ import {
 } from '@headless-tree/core';
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
 import { cn } from '@/lib/utils';
-import { UploadHighlight } from '@/components/ui/feedback/upload-highlight';
+import { UploadHighlight } from '@/components/feedback/upload-highlight';
 
 import { useWorkspaceTree } from '../../hooks/use-workspace-tree';
 import { useTreeHandlers } from '../../hooks/use-tree-handlers';
@@ -144,16 +147,16 @@ export default function WorkspaceTree({
     });
 
   const queryClient = useQueryClient();
-  
+
   // Get generating links state
-  const { 
-    addGeneratingItem, 
-    removeGeneratingItem, 
+  const {
+    addGeneratingItem,
+    removeGeneratingItem,
     addFolderWithLink,
     hasFolderLink,
-    isGenerating 
+    isGenerating,
   } = useGeneratingLinksStore();
-  
+
   // Fetch folders with links
   useFoldersWithLinks();
 
@@ -161,24 +164,33 @@ export default function WorkspaceTree({
   const dragPreviewConfig = useDragPreview();
 
   // Handle generating link for a folder
-  const handleGenerateLinkForFolder = async (folderId: string, folderName: string) => {
+  const handleGenerateLinkForFolder = async (
+    folderId: string,
+    folderName: string
+  ) => {
     // Add to generating state
     addGeneratingItem(folderId);
-    
+
     try {
       const result = await generateLinkFromFolderAction({ folderId });
 
       if (result.success && result.data) {
         // Add folder to links set
         addFolderWithLink(folderId);
-        
+
         // Invalidate queries
         await queryClient.invalidateQueries({ queryKey: ['links'] });
-        await queryClient.invalidateQueries({ queryKey: ['folders-with-links'] });
-        
+        await queryClient.invalidateQueries({
+          queryKey: ['folders-with-links'],
+        });
+
         // Build the link URL
-        const linkUrl = generateLinkUrl(result.data.slug, result.data.topic || null, { absolute: true });
-        
+        const linkUrl = generateLinkUrl(
+          result.data.slug,
+          result.data.topic || null,
+          { absolute: true }
+        );
+
         // Show interactive notification
         showGeneratedLinkNotification({
           linkId: result.data.id,
@@ -186,17 +198,25 @@ export default function WorkspaceTree({
           folderName,
         });
       } else {
-        showWorkspaceError('link_generated', {
-          itemName: folderName,
-          itemType: 'folder',
-        }, result.error || 'An unexpected error occurred');
+        showWorkspaceError(
+          'link_generated',
+          {
+            itemName: folderName,
+            itemType: 'folder',
+          },
+          result.error || 'An unexpected error occurred'
+        );
       }
     } catch (error) {
       console.error('Error generating link:', error);
-      showWorkspaceError('link_generated', {
-        itemName: folderName,
-        itemType: 'folder',
-      }, 'Failed to generate link. Please try again.');
+      showWorkspaceError(
+        'link_generated',
+        {
+          itemName: folderName,
+          itemType: 'folder',
+        },
+        'Failed to generate link. Please try again.'
+      );
     } finally {
       // Remove from generating state
       removeGeneratingItem(folderId);
@@ -462,18 +482,18 @@ export default function WorkspaceTree({
       const currentTreeSelection = tree
         .getSelectedItems()
         .map(item => item.getId());
-      
+
       // Only update if different to avoid infinite loops
-      const isDifferent = 
+      const isDifferent =
         selectedItems.length !== currentTreeSelection.length ||
         selectedItems.some(id => !currentTreeSelection.includes(id));
-      
+
       if (isDifferent) {
         tree.setSelectedItems(selectedItems || []);
       }
     }
   }, [tree, selectedItems]);
-  
+
   // Clear any default selection on mount if no external selection provided
   React.useEffect(() => {
     if (tree && !selectedItems) {
@@ -597,81 +617,84 @@ export default function WorkspaceTree({
                 >
                   <button
                     {...item.getProps()}
-                    style={{ paddingLeft: `${item.getItemMeta().level * 20}px` }}
+                    style={{
+                      paddingLeft: `${item.getItemMeta().level * 20}px`,
+                    }}
                   >
-                  <div
-                    className={cn(
-                      'flex items-center gap-1.5 flex-1 min-w-0',
-                      getCssClass(item)
-                    )}
-                  >
-                    {/* Selection checkbox - shown in selection mode for all devices */}
-                    {isSelectionMode && (
-                      <span
-                        className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer'
-                        onClick={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          item.toggleSelect();
-                        }}
-                      >
-                        {item.isSelected() ? (
-                          <CheckSquare className='size-4 text-tertiary dark:text-primary' />
-                        ) : (
-                          <Square className='size-4 text-neutral-400 dark:text-neutral-600' />
-                        )}
-                      </span>
-                    )}
+                    <div
+                      className={cn(
+                        'flex items-center gap-1.5 flex-1 min-w-0',
+                        getCssClass(item)
+                      )}
+                    >
+                      {/* Selection checkbox - shown in selection mode for all devices */}
+                      {isSelectionMode && (
+                        <span
+                          className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer'
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            item.toggleSelect();
+                          }}
+                        >
+                          {item.isSelected() ? (
+                            <CheckSquare className='size-4 text-tertiary dark:text-primary' />
+                          ) : (
+                            <Square className='size-4 text-neutral-400 dark:text-neutral-600' />
+                          )}
+                        </span>
+                      )}
 
-                    {/* Expand/Collapse icon for folders */}
-                    {item.isFolder() ? (
-                      <span
-                        className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted/80 rounded'
-                        onClick={e => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (item.isExpanded()) {
-                            item.collapse();
-                          } else {
-                            item.expand();
-                          }
-                        }}
-                      >
-                        {item.isExpanded() ? (
-                          <ChevronDown className='size-4 text-neutral-500 dark:text-neutral-500' />
-                        ) : (
-                          <ChevronRight className='size-4 text-neutral-500 dark:text-neutral-500' />
-                        )}
-                      </span>
-                    ) : (
-                      <span className='w-5' />
-                    )}
-
-                    {/* Folder/File icon */}
-                    {item.isFolder() ? (
-                      item.isExpanded() ? (
-                        <FolderOpenIcon className='text-tertiary dark:text-primary size-4 flex-shrink-0' />
+                      {/* Expand/Collapse icon for folders */}
+                      {item.isFolder() ? (
+                        <span
+                          className='flex-shrink-0 w-5 h-5 flex items-center justify-center cursor-pointer hover:bg-muted/80 rounded'
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (item.isExpanded()) {
+                              item.collapse();
+                            } else {
+                              item.expand();
+                            }
+                          }}
+                        >
+                          {item.isExpanded() ? (
+                            <ChevronDown className='size-4 text-neutral-500 dark:text-neutral-500' />
+                          ) : (
+                            <ChevronRight className='size-4 text-neutral-500 dark:text-neutral-500' />
+                          )}
+                        </span>
                       ) : (
-                        <FolderIcon className='text-tertiary dark:text-primary size-4 flex-shrink-0' />
-                      )
-                    ) : (
-                      <FileIcon className='text-neutral-500 dark:text-neutral-500 size-4 flex-shrink-0' />
-                    )}
+                        <span className='w-5' />
+                      )}
 
-                    {/* Item name */}
-                    <span className='truncate'>{item.getItemName()}</span>
-
-                    {/* Link indicator for folders with generated links */}
-                    {item.isFolder() && (hasFolderLink(itemId) || isGenerating(itemId)) && (
-                      <span className='flex-shrink-0 ml-1'>
-                        {isGenerating(itemId) ? (
-                          <Loader2 className='size-3 text-primary animate-spin' />
+                      {/* Folder/File icon */}
+                      {item.isFolder() ? (
+                        item.isExpanded() ? (
+                          <FolderOpenIcon className='text-tertiary dark:text-primary size-4 flex-shrink-0' />
                         ) : (
-                          <Link2 className='size-3 text-primary' />
+                          <FolderIcon className='text-tertiary dark:text-primary size-4 flex-shrink-0' />
+                        )
+                      ) : (
+                        <FileIcon className='text-neutral-500 dark:text-neutral-500 size-4 flex-shrink-0' />
+                      )}
+
+                      {/* Item name */}
+                      <span className='truncate'>{item.getItemName()}</span>
+
+                      {/* Link indicator for folders with generated links */}
+                      {item.isFolder() &&
+                        (hasFolderLink(itemId) || isGenerating(itemId)) && (
+                          <span className='flex-shrink-0 ml-1'>
+                            {isGenerating(itemId) ? (
+                              <Loader2 className='size-3 text-primary animate-spin' />
+                            ) : (
+                              <Link2 className='size-3 text-primary' />
+                            )}
+                          </span>
                         )}
-                      </span>
-                    )}
-                  </div>
+                    </div>
                   </button>
                 </WorkspaceContextMenu>
               ) : (
@@ -742,15 +765,16 @@ export default function WorkspaceTree({
                     <span className='truncate'>{item.getItemName()}</span>
 
                     {/* Link indicator for folders with generated links */}
-                    {item.isFolder() && (hasFolderLink(itemId) || isGenerating(itemId)) && (
-                      <span className='flex-shrink-0 ml-1'>
-                        {isGenerating(itemId) ? (
-                          <Loader2 className='size-3 text-primary animate-spin' />
-                        ) : (
-                          <Link2 className='size-3 text-primary' />
-                        )}
-                      </span>
-                    )}
+                    {item.isFolder() &&
+                      (hasFolderLink(itemId) || isGenerating(itemId)) && (
+                        <span className='flex-shrink-0 ml-1'>
+                          {isGenerating(itemId) ? (
+                            <Loader2 className='size-3 text-primary animate-spin' />
+                          ) : (
+                            <Link2 className='size-3 text-primary' />
+                          )}
+                        </span>
+                      )}
                   </div>
                 </button>
               )}

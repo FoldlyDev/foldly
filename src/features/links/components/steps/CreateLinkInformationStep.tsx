@@ -9,7 +9,7 @@ import {
   type CreateLinkFormData,
 } from '../../hooks/use-create-link-form';
 import { LinkCreationForm } from '../sections/LinkCreationForm';
-import { CreateLinkFormButtons } from '@/components/ui/core/create-link-form-buttons';
+import { CreateLinkFormButtons } from '@/components/core/create-link-form-buttons';
 import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
@@ -150,7 +150,6 @@ export const CreateLinkInformationStep = () => {
           updates.password ? '[PASSWORD SET]' : '[PASSWORD EMPTY]'
         );
       }
-
 
       if (updates.isActive !== undefined) {
         convertedUpdates.isActive = Boolean(updates.isActive);

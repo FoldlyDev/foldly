@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/core/shadcn/button';
-import { Input } from '@/components/ui/core/shadcn/input';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
 import { FolderPlus } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -14,10 +14,10 @@ interface FolderCreationProps {
   getTargetFolderName?: () => string;
 }
 
-export function FolderCreation({ 
+export function FolderCreation({
   linkId,
   getSelectedFolderId,
-  getTargetFolderName = () => 'Link Root'
+  getTargetFolderName = () => 'Link Root',
 }: FolderCreationProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -33,7 +33,8 @@ export function FolderCreation({
 
       const parentFolderId = getSelectedFolderId?.();
       // If parentFolderId is the link ID itself, treat it as root (undefined)
-      const effectiveParentId = parentFolderId === linkId ? undefined : parentFolderId;
+      const effectiveParentId =
+        parentFolderId === linkId ? undefined : parentFolderId;
       const stagingId = addStagedFolder(trimmedName, effectiveParentId);
 
       return { id: stagingId, name: trimmedName, parentFolderId };
@@ -80,9 +81,7 @@ export function FolderCreation({
           <Button
             size='sm'
             onClick={handleCreateFolder}
-            disabled={
-              !newFolderName.trim() || createFolderMutation.isPending
-            }
+            disabled={!newFolderName.trim() || createFolderMutation.isPending}
           >
             Create
           </Button>
@@ -105,7 +104,7 @@ export function FolderCreation({
   }
 
   const targetName = getTargetFolderName();
-  
+
   return (
     <div className='flex items-center gap-2'>
       <Button
@@ -118,9 +117,7 @@ export function FolderCreation({
         New Folder
       </Button>
       {targetName !== 'Link Root' && (
-        <span className='text-xs text-muted-foreground'>
-          → {targetName}
-        </span>
+        <span className='text-xs text-muted-foreground'>→ {targetName}</span>
       )}
     </div>
   );

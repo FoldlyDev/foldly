@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/core/shadcn/button';
-import { Input } from '@/components/ui/core/shadcn/input';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
 import {
   FolderPlus,
   Upload,
@@ -21,7 +21,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/core/shadcn/dropdown-menu';
+} from '@/components/ui/shadcn/dropdown-menu';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
@@ -80,13 +80,14 @@ export function WorkspaceToolbar({
   const queryClient = useQueryClient();
 
   const { openUploadModal } = useWorkspaceUI();
-  
+
   // Get mobile state from tree instance
   const isMobile = treeInstance?.isTouchDevice?.() || false;
-  
+
   // Use external selection mode state if provided, otherwise fallback to tree instance
-  const isSelectionMode = selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
-  
+  const isSelectionMode =
+    selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
+
   // Handle selection mode toggle
   const handleToggleSelectionMode = () => {
     const newMode = !isSelectionMode;
@@ -339,11 +340,13 @@ export function WorkspaceToolbar({
                 ) : (
                   <Square className='h-4 w-4 mr-2' />
                 )}
-                <span>{isMobile ? (isSelectionMode ? 'Exit' : 'Select') : 'Select'}</span>
+                <span>
+                  {isMobile ? (isSelectionMode ? 'Exit' : 'Select') : 'Select'}
+                </span>
               </Button>
             </label>
           </div>
-          
+
           {/* Create folder */}
           {isCreatingFolder ? (
             <div className='workspace-folder-creation'>
@@ -442,8 +445,8 @@ export function WorkspaceToolbar({
             <span className='text-sm font-medium text-tertiary dark:text-primary'>
               {selectedItems.length > 0 ? (
                 <>
-                  {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''}{' '}
-                  selected
+                  {selectedItems.length} item
+                  {selectedItems.length > 1 ? 's' : ''} selected
                 </>
               ) : (
                 'Tap items to select'
@@ -478,7 +481,9 @@ export function WorkspaceToolbar({
               }}
             >
               <X className='h-4 w-4 mr-2' />
-              {isMobile && isSelectionMode && selectedItems.length === 0 ? 'Cancel' : 'Clear'}
+              {isMobile && isSelectionMode && selectedItems.length === 0
+                ? 'Cancel'
+                : 'Clear'}
             </Button>
           </div>
         </div>

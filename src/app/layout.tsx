@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Toaster } from '@/components/ui/core/shadcn/sonner';
+import { Toaster } from '@/components/ui/shadcn/sonner';
 import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor';
-import PageTransition from '@/components/ui/layout/page-transition';
+import PageTransition from '@/components/layout/page-transition';
 import { Providers } from './providers';
 import './globals.css';
 
@@ -80,9 +80,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <PageTransition>
-            {children}
-          </PageTransition>
+          <PageTransition>{children}</PageTransition>
           <Toaster />
           <SpeedInsights />
           <PerformanceMonitor />

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { UploadHighlight } from '@/components/ui/feedback/upload-highlight';
+import { UploadHighlight } from '@/components/feedback/upload-highlight';
 
 export function EmptyTreeState() {
   return (

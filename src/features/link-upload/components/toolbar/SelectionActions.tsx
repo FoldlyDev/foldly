@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import { X, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/core/shadcn/dropdown-menu';
+} from '@/components/ui/shadcn/dropdown-menu';
 import { MoreVertical } from 'lucide-react';
 
 interface SelectionActionsProps {
@@ -30,10 +30,8 @@ export function SelectionActions({
 
   return (
     <div className='flex items-center gap-2 px-3 py-1.5 bg-accent/50 rounded-md'>
-      <span className='text-sm font-medium'>
-        {selectedCount} selected
-      </span>
-      
+      <span className='text-sm font-medium'>{selectedCount} selected</span>
+
       <Button
         onClick={onDelete}
         variant='ghost'

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Clock } from 'lucide-react';
-import { HelpPopover } from '@/components/ui/core/help-popover';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { LinkWithStats } from '@/lib/database/types';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
@@ -33,9 +33,7 @@ export function LinkExpirationSettings({
       <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         <div className='space-y-3'>
           <div className='flex items-center gap-2'>
-            <label className='form-label'>
-              Expiry Date
-            </label>
+            <label className='form-label'>Expiry Date</label>
             <HelpPopover
               title='Link Expiration'
               description='When this date is reached, the link is marked as "Expired" in your dashboard.

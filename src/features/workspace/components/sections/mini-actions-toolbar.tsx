@@ -1,7 +1,7 @@
 'use client';
 
 import { Trash2, X } from 'lucide-react';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { batchDeleteItemsAction } from '../../lib/actions';

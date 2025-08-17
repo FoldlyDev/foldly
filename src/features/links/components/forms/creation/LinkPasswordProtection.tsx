@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Lock, Eye, EyeOff } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
+import { Switch } from '@/components/ui/shadcn/switch';
 
 interface LinkPasswordProtectionProps {
   formData: {
@@ -25,9 +25,7 @@ export function LinkPasswordProtection({
         <div className='space-y-1'>
           <div className='flex items-center gap-2'>
             <Lock className='h-4 w-4 text-primary' />
-            <label className='form-label mb-0'>
-              Password Protection
-            </label>
+            <label className='form-label mb-0'>Password Protection</label>
           </div>
           <p className='form-helper text-xs'>
             Require a password to access this link

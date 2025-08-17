@@ -3,16 +3,10 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, AlertTriangle } from 'lucide-react';
-import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
-import {
-  LinkStatusIndicator,
-  LinkTypeIcon,
-} from '../indicators';
-import {
-  SearchHighlight,
-  CardActionsMenu,
-} from '@/components/ui/core';
-import type { ActionItem } from '@/components/ui/core/types';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
+import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
+import { SearchHighlight, CardActionsMenu } from '@/components/core';
+import type { ActionItem } from '@/components/core/types';
 import type { LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
@@ -69,9 +63,12 @@ export const LinkCardMobile = memo(
           }
         `}
         style={{
-          borderLeftColor: link.branding?.enabled && link.branding?.color 
-            ? link.branding.color 
-            : (isBaseLink ? '#c084fc' : undefined) // purple-400 as fallback for base links
+          borderLeftColor:
+            link.branding?.enabled && link.branding?.color
+              ? link.branding.color
+              : isBaseLink
+                ? '#c084fc'
+                : undefined, // purple-400 as fallback for base links
         }}
       >
         <div className='p-4 space-y-3'>
@@ -90,11 +87,13 @@ export const LinkCardMobile = memo(
               )}
 
               {/* Icon */}
-              <LinkTypeIcon 
-                isBaseLink={isBaseLink} 
-                size='md' 
+              <LinkTypeIcon
+                isBaseLink={isBaseLink}
+                size='md'
                 brandingEnabled={link.branding?.enabled}
-                {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+                {...(link.branding?.imageUrl && {
+                  brandingImageUrl: link.branding.imageUrl,
+                })}
               />
 
               {/* Title & URL */}
@@ -107,9 +106,7 @@ export const LinkCardMobile = memo(
                     />
                   </h3>
                 </div>
-                <p className='text-sm text-gray-500 truncate'>
-                  {displayUrl}
-                </p>
+                <p className='text-sm text-gray-500 truncate'>{displayUrl}</p>
               </div>
             </div>
 
@@ -119,11 +116,15 @@ export const LinkCardMobile = memo(
                 <div onClick={e => e.stopPropagation()}>
                   <NotificationBadge
                     count={unreadCount}
-                    {...(onClearNotifications && { onClick: onClearNotifications })}
+                    {...(onClearNotifications && {
+                      onClick: onClearNotifications,
+                    })}
                   />
                 </div>
               )}
-              <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
+              <LinkStatusIndicator
+                status={link.isActive ? 'active' : 'paused'}
+              />
             </div>
           </div>
 

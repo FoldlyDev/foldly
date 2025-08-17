@@ -1,9 +1,9 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card } from '@/components/ui/core/shadcn/card';
-import { Progress } from '@/components/ui/core/shadcn/progress';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Card } from '@/components/ui/shadcn/card';
+import { Progress } from '@/components/ui/shadcn/progress';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   CheckCircle2,
   AlertCircle,

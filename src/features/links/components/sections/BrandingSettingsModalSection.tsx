@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
+import { Switch } from '@/components/ui/shadcn/switch';
 import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
@@ -47,16 +47,20 @@ export function BrandingSettingsSection({
           <Switch
             checked={watchedValues.branding?.enabled || false}
             onCheckedChange={checked =>
-              setValue('branding', {
-                enabled: checked,
-                color: watchedValues.branding?.color,
-                image: watchedValues.branding?.image,
-                imagePath: watchedValues.branding?.imagePath,
-                imageUrl: watchedValues.branding?.imageUrl,
-              }, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
+              setValue(
+                'branding',
+                {
+                  enabled: checked,
+                  color: watchedValues.branding?.color,
+                  image: watchedValues.branding?.image,
+                  imagePath: watchedValues.branding?.imagePath,
+                  imageUrl: watchedValues.branding?.imageUrl,
+                },
+                {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                }
+              )
             }
             className='data-[state=unchecked]:bg-muted-foreground/20'
           />
@@ -82,16 +86,20 @@ export function BrandingSettingsSection({
                     type='color'
                     value={watchedValues.branding?.color || '#6c47ff'}
                     onChange={e =>
-                      setValue('branding', {
-                        enabled: watchedValues.branding?.enabled || false,
-                        color: e.target.value,
-                        image: watchedValues.branding?.image,
-                        imagePath: watchedValues.branding?.imagePath,
-                        imageUrl: watchedValues.branding?.imageUrl,
-                      }, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          image: watchedValues.branding?.image,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     className='w-12 h-10 rounded-lg cursor-pointer border border-border'
                   />
@@ -99,16 +107,20 @@ export function BrandingSettingsSection({
                     type='text'
                     value={watchedValues.branding?.color || ''}
                     onChange={e =>
-                      setValue('branding', {
-                        enabled: watchedValues.branding?.enabled || false,
-                        color: e.target.value,
-                        image: watchedValues.branding?.image,
-                        imagePath: watchedValues.branding?.imagePath,
-                        imageUrl: watchedValues.branding?.imageUrl,
-                      }, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          image: watchedValues.branding?.image,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     placeholder='#6c47ff'
                     className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring'
@@ -145,7 +157,9 @@ export function BrandingSettingsSection({
                 <div className='flex items-center gap-3 mb-4'>
                   <h3
                     className='text-xl font-semibold leading-tight'
-                    style={{ color: watchedValues.branding?.color || '#6c47ff' }}
+                    style={{
+                      color: watchedValues.branding?.color || '#6c47ff',
+                    }}
                   >
                     {link.title}
                   </h3>

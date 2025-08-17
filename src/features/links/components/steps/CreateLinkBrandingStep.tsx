@@ -10,7 +10,7 @@ import {
 import { useModalStore } from '../../store';
 import { useCreateLinkMutation } from '../../hooks/react-query/use-create-link-mutation';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
-import { CreateLinkFormButtons } from '@/components/ui/core/create-link-form-buttons';
+import { CreateLinkFormButtons } from '@/components/core/create-link-form-buttons';
 import { DEFAULT_BASE_LINK_TITLE } from '../../lib/constants/base-link-defaults';
 
 /**
@@ -100,11 +100,13 @@ export const CreateLinkBrandingStep = () => {
         expiresAt: formData.expiresAt
           ? formData.expiresAt.toISOString()
           : undefined,
-        branding: formData.brandEnabled ? {
-          enabled: formData.brandEnabled,
-          color: formData.brandColor,
-          // Don't include the base64 image in branding
-        } : undefined,
+        branding: formData.brandEnabled
+          ? {
+              enabled: formData.brandEnabled,
+              color: formData.brandColor,
+              // Don't include the base64 image in branding
+            }
+          : undefined,
         // Include the file separately for upload
         brandingImageFile: formData.logoFile || undefined,
       };

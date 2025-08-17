@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { Info, Hash, CheckCircle, AlertCircle } from 'lucide-react';
-import { Textarea } from '@/components/ui/core/shadcn/textarea';
-import { Input } from '@/components/ui/core/shadcn/input';
-import { HelpPopover } from '@/components/ui/core/help-popover';
+import { Textarea } from '@/components/ui/shadcn/textarea';
+import { Input } from '@/components/ui/shadcn/input';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 import type { LinkWithStats } from '@/lib/database/types';
@@ -64,9 +64,7 @@ export function LinkIdentitySettings({
         {isBaseLink && (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
-              <label className='form-label'>
-                Your Link URL
-              </label>
+              <label className='form-label'>Your Link URL</label>
               <HelpPopover
                 title='Custom URL'
                 description='Customize your personal collection URL. Leave empty to use your username.'
@@ -116,7 +114,9 @@ export function LinkIdentitySettings({
             {watchedValues.slug && slugValidation.isUnavailable && (
               <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded text-xs'>
                 <AlertCircle className='w-3 h-3 text-red-600 dark:text-red-400 flex-shrink-0' />
-                <p className='text-red-700 dark:text-red-400'>{slugValidation.message}</p>
+                <p className='text-red-700 dark:text-red-400'>
+                  {slugValidation.message}
+                </p>
               </div>
             )}
 
@@ -124,7 +124,9 @@ export function LinkIdentitySettings({
             {watchedValues.slug && slugValidation.isAvailable && (
               <div className='flex items-center gap-2 p-2 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 rounded text-xs'>
                 <CheckCircle className='w-3 h-3 text-green-600 dark:text-green-400 flex-shrink-0' />
-                <p className='text-green-700 dark:text-green-400'>This URL is available!</p>
+                <p className='text-green-700 dark:text-green-400'>
+                  This URL is available!
+                </p>
               </div>
             )}
 
@@ -141,9 +143,7 @@ export function LinkIdentitySettings({
         {isTopicLink && (
           <div className='space-y-2'>
             <div className='flex items-center gap-2'>
-              <label className='form-label'>
-                Collection URL
-              </label>
+              <label className='form-label'>Collection URL</label>
               <HelpPopover
                 title='Collection URL'
                 description='The URL path for this specific collection. Must be unique within your links.'
@@ -191,7 +191,9 @@ export function LinkIdentitySettings({
             {watchedValues.topic && topicValidation.isUnavailable && (
               <div className='flex items-center gap-2 p-2 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded text-xs'>
                 <AlertCircle className='w-3 h-3 text-red-600 dark:text-red-400 flex-shrink-0' />
-                <p className='text-red-700 dark:text-red-400'>{topicValidation.message}</p>
+                <p className='text-red-700 dark:text-red-400'>
+                  {topicValidation.message}
+                </p>
               </div>
             )}
 
@@ -217,9 +219,7 @@ export function LinkIdentitySettings({
         {/* Title - Editable for all links */}
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <label className='form-label'>
-              Display Name
-            </label>
+            <label className='form-label'>Display Name</label>
             <HelpPopover
               title='Display Name'
               description='The name that appears on your collection page and in the browser tab.'
@@ -247,9 +247,7 @@ export function LinkIdentitySettings({
         {/* Description - Editable */}
         <div className='space-y-2'>
           <div className='flex items-center gap-2'>
-            <label className='form-label'>
-              Description
-            </label>
+            <label className='form-label'>Description</label>
             <HelpPopover
               title='Description'
               description="This description will be shown to users when they visit your upload page. Use it to explain what files you're looking for or provide instructions."

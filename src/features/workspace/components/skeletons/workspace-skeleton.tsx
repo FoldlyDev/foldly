@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
+import { Skeleton } from '@/components/feedback/skeleton-loader';
 
 export function WorkspaceHeaderSkeleton() {
   return (
@@ -41,7 +41,10 @@ export function WorkspaceTreeSkeleton() {
   return (
     <div className='workspace-tree-container'>
       <div className='workspace-tree-wrapper'>
-        <div className='workspace-tree-content' style={{ overflow: 'hidden', height: 'auto' }}>
+        <div
+          className='workspace-tree-content'
+          style={{ overflow: 'hidden', height: 'auto' }}
+        >
           {/* Root folders skeleton - reduced items to prevent overflow */}
           <div className='space-y-1'>
             {[...Array(2)].map((_, i) => (

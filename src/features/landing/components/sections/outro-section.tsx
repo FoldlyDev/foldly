@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { PrimaryCta } from '@/components/ui/core/primary-cta';
+import { PrimaryCta } from '@/components/core/primary-cta';
 
 export function OutroSection() {
   return (

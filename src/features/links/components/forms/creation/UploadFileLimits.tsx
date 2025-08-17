@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 
 interface UploadFileLimitsProps {
   formData: {

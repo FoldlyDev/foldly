@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Progress } from '@/components/ui/core/shadcn/progress';
+import { Progress } from '@/components/ui/shadcn/progress';
 import { HardDrive, AlertTriangle, CheckCircle, Upload } from 'lucide-react';
 import { useStorageTracking, useStorageQuotaStatus } from '../../hooks';
 import { useLiveStorage } from '../../hooks/use-live-storage';
@@ -35,31 +35,34 @@ export function StorageInfoDisplay({
   const { storageInfo, isLoading, formatSize } = useStorageTracking();
   const quotaStatus = useStorageQuotaStatus();
   const liveStorage = useLiveStorage();
-  
+
   // Use live data if available and uploads are in progress
-  const displayUsage = showLiveUpdates && liveStorage.isUploading 
-    ? liveStorage.realtimeUsage 
-    : storageInfo.storageUsedBytes;
-  
-  const projectedUsage = showLiveUpdates && liveStorage.isUploading
-    ? liveStorage.projectedUsage
-    : storageInfo.storageUsedBytes;
-  
+  const displayUsage =
+    showLiveUpdates && liveStorage.isUploading
+      ? liveStorage.realtimeUsage
+      : storageInfo.storageUsedBytes;
+
+  const projectedUsage =
+    showLiveUpdates && liveStorage.isUploading
+      ? liveStorage.projectedUsage
+      : storageInfo.storageUsedBytes;
+
   const usagePercentage = (displayUsage / storageInfo.storageLimitBytes) * 100;
-  const projectedPercentage = (projectedUsage / storageInfo.storageLimitBytes) * 100;
+  const projectedPercentage =
+    (projectedUsage / storageInfo.storageLimitBytes) * 100;
 
   if (isLoading) {
     return (
       <div className={cn('animate-pulse', className)}>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-muted rounded-xl"></div>
-            <div className="flex-1 space-y-2">
-              <div className="h-4 bg-muted rounded w-3/4"></div>
-              <div className="h-3 bg-muted rounded w-1/2"></div>
+        <div className='space-y-3'>
+          <div className='flex items-center gap-3'>
+            <div className='w-10 h-10 bg-muted rounded-xl'></div>
+            <div className='flex-1 space-y-2'>
+              <div className='h-4 bg-muted rounded w-3/4'></div>
+              <div className='h-3 bg-muted rounded w-1/2'></div>
             </div>
           </div>
-          <div className="h-2 bg-muted rounded-full w-full"></div>
+          <div className='h-2 bg-muted rounded-full w-full'></div>
         </div>
       </div>
     );
@@ -97,9 +100,9 @@ export function StorageInfoDisplay({
       case 'exceeded':
       case 'critical':
       case 'warning':
-        return <AlertTriangle className="w-4 h-4" />;
+        return <AlertTriangle className='w-4 h-4' />;
       default:
-        return <CheckCircle className="w-4 h-4" />;
+        return <CheckCircle className='w-4 h-4' />;
     }
   };
 
@@ -126,23 +129,30 @@ export function StorageInfoDisplay({
       className={cn('space-y-4', className)}
     >
       {showHeader && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={cn('p-2.5 rounded-xl transition-colors', getIconBackground())}>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <div
+              className={cn(
+                'p-2.5 rounded-xl transition-colors',
+                getIconBackground()
+              )}
+            >
               <HardDrive className={cn('w-5 h-5', getStatusColor())} />
             </div>
             <div>
-              <span className="text-sm font-semibold text-foreground">
+              <span className='text-sm font-semibold text-foreground'>
                 Storage Usage
               </span>
               {liveStorage.isUploading && (
                 <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-1.5 mt-0.5"
+                  className='flex items-center gap-1.5 mt-0.5'
                 >
-                  <Upload className="w-3 h-3 text-primary dark:text-primary animate-pulse" />
-                  <span className="text-xs text-primary dark:text-primary font-medium">Live tracking</span>
+                  <Upload className='w-3 h-3 text-primary dark:text-primary animate-pulse' />
+                  <span className='text-xs text-primary dark:text-primary font-medium'>
+                    Live tracking
+                  </span>
                 </motion.div>
               )}
             </div>
@@ -150,15 +160,15 @@ export function StorageInfoDisplay({
         </div>
       )}
 
-      <div className="space-y-3">
+      <div className='space-y-3'>
         {/* Premium Progress Bar */}
-        <div className="relative">
-          <div className="relative h-3 bg-muted rounded-full overflow-hidden shadow-inner">
+        <div className='relative'>
+          <div className='relative h-3 bg-muted rounded-full overflow-hidden shadow-inner'>
             {/* Animated background pattern */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent animate-shimmer" />
+            <div className='absolute inset-0 opacity-10'>
+              <div className='absolute inset-0 bg-gradient-to-r from-transparent via-muted-foreground/30 to-transparent animate-shimmer' />
             </div>
-            
+
             {/* Projected usage (if uploading) */}
             <AnimatePresence>
               {liveStorage.isUploading && (
@@ -166,12 +176,12 @@ export function StorageInfoDisplay({
                   initial={{ width: `${progressValue}%` }}
                   animate={{ width: `${projectedValue}%` }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-y-0 left-0 bg-muted-foreground/30 rounded-full"
+                  className='absolute inset-y-0 left-0 bg-muted-foreground/30 rounded-full'
                   transition={{ duration: 0.5, ease: 'easeOut' }}
                 />
               )}
             </AnimatePresence>
-            
+
             {/* Current/Real-time usage with gradient */}
             <motion.div
               className={cn(
@@ -182,49 +192,49 @@ export function StorageInfoDisplay({
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
               {/* Shine effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/20 to-transparent animate-shimmer" />
+              <div className='absolute inset-0 bg-gradient-to-r from-transparent via-background/20 to-transparent animate-shimmer' />
             </motion.div>
           </div>
-          
         </div>
 
         {/* Usage details - Premium card style */}
         {!compact && (
-          <div className={cn(
-            'flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50',
-            'text-sm'
-          )}>
-            <div className="flex items-center gap-3">
+          <div
+            className={cn(
+              'flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border/50',
+              'text-sm'
+            )}
+          >
+            <div className='flex items-center gap-3'>
               <div className={cn('p-1.5 rounded-lg', getIconBackground())}>
-                <span className={getStatusColor()}>
-                  {getStatusIcon()}
-                </span>
+                <span className={getStatusColor()}>{getStatusIcon()}</span>
               </div>
               <div>
-                <p className="font-medium text-foreground">
-                  {formatSize(displayUsage)} / {formatSize(storageInfo.storageLimitBytes)}
+                <p className='font-medium text-foreground'>
+                  {formatSize(displayUsage)} /{' '}
+                  {formatSize(storageInfo.storageLimitBytes)}
                   {liveStorage.isUploading && (
-                    <motion.span 
+                    <motion.span
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-primary dark:text-primary ml-1 font-semibold"
+                      className='text-primary dark:text-primary ml-1 font-semibold'
                     >
                       +{formatSize(liveStorage.uploadingBytes)}
                     </motion.span>
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {storageInfo.filesCount} files • {formatSize(storageInfo.remainingBytes)} remaining
+                <p className='text-xs text-muted-foreground mt-0.5'>
+                  {storageInfo.filesCount} files •{' '}
+                  {formatSize(storageInfo.remainingBytes)} remaining
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="font-medium text-foreground/80">
-                {storageInfo.planKey.charAt(0).toUpperCase() + storageInfo.planKey.slice(1)}
+            <div className='text-right'>
+              <p className='font-medium text-foreground/80'>
+                {storageInfo.planKey.charAt(0).toUpperCase() +
+                  storageInfo.planKey.slice(1)}
               </p>
-              <p className="text-xs text-muted-foreground">
-                plan
-              </p>
+              <p className='text-xs text-muted-foreground'>plan</p>
             </div>
           </div>
         )}
@@ -238,39 +248,54 @@ export function StorageInfoDisplay({
               exit={{ opacity: 0, height: 0 }}
               className={cn(
                 'overflow-hidden rounded-xl border',
-                quotaStatus.status === 'exceeded' 
+                quotaStatus.status === 'exceeded'
                   ? 'bg-red-50/80 border-red-200/50'
                   : quotaStatus.status === 'critical'
-                  ? 'bg-red-50/60 border-red-200/40'
-                  : 'bg-yellow-50/80 border-yellow-200/50'
+                    ? 'bg-red-50/60 border-red-200/40'
+                    : 'bg-yellow-50/80 border-yellow-200/50'
               )}
             >
-              <div className="flex items-start gap-3 p-3">
-                <div className={cn(
-                  'p-1.5 rounded-lg flex-shrink-0',
-                  quotaStatus.status === 'exceeded' || quotaStatus.status === 'critical'
-                    ? 'bg-red-100'
-                    : 'bg-yellow-100'
-                )}>
-                  <AlertTriangle className={cn(
-                    "w-4 h-4",
-                    quotaStatus.status === 'exceeded' || quotaStatus.status === 'critical'
-                      ? 'text-red-600'
-                      : 'text-yellow-600'
-                  )} />
+              <div className='flex items-start gap-3 p-3'>
+                <div
+                  className={cn(
+                    'p-1.5 rounded-lg flex-shrink-0',
+                    quotaStatus.status === 'exceeded' ||
+                      quotaStatus.status === 'critical'
+                      ? 'bg-red-100'
+                      : 'bg-yellow-100'
+                  )}
+                >
+                  <AlertTriangle
+                    className={cn(
+                      'w-4 h-4',
+                      quotaStatus.status === 'exceeded' ||
+                        quotaStatus.status === 'critical'
+                        ? 'text-red-600'
+                        : 'text-yellow-600'
+                    )}
+                  />
                 </div>
-                <div className="flex-1">
-                  <p className={cn(
-                    "text-sm font-medium",
-                    quotaStatus.status === 'exceeded' || quotaStatus.status === 'critical'
-                      ? 'text-destructive'
-                      : 'text-warning'
-                  )}>
+                <div className='flex-1'>
+                  <p
+                    className={cn(
+                      'text-sm font-medium',
+                      quotaStatus.status === 'exceeded' ||
+                        quotaStatus.status === 'critical'
+                        ? 'text-destructive'
+                        : 'text-warning'
+                    )}
+                  >
                     {quotaStatus.message}
                   </p>
                   {liveStorage.isUploading && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatSize(Math.max(0, storageInfo.storageLimitBytes - projectedUsage))} will remain after uploads
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      {formatSize(
+                        Math.max(
+                          0,
+                          storageInfo.storageLimitBytes - projectedUsage
+                        )
+                      )}{' '}
+                      will remain after uploads
                     </p>
                   )}
                 </div>
@@ -292,7 +317,7 @@ export function StorageInfoDisplay({
  */
 export function CompactStorageInfo({ className }: { className?: string }) {
   return (
-    <StorageInfoDisplay 
+    <StorageInfoDisplay
       showHeader={false}
       compact={true}
       className={className}
@@ -319,37 +344,41 @@ export function StorageWarningBanner() {
     switch (quotaStatus.status) {
       case 'exceeded':
         return {
-          container: 'from-destructive/10 to-destructive/5 border-destructive/30',
+          container:
+            'from-destructive/10 to-destructive/5 border-destructive/30',
           icon: 'bg-destructive/10 text-destructive',
           text: 'text-destructive',
-          subtext: 'text-destructive/90'
+          subtext: 'text-destructive/90',
         };
       case 'critical':
         return {
-          container: 'from-destructive/10 to-destructive/5 border-destructive/20',
+          container:
+            'from-destructive/10 to-destructive/5 border-destructive/20',
           icon: 'bg-destructive/10 text-destructive/90',
           text: 'text-destructive/90',
-          subtext: 'text-destructive/80'
+          subtext: 'text-destructive/80',
         };
       case 'warning':
         return {
           container: 'from-warning/10 to-warning/5 border-warning/30',
           icon: 'bg-warning/10 text-warning',
           text: 'text-warning',
-          subtext: 'text-warning/90'
+          subtext: 'text-warning/90',
         };
       default:
         return {
           container: 'from-primary/10 to-primary/5 border-primary/30',
           icon: 'bg-primary/10 text-primary',
           text: 'text-primary',
-          subtext: 'text-primary/90'
+          subtext: 'text-primary/90',
         };
     }
   };
 
   const styles = getBannerStyles();
-  const usagePercentage = Math.round((storageInfo.storageUsedBytes / storageInfo.storageLimitBytes) * 100);
+  const usagePercentage = Math.round(
+    (storageInfo.storageUsedBytes / storageInfo.storageLimitBytes) * 100
+  );
 
   return (
     <motion.div
@@ -362,56 +391,60 @@ export function StorageWarningBanner() {
       )}
     >
       {/* Decorative background */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-current rounded-full blur-2xl" />
-        <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-tr from-current rounded-full blur-3xl" />
+      <div className='absolute inset-0 opacity-10'>
+        <div className='absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-current rounded-full blur-2xl' />
+        <div className='absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-tr from-current rounded-full blur-3xl' />
       </div>
 
-      <div className="relative flex items-start gap-3">
-        <motion.div 
+      <div className='relative flex items-start gap-3'>
+        <motion.div
           className={cn('p-2 rounded-xl flex-shrink-0', styles.icon)}
-          animate={{ 
+          animate={{
             scale: quotaStatus.status === 'exceeded' ? [1, 1.1, 1] : 1,
           }}
-          transition={{ 
+          transition={{
             duration: 1.5,
             repeat: quotaStatus.status === 'exceeded' ? Infinity : 0,
-            ease: 'easeInOut'
+            ease: 'easeInOut',
           }}
         >
-          <AlertTriangle className="w-5 h-5" />
+          <AlertTriangle className='w-5 h-5' />
         </motion.div>
-        
-        <div className="flex-1 space-y-2">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <p className={cn("text-sm font-semibold", styles.text)}>
+
+        <div className='flex-1 space-y-2'>
+          <div className='flex items-start justify-between gap-4'>
+            <div className='space-y-1'>
+              <p className={cn('text-sm font-semibold', styles.text)}>
                 {quotaStatus.message}
               </p>
-              <p className={cn("text-xs", styles.subtext)}>
-                Using {formatSize(storageInfo.storageUsedBytes)} of {formatSize(storageInfo.storageLimitBytes)}
+              <p className={cn('text-xs', styles.subtext)}>
+                Using {formatSize(storageInfo.storageUsedBytes)} of{' '}
+                {formatSize(storageInfo.storageLimitBytes)}
                 {storageInfo.remainingBytes > 0 && (
                   <> • {formatSize(storageInfo.remainingBytes)} remaining</>
                 )}
               </p>
             </div>
-            <div className="text-right">
-              <p className={cn("text-2xl font-bold", styles.text)}>
+            <div className='text-right'>
+              <p className={cn('text-2xl font-bold', styles.text)}>
                 {usagePercentage}%
               </p>
-              <p className={cn("text-xs", styles.subtext)}>used</p>
+              <p className={cn('text-xs', styles.subtext)}>used</p>
             </div>
           </div>
-          
+
           {/* Mini progress bar */}
-          <div className="relative h-1.5 bg-muted/50 rounded-full overflow-hidden">
+          <div className='relative h-1.5 bg-muted/50 rounded-full overflow-hidden'>
             <motion.div
               className={cn(
                 'absolute inset-y-0 left-0 rounded-full',
-                quotaStatus.status === 'exceeded' ? 'bg-destructive' :
-                quotaStatus.status === 'critical' ? 'bg-destructive/80' :
-                quotaStatus.status === 'warning' ? 'bg-yellow-500' :
-                'bg-primary'
+                quotaStatus.status === 'exceeded'
+                  ? 'bg-destructive'
+                  : quotaStatus.status === 'critical'
+                    ? 'bg-destructive/80'
+                    : quotaStatus.status === 'warning'
+                      ? 'bg-yellow-500'
+                      : 'bg-primary'
               )}
               initial={{ width: 0 }}
               animate={{ width: `${Math.min(usagePercentage, 100)}%` }}

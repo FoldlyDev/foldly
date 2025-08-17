@@ -10,7 +10,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
+} from '@/components/ui/animate-ui/radix/dialog';
 import { useModalStore } from '../../store';
 import {
   useCreateLinkFormStore,
@@ -73,9 +73,7 @@ export const CreateLinkModal = () => {
       >
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>
-          {linkType === 'base'
-            ? 'Base link setup'
-            : 'Topic link setup'}
+          {linkType === 'base' ? 'Base link setup' : 'Topic link setup'}
         </DialogTitle>
         <DialogDescription className='sr-only'>
           {linkType === 'base'
@@ -92,9 +90,7 @@ export const CreateLinkModal = () => {
               </div>
               <div className='min-w-0 flex-1'>
                 <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground'>
-                  {linkType === 'base'
-                    ? 'Base link setup'
-                    : 'Topic link setup'}
+                  {linkType === 'base' ? 'Base link setup' : 'Topic link setup'}
                 </h1>
                 <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
                   {linkType === 'base'

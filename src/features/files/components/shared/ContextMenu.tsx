@@ -18,7 +18,7 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuTrigger,
-} from '@/components/ui/core/shadcn/context-menu';
+} from '@/components/ui/shadcn/context-menu';
 import type { ContextMenuAction } from '@/features/files/types';
 
 interface ContextMenuProps {
@@ -45,7 +45,7 @@ export function ContextMenu({
   const longPressTimerRef = useRef<NodeJS.Timeout>();
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  
+
   // Build menu items based on context
   const menuItems = React.useMemo(() => {
     const items: Array<{
@@ -134,7 +134,7 @@ export function ContextMenu({
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-    
+
     longPressTimerRef.current = setTimeout(() => {
       e.preventDefault();
       setShowMenu(true);
@@ -143,11 +143,11 @@ export function ContextMenu({
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (!touchStartRef.current || !longPressTimerRef.current) return;
-    
+
     const touch = e.touches[0];
     const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
     const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
-    
+
     // Cancel long press if user moves finger too much
     if (deltaX > 10 || deltaY > 10) {
       clearTimeout(longPressTimerRef.current);
@@ -172,12 +172,15 @@ export function ContextMenu({
     };
   }, []);
 
-  const handleOpenChange = useCallback((open: boolean) => {
-    setShowMenu(open);
-    if (open && onOpenChange) {
-      onOpenChange(open, nodeId);
-    }
-  }, [nodeId, onOpenChange]);
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setShowMenu(open);
+      if (open && onOpenChange) {
+        onOpenChange(open, nodeId);
+      }
+    },
+    [nodeId, onOpenChange]
+  );
 
   return (
     <ContextMenuRoot open={showMenu} onOpenChange={handleOpenChange}>
@@ -190,23 +193,17 @@ export function ContextMenu({
           {children}
         </div>
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
+      <ContextMenuContent className='w-56'>
         {menuItems.map((item, index) => {
           const Icon = item.icon;
           return (
             <React.Fragment key={item.action}>
-              {item.divider && index > 0 && (
-                <ContextMenuSeparator />
-              )}
-              <ContextMenuItem
-                onClick={() => onAction(item.action)}
-              >
-                <Icon className="mr-2 h-4 w-4" />
-                <span className="flex-1">{item.label}</span>
+              {item.divider && index > 0 && <ContextMenuSeparator />}
+              <ContextMenuItem onClick={() => onAction(item.action)}>
+                <Icon className='mr-2 h-4 w-4' />
+                <span className='flex-1'>{item.label}</span>
                 {item.shortcut && (
-                  <ContextMenuShortcut>
-                    {item.shortcut}
-                  </ContextMenuShortcut>
+                  <ContextMenuShortcut>{item.shortcut}</ContextMenuShortcut>
                 )}
               </ContextMenuItem>
             </React.Fragment>

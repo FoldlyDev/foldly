@@ -9,8 +9,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/marketing/animate-ui/radix/dialog';
-import { Button } from '@/components/ui/core/shadcn/button';
+} from '@/components/ui/animate-ui/radix/dialog';
+import { Button } from '@/components/ui/shadcn/button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useDeleteLinkMutation } from '../../hooks/react-query/use-delete-link-mutation';
 import { useLinkUrl } from '../../hooks/use-link-url';
@@ -126,7 +126,6 @@ export function DeleteConfirmationModal() {
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Modal Footer */}

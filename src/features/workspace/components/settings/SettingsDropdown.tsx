@@ -27,7 +27,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function SettingsDropdown() {
@@ -175,8 +175,8 @@ export function SettingsDropdown() {
                 <BellOff size={16} className='opacity-60' />
                 <span>Do not disturb</span>
               </div>
-              <div 
-                className='context-menu-toggle' 
+              <div
+                className='context-menu-toggle'
                 data-state={doNotDisturb ? 'checked' : 'unchecked'}
               >
                 <div className='context-menu-toggle-thumb' />
@@ -198,8 +198,8 @@ export function SettingsDropdown() {
                 )}
                 <span>Silent notifications</span>
               </div>
-              <div 
-                className='context-menu-toggle' 
+              <div
+                className='context-menu-toggle'
                 data-state={silentNotifications ? 'checked' : 'unchecked'}
                 data-disabled={doNotDisturb ? '' : undefined}
               >

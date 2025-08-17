@@ -7,10 +7,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/ui/core/shadcn/card';
-import { Button } from '@/components/ui/core/shadcn/button';
-import { Separator } from '@/components/ui/core/shadcn/separator';
-import { Badge } from '@/components/ui/core/shadcn/badge';
+} from '@/components/ui/shadcn/card';
+import { Button } from '@/components/ui/shadcn/button';
+import { Separator } from '@/components/ui/shadcn/separator';
+import { Badge } from '@/components/ui/shadcn/badge';
 import {
   FolderOpen,
   Files,

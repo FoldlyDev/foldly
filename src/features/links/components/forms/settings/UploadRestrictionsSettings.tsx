@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import { HardDrive, FileType, Check } from 'lucide-react';
-import { HelpPopover } from '@/components/ui/core/help-popover';
-import { Badge } from '@/components/ui/core/shadcn/badge';
+import { HelpPopover } from '@/components/core/help-popover';
+import { Badge } from '@/components/ui/shadcn/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../../lib/constants';
@@ -80,9 +80,7 @@ export function UploadRestrictionsSettings({
             />
           </label>
           <DropdownMenu>
-            <DropdownMenuTrigger
-              className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer'
-            >
+            <DropdownMenuTrigger className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer'>
               <span>{watchedValues.maxFileSize || 10} MB</span>
               <svg
                 className='w-4 h-4 text-muted-foreground'
@@ -133,15 +131,18 @@ export function UploadRestrictionsSettings({
             />
           </label>
           <DropdownMenu>
-            <DropdownMenuTrigger
-              className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-h-[40px] h-auto'
-            >
+            <DropdownMenuTrigger className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-h-[40px] h-auto'>
               <div className='flex flex-wrap gap-1'>
-                {(!watchedValues.allowedFileTypes || watchedValues.allowedFileTypes.length === 0) ? (
-                  <span className='text-muted-foreground'>All file types allowed</span>
+                {!watchedValues.allowedFileTypes ||
+                watchedValues.allowedFileTypes.length === 0 ? (
+                  <span className='text-muted-foreground'>
+                    All file types allowed
+                  </span>
                 ) : watchedValues.allowedFileTypes.length <= 3 ? (
                   watchedValues.allowedFileTypes.map(type => {
-                    const option = fileTypeOptions.find(opt => opt.value === type);
+                    const option = fileTypeOptions.find(
+                      opt => opt.value === type
+                    );
                     return (
                       <Badge key={type} variant='secondary' className='text-xs'>
                         {option?.label?.split(' ')[0] || type}
@@ -168,25 +169,32 @@ export function UploadRestrictionsSettings({
                 />
               </svg>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='end' className='w-full min-w-[280px] max-h-[300px] overflow-y-auto'>
+            <DropdownMenuContent
+              align='end'
+              className='w-full min-w-[280px] max-h-[300px] overflow-y-auto'
+            >
               {fileTypeOptions.map(option => {
-                const isSelected = watchedValues.allowedFileTypes?.includes(option.value) || false;
-                
+                const isSelected =
+                  watchedValues.allowedFileTypes?.includes(option.value) ||
+                  false;
+
                 return (
                   <DropdownMenuItem
                     key={option.value}
                     onClick={() => {
                       const currentTypes = watchedValues.allowedFileTypes || [];
                       let newTypes: string[];
-                      
+
                       if (isSelected) {
                         // Remove from selection
-                        newTypes = currentTypes.filter(type => type !== option.value);
+                        newTypes = currentTypes.filter(
+                          type => type !== option.value
+                        );
                       } else {
                         // Add to selection
                         newTypes = [...currentTypes, option.value];
                       }
-                      
+
                       setValue('allowedFileTypes', newTypes, {
                         shouldDirty: true,
                         shouldValidate: true,
@@ -203,21 +211,24 @@ export function UploadRestrictionsSettings({
                   </DropdownMenuItem>
                 );
               })}
-              
-              {watchedValues.allowedFileTypes && watchedValues.allowedFileTypes.length > 0 && (
-                <>
-                  <div className='h-px bg-border my-1' />
-                  <DropdownMenuItem
-                    onClick={() => setValue('allowedFileTypes', [], {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })}
-                    className='cursor-pointer text-center justify-center text-muted-foreground'
-                  >
-                    Clear all
-                  </DropdownMenuItem>
-                </>
-              )}
+
+              {watchedValues.allowedFileTypes &&
+                watchedValues.allowedFileTypes.length > 0 && (
+                  <>
+                    <div className='h-px bg-border my-1' />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setValue('allowedFileTypes', [], {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      className='cursor-pointer text-center justify-center text-muted-foreground'
+                    >
+                      Clear all
+                    </DropdownMenuItem>
+                  </>
+                )}
             </DropdownMenuContent>
           </DropdownMenu>
           {errors.allowedFileTypes && (

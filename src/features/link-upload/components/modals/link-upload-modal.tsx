@@ -2,17 +2,20 @@
 
 import { useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
+} from '@/components/ui/animate-ui/radix/dialog';
 import { CloudUpload, AlertCircle, Shield, Info } from 'lucide-react';
 import { useUploadFiles } from '../../hooks/use-upload-files';
 import { UploadProgress } from '../upload/upload-progress';
-import { UploadValidation, UploadStorageWarning } from '../upload/upload-validation';
+import {
+  UploadValidation,
+  UploadStorageWarning,
+} from '../upload/upload-validation';
 import { LinkUploadArea } from '../upload/link-upload-area';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
 import type { LinkWithOwner } from '../../types';
@@ -64,7 +67,10 @@ export function LinkUploadModal({
   }, [isOpen, clearFiles]);
 
   // Get brand color for theming
-  const brandColor = linkData.branding?.enabled && linkData.branding?.color ? linkData.branding.color : '#3b82f6';
+  const brandColor =
+    linkData.branding?.enabled && linkData.branding?.color
+      ? linkData.branding.color
+      : '#3b82f6';
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -76,26 +82,27 @@ export function LinkUploadModal({
         {/* Accessibility Labels */}
         <DialogTitle className='sr-only'>Add Files to Link</DialogTitle>
         <DialogDescription className='sr-only'>
-          Select files to preview before adding them to the staging area. You can review your files before staging them for upload.
+          Select files to preview before adding them to the staging area. You
+          can review your files before staging them for upload.
         </DialogDescription>
 
         {/* Modal Header */}
-        <div 
+        <div
           className='relative border-b border-gray-200/50 shrink-0'
           style={{
-            background: linkData.branding?.enabled 
+            background: linkData.branding?.enabled
               ? `linear-gradient(135deg, ${brandColor}1a, ${brandColor}0d)`
-              : 'linear-gradient(135deg, rgb(59 130 246 / 0.1), rgb(99 102 241 / 0.05))'
+              : 'linear-gradient(135deg, rgb(59 130 246 / 0.1), rgb(99 102 241 / 0.05))',
           }}
         >
           <div className='p-4 sm:p-6 lg:p-8'>
             <div className='flex items-center gap-3 sm:gap-4'>
-              <div 
+              <div
                 className='p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-lg'
                 style={{
-                  background: linkData.branding?.enabled 
+                  background: linkData.branding?.enabled
                     ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
-                    : 'linear-gradient(135deg, rgb(59 130 246), rgb(99 102 241))'
+                    : 'linear-gradient(135deg, rgb(59 130 246), rgb(99 102 241))',
                 }}
               >
                 <CloudUpload className='w-5 h-5 sm:w-6 sm:h-6 text-white' />
@@ -163,16 +170,22 @@ export function LinkUploadModal({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-muted/30 border rounded-lg p-4"
+            className='bg-muted/30 border rounded-lg p-4'
           >
-            <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="font-medium text-sm">Upload Security</h4>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>• Files are encrypted during transfer and stored securely</p>
-                  {linkData.requirePassword && <p>• Password protection is enabled for this link</p>}
-                  {linkData.requireEmail && <p>• Email verification is required for uploads</p>}
+            <div className='flex items-start gap-3'>
+              <Shield className='w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5' />
+              <div className='space-y-1'>
+                <h4 className='font-medium text-sm'>Upload Security</h4>
+                <div className='text-xs text-muted-foreground space-y-1'>
+                  <p>
+                    • Files are encrypted during transfer and stored securely
+                  </p>
+                  {linkData.requirePassword && (
+                    <p>• Password protection is enabled for this link</p>
+                  )}
+                  {linkData.requireEmail && (
+                    <p>• Email verification is required for uploads</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -214,16 +227,18 @@ export function LinkUploadModal({
               onClick={hasFilesToUpload ? handleStageFiles : handleClose}
               className='w-full sm:w-auto min-w-0 sm:min-w-[140px] text-white transition-all duration-200 cursor-pointer'
               style={{
-                background: linkData.branding?.enabled && hasFilesToUpload
-                  ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
-                  : undefined
+                background:
+                  linkData.branding?.enabled && hasFilesToUpload
+                    ? `linear-gradient(135deg, ${brandColor}, ${brandColor}dd)`
+                    : undefined,
               }}
             >
               {hasFilesToUpload ? (
                 <>
                   <CloudUpload className='w-4 h-4' />
                   <span>
-                    Add {stagedFiles} selected {stagedFiles === 1 ? 'file' : 'files'}
+                    Add {stagedFiles} selected{' '}
+                    {stagedFiles === 1 ? 'file' : 'files'}
                   </span>
                 </>
               ) : (

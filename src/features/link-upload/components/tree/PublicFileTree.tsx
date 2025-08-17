@@ -1,9 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FileIcon, FolderIcon, Download, ChevronRight, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/core/shadcn/button';
-import { Skeleton } from '@/components/ui/core/shadcn/skeleton';
+import {
+  FileIcon,
+  FolderIcon,
+  Download,
+  ChevronRight,
+  ChevronDown,
+} from 'lucide-react';
+import { Button } from '@/components/ui/shadcn/button';
+import { Skeleton } from '@/components/ui/shadcn/skeleton';
 import { cn } from '@/lib/utils';
 import { usePublicFiles } from '../../hooks/use-public-files';
 import { formatBytes, formatDateTime } from '../../lib/utils/format';
@@ -25,18 +31,24 @@ export function PublicFileTree({ linkId, compact }: PublicFileTreeProps) {
 
   if (!tree || tree.length === 0) {
     return (
-      <div className={cn(
-        'text-center text-muted-foreground',
-        compact ? 'py-8' : 'py-12'
-      )}>
-        <FileIcon className={cn('mx-auto mb-3', compact ? 'h-8 w-8' : 'h-12 w-12')} />
-        <p className={compact ? 'text-sm' : 'text-base'}>No files uploaded yet</p>
+      <div
+        className={cn(
+          'text-center text-muted-foreground',
+          compact ? 'py-8' : 'py-12'
+        )}
+      >
+        <FileIcon
+          className={cn('mx-auto mb-3', compact ? 'h-8 w-8' : 'h-12 w-12')}
+        />
+        <p className={compact ? 'text-sm' : 'text-base'}>
+          No files uploaded yet
+        </p>
       </div>
     );
   }
 
   const toggleNode = (nodeId: string) => {
-    setExpandedNodes((prev) => {
+    setExpandedNodes(prev => {
       const next = new Set(prev);
       if (next.has(nodeId)) {
         next.delete(nodeId);
@@ -61,7 +73,7 @@ export function PublicFileTree({ linkId, compact }: PublicFileTreeProps) {
 
   return (
     <div className={cn('space-y-1', compact && 'text-sm')}>
-      {tree.map((node) => (
+      {tree.map(node => (
         <TreeNode
           key={node.id}
           node={node}
@@ -114,40 +126,53 @@ function TreeNode({
       >
         {hasChildren && (
           <button
-            className="p-0.5 hover:bg-muted rounded"
-            onClick={(e) => {
+            className='p-0.5 hover:bg-muted rounded'
+            onClick={e => {
               e.stopPropagation();
               onToggle(node.id);
             }}
           >
             {expanded ? (
-              <ChevronDown className="h-3 w-3" />
+              <ChevronDown className='h-3 w-3' />
             ) : (
-              <ChevronRight className="h-3 w-3" />
+              <ChevronRight className='h-3 w-3' />
             )}
           </button>
         )}
 
         {node.type === 'folder' ? (
-          <FolderIcon className={cn('text-muted-foreground', compact ? 'h-4 w-4' : 'h-5 w-5')} />
+          <FolderIcon
+            className={cn(
+              'text-muted-foreground',
+              compact ? 'h-4 w-4' : 'h-5 w-5'
+            )}
+          />
         ) : (
-          <FileIcon className={cn('text-muted-foreground', compact ? 'h-4 w-4' : 'h-5 w-5')} />
+          <FileIcon
+            className={cn(
+              'text-muted-foreground',
+              compact ? 'h-4 w-4' : 'h-5 w-5'
+            )}
+          />
         )}
 
-        <span className="flex-1 truncate">{node.name}</span>
+        <span className='flex-1 truncate'>{node.name}</span>
 
         {node.type === 'file' && (
           <>
             {!compact && node.size && (
-              <span className="text-xs text-muted-foreground">
+              <span className='text-xs text-muted-foreground'>
                 {formatBytes(node.size)}
               </span>
             )}
             <Button
-              variant="ghost"
-              size="icon"
-              className={cn('opacity-0 group-hover:opacity-100', compact ? 'h-6 w-6' : 'h-8 w-8')}
-              onClick={(e) => {
+              variant='ghost'
+              size='icon'
+              className={cn(
+                'opacity-0 group-hover:opacity-100',
+                compact ? 'h-6 w-6' : 'h-8 w-8'
+              )}
+              onClick={e => {
                 e.stopPropagation();
                 onDownload(node);
               }}
@@ -160,7 +185,7 @@ function TreeNode({
 
       {hasChildren && expanded && (
         <div>
-          {node.children!.map((child) => (
+          {node.children!.map(child => (
             <TreeNode
               key={child.id}
               node={child}
@@ -179,10 +204,12 @@ function TreeNode({
 
 function FileTreeSkeleton({ compact }: { compact?: boolean }) {
   return (
-    <div className="space-y-2">
+    <div className='space-y-2'>
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-2 py-1.5">
-          <Skeleton className={cn('rounded', compact ? 'h-4 w-4' : 'h-5 w-5')} />
+        <div key={i} className='flex items-center gap-2 py-1.5'>
+          <Skeleton
+            className={cn('rounded', compact ? 'h-4 w-4' : 'h-5 w-5')}
+          />
           <Skeleton className={cn('flex-1', compact ? 'h-4' : 'h-5')} />
           <Skeleton className={cn(compact ? 'h-4 w-12' : 'h-5 w-16')} />
         </div>

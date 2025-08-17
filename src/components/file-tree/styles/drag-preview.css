@@ -1,0 +1,8 @@
+/* Drag preview styling - positioned off-screen */
+.drag-preview {
+  position: fixed;
+  top: -1000px;
+  left: -1000px;
+  z-index: -1;
+  pointer-events: none;
+}

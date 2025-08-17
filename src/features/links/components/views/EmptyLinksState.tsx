@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { SecondaryCTAButton, TertiaryCTAButton } from '@/components/ui/core';
+import { SecondaryCTAButton, TertiaryCTAButton } from '@/components/core';
 import { useModalStore } from '../../store';
 import { useQuickStart } from '../../hooks/use-quick-start';
 import { getDisplayDomain } from '@/lib/config/url-config';

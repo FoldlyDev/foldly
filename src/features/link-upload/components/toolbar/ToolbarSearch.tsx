@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Input } from '@/components/ui/core/shadcn/input';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
+import { Button } from '@/components/ui/shadcn/button';
 import { Search, X } from 'lucide-react';
 
 interface ToolbarSearchProps {
@@ -11,10 +11,10 @@ interface ToolbarSearchProps {
   placeholder?: string;
 }
 
-export function ToolbarSearch({ 
-  searchQuery, 
+export function ToolbarSearch({
+  searchQuery,
   onSearchChange,
-  placeholder = 'Search files and folders...'
+  placeholder = 'Search files and folders...',
 }: ToolbarSearchProps) {
   const [localQuery, setLocalQuery] = useState(searchQuery);
 
@@ -35,7 +35,7 @@ export function ToolbarSearch({
         type='text'
         placeholder={placeholder}
         value={localQuery}
-        onChange={(e) => handleSearch(e.target.value)}
+        onChange={e => handleSearch(e.target.value)}
         className='pl-9 pr-8 h-9'
       />
       {localQuery && (

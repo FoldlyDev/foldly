@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
+import { Skeleton } from '@/components/feedback/skeleton-loader';
 
 export function SettingsSkeleton() {
   return (
@@ -45,10 +45,7 @@ export function SettingsSkeleton() {
 
               {/* Form Sections */}
               {[...Array(3)].map((_, sectionIndex) => (
-                <div
-                  key={sectionIndex}
-                  className='space-y-4 pt-6 border-t'
-                >
+                <div key={sectionIndex} className='space-y-4 pt-6 border-t'>
                   <Skeleton className='h-5 w-40 dark:bg-white/10' />
 
                   {/* Form Fields */}

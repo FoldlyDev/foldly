@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { MessageSquare } from 'lucide-react';
-import { HelpPopover } from '@/components/ui/core/help-popover';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 

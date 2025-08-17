@@ -1,10 +1,10 @@
 'use client';
 
 import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs';
-import { ArrowLeft } from '@/components/marketing/animate-ui/icons/arrow-left';
-import { AnimateIcon } from '@/components/marketing/animate-ui/icons/icon';
-import { ContentLoader } from '@/components/ui/feedback/content-loader';
-import { BubbleBackground } from '@/components/ui/core/bubble';
+import { ArrowLeft } from '@/components/ui/animate-ui/icons/arrow-left';
+import { AnimateIcon } from '@/components/ui/animate-ui/icons/icon';
+import { ContentLoader } from '@/components/feedback/content-loader';
+import { BubbleBackground } from '@/components/core/bubble';
 import { useEffect, useState } from 'react';
 
 import '@/features/auth/styles/auth-pages.css';

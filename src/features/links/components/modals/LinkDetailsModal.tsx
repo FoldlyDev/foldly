@@ -28,8 +28,8 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/marketing/animate-ui/radix/dialog';
-import { CopyButton } from '@/components/ui/core/copy-button';
+} from '@/components/ui/animate-ui/radix/dialog';
+import { CopyButton } from '@/components/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
@@ -41,13 +41,13 @@ export function LinkDetailsModal() {
   const currentModal = useCurrentModal();
   const { link } = useModalData();
   const { closeModal } = useModalStore();
-  
+
   // Get real-time storage and plan data
   const { storageInfo, refetchStorage, formatSize } = useStorageTracking();
   const { planKey } = useUserPlan();
 
   const isOpen = currentModal === 'link-details';
-  
+
   // Fetch detailed link stats when modal opens
   const { data: linkWithStats, isLoading } = useQuery({
     queryKey: ['link-details', link?.id],
@@ -61,10 +61,10 @@ export function LinkDetailsModal() {
     },
     enabled: isOpen && !!link?.id,
   });
-  
+
   // Use the enhanced stats if available, otherwise fall back to the original link data
   const displayLink = linkWithStats || link;
-  
+
   // Refetch storage data when modal opens to ensure we have the latest info
   useEffect(() => {
     if (isOpen) {
@@ -100,20 +100,23 @@ export function LinkDetailsModal() {
 
   const statusConfig = getStatusConfig();
   const { displayUrl, fullUrl } = useLinkUrl(link.slug, link.topic);
-  
+
   // Get accurate statistics from the enhanced data
-  const uploadSessions = (linkWithStats as LinkWithStats)?.stats?.batchCount || 0;
-  const totalItems = ((linkWithStats as LinkWithStats)?.stats?.fileCount || 0) + 
-                     ((linkWithStats as LinkWithStats)?.stats?.folderCount || 0);
-  
+  const uploadSessions =
+    (linkWithStats as LinkWithStats)?.stats?.batchCount || 0;
+  const totalItems =
+    ((linkWithStats as LinkWithStats)?.stats?.fileCount || 0) +
+    ((linkWithStats as LinkWithStats)?.stats?.folderCount || 0);
+
   // Calculate storage usage percentage for this link
-  const linkStoragePercentage = storageInfo.storageLimitBytes > 0
-    ? Math.min((link.totalSize / storageInfo.storageLimitBytes) * 100, 100)
-    : 0;
-  
+  const linkStoragePercentage =
+    storageInfo.storageLimitBytes > 0
+      ? Math.min((link.totalSize / storageInfo.storageLimitBytes) * 100, 100)
+      : 0;
+
   // Calculate overall storage usage percentage
   const overallStoragePercentage = storageInfo.usagePercentage || 0;
-  
+
   // Determine if user is approaching storage limits
   const isStorageWarning = overallStoragePercentage >= 75;
   const isStorageCritical = overallStoragePercentage >= 90;
@@ -221,7 +224,14 @@ export function LinkDetailsModal() {
                   </div>
                 </div>
                 <div className='text-xs text-muted-foreground mt-2'>
-                  {((linkWithStats as LinkWithStats)?.stats?.fileCount || 0).toLocaleString()} files, {((linkWithStats as LinkWithStats)?.stats?.folderCount || 0).toLocaleString()} folders
+                  {(
+                    (linkWithStats as LinkWithStats)?.stats?.fileCount || 0
+                  ).toLocaleString()}{' '}
+                  files,{' '}
+                  {(
+                    (linkWithStats as LinkWithStats)?.stats?.folderCount || 0
+                  ).toLocaleString()}{' '}
+                  folders
                 </div>
               </div>
             </motion.div>
@@ -262,18 +272,28 @@ export function LinkDetailsModal() {
             >
               <div className='relative z-10'>
                 <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3'>
-                  <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${
-                    isStorageExceeded ? 'bg-red-500/10' :
-                    isStorageCritical ? 'bg-orange-500/10' :
-                    isStorageWarning ? 'bg-yellow-500/10' :
-                    'bg-green-500/10'
-                  } self-start`}>
-                    <HardDrive className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                      isStorageExceeded ? 'text-red-600' :
-                      isStorageCritical ? 'text-orange-600' :
-                      isStorageWarning ? 'text-yellow-600' :
-                      'text-green-600'
-                    }`} />
+                  <div
+                    className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${
+                      isStorageExceeded
+                        ? 'bg-red-500/10'
+                        : isStorageCritical
+                          ? 'bg-orange-500/10'
+                          : isStorageWarning
+                            ? 'bg-yellow-500/10'
+                            : 'bg-green-500/10'
+                    } self-start`}
+                  >
+                    <HardDrive
+                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
+                        isStorageExceeded
+                          ? 'text-red-600'
+                          : isStorageCritical
+                            ? 'text-orange-600'
+                            : isStorageWarning
+                              ? 'text-yellow-600'
+                              : 'text-green-600'
+                      }`}
+                    />
                   </div>
                   <div className='text-left sm:text-right'>
                     <div className='text-xl sm:text-2xl lg:text-3xl font-bold stats-number'>
@@ -285,15 +305,19 @@ export function LinkDetailsModal() {
                   </div>
                 </div>
                 <div className='text-xs text-muted-foreground mb-2'>
-                  {linkStoragePercentage.toFixed(1)}% of {formatSize(storageInfo.storageLimitBytes)} limit
+                  {linkStoragePercentage.toFixed(1)}% of{' '}
+                  {formatSize(storageInfo.storageLimitBytes)} limit
                 </div>
                 <div className='w-full bg-muted rounded-full h-1.5 sm:h-2'>
                   <div
                     className={`h-1.5 sm:h-2 rounded-full premium-progress bg-gradient-to-r ${
-                      isStorageExceeded ? 'from-red-500 to-red-600' :
-                      isStorageCritical ? 'from-orange-500 to-orange-600' :
-                      isStorageWarning ? 'from-yellow-500 to-yellow-600' :
-                      'from-green-500 to-green-600'
+                      isStorageExceeded
+                        ? 'from-red-500 to-red-600'
+                        : isStorageCritical
+                          ? 'from-orange-500 to-orange-600'
+                          : isStorageWarning
+                            ? 'from-yellow-500 to-yellow-600'
+                            : 'from-green-500 to-green-600'
                     }`}
                     style={{ width: `${linkStoragePercentage}%` }}
                   />
@@ -322,80 +346,109 @@ export function LinkDetailsModal() {
                 {planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan
               </span>
             </div>
-            
+
             <div className='space-y-3'>
               {/* Overall Storage Usage */}
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <span className='text-sm font-medium text-muted-foreground'>Total Usage</span>
+                  <span className='text-sm font-medium text-muted-foreground'>
+                    Total Usage
+                  </span>
                   <span className='text-sm font-bold text-foreground'>
-                    {formatSize(storageInfo.storageUsedBytes)} / {formatSize(storageInfo.storageLimitBytes)}
+                    {formatSize(storageInfo.storageUsedBytes)} /{' '}
+                    {formatSize(storageInfo.storageLimitBytes)}
                   </span>
                 </div>
                 <div className='w-full bg-muted rounded-full h-2'>
                   <div
                     className={`h-2 rounded-full transition-all duration-500 bg-gradient-to-r ${
-                      isStorageExceeded ? 'from-red-500 to-red-600' :
-                      isStorageCritical ? 'from-orange-500 to-orange-600' :
-                      isStorageWarning ? 'from-yellow-500 to-yellow-600' :
-                      'from-blue-500 to-indigo-600'
+                      isStorageExceeded
+                        ? 'from-red-500 to-red-600'
+                        : isStorageCritical
+                          ? 'from-orange-500 to-orange-600'
+                          : isStorageWarning
+                            ? 'from-yellow-500 to-yellow-600'
+                            : 'from-blue-500 to-indigo-600'
                     }`}
-                    style={{ width: `${Math.min(overallStoragePercentage, 100)}%` }}
+                    style={{
+                      width: `${Math.min(overallStoragePercentage, 100)}%`,
+                    }}
                   />
                 </div>
                 <div className='flex justify-between items-center mt-1'>
                   <span className='text-xs text-muted-foreground'>
                     {storageInfo.filesCount} total files
                   </span>
-                  <span className={`text-xs font-medium ${
-                    isStorageExceeded ? 'text-red-600' :
-                    isStorageCritical ? 'text-orange-600' :
-                    isStorageWarning ? 'text-yellow-600' :
-                    'text-green-600'
-                  }`}>
+                  <span
+                    className={`text-xs font-medium ${
+                      isStorageExceeded
+                        ? 'text-red-600'
+                        : isStorageCritical
+                          ? 'text-orange-600'
+                          : isStorageWarning
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
+                    }`}
+                  >
                     {formatSize(storageInfo.remainingBytes)} available
                   </span>
                 </div>
               </div>
-              
+
               {/* Storage Warning Message */}
               {isStorageWarning && (
-                <div className={`flex items-start gap-2 p-3 rounded-lg ${
-                  isStorageExceeded ? 'bg-red-50 border border-red-200' :
-                  isStorageCritical ? 'bg-orange-50 border border-orange-200' :
-                  'bg-yellow-50 border border-yellow-200'
-                }`}>
-                  <AlertTriangle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                    isStorageExceeded ? 'text-red-600' :
-                    isStorageCritical ? 'text-orange-600' :
-                    'text-yellow-600'
-                  }`} />
+                <div
+                  className={`flex items-start gap-2 p-3 rounded-lg ${
+                    isStorageExceeded
+                      ? 'bg-red-50 border border-red-200'
+                      : isStorageCritical
+                        ? 'bg-orange-50 border border-orange-200'
+                        : 'bg-yellow-50 border border-yellow-200'
+                  }`}
+                >
+                  <AlertTriangle
+                    className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                      isStorageExceeded
+                        ? 'text-red-600'
+                        : isStorageCritical
+                          ? 'text-orange-600'
+                          : 'text-yellow-600'
+                    }`}
+                  />
                   <div className='flex-1'>
-                    <p className={`text-sm font-medium ${
-                      isStorageExceeded ? 'text-red-800' :
-                      isStorageCritical ? 'text-orange-800' :
-                      'text-yellow-800'
-                    }`}>
-                      {isStorageExceeded ? 'Storage limit exceeded!' :
-                       isStorageCritical ? 'Storage almost full!' :
-                       'Storage usage high'}
+                    <p
+                      className={`text-sm font-medium ${
+                        isStorageExceeded
+                          ? 'text-red-800'
+                          : isStorageCritical
+                            ? 'text-orange-800'
+                            : 'text-yellow-800'
+                      }`}
+                    >
+                      {isStorageExceeded
+                        ? 'Storage limit exceeded!'
+                        : isStorageCritical
+                          ? 'Storage almost full!'
+                          : 'Storage usage high'}
                     </p>
                     <p className='text-xs text-muted-foreground mt-1'>
-                      {isStorageExceeded ? 
-                        'Delete some files or upgrade your plan to continue uploading.' :
-                        `Only ${formatSize(storageInfo.remainingBytes)} remaining on your ${planKey} plan.`
-                      }
+                      {isStorageExceeded
+                        ? 'Delete some files or upgrade your plan to continue uploading.'
+                        : `Only ${formatSize(storageInfo.remainingBytes)} remaining on your ${planKey} plan.`}
                     </p>
                   </div>
                 </div>
               )}
-              
+
               {/* Link Contribution */}
               <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
                 <div className='flex justify-between items-center'>
-                  <span className='text-sm text-muted-foreground'>This link uses</span>
+                  <span className='text-sm text-muted-foreground'>
+                    This link uses
+                  </span>
                   <span className='text-sm font-semibold text-foreground'>
-                    {formatSize(link.totalSize)} ({linkStoragePercentage.toFixed(1)}%)
+                    {formatSize(link.totalSize)} (
+                    {linkStoragePercentage.toFixed(1)}%)
                   </span>
                 </div>
               </div>
@@ -482,7 +535,6 @@ export function LinkDetailsModal() {
               </div>
 
               <div className='space-y-4'>
-
                 <div className='flex items-center justify-between py-3 border-b border-border/50'>
                   <div className='flex items-center gap-2'>
                     <Mail className='w-4 h-4 text-muted-foreground' />

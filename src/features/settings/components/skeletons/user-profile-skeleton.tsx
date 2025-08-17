@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Skeleton } from '@/components/ui/feedback/skeleton-loader';
+import { Skeleton } from '@/components/feedback/skeleton-loader';
 import { Loader2 } from 'lucide-react';
 
 interface UserProfileSkeletonProps {
@@ -74,10 +74,7 @@ export const UserProfileSkeleton: React.FC<UserProfileSkeletonProps> = ({
 
             {/* Form Sections */}
             {[...Array(config.sectionsCount)].map((_, sectionIndex) => (
-              <div
-                key={sectionIndex}
-                className='space-y-4 pt-6 border-t'
-              >
+              <div key={sectionIndex} className='space-y-4 pt-6 border-t'>
                 <Skeleton className='h-5 w-40 dark:bg-white/10' />
 
                 {/* Form Fields */}

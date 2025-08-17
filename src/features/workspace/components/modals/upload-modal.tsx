@@ -2,20 +2,20 @@
 
 import { useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
+} from '@/components/ui/animate-ui/radix/dialog';
 import { CloudUpload, AlertCircle } from 'lucide-react';
 import { useFileUpload } from '../../hooks/use-file-upload';
 import { UploadProgress } from '../upload/upload-progress';
 import { UploadValidation, StorageWarning } from '../upload/upload-validation';
 import { StorageInfoDisplay } from '../storage/storage-info-display';
 import { FileUploadArea } from '../upload/file-upload-area';
-import { CentralizedFileUpload } from '@/components/ui/composite/centralized-file-upload';
+import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
 import { useAuth, Protect } from '@clerk/nextjs';
 import { useStorageTracking } from '../../hooks/use-storage-tracking';
@@ -94,19 +94,15 @@ export function UploadModal({
         {/* Protect component wrapper - ensures user has valid authentication */}
         <Protect
           fallback={
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-              <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+            <div className='flex flex-col items-center justify-center h-full p-8 text-center'>
+              <AlertCircle className='w-12 h-12 text-muted-foreground mb-4' />
+              <h3 className='text-lg font-semibold text-foreground mb-2'>
                 Authentication Required
               </h3>
-              <p className="text-sm text-muted-foreground max-w-sm">
+              <p className='text-sm text-muted-foreground max-w-sm'>
                 Please sign in to upload files to your workspace.
               </p>
-              <Button
-                variant="outline"
-                onClick={handleClose}
-                className="mt-6"
-              >
+              <Button variant='outline' onClick={handleClose} className='mt-6'>
                 Close
               </Button>
             </div>
@@ -133,152 +129,152 @@ export function UploadModal({
 
           {/* Content Area */}
           <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
-          {/* Storage Warning - Animated Alert */}
-          <AnimatePresence>
-            {quotaStatus.status !== 'safe' && (
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              >
-                <StorageWarning
-                  status={quotaStatus.status}
-                  remainingSpace={storageInfo.remainingBytes}
-                  formatSize={formatSize}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+            {/* Storage Warning - Animated Alert */}
+            <AnimatePresence>
+              {quotaStatus.status !== 'safe' && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                >
+                  <StorageWarning
+                    status={quotaStatus.status}
+                    remainingSpace={storageInfo.remainingBytes}
+                    formatSize={formatSize}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-          {/* File Upload Area */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <FileUploadArea
-              onFileSelect={handleFileSelect}
-              isDragging={isDragging}
-              isUploading={isUploading}
-              isExceeded={quotaStatus.status === 'exceeded'}
-              storageInfo={storageInfo}
-              formatSize={formatSize}
-              files={files}
-              onRemoveFile={handleRemoveFile}
-            />
+            {/* File Upload Area */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <FileUploadArea
+                onFileSelect={handleFileSelect}
+                isDragging={isDragging}
+                isUploading={isUploading}
+                isExceeded={quotaStatus.status === 'exceeded'}
+                storageInfo={storageInfo}
+                formatSize={formatSize}
+                files={files}
+                onRemoveFile={handleRemoveFile}
+              />
+            </div>
+
+            {/* Upload Limits Info - Always show for user reference */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <UploadLimitsInfo
+                plan={storageInfo.planKey as 'free' | 'pro' | 'business'}
+              />
+            </motion.div>
+
+            {/* Storage Info Display - Always show for user awareness */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <StorageInfoDisplay
+                showHeader={true}
+                compact={false}
+                showLiveUpdates={isUploading}
+              />
+            </motion.div>
+
+            {/* Upload Progress - Only show for batch summary */}
+            <AnimatePresence>
+              {isUploading && totalFiles > 3 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <UploadProgress
+                    isUploading={isUploading}
+                    totalFiles={totalFiles}
+                    completedFiles={completedFiles}
+                    failedFiles={failedFiles}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Upload Validation - Shows Error States with Details */}
+            <AnimatePresence>
+              {uploadValidation && !uploadValidation.valid && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <UploadValidation
+                    validation={uploadValidation}
+                    formatSize={formatSize}
+                    planKey={storageInfo.planKey}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Upload Limits Info - Always show for user reference */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <UploadLimitsInfo 
-              plan={storageInfo.planKey as 'free' | 'pro' | 'business'} 
-            />
-          </motion.div>
-
-          {/* Storage Info Display - Always show for user awareness */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-          >
-            <StorageInfoDisplay
-              showHeader={true}
-              compact={false}
-              showLiveUpdates={isUploading}
-            />
-          </motion.div>
-
-          {/* Upload Progress - Only show for batch summary */}
-          <AnimatePresence>
-            {isUploading && totalFiles > 3 && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
+          {/* Modal Footer */}
+          <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
+            <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
+              {/* Action Buttons */}
+              <Button
+                variant='outline'
+                onClick={handleClose}
+                disabled={isUploading}
+                className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
               >
-                <UploadProgress
-                  isUploading={isUploading}
-                  totalFiles={totalFiles}
-                  completedFiles={completedFiles}
-                  failedFiles={failedFiles}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-
-          {/* Upload Validation - Shows Error States with Details */}
-          <AnimatePresence>
-            {uploadValidation && !uploadValidation.valid && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
+                Cancel
+              </Button>
+              <Button
+                onClick={handleUpload}
+                disabled={
+                  files.length === 0 ||
+                  isUploading ||
+                  uploadValidation?.valid === false
+                }
+                className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
               >
-                <UploadValidation
-                  validation={uploadValidation}
-                  formatSize={formatSize}
-                  planKey={storageInfo.planKey}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Modal Footer */}
-        <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
-          <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
-            {/* Action Buttons */}
-            <Button
-              variant='outline'
-              onClick={handleClose}
-              disabled={isUploading}
-              className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={
-                files.length === 0 ||
-                isUploading ||
-                uploadValidation?.valid === false
-              }
-              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
-            >
-                  {isUploading ? (
-                    <>
-                      <div className='w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin' />
-                      <span>Uploading...</span>
-                    </>
-                  ) : uploadValidation?.valid === false ? (
-                    <>
-                      <AlertCircle className='w-4 h-4' />
-                      <span>Cannot Upload</span>
-                    </>
-                  ) : files.length > 0 ? (
-                    <>
-                      <CloudUpload className='w-4 h-4' />
-                      <span>
-                        Start Upload{files.length > 1 ? `ing ${files.length} files` : ''}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <CloudUpload className='w-4 h-4' />
-                      <span>Select Files</span>
-                    </>
-                  )}
-            </Button>
+                {isUploading ? (
+                  <>
+                    <div className='w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin' />
+                    <span>Uploading...</span>
+                  </>
+                ) : uploadValidation?.valid === false ? (
+                  <>
+                    <AlertCircle className='w-4 h-4' />
+                    <span>Cannot Upload</span>
+                  </>
+                ) : files.length > 0 ? (
+                  <>
+                    <CloudUpload className='w-4 h-4' />
+                    <span>
+                      Start Upload
+                      {files.length > 1 ? `ing ${files.length} files` : ''}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload className='w-4 h-4' />
+                    <span>Select Files</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
         </Protect>
       </DialogContent>
     </Dialog>

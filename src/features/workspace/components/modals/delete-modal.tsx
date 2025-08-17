@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/core/shadcn/dialog';
+} from '@/components/ui/shadcn/dialog';
 import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
 import { toast } from 'sonner';
@@ -48,9 +48,11 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
         // Invalidate both storage and workspace tree queries for real-time updates
         await Promise.all([
           invalidateStorage(),
-          queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() })
+          queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.tree(),
+          }),
         ]);
-        
+
         onClose();
         toast.success(
           `${item.type === 'folder' ? 'Folder' : 'File'} deleted successfully`
@@ -96,8 +98,12 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
               <FileText className='w-8 h-8 text-muted-foreground flex-shrink-0' />
             )}
             <div className='min-w-0 flex-1'>
-              <p className='font-medium text-foreground truncate'>{item.name}</p>
-              <p className='text-sm text-muted-foreground capitalize'>{item.type}</p>
+              <p className='font-medium text-foreground truncate'>
+                {item.name}
+              </p>
+              <p className='text-sm text-muted-foreground capitalize'>
+                {item.type}
+              </p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { DashboardLayoutWrapper } from '@/components/ui/layout/dashboard-layout-wrapper';
+import { DashboardLayoutWrapper } from '@/components/layout/dashboard-layout-wrapper';
 import { checkOnboardingStatusAction } from '@/features/onboarding/lib/actions';
 
 export default async function DashboardLayout({
@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   // Check if user has completed onboarding
   const onboardingStatus = await checkOnboardingStatusAction();
-  
+
   // If user hasn't completed onboarding (no workspace), redirect to onboarding
   if (!onboardingStatus.hasWorkspace) {
     redirect('/onboarding');

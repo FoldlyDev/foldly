@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
-import { CentralizedFileUpload } from '@/components/ui/composite/centralized-file-upload';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
 import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
@@ -31,88 +31,105 @@ export function BrandingSettingsForm({
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const handleFileChange = useCallback(async (files: File[]) => {
-    const file = files[0];
-    if (file) {
-      setPendingFile(file);
-      
-      // Create preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleFileChange = useCallback(
+    async (files: File[]) => {
+      const file = files[0];
+      if (file) {
+        setPendingFile(file);
 
-      // Upload immediately using API route (like workspace uploads)
-      setIsUploading(true);
-      try {
-        // Create FormData for upload
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('linkId', link.id);
-        formData.append('enabled', String(watchedValues.branding?.enabled || false));
-        if (watchedValues.branding?.color) {
-          formData.append('color', watchedValues.branding.color);
-        }
+        // Create preview URL
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result as string);
+        };
+        reader.readAsDataURL(file);
 
-        // Upload to API route
-        const response = await fetch('/api/links/branding/upload', {
-          method: 'POST',
-          body: formData,
-        });
+        // Upload immediately using API route (like workspace uploads)
+        setIsUploading(true);
+        try {
+          // Create FormData for upload
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('linkId', link.id);
+          formData.append(
+            'enabled',
+            String(watchedValues.branding?.enabled || false)
+          );
+          if (watchedValues.branding?.color) {
+            formData.append('color', watchedValues.branding.color);
+          }
 
-        const result = await response.json();
-
-        if (result.success) {
-          toast.success('Branding image uploaded successfully');
-          // Update form with the new image URL from storage
-          setValue('branding', {
-            enabled: watchedValues.branding?.enabled || false,
-            color: watchedValues.branding?.color,
-            imageUrl: result.data?.imageUrl,
-            imagePath: result.data?.imagePath,
-          }, {
-            shouldDirty: false,
-            shouldValidate: true,
+          // Upload to API route
+          const response = await fetch('/api/links/branding/upload', {
+            method: 'POST',
+            body: formData,
           });
-          setPendingFile(null);
-        } else {
-          toast.error(result.error || 'Failed to upload branding image');
+
+          const result = await response.json();
+
+          if (result.success) {
+            toast.success('Branding image uploaded successfully');
+            // Update form with the new image URL from storage
+            setValue(
+              'branding',
+              {
+                enabled: watchedValues.branding?.enabled || false,
+                color: watchedValues.branding?.color,
+                imageUrl: result.data?.imageUrl,
+                imagePath: result.data?.imagePath,
+              },
+              {
+                shouldDirty: false,
+                shouldValidate: true,
+              }
+            );
+            setPendingFile(null);
+          } else {
+            toast.error(result.error || 'Failed to upload branding image');
+            setPendingFile(null);
+            setPreviewUrl(null);
+          }
+        } catch (error) {
+          console.error('Failed to upload branding image:', error);
+          toast.error('Failed to upload branding image');
           setPendingFile(null);
           setPreviewUrl(null);
+        } finally {
+          setIsUploading(false);
         }
-      } catch (error) {
-        console.error('Failed to upload branding image:', error);
-        toast.error('Failed to upload branding image');
-        setPendingFile(null);
-        setPreviewUrl(null);
-      } finally {
-        setIsUploading(false);
       }
-    }
-  }, [link.id, setValue, watchedValues.branding]);
+    },
+    [link.id, setValue, watchedValues.branding]
+  );
 
   const handleFileRemove = useCallback(async () => {
     setIsUploading(true);
     try {
       // Use DELETE method on the same API route
-      const response = await fetch(`/api/links/branding/upload?linkId=${link.id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `/api/links/branding/upload?linkId=${link.id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       const result = await response.json();
 
       if (result.success) {
         toast.success('Branding image removed');
-        setValue('branding', {
-          enabled: watchedValues.branding?.enabled || false,
-          color: watchedValues.branding?.color,
-          imageUrl: undefined,
-          imagePath: undefined,
-        }, {
-          shouldDirty: false,
-          shouldValidate: true,
-        });
+        setValue(
+          'branding',
+          {
+            enabled: watchedValues.branding?.enabled || false,
+            color: watchedValues.branding?.color,
+            imageUrl: undefined,
+            imagePath: undefined,
+          },
+          {
+            shouldDirty: false,
+            shouldValidate: true,
+          }
+        );
         setPreviewUrl(null);
         setPendingFile(null);
       } else {
@@ -137,26 +154,29 @@ export function BrandingSettingsForm({
                 <Crown className='w-4 h-4 text-primary' />
               </div>
               <div>
-                <h3 className='form-label'>
-                  Enable Custom Branding
-                </h3>
+                <h3 className='form-label'>Enable Custom Branding</h3>
                 <p className='form-helper'>
-                  Add your own colors and logo to personalize your collection page
+                  Add your own colors and logo to personalize your collection
+                  page
                 </p>
               </div>
             </div>
             <Switch
               checked={watchedValues.branding?.enabled || false}
               onCheckedChange={checked =>
-                setValue('branding', {
-                  enabled: checked,
-                  color: watchedValues.branding?.color,
-                  imagePath: watchedValues.branding?.imagePath,
-                  imageUrl: watchedValues.branding?.imageUrl,
-                }, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
+                setValue(
+                  'branding',
+                  {
+                    enabled: checked,
+                    color: watchedValues.branding?.color,
+                    imagePath: watchedValues.branding?.imagePath,
+                    imageUrl: watchedValues.branding?.imageUrl,
+                  },
+                  {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  }
+                )
               }
               className='data-[state=unchecked]:bg-muted-foreground/20'
             />
@@ -175,23 +195,25 @@ export function BrandingSettingsForm({
             {/* Brand Color Selection */}
             <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
               <div className='space-y-2'>
-                <label className='form-label'>
-                  Brand Color
-                </label>
+                <label className='form-label'>Brand Color</label>
                 <div className='flex items-center gap-3'>
                   <input
                     type='color'
                     value={brandColor}
                     onChange={e =>
-                      setValue('branding', {
-                        enabled: watchedValues.branding?.enabled || false,
-                        color: e.target.value,
-                        imagePath: watchedValues.branding?.imagePath,
-                        imageUrl: watchedValues.branding?.imageUrl,
-                      }, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     className='w-12 h-10 rounded-lg cursor-pointer border border-border'
                   />
@@ -199,15 +221,19 @@ export function BrandingSettingsForm({
                     type='text'
                     value={brandColor}
                     onChange={e =>
-                      setValue('branding', {
-                        enabled: watchedValues.branding?.enabled || false,
-                        color: e.target.value,
-                        imagePath: watchedValues.branding?.imagePath,
-                        imageUrl: watchedValues.branding?.imageUrl,
-                      }, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     placeholder='#6c47ff'
                     className='form-input flex-1'
@@ -219,7 +245,8 @@ export function BrandingSettingsForm({
                   </p>
                 )}
                 <p className='form-helper text-xs'>
-                  This color will be used for buttons, link card borders, and branding elements
+                  This color will be used for buttons, link card borders, and
+                  branding elements
                 </p>
               </div>
             </div>
@@ -227,10 +254,8 @@ export function BrandingSettingsForm({
             {/* Logo Upload */}
             <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
               <div className='space-y-2'>
-                <label className='form-label'>
-                  Logo (Optional)
-                </label>
-                
+                <label className='form-label'>Logo (Optional)</label>
+
                 {/* Current Logo Display */}
                 {watchedValues.branding?.imageUrl && !pendingFile && (
                   <div className='flex items-center gap-3 p-3 bg-muted/50 rounded-lg mb-3'>
@@ -240,12 +265,16 @@ export function BrandingSettingsForm({
                       className='w-10 h-10 rounded object-cover'
                     />
                     <div className='flex-1'>
-                      <p className='text-sm font-medium text-foreground'>Current logo</p>
-                      <p className='text-xs text-muted-foreground'>Click below to replace</p>
+                      <p className='text-sm font-medium text-foreground'>
+                        Current logo
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        Click below to replace
+                      </p>
                     </div>
                   </div>
                 )}
-                
+
                 <CentralizedFileUpload
                   onChange={handleFileChange}
                   onRemove={handleFileRemove}
@@ -278,14 +307,14 @@ export function BrandingSettingsForm({
             <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
               <div className='flex items-center gap-2 mb-3'>
                 <Eye className='w-4 h-4 text-muted-foreground' />
-                <span className='form-label'>
-                  Preview
-                </span>
+                <span className='form-label'>Preview</span>
               </div>
-              
+
               {/* Collection Page Preview */}
               <div className='space-y-2'>
-                <p className='text-xs text-muted-foreground'>Collection Page Preview</p>
+                <p className='text-xs text-muted-foreground'>
+                  Collection Page Preview
+                </p>
                 <div
                   className='p-6 rounded-xl border border-border/50'
                   style={{
@@ -297,7 +326,9 @@ export function BrandingSettingsForm({
                   <div className='flex items-center gap-3 mb-4'>
                     {(previewUrl || watchedValues.branding?.imageUrl) && (
                       <img
-                        src={previewUrl || watchedValues.branding?.imageUrl || ''}
+                        src={
+                          previewUrl || watchedValues.branding?.imageUrl || ''
+                        }
                         alt='Logo'
                         className='w-6 h-6 rounded object-cover'
                       />
@@ -312,7 +343,9 @@ export function BrandingSettingsForm({
 
                   {/* Description */}
                   <p className='text-muted-foreground text-sm mb-8 leading-relaxed'>
-                    {watchedValues.description || link.description || 'Your description will appear here'}
+                    {watchedValues.description ||
+                      link.description ||
+                      'Your description will appear here'}
                   </p>
 
                   {/* Upload button */}

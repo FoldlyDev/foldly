@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
+} from '@/components/ui/animate-ui/radix/dialog';
 import type { LinkType } from '@/lib/database/types';
 
 // Local form step type
@@ -103,7 +103,9 @@ export const CreateLinkStepperHeader = ({
                   {index < steps.length - 1 && (
                     <div
                       className={`w-12 sm:w-20 h-0.5 mx-3 sm:mx-6 ${
-                        isCompleted ? 'bg-green-500 dark:bg-green-600' : 'bg-gray-200 dark:bg-gray-700'
+                        isCompleted
+                          ? 'bg-green-500 dark:bg-green-600'
+                          : 'bg-gray-200 dark:bg-gray-700'
                       }`}
                     />
                   )}

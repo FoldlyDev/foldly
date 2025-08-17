@@ -17,16 +17,16 @@ import {
   Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/core/shadcn/button';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/core/shadcn/dropdown-menu';
-import { Badge } from '@/components/ui/core/shadcn/badge';
-import { Checkbox } from '@/components/ui/core/shadcn/checkbox';
+} from '@/components/ui/shadcn/dropdown-menu';
+import { Badge } from '@/components/ui/shadcn/badge';
+import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { useFileCardStore } from '../../hooks/use-files-composite';
 import type { FileId } from '@/types';
 

@@ -3,8 +3,8 @@
 import { memo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { User, CheckCircle, AlertCircle } from 'lucide-react';
-import { Input } from '@/components/ui/core/shadcn/input';
-import { Label } from '@/components/ui/core/shadcn/label';
+import { Input } from '@/components/ui/shadcn/input';
+import { Label } from '@/components/ui/shadcn/label';
 import { cn } from '@/lib/utils';
 
 interface UsernameFieldProps {
@@ -27,13 +27,16 @@ export const UsernameField = memo(function UsernameField({
   error,
   isLoading = false,
 }: UsernameFieldProps) {
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    // Remove spaces and special characters, but preserve case
-    const normalized = e.target.value
-      .replace(/\s/g, '') // Remove spaces
-      .replace(/[^a-zA-Z0-9_-]/g, ''); // Only allow letters, numbers, underscores, and hyphens
-    onChange(normalized);
-  }, [onChange]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Remove spaces and special characters, but preserve case
+      const normalized = e.target.value
+        .replace(/\s/g, '') // Remove spaces
+        .replace(/[^a-zA-Z0-9_-]/g, ''); // Only allow letters, numbers, underscores, and hyphens
+      onChange(normalized);
+    },
+    [onChange]
+  );
 
   return (
     <motion.div
@@ -63,9 +66,11 @@ export const UsernameField = memo(function UsernameField({
           aria-required='true'
           aria-invalid={value ? validation.isUnavailable : undefined}
           aria-describedby={
-            error ? 'username-error' : 
-            validation.message ? 'username-validation' : 
-            'username-help'
+            error
+              ? 'username-error'
+              : validation.message
+                ? 'username-validation'
+                : 'username-help'
           }
           className={cn(
             'pr-10 text-gray-900 dark:text-gray-100 placeholder:text-gray-100 dark:placeholder:text-gray-100',
@@ -80,9 +85,12 @@ export const UsernameField = memo(function UsernameField({
 
         {/* Validation icon */}
         {value && (
-          <div className='absolute right-3 top-1/2 -translate-y-1/2' aria-live='polite'>
+          <div
+            className='absolute right-3 top-1/2 -translate-y-1/2'
+            aria-live='polite'
+          >
             {validation.isChecking ? (
-              <div 
+              <div
                 className='h-4 w-4 animate-spin rounded-full border-2 border-gray-500 dark:border-gray-400 border-t-transparent'
                 role='status'
                 aria-label='Checking username availability'
@@ -90,13 +98,13 @@ export const UsernameField = memo(function UsernameField({
                 <span className='sr-only'>Checking...</span>
               </div>
             ) : validation.isAvailable ? (
-              <CheckCircle 
-                className='h-4 w-4 text-green-600 dark:text-green-500' 
+              <CheckCircle
+                className='h-4 w-4 text-green-600 dark:text-green-500'
                 aria-label='Username is available'
               />
             ) : validation.isUnavailable ? (
-              <AlertCircle 
-                className='h-4 w-4 text-red-600 dark:text-red-500' 
+              <AlertCircle
+                className='h-4 w-4 text-red-600 dark:text-red-500'
                 aria-label='Username is not available'
               />
             ) : null}
@@ -144,7 +152,7 @@ export const UsernameField = memo(function UsernameField({
         </motion.p>
       )}
 
-      <p 
+      <p
         id='username-help'
         className='text-xs text-gray-600 dark:text-gray-400'
       >

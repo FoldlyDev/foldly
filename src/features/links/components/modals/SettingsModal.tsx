@@ -9,15 +9,15 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/marketing/animate-ui/radix/dialog';
-import { Button } from '@/components/ui/core/shadcn/button';
+} from '@/components/ui/animate-ui/radix/dialog';
+import { Button } from '@/components/ui/shadcn/button';
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContents,
   TabsContent,
-} from '@/components/marketing/animate-ui/components/tabs';
+} from '@/components/ui/animate-ui/components/tabs';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { LinkSettingsForm } from '../sections/LinkSettingsForm';
 import { BrandingSettingsForm } from '../sections/BrandingSettingsForm';
@@ -315,7 +315,7 @@ export function SettingsModal() {
 
               <TabsContent value='branding' className='h-full'>
                 <div className='max-w-2xl mx-auto pb-6'>
-                  <BrandingSettingsForm 
+                  <BrandingSettingsForm
                     link={{
                       ...link,
                       stats: {
@@ -332,7 +332,7 @@ export function SettingsModal() {
                         isNearLimit: false,
                       },
                     }}
-                    form={form} 
+                    form={form}
                   />
                 </div>
               </TabsContent>

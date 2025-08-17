@@ -2,16 +2,9 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Folder, 
-  FolderOpen, 
-  ChevronRight,
-  Home,
-  Check
-} from 'lucide-react';
-import { Button } from '@/components/ui/core/shadcn/button';
-import { ScrollArea } from '@/components/ui/core/shadcn/scroll-area';
+import { X, Folder, FolderOpen, ChevronRight, Home, Check } from 'lucide-react';
+import { Button } from '@/components/ui/shadcn/button';
+import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
 import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { cn } from '@/lib/utils';
@@ -29,9 +22,11 @@ export function WorkspaceFolderPicker({
   onSelect,
   selectedFolderId,
 }: WorkspaceFolderPickerProps) {
-  const [tempSelectedId, setTempSelectedId] = useState<string | null>(selectedFolderId);
+  const [tempSelectedId, setTempSelectedId] = useState<string | null>(
+    selectedFolderId
+  );
   const { data: workspaceData } = useWorkspaceTree();
-  
+
   // Check if there are any folders in the workspace
   const hasFolders = workspaceData?.folders && workspaceData.folders.length > 0;
 
@@ -48,7 +43,7 @@ export function WorkspaceFolderPicker({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+        className='fixed inset-0 z-50 bg-background/80 backdrop-blur-sm'
         onClick={onClose}
       >
         <motion.div
@@ -56,46 +51,48 @@ export function WorkspaceFolderPicker({
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="fixed bottom-0 left-0 right-0 z-50 h-[80vh] bg-background rounded-t-2xl shadow-xl"
-          onClick={(e) => e.stopPropagation()}
+          className='fixed bottom-0 left-0 right-0 z-50 h-[80vh] bg-background rounded-t-2xl shadow-xl'
+          onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="text-lg font-semibold">Select Destination</h2>
+          <div className='flex items-center justify-between p-4 border-b'>
+            <h2 className='text-lg font-semibold'>Select Destination</h2>
             <Button
-              variant="ghost"
-              size="icon"
+              variant='ghost'
+              size='icon'
               onClick={onClose}
-              className="h-8 w-8"
+              className='h-8 w-8'
             >
-              <X className="h-4 w-4" />
+              <X className='h-4 w-4' />
             </Button>
           </div>
 
           {/* Content */}
-          <ScrollArea className="flex-1 h-[calc(80vh-8rem)]">
-            <div className="p-4">
+          <ScrollArea className='flex-1 h-[calc(80vh-8rem)]'>
+            <div className='p-4'>
               {/* Root folder option */}
               <button
                 className={cn(
-                  "w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
-                  "hover:bg-accent",
-                  tempSelectedId === null && "bg-accent"
+                  'w-full flex items-center gap-3 p-3 rounded-lg transition-colors',
+                  'hover:bg-accent',
+                  tempSelectedId === null && 'bg-accent'
                 )}
                 onClick={() => setTempSelectedId(null)}
               >
-                <Home className="h-5 w-5 text-muted-foreground" />
-                <span className="flex-1 text-left font-medium">My Workspace</span>
+                <Home className='h-5 w-5 text-muted-foreground' />
+                <span className='flex-1 text-left font-medium'>
+                  My Workspace
+                </span>
                 {tempSelectedId === null && (
-                  <Check className="h-4 w-4 text-primary" />
+                  <Check className='h-4 w-4 text-primary' />
                 )}
               </button>
 
               {/* Workspace tree */}
-              <div className="mt-4">
+              <div className='mt-4'>
                 {hasFolders ? (
                   <WorkspaceTree
-                    onSelectionChange={(selectedItems) => {
+                    onSelectionChange={selectedItems => {
                       if (selectedItems.length > 0) {
                         setTempSelectedId(selectedItems[0]);
                       }
@@ -103,12 +100,12 @@ export function WorkspaceFolderPicker({
                     selectedItems={tempSelectedId ? [tempSelectedId] : []}
                   />
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Folder className="h-12 w-12 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-sm mb-2">
+                  <div className='flex flex-col items-center justify-center py-12 text-center'>
+                    <Folder className='h-12 w-12 text-muted-foreground mb-4' />
+                    <p className='text-muted-foreground text-sm mb-2'>
                       No folders yet? No cap! 🧢
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className='text-muted-foreground text-xs'>
                       Your files will vibe in the root folder for now
                     </p>
                   </div>
@@ -118,20 +115,15 @@ export function WorkspaceFolderPicker({
           </ScrollArea>
 
           {/* Footer */}
-          <div className="p-4 border-t">
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="flex-1"
-              >
+          <div className='p-4 border-t'>
+            <div className='flex gap-3'>
+              <Button variant='outline' onClick={onClose} className='flex-1'>
                 Cancel
               </Button>
-              <Button
-                onClick={handleSelect}
-                className="flex-1"
-              >
-                {!hasFolders && tempSelectedId === null ? 'Copy to Root' : 'Copy Here'}
+              <Button onClick={handleSelect} className='flex-1'>
+                {!hasFolders && tempSelectedId === null
+                  ? 'Copy to Root'
+                  : 'Copy Here'}
               </Button>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { Power, Eye, EyeOff } from 'lucide-react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
+import { Switch } from '@/components/ui/shadcn/switch';
 
 interface LinkStatusControlsProps {
   formData: {
@@ -36,7 +36,6 @@ export function LinkStatusControls({
           className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
         />
       </div>
-
     </>
   );
 }

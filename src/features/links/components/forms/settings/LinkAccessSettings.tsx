@@ -11,8 +11,8 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Switch } from '@/components/ui/core/shadcn/switch';
-import { HelpPopover } from '@/components/ui/core/help-popover';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 
@@ -42,9 +42,7 @@ export function LinkAccessSettings({ form }: LinkAccessSettingsProps) {
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='form-label'>
-                  Link Status
-                </span>
+                <span className='form-label'>Link Status</span>
                 <HelpPopover
                   title='Active vs Inactive Links'
                   description="Active: Link is live and accepts uploads.
@@ -80,14 +78,11 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           </label>
         </div>
 
-
         <div className='space-y-3'>
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='form-label'>
-                  Require Email Address
-                </span>
+                <span className='form-label'>Require Email Address</span>
                 <HelpPopover
                   title='Email Collection'
                   description='Collects uploader email addresses before upload.
@@ -118,9 +113,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='form-label'>
-                  Password Protection
-                </span>
+                <span className='form-label'>Password Protection</span>
                 <HelpPopover
                   title='Password Protection'
                   description='Requires password before accessing upload page.
@@ -170,9 +163,7 @@ Share both:
                 }}
                 className='ml-4 space-y-2 overflow-hidden'
               >
-                <label className='form-label'>
-                  Set Password
-                </label>
+                <label className='form-label'>Set Password</label>
                 <div className='relative'>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -185,7 +176,8 @@ Share both:
                     }
                     placeholder='Enter password (8+ characters)'
                     className={`form-input pr-10 ${
-                      watchedValues.password && watchedValues.password.length < 8
+                      watchedValues.password &&
+                      watchedValues.password.length < 8
                         ? 'form-input-error'
                         : ''
                     }`}
@@ -202,12 +194,13 @@ Share both:
                     )}
                   </button>
                 </div>
-                {watchedValues.password && watchedValues.password.length < 8 && (
-                  <p className='text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1'>
-                    <span>⚠️</span>
-                    Password must be at least 8 characters long
-                  </p>
-                )}
+                {watchedValues.password &&
+                  watchedValues.password.length < 8 && (
+                    <p className='text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1'>
+                      <span>⚠️</span>
+                      Password must be at least 8 characters long
+                    </p>
+                  )}
                 {errors.password && (
                   <p className='text-xs text-red-600'>
                     {errors.password.message}

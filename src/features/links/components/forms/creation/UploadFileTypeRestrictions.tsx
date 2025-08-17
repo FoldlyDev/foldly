@@ -1,13 +1,13 @@
 'use client';
 
 import { FileType, Check } from 'lucide-react';
-import { Badge } from '@/components/ui/core/shadcn/badge';
+import { Badge } from '@/components/ui/shadcn/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/marketing/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 import { cn } from '@/lib/utils/utils';
 
 interface UploadFileTypeRestrictionsProps {
@@ -26,10 +26,10 @@ export function UploadFileTypeRestrictions({
   isLoading = false,
 }: UploadFileTypeRestrictionsProps) {
   const allowedTypes = formData.allowedFileTypes || [];
-  
+
   const handleToggleFileType = (value: string) => {
     let newSelection: string[];
-    
+
     if (value === 'all') {
       // If "all" is selected, clear all other selections
       newSelection = [];
@@ -43,7 +43,7 @@ export function UploadFileTypeRestrictions({
         newSelection = [...allowedTypes, value];
       }
     }
-    
+
     onDataChange({ allowedFileTypes: newSelection });
   };
 
@@ -90,12 +90,16 @@ export function UploadFileTypeRestrictions({
             />
           </svg>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align='end' className='w-full min-w-[280px] max-h-[300px] overflow-y-auto'>
+        <DropdownMenuContent
+          align='end'
+          className='w-full min-w-[280px] max-h-[300px] overflow-y-auto'
+        >
           {fileTypeOptions.map(option => {
-            const isSelected = option.value === 'all' 
-              ? allowedTypes.length === 0 
-              : allowedTypes.includes(option.value);
-            
+            const isSelected =
+              option.value === 'all'
+                ? allowedTypes.length === 0
+                : allowedTypes.includes(option.value);
+
             return (
               <DropdownMenuItem
                 key={option.value}
@@ -111,7 +115,7 @@ export function UploadFileTypeRestrictions({
               </DropdownMenuItem>
             );
           })}
-          
+
           {allowedTypes.length > 0 && (
             <>
               <div className='h-px bg-border my-1' />

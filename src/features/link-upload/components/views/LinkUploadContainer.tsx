@@ -15,7 +15,7 @@ import { useLinkUploadModal } from '@/features/link-upload/stores/link-modal-sto
 import { LinkUploadSkeleton } from '../skeletons/link-upload-skeleton';
 import { useStagingStore } from '../../stores/staging-store';
 import type { LinkWithOwner, UploadSession } from '../../types';
-import { FadeTransitionWrapper } from '@/components/ui/feedback';
+import { FadeTransitionWrapper } from '@/components/feedback';
 
 // Lazy load the heavy LinkTree component
 const LinkTree = lazy(() => import('../tree/LinkTree'));
@@ -37,20 +37,16 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   useStagingStore();
 
   // Get link data with loading states - allow browsing without full authentication
-  const {
-    isLoading,
-    isError,
-    error,
-  } = useLinkTree(uploadSession ? linkData.id : '');
+  const { isLoading, isError, error } = useLinkTree(
+    uploadSession ? linkData.id : ''
+  );
 
   // Set up real-time subscription for link changes - allow browsing without full authentication
   useLinkRealtime(uploadSession ? linkData.id : '');
 
   // UI state management - use store directly for modal state
-  const {
-    isOpen: isUploadModalOpen,
-    closeModal: closeUploadModal,
-  } = useLinkUploadModal();
+  const { isOpen: isUploadModalOpen, closeModal: closeUploadModal } =
+    useLinkUploadModal();
 
   // Tree instance state with extended methods
   type ExtendedTreeInstance = TreeInstance<LinkTreeItem> & {

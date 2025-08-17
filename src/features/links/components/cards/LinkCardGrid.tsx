@@ -9,14 +9,14 @@ import {
   ExternalLink,
   AlertTriangle,
 } from 'lucide-react';
-import { Checkbox } from '@/components/marketing/animate-ui/radix/checkbox';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
-import { CardActionsMenu } from '@/components/ui/core/card-actions-menu';
-import { SearchHighlight } from '@/components/ui/core/search-highlight';
-import { ActionButton } from '@/components/ui/core/action-button';
-import { AnimatedCopyButton } from '@/components/ui/core/animated-copy-button';
+import { CardActionsMenu } from '@/components/core/card-actions-menu';
+import { SearchHighlight } from '@/components/core/search-highlight';
+import { ActionButton } from '@/components/core/action-button';
+import { AnimatedCopyButton } from '@/components/core/animated-copy-button';
 import type { LinkWithStats } from '@/lib/database/types';
-import type { ActionItem } from '@/components/ui/core/types';
+import type { ActionItem } from '@/components/core/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
@@ -64,20 +64,24 @@ export const LinkCardGrid = memo(
         ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
         style={{
-          borderLeftColor: link.branding?.enabled && link.branding?.color ? link.branding.color : undefined
+          borderLeftColor:
+            link.branding?.enabled && link.branding?.color
+              ? link.branding.color
+              : undefined,
         }}
       >
-
         <div className='relative z-10'>
           {/* Header */}
           <div className='link-card-grid-header'>
             <div className='flex-1 min-w-0'>
               <div className='flex items-center gap-3 mb-2'>
-                <LinkTypeIcon 
-                  isBaseLink={isBaseLink} 
-                  size='lg' 
+                <LinkTypeIcon
+                  isBaseLink={isBaseLink}
+                  size='lg'
                   brandingEnabled={link.branding?.enabled}
-                  {...(link.branding?.imageUrl && { brandingImageUrl: link.branding.imageUrl })}
+                  {...(link.branding?.imageUrl && {
+                    brandingImageUrl: link.branding.imageUrl,
+                  })}
                 />
                 <LinkStatusIndicator
                   status={link.isActive ? 'active' : 'paused'}
@@ -117,7 +121,9 @@ export const LinkCardGrid = memo(
                 <NotificationBadge
                   count={unreadCount}
                   className='mt-1'
-                  {...(onClearNotifications && { onClick: onClearNotifications })}
+                  {...(onClearNotifications && {
+                    onClick: onClearNotifications,
+                  })}
                 />
               )}
               <CardActionsMenu actions={actions} />
