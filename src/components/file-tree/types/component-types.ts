@@ -4,8 +4,8 @@ import type { TreeItem } from './tree-types';
 /**
  * Props for the DragPreview component
  */
-export interface DragPreviewProps {
-  tree: TreeInstance<TreeItem>;
+export interface DragPreviewProps<T extends TreeItem = TreeItem> {
+  tree: TreeInstance<T>;
   id?: string;
 }
 

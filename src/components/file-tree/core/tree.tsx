@@ -25,17 +25,20 @@ import {
 } from './tree-orchestrator';
 import {
   type TreeItem as TreeItemType,
+  type FileTreeProps,
   isFolder,
   isFile,
   getItemChildren,
 } from '../types/tree-types';
-import { createRenameHandler, createTreeDropHandler } from '../handlers';
+import { 
+  createRenameHandler, 
+  createTreeDropHandler,
+  createForeignDropHandlers,
+} from '../handlers';
 import '../styles/drag-preview.css';
 
-// =============================================================================
-// SAMPLE DATA - Mixed files and folders
-// =============================================================================
-
+// Component now requires external data - no demo data
+/*
 const initialItems: Record<string, TreeItemType> = {
   // Root folder
   company: {
@@ -305,65 +308,123 @@ const initialItems: Record<string, TreeItemType> = {
     extension: 'xlsx',
   },
 };
+*/
 
 // =============================================================================
-// FILE TREE COMPONENT
+// FILE TREE COMPONENT - Data-driven and configurable
 // =============================================================================
 
-const indent = 20;
-
-export default function FileTree() {
-  const [items, setItems] = useState(initialItems);
-
-  // Create handlers with the current state
-  const renameHandler = createRenameHandler(setItems);
-  const dropHandler = createTreeDropHandler(setItems);
-
+export default function FileTree<T extends TreeItemType = TreeItemType>({
+  // Required data props
+  data,
+  rootId,
+  
+  // Configuration
+  config = {},
+  
+  // Initial state
+  initialExpandedItems = [],
+  initialSelectedItems = [],
+  initialCheckedItems = [],
+  
+  // Styling
+  indent = 20,
+  className,
+  
+  // Callbacks
+  onExpandedItemsChange,
+  onSelectedItemsChange,
+  onCheckedItemsChange,
+}: FileTreeProps<T>) {
+  const [items, setItems] = useState<Record<string, T>>(data);
+  
   // Get drag preview configuration
   const dragPreviewConfig = useDragPreview();
+  
+  // Build features array based on configuration
+  const features = [];
+  features.push(syncDataLoaderFeature); // Always needed
+  
+  if (config.features?.selection !== false) features.push(selectionFeature);
+  if (config.features?.checkboxes) features.push(checkboxesFeature);
+  if (config.features?.keyboard !== false) features.push(hotkeysCoreFeature);
+  if (config.features?.dragAndDrop !== false) {
+    features.push(dragAndDropFeature);
+    features.push(keyboardDragAndDropFeature);
+  }
+  
+  // Handle rename based on configuration
+  const handleRename = config.handlers?.rename 
+    ? typeof config.handlers.rename === 'function'
+      ? config.handlers.rename
+      : createRenameHandler(setItems)
+    : undefined;
+    
+  // Add renaming feature if rename handler is enabled
+  if (handleRename) {
+    features.push(renamingFeature);
+  }
+  
+  // Handle drop based on configuration
+  const handleDrop = config.handlers?.drop
+    ? typeof config.handlers.drop === 'function'
+      ? config.handlers.drop
+      : createTreeDropHandler(setItems)
+    : undefined;
+    
+  // Handle foreign drop if configured
+  const foreignDropHandlers = config.handlers?.foreignDrop
+    ? typeof config.handlers.foreignDrop === 'object'
+      ? createForeignDropHandlers(setItems, config.handlers.foreignDrop)
+      : undefined
+    : undefined;
 
-  const tree = useTree<TreeItemType>({
+  const tree = useTree<T>({
     initialState: {
-      expandedItems: ['engineering', 'frontend', 'design-system', 'components'],
-      checkedItems: ['components', 'tokens'],
+      expandedItems: initialExpandedItems,
+      checkedItems: initialCheckedItems,
+      selectedItems: initialSelectedItems,
     },
     indent,
-    rootItemId: 'company',
+    rootItemId: rootId,
     getItemName: item => item.getItemData().name,
-    // isItemFolder: item => isFolder(item.getItemData()),
     // Fix for checkbox selection: only treat items with children as folders
     isItemFolder: item => {
       const itemData = item.getItemData();
       return isFolder(itemData) && (itemData.children?.length ?? 0) > 0;
     },
-    canReorder: true,
+    canReorder: config.features?.dragAndDrop !== false,
     dataLoader: {
       getItem: itemId =>
-        items[itemId] || {
+        items[itemId] || ({
           id: itemId,
           name: 'Unknown',
-          type: 'folder' as const,
+          type: 'folder',
           path: '/',
           depth: 0,
           children: [],
-        },
+        } as unknown as T),
       getChildren: itemId => {
         const item = items[itemId];
         return item ? getItemChildren(item) : [];
       },
     },
-    onRename: renameHandler,
-    onDrop: dropHandler,
+    ...(handleRename && { onRename: handleRename }),
+    ...(handleDrop && { onDrop: handleDrop }),
+    ...(foreignDropHandlers?.onDropForeignDragObject && { 
+      onDropForeignDragObject: foreignDropHandlers.onDropForeignDragObject 
+    }),
+    ...(foreignDropHandlers?.onCompleteForeignDrop && { 
+      onCompleteForeignDrop: foreignDropHandlers.onCompleteForeignDrop 
+    }),
+    ...(foreignDropHandlers?.createForeignDragObject && { 
+      createForeignDragObject: foreignDropHandlers.createForeignDragObject 
+    }),
+    ...(foreignDropHandlers?.canDropForeignDragObject && { 
+      canDropForeignDragObject: foreignDropHandlers.canDropForeignDragObject 
+    }),
     setDragImage: dragPreviewConfig.setDragImage,
-    features: [
-      syncDataLoaderFeature,
-      selectionFeature,
-      checkboxesFeature,
-      hotkeysCoreFeature,
-      renamingFeature,
-      dragAndDropFeature,
-      keyboardDragAndDropFeature,
-    ],
+    features,
   });
 
   return (
@@ -428,7 +489,7 @@ export default function FileTree() {
           );
         })}
         <TreeDragLine />
-        <DragPreview tree={tree} />
+        <DragPreview<T> tree={tree} />
       </Tree>
 
       <p

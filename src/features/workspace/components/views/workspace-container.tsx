@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense, useMemo } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
@@ -22,6 +22,7 @@ import { type StorageNotificationData } from '@/features/notifications/internal/
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
 import FileTree from '@/components/file-tree/core/tree';
+import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import TreeVerticalLines from '@/components/examples/tree-features-examples/basic-tree-vertical-lines';
 import MultiSelectDragDropTree from '@/components/examples/tree-features-examples/basic-tree-multi-select-drag-drop';
 import CheckboxMultiSelectTree from '@/components/examples/tree-features-examples/basic-tree-checkbox-multiselect';
@@ -32,6 +33,31 @@ const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 export function WorkspaceContainer() {
   // Get workspace data with loading states
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
+
+  // Transform workspace data to tree structure
+  const treeData = useMemo(() => {
+    if (!workspaceData?.workspace || !workspaceData?.folders || !workspaceData?.files) {
+      return {};
+    }
+    
+    // Get the transformed data
+    const transformed = transformToTreeStructure(workspaceData.folders, workspaceData.files);
+    
+    // Add the workspace root
+    transformed[workspaceData.workspace.id] = {
+      id: workspaceData.workspace.id,
+      name: workspaceData.workspace.name,
+      type: 'folder',
+      parentId: null,
+      path: '/',
+      depth: 0,
+      children: Object.values(transformed)
+        .filter(item => !item.parentId)
+        .map(item => item.id),
+    };
+    
+    return transformed;
+  }, [workspaceData]);
 
   // Mobile detection
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -172,7 +198,30 @@ export function WorkspaceContainer() {
             </div>
           </div>
         </div> */}
-        <FileTree />
+        {workspaceData?.workspace?.id && Object.keys(treeData).length > 0 ? (
+          <FileTree 
+            data={treeData}
+            rootId={workspaceData.workspace.id}
+            config={{
+              features: {
+                checkboxes: true,
+                dragAndDrop: true,
+                selection: true,
+                keyboard: true,
+              },
+              handlers: {
+                rename: true, // Use default rename handler for now
+                drop: true, // Use default drop handler for now
+              }
+            }}
+            initialExpandedItems={[workspaceData.workspace.id]}
+            onSelectedItemsChange={setSelectedItems}
+          />
+        ) : (
+          <div className='flex items-center justify-center h-64'>
+            <p className='text-muted-foreground'>No files or folders yet</p>
+          </div>
+        )}
         {/* <TreeVerticalLines /> */}
         <p>Separator</p>
         {/* <MultiSelectDragDropTree /> */}

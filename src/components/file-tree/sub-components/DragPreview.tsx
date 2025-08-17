@@ -12,7 +12,7 @@ import { getFileIcon } from './file';
  * This component is positioned off-screen and used by the headless-tree library
  * as a custom drag image via the setDragImage configuration
  */
-export function DragPreview({ tree, id = 'drag-preview' }: DragPreviewProps) {
+export function DragPreview<T extends TreeItem = TreeItem>({ tree, id = 'drag-preview' }: DragPreviewProps<T>) {
   const draggedItems = tree.getState()?.dnd?.draggedItems || [];
 
   if (draggedItems.length === 0) {
