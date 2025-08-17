@@ -21,6 +21,10 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/ui/feedback';
+import FileTree from '@/components/ui/core/file-tree/basic-tree';
+import TreeVerticalLines from '@/components/ui/core/file-tree/tree-features-examples/basic-tree-vertical-lines';
+import MultiSelectDragDropTree from '@/components/ui/core/file-tree/tree-features-examples/basic-tree-multi-select-drag-drop';
+import CheckboxMultiSelectTree from '@/components/ui/core/file-tree/tree-features-examples/basic-tree-checkbox-multiselect';
 
 // Lazy load the heavy WorkspaceTree component
 const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
@@ -146,7 +150,7 @@ export function WorkspaceContainer() {
       </div>
 
       <div className='workspace-tree-container mt-4 h-screen'>
-        <div className='flex gap-4 h-full'>
+        {/* <div className='flex gap-4 h-full'>
           <div className='workspace-tree-wrapper flex-1'>
             <div className='workspace-tree-content'>
               <Suspense
@@ -167,14 +171,11 @@ export function WorkspaceContainer() {
               </Suspense>
             </div>
           </div>
-
-          {/* Cloud Provider Buttons - Desktop Only */}
-          {/* {!isMobile && (
-            <div className='flex-shrink-0  my-auto'>
-              <CloudProviderButtons className='sticky my-auto' />
-            </div>
-          )} */}
-        </div>
+        </div> */}
+        {/* <FileTree /> */}
+        {/* <TreeVerticalLines /> */}
+        {/* <MultiSelectDragDropTree /> */}
+        <CheckboxMultiSelectTree />
       </div>
 
       {/* Upload Modal with Storage Context */}

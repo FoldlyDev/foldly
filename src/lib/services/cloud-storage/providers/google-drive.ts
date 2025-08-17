@@ -1,4 +1,5 @@
-import { BaseCloudProvider } from './types';\nimport type { CloudFile, Result } from './types';
+import { BaseCloudProvider } from './types';
+import type { CloudFile, Result } from './types';
 
 interface GoogleDriveFile {
   id: string;
