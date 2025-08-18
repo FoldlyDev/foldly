@@ -251,6 +251,8 @@ export function WorkspaceContainer() {
       <div className='workspace-toolbar'>
         <WorkspaceToolbar
           treeInstance={treeInstance}
+          workspaceId={workspaceData?.workspace?.id}
+          treeData={treeData}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           selectedItems={selectedItems}
