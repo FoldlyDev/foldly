@@ -52,10 +52,11 @@ tree.getState();                                // Get tree state (selected, exp
 
 ## Key Components
 
-- **tree.tsx** - Main component, handles data initialization and foreign drops
-- **tree-orchestrator.tsx** - UI components (Tree, TreeItem, TreeItemLabel, TreeDragLine)
+- **tree.tsx** - Main component with data loader pattern, handles drag/drop and programmatic operations
+- **tree.css** - Custom styling with arrow indicators and minimal padding
 - **tree-data.ts** - Creates data loader utilities for the tree
 - **transform.ts** - Transforms database records to tree structure
+- **tree-orchestrator.tsx** - Optional UI wrapper components (not currently used)
 
 ## Important Notes
 
@@ -64,3 +65,5 @@ tree.getState();                                // Get tree state (selected, exp
 - The tree instance exposes methods for external control (search, rename, etc.)
 - Folders are identified by either having a `children` property or `type: 'folder'`
 - Empty folders can be drop targets (no children required)
+- CSS provides white arrow indicators that rotate on expand/collapse
+- Search functionality integrated with `searchFeature` (Ctrl+F to open)
