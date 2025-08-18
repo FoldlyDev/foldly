@@ -28,11 +28,19 @@ import { createRenameHandler } from '../handlers/rename-handler';
 import { createForeignDropHandlers } from '../handlers/foreign-drop-handler';
 import { createInsertNewItem } from '../handlers/insert-item-handler';
 
+// WeakMap to store tree instance to treeId associations
+const treeIdMap = new WeakMap<any, string>();
+
+// Helper function to get treeId from tree instance
+export const getTreeId = (tree: any): string | undefined => {
+  return treeIdMap.get(tree);
+};
+
 // Create a Map to store data for each tree instance
 const treeDataMap = new Map<string, ReturnType<typeof createTreeData<TreeItemType>>>();
 
 // Helper to get or create data for a specific tree instance
-const getTreeData = (treeId: string) => {
+export const getTreeData = (treeId: string) => {
   if (!treeDataMap.has(treeId)) {
     treeDataMap.set(treeId, createTreeData<TreeItemType>());
   }
@@ -136,10 +144,18 @@ export default function FileTree({
     onRename,
     onDropForeignDragObject,
     onCompleteForeignDrop,
-    createForeignDragObject: items => ({
-      format: 'text/plain',
-      data: items.map(item => item.getId()).join(','),
-    }),
+    createForeignDragObject: items => {
+      // Serialize the full item data, not just IDs
+      const itemsData = items.map(item => {
+        const itemId = item.getId();
+        const itemData = data[itemId];
+        return itemData;
+      });
+      return {
+        format: 'application/json',
+        data: JSON.stringify(itemsData),
+      };
+    },
     canDropForeignDragObject: (_, target) => target.item.isFolder(),
     indent: 20,
     dataLoader: syncDataLoader,
@@ -158,8 +174,8 @@ export default function FileTree({
   // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
     if (onTreeReady && tree) {
-      // Attach the treeId to the tree instance for external use
-      (tree as any).__treeId = treeId;
+      // Store the treeId association in the WeakMap
+      treeIdMap.set(tree, treeId);
       onTreeReady(tree);
     }
   }, [tree, onTreeReady, treeId]);

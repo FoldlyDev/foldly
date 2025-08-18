@@ -1,5 +1,6 @@
 import { createOnDropHandler, type ItemInstance } from '@headless-tree/core';
-import type { TreeItem as TreeItemType } from '../types/tree-types';
+import type { TreeItem as TreeItemType, TreeFolderItem } from '../types/tree-types';
+import { isFolder } from '../types/tree-types';
 
 /**
  * Creates the onDrop handler for internal drag and drop operations
@@ -7,10 +8,10 @@ import type { TreeItem as TreeItemType } from '../types/tree-types';
  */
 export function createTreeDropHandler(data: Record<string, TreeItemType>) {
   return createOnDropHandler<TreeItemType>((item: ItemInstance<TreeItemType>, newChildren: string[]) => {
-    // Exactly like the example - direct assignment
     const targetItem = data[item.getId()];
-    if (targetItem) {
-      (targetItem as any).children = newChildren;
+    if (targetItem && isFolder(targetItem)) {
+      const folderItem = targetItem as TreeFolderItem;
+      folderItem.children = newChildren;
     }
   });
 }

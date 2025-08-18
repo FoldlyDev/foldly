@@ -1,6 +1,7 @@
 import type { DragTarget } from '@headless-tree/core';
 import { insertItemsAtTarget, removeItemsFromParents } from '@headless-tree/core';
-import type { TreeItem as TreeItemType } from '../types/tree-types';
+import type { TreeItem as TreeItemType, TreeFolderItem } from '../types/tree-types';
+import { isFolder } from '../types/tree-types';
 
 /**
  * Helper function to add items to the tree programmatically
@@ -29,8 +30,9 @@ export const addTreeItem = (
     // Use the same function that drag drop uses!
     insertItemsAtTarget([item.id], target, (item, newChildrenIds) => {
       const itemData = data[item.getId()];
-      if (itemData && 'children' in itemData) {
-        (itemData as any).children = newChildrenIds;
+      if (itemData && isFolder(itemData)) {
+        const folderItem = itemData as TreeFolderItem;
+        folderItem.children = newChildrenIds;
       }
     });
   }
@@ -60,8 +62,9 @@ export const removeTreeItem = (
   // Use removeItemsFromParents just like the drag drop example!
   removeItemsFromParents(itemInstances, (item, newChildren) => {
     const itemData = data[item.getId()];
-    if (itemData && 'children' in itemData) {
-      (itemData as any).children = newChildren;
+    if (itemData && isFolder(itemData)) {
+      const folderItem = itemData as TreeFolderItem;
+      folderItem.children = newChildren;
     }
   });
 

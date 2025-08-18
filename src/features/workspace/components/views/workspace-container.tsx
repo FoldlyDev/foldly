@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import { UploadModal } from '../modals/upload-modal';
-import { CloudProviderButtons } from '../cloud/cloud-provider-buttons';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
-import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
 import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
-import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   useStorageTracking,
   useStorageQuotaStatus,
@@ -21,11 +18,9 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
-import FileTree, { addTreeItem, removeTreeItem } from '@/components/file-tree/core/tree';
+import FileTree, { addTreeItem, removeTreeItem, getTreeId } from '@/components/file-tree/core/tree';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 
-// Lazy load the heavy WorkspaceTree component
-const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 
 export function WorkspaceContainer() {
   // Get workspace data with loading states
@@ -47,7 +42,7 @@ export function WorkspaceContainer() {
     // Get the transformed data
     const transformed = transformToTreeStructure(workspaceData.folders, workspaceData.files);
     
-    // Add the workspace root
+    // Add the workspace root with all required fields
     transformed[workspaceData.workspace.id] = {
       id: workspaceData.workspace.id,
       name: workspaceData.workspace.name,
@@ -55,6 +50,10 @@ export function WorkspaceContainer() {
       parentId: null,
       path: '/',
       depth: 0,
+      fileCount: workspaceData.files.length || 0,
+      totalSize: workspaceData.files.reduce((sum: number, f: any) => sum + (f.fileSize || 0), 0),
+      isArchived: false,
+      sortOrder: 0,
       children: Object.values(transformed)
         .filter(item => !item.parentId)
         .map(item => item.id),
@@ -64,7 +63,7 @@ export function WorkspaceContainer() {
   }, [workspaceData]);
 
   // Mobile detection
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  // const isMobile = useMediaQuery('(max-width: 768px)');
 
   // Set up real-time subscription for workspace changes
   useWorkspaceRealtime(workspaceData?.workspace?.id);
@@ -98,7 +97,7 @@ export function WorkspaceContainer() {
     if (treeInstance?.getState) {
       // The tree manages its own state, we can get it but not directly set it
       // Instead we'd need to trigger selection through the tree's methods
-      const state = treeInstance.getState();
+      // const state = treeInstance.getState();
       // For now, just clear local state
       setSelectedItems([]);
     }
@@ -288,7 +287,7 @@ export function WorkspaceContainer() {
               const selectedItems = state?.selectedItems || [];
               const targetId = selectedItems.length > 0 ? selectedItems[0] : workspaceData.workspace.id;
               
-              // Create new folder
+              // Create new folder with all required fields
               const newFolderId = `folder-${Date.now()}`;
               const newFolder = {
                 id: newFolderId,
@@ -296,13 +295,21 @@ export function WorkspaceContainer() {
                 type: 'folder' as const,
                 path: '/' + folderName,
                 depth: 1,
+                fileCount: 0,
+                totalSize: 0,
+                isArchived: false,
+                sortOrder: 0,
                 children: [],
                 parentId: targetId,
               };
               
               console.log('Calling addTreeItem with:', targetId, newFolder, workspaceData.workspace.id);
-              // Add folder programmatically - pass tree instance and treeId!
-              addTreeItem(treeInstance, targetId, newFolder, workspaceData.workspace.id);
+              // Get the treeId from the tree instance
+              const treeId = getTreeId(treeInstance);
+              if (treeId) {
+                // Add folder programmatically - pass tree instance, parentId, item, and treeId
+                addTreeItem(treeInstance, targetId, newFolder, treeId);
+              }
             }
           }}
         >
@@ -367,12 +374,16 @@ export function WorkspaceContainer() {
               const confirmDelete = confirm(`Delete ${selectedItems.length} selected item(s)?`);
               if (confirmDelete) {
                 console.log('Deleting items:', selectedItems);
-                // Use removeTreeItem with tree instance, array of IDs, and treeId
-                removeTreeItem(treeInstance, selectedItems, workspaceData?.workspace?.id || '');
-                
-                // Clear selection after deletion
-                if (treeInstance.clearSelection) {
-                  treeInstance.clearSelection();
+                // Get the treeId from the tree instance
+                const treeId = getTreeId(treeInstance);
+                if (treeId) {
+                  // Use removeTreeItem with tree instance, array of IDs, and treeId
+                  removeTreeItem(treeInstance, selectedItems, treeId);
+                  
+                  // Clear selection after deletion
+                  if (treeInstance.clearSelection) {
+                    treeInstance.clearSelection();
+                  }
                 }
               }
             }
@@ -406,11 +417,18 @@ export function WorkspaceContainer() {
                   mimeType: file.type || 'application/octet-stream',
                   fileSize: file.size,
                   extension: file.name.includes('.') ? file.name.split('.').pop() || null : null,
+                  thumbnailPath: null,
+                  processingStatus: 'pending' as const,
+                  parentId: targetId,
                 };
                 
                 console.log('Adding file to tree:', targetId, newFile);
-                // Use the addTreeItem function to add programmatically with treeId
-                addTreeItem(treeInstance, targetId, newFile, workspaceData.workspace.id);
+                // Get the treeId from the tree instance
+                const treeId = getTreeId(treeInstance);
+                if (treeId) {
+                  // Use the addTreeItem function to add programmatically with treeId
+                  addTreeItem(treeInstance, targetId, newFile, treeId);
+                }
               });
               
               // Clear the input
@@ -471,6 +489,10 @@ export function WorkspaceContainer() {
                     type: 'folder',
                     path: '/',
                     depth: 0,
+                    fileCount: 1,
+                    totalSize: 1024,
+                    isArchived: false,
+                    sortOrder: 0,
                     children: ['test-folder-1'],
                   },
                   'test-folder-1': {
@@ -480,6 +502,10 @@ export function WorkspaceContainer() {
                     parentId: 'test-root',
                     path: '/test-folder',
                     depth: 1,
+                    fileCount: 1,
+                    totalSize: 1024,
+                    isArchived: false,
+                    sortOrder: 0,
                     children: ['test-file-1'],
                   },
                   'test-file-1': {
@@ -490,11 +516,13 @@ export function WorkspaceContainer() {
                     mimeType: 'text/plain',
                     fileSize: 1024,
                     extension: 'txt',
+                    thumbnailPath: null,
+                    processingStatus: 'completed',
                   },
                 }}
                 initialExpandedItems={['test-root', 'test-folder-1']}
                 onTreeReady={(tree) => {
-                  console.log('Test tree ready with ID:', tree.__treeId);
+                  console.log('Test tree ready with ID:', getTreeId(tree));
                 }}
               />
             </div>
@@ -563,7 +591,7 @@ export function WorkspaceContainer() {
                 const item = treeData[contextMenu.itemId];
                 const parentId = item?.parentId || workspaceData.workspace.id;
                 
-                // Create duplicate with proper type
+                // Create duplicate with proper type and all required fields
                 const newId = `${item?.type}-${Date.now()}`;
                 const duplicate = item?.type === 'folder' 
                   ? {
@@ -573,6 +601,10 @@ export function WorkspaceContainer() {
                       parentId: parentId,
                       path: '/' + newName,
                       depth: item.depth || 1,
+                      fileCount: (item as any).fileCount || 0,
+                      totalSize: (item as any).totalSize || 0,
+                      isArchived: (item as any).isArchived || false,
+                      sortOrder: (item as any).sortOrder || 0,
                       children: [],
                     }
                   : {
@@ -583,9 +615,14 @@ export function WorkspaceContainer() {
                       mimeType: (item as any).mimeType || 'application/octet-stream',
                       fileSize: (item as any).fileSize || 0,
                       extension: (item as any).extension || null,
+                      thumbnailPath: (item as any).thumbnailPath || null,
+                      processingStatus: (item as any).processingStatus || 'pending',
                     };
                 
-                addTreeItem(treeInstance, parentId, duplicate, workspaceData?.workspace?.id || '');
+                const treeId = getTreeId(treeInstance);
+                if (treeId) {
+                  addTreeItem(treeInstance, parentId, duplicate, treeId);
+                }
                 setContextMenu(null);
               }
             }}
@@ -599,7 +636,10 @@ export function WorkspaceContainer() {
             className='w-full px-2 py-1.5 text-sm rounded hover:bg-destructive hover:text-destructive-foreground text-left flex items-center gap-2'
             onClick={() => {
               if (confirm(`Delete "${treeData[contextMenu.itemId]?.name}"?`)) {
-                removeTreeItem(treeInstance, [contextMenu.itemId], workspaceData?.workspace?.id || '');
+                const treeId = getTreeId(treeInstance);
+                if (treeId) {
+                  removeTreeItem(treeInstance, [contextMenu.itemId], treeId);
+                }
                 setContextMenu(null);
               }
             }}

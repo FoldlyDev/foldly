@@ -1,4 +1,5 @@
-import type { TreeItem } from '../types/tree-types';
+import type { TreeItem, TreeFolderItem } from '../types/tree-types';
+import { isFolder } from '../types/tree-types';
 
 /**
  * Creates tree data utilities following the exact pattern from headless-tree examples
@@ -13,8 +14,9 @@ export function createTreeData<T extends TreeItem = TreeItem>(initialData: Recor
     getItem: (id: string) => data[id] || ({} as T),
     getChildren: (id: string) => {
       const item = data[id];
-      if (item && 'children' in item) {
-        return (item as any).children ?? [];
+      if (item && isFolder(item)) {
+        const folderItem = item as TreeFolderItem;
+        return folderItem.children ?? [];
       }
       return [];
     },
@@ -25,8 +27,9 @@ export function createTreeData<T extends TreeItem = TreeItem>(initialData: Recor
     getItem: (itemId: string) => Promise.resolve(data[itemId]),
     getChildren: (itemId: string) => {
       const item = data[itemId];
-      if (item && 'children' in item) {
-        return Promise.resolve((item as any).children ?? []);
+      if (item && isFolder(item)) {
+        const folderItem = item as TreeFolderItem;
+        return Promise.resolve(folderItem.children ?? []);
       }
       return Promise.resolve([]);
     },
