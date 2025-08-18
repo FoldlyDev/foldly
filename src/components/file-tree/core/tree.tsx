@@ -45,7 +45,7 @@ const insertNewItem = (dataTransfer: DataTransfer) => {
   const newId = `new-${newItemId++}`;
   const itemName = dataTransfer.getData('text/plain') || 'New Item';
   const itemType = dataTransfer.getData('item-type') || 'file';
-  
+
   if (itemType === 'folder') {
     data[newId] = {
       id: newId,
@@ -59,7 +59,7 @@ const insertNewItem = (dataTransfer: DataTransfer) => {
     // Get file metadata if available
     const fileSize = parseInt(dataTransfer.getData('file-size') || '0');
     const fileType = dataTransfer.getData('file-type') || 'text/plain';
-    
+
     data[newId] = {
       id: newId,
       name: itemName,
@@ -69,7 +69,7 @@ const insertNewItem = (dataTransfer: DataTransfer) => {
       extension: itemName.includes('.') ? itemName.split('.').pop() : null,
     } as TreeItemType;
   }
-  
+
   return newId;
 };
 
@@ -103,10 +103,14 @@ const onRename = (item: ItemInstance<TreeItemType>, value: string) => {
 
 // Export helper functions for programmatic tree manipulation
 // Use insertItemsAtTarget just like the drag handler does!
-export const addTreeItem = (treeInstance: any, parentId: string, item: TreeItemType) => {
+export const addTreeItem = (
+  treeInstance: any,
+  parentId: string,
+  item: TreeItemType
+) => {
   // First add the item to data
   data[item.id] = item;
-  
+
   // Now use insertItemsAtTarget just like drag drop does!
   const parentItem = treeInstance.getItemInstance(parentId);
   if (parentItem) {
@@ -114,7 +118,7 @@ export const addTreeItem = (treeInstance: any, parentId: string, item: TreeItemT
     const target: DragTarget<TreeItemType> = {
       item: parentItem,
     };
-    
+
     // Use the same function that drag drop uses!
     insertItemsAtTarget([item.id], target, (item, newChildrenIds) => {
       const itemData = data[item.getId()];
@@ -125,17 +129,29 @@ export const addTreeItem = (treeInstance: any, parentId: string, item: TreeItemT
   }
 };
 
-export const removeTreeItem = (itemId: string) => {
-  // Remove from parent's children
-  Object.values(data).forEach((item: any) => {
-    if (item.children && item.children.includes(itemId)) {
-      item.children = item.children.filter((id: string) => id !== itemId);
+export const removeTreeItem = (treeInstance: any, itemIds: string[]) => {
+  // Get item instances from the tree
+  const itemInstances = itemIds
+    .map(id => treeInstance.getItemInstance(id))
+    .filter(Boolean);
+
+  if (itemInstances.length === 0) {
+    console.warn('No valid items to remove');
+    return;
+  }
+
+  // Use removeItemsFromParents just like the drag drop example!
+  removeItemsFromParents(itemInstances, (item, newChildren) => {
+    const itemData = data[item.getId()];
+    if (itemData && 'children' in itemData) {
+      (itemData as any).children = newChildren;
     }
   });
-  
-  // Delete the item
-  delete data[itemId];
-  // That's it! The tree will re-render automatically via syncDataLoader
+
+  // Delete the items from data
+  itemIds.forEach(id => {
+    delete data[id];
+  });
 };
 
 // Helper function to get CSS classes for tree items
@@ -184,7 +200,9 @@ export default function FileTree({
       const itemData = item.getItemData();
       // Check if item has children property OR is type folder
       // This ensures compatibility with both patterns
-      return !!('children' in itemData && itemData.children) || isFolder(itemData);
+      return (
+        !!('children' in itemData && itemData.children) || isFolder(itemData)
+      );
     },
     canReorder: true,
     onDrop: createOnDropHandler((item, newChildren) => {
@@ -232,7 +250,7 @@ export default function FileTree({
           <span>({tree.getSearchMatchingItems().length} matches)</span>
         </div>
       )}
-      
+
       {/* Tree Container - MUST have getContainerProps for drag/drop to work! */}
       <div {...tree.getContainerProps()} className='tree'>
         <AssistiveTreeDescription tree={tree} />
@@ -270,7 +288,9 @@ export default function FileTree({
                   {/* Button MUST have item.getProps() for drag/drop! */}
                   <button
                     {...item.getProps()}
-                    style={{ paddingLeft: `${item.getItemMeta().level * 20}px` }}
+                    style={{
+                      paddingLeft: `${item.getItemMeta().level * 20}px`,
+                    }}
                     className='flex-1'
                   >
                     <div className={getCssClass(item)}>

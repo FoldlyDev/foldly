@@ -21,7 +21,7 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
-import FileTree, { addTreeItem } from '@/components/file-tree/core/tree';
+import FileTree, { addTreeItem, removeTreeItem } from '@/components/file-tree/core/tree';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 
 // Lazy load the heavy WorkspaceTree component
@@ -30,6 +30,13 @@ const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
 export function WorkspaceContainer() {
   // Get workspace data with loading states
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
+  
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    itemId: string;
+  } | null>(null);
 
   // Transform workspace data to tree structure
   const treeData = useMemo(() => {
@@ -116,6 +123,67 @@ export function WorkspaceContainer() {
       // You could set up an interval or event listener here if needed
       // For now, we rely on the tree's internal state management
     }
+  }, [treeInstance]);
+  
+  // Handle context menu
+  React.useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      // Check if right-click is within the tree container
+      const target = e.target as HTMLElement;
+      const treeContainer = target.closest('[data-slot="tree"]');
+      const treeItem = target.closest('[data-slot="tree-item"]');
+      
+      // Only handle if clicked inside tree
+      if (treeContainer && treeInstance) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Get the item ID from the tree state
+        const state = treeInstance.getState();
+        const selectedItems = state?.selectedItems || [];
+        
+        // If we clicked on a tree item or have selected items, show menu
+        if (treeItem || selectedItems.length > 0) {
+          // If clicked on a specific item, try to select it first
+          if (treeItem && selectedItems.length === 0) {
+            // We need an item ID, but for now use selected items
+            return;
+          }
+          
+          if (selectedItems.length > 0) {
+            setContextMenu({
+              x: e.clientX,
+              y: e.clientY,
+              itemId: selectedItems[0], // Use first selected item
+            });
+          }
+        }
+        
+        return false; // Extra prevention
+      }
+    };
+    
+    const handleClick = () => {
+      // Close context menu on any click
+      setContextMenu(null);
+    };
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+    
+    // Use capture phase to intercept before default handler
+    document.addEventListener('contextmenu', handleContextMenu, true);
+    document.addEventListener('click', handleClick);
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu, true);
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [treeInstance]);
 
   // Monitor storage changes and show threshold notifications
@@ -284,6 +352,36 @@ export function WorkspaceContainer() {
           🔍 Search Files
         </button>
         
+        <button
+          className='px-4 py-2 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90 transition-colors'
+          onClick={() => {
+            // Delete selected items programmatically
+            if (treeInstance) {
+              const state = treeInstance.getState();
+              const selectedItems = state?.selectedItems || [];
+              
+              if (selectedItems.length === 0) {
+                alert('No items selected to delete');
+                return;
+              }
+              
+              const confirmDelete = confirm(`Delete ${selectedItems.length} selected item(s)?`);
+              if (confirmDelete) {
+                console.log('Deleting items:', selectedItems);
+                // Use removeTreeItem with tree instance and array of IDs
+                removeTreeItem(treeInstance, selectedItems);
+                
+                // Clear selection after deletion
+                if (treeInstance.clearSelection) {
+                  treeInstance.clearSelection();
+                }
+              }
+            }
+          }}
+        >
+          🗑️ Delete Selected
+        </button>
+        
         <label className='px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors cursor-pointer'>
           📤 Upload Files
           <input
@@ -382,6 +480,85 @@ export function WorkspaceContainer() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          className='fixed z-50 bg-popover text-popover-foreground rounded-md border shadow-md p-1 min-w-[180px]'
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`,
+          }}
+        >
+          <button
+            className='w-full px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground text-left flex items-center gap-2'
+            onClick={() => {
+              if (treeInstance) {
+                const itemInstance = treeInstance.getItemInstance(contextMenu.itemId);
+                if (itemInstance?.startRenaming) {
+                  itemInstance.startRenaming();
+                  setContextMenu(null);
+                }
+              }
+            }}
+          >
+            ✏️ Rename
+          </button>
+          
+          <button
+            className='w-full px-2 py-1.5 text-sm rounded hover:bg-accent hover:text-accent-foreground text-left flex items-center gap-2'
+            onClick={() => {
+              const newName = prompt('Duplicate as:', `${treeData[contextMenu.itemId]?.name} (copy)`);
+              if (newName && workspaceData?.workspace?.id) {
+                // Get parent of the item
+                const item = treeData[contextMenu.itemId];
+                const parentId = item?.parentId || workspaceData.workspace.id;
+                
+                // Create duplicate with proper type
+                const newId = `${item?.type}-${Date.now()}`;
+                const duplicate = item?.type === 'folder' 
+                  ? {
+                      id: newId,
+                      name: newName,
+                      type: 'folder' as const,
+                      parentId: parentId,
+                      path: '/' + newName,
+                      depth: item.depth || 1,
+                      children: [],
+                    }
+                  : {
+                      id: newId,
+                      name: newName,
+                      type: 'file' as const,
+                      parentId: parentId,
+                      mimeType: (item as any).mimeType || 'application/octet-stream',
+                      fileSize: (item as any).fileSize || 0,
+                      extension: (item as any).extension || null,
+                    };
+                
+                addTreeItem(treeInstance, parentId, duplicate);
+                setContextMenu(null);
+              }
+            }}
+          >
+            📋 Duplicate
+          </button>
+          
+          <div className='h-px bg-border my-1' />
+          
+          <button
+            className='w-full px-2 py-1.5 text-sm rounded hover:bg-destructive hover:text-destructive-foreground text-left flex items-center gap-2'
+            onClick={() => {
+              if (confirm(`Delete "${treeData[contextMenu.itemId]?.name}"?`)) {
+                removeTreeItem(treeInstance, [contextMenu.itemId]);
+                setContextMenu(null);
+              }
+            }}
+          >
+            🗑️ Delete
+          </button>
         </div>
       )}
     </FadeTransitionWrapper>
