@@ -23,11 +23,6 @@ export type {
   TreeHandlers,
 } from './handler-types';
 
-// Component types
-export type {
-  DragPreviewProps,
-  DragPreviewConfig,
-} from './component-types';
 
 // Display types (for future database integration)
 export type {

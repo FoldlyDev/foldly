@@ -21,11 +21,8 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
-import FileTree from '@/components/file-tree/core/tree';
+import FileTree, { addTreeItem } from '@/components/file-tree/core/tree';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
-import TreeVerticalLines from '@/components/examples/tree-features-examples/basic-tree-vertical-lines';
-import MultiSelectDragDropTree from '@/components/examples/tree-features-examples/basic-tree-multi-select-drag-drop';
-import CheckboxMultiSelectTree from '@/components/examples/tree-features-examples/basic-tree-checkbox-multiselect';
 
 // Lazy load the heavy WorkspaceTree component
 const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
@@ -90,15 +87,36 @@ export function WorkspaceContainer() {
   const [selectionMode, setSelectionMode] = useState(false);
 
   const handleClearSelection = () => {
-    // Clear tree instance selection
-    if (treeInstance?.setSelectedItems) {
-      treeInstance.setSelectedItems([]);
+    // Clear tree instance selection - based on the example pattern
+    if (treeInstance?.getState) {
+      // The tree manages its own state, we can get it but not directly set it
+      // Instead we'd need to trigger selection through the tree's methods
+      const state = treeInstance.getState();
+      // For now, just clear local state
+      setSelectedItems([]);
     }
-    // Clear local state
-    setSelectedItems([]);
     // Exit selection mode when clearing
     setSelectionMode(false);
   };
+  
+  // Monitor tree selection changes
+  React.useEffect(() => {
+    if (treeInstance?.getState) {
+      // Check tree state periodically or on events
+      const checkSelection = () => {
+        const state = treeInstance.getState();
+        if (state.selectedItems) {
+          setSelectedItems(state.selectedItems);
+        }
+      };
+      
+      // Initial check
+      checkSelection();
+      
+      // You could set up an interval or event listener here if needed
+      // For now, we rely on the tree's internal state management
+    }
+  }, [treeInstance]);
 
   // Monitor storage changes and show threshold notifications
   React.useEffect(() => {
@@ -175,6 +193,136 @@ export function WorkspaceContainer() {
         />
       </div>
 
+      {/* Foreign Drop Toolbar - Following the example pattern */}
+      <div className='workspace-foreign-toolbar flex gap-2 p-4 bg-muted/30 rounded-lg mb-4'>
+        {/* EXACT DRAG EXAMPLE FROM DEMO */}
+        <div
+          className='px-4 py-2 bg-blue-600 text-white rounded cursor-move hover:bg-blue-700 transition-colors'
+          draggable
+          onDragStart={e => {
+            console.log('Starting drag of test folder');
+            e.dataTransfer.setData('text/plain', 'Test Folder from Drag');
+            e.dataTransfer.setData('item-type', 'folder');
+          }}
+        >
+          📁 Drag me into the tree! (Like Example)
+        </div>
+        
+        {/* PROGRAMMATIC ADD BUTTON */}
+        <button
+          className='px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors'
+          onClick={() => {
+            const folderName = prompt('Enter folder name:') || 'Test Folder from Button';
+            
+            if (workspaceData?.workspace?.id) {
+              // Get selected item or use workspace root
+              const state = treeInstance?.getState();
+              const selectedItems = state?.selectedItems || [];
+              const targetId = selectedItems.length > 0 ? selectedItems[0] : workspaceData.workspace.id;
+              
+              // Create new folder
+              const newFolderId = `folder-${Date.now()}`;
+              const newFolder = {
+                id: newFolderId,
+                name: folderName,
+                type: 'folder' as const,
+                path: '/' + folderName,
+                depth: 1,
+                children: [],
+                parentId: targetId,
+              };
+              
+              console.log('Calling addTreeItem with:', targetId, newFolder);
+              // Add folder programmatically - pass tree instance too!
+              addTreeItem(treeInstance, targetId, newFolder);
+              // Now using insertItemsAtTarget just like drag drop!
+            }
+          }}
+        >
+          📁 Create Folder (Programmatic)
+        </button>
+        
+        <div
+          className='px-4 py-2 bg-secondary text-secondary-foreground rounded cursor-move hover:bg-secondary/90 transition-colors'
+          draggable
+          onDragStart={e => {
+            e.dataTransfer.setData('text/plain', 'New Document.txt');
+            e.dataTransfer.setData('item-type', 'file');
+          }}
+        >
+          📄 Drag to create file
+        </div>
+        
+        <button
+          className='px-4 py-2 bg-accent text-accent-foreground rounded hover:bg-accent/90 transition-colors'
+          onClick={() => {
+            // Rename selected item or workspace root
+            if (treeInstance) {
+              const state = treeInstance.getState();
+              const selectedItems = state?.selectedItems || [];
+              const targetId = selectedItems.length > 0 ? selectedItems[0] : workspaceData?.workspace?.id;
+              
+              if (targetId) {
+                console.log('Starting rename for:', targetId);
+                treeInstance.getItemInstance(targetId)?.startRenaming();
+              }
+            }
+          }}
+        >
+          ✏️ Rename Selected
+        </button>
+        
+        <button
+          className='px-4 py-2 bg-muted text-muted-foreground rounded hover:bg-muted/90 transition-colors'
+          onClick={() => {
+            // Open search in tree
+            if (treeInstance?.openSearch) {
+              treeInstance.openSearch();
+            }
+          }}
+        >
+          🔍 Search Files
+        </button>
+        
+        <label className='px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors cursor-pointer'>
+          📤 Upload Files
+          <input
+            type='file'
+            multiple
+            className='hidden'
+            onChange={(e) => {
+              const files = e.target.files;
+              if (!files || !treeInstance || !workspaceData?.workspace?.id) return;
+              
+              // Get target folder (selected or workspace root)
+              const state = treeInstance.getState();
+              const selectedItems = state?.selectedItems || [];
+              const targetId = selectedItems.length > 0 ? selectedItems[0] : workspaceData.workspace.id;
+              
+              // Add each file to the tree
+              Array.from(files).forEach(file => {
+                const newFileId = `file-${Date.now()}-${Math.random()}`;
+                const newFile = {
+                  id: newFileId,
+                  name: file.name,
+                  type: 'file' as const,
+                  mimeType: file.type || 'application/octet-stream',
+                  fileSize: file.size,
+                  extension: file.name.includes('.') ? file.name.split('.').pop() || null : null,
+                };
+                
+                console.log('Adding file to tree:', targetId, newFile);
+                // Use the addTreeItem function to add programmatically
+                addTreeItem(treeInstance, targetId, newFile);
+              });
+              
+              // Clear the input
+              e.target.value = '';
+            }}
+          />
+        </label>
+      </div>
+
       <div className='workspace-tree-container mt-4 h-screen overflow-y-auto!'>
         {/* <div className='flex gap-4 h-full'>
           <div className='workspace-tree-wrapper flex-1'>
@@ -200,32 +348,17 @@ export function WorkspaceContainer() {
         </div> */}
         {workspaceData?.workspace?.id && Object.keys(treeData).length > 0 ? (
           <FileTree 
-            data={treeData}
             rootId={workspaceData.workspace.id}
-            config={{
-              features: {
-                checkboxes: true,
-                dragAndDrop: true,
-                selection: true,
-                keyboard: true,
-              },
-              handlers: {
-                rename: true, // Use default rename handler for now
-                drop: true, // Use default drop handler for now
-              }
-            }}
+            initialData={treeData}
             initialExpandedItems={[workspaceData.workspace.id]}
-            onSelectedItemsChange={setSelectedItems}
+            initialSelectedItems={selectedItems}
+            onTreeReady={setTreeInstance}
           />
         ) : (
           <div className='flex items-center justify-center h-64'>
             <p className='text-muted-foreground'>No files or folders yet</p>
           </div>
         )}
-        {/* <TreeVerticalLines /> */}
-        <p>Separator</p>
-        {/* <MultiSelectDragDropTree /> */}
-        {/* <CheckboxMultiSelectTree /> */}
       </div>
 
       {/* Upload Modal with Storage Context */}

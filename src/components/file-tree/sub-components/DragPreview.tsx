@@ -15,14 +15,9 @@ import { getFileIcon } from './file';
 export function DragPreview<T extends TreeItem = TreeItem>({ tree, id = 'drag-preview' }: DragPreviewProps<T>) {
   const draggedItems = tree.getState()?.dnd?.draggedItems || [];
 
+  // Don't render anything if no items are being dragged
   if (draggedItems.length === 0) {
-    return (
-      <div id={id} className='drag-preview'>
-        <div className='flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-md shadow-lg'>
-          <span className='text-sm text-muted-foreground'>No items</span>
-        </div>
-      </div>
-    );
+    return <div id={id} className='drag-preview' />;
   }
 
   const firstItem = draggedItems[0];
