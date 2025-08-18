@@ -1,11 +1,12 @@
 import type { TreeItem, TreeFileItem, TreeFolderItem } from '../types/tree-types';
+import type { File, Folder } from '@/lib/database/types';
 
 /**
  * Transform database folders and files into tree structure
  */
 export function transformToTreeStructure(
-  folders: any[],
-  files: any[]
+  folders: Folder[],
+  files: File[]
 ): Record<string, TreeItem> {
   const treeData: Record<string, TreeItem> = {};
 
@@ -17,11 +18,13 @@ export function transformToTreeStructure(
       type: 'folder',
       parentId: folder.parentFolderId || null,
       path: folder.path,
-      depth: folder.depth || 0,
+      depth: folder.depth,
       children: [], // Will be populated below
       fileCount: folder.fileCount,
       totalSize: folder.totalSize,
       isArchived: folder.isArchived,
+      sortOrder: folder.sortOrder,
+      record: folder, // Store full database record
     };
     treeData[folder.id] = treeFolder;
   });
@@ -38,6 +41,7 @@ export function transformToTreeStructure(
       extension: file.extension,
       thumbnailPath: file.thumbnailPath,
       processingStatus: file.processingStatus,
+      record: file, // Store full database record
     };
     treeData[file.id] = treeFile;
   });
@@ -46,8 +50,11 @@ export function transformToTreeStructure(
   Object.values(treeData).forEach(item => {
     if (item.parentId && treeData[item.parentId]) {
       const parent = treeData[item.parentId];
-      if (parent.type === 'folder' && !parent.children?.includes(item.id)) {
-        parent.children = [...(parent.children || []), item.id];
+      if (parent && parent.type === 'folder') {
+        const folderParent = parent as TreeFolderItem;
+        if (!folderParent.children?.includes(item.id)) {
+          folderParent.children = [...(folderParent.children || []), item.id];
+        }
       }
     }
   });

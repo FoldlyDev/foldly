@@ -2,13 +2,15 @@
 // TREE TYPES - Shared types for file tree components
 // =============================================================================
 
+import type { File, Folder } from '@/lib/database/types';
+
 /**
  * Tree item can be either a file or folder
  */
 export type TreeItemType = 'file' | 'folder';
 
 /**
- * Base properties shared by all tree items
+ * Base properties shared by all tree items for the tree component
  */
 export interface BaseTreeItem {
   id: string;
@@ -18,28 +20,36 @@ export interface BaseTreeItem {
 }
 
 /**
- * File item in the tree
+ * File item in the tree - minimal fields needed for tree display
  */
 export interface TreeFileItem extends BaseTreeItem {
   type: 'file';
+  // Essential fields for tree display from File type
   mimeType: string;
   fileSize: number;
-  extension?: string | null;
-  thumbnailPath?: string | null;
-  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  extension: string | null;
+  thumbnailPath: string | null;
+  processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  // Store full database record for additional fields
+  record?: File;
 }
 
 /**
- * Folder item in the tree
+ * Folder item in the tree - minimal fields needed for tree display
  */
 export interface TreeFolderItem extends BaseTreeItem {
   type: 'folder';
-  children?: string[];
+  // Essential fields for tree display from Folder type
   path: string;
   depth: number;
-  fileCount?: number;
-  totalSize?: number;
-  isArchived?: boolean;
+  fileCount: number;
+  totalSize: number;
+  isArchived: boolean;
+  sortOrder: number;
+  // Tree-specific field for headless-tree library
+  children?: string[];
+  // Store full database record for additional fields
+  record?: Folder;
 }
 
 /**
@@ -86,7 +96,17 @@ export function hasChildren(item: TreeItem): boolean {
 // =============================================================================
 
 import type { RenameHandler, DropHandler } from './handler-types';
-import type { ForeignDropConfig } from '../handlers/foreign-drop';
+import type { DragTarget, ItemInstance } from '@headless-tree/core';
+
+/**
+ * Configuration for foreign drop operations
+ */
+export interface ForeignDropConfig<T extends TreeItem = TreeItem> {
+  onDropForeignDragObject: (dataTransfer: DataTransfer, target: DragTarget<T>) => void;
+  onCompleteForeignDrop: (items: ItemInstance<T>[]) => void;
+  canDropForeignDragObject?: (dataTransfer: DataTransfer, target: DragTarget<T>) => boolean;
+  createForeignDragObject?: (items: ItemInstance<T>[]) => { format: string; data: string };
+}
 
 /**
  * Configuration for tree handlers

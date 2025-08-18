@@ -3,14 +3,9 @@
 import React from 'react';
 import './tree.css';
 import {
-  type DragTarget,
-  type ItemInstance,
-  createOnDropHandler,
   dragAndDropFeature,
   hotkeysCoreFeature,
-  insertItemsAtTarget,
   keyboardDragAndDropFeature,
-  removeItemsFromParents,
   renamingFeature,
   searchFeature,
   selectionFeature,
@@ -18,175 +13,107 @@ import {
   checkboxesFeature,
 } from '@headless-tree/core';
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
-import { cn } from '@/lib/utils/utils';
-import { FolderIcon, FolderOpenIcon } from 'lucide-react';
 
 import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
-import { getFileIcon } from '../sub-components/file';
-import {
-  Tree,
-  TreeDragLine,
-  TreeItem,
-  TreeItemLabel,
-} from './tree-orchestrator';
+import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import {
   type TreeItem as TreeItemType,
   isFolder,
-  isFile,
 } from '../types/tree-types';
 import { createTreeData } from '../utils/tree-data';
+import { addTreeItem, removeTreeItem } from '../utils/tree-manipulation';
+import { createTreeDropHandler } from '../handlers/drop-handler';
+import { createRenameHandler } from '../handlers/rename-handler';
+import { createForeignDropHandlers } from '../handlers/foreign-drop-handler';
+import { createInsertNewItem } from '../handlers/insert-item-handler';
 
-// Create data outside component - exactly like the example
-const { syncDataLoader, data } = createTreeData<TreeItemType>();
-let newItemId = 0;
+// Create a Map to store data for each tree instance
+const treeDataMap = new Map<string, ReturnType<typeof createTreeData<TreeItemType>>>();
 
-const insertNewItem = (dataTransfer: DataTransfer) => {
-  const newId = `new-${newItemId++}`;
-  const itemName = dataTransfer.getData('text/plain') || 'New Item';
-  const itemType = dataTransfer.getData('item-type') || 'file';
-
-  if (itemType === 'folder') {
-    data[newId] = {
-      id: newId,
-      name: itemName,
-      type: 'folder',
-      path: '/' + itemName,
-      depth: 1,
-      children: [],
-    } as TreeItemType;
-  } else {
-    // Get file metadata if available
-    const fileSize = parseInt(dataTransfer.getData('file-size') || '0');
-    const fileType = dataTransfer.getData('file-type') || 'text/plain';
-
-    data[newId] = {
-      id: newId,
-      name: itemName,
-      type: 'file',
-      mimeType: fileType,
-      fileSize: fileSize,
-      extension: itemName.includes('.') ? itemName.split('.').pop() : null,
-    } as TreeItemType;
+// Helper to get or create data for a specific tree instance
+const getTreeData = (treeId: string) => {
+  if (!treeDataMap.has(treeId)) {
+    treeDataMap.set(treeId, createTreeData<TreeItemType>());
   }
-
-  return newId;
+  return treeDataMap.get(treeId)!;
 };
 
-const onDropForeignDragObject = (
-  dataTransfer: DataTransfer,
-  target: DragTarget<TreeItemType>
-) => {
-  const newId = insertNewItem(dataTransfer);
-  insertItemsAtTarget([newId], target, (item, newChildrenIds) => {
-    const itemData = data[item.getId()];
-    if (itemData && 'children' in itemData) {
-      (itemData as any).children = newChildrenIds;
-    }
-  });
-};
 
-const onCompleteForeignDrop = (items: ItemInstance<TreeItemType>[]) =>
-  removeItemsFromParents(items, (item, newChildren) => {
-    const itemData = item.getItemData();
-    if ('children' in itemData) {
-      (itemData as any).children = newChildren;
-    }
-  });
-
-const onRename = (item: ItemInstance<TreeItemType>, value: string) => {
-  const itemData = data[item.getId()];
-  if (itemData) {
-    itemData.name = value;
-  }
-};
-
-// Export helper functions for programmatic tree manipulation
-// Use insertItemsAtTarget just like the drag handler does!
-export const addTreeItem = (
+// Export helper functions for programmatic tree manipulation with bound getTreeData
+export const addTreeItemExport = (
   treeInstance: any,
   parentId: string,
-  item: TreeItemType
-) => {
-  // First add the item to data
-  data[item.id] = item;
+  item: TreeItemType,
+  treeId: string
+) => addTreeItem(treeInstance, parentId, item, treeId, getTreeData);
 
-  // Now use insertItemsAtTarget just like drag drop does!
-  const parentItem = treeInstance.getItemInstance(parentId);
-  if (parentItem) {
-    // Simple target - just the item (will drop inside it)
-    const target: DragTarget<TreeItemType> = {
-      item: parentItem,
-    };
+export const removeTreeItemExport = (
+  treeInstance: any,
+  itemIds: string[],
+  treeId: string
+) => removeTreeItem(treeInstance, itemIds, treeId, getTreeData);
 
-    // Use the same function that drag drop uses!
-    insertItemsAtTarget([item.id], target, (item, newChildrenIds) => {
-      const itemData = data[item.getId()];
-      if (itemData && 'children' in itemData) {
-        (itemData as any).children = newChildrenIds;
-      }
-    });
-  }
-};
-
-export const removeTreeItem = (treeInstance: any, itemIds: string[]) => {
-  // Get item instances from the tree
-  const itemInstances = itemIds
-    .map(id => treeInstance.getItemInstance(id))
-    .filter(Boolean);
-
-  if (itemInstances.length === 0) {
-    console.warn('No valid items to remove');
-    return;
-  }
-
-  // Use removeItemsFromParents just like the drag drop example!
-  removeItemsFromParents(itemInstances, (item, newChildren) => {
-    const itemData = data[item.getId()];
-    if (itemData && 'children' in itemData) {
-      (itemData as any).children = newChildren;
-    }
-  });
-
-  // Delete the items from data
-  itemIds.forEach(id => {
-    delete data[id];
-  });
-};
-
-// Helper function to get CSS classes for tree items
-const getCssClass = (item: ItemInstance<TreeItemType>) =>
-  cn('treeitem', {
-    focused: item.isFocused(),
-    expanded: item.isExpanded(),
-    selected: item.isSelected(),
-    folder: item.isFolder(),
-    drop: item.isDragTarget(),
-    searchmatch: item.isMatchingSearch(),
-  });
+// Re-export with original names for backward compatibility
+export { addTreeItemExport as addTreeItem, removeTreeItemExport as removeTreeItem };
 
 interface FileTreeProps {
   rootId: string;
+  treeId: string;  // Required treeId for instance isolation
   initialData: Record<string, TreeItemType>;
   initialExpandedItems?: string[];
   initialSelectedItems?: string[];
   initialCheckedItems?: string[];
   onTreeReady?: (tree: any) => void;
+  // Display options for sub-components
+  showFileSize?: boolean;
+  showFileDate?: boolean;
+  showFileStatus?: boolean;
+  showFolderCount?: boolean;
+  showFolderSize?: boolean;
 }
 
 export default function FileTree({
   rootId,
+  treeId,
   initialData,
   initialExpandedItems = [],
   initialSelectedItems = [],
   initialCheckedItems = [],
   onTreeReady,
+  showFileSize = false,
+  showFileDate = false,
+  showFileStatus = false,
+  showFolderCount = false,
+  showFolderSize = false,
 }: FileTreeProps) {
+  // Get the data and syncDataLoader for this specific tree instance
+  const { syncDataLoader, data } = React.useMemo(
+    () => getTreeData(treeId),
+    [treeId]
+  );
+  
+  // Create instance-specific handlers
+  const insertNewItem = React.useMemo(
+    () => createInsertNewItem(data),
+    [data]
+  );
+  
+  const { onDropForeignDragObject, onCompleteForeignDrop } = React.useMemo(
+    () => createForeignDropHandlers(data, insertNewItem),
+    [data, insertNewItem]
+  );
+
+  const onRename = React.useMemo(
+    () => createRenameHandler(data),
+    [data]
+  );
+  
   // Initialize data with provided initial data
   React.useEffect(() => {
     Object.keys(data).forEach(key => delete data[key]);
     Object.assign(data, initialData);
-  }, [initialData]);
+  }, [initialData, data]);
 
   const tree = useTree<TreeItemType>({
     initialState: {
@@ -205,13 +132,7 @@ export default function FileTree({
       );
     },
     canReorder: true,
-    onDrop: createOnDropHandler((item, newChildren) => {
-      // Exactly like the example - direct assignment
-      const targetItem = data[item.getId()];
-      if (targetItem) {
-        (targetItem as any).children = newChildren;
-      }
-    }),
+    onDrop: createTreeDropHandler(data),
     onRename,
     onDropForeignDragObject,
     onCompleteForeignDrop,
@@ -234,12 +155,14 @@ export default function FileTree({
     ],
   });
 
-  // Call onTreeReady when tree is created
+  // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
     if (onTreeReady && tree) {
+      // Attach the treeId to the tree instance for external use
+      (tree as any).__treeId = treeId;
       onTreeReady(tree);
     }
-  }, [tree, onTreeReady]);
+  }, [tree, onTreeReady, treeId]);
 
   return (
     <div className='flex h-full flex-col gap-2 *:first:grow'>
@@ -293,29 +216,15 @@ export default function FileTree({
                     }}
                     className='flex-1'
                   >
-                    <div className={getCssClass(item)}>
-                      <span className='flex items-center gap-2'>
-                        {(() => {
-                          if (isFolder(itemData)) {
-                            return item.isExpanded() ? (
-                              <FolderOpenIcon className='size-4 text-muted-foreground' />
-                            ) : (
-                              <FolderIcon className='size-4 text-muted-foreground' />
-                            );
-                          } else if (isFile(itemData)) {
-                            const FileIconComponent = getFileIcon(
-                              itemData.mimeType,
-                              itemData.extension
-                            );
-                            return (
-                              <FileIconComponent className='size-4 text-muted-foreground' />
-                            );
-                          }
-                          return null;
-                        })()}
-                        <span className='truncate'>{item.getItemName()}</span>
-                      </span>
-                    </div>
+                    <TreeItemRenderer
+                      item={itemData}
+                      itemInstance={item}
+                      showFileSize={showFileSize}
+                      showFileDate={showFileDate}
+                      showFileStatus={showFileStatus}
+                      showFolderCount={showFolderCount}
+                      showFolderSize={showFolderSize}
+                    />
                   </button>
                 </div>
               )}

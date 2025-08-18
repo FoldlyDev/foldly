@@ -16,48 +16,46 @@ import type { FileProcessingStatus } from './enums';
 // =============================================================================
 
 /**
- * File entity - exact match to database schema
+ * File entity - exact match to database schema (files table)
  */
 export interface File extends TimestampFields {
   id: DatabaseId;
-  batchId: DatabaseId;
-  linkId: DatabaseId;
-  userId: DatabaseId;
-  folderId: DatabaseId | null;
+  linkId: DatabaseId | null; // Optional - null for personal workspace files
+  batchId: DatabaseId | null; // Required when linkId is set, null for workspace files
+  workspaceId: DatabaseId | null; // For personal workspace files
+  folderId: DatabaseId | null; // NULL for root folder files
 
-  // File information
+  // File identification
   fileName: string;
   originalName: string;
   fileSize: number;
   mimeType: string;
-  fileHash: string;
+  extension: string | null;
 
   // Storage information
   storagePath: string;
   storageProvider: string;
-  storageMetadata: Record<string, unknown> | null;
+  checksum: string | null;
 
-  // Processing status
-  status: FileProcessingStatus;
-  processingStartedAt: Date | null;
-  processingCompletedAt: Date | null;
-  errorMessage: string | null;
+  // Security and safety
+  isSafe: boolean;
+  virusScanResult: string;
 
-  // File metadata
-  width: number | null;
-  height: number | null;
-  duration: number | null;
+  // File processing
+  processingStatus: FileProcessingStatus;
   thumbnailPath: string | null;
 
-  // Access control
-  downloadCount: number;
-  lastDownloadAt: Date | null;
-
-  // Organization
+  // Organization flags
+  isOrganized: boolean;
+  needsReview: boolean;
   sortOrder: number;
 
-  // Expiration
-  expiresAt: Date | null;
+  // Access tracking
+  downloadCount: number;
+  lastAccessedAt: Date | null;
+
+  // Upload tracking
+  uploadedAt: Date;
 }
 
 /**
@@ -71,28 +69,29 @@ export type FileInsert = WithoutSystemFields<File>;
 export type FileUpdate = PartialBy<
   Omit<
     File,
-    'id' | 'batchId' | 'linkId' | 'userId' | 'createdAt' | 'updatedAt'
+    'id' | 'createdAt' | 'updatedAt' | 'uploadedAt'
   >,
+  | 'linkId'
+  | 'batchId'
+  | 'workspaceId'
   | 'folderId'
   | 'fileName'
   | 'originalName'
   | 'fileSize'
   | 'mimeType'
-  | 'fileHash'
+  | 'extension'
   | 'storagePath'
   | 'storageProvider'
-  | 'storageMetadata'
-  | 'status'
-  | 'processingStartedAt'
-  | 'processingCompletedAt'
-  | 'errorMessage'
-  | 'width'
-  | 'height'
-  | 'duration'
+  | 'checksum'
+  | 'isSafe'
+  | 'virusScanResult'
+  | 'processingStatus'
   | 'thumbnailPath'
+  | 'isOrganized'
+  | 'needsReview'
+  | 'sortOrder'
   | 'downloadCount'
-  | 'lastDownloadAt'
-  | 'expiresAt'
+  | 'lastAccessedAt'
 >;
 
 // =============================================================================
@@ -118,8 +117,6 @@ export interface FileWithMetadata extends File {
     isDocument: boolean;
     hasPreview: boolean;
     hasThumbnail: boolean;
-    aspectRatio: number | null;
-    durationFormatted: string | null;
   };
   urls: {
     download: string;
@@ -140,8 +137,7 @@ export interface FileUploadProgress {
   progressPercentage: number;
   uploadSpeed: number; // bytes per second
   timeRemaining: number | null; // seconds
-  status: 'queued' | 'uploading' | 'processing' | 'completed' | 'failed';
-  errorMessage: string | null;
+  processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
   startedAt: Date;
   completedAt: Date | null;
 }
@@ -152,8 +148,9 @@ export interface FileUploadProgress {
 export interface FileWithBatch extends File {
   batch: {
     id: DatabaseId;
-    name: string;
-    status: string;
+    uploaderEmail: string | null;
+    uploaderName: string | null;
+    batchStatus: string;
     totalFiles: number;
     processedFiles: number;
     createdAt: Date;
@@ -198,7 +195,7 @@ export interface FileListItem {
   originalName: string;
   fileSize: number;
   mimeType: string;
-  status: FileProcessingStatus;
+  processingStatus: FileProcessingStatus;
   downloadCount: number;
   createdAt: Date;
   thumbnailPath: string | null;
@@ -221,8 +218,7 @@ export interface FileDownloadInfo {
   storagePath: string;
   storageProvider: string;
   downloadUrl: string;
-  expiresAt: Date | null;
-  linkId: DatabaseId;
+  linkId: DatabaseId | null;
 }
 
 /**
@@ -284,7 +280,7 @@ export interface UploadFile {
   lastModified: number;
   id?: string;
   progress?: number;
-  status?: 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
   error?: string;
 }
 
@@ -307,7 +303,8 @@ export interface FileRenameForm {
  * File settings form data
  */
 export interface FileSettingsForm {
-  expiresAt?: Date;
+  needsReview?: boolean;
+  isOrganized?: boolean;
 }
 
 // =============================================================================
@@ -332,13 +329,6 @@ export interface FileValidationConstraints {
     allowed: string[];
     blocked: string[];
   };
-  dimensions: {
-    maxWidth: number;
-    maxHeight: number;
-  };
-  duration: {
-    maxDuration: number; // seconds
-  };
 }
 
 /**
@@ -348,8 +338,6 @@ export interface FileValidationErrors {
   fileName?: string[];
   fileSize?: string[];
   mimeType?: string[];
-  dimensions?: string[];
-  duration?: string[];
 }
 
 // =============================================================================
@@ -360,26 +348,21 @@ export interface FileValidationErrors {
  * File filter options
  */
 export interface FileFilterOptions {
-  userId?: DatabaseId;
+  workspaceId?: DatabaseId;
   linkId?: DatabaseId;
   batchId?: DatabaseId;
   folderId?: DatabaseId;
-  status?: FileProcessingStatus | FileProcessingStatus[];
+  processingStatus?: FileProcessingStatus | FileProcessingStatus[];
   mimeType?: string | string[];
   typeCategory?: string | string[];
   hasPreview?: boolean;
   hasThumbnail?: boolean;
   fileSizeRange?: { min: number; max: number };
-  dimensionsRange?: {
-    minWidth: number;
-    maxWidth: number;
-    minHeight: number;
-    maxHeight: number;
-  };
-  durationRange?: { min: number; max: number };
   createdDateRange?: { start: Date; end: Date };
   downloadCountRange?: { min: number; max: number };
-  isExpired?: boolean;
+  isSafe?: boolean;
+  isOrganized?: boolean;
+  needsReview?: boolean;
 }
 
 /**
@@ -390,11 +373,11 @@ export type FileSortField =
   | 'originalName'
   | 'fileSize'
   | 'mimeType'
-  | 'status'
+  | 'processingStatus'
   | 'downloadCount'
   | 'createdAt'
-  | 'processingCompletedAt'
-  | 'lastDownloadAt';
+  | 'uploadedAt'
+  | 'lastAccessedAt';
 
 /**
  * File query options
@@ -483,15 +466,7 @@ export const fileHasThumbnail = (
   return file.thumbnailPath !== null;
 };
 
-/**
- * Calculate aspect ratio
- */
-export const calculateAspectRatio = (
-  file: Pick<File, 'width' | 'height'>
-): number | null => {
-  if (!file.width || !file.height) return null;
-  return file.width / file.height;
-};
+// Removed calculateAspectRatio - width/height not in database schema
 
 /**
  * Format file size to human readable format
@@ -520,35 +495,29 @@ export const formatDuration = (seconds: number): string => {
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
-/**
- * Check if file is expired
- */
-export const isFileExpired = (file: Pick<File, 'expiresAt'>): boolean => {
-  if (!file.expiresAt) return false;
-  return new Date() > file.expiresAt;
-};
+// Removed isFileExpired - expiresAt not in database schema
 
 /**
  * Check if file is processing
  */
-export const isFileProcessing = (file: Pick<File, 'status'>): boolean => {
-  return file.status === 'processing';
+export const isFileProcessing = (file: Pick<File, 'processingStatus'>): boolean => {
+  return file.processingStatus === 'processing';
 };
 
 /**
  * Check if file processing is complete
  */
 export const isFileProcessingComplete = (
-  file: Pick<File, 'status'>
+  file: Pick<File, 'processingStatus'>
 ): boolean => {
-  return file.status === 'completed';
+  return file.processingStatus === 'completed';
 };
 
 /**
  * Check if file processing failed
  */
-export const isFileProcessingFailed = (file: Pick<File, 'status'>): boolean => {
-  return file.status === 'failed';
+export const isFileProcessingFailed = (file: Pick<File, 'processingStatus'>): boolean => {
+  return file.processingStatus === 'failed';
 };
 
 /**

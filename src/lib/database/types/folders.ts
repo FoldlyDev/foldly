@@ -15,19 +15,18 @@ import type {
 // =============================================================================
 
 /**
- * Folder entity - exact match to database schema
+ * Folder entity - exact match to database schema (folders table)
  */
 export interface Folder extends TimestampFields {
   id: DatabaseId;
-  userId: DatabaseId;
-  workspaceId: DatabaseId;
-  parentFolderId: DatabaseId | null;
-  linkId: DatabaseId | null;
+  workspaceId: DatabaseId | null; // Optional, can be null for link folders
+  parentFolderId: DatabaseId | null; // Self-referential for hierarchy
+  linkId: DatabaseId | null; // Optional, for link-specific folders
 
-  // Folder information
+  // Folder information - Simplified for MVP
   name: string;
-  path: string;
-  depth: number;
+  path: string; // materialized full path
+  depth: number; // 0 = root
 
   // Organization
   isArchived: boolean;
@@ -35,7 +34,7 @@ export interface Folder extends TimestampFields {
 
   // Statistics
   fileCount: number;
-  totalSize: number;
+  totalSize: number; // bigint in DB, but number in JS
 }
 
 /**
@@ -47,7 +46,8 @@ export type FolderInsert = WithoutSystemFields<Folder>;
  * Folder update type - for updating existing folders
  */
 export type FolderUpdate = PartialBy<
-  Omit<Folder, 'id' | 'userId' | 'workspaceId' | 'createdAt' | 'updatedAt'>,
+  Omit<Folder, 'id' | 'createdAt' | 'updatedAt'>,
+  | 'workspaceId'
   | 'parentFolderId'
   | 'linkId'
   | 'path'

@@ -300,10 +300,9 @@ export function WorkspaceContainer() {
                 parentId: targetId,
               };
               
-              console.log('Calling addTreeItem with:', targetId, newFolder);
-              // Add folder programmatically - pass tree instance too!
-              addTreeItem(treeInstance, targetId, newFolder);
-              // Now using insertItemsAtTarget just like drag drop!
+              console.log('Calling addTreeItem with:', targetId, newFolder, workspaceData.workspace.id);
+              // Add folder programmatically - pass tree instance and treeId!
+              addTreeItem(treeInstance, targetId, newFolder, workspaceData.workspace.id);
             }
           }}
         >
@@ -368,8 +367,8 @@ export function WorkspaceContainer() {
               const confirmDelete = confirm(`Delete ${selectedItems.length} selected item(s)?`);
               if (confirmDelete) {
                 console.log('Deleting items:', selectedItems);
-                // Use removeTreeItem with tree instance and array of IDs
-                removeTreeItem(treeInstance, selectedItems);
+                // Use removeTreeItem with tree instance, array of IDs, and treeId
+                removeTreeItem(treeInstance, selectedItems, workspaceData?.workspace?.id || '');
                 
                 // Clear selection after deletion
                 if (treeInstance.clearSelection) {
@@ -410,8 +409,8 @@ export function WorkspaceContainer() {
                 };
                 
                 console.log('Adding file to tree:', targetId, newFile);
-                // Use the addTreeItem function to add programmatically
-                addTreeItem(treeInstance, targetId, newFile);
+                // Use the addTreeItem function to add programmatically with treeId
+                addTreeItem(treeInstance, targetId, newFile, workspaceData.workspace.id);
               });
               
               // Clear the input
@@ -445,13 +444,61 @@ export function WorkspaceContainer() {
           </div>
         </div> */}
         {workspaceData?.workspace?.id && Object.keys(treeData).length > 0 ? (
-          <FileTree 
-            rootId={workspaceData.workspace.id}
-            initialData={treeData}
-            initialExpandedItems={[workspaceData.workspace.id]}
-            initialSelectedItems={selectedItems}
-            onTreeReady={setTreeInstance}
-          />
+          <>
+            {/* Main workspace tree */}
+            <div className='border rounded-lg p-4 mb-4'>
+              <h3 className='text-lg font-semibold mb-2'>Workspace Tree (ID: {workspaceData.workspace.id})</h3>
+              <FileTree 
+                rootId={workspaceData.workspace.id}
+                treeId={workspaceData.workspace.id}  // Add required treeId
+                initialData={treeData}
+                initialExpandedItems={[workspaceData.workspace.id]}
+                initialSelectedItems={selectedItems}
+                onTreeReady={setTreeInstance}
+              />
+            </div>
+            
+            {/* Test tree with different ID to verify isolation */}
+            <div className='border rounded-lg p-4 border-green-500'>
+              <h3 className='text-lg font-semibold mb-2 text-green-600'>Test Tree (ID: test-tree-2)</h3>
+              <FileTree 
+                rootId="test-root"
+                treeId="test-tree-2"  // Different treeId for isolation
+                initialData={{
+                  'test-root': {
+                    id: 'test-root',
+                    name: 'Test Root',
+                    type: 'folder',
+                    path: '/',
+                    depth: 0,
+                    children: ['test-folder-1'],
+                  },
+                  'test-folder-1': {
+                    id: 'test-folder-1',
+                    name: 'Test Folder',
+                    type: 'folder',
+                    parentId: 'test-root',
+                    path: '/test-folder',
+                    depth: 1,
+                    children: ['test-file-1'],
+                  },
+                  'test-file-1': {
+                    id: 'test-file-1',
+                    name: 'test-file.txt',
+                    type: 'file',
+                    parentId: 'test-folder-1',
+                    mimeType: 'text/plain',
+                    fileSize: 1024,
+                    extension: 'txt',
+                  },
+                }}
+                initialExpandedItems={['test-root', 'test-folder-1']}
+                onTreeReady={(tree) => {
+                  console.log('Test tree ready with ID:', tree.__treeId);
+                }}
+              />
+            </div>
+          </>
         ) : (
           <div className='flex items-center justify-center h-64'>
             <p className='text-muted-foreground'>No files or folders yet</p>
@@ -538,7 +585,7 @@ export function WorkspaceContainer() {
                       extension: (item as any).extension || null,
                     };
                 
-                addTreeItem(treeInstance, parentId, duplicate);
+                addTreeItem(treeInstance, parentId, duplicate, workspaceData?.workspace?.id || '');
                 setContextMenu(null);
               }
             }}
@@ -552,7 +599,7 @@ export function WorkspaceContainer() {
             className='w-full px-2 py-1.5 text-sm rounded hover:bg-destructive hover:text-destructive-foreground text-left flex items-center gap-2'
             onClick={() => {
               if (confirm(`Delete "${treeData[contextMenu.itemId]?.name}"?`)) {
-                removeTreeItem(treeInstance, [contextMenu.itemId]);
+                removeTreeItem(treeInstance, [contextMenu.itemId], workspaceData?.workspace?.id || '');
                 setContextMenu(null);
               }
             }}
