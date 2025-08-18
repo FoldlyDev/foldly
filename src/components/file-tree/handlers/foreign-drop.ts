@@ -48,20 +48,30 @@ export function createForeignDropHandlers<T extends TreeItem = TreeItem>(
       const newItem = createItemFromDrop(dataTransfer);
       if (!newItem) return;
 
-      // Insert the new item at the drop target
+      // Add the new item to the tree data first
+      setItems(prevItems => ({
+        ...prevItems,
+        [newItem.id]: newItem
+      }));
+
+      // Then insert it at the correct position using the tree utility
       insertItemsAtTarget([newItem.id], target, (item, newChildrenIds) => {
         setItems(prevItems => {
-          const targetItem = prevItems[item.getId()];
+          const newItems = { ...prevItems };
+          const targetId = item.getId();
+          const targetItem = newItems[targetId];
+          
           if (!targetItem || !isFolder(targetItem)) return prevItems;
           
-          return {
-            ...prevItems,
-            [newItem.id]: newItem,
-            [item.getId()]: {
-              ...targetItem,
-              children: newChildrenIds
-            } as T
-          };
+          // Update the target folder's children
+          (targetItem as any).children = newChildrenIds;
+          
+          // Set the parent ID for the new item
+          if (newItems[newItem.id]) {
+            newItems[newItem.id].parentId = targetId;
+          }
+          
+          return newItems;
         });
       });
     },
@@ -72,16 +82,16 @@ export function createForeignDropHandlers<T extends TreeItem = TreeItem>(
     onCompleteForeignDrop: (items: ItemInstance<T>[]) => {
       removeItemsFromParents(items, (item, newChildrenIds) => {
         setItems(prevItems => {
-          const parentItem = prevItems[item.getId()];
+          const newItems = { ...prevItems };
+          const parentId = item.getId();
+          const parentItem = newItems[parentId];
+          
           if (!parentItem || !isFolder(parentItem)) return prevItems;
           
-          return {
-            ...prevItems,
-            [item.getId()]: {
-              ...parentItem,
-              children: newChildrenIds
-            } as T
-          };
+          // Update the parent's children array
+          (parentItem as any).children = newChildrenIds;
+          
+          return newItems;
         });
       });
     },
