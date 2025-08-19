@@ -109,15 +109,17 @@ export const Folder: React.FC<FolderProps> = ({
   return (
     <div
       className={cn(
-        'flex items-center gap-1 rounded px-1 py-0.5 transition-colors',
-        folder.isSelected && 'bg-accent',
-        folder.isFocused && 'ring-2 ring-primary ring-offset-1',
+        'flex items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 relative',
+        folder.isSelected && 'bg-primary/20 dark:bg-primary/15 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-tertiary dark:before:bg-secondary before:rounded-full',
         folder.isArchived && 'opacity-50',
         className
       )}
+      data-focused={folder.isFocused}
     >
       {showChevron && folder.hasChildren && (
-        <ChevronIcon className="size-3 text-muted-foreground" />
+        <span data-chevron className="flex items-center justify-center cursor-pointer hover:bg-muted/80 rounded p-0.5">
+          <ChevronIcon className="size-3 text-muted-foreground" />
+        </span>
       )}
       
       {showChevron && !folder.hasChildren && (

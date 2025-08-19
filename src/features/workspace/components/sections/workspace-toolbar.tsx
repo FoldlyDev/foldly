@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import {
   FolderPlus,
+  Upload,
   Search,
   MoreVertical,
   Minimize2,
@@ -21,13 +22,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/shadcn/dropdown-menu';
-// import { useWorkspaceUI } from '../../hooks/use-workspace-ui'; // TODO: Re-enable when needed
+import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
+import { setDragOperationActive } from '../../lib/tree-data';
 import { toast } from 'sonner';
-import { addTreeItem, removeTreeItem, getTreeId } from '@/components/file-tree/core/tree';
-import type { TreeItem as TreeItemType, TreeFolderItem } from '@/components/file-tree/types/tree-types';
 import {
   BatchOperationModal,
   type BatchOperationItem,
@@ -36,9 +36,23 @@ import {
 
 interface WorkspaceToolbarProps {
   className?: string;
-  treeInstance?: any; // Using the new tree instance from @headless-tree/react
-  workspaceId?: string; // Need workspace ID for operations
-  treeData?: Record<string, TreeItemType>; // Need access to tree data
+  treeInstance?: {
+    getSelectedItems?: () => Array<{
+      getId: () => string;
+      getItemName: () => string;
+      isFolder: () => boolean;
+    }>;
+    getItemInstance?: (
+      id: string
+    ) => { expand: () => void; isExpanded: () => boolean } | null;
+    addFolder?: (name: string, parentId?: string) => string | null;
+    deleteItems?: (itemIds: string[]) => void;
+    expandAll?: () => void;
+    collapseAll?: () => void;
+    isTouchDevice?: () => boolean;
+    isSelectionMode?: () => boolean;
+    setSelectionMode?: (mode: boolean) => void;
+  };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedItems?: string[];
@@ -50,8 +64,6 @@ interface WorkspaceToolbarProps {
 export function WorkspaceToolbar({
   className = '',
   treeInstance,
-  workspaceId,
-  treeData = {},
   searchQuery = '',
   setSearchQuery,
   selectedItems = [],
@@ -67,13 +79,14 @@ export function WorkspaceToolbar({
   >();
   const queryClient = useQueryClient();
 
-  // const { openUploadModal } = useWorkspaceUI(); // TODO: Re-enable when needed
+  const { openUploadModal } = useWorkspaceUI();
 
-  // For now, detect mobile using window width
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  // Get mobile state from tree instance
+  const isMobile = treeInstance?.isTouchDevice?.() || false;
 
-  // Use external selection mode state
-  const isSelectionMode = selectionMode || false;
+  // Use external selection mode state if provided, otherwise fallback to tree instance
+  const isSelectionMode =
+    selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
 
   // Handle selection mode toggle
   const handleToggleSelectionMode = () => {
@@ -81,6 +94,10 @@ export function WorkspaceToolbar({
     // Update external state if handler provided
     if (onSelectionModeChange) {
       onSelectionModeChange(newMode);
+    }
+    // Also update tree instance if available
+    if (treeInstance?.setSelectionMode) {
+      treeInstance.setSelectionMode(newMode);
     }
   };
 
@@ -109,56 +126,57 @@ export function WorkspaceToolbar({
 
       const totalItems = selectedItems.length;
 
-      // Initialize progress
-      setBatchProgress({
-        completed: 0,
-        total: totalItems,
-        failed: [],
-      });
+      // Set operation active to prevent data rebuilds during batch operation
+      setDragOperationActive(true);
 
-      // Update the tree UI immediately using new API (following inline toolbar pattern)
-      const treeId = getTreeId(treeInstance);
-      if (treeInstance && treeId) {
-        // Remove items from tree using the new API
-        removeTreeItem(treeInstance, selectedItems, treeId);
-        
-        // Clear selection after deletion
-        if (treeInstance.clearSelection) {
-          treeInstance.clearSelection();
+      try {
+        // Initialize progress
+        setBatchProgress({
+          completed: 0,
+          total: totalItems,
+          failed: [],
+        });
+
+        // Update the tree UI immediately
+        if (treeInstance?.deleteItems) {
+          treeInstance.deleteItems(selectedItems);
         }
-      }
 
-      // Track progress
-      setBatchProgress(prev =>
-        prev ? { ...prev, currentItem: 'Processing items...' } : undefined
-      );
-
-      const result = await batchDeleteItemsAction(selectedItems);
-
-      if (!result.success) {
+        // Track progress
         setBatchProgress(prev =>
-          prev
-            ? {
-                ...prev,
-                failed: [result.error || 'Unknown error'],
-                completed: totalItems,
-              }
-            : undefined
+          prev ? { ...prev, currentItem: 'Processing items...' } : undefined
         );
-        throw new Error(result.error || 'Failed to delete items');
+
+        const result = await batchDeleteItemsAction(selectedItems);
+
+        if (!result.success) {
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  failed: [result.error || 'Unknown error'],
+                  completed: totalItems,
+                }
+              : undefined
+          );
+          throw new Error(result.error || 'Failed to delete items');
+        }
+
+        // Mark as complete
+        setBatchProgress(prev => {
+          if (!prev) return undefined;
+          const { currentItem, ...rest } = prev;
+          return {
+            ...rest,
+            completed: totalItems,
+          };
+        });
+
+        return result.data;
+      } finally {
+        // Always clear operation state
+        setDragOperationActive(false);
       }
-
-      // Mark as complete
-      setBatchProgress(prev => {
-        if (!prev) return undefined;
-        const { currentItem, ...rest } = prev;
-        return {
-          ...rest,
-          completed: totalItems,
-        };
-      });
-
-      return result.data;
     },
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
@@ -168,7 +186,7 @@ export function WorkspaceToolbar({
       });
       onClearSelection?.();
     },
-    onError: () => {
+    onError: error => {
       // If database deletion fails, restore the tree state with immediate refetch
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
     },
@@ -192,110 +210,19 @@ export function WorkspaceToolbar({
       }
 
       // Get selected folder from tree if available
-      const state = treeInstance?.getState?.();
-      const selectedTreeItems = state?.selectedItems || [];
-      
-      // Determine parent folder ID
-      let parentFolderId = selectedTreeItems.length > 0 ? selectedTreeItems[0] : undefined;
-      
-      // Check if the selected item is actually a folder
-      if (parentFolderId && treeData[parentFolderId]) {
-        const selectedItem = treeData[parentFolderId];
-        
-        // If selected item is a file, use its parent folder
-        if (selectedItem && selectedItem.type === 'file') {
-          parentFolderId = selectedItem.parentId || undefined;
-        }
-      }
-      
-      // IMPORTANT: If parentFolderId is the workspace ID, set it to undefined
-      // The database expects null/undefined for root folders, not the workspace ID
-      if (parentFolderId === workspaceId) {
-        parentFolderId = undefined;
+      const selectedItems = treeInstance?.getSelectedItems?.() || [];
+      const parentFolderId =
+        selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
+
+      // Add to tree UI immediately
+      if (treeInstance?.addFolder) {
+        treeInstance.addFolder(trimmedName, parentFolderId);
       }
 
-      // Create folder data with all required fields
-      const newFolderId = `folder-temp-${Date.now()}`; // Temp ID until database returns real one
-      const newFolder: TreeFolderItem = {
-        id: newFolderId,
-        name: trimmedName,
-        type: 'folder',
-        path: '/' + trimmedName,
-        depth: 1,
-        fileCount: 0,
-        totalSize: 0,
-        isArchived: false,
-        sortOrder: 0,
-        children: [],
-        parentId: parentFolderId,
-      };
-
-      // Add to tree UI immediately using new API
-      const treeId = getTreeId(treeInstance);
-      
-      if (treeInstance && treeId) {
-        // Use workspace ID as parent if no parent folder selected (for UI only)
-        const targetParentId = parentFolderId || workspaceId;
-        
-        // Check if folder with this name already exists and add suffix if needed
-        if (targetParentId && treeData[targetParentId]) {
-          const parentItem = treeData[targetParentId];
-          if (parentItem.type === 'folder') {
-            const parentFolder = parentItem as TreeFolderItem;
-            let finalName = trimmedName;
-            let suffix = 2;
-            
-            // Keep checking for existing names and increment suffix
-            while (parentFolder.children?.some(childId => {
-              const child = treeData[childId];
-              return child && child.name === finalName;
-            })) {
-              finalName = `${trimmedName} (${suffix})`;
-              suffix++;
-            }
-            
-            // Update the folder name if it was changed
-            if (finalName !== trimmedName) {
-              newFolder.name = finalName;
-              newFolder.path = '/' + finalName;
-            }
-          }
-        }
-        
-        if (targetParentId) {
-          addTreeItem(treeInstance, targetParentId, newFolder, treeId);
-        }
-      }
-
-      // Use the potentially modified name for the database action too
-      const finalFolderName = newFolder.name;
-      
-      const result = await createFolderAction(finalFolderName, parentFolderId);
-      
+      const result = await createFolderAction(trimmedName, parentFolderId);
       if (!result.success) {
         throw new Error(result.error || 'Failed to create folder');
       }
-      
-      // Replace temp ID with real database ID if available
-      if (result.data?.id && treeData[newFolderId]) {
-        // Update the folder with the real ID
-        const realFolder = { ...treeData[newFolderId], id: result.data.id };
-        delete treeData[newFolderId];
-        treeData[result.data.id] = realFolder;
-        
-        // Update parent's children array if needed
-        const targetParentId = parentFolderId || workspaceId;
-        if (targetParentId && treeData[targetParentId] && treeData[targetParentId].type === 'folder') {
-          const parent = treeData[targetParentId] as TreeFolderItem;
-          if (parent.children) {
-            const index = parent.children.indexOf(newFolderId);
-            if (index !== -1) {
-              parent.children[index] = result.data.id;
-            }
-          }
-        }
-      }
-      
       return result.data;
     },
     onSuccess: () => {
@@ -321,20 +248,35 @@ export function WorkspaceToolbar({
   // Convert selected items to BatchOperationItem format
   const getBatchOperationItems = (): BatchOperationItem[] => {
     try {
+      const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
       return selectedItems
         .map(id => {
-          const item = treeData[id];
-          if (!item) {
-            return null;
+          const treeItem = selectedTreeItems.find(item => {
+            try {
+              return item?.getId?.() === id;
+            } catch {
+              return false;
+            }
+          });
+
+          let name = 'Unknown';
+          let type: 'file' | 'folder' = 'file';
+
+          try {
+            name = treeItem?.getItemName?.() || 'Unknown';
+          } catch {
+            name = 'Unknown';
           }
 
-          return {
-            id,
-            name: item.name,
-            type: item.type as 'file' | 'folder',
-          };
+          try {
+            type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
+          } catch {
+            type = 'file';
+          }
+
+          return { id, name, type };
         })
-        .filter((item): item is BatchOperationItem => item !== null);
+        .filter(item => item.name !== 'Unknown'); // Filter out invalid items
     } catch (error) {
       // Error in getBatchOperationItems - return empty array
       return [];
@@ -354,18 +296,11 @@ export function WorkspaceToolbar({
 
   // Get the container folder name for new folder creation
   const getTargetFolderName = () => {
-    const selectedFolders = selectedItems.filter(id => {
-      const item = treeData[id];
-      return item && item.type === 'folder';
-    });
+    const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
+    const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
 
     if (selectedFolders.length === 1) {
-      const folderId = selectedFolders[0];
-      if (folderId) {
-        const folder = treeData[folderId];
-        return folder?.name || 'Selected Folder';
-      }
-      return 'Selected Folder';
+      return selectedFolders[0]?.getItemName?.() || 'Selected Folder';
     } else if (selectedFolders.length > 1) {
       return 'Multiple Folders';
     } else {

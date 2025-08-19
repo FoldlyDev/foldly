@@ -14,28 +14,56 @@ export const addTreeItem = (
   treeId: string,  // Add treeId parameter
   getTreeData: (treeId: string) => { data: Record<string, TreeItemType> }
 ) => {
+  console.log('🟤 [tree-manipulation] addTreeItem called:', {
+    parentId,
+    itemId: item.id,
+    itemName: item.name,
+    treeId
+  });
+  
   const { data } = getTreeData(treeId);
+  console.log('🟤 [tree-manipulation] Current data keys before add:', Object.keys(data));
   
   // First add the item to data
   data[item.id] = item;
+  console.log('🟤 [tree-manipulation] Added item to data object');
 
   // Now use insertItemsAtTarget just like drag drop does!
   const parentItem = treeInstance.getItemInstance(parentId);
+  console.log('🟤 [tree-manipulation] Parent item found:', {
+    parentId,
+    parentExists: !!parentItem,
+    parentName: parentItem?.getItemName?.()
+  });
+  
   if (parentItem) {
     // Simple target - just the item (will drop inside it)
     const target: DragTarget<TreeItemType> = {
       item: parentItem,
     };
 
+    console.log('🟤 [tree-manipulation] Calling insertItemsAtTarget');
     // Use the same function that drag drop uses!
     insertItemsAtTarget([item.id], target, (item, newChildrenIds) => {
       const itemData = data[item.getId()];
+      console.log('🟤 [tree-manipulation] insertItemsAtTarget callback:', {
+        itemId: item.getId(),
+        newChildrenIds,
+        hasItemData: !!itemData
+      });
       if (itemData && isFolder(itemData)) {
         const folderItem = itemData as TreeFolderItem;
         folderItem.children = newChildrenIds;
+        console.log('🟤 [tree-manipulation] Updated folder children:', newChildrenIds);
       }
     });
+    console.log('🟤 [tree-manipulation] insertItemsAtTarget completed');
+  } else {
+    console.log('⚠️ [tree-manipulation] Parent item not found!', { parentId });
   }
+  
+  console.log('🟤 [tree-manipulation] Final data keys:', Object.keys(data));
+  console.log('🟤 [tree-manipulation] addTreeItem completed');
 };
 
 /**

@@ -61,8 +61,11 @@ body {
     /* background-color: #eee; */
 }
 
-button:focus-visible .treeitem.focused, .treeitem.searchmatch.focused {
-    outline: 2px solid black;
+/* Only show focus outline when using keyboard navigation, not on initial load */
+button[role="treeitem"]:focus-visible [data-focused="true"] {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 1px;
+    border-radius: 0.25rem;
 }
 
 .treeitem.drop {
@@ -132,6 +135,45 @@ button:focus-visible .treeitem.focused, .treeitem.searchmatch.focused {
     display: flex;
     align-items: center;
     gap: 2px;
+    position: relative;
+}
+
+/* Indentation guides for nested items */
+.tree {
+    --indent-guide-size: 1px;
+    --indent-guide-color: rgba(128, 128, 128, 0.2);
+}
+
+/* Vertical indent guide for each level */
+.outeritem[data-depth]:not([data-depth="0"]) {
+    position: relative;
+}
+
+/* Create indent guides for each level */
+.outeritem[data-depth]:not([data-depth="0"])::before {
+    content: '';
+    position: absolute;
+    left: calc((var(--depth) - 1) * 20px + 10px);
+    top: 0;
+    bottom: 0;
+    width: var(--indent-guide-size);
+    background: var(--indent-guide-color);
+}
+
+/* Hide guide for last child */
+.outeritem[data-last-child="true"]::before {
+    height: 50%;
+}
+
+/* Horizontal connector */
+.outeritem[data-depth]:not([data-depth="0"])::after {
+    content: '';
+    position: absolute;
+    left: calc((var(--depth) - 1) * 20px + 10px);
+    top: 50%;
+    width: 10px;
+    height: var(--indent-guide-size);
+    background: var(--indent-guide-color);
 }
 .outeritem button:not([role="treeitem"]) {
     padding: 2px 4px;

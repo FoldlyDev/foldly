@@ -100,12 +100,20 @@ const navigationData: NavSection[] = [
 
 // User Profile Button Component
 function UserProfileButton({ shouldExpand }: { shouldExpand: boolean }) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleProfileClick = () => {
     router.push('/dashboard/settings');
   };
+
+  // Show fallback during SSR and initial client render
+  const showImage = mounted && isLoaded && user?.imageUrl;
 
   return (
     <button
@@ -119,7 +127,7 @@ function UserProfileButton({ shouldExpand }: { shouldExpand: boolean }) {
     >
       {/* User Avatar */}
       <div className='w-8 h-8 rounded-full overflow-hidden flex-shrink-0'>
-        {user?.imageUrl ? (
+        {showImage ? (
           <Image
             src={user.imageUrl}
             alt={user.fullName || 'User profile'}

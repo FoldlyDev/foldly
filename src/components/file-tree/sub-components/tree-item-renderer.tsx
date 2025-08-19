@@ -57,7 +57,7 @@ function mapToFolderDisplayItem(
     name: item.name,
     path: item.path,
     depth: item.depth,
-    parentFolderId: item.parentId,
+    parentFolderId: item.parentId ?? null,  // Ensure undefined becomes null
     
     // Statistics if available
     fileCount: item.fileCount,
@@ -69,7 +69,7 @@ function mapToFolderDisplayItem(
     isSelected: itemInstance.isSelected(),
     isFocused: itemInstance.isFocused(),
     isRenaming: itemInstance.isRenaming(),
-    hasChildren: (item.children?.length ?? 0) > 0,
+    hasChildren: itemInstance.isFolder(),  // All folders can potentially have children
   };
 }
 
@@ -120,6 +120,6 @@ export const TreeItemRenderer: React.FC<TreeItemRendererProps> = ({
     );
   }
 
-  // Fallback for unknown types
-  return <div className="text-sm">{item.name}</div>;
+  // Fallback for unknown types (shouldn't happen but satisfies TypeScript)
+  return <div className="text-sm">{(item as TreeItemType).name}</div>;
 };
