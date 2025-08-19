@@ -14,6 +14,7 @@ A data-driven file tree implementation using [@headless-tree/react](https://head
 - **Moving**: Drag items between folders to change their parent
 - Handled by `onDrop` handler which updates the parent's children array
 - Works automatically with `dragAndDropFeature` and `canReorder: true`
+- **Drag Line**: Shows during active drag operations only, with error handling for edge cases (e.g., dragging to last position)
 
 ### External Interactions
 

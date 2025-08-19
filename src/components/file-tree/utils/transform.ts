@@ -6,9 +6,28 @@ import type { File, Folder } from '@/lib/database/types';
  */
 export function transformToTreeStructure(
   folders: Folder[],
-  files: File[]
+  files: File[],
+  workspace?: { id: string; name: string } | null
 ): Record<string, TreeItem> {
   const treeData: Record<string, TreeItem> = {};
+
+  // Add workspace root if provided
+  if (workspace) {
+    const workspaceRoot: TreeFolderItem = {
+      id: workspace.id,
+      name: workspace.name,
+      type: 'folder',
+      parentId: null,
+      path: '/',
+      depth: 0,
+      fileCount: files.length,
+      totalSize: files.reduce((sum, f) => sum + f.fileSize, 0),
+      isArchived: false,
+      sortOrder: 0,
+      children: [],
+    };
+    treeData[workspace.id] = workspaceRoot;
+  }
 
   // Transform folders
   folders.forEach(folder => {
@@ -16,7 +35,7 @@ export function transformToTreeStructure(
       id: folder.id,
       name: folder.name,
       type: 'folder',
-      parentId: folder.parentFolderId || null,
+      parentId: folder.parentFolderId || (workspace?.id ?? null),
       path: folder.path,
       depth: folder.depth,
       children: [], // Will be populated below
@@ -35,7 +54,7 @@ export function transformToTreeStructure(
       id: file.id,
       name: file.fileName || file.originalName,
       type: 'file',
-      parentId: file.folderId || null,
+      parentId: file.folderId || (workspace?.id ?? null),
       mimeType: file.mimeType,
       fileSize: file.fileSize,
       extension: file.extension,
@@ -55,6 +74,13 @@ export function transformToTreeStructure(
         if (!folderParent.children?.includes(item.id)) {
           folderParent.children = [...(folderParent.children || []), item.id];
         }
+      }
+    } else if (workspace && !item.parentId && item.id !== workspace.id) {
+      // Items without parents should be children of workspace root
+      const workspaceRoot = treeData[workspace.id] as TreeFolderItem;
+      if (workspaceRoot && !workspaceRoot.children?.includes(item.id)) {
+        workspaceRoot.children = [...(workspaceRoot.children || []), item.id];
+        item.parentId = workspace.id;
       }
     }
   });

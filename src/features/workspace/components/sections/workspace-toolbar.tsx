@@ -52,6 +52,7 @@ interface WorkspaceToolbarProps {
     isTouchDevice?: () => boolean;
     isSelectionMode?: () => boolean;
     setSelectionMode?: (mode: boolean) => void;
+    addFolderToTree?: (folder: any) => void;
   };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
@@ -214,19 +215,28 @@ export function WorkspaceToolbar({
       const parentFolderId =
         selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
 
-      // Add to tree UI immediately
-      if (treeInstance?.addFolder) {
-        treeInstance.addFolder(trimmedName, parentFolderId);
-      }
-
+      // Don't add to tree immediately - addFolder returns null to indicate server action should handle it
+      const tempId = treeInstance?.addFolder?.(trimmedName, parentFolderId);
+      
       const result = await createFolderAction(trimmedName, parentFolderId);
       if (!result.success) {
         throw new Error(result.error || 'Failed to create folder');
       }
+      
+      // If we didn't add a temp folder (tempId is null), add the real folder to tree now
+      if (!tempId && result.data && treeInstance?.addFolderToTree) {
+        treeInstance.addFolderToTree(result.data);
+      }
+      
       return result.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+    onSuccess: (data) => {
+      // Don't invalidate queries immediately - the tree is already updated
+      // Only invalidate to sync any other data that might depend on this
+      queryClient.invalidateQueries({ 
+        queryKey: workspaceQueryKeys.tree(),
+        refetchType: 'none' // Don't refetch immediately
+      });
       toast.success('Folder created successfully');
       setNewFolderName('');
       setIsCreatingFolder(false);

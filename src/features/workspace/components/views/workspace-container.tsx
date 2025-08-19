@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo, useRef, useCallback } from 'react';
+import React, { useState, lazy, Suspense, useMemo, useRef, useCallback, useEffect } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
@@ -19,100 +19,14 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
-import type { TreeItem, TreeFolderItem, TreeFileItem } from '@/components/file-tree/types';
-import type { File, Folder } from '@/lib/database/types';
+import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
+import type { TreeFolderItem } from '@/components/file-tree/types';
+
+// Import tree manipulation functions
+import { addTreeItem, removeTreeItem } from '@/components/file-tree/core/tree';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
-
-// Helper function to transform database data to tree format
-function transformToTreeData(
-  workspace: { id: string; name: string } | null,
-  folders: Folder[],
-  files: File[]
-): Record<string, TreeItem> {
-  const treeData: Record<string, TreeItem> = {};
-
-  if (!workspace) return treeData;
-
-  // Add workspace as root folder
-  treeData[workspace.id] = {
-    id: workspace.id,
-    name: workspace.name,
-    type: 'folder',
-    parentId: null,
-    path: '/',
-    depth: 0,
-    fileCount: files.length,
-    totalSize: files.reduce((sum, f) => sum + f.fileSize, 0),
-    isArchived: false,
-    sortOrder: 0,
-    children: [],
-  } as TreeFolderItem;
-
-  // Create a map for easy parent lookup
-  const folderMap = new Map<string, TreeFolderItem>();
-  folderMap.set(workspace.id, treeData[workspace.id] as TreeFolderItem);
-
-  // Add folders with proper hierarchy
-  folders
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .forEach(folder => {
-      const treeFolder: TreeFolderItem = {
-        id: folder.id,
-        name: folder.name,
-        type: 'folder',
-        parentId: folder.parentFolderId || workspace.id,
-        path: folder.path,
-        depth: folder.depth,
-        fileCount: folder.fileCount,
-        totalSize: folder.totalSize,
-        isArchived: folder.isArchived,
-        sortOrder: folder.sortOrder,
-        children: [],
-        record: folder,
-      };
-
-      treeData[folder.id] = treeFolder;
-      folderMap.set(folder.id, treeFolder);
-
-      // Add to parent's children
-      const parentId = folder.parentFolderId || workspace.id;
-      const parent = folderMap.get(parentId);
-      if (parent?.children) {
-        parent.children.push(folder.id);
-      }
-    });
-
-  // Add files
-  files
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .forEach(file => {
-      const treeFile: TreeFileItem = {
-        id: file.id,
-        name: file.fileName,
-        type: 'file',
-        parentId: file.folderId || workspace.id,
-        mimeType: file.mimeType,
-        fileSize: file.fileSize,
-        extension: file.extension,
-        thumbnailPath: file.thumbnailPath,
-        processingStatus: file.processingStatus,
-        record: file,
-      };
-
-      treeData[file.id] = treeFile;
-
-      // Add to parent's children
-      const parentId = file.folderId || workspace.id;
-      const parent = folderMap.get(parentId);
-      if (parent?.children) {
-        parent.children.push(file.id);
-      }
-    });
-
-  return treeData;
-}
 
 export function WorkspaceContainer() {
   // Get workspace data with loading states
@@ -148,14 +62,21 @@ export function WorkspaceContainer() {
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+  
+  // Track if we have touch support
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
-  // Transform workspace data to tree format
+  // Transform workspace data to tree format using the file-tree's utility
   const treeData = useMemo(() => {
     if (!workspaceData) return {};
-    return transformToTreeData(
-      workspaceData.workspace,
+    return transformToTreeStructure(
       workspaceData.folders || [],
-      workspaceData.files || []
+      workspaceData.files || [],
+      workspaceData.workspace
     );
   }, [workspaceData]);
 
@@ -175,10 +96,71 @@ export function WorkspaceContainer() {
     setSelectionMode(false);
   };
 
-  // Handle tree ready callback
+  // Handle tree ready callback and extend with needed methods
   const handleTreeReady = useCallback((tree: any) => {
-    setTreeInstance(tree);
-  }, []);
+    // Extend the tree instance with methods the toolbar expects
+    const extendedTree = {
+      ...tree,
+      // Add methods that toolbar expects
+      getSelectedItems: () => {
+        // The new tree tracks selected items differently
+        return tree.getSelectedItems ? tree.getSelectedItems() : [];
+      },
+      getItemInstance: (id: string) => {
+        // Get specific item instance
+        return tree.getItemInstance ? tree.getItemInstance(id) : null;
+      },
+      addFolder: (_name: string, _parentId?: string) => {
+        // Don't add immediately - return null to signal toolbar to use server action
+        // We'll add to tree when server action succeeds
+        return null;
+      },
+      deleteItems: (itemIds: string[]) => {
+        // Remove items from tree immediately for responsive UI
+        if (tree && treeIdRef.current) {
+          removeTreeItem(tree, itemIds, treeIdRef.current);
+        }
+      },
+      // Add a method to add folder after successful server action
+      addFolderToTree: (folder: any) => {
+        if (!tree || !treeIdRef.current || !folder) return;
+        
+        const treeFolder: TreeFolderItem = {
+          id: folder.id,
+          name: folder.name,
+          type: 'folder',
+          parentId: folder.parentFolderId || workspaceData?.workspace?.id || null,
+          path: folder.path || '/',
+          depth: folder.depth || 0,
+          fileCount: 0,
+          totalSize: 0,
+          isArchived: false,
+          sortOrder: folder.sortOrder || 999,
+          children: [],
+          record: folder,
+        };
+        
+        const parentId = folder.parentFolderId || workspaceData?.workspace?.id || '';
+        addTreeItem(tree, parentId, treeFolder, treeIdRef.current);
+      },
+      expandAll: () => {
+        if (tree.expandAll) tree.expandAll();
+      },
+      collapseAll: () => {
+        if (tree.collapseAll) tree.collapseAll();
+      },
+      isTouchDevice: () => isTouchDevice,
+      isSelectionMode: () => selectionMode,
+      setSelectionMode: (mode: boolean) => {
+        setSelectionMode(mode);
+      },
+      setSelectedItems: (items: string[]) => {
+        if (tree.setSelectedItems) tree.setSelectedItems(items);
+      },
+    };
+    
+    setTreeInstance(extendedTree);
+  }, [selectionMode, isTouchDevice, workspaceData?.workspace?.id]);
 
   // Monitor storage changes and show threshold notifications
   React.useEffect(() => {

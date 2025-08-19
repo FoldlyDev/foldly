@@ -59,39 +59,39 @@ export const addTreeItemExport = (
   item: TreeItemType,
   treeId: string
 ) => {
-  console.log('🔵 [FileTree] addTreeItemExport called:', {
-    parentId,
-    itemId: item.id,
-    itemName: item.name,
-    treeId,
-    timestamp: Date.now()
-  });
+  // console.log('🔵 [FileTree] addTreeItemExport called:', {
+  //   parentId,
+  //   itemId: item.id,
+  //   itemName: item.name,
+  //   treeId,
+  //   timestamp: Date.now()
+  // });
   
-  const dataBefore = Object.keys(getTreeData(treeId).data);
-  console.log('🔵 [FileTree] Data keys before add:', dataBefore);
+  // const dataBefore = Object.keys(getTreeData(treeId).data);
+  // console.log('🔵 [FileTree] Data keys before add:', dataBefore);
   
   addTreeItem(treeInstance, parentId, item, treeId, getTreeData);
   
-  const dataAfter = Object.keys(getTreeData(treeId).data);
-  console.log('🔵 [FileTree] Data keys after add:', dataAfter);
-  console.log('🔵 [FileTree] New keys added:', dataAfter.filter(k => !dataBefore.includes(k)));
+  // const dataAfter = Object.keys(getTreeData(treeId).data);
+  // console.log('🔵 [FileTree] Data keys after add:', dataAfter);
+  // console.log('🔵 [FileTree] New keys added:', dataAfter.filter(k => !dataBefore.includes(k)));
   
   // Schedule a rebuild to ensure the tree updates
   // Use setTimeout to allow the data mutation to complete first
-  console.log('🔵 [FileTree] Scheduling manual rebuildTree with 0ms delay');
+  // console.log('🔵 [FileTree] Scheduling manual rebuildTree with 0ms delay');
   setTimeout(() => {
     if (treeInstance.rebuildTree) {
-      console.log('🔴 [FileTree] EXECUTING manual rebuildTree NOW!', {
-        treeId,
-        itemCountBefore: treeInstance.getItems().length,
-        timestamp: Date.now()
-      });
+      // console.log('🔴 [FileTree] EXECUTING manual rebuildTree NOW!', {
+      //   treeId,
+      //   itemCountBefore: treeInstance.getItems().length,
+      //   timestamp: Date.now()
+      // });
       treeInstance.rebuildTree();
-      console.log('🔴 [FileTree] Manual rebuildTree COMPLETED!', {
-        treeId,
-        itemCountAfter: treeInstance.getItems().length,
-        timestamp: Date.now()
-      });
+      // console.log('🔴 [FileTree] Manual rebuildTree COMPLETED!', {
+      //   treeId,
+      //   itemCountAfter: treeInstance.getItems().length,
+      //   timestamp: Date.now()
+      // });
     }
   }, 0);
 };
@@ -272,12 +272,12 @@ export default function FileTree({
   
   // Initialize data with provided initial data
   React.useEffect(() => {
-    console.log('🟡 [FileTree] Initializing data effect:', {
-      treeId,
-      previousDataKeys: Object.keys(data),
-      newDataKeys: Object.keys(initialData),
-      timestamp: Date.now()
-    });
+    // console.log('🟡 [FileTree] Initializing data effect:', {
+    //   treeId,
+    //   previousDataKeys: Object.keys(data),
+    //   newDataKeys: Object.keys(initialData),
+    //   timestamp: Date.now()
+    // });
     
     // Keep track of temp items that should be preserved
     const tempItems: Record<string, TreeItemType> = {};
@@ -317,17 +317,17 @@ export default function FileTree({
       }
     });
     
-    console.log('🟡 [FileTree] Data initialized, final keys:', Object.keys(data));
+    // console.log('🟡 [FileTree] Data initialized, final keys:', Object.keys(data));
   }, [initialData, data, updateCounter]); // Include updateCounter to re-sync on force updates
 
   // Only log when tree is actually being created (first render)
   React.useEffect(() => {
-    console.log('🟢 [FileTree] Tree component mounted:', {
-      treeId,
-      rootId,
-      dataKeys: Object.keys(data),
-      timestamp: Date.now()
-    });
+    // console.log('🟢 [FileTree] Tree component mounted:', {
+    //   treeId,
+    //   rootId,
+    //   dataKeys: Object.keys(data),
+    //   timestamp: Date.now()
+    // });
   }, []);
   
   // Memoize the tree configuration to prevent recreating the tree on every render
@@ -387,11 +387,11 @@ export default function FileTree({
   // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
     if (onTreeReady && tree) {
-      console.log('🟣 [FileTree] Tree ready, calling onTreeReady:', {
-        treeId,
-        itemCount: tree.getItems().length,
-        timestamp: Date.now()
-      });
+      // console.log('🟣 [FileTree] Tree ready, calling onTreeReady:', {
+      //   treeId,
+      //   itemCount: tree.getItems().length,
+      //   timestamp: Date.now()
+      // });
       // Store the treeId association in the WeakMap
       treeIdMap.set(tree, treeId);
       onTreeReady(tree);
@@ -402,32 +402,32 @@ export default function FileTree({
   // This is the mechanism that prevents items from disappearing
   React.useEffect(() => {
     const dataLength = Object.keys(data).length;
-    console.log('🟠 [FileTree] Data change detection effect:', {
-      treeId,
-      hasTree: !!tree,
-      dataLength,
-      dataKeys: Object.keys(data).slice(0, 5), // Show first 5 keys
-      timestamp: Date.now()
-    });
+    // console.log('🟠 [FileTree] Data change detection effect:', {
+    //   treeId,
+    //   hasTree: !!tree,
+    //   dataLength,
+    //   dataKeys: Object.keys(data).slice(0, 5), // Show first 5 keys
+    //   timestamp: Date.now()
+    // });
     
     if (tree && dataLength > 0) {
-      console.log('🟠 [FileTree] Scheduling auto rebuildTree in 10ms');
+      // console.log('🟠 [FileTree] Scheduling auto rebuildTree in 10ms');
       // Small delay to ensure data mutations are complete
       const timer = setTimeout(() => {
-        console.log('🔴 [FileTree] EXECUTING auto rebuildTree NOW!', {
-          treeId,
-          itemCountBefore: tree.getItems().length,
-          timestamp: Date.now()
-        });
+        // console.log('🔴 [FileTree] EXECUTING auto rebuildTree NOW!', {
+        //   treeId,
+        //   itemCountBefore: tree.getItems().length,
+        //   timestamp: Date.now()
+        // });
         tree.rebuildTree();
-        console.log('🔴 [FileTree] Auto rebuildTree COMPLETED!', {
-          treeId,
-          itemCountAfter: tree.getItems().length,
-          timestamp: Date.now()
-        });
+        // console.log('🔴 [FileTree] Auto rebuildTree COMPLETED!', {
+        //   treeId,
+        //   itemCountAfter: tree.getItems().length,
+        //   timestamp: Date.now()
+        // });
       }, 10);
       return () => {
-        console.log('🟠 [FileTree] Cleanup: Cancelling scheduled auto rebuild');
+        // console.log('🟠 [FileTree] Cleanup: Cancelling scheduled auto rebuild');
         clearTimeout(timer);
       };
     }
@@ -517,24 +517,42 @@ export default function FileTree({
         ) : (
           (() => {
             const items = tree.getItems();
-            console.log('🎆 [FileTree] RENDERING tree items:', {
-              treeId,
-              totalItems: items.length,
-              itemIds: items.map(i => i.getId()).slice(0, 5), // First 5 IDs
-              searchQuery,
-              filteredItemsCount: filteredItems.length,
-              timestamp: Date.now()
-            });
+            // Only log during development and not on every render
+            if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
+              console.log('🎆 [FileTree] RENDERING tree items:', {
+                treeId,
+                totalItems: items.length,
+                itemIds: items.map(i => i.getId()).slice(0, 5), // First 5 IDs
+                searchQuery,
+                filteredItemsCount: filteredItems.length,
+                timestamp: Date.now()
+              });
+            }
             return items.map(item => {
-            const itemData = item.getItemData();
-            const itemId = item.getId();
-            const isVisible = !searchQuery || filteredItems.includes(itemId);
+            // Add null checks for item methods
+            if (!item || !item.getId || !item.getItemData) {
+              console.warn('Invalid item encountered during rendering');
+              return null;
+            }
             
-            // Check if this is the last child of its parent
-            const parent = item.getParent();
-            const isLastChild = parent ? 
-              parent.getChildren()[parent.getChildren().length - 1]?.getId() === itemId : 
-              false;
+            try {
+              const itemData = item.getItemData();
+              const itemId = item.getId();
+              const isVisible = !searchQuery || filteredItems.includes(itemId);
+              
+              // Check if this is the last child of its parent
+              const parent = item.getParent ? item.getParent() : null;
+              const isLastChild = parent ? (() => {
+                try {
+                  const children = parent.getChildren ? parent.getChildren() : [];
+                  if (!children || children.length === 0) return false;
+                  const lastChild = children[children.length - 1];
+                  return lastChild && lastChild.getId ? lastChild.getId() === itemId : false;
+                } catch (e) {
+                  console.warn('Error checking last child status:', e);
+                  return false;
+                }
+              })() : false;
 
             return isVisible ? (
               <React.Fragment key={item.getId()}>
@@ -593,12 +611,34 @@ export default function FileTree({
                 )}
               </React.Fragment>
             ) : null;
+            } catch (error) {
+              console.error('Error rendering tree item:', error, { itemId: item?.getId?.() });
+              return null;
+            }
           });
           })()
         )}
-        {tree.getDragLineStyle && tree.getDragLineStyle() && (
-          <div style={tree.getDragLineStyle()} className='dragline' />
-        )}
+        {(() => {
+          // Only try to render drag line if we're actively dragging
+          const dndState = tree.getState?.()?.dnd;
+          const isDragging = dndState?.draggedItems && dndState.draggedItems.length > 0;
+          if (!isDragging || !tree.getDragLineStyle) {
+            return null;
+          }
+          
+          try {
+            const style = tree.getDragLineStyle();
+            // Only render if we have a valid style object with actual positioning
+            if (style && typeof style === 'object' && ('top' in style || 'bottom' in style)) {
+              return <div style={style} className='dragline' />;
+            }
+            return null;
+          } catch (error) {
+            // Silently handle the error - this is expected when dragging to certain positions
+            // The headless-tree library tries to access elements that might not exist yet
+            return null;
+          }
+        })()}
       </div>
     </div>
   );
