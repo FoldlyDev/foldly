@@ -256,6 +256,7 @@ export function WorkspaceContainer() {
                     initialExpandedItems={initialExpandedItems}
                     initialSelectedItems={selectedItems}
                     onTreeReady={handleTreeReady}
+                    onSelectionChange={setSelectedItems}
                     showCheckboxes={selectionMode}
                     searchQuery={searchQuery}
                     onSearchChange={(query) => setSearchQuery(query)}

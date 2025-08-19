@@ -138,6 +138,8 @@ interface FileTreeProps {
   // Search/filter control
   searchQuery?: string;
   onSearchChange?: (query: string) => void; // Reserved for future search implementation
+  // Selection callback
+  onSelectionChange?: (selectedItems: string[]) => void;
 }
 
 export default function FileTree({
@@ -156,6 +158,7 @@ export default function FileTree({
   showCheckboxes = false,
   searchQuery = '',
   onSearchChange: _onSearchChange,
+  onSelectionChange,
 }: FileTreeProps) {
   // Update counter for re-syncing data
   const [updateCounter] = React.useReducer(x => x + 1, 0);
@@ -168,6 +171,23 @@ export default function FileTree({
   }
   const { syncDataLoader, data } = treeDataRef.current;
   
+  // Track if we should hide drag line (after clicking)
+  const [hideDragLine, setHideDragLine] = React.useState(false);
+  
+  // Store tree instance ref for clearDragState
+  const treeRef = React.useRef<any>(null);
+  
+  // Force clear drag state when clicking items
+  const clearDragState = React.useCallback(() => {
+    // Clear drag state if tree is available
+    if (treeRef.current?.applySubStateUpdate) {
+      treeRef.current.applySubStateUpdate("dnd", {});
+    }
+    setHideDragLine(true);
+    // Reset the flag after a short delay
+    setTimeout(() => setHideDragLine(false), 100);
+  }, []);
+  
   // Create custom feature to prevent folder expansion on click (only select)
   const customClickBehavior: FeatureImplementation<TreeItemType> = React.useMemo(() => ({
     itemInstance: {
@@ -177,6 +197,9 @@ export default function FileTree({
         return {
           ...prevProps,
           onClick: (e: React.MouseEvent) => {
+            // Clear any lingering drag state when clicking
+            clearDragState();
+            
             // Check if the click target is the chevron icon
             const target = e.target as HTMLElement;
             const isChevronClick = target.closest('[data-chevron]');
@@ -207,7 +230,7 @@ export default function FileTree({
         };
       },
     },
-  }), []);
+  }), [clearDragState]);
   
   // Create custom feature to clear selection when clicking root
   const clearSelectionOnRootClick: FeatureImplementation<TreeItemType> = React.useMemo(() => ({
@@ -380,9 +403,23 @@ export default function FileTree({
       customClickBehavior,
       clearSelectionOnRootClick,
     ],
-  }), [rootId, syncDataLoader, onRename, onDropForeignDragObject, onCompleteForeignDrop, customClickBehavior, clearSelectionOnRootClick, initialExpandedItems, initialSelectedItems, initialCheckedItems]);
+  }), [rootId, syncDataLoader, onRename, onDropForeignDragObject, onCompleteForeignDrop, customClickBehavior, clearSelectionOnRootClick, initialExpandedItems, initialSelectedItems, initialCheckedItems, data]);
   
   const tree = useTree<TreeItemType>(treeConfig);
+  
+  // Store tree instance in ref for clearDragState
+  React.useEffect(() => {
+    treeRef.current = tree;
+  }, [tree]);
+
+  // Track selection changes and notify parent
+  React.useEffect(() => {
+    if (tree && onSelectionChange) {
+      // Get current selection from tree state
+      const selectedItems = tree.getState?.()?.selectedItems || [];
+      onSelectionChange(selectedItems);
+    }
+  }, [tree?.getState?.()?.selectedItems, onSelectionChange]);
 
   // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
@@ -491,7 +528,7 @@ export default function FileTree({
   }, [searchQuery, tree]);
 
   return (
-    <div className='flex h-full flex-col gap-2 *:first:grow'>
+    <div className='file-tree-component flex h-full flex-col gap-2 *:first:grow'>
       {/* Tree Container - MUST have getContainerProps for drag/drop to work! */}
       <div 
         {...tree.getContainerProps()} 
@@ -499,6 +536,9 @@ export default function FileTree({
         onClick={(e) => {
           // Check if the click is directly on the container (empty space)
           if (e.target === e.currentTarget) {
+            // Clear any lingering drag state
+            clearDragState();
+            
             // Clear all selections when clicking empty space
             if (tree.setSelectedItems) {
               tree.setSelectedItems([]);
@@ -517,6 +557,7 @@ export default function FileTree({
         ) : (
           (() => {
             const items = tree.getItems();
+            
             // Only log during development and not on every render
             if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
               console.log('🎆 [FileTree] RENDERING tree items:', {
@@ -597,15 +638,17 @@ export default function FileTree({
                     }}
                     className='flex-1'
                   >
-                    <TreeItemRenderer
-                      item={itemData}
-                      itemInstance={item}
-                      showFileSize={showFileSize}
-                      showFileDate={showFileDate}
-                      showFileStatus={showFileStatus}
-                      showFolderCount={showFolderCount}
-                      showFolderSize={showFolderSize}
-                    />
+                    <div className={`treeitem ${item.isFolder() ? 'folder' : ''} ${item.isExpanded() ? 'expanded' : ''} ${item.isSelected() ? 'selected' : ''} ${item.isFocused() ? 'focused' : ''} ${item.isDragTarget?.() ? 'drop' : ''} ${item.isDragTargetAbove?.() ? 'drop-above' : ''} ${item.isDragTargetBelow?.() ? 'drop-below' : ''} ${item.isMatchingSearch?.() ? 'searchmatch' : ''}`}>
+                      <TreeItemRenderer
+                        item={itemData}
+                        itemInstance={item}
+                        showFileSize={showFileSize}
+                        showFileDate={showFileDate}
+                        showFileStatus={showFileStatus}
+                        showFolderCount={showFolderCount}
+                        showFolderSize={showFolderSize}
+                      />
+                    </div>
                   </button>
                 </div>
                 )}
@@ -619,17 +662,36 @@ export default function FileTree({
           })()
         )}
         {(() => {
-          // Only try to render drag line if we're actively dragging
+          // Don't show drag line if it's been hidden by clicking
+          if (hideDragLine) {
+            return null;
+          }
+          
+          // Only render drag line during active drag operations
           const dndState = tree.getState?.()?.dnd;
-          const isDragging = dndState?.draggedItems && dndState.draggedItems.length > 0;
-          if (!isDragging || !tree.getDragLineStyle) {
+          
+          // Check multiple conditions to ensure we're actually dragging
+          const hasDraggedItems = dndState?.draggedItems && dndState.draggedItems.length > 0;
+          const hasDragTarget = dndState?.dragTarget !== null && dndState?.dragTarget !== undefined;
+          const isDraggingOver = dndState?.draggingOverItem !== null && dndState?.draggingOverItem !== undefined;
+          
+          // Only show drag line if actively dragging AND have a valid target
+          const shouldShowDragLine = hasDraggedItems && (hasDragTarget || isDraggingOver);
+          
+          if (!shouldShowDragLine || !tree.getDragLineStyle) {
             return null;
           }
           
           try {
             const style = tree.getDragLineStyle();
-            // Only render if we have a valid style object with actual positioning
-            if (style && typeof style === 'object' && ('top' in style || 'bottom' in style)) {
+            // Additional check: ensure style has valid positioning and isn't hidden
+            if (
+              style && 
+              typeof style === 'object' && 
+              ('top' in style || 'bottom' in style) &&
+              style.display !== 'none' &&
+              style.visibility !== 'hidden'
+            ) {
               return <div style={style} className='dragline' />;
             }
             return null;
