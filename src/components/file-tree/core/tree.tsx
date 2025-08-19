@@ -155,7 +155,7 @@ export default function FileTree({
   showFolderSize = false,
   showCheckboxes = false,
   searchQuery = '',
-  onSearchChange,
+  onSearchChange: _onSearchChange,
 }: FileTreeProps) {
   // Update counter for re-syncing data
   const [updateCounter] = React.useReducer(x => x + 1, 0);
@@ -283,7 +283,10 @@ export default function FileTree({
     const tempItems: Record<string, TreeItemType> = {};
     Object.keys(data).forEach(key => {
       if (key.startsWith('folder-temp-') || key.startsWith('file-temp-')) {
-        tempItems[key] = data[key];
+        const item = data[key];
+        if (item) {
+          tempItems[key] = item;
+        }
       }
     });
     
@@ -296,16 +299,18 @@ export default function FileTree({
     // Re-add temp items that aren't in initialData
     Object.keys(tempItems).forEach(key => {
       if (!data[key]) {
-        data[key] = tempItems[key];
-        
-        // Also ensure temp item is in parent's children array
         const tempItem = tempItems[key];
-        if (tempItem.parentId && data[tempItem.parentId]) {
-          const parent = data[tempItem.parentId];
-          if (parent.type === 'folder') {
-            const folderParent = parent as TreeFolderItem;
-            if (folderParent.children && !folderParent.children.includes(key)) {
-              folderParent.children.push(key);
+        if (tempItem) {
+          data[key] = tempItem;
+          
+          // Also ensure temp item is in parent's children array
+          if (tempItem.parentId && data[tempItem.parentId]) {
+            const parent = data[tempItem.parentId];
+            if (parent && parent.type === 'folder') {
+              const folderParent = parent as TreeFolderItem;
+              if (folderParent.children && !folderParent.children.includes(key)) {
+                folderParent.children.push(key);
+              }
             }
           }
         }

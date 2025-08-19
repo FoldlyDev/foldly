@@ -1,14 +1,12 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo } from 'react';
+import React, { useState, lazy, Suspense, useMemo, useRef, useCallback } from 'react';
 
 import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import { UploadModal } from '../modals/upload-modal';
-import { CloudProviderButtons } from '../cloud/cloud-provider-buttons';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
-import { useWorkspaceUI } from '@/features/workspace/hooks/use-workspace-ui';
 import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
@@ -21,17 +19,107 @@ import { checkAndShowStorageThresholds } from '@/features/notifications/internal
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
-import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
+import type { TreeItem, TreeFolderItem, TreeFileItem } from '@/components/file-tree/types';
+import type { File, Folder } from '@/lib/database/types';
 
-// Lazy load the heavy WorkspaceTree component
-const WorkspaceTree = lazy(() => import('../tree/WorkspaceTree'));
+// Lazy load the file-tree component
+const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
+
+// Helper function to transform database data to tree format
+function transformToTreeData(
+  workspace: { id: string; name: string } | null,
+  folders: Folder[],
+  files: File[]
+): Record<string, TreeItem> {
+  const treeData: Record<string, TreeItem> = {};
+
+  if (!workspace) return treeData;
+
+  // Add workspace as root folder
+  treeData[workspace.id] = {
+    id: workspace.id,
+    name: workspace.name,
+    type: 'folder',
+    parentId: null,
+    path: '/',
+    depth: 0,
+    fileCount: files.length,
+    totalSize: files.reduce((sum, f) => sum + f.fileSize, 0),
+    isArchived: false,
+    sortOrder: 0,
+    children: [],
+  } as TreeFolderItem;
+
+  // Create a map for easy parent lookup
+  const folderMap = new Map<string, TreeFolderItem>();
+  folderMap.set(workspace.id, treeData[workspace.id] as TreeFolderItem);
+
+  // Add folders with proper hierarchy
+  folders
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .forEach(folder => {
+      const treeFolder: TreeFolderItem = {
+        id: folder.id,
+        name: folder.name,
+        type: 'folder',
+        parentId: folder.parentFolderId || workspace.id,
+        path: folder.path,
+        depth: folder.depth,
+        fileCount: folder.fileCount,
+        totalSize: folder.totalSize,
+        isArchived: folder.isArchived,
+        sortOrder: folder.sortOrder,
+        children: [],
+        record: folder,
+      };
+
+      treeData[folder.id] = treeFolder;
+      folderMap.set(folder.id, treeFolder);
+
+      // Add to parent's children
+      const parentId = folder.parentFolderId || workspace.id;
+      const parent = folderMap.get(parentId);
+      if (parent?.children) {
+        parent.children.push(folder.id);
+      }
+    });
+
+  // Add files
+  files
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .forEach(file => {
+      const treeFile: TreeFileItem = {
+        id: file.id,
+        name: file.fileName,
+        type: 'file',
+        parentId: file.folderId || workspace.id,
+        mimeType: file.mimeType,
+        fileSize: file.fileSize,
+        extension: file.extension,
+        thumbnailPath: file.thumbnailPath,
+        processingStatus: file.processingStatus,
+        record: file,
+      };
+
+      treeData[file.id] = treeFile;
+
+      // Add to parent's children
+      const parentId = file.folderId || workspace.id;
+      const parent = folderMap.get(parentId);
+      if (parent?.children) {
+        parent.children.push(file.id);
+      }
+    });
+
+  return treeData;
+}
 
 export function WorkspaceContainer() {
   // Get workspace data with loading states
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
 
   // Mobile detection
-  const isMobile = useMediaQuery('(max-width: 768px)');
+  const _isMobile = useMediaQuery('(max-width: 768px)');
 
   // Set up real-time subscription for workspace changes
   useWorkspaceRealtime(workspaceData?.workspace?.id);
@@ -50,8 +138,9 @@ export function WorkspaceContainer() {
     number | undefined
   >(undefined);
 
-  // Tree instance state
+  // Tree instance state and unique tree ID
   const [treeInstance, setTreeInstance] = useState<any | null>(null);
+  const treeIdRef = useRef<string>(`workspace-tree-${Date.now()}`);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,6 +148,21 @@ export function WorkspaceContainer() {
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
+
+  // Transform workspace data to tree format
+  const treeData = useMemo(() => {
+    if (!workspaceData) return {};
+    return transformToTreeData(
+      workspaceData.workspace,
+      workspaceData.folders || [],
+      workspaceData.files || []
+    );
+  }, [workspaceData]);
+
+  // Get initially expanded items (workspace root)
+  const initialExpandedItems = useMemo(() => {
+    return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
+  }, [workspaceData?.workspace?.id]);
 
   const handleClearSelection = () => {
     // Clear tree instance selection
@@ -70,6 +174,11 @@ export function WorkspaceContainer() {
     // Exit selection mode when clearing
     setSelectionMode(false);
   };
+
+  // Handle tree ready callback
+  const handleTreeReady = useCallback((tree: any) => {
+    setTreeInstance(tree);
+  }, []);
 
   // Monitor storage changes and show threshold notifications
   React.useEffect(() => {
@@ -157,14 +266,24 @@ export function WorkspaceContainer() {
                   </div>
                 }
               >
-                <WorkspaceTree
-                  onTreeReady={setTreeInstance}
-                  searchQuery={searchQuery}
-                  selectedItems={selectedItems}
-                  onSelectionChange={setSelectedItems}
-                  selectionMode={selectionMode}
-                  onSelectionModeChange={setSelectionMode}
-                />
+                {workspaceData?.workspace?.id && (
+                  <FileTree
+                    rootId={workspaceData.workspace.id}
+                    treeId={treeIdRef.current}
+                    initialData={treeData}
+                    initialExpandedItems={initialExpandedItems}
+                    initialSelectedItems={selectedItems}
+                    onTreeReady={handleTreeReady}
+                    showCheckboxes={selectionMode}
+                    searchQuery={searchQuery}
+                    onSearchChange={(query) => setSearchQuery(query)}
+                    showFileSize={true}
+                    showFileDate={false}
+                    showFileStatus={false}
+                    showFolderCount={true}
+                    showFolderSize={false}
+                  />
+                )}
               </Suspense>
             </div>
           </div>
