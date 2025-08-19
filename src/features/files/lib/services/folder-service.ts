@@ -112,7 +112,7 @@ export class FolderService {
         .select()
         .from(folders)
         .where(condition)
-        .orderBy(folders.name);
+        .orderBy(folders.sortOrder, folders.name);
 
       console.log(
         `✅ FOLDERS_BY_PARENT_FETCHED: ${siblingFolders.length} folders for parent ${parentId} in workspace ${workspaceId}`

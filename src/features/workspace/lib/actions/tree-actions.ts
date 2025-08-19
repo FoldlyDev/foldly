@@ -65,6 +65,11 @@ export async function moveItemAction(
   targetId: string
 ): Promise<ActionResult> {
   try {
+    console.log('🚚 [moveItemAction] Called with:', {
+      itemId: itemId.slice(0, 8),
+      targetId: targetId.slice(0, 8)
+    });
+    
     const { userId } = await auth();
     if (!userId) {
       return { success: false, error: 'Unauthorized' };
@@ -78,6 +83,12 @@ export async function moveItemAction(
 
     // If target is workspace ID, set parent to null (workspace root)
     const newParentId = targetId === workspace.id ? null : targetId;
+    
+    console.log('🚚 [moveItemAction] Parent resolution:', {
+      targetId: targetId.slice(0, 8),
+      workspaceId: workspace.id.slice(0, 8),
+      newParentId: newParentId ? newParentId.slice(0, 8) : 'null (root)'
+    });
 
     // Try to move as file first, then as folder
     const fileMove = await fileService.moveFile(itemId, newParentId);
@@ -107,6 +118,12 @@ export async function updateItemOrderAction(
   orderedChildIds: string[]
 ): Promise<ActionResult> {
   try {
+    console.log('📊 [updateItemOrderAction] Called with:', {
+      parentId: parentId.slice(0, 8),
+      childCount: orderedChildIds.length,
+      childIds: orderedChildIds.map(id => id.slice(0, 8))
+    });
+    
     const { userId } = await auth();
     if (!userId) {
       return { success: false, error: 'Unauthorized' };
@@ -118,27 +135,46 @@ export async function updateItemOrderAction(
       return { success: false, error: 'Workspace not found' };
     }
 
-    // Get current files and folders to distinguish between them
+    // Determine the actual parent folder ID (null for workspace root)
+    const actualParentId = parentId === workspace.id ? null : parentId;
+    
+    console.log('📊 [updateItemOrderAction] Parent resolution:', {
+      parentId: parentId.slice(0, 8),
+      workspaceId: workspace.id.slice(0, 8),
+      actualParentId: actualParentId ? actualParentId.slice(0, 8) : 'null (root)',
+    });
+
+    // Get current files and folders for this specific parent
     const [foldersResult, filesResult] = await Promise.all([
-      folderService.getFoldersByWorkspace(workspace.id),
-      fileService.getFilesByWorkspace(workspace.id),
+      folderService.getFoldersByParent(actualParentId, workspace.id),
+      actualParentId 
+        ? fileService.getFilesByFolder(actualParentId)
+        : fileService.getRootFilesByWorkspace(workspace.id),
     ]);
 
     if (!foldersResult.success || !filesResult.success) {
-      return { success: false, error: 'Failed to fetch workspace data' };
+      return { success: false, error: 'Failed to fetch parent items' };
     }
 
     const folderIds = new Set(foldersResult.data?.map(f => f.id) || []);
     const fileIds = new Set(filesResult.data?.map(f => f.id) || []);
+    
+    console.log('📊 [updateItemOrderAction] Found items:', {
+      folders: folderIds.size,
+      files: fileIds.size,
+      totalToUpdate: orderedChildIds.length
+    });
 
     // Separate files and folders, then update their sortOrder
     const updates = orderedChildIds.map(async (id, index) => {
       if (folderIds.has(id)) {
+        console.log(`  📁 Updating folder ${id.slice(0, 8)} sortOrder to ${index}`);
         return folderService.updateFolder(id, { sortOrder: index });
       } else if (fileIds.has(id)) {
+        console.log(`  📄 Updating file ${id.slice(0, 8)} sortOrder to ${index}`);
         return fileService.updateFile(id, { sortOrder: index });
       } else {
-        logger.warn('Item not found in workspace', { itemId: id });
+        console.warn(`  ⚠️ Item ${id.slice(0, 8)} not found in parent`);
         return { success: false, error: `Item ${id} not found` };
       }
     });

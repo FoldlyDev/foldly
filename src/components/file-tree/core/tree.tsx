@@ -19,6 +19,7 @@ import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
 import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
+import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
 import {
   type TreeItem as TreeItemType,
   type TreeFolderItem,
@@ -26,8 +27,8 @@ import {
 } from '../types/tree-types';
 import { createTreeData } from '../utils/tree-data';
 import { addTreeItem, removeTreeItem } from '../utils/tree-manipulation';
-import { createTreeDropHandler } from '../handlers/drop-handler';
-import { createRenameHandler } from '../handlers/rename-handler';
+import { createTreeDropHandler, type DropOperationCallbacks } from '../handlers/drop-handler';
+import { createRenameHandler, type RenameOperationCallback } from '../handlers/rename-handler';
 import { createForeignDropHandlers } from '../handlers/foreign-drop-handler';
 import { createInsertNewItem } from '../handlers/insert-item-handler';
 import { clearCheckedItems } from '../utils/checkbox-management';
@@ -119,6 +120,22 @@ export {
   getCheckedItemsData,
 } from '../utils/checkbox-management';
 
+// Context menu item configuration
+export interface ContextMenuItem {
+  label?: string;
+  icon?: React.ReactNode;
+  onClick?: () => void | Promise<void>;
+  disabled?: boolean;
+  destructive?: boolean;
+  separator?: boolean;
+}
+
+// Context menu provider function
+export type ContextMenuProvider = (
+  item: TreeItemType,
+  itemInstance: any
+) => ContextMenuItem[] | null;
+
 interface FileTreeProps {
   rootId: string;
   treeId: string;  // Required treeId for instance isolation
@@ -140,6 +157,12 @@ interface FileTreeProps {
   onSearchChange?: (query: string) => void; // Reserved for future search implementation
   // Selection callback
   onSelectionChange?: (selectedItems: string[]) => void;
+  // Drop operation callbacks
+  dropCallbacks?: DropOperationCallbacks;
+  // Rename operation callback
+  renameCallback?: RenameOperationCallback;
+  // Context menu provider
+  contextMenuProvider?: ContextMenuProvider;
 }
 
 export default function FileTree({
@@ -159,6 +182,9 @@ export default function FileTree({
   searchQuery = '',
   onSearchChange: _onSearchChange,
   onSelectionChange,
+  dropCallbacks,
+  renameCallback,
+  contextMenuProvider,
 }: FileTreeProps) {
   // Update counter for re-syncing data
   const [updateCounter] = React.useReducer(x => x + 1, 0);
@@ -288,10 +314,20 @@ export default function FileTree({
     [insertNewItem] // Only depend on insertNewItem, not data
   );
 
-  const onRename = React.useCallback(
-    createRenameHandler(data),
-    [] // Empty deps since data is a stable reference
+  const onRename = React.useMemo(
+    () => createRenameHandler(data, renameCallback),
+    [renameCallback] // Depend on renameCallback to update if it changes
   );
+  
+  // Log once when callbacks are set up
+  React.useEffect(() => {
+    console.log('🎯 [FileTree] Callbacks configured:', {
+      hasDropCallbacks: !!dropCallbacks,
+      hasOnReorder: !!dropCallbacks?.onReorder,
+      hasOnMove: !!dropCallbacks?.onMove,
+      hasRenameCallback: !!renameCallback
+    });
+  }, []);
   
   // Initialize data with provided initial data
   React.useEffect(() => {
@@ -371,7 +407,7 @@ export default function FileTree({
       );
     },
     canReorder: true,
-    onDrop: createTreeDropHandler(data),
+    onDrop: createTreeDropHandler(data, dropCallbacks),
     onRename,
     onDropForeignDragObject,
     onCompleteForeignDrop,
@@ -403,7 +439,7 @@ export default function FileTree({
       customClickBehavior,
       clearSelectionOnRootClick,
     ],
-  }), [rootId, syncDataLoader, onRename, onDropForeignDragObject, onCompleteForeignDrop, customClickBehavior, clearSelectionOnRootClick, initialExpandedItems, initialSelectedItems, initialCheckedItems, data]);
+  }), [rootId, syncDataLoader, onRename, onDropForeignDragObject, onCompleteForeignDrop, customClickBehavior, clearSelectionOnRootClick, initialExpandedItems, initialSelectedItems, initialCheckedItems, data, dropCallbacks]);
   
   const tree = useTree<TreeItemType>(treeConfig);
   
@@ -609,48 +645,54 @@ export default function FileTree({
                     />
                   </div>
                 ) : (
-                  <div 
-                  className='outeritem'
-                  data-depth={item.getItemMeta().level}
-                  data-last-child={isLastChild}
-                  style={{ '--depth': item.getItemMeta().level } as React.CSSProperties}
-                >
-                  {showCheckboxes && (
-                    <Checkbox
-                      checked={
-                        {
-                          checked: true,
-                          unchecked: false,
-                          indeterminate: 'indeterminate' as const,
-                        }[item.getCheckedState()]
-                      }
-                      onCheckedChange={(checked: boolean | 'indeterminate') => {
-                        const checkboxProps = item.getCheckboxProps();
-                        checkboxProps.onChange?.({ target: { checked } });
-                      }}
-                    />
-                  )}
-                  {/* Button MUST have item.getProps() for drag/drop! */}
-                  <button
-                    {...item.getProps()}
-                    style={{
-                      paddingLeft: `${item.getItemMeta().level * 20}px`,
-                    }}
-                    className='flex-1'
+                  <ContextMenuWrapper
+                    item={itemData}
+                    itemInstance={item}
+                    menuItems={contextMenuProvider ? contextMenuProvider(itemData, item) : null}
                   >
-                    <div className={`treeitem ${item.isFolder() ? 'folder' : ''} ${item.isExpanded() ? 'expanded' : ''} ${item.isSelected() ? 'selected' : ''} ${item.isFocused() ? 'focused' : ''} ${item.isDragTarget?.() ? 'drop' : ''} ${item.isDragTargetAbove?.() ? 'drop-above' : ''} ${item.isDragTargetBelow?.() ? 'drop-below' : ''} ${item.isMatchingSearch?.() ? 'searchmatch' : ''}`}>
-                      <TreeItemRenderer
-                        item={itemData}
-                        itemInstance={item}
-                        showFileSize={showFileSize}
-                        showFileDate={showFileDate}
-                        showFileStatus={showFileStatus}
-                        showFolderCount={showFolderCount}
-                        showFolderSize={showFolderSize}
+                    <div 
+                    className='outeritem'
+                    data-depth={item.getItemMeta().level}
+                    data-last-child={isLastChild}
+                    style={{ '--depth': item.getItemMeta().level } as React.CSSProperties}
+                  >
+                    {showCheckboxes && (
+                      <Checkbox
+                        checked={
+                          {
+                            checked: true,
+                            unchecked: false,
+                            indeterminate: 'indeterminate' as const,
+                          }[item.getCheckedState()]
+                        }
+                        onCheckedChange={(checked: boolean | 'indeterminate') => {
+                          const checkboxProps = item.getCheckboxProps();
+                          checkboxProps.onChange?.({ target: { checked } });
+                        }}
                       />
-                    </div>
-                  </button>
-                </div>
+                    )}
+                    {/* Button MUST have item.getProps() for drag/drop! */}
+                    <button
+                      {...item.getProps()}
+                      style={{
+                        paddingLeft: `${item.getItemMeta().level * 20}px`,
+                      }}
+                      className='flex-1'
+                    >
+                      <div className={`treeitem ${item.isFolder() ? 'folder' : ''} ${item.isExpanded() ? 'expanded' : ''} ${item.isSelected() ? 'selected' : ''} ${item.isFocused() ? 'focused' : ''} ${item.isDragTarget?.() ? 'drop' : ''} ${item.isDragTargetAbove?.() ? 'drop-above' : ''} ${item.isDragTargetBelow?.() ? 'drop-below' : ''} ${item.isMatchingSearch?.() ? 'searchmatch' : ''}`}>
+                        <TreeItemRenderer
+                          item={itemData}
+                          itemInstance={item}
+                          showFileSize={showFileSize}
+                          showFileDate={showFileDate}
+                          showFileStatus={showFileStatus}
+                          showFolderCount={showFolderCount}
+                          showFolderSize={showFolderSize}
+                        />
+                      </div>
+                    </button>
+                  </div>
+                  </ContextMenuWrapper>
                 )}
               </React.Fragment>
             ) : null;

@@ -30,6 +30,7 @@ export interface TreeFileItem extends BaseTreeItem {
   extension: string | null;
   thumbnailPath: string | null;
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  sortOrder?: number; // Add sortOrder for files
   // Store full database record for additional fields
   record?: File;
 }

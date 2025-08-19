@@ -77,7 +77,7 @@ export class FileService {
         .select()
         .from(files)
         .where(eq(files.folderId, folderId))
-        .orderBy(files.createdAt);
+        .orderBy(files.sortOrder, files.createdAt);
 
       return { success: true, data: folderFiles };
     } catch (error) {
@@ -106,7 +106,7 @@ export class FileService {
             eq(files.linkId, workspaceId) // Links to workspace
           )
         )
-        .orderBy(files.createdAt);
+        .orderBy(files.sortOrder, files.createdAt);
 
       console.log(
         `✅ ROOT_FILES_FETCHED: ${rootFiles.length} root files for workspace ${workspaceId}`
@@ -326,7 +326,7 @@ export class FileService {
         .from(files)
         .leftJoin(folders, eq(files.folderId, folders.id))
         .where(eq(folders.workspaceId, workspaceId))
-        .orderBy(files.createdAt);
+        .orderBy(files.sortOrder, files.createdAt);
 
       const flatFiles = workspaceFiles.map(({ file }) => file);
 

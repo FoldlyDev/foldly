@@ -3,19 +3,22 @@ import type { File, Folder } from '@/lib/database/types';
 
 /**
  * Transform database folders and files into tree structure
+ * @param folders - Array of folder records from database
+ * @param files - Array of file records from database
+ * @param rootItem - Optional root item to add to the tree (e.g., workspace, link root, etc.)
  */
 export function transformToTreeStructure(
   folders: Folder[],
   files: File[],
-  workspace?: { id: string; name: string } | null
+  rootItem?: { id: string; name: string } | null
 ): Record<string, TreeItem> {
   const treeData: Record<string, TreeItem> = {};
 
-  // Add workspace root if provided
-  if (workspace) {
-    const workspaceRoot: TreeFolderItem = {
-      id: workspace.id,
-      name: workspace.name,
+  // Add root item if provided (could be workspace, link, or any other container)
+  if (rootItem) {
+    const rootFolder: TreeFolderItem = {
+      id: rootItem.id,
+      name: rootItem.name,
       type: 'folder',
       parentId: null,
       path: '/',
@@ -26,7 +29,7 @@ export function transformToTreeStructure(
       sortOrder: 0,
       children: [],
     };
-    treeData[workspace.id] = workspaceRoot;
+    treeData[rootItem.id] = rootFolder;
   }
 
   // Transform folders
@@ -35,7 +38,7 @@ export function transformToTreeStructure(
       id: folder.id,
       name: folder.name,
       type: 'folder',
-      parentId: folder.parentFolderId || (workspace?.id ?? null),
+      parentId: folder.parentFolderId || (rootItem?.id ?? null),
       path: folder.path,
       depth: folder.depth,
       children: [], // Will be populated below
@@ -54,34 +57,66 @@ export function transformToTreeStructure(
       id: file.id,
       name: file.fileName || file.originalName,
       type: 'file',
-      parentId: file.folderId || (workspace?.id ?? null),
+      parentId: file.folderId || (rootItem?.id ?? null),
       mimeType: file.mimeType,
       fileSize: file.fileSize,
       extension: file.extension,
       thumbnailPath: file.thumbnailPath,
       processingStatus: file.processingStatus,
+      sortOrder: file.sortOrder, // Add sortOrder for files
       record: file, // Store full database record
     };
     treeData[file.id] = treeFile;
   });
 
-  // Build parent-child relationships
+  // Build parent-child relationships - group children by parent first
+  const childrenByParent: Record<string, TreeItem[]> = {};
+  
   Object.values(treeData).forEach(item => {
     if (item.parentId && treeData[item.parentId]) {
       const parent = treeData[item.parentId];
       if (parent && parent.type === 'folder') {
-        const folderParent = parent as TreeFolderItem;
-        if (!folderParent.children?.includes(item.id)) {
-          folderParent.children = [...(folderParent.children || []), item.id];
+        if (!childrenByParent[item.parentId]) {
+          childrenByParent[item.parentId] = [];
         }
+        childrenByParent[item.parentId]?.push(item);
       }
-    } else if (workspace && !item.parentId && item.id !== workspace.id) {
-      // Items without parents should be children of workspace root
-      const workspaceRoot = treeData[workspace.id] as TreeFolderItem;
-      if (workspaceRoot && !workspaceRoot.children?.includes(item.id)) {
-        workspaceRoot.children = [...(workspaceRoot.children || []), item.id];
-        item.parentId = workspace.id;
+    } else if (rootItem && !item.parentId && item.id !== rootItem.id) {
+      // Items without parents should be children of the root
+      if (!childrenByParent[rootItem.id]) {
+        childrenByParent[rootItem.id] = [];
       }
+      childrenByParent[rootItem.id]?.push(item);
+      item.parentId = rootItem.id;
+    }
+  });
+  
+  // Sort children by sortOrder and assign to parent's children array
+  Object.entries(childrenByParent).forEach(([parentId, children]) => {
+    const parent = treeData[parentId];
+    if (parent && parent.type === 'folder') {
+      const folderParent = parent as TreeFolderItem;
+      
+      // Sort children: folders first, then by sortOrder, then by name
+      const sortedChildren = children.sort((a, b) => {
+        // Folders come before files
+        if (a.type !== b.type) {
+          return a.type === 'folder' ? -1 : 1;
+        }
+        
+        // Sort by sortOrder if both have it
+        const aSortOrder = (a as any).sortOrder ?? 999;
+        const bSortOrder = (b as any).sortOrder ?? 999;
+        if (aSortOrder !== bSortOrder) {
+          return aSortOrder - bSortOrder;
+        }
+        
+        // Fallback to name
+        return a.name.localeCompare(b.name);
+      });
+      
+      // Assign sorted child IDs to parent
+      folderParent.children = sortedChildren.map(child => child.id);
     }
   });
 

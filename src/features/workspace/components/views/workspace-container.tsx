@@ -20,10 +20,23 @@ import { type StorageNotificationData } from '@/features/notifications/internal/
 import { AlertTriangle } from 'lucide-react';
 import { FadeTransitionWrapper } from '@/components/feedback';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
-import type { TreeFolderItem } from '@/components/file-tree/types';
+import type { TreeFolderItem, TreeItem } from '@/components/file-tree/types';
+import { isFolder } from '@/components/file-tree/types';
+import type { DropOperationCallbacks } from '@/components/file-tree/handlers/drop-handler';
+import type { ContextMenuProvider, ContextMenuItem } from '@/components/file-tree/core/tree';
+import { Trash2, Edit2, Link2, FolderPlus } from 'lucide-react';
 
 // Import tree manipulation functions
 import { addTreeItem, removeTreeItem } from '@/components/file-tree/core/tree';
+
+// Import workspace actions for database operations
+import { 
+  updateItemOrderAction, 
+  moveItemAction,
+  renameFolderAction,
+  renameFileAction 
+} from '@/features/workspace/lib/actions';
+import { toast } from 'sonner';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -84,6 +97,134 @@ export function WorkspaceContainer() {
   const initialExpandedItems = useMemo(() => {
     return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
   }, [workspaceData?.workspace?.id]);
+
+  // Create drop operation callbacks for database persistence
+  const dropCallbacks: DropOperationCallbacks = useMemo(() => ({
+    onReorder: async (parentId: string, _itemIds: string[], newOrder: string[]) => {
+      console.log('🔄 [WorkspaceContainer] Executing REORDER database update:', {
+        parentId: parentId.slice(0, 8),
+        newOrder: newOrder.map(id => id.slice(0, 8))
+      });
+      
+      try {
+        const result = await updateItemOrderAction(parentId, newOrder);
+        if (result.success) {
+          console.log('✅ [WorkspaceContainer] REORDER succeeded');
+          toast.success('Items reordered', { duration: 1500 });
+        } else {
+          throw new Error(result.error || 'Failed to update order');
+        }
+      } catch (error) {
+        console.error('❌ [WorkspaceContainer] REORDER failed:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to update order');
+        throw error; // Re-throw to prevent local state update
+      }
+    },
+    onMove: async (itemIds: string[], _fromParentId: string, toParentId: string) => {
+      console.log('➡️ [WorkspaceContainer] Executing MOVE database update:', {
+        items: itemIds.map(id => id.slice(0, 8)),
+        to: toParentId.slice(0, 8)
+      });
+      
+      try {
+        const results = await Promise.all(
+          itemIds.map(itemId => moveItemAction(itemId, toParentId))
+        );
+        
+        const failed = results.filter(r => !r.success);
+        if (failed.length > 0) {
+          throw new Error(`Failed to move ${failed.length} of ${itemIds.length} items`);
+        }
+        
+        console.log('✅ [WorkspaceContainer] MOVE succeeded');
+        toast.success(`Moved ${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`, { 
+          duration: 1500 
+        });
+      } catch (error) {
+        console.error('❌ [WorkspaceContainer] MOVE failed:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to move items');
+        throw error; // Re-throw to prevent local state update
+      }
+    }
+  }), []);
+
+  // Create rename operation callback for database persistence
+  const renameCallback = useCallback(async (itemId: string, newName: string, itemType: 'file' | 'folder') => {
+    try {
+      const result = itemType === 'folder' 
+        ? await renameFolderAction(itemId, newName)
+        : await renameFileAction(itemId, newName);
+      
+      if (result.success) {
+        toast.success(`${itemType === 'folder' ? 'Folder' : 'File'} renamed successfully`);
+      } else {
+        throw new Error(result.error || `Failed to rename ${itemType}`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Failed to rename ${itemType}`);
+      throw error; // Re-throw to prevent local state update
+    }
+  }, []);
+
+  // Create context menu provider for tree items
+  const contextMenuProvider: ContextMenuProvider = useCallback((item: TreeItem, itemInstance: any) => {
+    const menuItems: ContextMenuItem[] = [];
+    
+    // Don't show context menu for workspace root
+    if (item.id === workspaceData?.workspace?.id) {
+      return null;
+    }
+    
+    // Common items for both files and folders
+    menuItems.push({
+      label: 'Rename',
+      icon: <Edit2 className="h-4 w-4" />,
+      onClick: () => {
+        itemInstance.startRenaming();
+      },
+    });
+    
+    menuItems.push({
+      label: 'Delete',
+      icon: <Trash2 className="h-4 w-4" />,
+      destructive: true,
+      onClick: async () => {
+        // Use the existing delete functionality from toolbar
+        if (treeInstance?.deleteItems) {
+          treeInstance.deleteItems([item.id]);
+        }
+        // TODO: Call delete action
+      },
+    });
+    
+    // Folder-specific items
+    if (isFolder(item)) {
+      menuItems.push({ separator: true });
+      
+      menuItems.push({
+        label: 'New Folder',
+        icon: <FolderPlus className="h-4 w-4" />,
+        onClick: () => {
+          // Select this folder first
+          if (treeInstance?.setSelectedItems) {
+            treeInstance.setSelectedItems([item.id]);
+          }
+          // TODO: Trigger new folder creation UI
+        },
+      });
+      
+      menuItems.push({
+        label: 'Generate Link',
+        icon: <Link2 className="h-4 w-4" />,
+        onClick: async () => {
+          // TODO: Generate link for this folder
+          console.log('Generate link for folder:', item.id);
+        },
+      });
+    }
+    
+    return menuItems;
+  }, [workspaceData?.workspace?.id, treeInstance]);
 
   const handleClearSelection = () => {
     // Clear tree instance selection
@@ -265,6 +406,9 @@ export function WorkspaceContainer() {
                     showFileStatus={false}
                     showFolderCount={true}
                     showFolderSize={false}
+                    dropCallbacks={dropCallbacks}
+                    renameCallback={renameCallback}
+                    contextMenuProvider={contextMenuProvider}
                   />
                 )}
               </Suspense>
