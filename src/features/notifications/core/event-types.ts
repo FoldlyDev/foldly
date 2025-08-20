@@ -79,7 +79,12 @@ export enum NotificationEventType {
   WORKSPACE_FOLDER_MOVE_SUCCESS = 'workspace.folder.move.success',
   WORKSPACE_FOLDER_RENAME_SUCCESS = 'workspace.folder.rename.success',
   
+  WORKSPACE_ITEMS_REORDER_START = 'workspace.items.reorder.start',
   WORKSPACE_ITEMS_REORDER_SUCCESS = 'workspace.items.reorder.success',
+  WORKSPACE_ITEMS_REORDER_ERROR = 'workspace.items.reorder.error',
+  WORKSPACE_ITEMS_MOVE_START = 'workspace.items.move.start',
+  WORKSPACE_ITEMS_MOVE_SUCCESS = 'workspace.items.move.success',
+  WORKSPACE_ITEMS_MOVE_ERROR = 'workspace.items.move.error',
   WORKSPACE_BATCH_DELETE_START = 'workspace.batch.delete.start',
   WORKSPACE_BATCH_DELETE_PROGRESS = 'workspace.batch.delete.progress',
   WORKSPACE_BATCH_DELETE_SUCCESS = 'workspace.batch.delete.success',
@@ -346,7 +351,12 @@ export interface EventPayloadMap {
   [NotificationEventType.WORKSPACE_FOLDER_MOVE_SUCCESS]: FolderEventPayload;
   [NotificationEventType.WORKSPACE_FOLDER_RENAME_SUCCESS]: FolderEventPayload;
   
+  [NotificationEventType.WORKSPACE_ITEMS_REORDER_START]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_MOVE_START]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_DELETE_START]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_DELETE_PROGRESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS]: BatchEventPayload;

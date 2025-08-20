@@ -53,13 +53,12 @@ import {
   createFolderAction,
   batchDeleteItemsAction,
 } from '@/features/workspace/lib/actions';
-import { toast } from 'sonner';
 import { generateLinkFromFolderAction } from '@/features/links/lib/actions';
 import { generateLinkUrl } from '@/lib/config/url-config';
 import { showGeneratedLinkNotification } from '@/features/notifications/utils/link-notifications';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
-import { eventBus, NotificationEventType } from '@/features/notifications/core';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -205,19 +204,55 @@ export function WorkspaceContainer() {
           }
         );
 
+        // Show loading notification for reorder
+        const reorderBatchId = `reorder-${Date.now()}`;
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_START, {
+          batchId: reorderBatchId,
+          totalItems: newOrder.length,
+          completedItems: 0,
+          items: newOrder.map(id => ({ id, name: '', type: 'file' as const })), // We don't have names here
+        }, {
+          priority: NotificationPriority.LOW,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 0, // Keep showing until complete
+        });
+
         try {
           const result = await updateItemOrderAction(parentId, newOrder);
           if (result.success) {
             console.log('✅ [WorkspaceContainer] REORDER succeeded');
-            toast.success('Items reordered', { duration: 1500 });
+            
+            // Emit success notification
+            eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+              batchId: reorderBatchId,
+              totalItems: newOrder.length,
+              completedItems: newOrder.length,
+              items: newOrder.map(id => ({ id, name: '', type: 'file' as const })),
+            }, {
+              priority: NotificationPriority.LOW,
+              uiType: NotificationUIType.TOAST_SIMPLE,
+              duration: 2000,
+            });
           } else {
             throw new Error(result.error || 'Failed to update order');
           }
         } catch (error) {
           console.error('❌ [WorkspaceContainer] REORDER failed:', error);
-          toast.error(
-            error instanceof Error ? error.message : 'Failed to update order'
-          );
+          
+          // Emit error notification
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR, {
+            batchId: reorderBatchId,
+            totalItems: newOrder.length,
+            completedItems: 0,
+            failedItems: newOrder.length,
+            items: newOrder.map(id => ({ id, name: '', type: 'file' as const })),
+            error: error instanceof Error ? error.message : 'Failed to update order',
+          }, {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          });
+          
           throw error; // Re-throw to prevent local state update
         }
       },
@@ -229,6 +264,19 @@ export function WorkspaceContainer() {
         console.log('➡️ [WorkspaceContainer] Executing MOVE database update:', {
           items: itemIds.map(id => id.slice(0, 8)),
           to: toParentId.slice(0, 8),
+        });
+
+        // Show loading notification for move
+        const moveBatchId = `move-${Date.now()}`;
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_MOVE_START, {
+          batchId: moveBatchId,
+          totalItems: itemIds.length,
+          completedItems: 0,
+          items: itemIds.map(id => ({ id, name: '', type: 'file' as const })),
+        }, {
+          priority: NotificationPriority.MEDIUM,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 0, // Keep showing until complete
         });
 
         try {
@@ -244,17 +292,35 @@ export function WorkspaceContainer() {
           }
 
           console.log('✅ [WorkspaceContainer] MOVE succeeded');
-          toast.success(
-            `Moved ${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
-            {
-              duration: 1500,
-            }
-          );
+          
+          // Emit success notification
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS, {
+            batchId: moveBatchId,
+            totalItems: itemIds.length,
+            completedItems: itemIds.length,
+            items: itemIds.map(id => ({ id, name: '', type: 'file' as const })),
+          }, {
+            priority: NotificationPriority.LOW,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 2000,
+          });
         } catch (error) {
           console.error('❌ [WorkspaceContainer] MOVE failed:', error);
-          toast.error(
-            error instanceof Error ? error.message : 'Failed to move items'
-          );
+          
+          // Emit error notification
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR, {
+            batchId: moveBatchId,
+            totalItems: itemIds.length,
+            completedItems: 0,
+            failedItems: itemIds.length,
+            items: itemIds.map(id => ({ id, name: '', type: 'file' as const })),
+            error: error instanceof Error ? error.message : 'Failed to move items',
+          }, {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          });
+          
           throw error; // Re-throw to prevent local state update
         }
       },
@@ -272,18 +338,51 @@ export function WorkspaceContainer() {
             : await renameFileAction(itemId, newName);
 
         if (result.success) {
-          toast.success(
-            `${itemType === 'folder' ? 'Folder' : 'File'} renamed successfully`
-          );
+          // Use event-driven notifications
+          if (itemType === 'folder') {
+            eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_RENAME_SUCCESS, {
+              folderId: itemId,
+              folderName: newName,
+            }, {
+              priority: NotificationPriority.LOW,
+              uiType: NotificationUIType.TOAST_SIMPLE,
+              duration: 2000,
+            });
+          } else {
+            eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_RENAME_SUCCESS, {
+              fileId: itemId,
+              fileName: newName,
+              fileSize: 0, // We don't have this info here
+            }, {
+              priority: NotificationPriority.LOW,
+              uiType: NotificationUIType.TOAST_SIMPLE,
+              duration: 2000,
+            });
+          }
         } else {
           throw new Error(result.error || `Failed to rename ${itemType}`);
         }
       } catch (error) {
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : `Failed to rename ${itemType}`
+        // Use event-driven error notification
+        const errorMessage = error instanceof Error ? error.message : `Failed to rename ${itemType}`;
+        
+        eventBus.emitNotification(
+          itemType === 'folder' 
+            ? NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR 
+            : NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
+          {
+            ...(itemType === 'folder' 
+              ? { folderId: itemId, folderName: newName }
+              : { fileId: itemId, fileName: newName, fileSize: 0 }),
+            error: errorMessage,
+          },
+          {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          }
         );
+        
         throw error; // Re-throw to prevent local state update
       }
     },
@@ -612,7 +711,13 @@ export function WorkspaceContainer() {
   React.useEffect(() => {
     const handleFolderDropInfo = (data: any) => {
       // Show notification about folders that can't be uploaded
-      toast.info(data.message || 'Folders detected in drop', {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_DROPPED, {
+        fileCount: data.fileCount || 0,
+        folderCount: data.folderCount || 1,
+        message: data.message || 'Folders detected in drop',
+      }, {
+        priority: NotificationPriority.LOW,
+        uiType: NotificationUIType.TOAST_SIMPLE,
         duration: 5000,
       });
     };

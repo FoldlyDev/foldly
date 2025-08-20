@@ -274,7 +274,12 @@ class NotificationManager {
       // Batch events
       [NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS]: 'Items deleted',
       [NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR]: 'Failed to delete items',
+      [NotificationEventType.WORKSPACE_ITEMS_REORDER_START]: 'Reordering items...',
       [NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS]: 'Items reordered',
+      [NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR]: 'Failed to reorder items',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_START]: 'Moving items...',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS]: 'Items moved',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR]: 'Failed to move items',
       
       // Link events
       [NotificationEventType.LINK_CREATE_SUCCESS]: 'Link created',
@@ -330,6 +335,24 @@ class NotificationManager {
       
       case NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS:
         return `${payload.completedItems} items deleted`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_START:
+        return `Reordering ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS:
+        return `Successfully reordered ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR:
+        return payload.error || `Failed to reorder ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_START:
+        return `Moving ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS:
+        return `Successfully moved ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR:
+        return payload.error || `Failed to move ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
       
       case NotificationEventType.LINK_NEW_UPLOAD:
         const items = [];

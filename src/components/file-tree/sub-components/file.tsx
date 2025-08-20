@@ -11,7 +11,10 @@ import {
   CodeIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
+import { Input } from '@/components/ui/shadcn/input';
 import type { TreeFileItem } from '../types/display-types';
+import type { ItemInstance } from '@headless-tree/core';
+import type { TreeItem as TreeItemType } from '../types/tree-types';
 
 // =============================================================================
 // FILE COMPONENT TYPES
@@ -22,6 +25,7 @@ import type { TreeFileItem } from '../types/display-types';
  */
 export interface FileProps {
   file: TreeFileItem;
+  itemInstance?: ItemInstance<TreeItemType>; // Optional for rename support
   showIcon?: boolean;
   showSize?: boolean;
   showDate?: boolean;
@@ -142,6 +146,7 @@ export function getFileExtension(fileName: string): string | null {
  */
 export const File: React.FC<FileProps> = ({
   file,
+  itemInstance,
   showIcon = true,
   showSize = false,
   showDate = false,
@@ -169,9 +174,65 @@ export const File: React.FC<FileProps> = ({
         />
       )}
 
-      <span className='flex-1 truncate text-sm'>
-        {file.originalName || file.fileName}
-      </span>
+      {file.isRenaming && itemInstance ? (
+        <div className="flex-1 flex items-center gap-1">
+          <Input
+            {...itemInstance.getRenameInputProps()}
+            autoFocus
+            className="flex-1 h-6 px-1 py-0 text-sm"
+            data-rename-input={file.id}
+            onKeyDown={(e) => {
+              // Handle Enter key to confirm rename
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.currentTarget.blur(); // This will trigger the rename completion
+              }
+              // Handle Escape key to cancel rename
+              if (e.key === 'Escape') {
+                // The getRenameInputProps handles escape internally
+                e.preventDefault();
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            onClick={() => {
+              // Get the input element by data attribute and trigger blur to save
+              const input = document.querySelector(`input[data-rename-input="${file.id}"]`) as HTMLInputElement;
+              if (input) {
+                input.blur();
+              }
+            }}
+            title="Save (Enter)"
+          >
+            <svg className="w-3.5 h-3.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            onClick={() => {
+              // Trigger escape key event to cancel rename
+              const input = document.querySelector(`input[data-rename-input="${file.id}"]`) as HTMLInputElement;
+              if (input) {
+                const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+                input.dispatchEvent(escapeEvent);
+              }
+            }}
+            title="Cancel (Esc)"
+          >
+            <svg className="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      ) : (
+        <span className='flex-1 truncate text-sm'>
+          {file.originalName || file.fileName}
+        </span>
+      )}
 
       {showSize && (
         <span className='text-xs text-muted-foreground'>

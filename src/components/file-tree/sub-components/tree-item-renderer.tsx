@@ -101,6 +101,7 @@ export const TreeItemRenderer: React.FC<TreeItemRendererProps> = ({
     return (
       <Folder
         folder={folderData}
+        itemInstance={itemInstance}
         showIcon={true}
         showChevron={true}
         showFileCount={showFolderCount}
@@ -112,6 +113,7 @@ export const TreeItemRenderer: React.FC<TreeItemRendererProps> = ({
     return (
       <File
         file={fileData}
+        itemInstance={itemInstance}
         showIcon={true}
         showSize={showFileSize}
         showDate={showFileDate}

@@ -58,6 +58,15 @@ export function BatchOperationModal({
   isProcessing,
 }: BatchOperationModalProps) {
   const [showProgress, setShowProgress] = useState(false);
+  // Keep a local copy of items to prevent count from changing during operation
+  const [localItems, setLocalItems] = useState<BatchOperationItem[]>(items);
+
+  // Update local items only when modal opens with new items
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      setLocalItems(items);
+    }
+  }, [isOpen, items]);
 
   useEffect(() => {
     if (isProcessing) {
@@ -93,7 +102,7 @@ export function BatchOperationModal({
             {isDelete ? (
               <>
                 <AlertTriangle className='w-5 h-5 text-destructive' />
-                Delete {items.length} Item{items.length > 1 ? 's' : ''}
+                Delete {localItems.length} Item{localItems.length > 1 ? 's' : ''}
               </>
             ) : (
               <>

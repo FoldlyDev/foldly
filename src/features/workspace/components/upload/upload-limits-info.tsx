@@ -20,7 +20,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
   const features = [
     {
       icon: Zap,
-      label: 'Smart Upload',
+      label: 'Batch Upload',
       value: `${UPLOAD_CONFIG.batch.size} files at once`,
       color: 'text-warning',
       bgColor: 'bg-warning/10',
@@ -34,8 +34,8 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
     },
     {
       icon: Clock,
-      label: 'Auto-Retry',
-      value: `Up to ${UPLOAD_CONFIG.batch.maxRetries} retries`,
+      label: 'Upload Rate',
+      value: `${UPLOAD_CONFIG.rateLimit.maxUploadsPerMinute} uploads/minute`,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
@@ -93,7 +93,7 @@ export function UploadLimitsInfo({ plan, className, compact = false }: UploadLim
       <div className="flex items-start gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg bg-muted/30">
         <Info className="w-3 h-3 text-muted-foreground/60 shrink-0 mt-0.5" />
         <span className="text-[10px] sm:text-xs text-muted-foreground">
-          Files are processed quickly with automatic error recovery. Large uploads may take a moment.
+          Upload rate limited to {UPLOAD_CONFIG.rateLimit.maxUploadsPerMinute} files per minute. Large batches will be queued automatically.
         </span>
       </div>
     </motion.div>

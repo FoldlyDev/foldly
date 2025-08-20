@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
+import { UploadHighlight } from '@/components/feedback/upload-highlight';
 import {
   type TreeItem as TreeItemType,
   type TreeFolderItem,
@@ -190,7 +191,7 @@ export default function FileTree({
   onExternalFileDrop,
 }: FileTreeProps) {
   // Update counter for re-syncing data
-  const [updateCounter] = React.useReducer(x => x + 1, 0);
+  const [updateCounter, forceUpdate] = React.useReducer(x => x + 1, 0);
   
   // Get the data and syncDataLoader for this specific tree instance
   // IMPORTANT: Only get this once when treeId changes, not on every render
@@ -318,8 +319,8 @@ export default function FileTree({
   );
 
   const onRename = React.useMemo(
-    () => createRenameHandler(data, renameCallback),
-    [renameCallback] // Depend on renameCallback to update if it changes
+    () => createRenameHandler(data, renameCallback, forceUpdate),
+    [renameCallback, forceUpdate] // Depend on renameCallback and forceUpdate
   );
   
   // Log once when callbacks are set up
@@ -541,6 +542,31 @@ export default function FileTree({
   // Track filtered items for display
   const [filteredItems, setFilteredItems] = React.useState<string[]>([]);
   
+  // Check if workspace is empty (only root item with no children)
+  const isWorkspaceEmpty = React.useMemo(() => {
+    // Get all items from the tree
+    if (!tree || !tree.getItems) return false; // If tree not ready, don't show empty state
+    
+    const items = tree.getItems();
+    
+    // If we have more than just the root item, workspace is not empty
+    // The tree always has at least the root item when initialized
+    if (items.length > 1) return false;
+    
+    // If we only have one item (the root), check if it has children
+    if (items.length === 1) {
+      const rootTreeItem = items[0];
+      if (!rootTreeItem) return false;
+      
+      // Check if the root has any children
+      const children = rootTreeItem.getChildren ? rootTreeItem.getChildren() : [];
+      return children.length === 0;
+    }
+    
+    // No items at all (shouldn't happen but handle it)
+    return items.length === 0;
+  }, [tree, tree?.getItems?.().length]); // Re-compute when tree items change
+  
   // Update filtered items when search changes or tree items change
   React.useEffect(() => {
     if (!searchQuery || searchQuery.length === 0) {
@@ -599,6 +625,29 @@ export default function FileTree({
         {searchQuery && filteredItems.length === 0 ? (
           <div className='px-3 py-4 text-center text-sm text-muted-foreground'>
             No items found for "{searchQuery}"
+          </div>
+        ) : isWorkspaceEmpty && !searchQuery ? (
+          // Show upload highlight when workspace is empty and not searching
+          <div className='flex h-full flex-col items-center justify-center p-8 gap-4'>
+            <UploadHighlight 
+              multiple
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0 && onExternalFileDrop) {
+                  // Convert FileList to File array and trigger the external drop handler
+                  const fileArray = Array.from(files);
+                  onExternalFileDrop(fileArray, rootId, undefined);
+                }
+              }}
+            />
+            <div className='text-center'>
+              <p className='text-sm text-muted-foreground'>
+                Drop files here or click to upload
+              </p>
+              <p className='text-xs text-muted-foreground mt-1'>
+                You can also drag folders from your computer
+              </p>
+            </div>
           </div>
         ) : (
           (() => {

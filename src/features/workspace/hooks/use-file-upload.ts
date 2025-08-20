@@ -567,18 +567,21 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         : files;
 
       if (validFiles.length === 0) {
-        emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
-          currentUsage: storageInfo.storageUsedBytes,
-          totalLimit: storageInfo.storageLimitBytes,
-          remainingSpace: storageInfo.remainingBytes,
-          usagePercentage: storageInfo.usagePercentage,
-          planKey: storageInfo.planKey,
-          message: 'All files exceed the size limit',
-        }, {
-          priority: NotificationPriority.HIGH,
-          uiType: NotificationUIType.TOAST_SIMPLE,
-          duration: 5000,
-        });
+        // Only show notification if there were actually invalid files
+        if (uploadValidation?.invalidFiles && uploadValidation.invalidFiles.length > 0) {
+          emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
+            currentUsage: storageInfo.storageUsedBytes,
+            totalLimit: storageInfo.storageLimitBytes,
+            remainingSpace: storageInfo.remainingBytes,
+            usagePercentage: storageInfo.usagePercentage,
+            planKey: storageInfo.planKey,
+            message: 'All files exceed the size limit',
+          }, {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          });
+        }
         setIsUploading(false);
         return;
       }
@@ -600,13 +603,13 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       }
 
       // Upload files in parallel batches to improve performance
-      const BATCH_SIZE = UPLOAD_CONFIG.batch.size;
+      const PARALLEL_UPLOADS = UPLOAD_CONFIG.batch.parallelUploads || 3;
       const results: any[] = [];
       let completedCount = 0;
       let uploadFailedCount = 0;
       
-      for (let i = 0; i < validFiles.length; i += BATCH_SIZE) {
-        const batch = validFiles.slice(i, i + BATCH_SIZE)
+      for (let i = 0; i < validFiles.length; i += PARALLEL_UPLOADS) {
+        const batch = validFiles.slice(i, i + PARALLEL_UPLOADS)
           .filter(file => file.status === 'pending' || file.status === 'error');
         
         if (batch.length > 0) {

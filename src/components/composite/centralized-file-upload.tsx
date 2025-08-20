@@ -13,11 +13,56 @@ export interface FileWithPreview extends File {
 
 // Remove custom type - use react-dropzone's FileRejection type instead
 
+/**
+ * Recursively reads all files from a directory entry
+ */
+async function readDirectoryRecursively(directoryEntry: any): Promise<File[]> {
+  return new Promise((resolve) => {
+    const dirReader = directoryEntry.createReader();
+    const entries: any[] = [];
+    const files: File[] = [];
+    
+    const readEntries = () => {
+      dirReader.readEntries((results: any[]) => {
+        if (!results.length) {
+          // All entries have been read
+          Promise.all(
+            entries.map(async (entry) => {
+              if (entry.isFile) {
+                return new Promise<void>((resolveFile) => {
+                  entry.file((file: File) => {
+                    files.push(file);
+                    resolveFile();
+                  });
+                });
+              } else if (entry.isDirectory) {
+                const subFiles = await readDirectoryRecursively(entry);
+                files.push(...subFiles);
+              }
+            })
+          ).then(() => {
+            resolve(files);
+          });
+        } else {
+          // Continue reading
+          entries.push(...results);
+          readEntries();
+        }
+      });
+    };
+    
+    readEntries();
+  });
+}
+
 export interface CentralizedFileUploadProps {
   // File handling
   onChange?: (files: File[]) => void;
   onRemove?: (index: number) => void;
   files?: File[];
+  
+  // Skip recursive folder extraction if files are already pre-processed
+  skipFolderExtraction?: boolean;
   
   // Constraints from database schema
   multiple?: boolean;
@@ -48,6 +93,7 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
   onChange,
   onRemove,
   files: externalFiles = [],
+  skipFolderExtraction = false,
   multiple = false,
   maxFiles,
   maxFileSize,
@@ -229,6 +275,52 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
     noClick: true,
     disabled: disabled || hasReachedMaxFiles,
     onDrop: handleFileChange,
+    // Only use custom folder extraction if not already pre-processed
+    ...(skipFolderExtraction ? {} : {
+      getFilesFromEvent: async (event) => {
+        // Custom file handling to support folder drops
+        const fileList: File[] = [];
+        const items = (event as any).dataTransfer?.items;
+        
+        if (!items) {
+          // Fallback to default behavior
+          return Array.from((event as any).dataTransfer?.files || []);
+        }
+        
+        // Process each dropped item
+        await Promise.all(
+          Array.from(items).map(async (item: any) => {
+            if (item.kind === 'file') {
+              const entry = item.webkitGetAsEntry?.();
+              
+              if (entry) {
+                if (entry.isDirectory) {
+                  // Recursively read all files from the directory
+                  const filesInFolder = await readDirectoryRecursively(entry);
+                  fileList.push(...filesInFolder);
+                } else if (entry.isFile) {
+                  // Regular file
+                  await new Promise<void>((resolve) => {
+                    entry.file((file: File) => {
+                      fileList.push(file);
+                      resolve();
+                    });
+                  });
+                }
+              } else {
+                // Fallback for browsers that don't support webkitGetAsEntry
+                const file = item.getAsFile();
+                if (file) {
+                  fileList.push(file);
+                }
+              }
+            }
+          })
+        );
+        
+        return fileList;
+      }
+    }),
     onDropRejected: (fileRejections: FileRejection[]) => {
       console.error('Files rejected:', fileRejections);
       fileRejections.forEach(rejection => {

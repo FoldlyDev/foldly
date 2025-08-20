@@ -22,7 +22,6 @@ export const UPLOAD_CONFIG = {
   // Use shared upload processing config
   batch: {
     ...UPLOAD_PROCESSING.batch,
-    maxFilesPerUpload: UPLOAD_PROCESSING.batch.maxFilesPerUpload,
   },
   rateLimit: UPLOAD_PROCESSING.rateLimit,
   

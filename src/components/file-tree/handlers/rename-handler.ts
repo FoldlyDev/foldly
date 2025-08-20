@@ -13,7 +13,8 @@ export interface RenameOperationCallback {
  */
 export function createRenameHandler(
   data: Record<string, TreeItemType>,
-  callback?: RenameOperationCallback
+  callback?: RenameOperationCallback,
+  onUpdate?: () => void
 ) {
   return async (item: ItemInstance<TreeItemType>, value: string) => {
     const itemId = item.getId();
@@ -30,6 +31,8 @@ export function createRenameHandler(
         await callback(itemId, value, itemType);
         // Only update local state if callback succeeds
         itemData.name = value;
+        // Trigger re-render
+        if (onUpdate) onUpdate();
       } catch (error) {
         console.error('Rename operation failed:', error);
         // Don't update local state, keep old name
@@ -38,6 +41,8 @@ export function createRenameHandler(
     } else {
       // No callback, just update local state
       itemData.name = value;
+      // Trigger re-render
+      if (onUpdate) onUpdate();
     }
   };
 }

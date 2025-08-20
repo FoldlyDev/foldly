@@ -293,7 +293,7 @@ export const SYSTEM_LIMITS = {
   MAX_BATCH_SIZE: 10 * 1024 * 1024 * 1024, // 10GB
   
   // Maximum files per batch upload
-  MAX_FILES_PER_BATCH: 50,
+  MAX_FILES_PER_BATCH: 10, // Supabase rate limit
   
   // Maximum files per folder
   MAX_FILES_PER_FOLDER: 1000,
