@@ -16,7 +16,7 @@ import { UploadModal } from '../modals/upload-modal';
 import { BatchOperationModal, type BatchOperationItem, type BatchOperationProgress } from '../modals/batch-operation-modal';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
-import { useWorkspaceUploadModal } from '@/features/workspace/stores/workspace-modal-store';
+import { useWorkspaceUploadModal, useWorkspaceModalStore } from '@/features/workspace/stores/workspace-modal-store';
 import {
   useStorageTracking,
   useStorageQuotaStatus,
@@ -89,6 +89,9 @@ export function WorkspaceContainer() {
   // Tree instance state and unique tree ID
   const [treeInstance, setTreeInstance] = useState<any | null>(null);
   const treeIdRef = useRef<string>(`workspace-tree-${Date.now()}`);
+  
+  // State for handling file drops
+  const [droppedFiles, setDroppedFiles] = useState<{ files: File[], targetFolderId: string | null } | null>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -435,6 +438,30 @@ export function WorkspaceContainer() {
     // Exit selection mode when clearing
     setSelectionMode(false);
   };
+  
+  // Handle external file drops from outside the application
+  const handleExternalFileDrop = useCallback((files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => {
+    console.log('📁 External files dropped:', {
+      fileCount: files.length,
+      targetFolderId,
+      fileNames: files.map(f => f.name),
+      hasFolderStructure: !!folderStructure
+    });
+    
+    // Store dropped files for processing
+    setDroppedFiles({ files, targetFolderId });
+    
+    // TODO: Handle folder structure by creating folders first if needed
+    if (folderStructure) {
+      console.log('📂 Folder structure detected:', Object.keys(folderStructure));
+      // In the future, we could automatically create the folder structure
+      // For now, we'll just upload all files to the target folder
+    }
+    
+    // Open upload modal to handle the files
+    // Access the store directly since we're in a callback
+    useWorkspaceModalStore.getState().openUploadModal(workspaceData?.workspace?.id, targetFolderId || undefined);
+  }, [workspaceData?.workspace?.id]);
 
   // Handle tree ready callback and extend with needed methods
   const handleTreeReady = useCallback(
@@ -551,6 +578,22 @@ export function WorkspaceContainer() {
       setPreviousStoragePercentage(currentPercentage);
     }
   }, [storageInfo, storageLoading, previousStoragePercentage]);
+  
+  // Listen for folder drop info events
+  React.useEffect(() => {
+    const handleFolderDropInfo = (data: any) => {
+      // Show notification about folders that can't be uploaded
+      toast.info(data.message || 'Folders detected in drop', {
+        duration: 5000,
+      });
+    };
+    
+    eventBus.on('workspace:folder-drop-info', handleFolderDropInfo);
+    
+    return () => {
+      eventBus.off('workspace:folder-drop-info', handleFolderDropInfo);
+    };
+  }, []);
 
   // Show error state
   if (isError && !isLoading) {
@@ -635,6 +678,7 @@ export function WorkspaceContainer() {
                     dropCallbacks={dropCallbacks}
                     renameCallback={renameCallback}
                     contextMenuProvider={contextMenuProvider}
+                    onExternalFileDrop={handleExternalFileDrop}
                   />
                 )}
               </Suspense>
@@ -646,9 +690,15 @@ export function WorkspaceContainer() {
       {/* Upload Modal with Storage Context */}
       <UploadModal
         isOpen={isUploadModalOpen}
-        onClose={closeUploadModal}
+        onClose={() => {
+          closeUploadModal();
+          // Clear dropped files after closing modal
+          setDroppedFiles(null);
+        }}
         workspaceId={modalWorkspaceId || workspaceData?.workspace?.id}
+        {...(droppedFiles?.targetFolderId && { folderId: droppedFiles.targetFolderId })}
         onFileUploaded={treeInstance?.addFileToTree}
+        {...(droppedFiles?.files && { initialFiles: droppedFiles.files })}
       />
 
       {/* Global Storage Status Overlay for Critical States */}

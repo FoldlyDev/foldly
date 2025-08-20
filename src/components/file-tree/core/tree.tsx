@@ -163,6 +163,8 @@ interface FileTreeProps {
   renameCallback?: RenameOperationCallback;
   // Context menu provider
   contextMenuProvider?: ContextMenuProvider;
+  // External file drop handler
+  onExternalFileDrop?: (files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => void;
 }
 
 export default function FileTree({
@@ -185,6 +187,7 @@ export default function FileTree({
   dropCallbacks,
   renameCallback,
   contextMenuProvider,
+  onExternalFileDrop,
 }: FileTreeProps) {
   // Update counter for re-syncing data
   const [updateCounter] = React.useReducer(x => x + 1, 0);
@@ -310,8 +313,8 @@ export default function FileTree({
   );
   
   const { onDropForeignDragObject, onCompleteForeignDrop } = React.useMemo(
-    () => createForeignDropHandlers(data, insertNewItem),
-    [insertNewItem] // Only depend on insertNewItem, not data
+    () => createForeignDropHandlers(data, insertNewItem, onExternalFileDrop),
+    [insertNewItem, onExternalFileDrop] // Depend on both
   );
 
   const onRename = React.useMemo(
@@ -423,7 +426,14 @@ export default function FileTree({
         data: JSON.stringify(itemsData),
       };
     },
-    canDropForeignDragObject: (_: any, target: any) => target.item.isFolder(),
+    canDropForeignDragObject: (dataTransfer: any, target: any) => {
+      // Allow file drops on folders
+      if (dataTransfer.files && dataTransfer.files.length > 0) {
+        return target.item.isFolder() || target.mode === 'inside';
+      }
+      // Original behavior for other drops
+      return target.item.isFolder();
+    },
     indent: 20,
     dataLoader: syncDataLoader,
     features: [

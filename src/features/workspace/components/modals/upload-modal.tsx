@@ -26,6 +26,7 @@ interface UploadModalProps {
   workspaceId?: string;
   folderId?: string;
   onFileUploaded?: (file: any) => void;
+  initialFiles?: File[]; // Pre-selected files from drag-and-drop
 }
 
 export function UploadModal({
@@ -34,6 +35,7 @@ export function UploadModal({
   workspaceId,
   folderId,
   onFileUploaded,
+  initialFiles,
 }: UploadModalProps) {
   const { refetchStorage } = useStorageTracking();
   const {
@@ -62,13 +64,18 @@ export function UploadModal({
     onClose();
   }, [isUploading, onClose]);
 
-  // Refetch storage data when modal opens
+  // Refetch storage data when modal opens and handle initial files
   useEffect(() => {
     if (isOpen) {
       // Refresh storage data to ensure we have the latest info
       refetchStorage();
+      
+      // If we have initial files from drag-and-drop, add them
+      if (initialFiles && initialFiles.length > 0) {
+        handleFileSelect(initialFiles);
+      }
     }
-  }, [isOpen, refetchStorage]);
+  }, [isOpen, refetchStorage, initialFiles, handleFileSelect]);
 
   // Clear files when modal closes
   useEffect(() => {
