@@ -544,28 +544,27 @@ export default function FileTree({
   
   // Check if workspace is empty (only root item with no children)
   const isWorkspaceEmpty = React.useMemo(() => {
-    // Get all items from the tree
-    if (!tree || !tree.getItems) return false; // If tree not ready, don't show empty state
+    // Check the initialData prop - this is the source of truth
+    const dataKeys = Object.keys(initialData);
     
-    const items = tree.getItems();
+    // If we have more than one item (root + others), not empty
+    if (dataKeys.length > 1) return false;
     
-    // If we have more than just the root item, workspace is not empty
-    // The tree always has at least the root item when initialized
-    if (items.length > 1) return false;
-    
-    // If we only have one item (the root), check if it has children
-    if (items.length === 1) {
-      const rootTreeItem = items[0];
-      if (!rootTreeItem) return false;
+    // If we only have one item, check if it's the root and has no children
+    if (dataKeys.length === 1) {
+      const rootItem = initialData[rootId];
+      if (!rootItem) return false;
       
-      // Check if the root has any children
-      const children = rootTreeItem.getChildren ? rootTreeItem.getChildren() : [];
-      return children.length === 0;
+      // Check if it's a folder with children
+      if (isFolder(rootItem)) {
+        const folderItem = rootItem as TreeFolderItem;
+        return !folderItem.children || folderItem.children.length === 0;
+      }
     }
     
-    // No items at all (shouldn't happen but handle it)
-    return items.length === 0;
-  }, [tree, tree?.getItems?.().length]); // Re-compute when tree items change
+    // No data at all
+    return dataKeys.length === 0;
+  }, [initialData, rootId]);
   
   // Update filtered items when search changes or tree items change
   React.useEffect(() => {
