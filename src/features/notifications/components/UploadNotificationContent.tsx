@@ -115,6 +115,70 @@ export function UploadNotificationContent({
 }
 
 /**
+ * File Upload Progress Notification Content
+ */
+interface FileUploadProgressProps {
+  toastId: string | number;
+  fileName: string;
+  fileSize: number;
+  progress: number;
+  status?: 'uploading' | 'success' | 'error';
+}
+
+export function FileUploadProgressContent({
+  toastId,
+  fileName,
+  fileSize,
+  progress,
+  status = 'uploading',
+}: FileUploadProgressProps) {
+  const formatFileSize = (bytes: number): string => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  return (
+    <div className="bg-background text-foreground w-full rounded-lg border border-border px-4 py-3 shadow-lg sm:w-[var(--width)] animate-in slide-in-from-bottom-2">
+      <div className="flex gap-3">
+        <div className="flex grow gap-3">
+          <FileUp className="mt-0.5 shrink-0 text-blue-500" size={18} aria-hidden="true" />
+          
+          <div className="flex grow flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Uploading {fileName}</p>
+              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+            </div>
+            
+            {/* Progress bar */}
+            <div className="w-full bg-secondary rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              {formatFileSize(fileSize)} • {Math.round(progress)}% complete
+            </p>
+          </div>
+        </div>
+        
+        <button
+          className="group -my-1.5 -me-2 size-8 shrink-0 p-0 rounded-md hover:bg-accent transition-colors"
+          onClick={() => toast.dismiss(toastId)}
+          aria-label="Dismiss notification"
+        >
+          <XIcon size={16} className="opacity-60 transition-opacity group-hover:opacity-100" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Batch Upload Notification Content
  */
 interface BatchUploadNotificationContentProps {

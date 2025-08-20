@@ -7,7 +7,8 @@
 import { toast } from 'sonner';
 import { 
   UploadNotificationContent, 
-  BatchUploadNotificationContent 
+  BatchUploadNotificationContent,
+  FileUploadProgressContent 
 } from '../components/UploadNotificationContent';
 import { useUserSettingsStore } from '@/features/settings/store/user-settings-store';
 
@@ -108,6 +109,36 @@ export function showBatchUploadNotification(
     duration: 8000,
     position: 'bottom-right',
   });
+}
+
+/**
+ * Show file upload progress notification
+ */
+export function showFileUploadProgress(
+  fileId: string,
+  fileName: string,
+  fileSize: number,
+  progress: number,
+  status: 'uploading' | 'success' | 'error' = 'uploading'
+): string {
+  const toastId = `upload-progress-${fileId}`;
+  
+  // Use custom toast with progress bar
+  toast.custom((t) => (
+    <FileUploadProgressContent
+      toastId={t}
+      fileName={fileName}
+      fileSize={fileSize}
+      progress={progress}
+      status={status}
+    />
+  ), {
+    id: toastId,
+    duration: status === 'uploading' ? Infinity : 3000, // Don't auto-dismiss while uploading
+    position: 'bottom-right',
+  });
+  
+  return toastId;
 }
 
 // Export the original interface for backward compatibility

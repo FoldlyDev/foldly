@@ -69,6 +69,7 @@ class NotificationManager {
   private deduplicationMap: Map<string, DeduplicationEntry> = new Map();
   private activeToasts: Set<string> = new Set();
   private progressToasts: Map<string, string> = new Map(); // Maps event ID to toast ID
+  private completedUploads: Set<string> = new Set(); // Track completed uploads to prevent recreation
 
   private constructor(config?: Partial<NotificationManagerConfig>) {
     this.config = {
@@ -255,6 +256,8 @@ class NotificationManager {
     // Map of event types to title generators
     const titleMap: Record<string, string> = {
       // File events
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_START]: `Uploading ${payload.fileName || 'file'}`,
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS]: `Uploading ${payload.fileName || 'file'}`,
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS]: 'File uploaded successfully',
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR]: 'File upload failed',
       [NotificationEventType.WORKSPACE_FILE_DELETE_SUCCESS]: 'File deleted',
@@ -299,6 +302,13 @@ class NotificationManager {
     
     // Generate descriptions based on event type
     switch (event.type) {
+      case NotificationEventType.WORKSPACE_FILE_UPLOAD_START:
+        return `Starting upload (${this.formatFileSize(payload.fileSize)})`;
+      
+      case NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS:
+        const progress = Math.round(payload.uploadProgress || 0);
+        return `${progress}% complete (${this.formatFileSize(payload.fileSize)})`;
+        
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS:
         return payload.fileName;
       
@@ -500,13 +510,99 @@ class NotificationManager {
       return;
     }
 
-    // Check if this is an update to existing progress
+    // Check if this upload was already completed - if so, ignore all further events
+    if (this.completedUploads.has(progressId)) {
+      return;
+    }
+
+    // For file upload start, create a loading toast
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START) {
+      // Check if already exists
+      const existingToastId = this.progressToasts.get(progressId);
+      if (!existingToastId && !this.completedUploads.has(progressId)) {
+        const toastIdKey = `progress-${progressId}`;
+        toast.loading(display.title, {
+          description: display.description,
+          id: toastIdKey,
+        });
+        this.progressToasts.set(progressId, toastIdKey);
+      }
+      return;
+    }
+    
+    // For file upload progress, update the existing toast (but don't create new ones)
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS) {
+      // Only update if the toast still exists in our tracking
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId && !this.completedUploads.has(progressId)) {
+        // Just update the text, don't recreate
+        toast.loading(display.title, {
+          description: display.description,
+          id: existingToastId,
+        });
+      }
+      // If no existing toast, just ignore the progress update (file probably already completed)
+      return;
+    }
+    
+    // For file upload success, dismiss loading and show success
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS) {
+      // Mark as completed to prevent any further updates
+      this.completedUploads.add(progressId);
+      
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId) {
+        // Force dismiss the loading toast completely
+        toast.dismiss(existingToastId);
+        // Remove all traces of it
+        this.progressToasts.delete(progressId);
+      }
+      // Create a new success toast with a different ID to avoid conflicts
+      toast.success(display.title, {
+        description: display.description,
+        duration: 3000,
+        id: `success-${progressId}`, // Different ID to avoid conflicts
+      });
+      
+      // Clean up completed uploads after a delay
+      setTimeout(() => {
+        this.completedUploads.delete(progressId);
+      }, 10000);
+      return;
+    }
+    
+    // For file upload error, dismiss loading and show error
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR) {
+      // Mark as completed to prevent any further updates
+      this.completedUploads.add(progressId);
+      
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId) {
+        // Force dismiss the loading toast completely
+        toast.dismiss(existingToastId);
+        // Remove all traces of it
+        this.progressToasts.delete(progressId);
+      }
+      // Create a new error toast with a different ID to avoid conflicts
+      toast.error(display.title, {
+        description: display.description,
+        duration: 5000,
+        id: `error-${progressId}`, // Different ID to avoid conflicts
+      });
+      
+      // Clean up completed uploads after a delay
+      setTimeout(() => {
+        this.completedUploads.delete(progressId);
+      }, 10000);
+      return;
+    }
+
+    // For other progress events, use standard loading toast
     const existingToastId = this.progressToasts.get(progressId);
     if (existingToastId) {
       toast.dismiss(existingToastId);
     }
 
-    // Create new progress toast
     const toastId = toast.loading(display.title, {
       description: display.description,
       id: `progress-${progressId}`,
@@ -533,6 +629,17 @@ class NotificationManager {
     // This will be implemented with stacked notifications component
     // For now, fall back to simple toast
     this.showToast(event, display);
+  }
+
+  /**
+   * Format file size for display
+   */
+  private formatFileSize(bytes: number): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   }
 
   /**

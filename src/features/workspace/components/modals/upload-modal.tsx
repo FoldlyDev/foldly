@@ -25,6 +25,7 @@ interface UploadModalProps {
   onClose: () => void;
   workspaceId?: string;
   folderId?: string;
+  onFileUploaded?: (file: any) => void;
 }
 
 export function UploadModal({
@@ -32,6 +33,7 @@ export function UploadModal({
   onClose,
   workspaceId,
   folderId,
+  onFileUploaded,
 }: UploadModalProps) {
   const { refetchStorage } = useStorageTracking();
   const {
@@ -53,7 +55,7 @@ export function UploadModal({
     quotaStatus,
     storageInfo,
     clearFiles,
-  } = useFileUpload({ workspaceId, folderId, onClose });
+  } = useFileUpload({ workspaceId, folderId, onClose, onFileUploaded });
 
   const handleClose = useCallback(() => {
     if (isUploading) return;
