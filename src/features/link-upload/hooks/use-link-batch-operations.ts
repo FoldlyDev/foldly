@@ -6,7 +6,7 @@ import type { TreeInstance } from '@headless-tree/core';
 import { moveLinkItemsAction } from '../lib/actions/link-folder-actions';
 import { linkQueryKeys } from '../lib/query-keys';
 import { setDragOperationActive, type LinkTreeItem } from '../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import type { BatchOperationItem, BatchOperationProgress } from '../components/modals/batch-operation-modal';
 
 interface UseLinkBatchOperationsProps {
@@ -53,17 +53,26 @@ export function useLinkBatchOperations({
         setDragOperationActive(false);
       }
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({
         queryKey: linkQueryKeys.tree(linkId),
         refetchType: 'none',
       });
       onSelectionChange?.([]);
-      toast.success('Items moved successfully');
+      const itemCount = variables.itemIds.length;
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_MOVE_SUCCESS, {
+        fileId: variables.itemIds[0] || '',
+        fileName: `${itemCount} item${itemCount === 1 ? '' : 's'}`,
+      });
     },
-    onError: (error) => {
+    onError: (error, variables) => {
       queryClient.invalidateQueries({ queryKey: linkQueryKeys.tree(linkId) });
-      toast.error(error instanceof Error ? error.message : 'Failed to move items');
+      const itemCount = variables?.itemIds.length || 0;
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: variables?.itemIds[0] || '',
+        fileName: `${itemCount} item${itemCount === 1 ? '' : 's'}`,
+        error: error instanceof Error ? error.message : 'Failed to move items',
+      });
     },
   });
 

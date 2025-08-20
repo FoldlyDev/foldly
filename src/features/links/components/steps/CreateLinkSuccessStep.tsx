@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, ExternalLink } from 'lucide-react';
 import { useCallback } from 'react';
-import { toast } from 'sonner';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,

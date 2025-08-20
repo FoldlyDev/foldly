@@ -27,7 +27,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { setDragOperationActive } from '../../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import {
   BatchOperationModal,
   type BatchOperationItem,
@@ -106,7 +106,13 @@ export function WorkspaceToolbar({
   const handleCollapseAll = () => {
     if (treeInstance?.collapseAll) {
       treeInstance.collapseAll();
-      toast.success('All folders collapsed');
+      // Use a simple success event for UI operations
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+        items: [],
+        batchId: `collapse-${Date.now()}`,
+        totalItems: 0,
+        completedItems: 0,
+      });
     }
   };
 
@@ -114,7 +120,13 @@ export function WorkspaceToolbar({
   const handleExpandAll = () => {
     if (treeInstance?.expandAll) {
       treeInstance.expandAll();
-      toast.success('All folders expanded');
+      // Use a simple success event for UI operations
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+        items: [],
+        batchId: `expand-${Date.now()}`,
+        totalItems: 0,
+        completedItems: 0,
+      });
     }
   };
 
@@ -237,15 +249,20 @@ export function WorkspaceToolbar({
         queryKey: workspaceQueryKeys.tree(),
         refetchType: 'none' // Don't refetch immediately
       });
-      toast.success('Folder created successfully');
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
+        folderId: data?.id || '',
+        folderName: data?.name || newFolderName,
+      });
       setNewFolderName('');
       setIsCreatingFolder(false);
     },
     onError: error => {
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to create folder'
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+        folderId: '',
+        folderName: newFolderName,
+        error: error instanceof Error ? error.message : 'Failed to create folder',
+      });
     },
   });
 

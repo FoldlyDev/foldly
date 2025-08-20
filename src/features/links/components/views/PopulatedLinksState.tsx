@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/animate-ui/radix/dropdown-menu';
 import { Filter } from 'lucide-react';
-import { toast } from 'sonner';
 import type { LinkWithStats } from '@/lib/database/types';
 
 interface PopulatedLinksStateProps {
@@ -81,7 +80,8 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
       // If no base link exists, create base link first
       if (!hasBaseLink) {
-        toast.info('Setting up your base link first...');
+        // This is just informational UI feedback, not really a notification event
+        // We'll keep it simple and just open the modal without a toast
         openCreateModal('base');
       } else {
         // User has base link, create topic link

@@ -9,7 +9,7 @@ import { useStagingStore } from '../../stores/staging-store';
 import { useBatchUpload } from '../../hooks/use-batch-upload';
 import { linkQueryKeys } from '../../lib/query-keys';
 import { setDragOperationActive } from '../../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import {
   BatchOperationModal,
   type BatchOperationItem,
@@ -121,9 +121,12 @@ export function LinkUploadToolbar({
       const failCount = results.filter(r => !r.success).length;
 
       if (successCount > 0) {
-        toast.success(
-          `Successfully uploaded ${successCount} item${successCount !== 1 ? 's' : ''}`
-        );
+        eventBus.emitNotification(NotificationEventType.LINK_BATCH_UPLOAD, {
+          linkId: linkData.id,
+          linkSlug: linkData.slug,
+          linkTitle: linkData.title || linkData.slug,
+          uploadCount: successCount,
+        });
         
         // Invalidate tree data to refresh the UI
         await queryClient.invalidateQueries({
@@ -132,9 +135,12 @@ export function LinkUploadToolbar({
       }
       
       if (failCount > 0) {
-        toast.error(
-          `Failed to upload ${failCount} item${failCount !== 1 ? 's' : ''}`
-        );
+        eventBus.emitNotification(NotificationEventType.LINK_GENERATE_ERROR, {
+          linkId: linkData.id,
+          linkSlug: linkData.slug,
+          linkTitle: linkData.title || linkData.slug,
+          error: `Failed to upload ${failCount} item${failCount !== 1 ? 's' : ''}`,
+        });
       }
 
       setIsUploading(false);
@@ -166,7 +172,12 @@ export function LinkUploadToolbar({
       });
     } catch (error) {
       console.error('Upload failed:', error);
-      toast.error('Upload failed. Please try again.');
+      eventBus.emitNotification(NotificationEventType.LINK_GENERATE_ERROR, {
+        linkId: linkData.id,
+        linkSlug: linkData.slug,
+        linkTitle: linkData.title || linkData.slug,
+        error: 'Upload failed. Please try again.',
+      });
       setIsUploading(false);
       updateUploadProgress({ completed: 0, total: 0 });
     }
@@ -225,9 +236,11 @@ export function LinkUploadToolbar({
     onSuccess: result => {
       if (result.success) {
         const successCount = result.data?.deletedCount || 0;
-        toast.success(
-          `Deleted ${successCount} item${successCount !== 1 ? 's' : ''}`
-        );
+        eventBus.emitNotification(NotificationEventType.LINK_DELETE_SUCCESS, {
+          linkId: linkData.id,
+          linkSlug: linkData.slug,
+          linkTitle: `Deleted ${successCount} item${successCount !== 1 ? 's' : ''}`,
+        });
 
         // Clear selection
         if (onClearSelection) {
@@ -239,13 +252,23 @@ export function LinkUploadToolbar({
           queryKey: linkQueryKeys.tree(linkData.id),
         });
       } else {
-        toast.error(result.error || 'Failed to delete items');
+        eventBus.emitNotification(NotificationEventType.LINK_DELETE_ERROR, {
+          linkId: linkData.id,
+          linkSlug: linkData.slug,
+          linkTitle: linkData.title || linkData.slug,
+          error: result.error || 'Failed to delete items',
+        });
       }
       setShowBatchModal(false);
     },
     onError: error => {
       console.error('Delete error:', error);
-      toast.error('Failed to delete items. Please try again.');
+      eventBus.emitNotification(NotificationEventType.LINK_DELETE_ERROR, {
+        linkId: linkData.id,
+        linkSlug: linkData.slug,
+        linkTitle: linkData.title || linkData.slug,
+        error: 'Failed to delete items. Please try again.',
+      });
       setShowBatchModal(false);
     },
   });

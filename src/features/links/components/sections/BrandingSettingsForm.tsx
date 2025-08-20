@@ -8,7 +8,7 @@ import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
 import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 export interface BrandingSettingsFormProps {
   form: UseFormReturn<GeneralSettingsFormData>;
@@ -24,6 +24,7 @@ export function BrandingSettingsForm({
     setValue,
     formState: { errors },
   } = form;
+  const { emit } = useEventBus();
 
   const watchedValues = watch();
   const brandColor = watchedValues.branding?.color || '#6c47ff';
@@ -68,7 +69,10 @@ export function BrandingSettingsForm({
           const result = await response.json();
 
           if (result.success) {
-            toast.success('Branding image uploaded successfully');
+            emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+              linkId: link.id,
+              linkTitle: `${link.title} - Branding image uploaded`,
+            });
             // Update form with the new image URL from storage
             setValue(
               'branding',
@@ -85,13 +89,21 @@ export function BrandingSettingsForm({
             );
             setPendingFile(null);
           } else {
-            toast.error(result.error || 'Failed to upload branding image');
+            emit(NotificationEventType.LINK_UPDATE_ERROR, {
+              linkId: link.id,
+              linkTitle: link.title,
+              error: result.error || 'Failed to upload branding image',
+            });
             setPendingFile(null);
             setPreviewUrl(null);
           }
         } catch (error) {
           console.error('Failed to upload branding image:', error);
-          toast.error('Failed to upload branding image');
+          emit(NotificationEventType.LINK_UPDATE_ERROR, {
+            linkId: link.id,
+            linkTitle: link.title,
+            error: 'Failed to upload branding image',
+          });
           setPendingFile(null);
           setPreviewUrl(null);
         } finally {
@@ -99,7 +111,7 @@ export function BrandingSettingsForm({
         }
       }
     },
-    [link.id, setValue, watchedValues.branding]
+    [link.id, setValue, watchedValues.branding, emit]
   );
 
   const handleFileRemove = useCallback(async () => {
@@ -116,7 +128,10 @@ export function BrandingSettingsForm({
       const result = await response.json();
 
       if (result.success) {
-        toast.success('Branding image removed');
+        emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+          linkId: link.id,
+          linkTitle: `${link.title} - Branding image removed`,
+        });
         setValue(
           'branding',
           {
@@ -133,15 +148,23 @@ export function BrandingSettingsForm({
         setPreviewUrl(null);
         setPendingFile(null);
       } else {
-        toast.error(result.error || 'Failed to remove branding image');
+        emit(NotificationEventType.LINK_UPDATE_ERROR, {
+          linkId: link.id,
+          linkTitle: link.title,
+          error: result.error || 'Failed to remove branding image',
+        });
       }
     } catch (error) {
       console.error('Failed to remove branding image:', error);
-      toast.error('Failed to remove branding image');
+      emit(NotificationEventType.LINK_UPDATE_ERROR, {
+        linkId: link.id,
+        linkTitle: link.title,
+        error: 'Failed to remove branding image',
+      });
     } finally {
       setIsUploading(false);
     }
-  }, [link.id, setValue, watchedValues.branding]);
+  }, [link.id, link.title, setValue, watchedValues.branding, emit]);
 
   return (
     <div className='space-y-6'>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import { FolderPlus } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import { useStagingStore } from '../../stores/staging-store';
 
 interface FolderCreationProps {
@@ -39,15 +39,20 @@ export function FolderCreation({
 
       return { id: stagingId, name: trimmedName, parentFolderId };
     },
-    onSuccess: () => {
-      toast.success('Folder staged for upload');
+    onSuccess: (data) => {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
+        folderId: data.id,
+        folderName: data.name,
+      });
       setNewFolderName('');
       setIsCreatingFolder(false);
     },
     onError: error => {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to stage folder'
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+        folderId: '',
+        folderName: newFolderName,
+        error: error instanceof Error ? error.message : 'Failed to stage folder',
+      });
     },
   });
 

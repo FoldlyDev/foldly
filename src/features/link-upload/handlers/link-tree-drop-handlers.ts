@@ -7,7 +7,7 @@ import {
   setDragOperationActive,
   type LinkTreeItem 
 } from '../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 
 interface DropHandlerProps {
   items: ItemInstance<LinkTreeItem>[];
@@ -96,7 +96,10 @@ async function handleDropInternal(
   const isTargetFolder = !targetItemData.isFile;
   if (!isTargetFolder) {
     console.warn('Cannot drop items on a file, only folders allowed');
-    toast.error('Can only drop items into folders');
+    eventBus.emitNotification(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+      message: 'Can only drop items into folders',
+      error: 'Invalid drop target',
+    });
     return;
   }
 
@@ -205,7 +208,16 @@ async function handleReorderOperation(
   // For staging items, we don't persist to database
   if (parentData.isStaged) {
     console.log('✅ Reorder operation successful (staging folder)');
-    toast.success('Items reordered', { duration: 1500 });
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+      items: newChildren.map(id => ({
+        id,
+        name: data[id]?.name || 'Item',
+        type: data[id]?.isFile ? 'file' as const : 'folder' as const,
+      })),
+      batchId: `reorder-${Date.now()}`,
+      totalItems: newChildren.length,
+      completedItems: newChildren.length,
+    });
     return;
   }
 
@@ -222,7 +234,16 @@ async function handleReorderOperation(
           refetchType: 'none',
         });
       }
-      toast.success('Items reordered', { duration: 1500 });
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+      items: newChildren.map(id => ({
+        id,
+        name: data[id]?.name || 'Item',
+        type: data[id]?.isFile ? 'file' as const : 'folder' as const,
+      })),
+      batchId: `reorder-${Date.now()}`,
+      totalItems: newChildren.length,
+      completedItems: newChildren.length,
+    });
     } else {
       throw new Error(result.error || 'Failed to update order');
     }
@@ -237,9 +258,18 @@ async function handleReorderOperation(
       });
     }
     
-    toast.error(
-      error instanceof Error ? error.message : 'Failed to update order'
-    );
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+      items: newChildren.map(id => ({
+        id,
+        name: data[id]?.name || 'Item',
+        type: data[id]?.isFile ? 'file' as const : 'folder' as const,
+      })),
+      batchId: `reorder-${Date.now()}`,
+      totalItems: newChildren.length,
+      completedItems: 0,
+      failedItems: newChildren.length,
+      error: error instanceof Error ? error.message : 'Failed to update order',
+    });
   }
 }
 
@@ -322,10 +352,10 @@ async function handleMoveOperation(
     
     if (isTargetStaged || hasAnyStaged) {
       console.log('✅ Move operation successful (involves staging items)');
-      toast.success(
-        `Moved ${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
-        { duration: 1500 }
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_MOVE_SUCCESS, {
+        fileId: itemIds[0] || '',
+        fileName: `${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
+      });
       return;
     }
 
@@ -346,10 +376,10 @@ async function handleMoveOperation(
       });
     }
 
-    toast.success(
-      `Moved ${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
-      { duration: 1500 }
-    );
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_MOVE_SUCCESS, {
+      fileId: itemIds[0] || '',
+      fileName: `${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
+    });
   } catch (error) {
     // Revert all changes on failure
     console.log('⏪ Reverting move changes due to error');
@@ -392,8 +422,10 @@ async function handleMoveOperation(
       });
     }
     
-    toast.error(
-      error instanceof Error ? error.message : 'Failed to move items'
-    );
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+      fileId: itemIds[0] || '',
+      fileName: `${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
+      error: error instanceof Error ? error.message : 'Failed to move items',
+    });
   }
 }

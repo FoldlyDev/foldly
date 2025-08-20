@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import type { TreeInstance } from '@headless-tree/core';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import { batchMoveItemsAction } from '../lib/actions';
 import { workspaceQueryKeys } from '../lib/query-keys';
 import type {
@@ -11,7 +10,6 @@ import type {
   BatchOperationProgress,
 } from '../components/modals/batch-operation-modal';
 import { data, setDragOperationActive } from '../lib/tree-data';
-import type { WorkspaceTreeItem } from '../lib/tree-data';
 
 export type BatchMoveModalState = {
   isOpen: boolean;
@@ -81,10 +79,17 @@ export function useBatchOperations({
               queryKey: workspaceQueryKeys.tree(),
               refetchType: 'none',
             });
-            toast.success('Item moved successfully');
+            eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_MOVE_SUCCESS, {
+              fileId: movedItems[0] || '',
+              fileName: data[movedItems[0] || '']?.name || 'Item',
+            });
             onSelectionChange?.([]);
           } else {
-            toast.error(result.error || 'Failed to move item');
+            eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+              fileId: movedItems[0] || '',
+              fileName: data[movedItems[0] || '']?.name || 'Item',
+              error: result.error || 'Failed to move item',
+            });
             // Force refetch on error to ensure consistency
             queryClient.invalidateQueries({
               queryKey: workspaceQueryKeys.tree(),
@@ -179,13 +184,19 @@ export function useBatchOperations({
         const { movedItems: actualMoved, totalItems: actualTotal } =
           result.data || {};
         if (actualMoved && actualTotal && actualMoved < actualTotal) {
-          toast.success(
-            `Moved ${actualMoved} items (${actualTotal - actualMoved} were children of moved folders)`
-          );
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS, {
+            items: batchMoveModal.items,
+            batchId: `move-${Date.now()}`,
+            totalItems: actualTotal,
+            completedItems: actualMoved,
+          });
         } else {
-          toast.success(
-            `Moved ${movedItemIds.length} item${movedItemIds.length === 1 ? '' : 's'}`
-          );
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS, {
+            items: batchMoveModal.items,
+            batchId: `move-${Date.now()}`,
+            totalItems: movedItemIds.length,
+            completedItems: movedItemIds.length,
+          });
         }
 
         // Clear selection after successful batch move
@@ -207,7 +218,14 @@ export function useBatchOperations({
               }
             : undefined,
         }));
-        toast.error(result.error || 'Failed to move items');
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+          items: batchMoveModal.items,
+          batchId: `move-${Date.now()}`,
+          totalItems: batchMoveModal.items.length,
+          completedItems: 0,
+          failedItems: batchMoveModal.items.length,
+          error: result.error || 'Failed to move items',
+        });
 
         // Force refetch on error to ensure consistency
         queryClient.invalidateQueries({
@@ -215,9 +233,14 @@ export function useBatchOperations({
         });
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to move items'
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+        items: batchMoveModal.items,
+        batchId: `move-${Date.now()}`,
+        totalItems: batchMoveModal.items.length,
+        completedItems: 0,
+        failedItems: batchMoveModal.items.length,
+        error: error instanceof Error ? error.message : 'Failed to move items',
+      });
       // Force refetch on error to ensure consistency
       queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),

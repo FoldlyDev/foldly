@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import {
   Settings,
   Moon,
@@ -12,8 +11,8 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
 import { useTheme } from '@/lib/providers/theme-provider';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 import { useUserSettingsStore } from '@/features/settings/store/user-settings-store';
 import {
   updateDoNotDisturbAction,
@@ -28,17 +27,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/animate-ui/radix/dropdown-menu';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export function SettingsDropdown() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { emit } = useEventBus();
   const {
     doNotDisturb,
     silentNotifications,
     setDoNotDisturb,
     setSilentNotifications,
-    isSaving,
   } = useUserSettingsStore();
 
   const handleThemeChange = async (newTheme: string) => {
@@ -51,10 +50,11 @@ export function SettingsDropdown() {
       system: 'Going with the flow 🤖',
     };
 
-    toast.success(
-      themeMessages[newTheme as keyof typeof themeMessages] ||
-        `Switched to ${newTheme} mode`
-    );
+    emit(NotificationEventType.SETTINGS_UPDATE_SUCCESS, {
+      setting: 'theme',
+      value: newTheme,
+      message: themeMessages[newTheme as keyof typeof themeMessages] || `Switched to ${newTheme} mode`,
+    });
   };
 
   const handleDNDToggle = async () => {
@@ -74,15 +74,21 @@ export function SettingsDropdown() {
     const result = await updateDoNotDisturbAction(newValue);
 
     if (result.success) {
-      toast.success(
-        newValue
+      emit(NotificationEventType.SETTINGS_UPDATE_SUCCESS, {
+        setting: 'doNotDisturb',
+        value: newValue,
+        message: newValue
           ? 'Alright, going ghost mode 👻'
-          : "Back in action! Let's get those notifications 🔔"
-      );
+          : "Back in action! Let's get those notifications 🔔",
+      });
     } else {
       // Revert on error
       setDoNotDisturb(doNotDisturb);
-      toast.error('Oops! Something went wrong with that toggle');
+      emit(NotificationEventType.SETTINGS_UPDATE_ERROR, {
+        setting: 'doNotDisturb',
+        value: newValue,
+        error: 'Oops! Something went wrong with that toggle',
+      });
     }
   };
 
@@ -96,15 +102,21 @@ export function SettingsDropdown() {
     const result = await updateSilentNotificationsAction(newValue);
 
     if (result.success) {
-      toast.success(
-        newValue
+      emit(NotificationEventType.SETTINGS_UPDATE_SUCCESS, {
+        setting: 'silentNotifications',
+        value: newValue,
+        message: newValue
           ? "Shhh... let's keep it quiet 🤫"
-          : "Sound's back on! Let's make some noise 🔊"
-      );
+          : "Sound's back on! Let's make some noise 🔊",
+      });
     } else {
       // Revert on error
       setSilentNotifications(silentNotifications);
-      toast.error("Uh oh! Couldn't update the sound settings");
+      emit(NotificationEventType.SETTINGS_UPDATE_ERROR, {
+        setting: 'silentNotifications',
+        value: newValue,
+        error: "Uh oh! Couldn't update the sound settings",
+      });
     }
   };
 

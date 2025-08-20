@@ -11,7 +11,8 @@ import { linksQueryKeys } from '../../lib/query-keys';
 import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import type { Link, LinkWithStats } from '@/lib/database/types/links';
 import type { CreateLinkActionData } from '../../lib/validations';
-import { toast } from 'sonner';
+import { NotificationEventType } from '@/features/notifications/core';
+import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseCreateLinkMutationOptions {
   onSuccess?: (data: Link) => void;
@@ -37,6 +38,7 @@ export function useCreateLinkMutation(
   options: UseCreateLinkMutationOptions = {}
 ): UseCreateLinkMutationResult {
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
@@ -150,13 +152,20 @@ export function useCreateLinkMutation(
       return { previousLinks };
     },
 
-    onError: (error, _variables, context) => {
+    onError: (error, variables, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousLinks) {
         queryClient.setQueryData(linksQueryKeys.list(), context.previousLinks);
       }
 
-      toast.error(error.message || 'Failed to create link');
+      // Emit error event instead of direct toast
+      emit(NotificationEventType.LINK_CREATE_ERROR, {
+        linkId: 'temp-' + Date.now(),
+        linkTitle: variables.title || 'New Link',
+        linkType: variables.slug ? 'custom' : 'base',
+        error: error.message || 'Failed to create link',
+      });
+      
       onError?.(error);
     },
 
@@ -216,8 +225,14 @@ export function useCreateLinkMutation(
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
-      // Don't show toast here - let the calling code handle it
-      // This prevents double toasts when using quick start or other features
+      // Emit success event for notification
+      emit(NotificationEventType.LINK_CREATE_SUCCESS, {
+        linkId: data.id,
+        linkTitle: data.title,
+        linkUrl: data.slug,
+        linkType: data.topic ? 'custom' : 'base',
+      });
+
       onSuccess?.(data);
     },
 

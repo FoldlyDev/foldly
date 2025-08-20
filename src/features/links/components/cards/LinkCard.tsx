@@ -5,12 +5,12 @@ import { useIsMobile } from '@/lib/hooks/use-mobile';
 import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
 import { LinkCardGrid } from './LinkCardGrid';
-import { toast } from 'sonner';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import type { LinkWithStats } from '@/lib/database/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
 import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 interface LinkCardProps {
   link: LinkWithStats;
@@ -36,6 +36,7 @@ const LinkCardComponent = ({
   onMultiSelect,
 }: LinkCardProps) => {
   const isMobile = useIsMobile();
+  const { emit } = useEventBus();
   const unreadCounts = useNotificationStore(state => state.unreadCounts);
   const clearLinkNotificationsLocal = useNotificationStore(state => state.clearLinkNotifications);
   
@@ -85,10 +86,18 @@ const LinkCardComponent = ({
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(fullUrl);
-      toast.success('Link copied to clipboard');
+      emit(NotificationEventType.LINK_COPY_SUCCESS, {
+        linkId: link.id,
+        linkTitle: link.title,
+        linkUrl: fullUrl,
+      });
     } catch (error) {
       console.error('Failed to copy link:', error);
-      toast.error('Failed to copy link');
+      // Use permission error for clipboard failures
+      emit(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+        message: 'Failed to copy link to clipboard. Please check your browser permissions.',
+        severity: 'error',
+      });
     }
   };
 

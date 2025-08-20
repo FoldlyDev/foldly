@@ -12,7 +12,8 @@ import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
 import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
-import { toast } from 'sonner';
+import { NotificationEventType } from '@/features/notifications/core';
+import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseUpdateLinkMutationOptions {
   onSuccess?: (result: UpdateLinkResult) => void;
@@ -49,6 +50,7 @@ export function useUpdateLinkMutation(
   options: UseUpdateLinkMutationOptions = {}
 ): UseUpdateLinkMutationResult {
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
@@ -136,7 +138,12 @@ export function useUpdateLinkMutation(
         }
       }
 
-      toast.error(error.message || 'Failed to update link');
+      // Emit error event
+      emit(NotificationEventType.LINK_UPDATE_ERROR, {
+        linkId: variables.id,
+        linkTitle: variables.title || 'Link',
+        error: error.message || 'Failed to update link',
+      });
       onError?.(error);
     },
 
@@ -150,9 +157,11 @@ export function useUpdateLinkMutation(
         });
 
         const affectedCount = result.meta.affectedLinksCount || 0;
-        toast.success(
-          `Base link updated - ${affectedCount} links updated successfully`
-        );
+        // Emit success event for cascade update
+        emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+          linkId: variables.id,
+          linkTitle: `Base link updated - ${affectedCount} links updated`,
+        });
       } else {
         // Regular single link update
         queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
@@ -160,7 +169,11 @@ export function useUpdateLinkMutation(
           queryKey: linksQueryKeys.detail(variables.id),
         });
 
-        toast.success('Link updated successfully');
+        // Emit success event for regular update
+        emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+          linkId: variables.id,
+          linkTitle: variables.title || result.data?.title || 'Link',
+        });
       }
       
       // Invalidate storage queries to reflect any changes in storage usage

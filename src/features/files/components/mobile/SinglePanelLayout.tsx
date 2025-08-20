@@ -23,7 +23,7 @@ import {
   copyFilesToWorkspaceAction,
   copyTreeNodesToWorkspaceAction,
 } from '../../lib/actions';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import type { LinkWithFileTree, TreeNode } from '../../types';
 import { cn } from '@/lib/utils';
 
@@ -182,7 +182,10 @@ export function SinglePanelLayout({
               : 'Files copied to your workspace';
         }
 
-        toast.success(title, { description });
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS, {
+          fileId: '',
+          fileName: title,
+        });
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['workspace'] });
@@ -193,15 +196,18 @@ export function SinglePanelLayout({
           failCopyOperation(error.fileId, error.error);
         });
 
-        toast.error('Copy completed with errors', {
-          description: result.error || 'Some files failed to copy',
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+          fileId: '',
+          fileName: 'Files',
+          error: result.error || 'Some files failed to copy',
         });
       }
     },
     onError: error => {
-      toast.error('Copy failed', {
-        description:
-          error instanceof Error ? error.message : 'Failed to copy files',
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: '',
+        fileName: 'Files',
+        error: error instanceof Error ? error.message : 'Failed to copy files',
       });
     },
   });
@@ -245,8 +251,9 @@ export function SinglePanelLayout({
       const folderIds = Array.from(selectedFolders);
 
       if (fileIds.length === 0 && folderIds.length === 0) {
-        toast.error('No items selected', {
-          description: 'Please select files or folders to copy',
+        eventBus.emitNotification(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+          message: 'No items selected',
+          error: 'Please select files or folders to copy',
         });
         return;
       }

@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { batchDeleteItemsAction } from '../../lib/actions';
 import { setDragOperationActive } from '../../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 
 interface MiniActionsToolbarProps {
   selectMode: {
@@ -51,17 +51,33 @@ export function MiniActionsToolbar({
         queryKey: workspaceQueryKeys.tree(),
         refetchType: 'none',
       });
-      toast.success(
-        `${selectedCount} item${selectedCount > 1 ? 's' : ''} deleted`
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS, {
+        items: selectMode.selectedItems.map(id => ({
+          id,
+          name: 'Item',
+          type: 'file' as const,
+        })),
+        batchId: `delete-${Date.now()}`,
+        totalItems: selectedCount,
+        completedItems: selectedCount,
+      });
       selectMode.clearSelection();
     },
     onError: error => {
       // Force refetch on error to ensure consistency
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to delete items'
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+        items: selectMode.selectedItems.map(id => ({
+          id,
+          name: 'Item',
+          type: 'file' as const,
+        })),
+        batchId: `delete-${Date.now()}`,
+        totalItems: selectedCount,
+        completedItems: 0,
+        failedItems: selectedCount,
+        error: error instanceof Error ? error.message : 'Failed to delete items',
+      });
     },
   });
 

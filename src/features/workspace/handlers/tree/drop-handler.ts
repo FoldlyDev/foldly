@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 import { updateItemOrderAction, moveItemAction } from '../../lib/actions';
 import {
   data,
@@ -12,6 +11,7 @@ import type {
   TreeInstance,
 } from '@headless-tree/core';
 import type { QueryClient } from '@tanstack/react-query';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 
 export type DropHandlerParams = {
   items: ItemInstance<WorkspaceTreeItem>[];
@@ -252,7 +252,16 @@ async function handleReorderOperation(
         });
       }
 
-      toast.success('Items reordered', { duration: 1500 });
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+        items: itemIds.map(id => ({
+          id,
+          name: data[id]?.name || 'Unknown',
+          type: data[id]?.isFile ? 'file' as const : 'folder' as const,
+        })),
+        batchId: `reorder-${Date.now()}`,
+        totalItems: itemIds.length,
+        completedItems: itemIds.length,
+      });
     } else {
       console.error('❌ Reorder operation failed:', result.error);
       throw new Error(result.error || 'Failed to update order');
@@ -269,9 +278,19 @@ async function handleReorderOperation(
       });
     }
 
-    toast.error(
-      error instanceof Error ? error.message : 'Failed to update order'
-    );
+    // Use a generic batch error event since WORKSPACE_ITEMS_REORDER_ERROR doesn't exist
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+      items: itemIds.map(id => ({
+        id,
+        name: data[id]?.name || 'Unknown',
+        type: data[id]?.isFile ? 'file' as const : 'folder' as const,
+      })),
+      batchId: `reorder-${Date.now()}`,
+      totalItems: itemIds.length,
+      completedItems: 0,
+      failedItems: itemIds.length,
+      error: error instanceof Error ? error.message : 'Failed to update order',
+    });
   }
 }
 
@@ -358,10 +377,10 @@ async function handleMoveOperation(
       });
     }
 
-    toast.success(
-      `Moved ${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
-      { duration: 1500 }
-    );
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_MOVE_SUCCESS, {
+      fileId: itemIds[0] || '', // Use first item ID for single moves
+      fileName: `${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
+    });
   } catch (error) {
     // Revert all changes on failure
     console.log('⏪ Reverting move changes due to error');
@@ -388,8 +407,11 @@ async function handleMoveOperation(
       });
     }
 
-    toast.error(
-      error instanceof Error ? error.message : 'Failed to move items'
-    );
+    // Use generic upload error since WORKSPACE_FILE_MOVE_ERROR doesn't exist
+    eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+      fileId: itemIds[0] || '', // Use first item ID for single moves
+      fileName: `${itemIds.length} item${itemIds.length === 1 ? '' : 's'}`,
+      error: error instanceof Error ? error.message : 'Failed to move items',
+    });
   }
 }

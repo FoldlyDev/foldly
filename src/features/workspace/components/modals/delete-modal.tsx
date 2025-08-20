@@ -12,11 +12,11 @@ import {
 } from '@/components/ui/shadcn/dialog';
 import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
-import { toast } from 'sonner';
 import type { DatabaseId } from '@/lib/database/types';
 import { useInvalidateStorage } from '../../hooks/use-storage-tracking';
 import { useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -32,6 +32,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const invalidateStorage = useInvalidateStorage();
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
 
   const handleDelete = async () => {
     if (!item) return;
@@ -54,16 +55,50 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
         ]);
 
         onClose();
-        toast.success(
-          `${item.type === 'folder' ? 'Folder' : 'File'} deleted successfully`
-        );
+        
+        // Emit appropriate success event based on item type
+        if (item.type === 'folder') {
+          emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_SUCCESS, {
+            folderId: item.id as string,
+            folderName: item.name,
+          });
+        } else {
+          emit(NotificationEventType.WORKSPACE_FILE_DELETE_SUCCESS, {
+            fileId: item.id as string,
+            fileName: item.name,
+          });
+        }
       } else {
-        toast.error(result.error || `Failed to delete ${item.type}`);
+        // Emit appropriate error event based on item type
+        if (item.type === 'folder') {
+          emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_ERROR, {
+            folderId: item.id as string,
+            folderName: item.name,
+            error: result.error || `Failed to delete ${item.type}`,
+          });
+        } else {
+          emit(NotificationEventType.WORKSPACE_FILE_DELETE_ERROR, {
+            fileId: item.id as string,
+            fileName: item.name,
+            error: result.error || `Failed to delete ${item.type}`,
+          });
+        }
       }
     } catch (error) {
-      toast.error(
-        `Failed to delete ${item.type}: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      // Emit appropriate error event for exceptions
+      if (item.type === 'folder') {
+        emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_ERROR, {
+          folderId: item.id as string,
+          folderName: item.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      } else {
+        emit(NotificationEventType.WORKSPACE_FILE_DELETE_ERROR, {
+          fileId: item.id as string,
+          fileName: item.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

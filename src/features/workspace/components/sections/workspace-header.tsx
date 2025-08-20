@@ -7,9 +7,9 @@ import { GradientButton } from '@/components/core/gradient-button';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
 import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useStorageQuotaStatus } from '../../hooks';
-import { toast } from 'sonner';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 import { SettingsDropdown } from '../settings/SettingsDropdown';
 import { SecondaryCTAButton } from '@/components/core';
 
@@ -27,6 +27,7 @@ export function WorkspaceHeader({
   const { user } = useUser();
   const { openUploadModal } = useWorkspaceUI();
   const quotaStatus = useStorageQuotaStatus();
+  const { emit } = useEventBus();
   const [showNotifications, setShowNotifications] = useState(false);
   const totalUnread = useNotificationStore(state => state.totalUnread);
 
@@ -44,15 +45,23 @@ export function WorkspaceHeader({
   // Handle upload button click with storage validation
   const handleUploadClick = () => {
     if (quotaStatus.status === 'exceeded') {
-      toast.error('Storage limit exceeded', {
-        description: 'Please free up space before uploading more files.',
+      emit(NotificationEventType.STORAGE_LIMIT_EXCEEDED, {
+        currentUsage: 0, // We don't have exact bytes here
+        totalLimit: 0,   // We don't have exact limit here
+        remainingSpace: 0,
+        usagePercentage: quotaStatus.percentage || 100,
+        planKey: 'free', // Default to free plan
       });
       return;
     }
 
     if (quotaStatus.status === 'critical') {
-      toast.warning('Storage almost full', {
-        description: 'Consider upgrading your plan for more storage.',
+      emit(NotificationEventType.STORAGE_THRESHOLD_CRITICAL, {
+        currentUsage: 0, // We don't have exact bytes here
+        totalLimit: 0,   // We don't have exact limit here
+        remainingSpace: 0,
+        usagePercentage: quotaStatus.percentage || 90,
+        planKey: 'free', // Default to free plan
       });
     }
 

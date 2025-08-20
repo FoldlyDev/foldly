@@ -14,7 +14,7 @@ import {
   copyFilesToWorkspaceAction,
   copyTreeNodesToWorkspaceAction,
 } from '../../lib/actions';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import type { LinkWithFileTree, TreeNode } from '../../types';
 import { cn } from '@/lib/utils';
 
@@ -110,7 +110,10 @@ export function TwoPanelLayout({
               : 'Files copied to your workspace';
         }
 
-        toast.success(title, { description });
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS, {
+          fileId: '',
+          fileName: title,
+        });
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['workspace'] });
@@ -133,15 +136,18 @@ export function TwoPanelLayout({
           failCopyOperation(error.fileId, error.error);
         });
 
-        toast.error('Copy completed with errors', {
-          description: result.error || 'Some files failed to copy',
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+          fileId: '',
+          fileName: 'Files',
+          error: result.error || 'Some files failed to copy',
         });
       }
     },
     onError: error => {
-      toast.error('Copy failed', {
-        description:
-          error instanceof Error ? error.message : 'Failed to copy files',
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: '',
+        fileName: 'Files',
+        error: error instanceof Error ? error.message : 'Failed to copy files',
       });
     },
   });
@@ -164,12 +170,10 @@ export function TwoPanelLayout({
         });
 
         const { copiedFiles } = result.data;
-        toast.success(
-          `Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`,
-          {
-            description: 'Files copied to your workspace',
-          }
-        );
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS, {
+          fileId: '',
+          fileName: `Copied ${copiedFiles} file${copiedFiles !== 1 ? 's' : ''}`,
+        });
 
         queryClient.invalidateQueries({ queryKey: ['workspace'] });
         queryClient.invalidateQueries({ queryKey: ['storage'] });
@@ -178,15 +182,18 @@ export function TwoPanelLayout({
           failCopyOperation(error.fileId, error.error);
         });
 
-        toast.error('Copy completed with errors', {
-          description: result.error || 'Some files failed to copy',
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+          fileId: '',
+          fileName: 'Files',
+          error: result.error || 'Some files failed to copy',
         });
       }
     },
     onError: error => {
-      toast.error('Copy failed', {
-        description:
-          error instanceof Error ? error.message : 'Failed to copy files',
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: '',
+        fileName: 'Files',
+        error: error instanceof Error ? error.message : 'Failed to copy files',
       });
     },
   });
@@ -211,8 +218,9 @@ export function TwoPanelLayout({
         const nodes: TreeNode[] = JSON.parse(data);
 
         if (nodes.length === 0) {
-          toast.error('No items selected', {
-            description: 'Please select files or folders to copy',
+          eventBus.emitNotification(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+            message: 'No items selected',
+            error: 'Please select files or folders to copy',
           });
           return;
         }
@@ -238,8 +246,10 @@ export function TwoPanelLayout({
         copyTreeMutation.mutate({ nodes, targetFolderId });
       } catch (error) {
         console.error('Drop error:', error);
-        toast.error('Drop failed', {
-          description: 'Failed to process dropped items',
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+          fileId: '',
+          fileName: 'Dropped items',
+          error: 'Failed to process dropped items',
         });
       }
     },
@@ -252,8 +262,9 @@ export function TwoPanelLayout({
     const folderIds = Array.from(selectedFolders);
 
     if (fileIds.length === 0 && folderIds.length === 0) {
-      toast.error('No items selected', {
-        description: 'Please select files or folders to copy',
+      eventBus.emitNotification(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+        message: 'No items selected',
+        error: 'Please select files or folders to copy',
       });
       return;
     }

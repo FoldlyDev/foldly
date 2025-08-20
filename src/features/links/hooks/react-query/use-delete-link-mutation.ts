@@ -11,7 +11,8 @@ import { linksQueryKeys } from '../../lib/query-keys';
 import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
 import type { Link, DatabaseId } from '@/lib/database/types';
-import { toast } from 'sonner';
+import { NotificationEventType } from '@/features/notifications/core';
+import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseDeleteLinkMutationOptions {
   onSuccess?: () => void;
@@ -36,6 +37,7 @@ export function useDeleteLinkMutation(
   options: UseDeleteLinkMutationOptions = {}
 ): UseDeleteLinkMutationResult {
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
@@ -87,7 +89,12 @@ export function useDeleteLinkMutation(
         );
       }
 
-      toast.error(error.message || 'Failed to delete link');
+      // Emit error event instead of direct toast
+      emit(NotificationEventType.LINK_DELETE_ERROR, {
+        linkId: linkId as string,
+        linkTitle: 'Link',
+        error: error.message || 'Failed to delete link',
+      });
       onError?.(error);
     },
 
@@ -106,7 +113,11 @@ export function useDeleteLinkMutation(
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
-      toast.success('Link deleted successfully');
+      // Emit success event for notification
+      emit(NotificationEventType.LINK_DELETE_SUCCESS, {
+        linkId: linkId as string,
+        linkTitle: 'Link',
+      });
       onSuccess?.();
     },
 

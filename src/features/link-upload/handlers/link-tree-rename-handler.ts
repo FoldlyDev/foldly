@@ -2,7 +2,7 @@ import type { ItemInstance } from '@headless-tree/core';
 import type { QueryClient } from '@tanstack/react-query';
 import { linkQueryKeys } from '../lib/query-keys';
 import type { LinkTreeItem } from '../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 
 interface RenameHandlerProps {
   item: ItemInstance<LinkTreeItem>;
@@ -30,7 +30,20 @@ export async function handleLinkRename(
 
     // For now, just show success since we don't have a rename server action yet
     // In a real implementation, this would call a server action to rename the item
-    toast.success(`Renamed to "${value}"`);
+    const itemData = item.getData();
+    const isFolder = itemData && !itemData.isFile;
+    
+    if (isFolder) {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_RENAME_SUCCESS, {
+        folderId: item.getId(),
+        folderName: value,
+      });
+    } else {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_RENAME_SUCCESS, {
+        fileId: item.getId(),
+        fileName: value,
+      });
+    }
     
     // Mark cache as stale
     queryClient.invalidateQueries({
@@ -39,6 +52,21 @@ export async function handleLinkRename(
     });
   } catch (error) {
     console.error('❌ handleLinkRename: Error during rename operation:', error);
-    toast.error(error instanceof Error ? error.message : 'Failed to rename item');
+    const itemData = item.getData();
+    const isFolder = itemData && !itemData.isFile;
+    
+    if (isFolder) {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+        folderId: item.getId(),
+        folderName: value,
+        error: error instanceof Error ? error.message : 'Failed to rename item',
+      });
+    } else {
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: item.getId(),
+        fileName: value,
+        error: error instanceof Error ? error.message : 'Failed to rename item',
+      });
+    }
   }
 }

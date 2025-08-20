@@ -1,6 +1,6 @@
 /**
- * Global Notification Provider - Ensures notifications work across the entire platform
- * Intercepts all toast notifications to respect user settings (DND, Silent mode)
+ * Global Notification Provider - Central hub for the event-driven notification system
+ * Manages both the new event-driven system and backward compatibility
  */
 
 'use client';
@@ -12,6 +12,7 @@ import { useUserSettingsStore } from '@/features/settings/store/user-settings-st
 import { getUserSettingsAction } from '@/features/settings/lib/actions/user-settings-actions';
 import { useUser } from '@clerk/nextjs';
 import { playGeneralNotificationSound, playWarningNotificationSound, shouldPlaySound } from '@/lib/utils/notification-sound';
+import { initializeNotifications } from '../core';
 
 interface NotificationProviderProps {
   children: React.ReactNode;
@@ -29,11 +30,6 @@ const createToastWrapper = () => {
 
   // Wrap the main toast function
   const wrappedToast = Object.assign(
-    (message: any, options?: any) => {
-      const { doNotDisturb } = checkSettings();
-      if (doNotDisturb) return; // Block all notifications in DND mode
-      return originalToast(message, options);
-    },
     {
       // Wrap all toast methods
       success: (message: any, options?: any) => {
@@ -102,6 +98,14 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   const { user } = useUser();
   const { initializeSettings, setLoading } = useUserSettingsStore();
   
+  // Initialize the new event-driven notification system
+  useEffect(() => {
+    initializeNotifications({
+      enableSound: true,
+      enableAnalytics: true,
+    });
+  }, []);
+  
   // Initialize real-time notifications globally
   useRealtimeNotifications();
   
@@ -109,7 +113,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   useEffect(() => {
     if (user?.id) {
       getUserSettingsAction().then((result) => {
-        if (result.success && result.data) {
+        if (result.success && 'data' in result) {
           initializeSettings(result.data);
         } else {
           setLoading(false);
@@ -120,7 +124,7 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     }
   }, [user?.id, initializeSettings, setLoading]);
   
-  // Override global toast with our wrapper
+  // Override global toast with our wrapper (for backward compatibility)
   useEffect(() => {
     const wrappedToast = createToastWrapper();
     

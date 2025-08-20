@@ -1,9 +1,8 @@
 import { useUser } from '@clerk/nextjs';
-import { toast } from 'sonner';
 import { useCreateLinkMutation } from './react-query/use-create-link-mutation';
-import { useModalStore } from '../store';
 import { normalizeSlug } from '../lib/utils/slug-normalization';
 import { DEFAULT_BASE_LINK_TITLE } from '../lib/constants/base-link-defaults';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseQuickStartOptions {
   onSuccess?: () => void;
@@ -16,8 +15,8 @@ interface UseQuickStartOptions {
  */
 export function useQuickStart(options: UseQuickStartOptions = {}) {
   const { user } = useUser();
-  const { openCreateModal } = useModalStore();
   const createLinkMutation = useCreateLinkMutation();
+  const { emit } = useEventBus();
 
   const quickStart = async () => {
     console.log('🚀 QUICK START: Starting quick start process');
@@ -25,7 +24,10 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
 
     if (!user?.username) {
       console.error('🚀 QUICK START: Username not available');
-      toast.error('Username not available');
+      emit(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+        message: 'Username not available. Please complete your profile to create links.',
+        severity: 'error',
+      });
       options.onError?.(new Error('Username not available'));
       return;
     }
@@ -33,7 +35,7 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
     console.log('🚀 QUICK START: Username available:', user.username);
 
     try {
-      toast.loading('Setting up your base link...', { id: 'quick-start' });
+      // Note: Loading state is handled by the UI, no need for loading toast
 
       // Create base link with sensible defaults - matching manual creation exactly
       const quickStartData = {
@@ -75,10 +77,7 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
       const result = await createLinkMutation.mutateAsync(quickStartData);
       console.log('🚀 QUICK START: Mutation successful! Result:', result);
 
-      toast.success('Base link created successfully! 🎉', {
-        id: 'quick-start',
-      });
-
+      // Success event is now emitted by the mutation hook itself
       // Call success callback (for refreshing dashboard, etc.)
       options.onSuccess?.();
     } catch (error) {
@@ -104,9 +103,8 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
         );
       }
 
-      toast.error('Failed to create base link. Please try the custom setup.', {
-        id: 'quick-start',
-      });
+      // Error is already emitted by the mutation hook
+      // No need to emit another error event here
       options.onError?.(error);
     }
   };
