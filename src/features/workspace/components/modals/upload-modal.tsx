@@ -75,6 +75,11 @@ export function UploadModal({
   // Handle initial files separately to prevent re-adding
   useEffect(() => {
     if (isOpen && initialFiles && initialFiles.length > 0 && !initialFilesProcessed) {
+      console.log('📥 [UPLOAD-MODAL] Processing initial files from tree drop:', {
+        fileCount: initialFiles.length,
+        fileNames: initialFiles.map(f => f.name),
+        fileTypes: initialFiles.map(f => f.type)
+      });
       // Only add initial files once when they are first provided
       handleFileSelect(initialFiles);
       setInitialFilesProcessed(true);
@@ -171,8 +176,16 @@ export function UploadModal({
                   handleRemoveFile(fileId);
                 }
               }}
-              files={files.map(f => f.file)}
-              skipFolderExtraction={!!initialFiles} // Skip extraction if files are pre-processed from tree drop
+              files={(() => {
+                const mappedFiles = files.map(f => f.file);
+                console.log('🔍 [UPLOAD-MODAL] Passing files to CentralizedFileUpload:', {
+                  count: mappedFiles.length,
+                  fileNames: mappedFiles.map(f => f.name),
+                  fileTypes: mappedFiles.map(f => f.type)
+                });
+                return mappedFiles;
+              })()}
+              skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
               multiple={true}
               maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}
               maxFileSize={UPLOAD_CONFIG.fileSizeLimits[storageInfo.planKey as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024}

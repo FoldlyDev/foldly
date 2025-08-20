@@ -134,6 +134,14 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
     const fileArray = selectedFiles instanceof FileList 
       ? Array.from(selectedFiles) 
       : selectedFiles;
+    
+    console.log('📤 [USE-FILE-UPLOAD] handleFileSelect called:', {
+      source: selectedFiles instanceof FileList ? 'FileList' : 'File[]',
+      fileCount: fileArray.length,
+      currentFiles: files.length,
+      fileNames: fileArray.map(f => f.name),
+      fileTypes: fileArray.map(f => f.type)
+    });
 
     // Check if adding these files would exceed the maximum limit
     const maxFiles = UPLOAD_CONFIG.batch.maxFilesPerUpload || 50;
@@ -154,15 +162,31 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
     }
 
     // Always add files to the list for visibility
-    const newFiles: UploadFile[] = fileArray.map(file => ({
-      id: Math.random().toString(36).substring(7),
-      file,
-      progress: 0,
-      status: 'pending',
-      retryCount: 0,
-      maxRetries: UPLOAD_CONFIG.batch.maxRetries,
-    }));
+    // Generate preview URLs for image files here, at the source
+    const newFiles: UploadFile[] = fileArray.map(file => {
+      // If it's an image, create a preview URL and attach it to the file
+      if (file.type.startsWith('image/')) {
+        const preview = URL.createObjectURL(file);
+        // Attach preview to the file object
+        Object.assign(file, { preview });
+        console.log('🎨 [USE-FILE-UPLOAD] Created preview for image:', file.name, preview);
+      }
+      
+      return {
+        id: Math.random().toString(36).substring(7),
+        file,
+        progress: 0,
+        status: 'pending',
+        retryCount: 0,
+        maxRetries: UPLOAD_CONFIG.batch.maxRetries,
+      };
+    });
 
+    console.log('➕ [USE-FILE-UPLOAD] Adding files to state:', {
+      newFilesCount: newFiles.length,
+      previousCount: files.length,
+      totalAfter: files.length + newFiles.length
+    });
     setFiles(prev => [...prev, ...newFiles]);
 
     // Validate storage after adding files
@@ -258,6 +282,7 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
 
   // Clear all files
   const clearFiles = useCallback(() => {
+    console.log('🗑️ [USE-FILE-UPLOAD] Clearing all files');
     setFiles([]);
     setUploadValidation(null);
   }, []);
