@@ -347,8 +347,28 @@
 @media (max-width: 768px) {
   .demo-spotlight .gallery-card {
     top: 50%;
-    width: 50%;
-    height: 25svh;
+    width: 85%;
+    height: auto;
+    min-height: 60svh;
+    max-height: 75svh;
+    padding: 1em;
+  }
+
+  .demo-spotlight .gallery-card-img {
+    flex: 1 1 auto;
+    min-height: 45svh;
+  }
+
+  .demo-spotlight .gallery-card-content {
+    padding: 0.75rem 0;
+  }
+
+  .demo-spotlight .gallery-card-content h4 {
+    font-size: 1.2rem;
+  }
+
+  .demo-spotlight .gallery-card-content p {
+    font-size: 1rem;
   }
 
   .spotlight-mask-header {

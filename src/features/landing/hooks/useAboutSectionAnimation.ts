@@ -13,6 +13,7 @@ interface AboutSectionRefs {
 interface UseAboutSectionAnimationProps {
   refs: AboutSectionRefs;
   isEnabled: boolean;
+  isMobile?: boolean;
 }
 
 export function useAboutSectionAnimation({

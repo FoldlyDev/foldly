@@ -98,8 +98,6 @@ export function LandingPageContainer() {
     duplicateIconsContainerRef: introDuplicateIconsContainerRef,
   });
 
-  // Initialize Lenis smooth scrolling
-  useLenisScroll();
 
   // Wait for client-side hydration to complete
   useEffect(() => {
@@ -149,6 +147,9 @@ export function LandingPageContainer() {
       },
     });
 
+  // Initialize Lenis smooth scrolling
+  useLenisScroll(animationState.isMobile);
+
   // Initialize section-specific animations with orchestrator state
   useIntroSectionAnimation({
     introRef,
@@ -162,6 +163,7 @@ export function LandingPageContainer() {
     registerScrollTrigger,
     registerCleanup,
     prefersReducedMotion: animationState.prefersReducedMotion,
+    isMobile: animationState.isMobile,
   });
 
   useFeatureHighlightSectionAnimation({
@@ -169,6 +171,7 @@ export function LandingPageContainer() {
     isEnabled:
       animationState.featureHighlightReady &&
       !animationState.prefersReducedMotion,
+    isMobile: animationState.isMobile,
   });
 
   useDemoSectionAnimation({
@@ -176,6 +179,7 @@ export function LandingPageContainer() {
     isEnabled:
       animationState.demoReady &&
       !animationState.prefersReducedMotion,
+    isMobile: animationState.isMobile,
   });
 
   useAboutSectionAnimation({
@@ -183,6 +187,7 @@ export function LandingPageContainer() {
     isEnabled:
       animationState.aboutReady &&
       !animationState.prefersReducedMotion,
+    isMobile: animationState.isMobile,
   });
 
   return (
