@@ -111,19 +111,27 @@ export function useLandingAnimationOrchestrator(
       }));
 
       if (!prefersReducedMotion && !isLowEndDevice) {
-        // Register all required plugins once
-        gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin, useGSAP);
+        // Ensure GSAP is properly initialized before registering plugins
+        if (typeof gsap !== 'undefined' && gsap.registerPlugin) {
+          try {
+            // Register all required plugins once
+            gsap.registerPlugin(ScrollTrigger, SplitText, TextPlugin, useGSAP);
 
-        // Configure GSAP for optimal performance
-        gsap.config({
-          nullTargetWarn: false,
-          force3D: true,
-          autoSleep: 60, // Auto-sleep after 60 ticks of inactivity
-        });
+            // Configure GSAP for optimal performance
+            gsap.config({
+              nullTargetWarn: false,
+              force3D: true,
+              autoSleep: 60, // Auto-sleep after 60 ticks of inactivity
+            });
 
-        // Set consistent FPS for all devices
-        gsap.ticker.fps(120); // Allow up to 120 FPS for devices that support it
-        // Note: lagSmoothing is set to 0 in useLenisScroll hook to prevent scrollbar jumping
+            // Set consistent FPS for all devices
+            gsap.ticker.fps(120); // Allow up to 120 FPS for devices that support it
+            // Note: lagSmoothing is set to 0 in useLenisScroll hook to prevent scrollbar jumping
+          } catch (pluginError) {
+            console.error('[Orchestrator] Failed to register GSAP plugins:', pluginError);
+            // Continue without animations if plugin registration fails
+          }
+        }
       }
 
       gsapInitialized.current = true;

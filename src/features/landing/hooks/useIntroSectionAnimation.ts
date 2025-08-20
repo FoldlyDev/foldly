@@ -40,7 +40,13 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
     if (!allRefsReady) return;
 
-    // GSAP should already be registered by the orchestrator
+    // Ensure ScrollTrigger is registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+    } else {
+      console.warn('[IntroAnimation] GSAP or ScrollTrigger not available');
+      return;
+    }
 
     const animatedIcons = refs.animatedIconsRef.current;
     const iconElements = refs.iconRefs.map(ref => ref.current!);

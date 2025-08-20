@@ -29,7 +29,13 @@ export function useDemoSectionAnimation({
   useGSAP(() => {
     if (!isEnabled || !refs || !refs.sectionRef) return;
 
-    // GSAP plugins are registered by the orchestrator
+    // Ensure ScrollTrigger and SplitText are registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined' && typeof SplitText !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger, SplitText);
+    } else {
+      console.warn('[DemoAnimation] GSAP plugins not available');
+      return;
+    }
 
     const section = refs.sectionRef.current;
     const galleryCards = refs.galleryCardsRef?.current || [];
