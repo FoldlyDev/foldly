@@ -85,6 +85,14 @@ export enum NotificationEventType {
   WORKSPACE_BATCH_DELETE_SUCCESS = 'workspace.batch.delete.success',
   WORKSPACE_BATCH_DELETE_ERROR = 'workspace.batch.delete.error',
   
+  WORKSPACE_FILES_LIMIT_EXCEEDED = 'workspace.files.limit.exceeded',
+  WORKSPACE_FOLDER_DROPPED = 'workspace.folder.dropped',
+  
+  WORKSPACE_BATCH_UPLOAD_START = 'workspace.batch.upload.start',
+  WORKSPACE_BATCH_UPLOAD_PROGRESS = 'workspace.batch.upload.progress',
+  WORKSPACE_BATCH_UPLOAD_SUCCESS = 'workspace.batch.upload.success',
+  WORKSPACE_BATCH_UPLOAD_ERROR = 'workspace.batch.upload.error',
+  
   // Link Events
   LINK_CREATE_SUCCESS = 'link.create.success',
   LINK_CREATE_ERROR = 'link.create.error',
@@ -226,6 +234,25 @@ export interface BatchEventPayload {
 }
 
 /**
+ * File limit exceeded event payload
+ */
+export interface FileLimitEventPayload {
+  attemptedCount: number;
+  maxAllowed: number;
+  currentCount?: number;
+  message?: string;
+}
+
+/**
+ * Folder drop event payload  
+ */
+export interface FolderDropEventPayload {
+  fileCount: number;
+  folderCount?: number;
+  message: string;
+}
+
+/**
  * Link operation event payload
  */
 export interface LinkEventPayload {
@@ -251,6 +278,7 @@ export interface StorageEventPayload {
   planKey: string;
   filesCount?: number;
   threshold?: number;
+  message?: string;
 }
 
 /**
@@ -323,6 +351,14 @@ export interface EventPayloadMap {
   [NotificationEventType.WORKSPACE_BATCH_DELETE_PROGRESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR]: BatchEventPayload;
+  
+  [NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED]: FileLimitEventPayload;
+  [NotificationEventType.WORKSPACE_FOLDER_DROPPED]: FolderDropEventPayload;
+  
+  [NotificationEventType.WORKSPACE_BATCH_UPLOAD_START]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: BatchEventPayload;
   
   // Link events
   [NotificationEventType.LINK_CREATE_SUCCESS]: LinkEventPayload;

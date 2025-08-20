@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { workspaceQueryKeys } from '../lib/query-keys';
 import type { UploadFile } from '../components/upload/file-upload-area';
 import { UPLOAD_CONFIG } from '../lib/config/upload-config';
@@ -136,6 +135,24 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       ? Array.from(selectedFiles) 
       : selectedFiles;
 
+    // Check if adding these files would exceed the maximum limit
+    const maxFiles = UPLOAD_CONFIG.batch.maxFilesPerUpload || 50;
+    const totalFiles = files.length + fileArray.length;
+    
+    if (totalFiles > maxFiles) {
+      emitNotification(NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED, {
+        attemptedCount: totalFiles,
+        maxAllowed: maxFiles,
+        currentCount: files.length,
+        message: `You can upload a maximum of ${maxFiles} files at once. You currently have ${files.length} file${files.length !== 1 ? 's' : ''} and are trying to add ${fileArray.length} more.`,
+      }, {
+        priority: NotificationPriority.HIGH,
+        uiType: NotificationUIType.TOAST_SIMPLE,
+        duration: 6000,
+      });
+      return;
+    }
+
     // Always add files to the list for visibility
     const newFiles: UploadFile[] = fileArray.map(file => ({
       id: Math.random().toString(36).substring(7),
@@ -156,30 +173,63 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
     if (!validation.valid) {
       if (validation.invalidFiles && validation.invalidFiles.length > 0) {
         // File size limit exceeded
-        toast.error('File size limit exceeded', {
-          description: `${validation.invalidFiles.length} file(s) exceed your plan's size limit`,
+        emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
+          currentUsage: storageInfo.storageUsedBytes,
+          totalLimit: storageInfo.storageLimitBytes,
+          remainingSpace: storageInfo.remainingBytes,
+          usagePercentage: storageInfo.usagePercentage,
+          planKey: storageInfo.planKey,
+          message: `${validation.invalidFiles.length} file(s) exceed your plan's size limit`,
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
           duration: 5000,
         });
       } else if (validation.exceedsLimit) {
         // Storage quota exceeded
-        toast.error('Storage limit exceeded', {
-          description: validation.reason,
+        emitNotification(NotificationEventType.STORAGE_LIMIT_EXCEEDED, {
+          currentUsage: storageInfo.storageUsedBytes,
+          totalLimit: storageInfo.storageLimitBytes,
+          remainingSpace: storageInfo.remainingBytes,
+          usagePercentage: storageInfo.usagePercentage,
+          planKey: storageInfo.planKey,
+          ...(validation.reason && { message: validation.reason }),
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
           duration: 5000,
         });
       } else {
         // Other validation errors
-        toast.error('Upload validation failed', {
-          description: validation.reason || 'Please check your files and try again',
+        emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
+          currentUsage: storageInfo.storageUsedBytes,
+          totalLimit: storageInfo.storageLimitBytes,
+          remainingSpace: storageInfo.remainingBytes,
+          usagePercentage: storageInfo.usagePercentage,
+          planKey: storageInfo.planKey,
+          message: validation.reason || 'Please check your files and try again',
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
           duration: 5000,
         });
       }
     } else if (validation.valid && quotaStatus.status !== 'safe') {
       // Show warning if approaching limit
-      toast.warning('Storage getting full', {
-        description: `${formatSize(validation.totalSize)} will be added. ${formatSize(storageInfo.remainingBytes - validation.totalSize)} remaining.`,
+      emitNotification(NotificationEventType.STORAGE_THRESHOLD_WARNING, {
+        currentUsage: storageInfo.storageUsedBytes + validation.totalSize,
+        totalLimit: storageInfo.storageLimitBytes,
+        remainingSpace: storageInfo.remainingBytes - validation.totalSize,
+        usagePercentage: ((storageInfo.storageUsedBytes + validation.totalSize) / storageInfo.storageLimitBytes) * 100,
+        planKey: storageInfo.planKey,
+        message: `${formatSize(validation.totalSize)} will be added. ${formatSize(storageInfo.remainingBytes - validation.totalSize)} remaining.`,
+      }, {
+        priority: NotificationPriority.MEDIUM,
+        uiType: NotificationUIType.TOAST_SIMPLE,
+        duration: 4000,
       });
     }
-  }, [preUploadValidation, quotaStatus.status, formatSize, storageInfo.remainingBytes]);
+  }, [files.length, preUploadValidation, quotaStatus.status, formatSize, storageInfo]);
 
   // Drag handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -486,8 +536,16 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
 
     // Prevent upload if validation failed
     if (uploadValidation && !uploadValidation.valid) {
-      toast.error('Cannot upload files', {
-        description: uploadValidation.reason || 'Some files exceed the size limit',
+      emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
+        currentUsage: storageInfo.storageUsedBytes,
+        totalLimit: storageInfo.storageLimitBytes,
+        remainingSpace: storageInfo.remainingBytes,
+        usagePercentage: storageInfo.usagePercentage,
+        planKey: storageInfo.planKey,
+        message: uploadValidation.reason || 'Some files exceed the size limit',
+      }, {
+        priority: NotificationPriority.HIGH,
+        uiType: NotificationUIType.TOAST_SIMPLE,
         duration: 5000,
       });
       return;
@@ -509,8 +567,16 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         : files;
 
       if (validFiles.length === 0) {
-        toast.error('No valid files to upload', {
-          description: 'All files exceed the size limit',
+        emitNotification(NotificationEventType.STORAGE_UPLOAD_BLOCKED, {
+          currentUsage: storageInfo.storageUsedBytes,
+          totalLimit: storageInfo.storageLimitBytes,
+          remainingSpace: storageInfo.remainingBytes,
+          usagePercentage: storageInfo.usagePercentage,
+          planKey: storageInfo.planKey,
+          message: 'All files exceed the size limit',
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
           duration: 5000,
         });
         setIsUploading(false);
@@ -519,10 +585,17 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       
       // For batch uploads, show a single aggregated notification
       if (isBatchUpload && batchId) {
-        // Show a loading toast for batch upload
-        toast.loading(`Uploading ${validFiles.length} files...`, {
-          id: batchId,
-          description: `0 of ${validFiles.length} completed`
+        // Show a loading notification for batch upload
+        emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_START, {
+          batchId: batchId,
+          totalItems: validFiles.length,
+          completedItems: 0,
+        }, {
+          priority: NotificationPriority.MEDIUM,
+          uiType: NotificationUIType.PROGRESS,
+          duration: 0,
+          persistent: true,
+          deduplicationKey: batchId,
         });
       }
 
@@ -551,12 +624,18 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
             
             // Update batch progress notification
             if (isBatchUpload && batchId) {
-              const progress = ((completedCount + uploadFailedCount) / validFiles.length) * 100;
-              
-              // Update the loading toast with progress
-              toast.loading(`Uploading ${validFiles.length} files...`, {
-                id: batchId,
-                description: `${completedCount} of ${validFiles.length} completed${uploadFailedCount > 0 ? ` (${uploadFailedCount} failed)` : ''} - ${Math.round(progress)}%`
+              // Update the progress notification
+              emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS, {
+                batchId: batchId,
+                totalItems: validFiles.length,
+                completedItems: completedCount,
+                failedItems: uploadFailedCount,
+              }, {
+                priority: NotificationPriority.LOW,
+                uiType: NotificationUIType.PROGRESS,
+                duration: 0,
+                persistent: true,
+                deduplicationKey: batchId,
               });
             }
           });
@@ -576,19 +655,41 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       
       // Show final batch notification
       if (isBatchUpload && batchId) {
-        toast.dismiss(batchId); // Dismiss the loading toast
-        
         if (successCount > 0 && finalFailedCount === 0) {
-          toast.success(`Successfully uploaded ${successCount} file${successCount === 1 ? '' : 's'}`, {
-            duration: 3000
+          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
+            batchId: batchId,
+            totalItems: validFiles.length,
+            completedItems: successCount,
+          }, {
+            priority: NotificationPriority.LOW,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 3000,
+            deduplicationKey: batchId,
           });
         } else if (successCount > 0 && finalFailedCount > 0) {
-          toast.warning(`Uploaded ${successCount} file${successCount === 1 ? '' : 's'}, ${finalFailedCount} failed`, {
-            duration: 5000
+          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
+            batchId: batchId,
+            totalItems: validFiles.length,
+            completedItems: successCount,
+            failedItems: finalFailedCount,
+          }, {
+            priority: NotificationPriority.MEDIUM,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+            deduplicationKey: batchId,
           });
         } else if (finalFailedCount > 0) {
-          toast.error(`Failed to upload ${finalFailedCount} file${finalFailedCount === 1 ? '' : 's'}`, {
-            duration: 5000
+          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR, {
+            batchId: batchId,
+            totalItems: validFiles.length,
+            completedItems: 0,
+            failedItems: finalFailedCount,
+            error: `Failed to upload ${finalFailedCount} file${finalFailedCount === 1 ? '' : 's'}`,
+          }, {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+            deduplicationKey: batchId,
           });
         }
       }
@@ -625,7 +726,16 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         liveStorage.resetLiveTracking();
       }
     } catch (error) {
-      toast.error('Upload failed');
+      emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+        fileId: 'batch',
+        fileName: 'Multiple files',
+        workspaceId: workspaceId || '',
+        error: error instanceof Error ? error.message : 'Upload failed',
+      }, {
+        priority: NotificationPriority.HIGH,
+        uiType: NotificationUIType.TOAST_SIMPLE,
+        duration: 5000,
+      });
     } finally {
       setIsUploading(false);
       // Reset live storage if all uploads are done

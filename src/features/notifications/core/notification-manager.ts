@@ -289,6 +289,16 @@ class NotificationManager {
       [NotificationEventType.STORAGE_THRESHOLD_CRITICAL]: 'Storage critical',
       [NotificationEventType.STORAGE_LIMIT_EXCEEDED]: 'Storage limit exceeded',
       [NotificationEventType.STORAGE_UPLOAD_BLOCKED]: 'Upload blocked',
+      
+      // File limit events
+      [NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED]: 'Too many files selected',
+      [NotificationEventType.WORKSPACE_FOLDER_DROPPED]: `Processing ${payload.fileCount || 0} files`,
+      
+      // Batch upload events
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_START]: `Uploading ${payload.totalItems || 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: `Uploading ${payload.totalItems || 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: 'Files uploaded successfully',
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: 'Failed to upload files',
     };
 
     return titleMap[event.type] || 'Notification';
@@ -336,6 +346,28 @@ class NotificationManager {
       
       case NotificationEventType.STORAGE_LIMIT_EXCEEDED:
         return 'Free up space to continue uploading files';
+      
+      case NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED:
+        return payload.message || `You tried to upload ${payload.attemptedCount} files, but the maximum is ${payload.maxAllowed} files at once. Please select fewer files or upload in smaller batches.`;
+      
+      case NotificationEventType.WORKSPACE_FOLDER_DROPPED:
+        return payload.message || 'Files will be uploaded to the selected location.';
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_START:
+        return `Starting upload of ${payload.totalItems} files`;
+        
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS:
+        const uploadProgress = Math.round(((payload.completedItems || 0) / (payload.totalItems || 1)) * 100);
+        return `${payload.completedItems} of ${payload.totalItems} completed${payload.failedItems ? ` (${payload.failedItems} failed)` : ''} - ${uploadProgress}%`;
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS:
+        if (payload.failedItems && payload.failedItems > 0) {
+          return `Uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}, ${payload.failedItems} failed`;
+        }
+        return `Successfully uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR:
+        return payload.error || `Failed to upload ${payload.failedItems} file${payload.failedItems === 1 ? '' : 's'}`;
       
       default:
         return payload.error || payload.message || undefined;

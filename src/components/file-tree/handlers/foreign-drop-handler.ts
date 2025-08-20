@@ -2,7 +2,8 @@ import type { DragTarget, ItemInstance } from '@headless-tree/core';
 import { insertItemsAtTarget, removeItemsFromParents } from '@headless-tree/core';
 import type { TreeItem as TreeItemType, TreeFolderItem } from '../types/tree-types';
 import { isFolder } from '../types/tree-types';
-import { eventBus } from '@/features/notifications/core';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
+import { UPLOAD_PROCESSING } from '@/lib/upload/constants/limits';
 
 /**
  * Recursively reads all files from a directory entry
@@ -102,9 +103,14 @@ export function createForeignDropHandlers(
                   });
                 } catch (error) {
                   console.error('Error reading directory:', error);
-                  eventBus.emit('workspace:folder-drop-info', {
-                    folderNames: [entry.name],
+                  eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_DROPPED, {
+                    fileCount: 0,
+                    folderCount: 1,
                     message: `Error reading folder "${entry.name}". Please try selecting files directly.`,
+                  }, {
+                    priority: NotificationPriority.MEDIUM,
+                    uiType: NotificationUIType.TOAST_SIMPLE,
+                    duration: 5000,
                   });
                 }
               } else if (entry.isFile) {
@@ -127,6 +133,28 @@ export function createForeignDropHandlers(
         })
       );
       
+      // Check if too many files are being uploaded
+      const maxFiles = UPLOAD_PROCESSING.batch.maxFilesPerUpload;
+      if (allFiles.length > maxFiles) {
+        // Too many files - show error notification using event system
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED, {
+          attemptedCount: allFiles.length,
+          maxAllowed: maxFiles,
+          currentCount: 0,
+          message: `You tried to upload ${allFiles.length} files, but the maximum is ${maxFiles} files at once. Please select fewer files or upload in smaller batches.`,
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 8000,
+        });
+        
+        // Log for debugging
+        console.warn(`Attempted to upload ${allFiles.length} files, exceeding limit of ${maxFiles}`);
+        
+        // Don't proceed with the upload
+        return;
+      }
+      
       // Trigger file upload if handler is provided
       if (allFiles.length > 0 && onExternalFileDrop) {
         onExternalFileDrop(allFiles, targetFolderId, Object.keys(folderStructure).length > 0 ? folderStructure : undefined);
@@ -135,8 +163,14 @@ export function createForeignDropHandlers(
         if (Object.keys(folderStructure).length > 0) {
           const folderCount = new Set(Object.keys(folderStructure).map(p => p.split('/')[0])).size;
           const fileCount = allFiles.length;
-          eventBus.emit('workspace:folder-drop-info', {
-            message: `Uploading ${fileCount} file${fileCount !== 1 ? 's' : ''} from ${folderCount} folder${folderCount !== 1 ? 's' : ''}. Folder structure will be preserved.`,
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_DROPPED, {
+            fileCount,
+            folderCount,
+            message: 'Files will be uploaded to the selected location.',
+          }, {
+            priority: NotificationPriority.LOW,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
           });
         }
       }

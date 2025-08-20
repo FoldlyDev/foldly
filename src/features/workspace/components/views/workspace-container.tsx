@@ -300,33 +300,62 @@ export function WorkspaceContainer() {
         return null;
       }
 
-      // Common items for both files and folders
-      menuItems.push({
-        label: 'Rename',
-        icon: <Edit2 className='h-4 w-4' />,
-        onClick: () => {
-          itemInstance.startRenaming();
-        },
-      });
+      // Get selected items to determine single vs multiple selection
+      const tree = itemInstance?.getTree?.();
+      const selectedTreeItems = tree?.getSelectedItems?.() || [];
+      const isItemSelected = selectedTreeItems.some((si: any) => si.getId() === item.id);
+      const isMultipleSelection = isItemSelected && selectedTreeItems.length > 1;
+      const deleteCount = isMultipleSelection ? selectedTreeItems.length : 1;
 
+      // Only show rename for single selection
+      if (!isMultipleSelection) {
+        menuItems.push({
+          label: 'Rename',
+          icon: <Edit2 className='h-4 w-4' />,
+          onClick: () => {
+            itemInstance.startRenaming();
+          },
+        });
+      }
+
+      // Delete is always available
       menuItems.push({
-        label: 'Delete',
+        label: deleteCount > 1 ? `Delete ${deleteCount} items` : 'Delete',
         icon: <Trash2 className='h-4 w-4' />,
         destructive: true,
         onClick: () => {
-          // Set the item to delete and show the modal
-          const deleteItem: BatchOperationItem = {
-            id: item.id,
-            name: item.name,
-            type: isFolder(item) ? 'folder' : 'file',
-          };
-          setItemsToDelete([deleteItem]);
+          // If multiple items are selected, delete all of them
+          // Otherwise, just delete the right-clicked item
+          let itemsToDeleteArray: BatchOperationItem[] = [];
+          
+          if (isMultipleSelection) {
+            // Multiple items selected and the right-clicked item is one of them
+            // Delete all selected items
+            itemsToDeleteArray = selectedTreeItems.map((selectedItem: any) => {
+              const itemData = selectedItem.getItemData();
+              return {
+                id: selectedItem.getId(),
+                name: selectedItem.getItemName?.() || itemData?.name || 'Unknown',
+                type: selectedItem.isFolder?.() ? 'folder' : 'file',
+              } as BatchOperationItem;
+            });
+          } else {
+            // Single item or right-clicked item is not in selection
+            // Just delete the right-clicked item
+            itemsToDeleteArray = [{
+              id: item.id,
+              name: item.name,
+              type: isFolder(item) ? 'folder' : 'file',
+            }];
+          }
+          
+          setItemsToDelete(itemsToDeleteArray);
           setShowDeleteModal(true);
         },
       });
 
-      // Folder-specific items
-      if (isFolder(item)) {
+      // Folder-specific items - only show for single selection
+      if (isFolder(item) && !isMultipleSelection) {
         menuItems.push({ separator: true });
 
         menuItems.push({

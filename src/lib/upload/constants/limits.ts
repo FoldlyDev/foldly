@@ -45,6 +45,7 @@ export const UPLOAD_PROCESSING = {
     size: 3, // Number of files uploaded simultaneously
     maxRetries: 3, // Maximum retry attempts per file
     retryDelays: [1000, 2000, 4000, 8000, 10000], // Exponential backoff in ms
+    maxFilesPerUpload: 50, // Maximum number of files in a single upload batch
   },
   rateLimit: {
     maxUploadsPerMinute: 10, // Maximum uploads per user per minute
