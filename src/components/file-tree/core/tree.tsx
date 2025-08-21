@@ -544,15 +544,15 @@ export default function FileTree({
   
   // Check if workspace is empty (only root item with no children)
   const isWorkspaceEmpty = React.useMemo(() => {
-    // Check the initialData prop - this is the source of truth
-    const dataKeys = Object.keys(initialData);
+    // Check the current tree data, not just initial data
+    const currentDataKeys = Object.keys(data);
     
     // If we have more than one item (root + others), not empty
-    if (dataKeys.length > 1) return false;
+    if (currentDataKeys.length > 1) return false;
     
     // If we only have one item, check if it's the root and has no children
-    if (dataKeys.length === 1) {
-      const rootItem = initialData[rootId];
+    if (currentDataKeys.length === 1) {
+      const rootItem = data[rootId];
       if (!rootItem) return false;
       
       // Check if it's a folder with children
@@ -563,8 +563,8 @@ export default function FileTree({
     }
     
     // No data at all
-    return dataKeys.length === 0;
-  }, [initialData, rootId]);
+    return currentDataKeys.length === 0;
+  }, [data, rootId, tree?.getItems()?.length]); // Add tree items length as dependency to trigger updates
   
   // Update filtered items when search changes or tree items change
   React.useEffect(() => {

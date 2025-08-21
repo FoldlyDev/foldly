@@ -128,6 +128,18 @@ export function WorkspaceContainer() {
     return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
   }, [workspaceData?.workspace?.id]);
   
+  // Helper function to clear selection
+  const clearSelectionState = useCallback(() => {
+    // Clear tree instance selection
+    if (treeInstance?.setSelectedItems) {
+      treeInstance.setSelectedItems([]);
+    }
+    // Clear local state
+    setSelectedItems([]);
+    // Exit selection mode when clearing
+    setSelectionMode(false);
+  }, [treeInstance]);
+  
   // Batch delete mutation (same as toolbar)
   const batchDeleteMutation = useMutation({
     mutationFn: async () => {
@@ -153,6 +165,9 @@ export function WorkspaceContainer() {
       }
     },
     onSuccess: () => {
+      // Clear selection after successful deletion
+      clearSelectionState();
+      
       // Invalidate cache but don't refetch immediately
       queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
@@ -618,6 +633,8 @@ export function WorkspaceContainer() {
           // Remove items from tree immediately for responsive UI
           if (tree && treeIdRef.current) {
             removeTreeItem(tree, itemIds, treeIdRef.current);
+            // Clear selection after deletion
+            clearSelectionState();
           }
         },
         // Add a method to add folder after successful server action
