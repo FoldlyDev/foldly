@@ -130,7 +130,9 @@ export function createTreeDropHandler(
         
         if (orderChanged && callbacks?.onReorder) {
           try {
-            await callbacks.onReorder(targetId, newChildren, newChildren);
+            // For reorder, we need to pass ALL children in their new order
+            // because all items' sort orders need to be updated
+            await callbacks.onReorder(targetId, oldChildren, newChildren);
           } catch (error) {
             console.error('Reorder operation failed:', error);
             // Don't update local state if the operation failed

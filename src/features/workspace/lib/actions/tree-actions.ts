@@ -156,16 +156,19 @@ export async function updateItemOrderAction(
       return { success: false, error: 'Failed to fetch parent items' };
     }
 
-    const folderIds = new Set(foldersResult.data?.map(f => f.id) || []);
-    const fileIds = new Set(filesResult.data?.map(f => f.id) || []);
+    const folders = foldersResult.data || [];
+    const files = filesResult.data || [];
+    const folderIds = new Set(folders.map(f => f.id));
+    const fileIds = new Set(files.map(f => f.id));
     
     console.log('📊 [updateItemOrderAction] Found items:', {
       folders: folderIds.size,
       files: fileIds.size,
-      totalToUpdate: orderedChildIds.length
+      requestedToUpdate: orderedChildIds.length
     });
 
-    // Separate files and folders, then update their sortOrder
+    // Update sortOrder for ALL items provided in their new order
+    // The tree sends us the complete new order for all children
     const updates = orderedChildIds.map(async (id, index) => {
       if (folderIds.has(id)) {
         console.log(`  📁 Updating folder ${id.slice(0, 8)} sortOrder to ${index}`);
@@ -174,8 +177,9 @@ export async function updateItemOrderAction(
         console.log(`  📄 Updating file ${id.slice(0, 8)} sortOrder to ${index}`);
         return fileService.updateFile(id, { sortOrder: index });
       } else {
-        console.warn(`  ⚠️ Item ${id.slice(0, 8)} not found in parent`);
-        return { success: false, error: `Item ${id} not found` };
+        // Skip items that don't belong to this parent (they might be from other folders during multi-select)
+        console.warn(`  ⚠️ Item ${id.slice(0, 8)} not found in parent - skipping`);
+        return { success: true }; // Not an error, just skip it
       }
     });
 
