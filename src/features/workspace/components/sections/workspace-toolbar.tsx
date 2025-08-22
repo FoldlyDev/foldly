@@ -26,7 +26,7 @@ import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
-import { setDragOperationActive } from '../../lib/tree-data';
+// Removed: import { setDragOperationActive } from '../../lib/tree-data';
 import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import {
   BatchOperationModal,
@@ -139,8 +139,7 @@ export function WorkspaceToolbar({
 
       const totalItems = selectedItems.length;
 
-      // Set operation active to prevent data rebuilds during batch operation
-      setDragOperationActive(true);
+      // Removed: setDragOperationActive(true) - no longer needed without old tree
 
       try {
         // Initialize progress
@@ -187,8 +186,7 @@ export function WorkspaceToolbar({
 
         return result.data;
       } finally {
-        // Always clear operation state
-        setDragOperationActive(false);
+        // Removed: setDragOperationActive(false) - no longer needed without old tree
       }
     },
     onSuccess: () => {

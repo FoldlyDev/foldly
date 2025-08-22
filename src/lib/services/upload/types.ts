@@ -163,6 +163,14 @@ export interface UploadOptions {
   preserveMetadata?: boolean;
   validateBeforeUpload?: boolean;
   
+  // Security and tracking
+  clientIp?: string; // Client IP for quota checking and security
+  
+  // Validation
+  maxFileSize?: number;
+  allowedTypes?: string[];
+  blockedTypes?: string[];
+  
   // Performance
   chunkSize?: number; // For future chunked uploads
   timeout?: number;   // Upload timeout in milliseconds

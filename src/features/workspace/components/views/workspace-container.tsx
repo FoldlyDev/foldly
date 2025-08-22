@@ -209,23 +209,26 @@ export function WorkspaceContainer() {
       onReorder: async (
         parentId: string,
         _itemIds: string[],
-        newOrder: string[]
+        newOrder: string[],
+        draggedItemIds: string[]
       ) => {
         console.log(
           '🔄 [WorkspaceContainer] Executing REORDER database update:',
           {
             parentId: parentId.slice(0, 8),
+            draggedItems: draggedItemIds.map(id => id.slice(0, 8)),
+            draggedCount: draggedItemIds.length,
             newOrder: newOrder.map(id => id.slice(0, 8)),
           }
         );
 
-        // Show loading notification for reorder
+        // Show loading notification for reorder - use dragged items count
         const reorderBatchId = `reorder-${Date.now()}`;
         eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_START, {
           batchId: reorderBatchId,
-          totalItems: newOrder.length,
+          totalItems: draggedItemIds.length, // Use actual dragged items count
           completedItems: 0,
-          items: newOrder.map(id => ({ id, name: '', type: 'file' as const })), // We don't have names here
+          items: draggedItemIds.map(id => ({ id, name: '', type: 'file' as const })),
         }, {
           priority: NotificationPriority.LOW,
           uiType: NotificationUIType.TOAST_SIMPLE,
@@ -237,12 +240,12 @@ export function WorkspaceContainer() {
           if (result.success) {
             console.log('✅ [WorkspaceContainer] REORDER succeeded');
             
-            // Emit success notification
+            // Emit success notification with correct count
             eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
               batchId: reorderBatchId,
-              totalItems: newOrder.length,
-              completedItems: newOrder.length,
-              items: newOrder.map(id => ({ id, name: '', type: 'file' as const })),
+              totalItems: draggedItemIds.length, // Use actual dragged items count
+              completedItems: draggedItemIds.length,
+              items: draggedItemIds.map(id => ({ id, name: '', type: 'file' as const })),
             }, {
               priority: NotificationPriority.LOW,
               uiType: NotificationUIType.TOAST_SIMPLE,
@@ -254,13 +257,13 @@ export function WorkspaceContainer() {
         } catch (error) {
           console.error('❌ [WorkspaceContainer] REORDER failed:', error);
           
-          // Emit error notification
+          // Emit error notification with correct count
           eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR, {
             batchId: reorderBatchId,
-            totalItems: newOrder.length,
+            totalItems: draggedItemIds.length, // Use actual dragged items count
             completedItems: 0,
-            failedItems: newOrder.length,
-            items: newOrder.map(id => ({ id, name: '', type: 'file' as const })),
+            failedItems: draggedItemIds.length,
+            items: draggedItemIds.map(id => ({ id, name: '', type: 'file' as const })),
             error: error instanceof Error ? error.message : 'Failed to update order',
           }, {
             priority: NotificationPriority.HIGH,

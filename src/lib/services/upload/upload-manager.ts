@@ -3,7 +3,7 @@
  * Lightweight coordinator for file uploads across the application
  */
 
-import { eventBus, emitNotification } from '@/features/notifications/core';
+import { emitNotification } from '@/features/notifications/core';
 import { NotificationEventType } from '@/features/notifications/core/event-types';
 import type {
   UploadContext,
@@ -11,15 +11,17 @@ import type {
   UploadOptions,
   UploadResult,
   UploadStatus,
-  UploadProgressEvent,
-  UploadStateEvent,
-  UploadMetrics,
   UploadStatistics,
-  WorkspaceUploadContext,
-  LinkUploadContext,
 } from './types';
-import { isWorkspaceContext, isLinkContext, UploadError, UploadErrorCode } from './types';
+import { isWorkspaceContext, isLinkContext, UploadError } from './types';
 import { logger } from '@/lib/services/logging/logger';
+
+// Import modular components
+import { WorkspaceUploadHandler } from './handlers/workspace-handler';
+import { LinkUploadHandler } from './handlers/link-handler';
+import { validateFile } from './utils/validation';
+import { ProgressTracker } from './utils/progress-tracker';
+import { RetryManager, ErrorClassifier } from './utils/retry-logic';
 
 // =============================================================================
 // UPLOAD MANAGER CONFIGURATION
@@ -43,10 +45,22 @@ export class UploadManager {
   private static instance: UploadManager | null = null;
   private uploads: Map<string, UploadHandle> = new Map();
   private activeUploads: Set<string> = new Set();
-  private metrics: Map<string, UploadMetrics> = new Map();
   private config = DEFAULT_CONFIG;
 
+  // Modular components
+  private progressTracker: ProgressTracker;
+  private retryManager: RetryManager;
+  private workspaceHandler: WorkspaceUploadHandler;
+  private linkHandler: LinkUploadHandler;
+
   private constructor() {
+    this.progressTracker = new ProgressTracker();
+    this.retryManager = new RetryManager({
+      maxRetries: this.config.maxRetries,
+      retryDelays: this.config.retryDelays,
+    });
+    this.workspaceHandler = new WorkspaceUploadHandler();
+    this.linkHandler = new LinkUploadHandler();
     this.initialize();
   }
 
@@ -89,14 +103,43 @@ export class UploadManager {
     const uploadId = this.generateUploadId();
     
     // Validate before starting
-    const validation = await this.validateUpload(file, context);
-    if (!validation.valid) {
-      throw new UploadError(
-        validation.error || 'Upload validation failed',
-        UploadErrorCode.INVALID_FILE_TYPE,
-        uploadId
-      );
+    const validationOptions: any = {
+      maxFileSize: options.maxFileSize || this.config.maxFileSize,
+    };
+    if (options.allowedTypes) {
+      validationOptions.allowedTypes = options.allowedTypes;
     }
+    if (options.blockedTypes) {
+      validationOptions.blockedTypes = options.blockedTypes;
+    }
+    const validation = await validateFile(file, context, validationOptions);
+
+    if (!validation.valid) {
+      const primaryError = validation.errors[0];
+      if (primaryError) {
+        throw new UploadError(
+          primaryError.message,
+          primaryError.code,
+          uploadId,
+          primaryError.details
+        );
+      } else {
+        throw new UploadError(
+          'Validation failed',
+          'VALIDATION_ERROR',
+          uploadId
+        );
+      }
+    }
+
+    // Log warnings if any
+    validation.warnings.forEach(warning => {
+      logger.warn('Upload validation warning', {
+        uploadId,
+        code: warning.code,
+        message: warning.message,
+      });
+    });
 
     // Create upload handle
     const handle: UploadHandle = {
@@ -147,14 +190,7 @@ export class UploadManager {
     this.activeUploads.delete(uploadId);
     
     // Emit cancellation event
-    emitNotification(
-      NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
-      {
-        fileId: uploadId,
-        fileName: handle.file.name,
-        error: 'Upload cancelled by user',
-      }
-    );
+    this.emitCancellationEvent(handle);
 
     logger.info('Upload cancelled', { uploadId });
   }
@@ -163,8 +199,7 @@ export class UploadManager {
    * Get current progress for an upload
    */
   public getProgress(uploadId: string): number {
-    const handle = this.uploads.get(uploadId);
-    return handle?.progress || 0;
+    return this.progressTracker.getProgress(uploadId);
   }
 
   /**
@@ -210,18 +245,7 @@ export class UploadManager {
    * Get upload statistics
    */
   public getStatistics(): UploadStatistics {
-    const allUploads = Array.from(this.uploads.values());
-    
-    return {
-      totalUploads: allUploads.length,
-      successCount: allUploads.filter(u => u.status === 'success').length,
-      failureCount: allUploads.filter(u => u.status === 'error').length,
-      cancelledCount: allUploads.filter(u => u.status === 'cancelled').length,
-      totalBytes: allUploads.reduce((sum, u) => sum + u.file.size, 0),
-      averageDuration: this.calculateAverageDuration(),
-      averageSpeed: this.calculateAverageSpeed(),
-      activeUploads: this.activeUploads.size,
-    };
+    return this.progressTracker.getStatistics(this.uploads);
   }
 
   // =============================================================================
@@ -239,27 +263,29 @@ export class UploadManager {
       // Update status
       this.updateUploadStatus(handle, 'uploading');
       
-      // Route based on context
+      // Route to appropriate handler
       let result: UploadResult;
       
       if (isWorkspaceContext(handle.context)) {
-        result = await this.uploadToWorkspace(handle, handle.context, options);
+        result = await this.workspaceHandler.process(handle, options);
       } else if (isLinkContext(handle.context)) {
-        result = await this.uploadToLink(handle, handle.context, options);
+        result = await this.linkHandler.process(handle, options);
       } else {
         throw new Error('Invalid upload context');
       }
       
       // Handle result
       if (result.success) {
-        this.handleUploadSuccess(handle, result);
+        this.handleUploadSuccess(handle, result, options);
       } else {
         throw new Error(result.error || 'Upload failed');
       }
     } catch (error) {
-      // Handle retry logic
-      if (this.shouldRetry(handle, error)) {
-        await this.retryUpload(handle, options);
+      // Check if we should retry
+      if (this.retryManager.shouldRetry(handle, error)) {
+        await this.retryManager.executeRetry(handle, () => 
+          this.processUpload(handle, options)
+        );
       } else {
         this.handleUploadError(handle, error);
       }
@@ -270,279 +296,60 @@ export class UploadManager {
   }
 
   /**
-   * Upload to workspace context
-   */
-  private async uploadToWorkspace(
-    handle: UploadHandle,
-    context: WorkspaceUploadContext,
-    options: UploadOptions
-  ): Promise<UploadResult> {
-    // Create form data
-    const formData = new FormData();
-    formData.append('file', handle.file);
-    formData.append('workspaceId', context.workspaceId);
-    if (context.folderId) {
-      formData.append('folderId', context.folderId);
-    }
-
-    // Upload with progress tracking
-    return this.performUpload(
-      '/api/workspace/upload',
-      formData,
-      handle,
-      options
-    );
-  }
-
-  /**
-   * Upload to link context
-   */
-  private async uploadToLink(
-    handle: UploadHandle,
-    context: LinkUploadContext,
-    options: UploadOptions
-  ): Promise<UploadResult> {
-    // Create form data - using context for all fields
-    const formData = new FormData();
-    formData.append('file', handle.file);
-    formData.append('linkId', context.linkId);
-    formData.append('uploaderName', context.uploaderName);
-    
-    if (context.uploaderEmail) {
-      formData.append('uploaderEmail', context.uploaderEmail);
-    }
-    if (context.message) {
-      formData.append('message', context.message);
-    }
-    if (context.password) {
-      formData.append('password', context.password);
-    }
-    if (context.folderId) {
-      formData.append('folderId', context.folderId);
-    }
-
-    // Upload with progress tracking
-    return this.performUpload(
-      '/api/link/upload',
-      formData,
-      handle,
-      options
-    );
-  }
-
-  /**
-   * Perform the actual upload with XMLHttpRequest for progress tracking
-   */
-  private performUpload(
-    url: string,
-    formData: FormData,
-    handle: UploadHandle,
-    options: UploadOptions
-  ): Promise<UploadResult> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      handle.xhr = xhr;
-
-      // Progress event
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          this.updateUploadProgress(handle, progress, event.loaded, event.total);
-          
-          // Call user callback if provided
-          if (options.onProgress) {
-            const progressEvent: UploadProgressEvent = {
-              uploadId: handle.id,
-              fileName: handle.file.name,
-              progress,
-              loaded: event.loaded,
-              total: event.total,
-              speed: this.calculateSpeed(handle, event.loaded),
-              remainingTime: this.calculateRemainingTime(handle, event.loaded, event.total),
-            };
-            options.onProgress(progressEvent);
-          }
-        }
-      });
-
-      // Load event (success)
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const response = JSON.parse(xhr.responseText);
-            resolve(response);
-          } catch (error) {
-            reject(new Error('Invalid response format'));
-          }
-        } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      });
-
-      // Error event
-      xhr.addEventListener('error', () => {
-        reject(new Error('Network error during upload'));
-      });
-
-      // Abort event
-      xhr.addEventListener('abort', () => {
-        reject(new Error('Upload cancelled'));
-      });
-
-      // Timeout event
-      xhr.addEventListener('timeout', () => {
-        reject(new Error('Upload timeout'));
-      });
-
-      // Configure request
-      xhr.open('POST', url);
-      xhr.timeout = options.timeout || this.config.defaultTimeout;
-      
-      // Add abort signal
-      handle.controller.signal.addEventListener('abort', () => {
-        xhr.abort();
-      });
-
-      // Send request
-      xhr.send(formData);
-    });
-  }
-
-  // =============================================================================
-  // PRIVATE METHODS - HELPERS
-  // =============================================================================
-
-  /**
-   * Validate upload before starting
-   */
-  private async validateUpload(
-    file: File,
-    _context: UploadContext
-  ): Promise<{ valid: boolean; error?: string }> {
-    // Check file size
-    if (file.size > this.config.maxFileSize) {
-      return {
-        valid: false,
-        error: `File size exceeds maximum allowed (${this.formatSize(this.config.maxFileSize)})`,
-      };
-    }
-
-    // Additional validation can be added here based on context
-    // - File type validation
-    // - Quota checking (using _context when needed)
-    // - Permission validation
-
-    return { valid: true };
-  }
-
-  /**
-   * Check if upload should be retried
-   */
-  private shouldRetry(handle: UploadHandle, error: any): boolean {
-    if (handle.retryCount >= handle.maxRetries) {
-      return false;
-    }
-
-    // Check if error is retryable
-    const retryableErrors = [
-      'Network error',
-      'Upload timeout',
-      'status 502',
-      'status 503',
-      'status 504',
-    ];
-
-    const errorMessage = error?.message || '';
-    return retryableErrors.some(e => errorMessage.includes(e));
-  }
-
-  /**
-   * Retry upload with exponential backoff
-   */
-  private async retryUpload(
-    handle: UploadHandle,
-    options: UploadOptions
-  ): Promise<void> {
-    handle.retryCount++;
-    
-    const delay = this.config.retryDelays[handle.retryCount - 1] || 5000;
-    
-    logger.info('Retrying upload', {
-      uploadId: handle.id,
-      retryCount: handle.retryCount,
-      delay,
-    });
-
-    // Wait before retry
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    // Reset controller
-    handle.controller = new AbortController();
-    
-    // Try again
-    await this.processUpload(handle, options);
-  }
-
-  /**
    * Update upload status
    */
   private updateUploadStatus(handle: UploadHandle, status: UploadStatus): void {
     const previousStatus = handle.status;
     handle.status = status;
     
-    // Emit state change event
-    const event: UploadStateEvent = {
-      uploadId: handle.id,
-      previousStatus,
-      newStatus: status,
-    };
-    
-    eventBus.emit(`upload.status.${handle.id}`, event);
-  }
-
-  /**
-   * Update upload progress
-   */
-  private updateUploadProgress(
-    handle: UploadHandle,
-    progress: number,
-    _loaded: number,
-    total: number
-  ): void {
-    handle.progress = progress;
-    
-    // Emit progress event via notification system
-    emitNotification(
-      NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS,
-      {
-        fileId: handle.id,
-        fileName: handle.file.name,
-        uploadProgress: progress,
-        fileSize: total,
-      }
-    );
+    if (this.config.enableLogging) {
+      logger.debug('Upload status changed', {
+        uploadId: handle.id,
+        previousStatus,
+        newStatus: status,
+      });
+    }
   }
 
   /**
    * Handle successful upload
    */
-  private handleUploadSuccess(handle: UploadHandle, result: UploadResult): void {
+  private handleUploadSuccess(
+    handle: UploadHandle, 
+    result: UploadResult,
+    options: UploadOptions
+  ): void {
     handle.status = 'success';
     handle.endTime = Date.now();
     handle.result = result;
     
     // Record metrics
-    this.recordMetrics(handle);
+    this.progressTracker.recordMetrics(handle);
     
-    // Emit success event
-    emitNotification(
-      NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS,
-      {
-        fileId: result.fileId || handle.id,
-        fileName: handle.file.name,
-        fileSize: handle.file.size,
-      }
-    );
+    // Emit success event based on context
+    if (isWorkspaceContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS,
+        {
+          fileId: result.fileId || handle.id,
+          fileName: handle.file.name,
+          fileSize: handle.file.size,
+        }
+      );
+    } else if (isLinkContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.LINK_NEW_UPLOAD,
+        {
+          fileName: handle.file.name,
+          fileSize: handle.file.size,
+        } as any
+      );
+    }
+
+    // Call user callback if provided
+    if (options.onComplete) {
+      options.onComplete(result);
+    }
     
     logger.info('Upload completed successfully', {
       uploadId: handle.id,
@@ -558,19 +365,34 @@ export class UploadManager {
     handle.endTime = Date.now();
     handle.error = error?.message || 'Unknown error';
     
-    // Emit error event
-    emitNotification(
-      NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
-      {
-        fileId: handle.id,
-        fileName: handle.file.name,
-        error: handle.error || 'Unknown error',
-      }
-    );
+    // Categorize error
+    const errorCategory = ErrorClassifier.categorizeError(error);
+    
+    // Emit error event based on context
+    if (isWorkspaceContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
+        {
+          fileId: handle.id,
+          fileName: handle.file.name,
+          error: handle.error || 'Unknown error',
+        }
+      );
+    } else if (isLinkContext(handle.context)) {
+      // Link uploads might have different error handling
+      emitNotification(
+        NotificationEventType.LINK_BATCH_UPLOAD,
+        {
+          status: 'failed',
+          error: handle.error,
+        } as any
+      );
+    }
     
     logger.error('Upload failed', error, {
       uploadId: handle.id,
       retryCount: handle.retryCount,
+      errorCategory,
     });
   }
 
@@ -578,14 +400,50 @@ export class UploadManager {
    * Emit upload start event
    */
   private emitUploadStart(handle: UploadHandle): void {
-    emitNotification(
-      NotificationEventType.WORKSPACE_FILE_UPLOAD_START,
-      {
-        fileId: handle.id,
-        fileName: handle.file.name,
-        fileSize: handle.file.size,
-      }
-    );
+    if (isWorkspaceContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.WORKSPACE_FILE_UPLOAD_START,
+        {
+          fileId: handle.id,
+          fileName: handle.file.name,
+          fileSize: handle.file.size,
+        }
+      );
+    } else if (isLinkContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.LINK_BATCH_UPLOAD,
+        {
+          status: 'started',
+          totalFiles: 1,
+        } as any
+      );
+    }
+  }
+
+  /**
+   * Emit cancellation event
+   */
+  private emitCancellationEvent(handle: UploadHandle): void {
+    const errorMessage = 'Upload cancelled by user';
+    
+    if (isWorkspaceContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
+        {
+          fileId: handle.id,
+          fileName: handle.file.name,
+          error: errorMessage,
+        }
+      );
+    } else if (isLinkContext(handle.context)) {
+      emitNotification(
+        NotificationEventType.LINK_BATCH_UPLOAD,
+        {
+          status: 'cancelled',
+          error: errorMessage,
+        } as any
+      );
+    }
   }
 
   // =============================================================================
@@ -597,95 +455,6 @@ export class UploadManager {
    */
   private generateUploadId(): string {
     return `upload-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-  }
-
-  /**
-   * Calculate upload speed
-   */
-  private calculateSpeed(handle: UploadHandle, loaded: number): number {
-    const duration = (Date.now() - handle.startTime) / 1000; // seconds
-    return duration > 0 ? loaded / duration : 0;
-  }
-
-  /**
-   * Calculate remaining time
-   */
-  private calculateRemainingTime(
-    handle: UploadHandle,
-    loaded: number,
-    total: number
-  ): number {
-    const speed = this.calculateSpeed(handle, loaded);
-    if (speed === 0) return 0;
-    
-    const remaining = total - loaded;
-    return remaining / speed;
-  }
-
-  /**
-   * Record upload metrics
-   */
-  private recordMetrics(handle: UploadHandle): void {
-    if (!this.config.enableAnalytics) return;
-    
-    const duration = (handle.endTime || Date.now()) - handle.startTime;
-    const averageSpeed = handle.file.size / (duration / 1000);
-    
-    const metrics: UploadMetrics = {
-      uploadId: handle.id,
-      fileName: handle.file.name,
-      fileSize: handle.file.size,
-      duration,
-      averageSpeed,
-      peakSpeed: averageSpeed, // TODO: Track actual peak
-      retryCount: handle.retryCount,
-      status: handle.status,
-      timestamp: Date.now(),
-    };
-    
-    this.metrics.set(handle.id, metrics);
-  }
-
-  /**
-   * Calculate average upload duration
-   */
-  private calculateAverageDuration(): number {
-    const completedMetrics = Array.from(this.metrics.values())
-      .filter(m => m.status === 'success');
-    
-    if (completedMetrics.length === 0) return 0;
-    
-    const totalDuration = completedMetrics.reduce((sum, m) => sum + m.duration, 0);
-    return totalDuration / completedMetrics.length;
-  }
-
-  /**
-   * Calculate average upload speed
-   */
-  private calculateAverageSpeed(): number {
-    const completedMetrics = Array.from(this.metrics.values())
-      .filter(m => m.status === 'success');
-    
-    if (completedMetrics.length === 0) return 0;
-    
-    const totalSpeed = completedMetrics.reduce((sum, m) => sum + m.averageSpeed, 0);
-    return totalSpeed / completedMetrics.length;
-  }
-
-  /**
-   * Format file size for display
-   */
-  private formatSize(bytes: number): string {
-    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-    let size = bytes;
-    let unitIndex = 0;
-    
-    while (size >= 1024 && unitIndex < units.length - 1) {
-      size /= 1024;
-      unitIndex++;
-    }
-    
-    return `${size.toFixed(2)} ${units[unitIndex]}`;
   }
 
   /**
@@ -709,10 +478,15 @@ export class UploadManager {
         handle.status === 'cancelled'
       );
     
-    completed.forEach(([id]) => {
+    const completedIds = completed.map(([id]) => id);
+    
+    // Clear from maps
+    completedIds.forEach(id => {
       this.uploads.delete(id);
-      this.metrics.delete(id);
     });
+    
+    // Clear from progress tracker
+    this.progressTracker.clearCompleted(completedIds);
   }
 
   /**
@@ -728,7 +502,7 @@ export class UploadManager {
       // Clear all data
       UploadManager.instance.uploads.clear();
       UploadManager.instance.activeUploads.clear();
-      UploadManager.instance.metrics.clear();
+      UploadManager.instance.progressTracker.clearAll();
       
       // Remove instance
       UploadManager.instance = null;

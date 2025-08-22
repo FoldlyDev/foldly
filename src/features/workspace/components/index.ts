@@ -1,7 +1,6 @@
 // Workspace components
 
-// Tree components
-export { default as WorkspaceTree } from './tree/WorkspaceTree';
+// Tree components - removed old WorkspaceTree (use @/components/file-tree instead)
 
 // Views
 export { WorkspaceContainer } from './views/workspace-container';

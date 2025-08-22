@@ -18,7 +18,7 @@ export {
 } from './lib/actions';
 
 // Workspace components
-export { WorkspaceTree, WorkspaceContainer } from './components';
+export { WorkspaceContainer } from './components';
 
 // Workspace hooks
 export {

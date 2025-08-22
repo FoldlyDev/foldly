@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Folder, FolderOpen, ChevronRight, Home, Check } from 'lucide-react';
 import { Button } from '@/components/ui/shadcn/button';
 import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
-import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
+// TODO: Replace with new FileTree component from @/components/file-tree
+// import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
 import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { cn } from '@/lib/utils';
 
@@ -91,6 +92,7 @@ export function WorkspaceFolderPicker({
               {/* Workspace tree */}
               <div className='mt-4'>
                 {hasFolders ? (
+                  /* TODO: Replace with new FileTree component
                   <WorkspaceTree
                     onSelectionChange={selectedItems => {
                       if (selectedItems.length > 0) {
@@ -99,6 +101,16 @@ export function WorkspaceFolderPicker({
                     }}
                     selectedItems={tempSelectedId ? [tempSelectedId] : []}
                   />
+                  */
+                  <div className='flex flex-col items-center justify-center py-12 text-center'>
+                    <Folder className='h-12 w-12 text-muted-foreground mb-4' />
+                    <p className='text-muted-foreground text-sm mb-2'>
+                      Tree component temporarily disabled
+                    </p>
+                    <p className='text-muted-foreground text-xs'>
+                      Migration to new FileTree in progress
+                    </p>
+                  </div>
                 ) : (
                   <div className='flex flex-col items-center justify-center py-12 text-center'>
                     <Folder className='h-12 w-12 text-muted-foreground mb-4' />
