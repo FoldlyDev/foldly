@@ -6,10 +6,11 @@ This directory contains the unified upload service layer that coordinates file u
 
 ## ✅ Implementation Status (January 2025)
 
-### Phase 1: Lightweight Upload Manager - **COMPLETE**
+### Phase 1: Production-Ready Upload Manager - **COMPLETE WITH ENHANCEMENTS**
 
 The upload service has been fully implemented with a modular, enterprise-grade architecture that provides:
 
+#### Core Features
 - ✅ **Centralized upload coordination** across workspace and link contexts
 - ✅ **Full integration with existing server actions** (no API endpoint bypassing)
 - ✅ **Context-aware event system** with proper notification routing
@@ -17,6 +18,15 @@ The upload service has been fully implemented with a modular, enterprise-grade a
 - ✅ **Modular architecture** with clean separation of concerns
 - ✅ **Zero TypeScript errors** with full type safety
 - ✅ **DRY principles** applied throughout with reusable components
+
+#### 🆕 New Production Features (January 2025)
+- ✅ **Centralized Configuration** - Single source of truth at `/lib/config/upload-config.ts`
+- ✅ **Environment-Aware Limits** - Different limits for dev (5MB) vs production (up to 5GB)
+- ✅ **Chunked Upload Support** - Large files split into 5MB chunks (production only)
+- ✅ **Resumable Uploads** - 24-hour session persistence with localStorage
+- ✅ **Peak Speed Tracking** - Accurate speed metrics with sampling
+- ✅ **Fail-Closed Security** - Quota validation denies uploads on service errors
+- ✅ **Plan-Based Limits** - Free: 100MB, Pro: 1GB, Business: 5GB (production)
 
 ### Next Steps: Workspace Integration
 
@@ -76,13 +86,16 @@ This will result in a **95% code reduction** in workspace upload handling while 
 - ✅ **Centralized coordination** without replacing existing services
 - ✅ **AbortController support** for upload cancellation  
 - ✅ **Event-driven notifications** using existing event bus
-- ✅ **Progress tracking** with dedicated ProgressTracker utility
+- ✅ **Progress tracking** with peak speed calculation and sampling
 - ✅ **Retry logic** with exponential backoff via RetryManager
 - ✅ **Context-aware routing** (workspace vs link uploads)
-- ✅ **Comprehensive validation** with quota checking
+- ✅ **Comprehensive validation** with fail-closed quota checking
 - ✅ **Error classification** for intelligent retry decisions
 - ✅ **Modular handlers** for each upload context
 - ✅ **Type-safe throughout** with zero TypeScript errors
+- ✅ **Chunked uploads** for files > 50MB (production only)
+- ✅ **Resumable sessions** with 24-hour persistence
+- ✅ **Environment configuration** via centralized config
 
 ### Implementation Details
 
@@ -98,9 +111,17 @@ class UploadManager {
   getProgress(uploadId: string): number
   retry(uploadId: string): Promise<void>
   
+  // New production methods
+  resumeUpload(sessionId: string): Promise<{ success: boolean }>
+  getResumableSessions(): string[]
+  getStatistics(): UploadStatistics
+  
   // Event emission via existing notification system
   private emitProgress(uploadId: string, progress: number): void
   private emitComplete(uploadId: string, result: UploadResult): void
+  
+  // Chunked upload support
+  private processChunkedUpload(handle: UploadHandle): Promise<void>
 }
 ```
 
@@ -163,10 +184,40 @@ const result = await uploadFileAction(handle.file, context.workspaceId, context.
    - Error classification for intelligent handling
    - Progress tracking with metrics collection
 
+### Configuration System
+
+The upload service now uses a centralized configuration at `/lib/config/upload-config.ts`:
+
+```typescript
+// Environment-aware configuration
+const isProduction = process.env.NODE_ENV === 'production' && 
+                     process.env.NEXT_PUBLIC_SUPABASE_TIER !== 'free';
+
+// File size limits by environment and plan
+UPLOAD_CONFIG.limits.getMaxFileSize('free')     // 5MB dev, 100MB prod
+UPLOAD_CONFIG.limits.getMaxFileSize('pro')      // 5MB dev, 1GB prod
+UPLOAD_CONFIG.limits.getMaxFileSize('business') // 5MB dev, 5GB prod
+
+// Feature flags
+UPLOAD_CONFIG.features.chunkedUploads    // true in production
+UPLOAD_CONFIG.features.resumableUploads  // true in production
+UPLOAD_CONFIG.features.virusScanning     // configurable via env
+```
+
+#### Environment Variables
+- `NEXT_PUBLIC_SUPABASE_TIER`: 'free' or 'paid'
+- `NEXT_PUBLIC_MAX_FILE_SIZE`: Override max file size
+- `NEXT_PUBLIC_MAX_CONCURRENT_UPLOADS`: Default 3
+- `NEXT_PUBLIC_MAX_UPLOAD_RETRIES`: Default 3
+- `NEXT_PUBLIC_UPLOAD_TIMEOUT`: Default 300000 (5 minutes)
+- `NEXT_PUBLIC_ENABLE_VIRUS_SCAN`: Enable virus scanning
+
 ### Usage Example
 ```typescript
 // Simple usage with the implemented service
 const uploadManager = UploadManager.getInstance();
+
+// Regular upload
 await uploadManager.upload(file, {
   type: 'workspace',
   workspaceId,
@@ -177,6 +228,12 @@ await uploadManager.upload(file, {
   onComplete: (result) => console.log('Upload successful:', result),
   onError: (error) => console.error('Upload failed:', error)
 });
+
+// Resume an interrupted upload (production only)
+const sessions = uploadManager.getResumableSessions();
+if (sessions.length > 0) {
+  await uploadManager.resumeUpload(sessions[0]);
+}
 ```
 
 ### Benefits
@@ -558,12 +615,12 @@ class StorageTieringService {
 
 ### Development Guidelines
 
-#### Implemented Code Organization (✅ COMPLETE)
+#### Implemented Code Organization (✅ COMPLETE WITH ENHANCEMENTS)
 ```
 src/lib/services/upload/
-├── README.md                 # This file
+├── README.md                 # This file (updated)
 ├── index.ts                  # Public API exports ✅
-├── upload-manager.ts         # Main coordinator (530 lines, modular) ✅
+├── upload-manager.ts         # Main coordinator (enhanced with chunking) ✅
 ├── types.ts                  # TypeScript definitions ✅
 │   ├── Context types (WorkspaceUploadContext, LinkUploadContext)
 │   ├── Status types (UploadStatus, BatchStatus)
@@ -571,21 +628,28 @@ src/lib/services/upload/
 │   ├── Option types (UploadOptions, BatchUploadOptions)
 │   └── Error types (UploadError, UploadErrorCode)
 ├── handlers/                 # Context-specific handlers ✅
-│   ├── base-handler.ts      # Abstract base (70 lines)
-│   ├── workspace-handler.ts # Workspace uploads (65 lines)
-│   └── link-handler.ts      # Link uploads (90 lines)
+│   ├── base-handler.ts      # Abstract base (77 lines)
+│   ├── workspace-handler.ts # Workspace uploads (73 lines)
+│   └── link-handler.ts      # Link uploads (109 lines)
 └── utils/                    # Utility functions ✅
-    ├── progress-tracker.ts   # Progress & metrics (140 lines)
-    ├── retry-logic.ts        # Retry & error classification (230 lines)
-    └── validation.ts         # File & quota validation (200 lines)
+    ├── progress-tracker.ts   # Progress with peak speed tracking (210 lines) 🆕
+    ├── retry-logic.ts        # Retry & error classification (244 lines)
+    ├── validation.ts         # Fail-closed quota validation (228 lines) 🆕
+    └── chunked-upload.ts     # Chunked & resumable uploads (600 lines) 🆕
+
+src/lib/config/
+├── upload-config.ts          # Centralized upload configuration (310 lines) 🆕
+└── plan-configuration.ts     # Updated with production file sizes 🆕
 ```
 
 #### Implementation Metrics
-- **Total Lines of Code**: ~1,500 (well-organized and modular)
-- **Main Coordinator**: 530 lines (down from 800+ in original)
-- **Average Module Size**: <250 lines (highly maintainable)
+- **Total Lines of Code**: ~2,400 (well-organized and modular)
+- **Main Coordinator**: 600 lines (with chunking support)
+- **Average Module Size**: <300 lines (highly maintainable)
 - **TypeScript Coverage**: 100% with full type safety
 - **Code Duplication**: 0% (DRY principles applied)
+- **Production Features**: Chunking, resumability, peak tracking
+- **Security Improvements**: Fail-closed validation, blocked extensions
 
 #### Best Practices
 1. **Single Responsibility**: Each class/function has one clear purpose

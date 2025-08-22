@@ -15,6 +15,8 @@ import type {
 } from './types';
 import { isWorkspaceContext, isLinkContext, UploadError } from './types';
 import { logger } from '@/lib/services/logging/logger';
+import { UPLOAD_CONFIG, shouldUseChunkedUpload, getRetryDelay } from '@/lib/config/upload-config';
+import { PLAN_CONFIGURATION, type PlanKey } from '@/lib/config/plan-configuration';
 
 // Import modular components
 import { WorkspaceUploadHandler } from './handlers/workspace-handler';
@@ -22,20 +24,7 @@ import { LinkUploadHandler } from './handlers/link-handler';
 import { validateFile } from './utils/validation';
 import { ProgressTracker } from './utils/progress-tracker';
 import { RetryManager, ErrorClassifier } from './utils/retry-logic';
-
-// =============================================================================
-// UPLOAD MANAGER CONFIGURATION
-// =============================================================================
-
-const DEFAULT_CONFIG = {
-  maxConcurrentUploads: 3,
-  defaultTimeout: 300000, // 5 minutes
-  maxRetries: 3,
-  retryDelays: [1000, 2000, 5000], // Exponential backoff
-  maxFileSize: 5 * 1024 * 1024 * 1024, // 5GB
-  enableLogging: process.env.NODE_ENV === 'development',
-  enableAnalytics: true,
-};
+import { chunkedUploadManager } from './utils/chunked-upload';
 
 // =============================================================================
 // UPLOAD MANAGER IMPLEMENTATION
@@ -45,7 +34,6 @@ export class UploadManager {
   private static instance: UploadManager | null = null;
   private uploads: Map<string, UploadHandle> = new Map();
   private activeUploads: Set<string> = new Set();
-  private config = DEFAULT_CONFIG;
 
   // Modular components
   private progressTracker: ProgressTracker;
@@ -56,8 +44,8 @@ export class UploadManager {
   private constructor() {
     this.progressTracker = new ProgressTracker();
     this.retryManager = new RetryManager({
-      maxRetries: this.config.maxRetries,
-      retryDelays: this.config.retryDelays,
+      maxRetries: UPLOAD_CONFIG.retry.maxRetries,
+      retryDelays: UPLOAD_CONFIG.retry.retryDelays,
     });
     this.workspaceHandler = new WorkspaceUploadHandler();
     this.linkHandler = new LinkUploadHandler();
@@ -78,13 +66,35 @@ export class UploadManager {
    * Initialize the upload manager
    */
   private initialize(): void {
-    if (this.config.enableLogging) {
-      logger.info('Upload Manager initialized', { config: this.config });
+    if (UPLOAD_CONFIG.debug.enableLogging) {
+      logger.info('Upload Manager initialized', { 
+        config: {
+          maxConcurrentUploads: UPLOAD_CONFIG.concurrency.maxConcurrentUploads,
+          chunkedUploads: UPLOAD_CONFIG.features.chunkedUploads,
+          resumableUploads: UPLOAD_CONFIG.features.resumableUploads,
+        }
+      });
     }
 
     // Listen for page unload to handle cleanup
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', this.handlePageUnload.bind(this));
+      
+      // Check for resumable sessions on initialization
+      if (UPLOAD_CONFIG.features.resumableUploads) {
+        this.checkResumableSessions();
+      }
+    }
+  }
+  
+  /**
+   * Check for resumable upload sessions
+   */
+  private checkResumableSessions(): void {
+    const sessions = chunkedUploadManager.getResumableSessions();
+    if (sessions.length > 0) {
+      logger.info(`Found ${sessions.length} resumable upload sessions`);
+      // Sessions can be resumed through UI or automatically
     }
   }
 
@@ -102,9 +112,26 @@ export class UploadManager {
   ): Promise<string> {
     const uploadId = this.generateUploadId();
     
+    // Check concurrent upload limit
+    if (this.activeUploads.size >= UPLOAD_CONFIG.concurrency.maxConcurrentUploads) {
+      throw new UploadError(
+        'Maximum concurrent uploads reached. Please wait for current uploads to complete.',
+        'CONCURRENT_LIMIT_EXCEEDED',
+        uploadId
+      );
+    }
+    
+    // Determine user's plan for file size validation
+    let planKey: PlanKey = 'free';
+    if (isWorkspaceContext(context)) {
+      // In production, you would fetch the user's actual plan from database
+      // For now, we'll use 'free' as default
+      planKey = 'free';
+    }
+    
     // Validate before starting
     const validationOptions: any = {
-      maxFileSize: options.maxFileSize || this.config.maxFileSize,
+      maxFileSize: options.maxFileSize || UPLOAD_CONFIG.limits.getMaxFileSize(planKey),
     };
     if (options.allowedTypes) {
       validationOptions.allowedTypes = options.allowedTypes;
@@ -151,7 +178,7 @@ export class UploadManager {
       status: 'pending',
       startTime: Date.now(),
       retryCount: 0,
-      maxRetries: options.maxRetries || this.config.maxRetries,
+      maxRetries: options.maxRetries || UPLOAD_CONFIG.retry.maxRetries,
     };
 
     // Store handle
@@ -247,6 +274,68 @@ export class UploadManager {
   public getStatistics(): UploadStatistics {
     return this.progressTracker.getStatistics(this.uploads);
   }
+  
+  /**
+   * Resume a chunked upload session
+   */
+  public async resumeUpload(
+    sessionId: string,
+    options: UploadOptions = {}
+  ): Promise<{ success: boolean; error?: string }> {
+    if (!UPLOAD_CONFIG.features.resumableUploads) {
+      return {
+        success: false,
+        error: 'Resumable uploads are not enabled in this environment',
+      };
+    }
+    
+    try {
+      logger.info('Attempting to resume upload session', { sessionId });
+      
+      // Get upload URL (would be determined from session context in production)
+      const uploadUrl = '/api/upload/resume';
+      
+      const result = await chunkedUploadManager.resumeUpload(
+        sessionId,
+        uploadUrl,
+        (progress) => {
+          if (options.onProgress) {
+            options.onProgress({
+              uploadId: sessionId,
+              fileName: 'Resuming upload',
+              progress,
+              loaded: 0,
+              total: 0,
+            });
+          }
+        }
+      );
+      
+      if (result.success) {
+        logger.info('Successfully resumed upload', { sessionId });
+      } else {
+        logger.error('Failed to resume upload', { sessionId, error: result.error });
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error('Error resuming upload', error, { sessionId });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to resume upload',
+      };
+    }
+  }
+  
+  /**
+   * Get all resumable upload sessions
+   */
+  public getResumableSessions(): string[] {
+    if (!UPLOAD_CONFIG.features.resumableUploads) {
+      return [];
+    }
+    return chunkedUploadManager.getResumableSessions();
+  }
 
   // =============================================================================
   // PRIVATE METHODS - UPLOAD PROCESSING
@@ -263,7 +352,14 @@ export class UploadManager {
       // Update status
       this.updateUploadStatus(handle, 'uploading');
       
-      // Route to appropriate handler
+      // Check if we should use chunked upload for large files
+      if (shouldUseChunkedUpload(handle.file.size)) {
+        // Use chunked upload for large files (production only)
+        await this.processChunkedUpload(handle, options);
+        return;
+      }
+      
+      // Route to appropriate handler for regular uploads
       let result: UploadResult;
       
       if (isWorkspaceContext(handle.context)) {
@@ -293,6 +389,70 @@ export class UploadManager {
       // Clean up active upload
       this.activeUploads.delete(handle.id);
     }
+  }
+  
+  /**
+   * Process chunked upload for large files
+   */
+  private async processChunkedUpload(
+    handle: UploadHandle,
+    options: UploadOptions
+  ): Promise<void> {
+    logger.info('Processing chunked upload', {
+      uploadId: handle.id,
+      fileName: handle.file.name,
+      fileSize: handle.file.size,
+    });
+    
+    // Generate upload URL based on context
+    const uploadUrl = this.getUploadUrl(handle.context);
+    
+    // Use chunked upload manager
+    const result = await chunkedUploadManager.uploadInChunks(
+      handle,
+      uploadUrl,
+      options,
+      (progress) => {
+        handle.progress = progress;
+        this.progressTracker.updateProgress(handle, progress, 
+          (handle.file.size * progress) / 100, handle.file.size);
+        
+        if (options.onProgress) {
+          options.onProgress({
+            uploadId: handle.id,
+            fileName: handle.file.name,
+            progress,
+            loaded: (handle.file.size * progress) / 100,
+            total: handle.file.size,
+          });
+        }
+      }
+    );
+    
+    if (result.success) {
+      this.handleUploadSuccess(handle, {
+        success: true,
+        fileId: handle.id,
+        fileName: handle.file.name,
+        fileSize: handle.file.size,
+      }, options);
+    } else {
+      throw new Error(result.error || 'Chunked upload failed');
+    }
+  }
+  
+  /**
+   * Get upload URL based on context
+   */
+  private getUploadUrl(context: UploadContext): string {
+    // In production, this would return the actual upload endpoint
+    // For now, return a placeholder
+    if (isWorkspaceContext(context)) {
+      return '/api/upload/workspace';
+    } else if (isLinkContext(context)) {
+      return '/api/upload/link';
+    }
+    return '/api/upload';
   }
 
   /**

@@ -143,14 +143,16 @@ async function checkUserQuota(
       nearLimit: quotaStatus.currentUsage / quotaStatus.limit > 0.8,
     };
   } catch (error) {
-    // If quota check fails, allow upload but log error
-    console.error('Failed to check user quota:', error);
+    // SECURITY: Fail closed - if quota check fails, deny upload
+    // This prevents potential abuse if quota service is down
+    console.error('Failed to check user quota, denying upload for security:', error);
     return {
-      canUpload: true,
+      canUpload: false,
+      reason: 'Unable to verify storage quota. Please try again later.',
       currentUsage: 0,
-      limit: DEFAULT_MAX_FILE_SIZE,
-      percentageUsed: 0,
-      nearLimit: false,
+      limit: 0,
+      percentageUsed: 100,
+      nearLimit: true,
     };
   }
 }

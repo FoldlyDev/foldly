@@ -15,6 +15,8 @@ import { isWorkspaceContext, isLinkContext } from '../types';
 export class ProgressTracker {
   private metrics: Map<string, UploadMetrics> = new Map();
   private progressCache: Map<string, number> = new Map();
+  private speedSamples: Map<string, number[]> = new Map();
+  private peakSpeeds: Map<string, number> = new Map();
 
   /**
    * Update upload progress
@@ -27,6 +29,10 @@ export class ProgressTracker {
   ): void {
     handle.progress = progress;
     this.progressCache.set(handle.id, progress);
+    
+    // Track upload speed
+    const currentSpeed = this.calculateSpeed(handle, loaded);
+    this.trackSpeed(handle.id, currentSpeed);
     
     // Emit appropriate event based on context
     if (isWorkspaceContext(handle.context)) {
@@ -47,8 +53,49 @@ export class ProgressTracker {
         progress,
         loaded,
         total,
+        speed: currentSpeed,
+        peakSpeed: this.peakSpeeds.get(handle.id) || currentSpeed,
       });
     }
+  }
+  
+  /**
+   * Track speed samples and update peak speed
+   */
+  private trackSpeed(uploadId: string, speed: number): void {
+    // Get or initialize speed samples
+    let samples = this.speedSamples.get(uploadId) || [];
+    samples.push(speed);
+    
+    // Keep only last 10 samples for smoothing
+    if (samples.length > 10) {
+      samples = samples.slice(-10);
+    }
+    this.speedSamples.set(uploadId, samples);
+    
+    // Update peak speed if current is higher
+    const currentPeak = this.peakSpeeds.get(uploadId) || 0;
+    if (speed > currentPeak) {
+      this.peakSpeeds.set(uploadId, speed);
+    }
+  }
+  
+  /**
+   * Get average speed from recent samples
+   */
+  private getAverageSpeed(uploadId: string): number {
+    const samples = this.speedSamples.get(uploadId) || [];
+    if (samples.length === 0) return 0;
+    
+    const sum = samples.reduce((acc, speed) => acc + speed, 0);
+    return sum / samples.length;
+  }
+  
+  /**
+   * Get peak speed for an upload
+   */
+  getPeakSpeed(uploadId: string): number {
+    return this.peakSpeeds.get(uploadId) || 0;
   }
 
   /**
@@ -63,7 +110,8 @@ export class ProgressTracker {
    */
   recordMetrics(handle: UploadHandle): void {
     const duration = (handle.endTime || Date.now()) - handle.startTime;
-    const averageSpeed = handle.file.size / (duration / 1000);
+    const averageSpeed = this.getAverageSpeed(handle.id) || (handle.file.size / (duration / 1000));
+    const peakSpeed = this.getPeakSpeed(handle.id) || averageSpeed;
     
     const metrics: UploadMetrics = {
       uploadId: handle.id,
@@ -71,7 +119,7 @@ export class ProgressTracker {
       fileSize: handle.file.size,
       duration,
       averageSpeed,
-      peakSpeed: averageSpeed, // TODO: Track actual peak
+      peakSpeed,
       retryCount: handle.retryCount,
       status: handle.status,
       timestamp: Date.now(),
@@ -139,6 +187,8 @@ export class ProgressTracker {
     uploadIds.forEach(id => {
       this.metrics.delete(id);
       this.progressCache.delete(id);
+      this.speedSamples.delete(id);
+      this.peakSpeeds.delete(id);
     });
   }
 
@@ -148,6 +198,8 @@ export class ProgressTracker {
   clearAll(): void {
     this.metrics.clear();
     this.progressCache.clear();
+    this.speedSamples.clear();
+    this.peakSpeeds.clear();
   }
 
   /**

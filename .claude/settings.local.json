@@ -18,7 +18,8 @@
       "Bash(npx tsc:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "mcp__sequential-thinking__sequentialthinking"
     ]
   },
   "enableAllProjectMcpServers": true,

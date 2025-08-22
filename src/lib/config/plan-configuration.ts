@@ -20,7 +20,8 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 0.00,
       yearly_price_usd: 0.00,
       storage_limit_gb: 50,
-      max_file_size_mb: 5, // 5MB (Supabase deployment limit)
+      max_file_size_mb: 5, // 5MB in dev (Supabase free tier), 100MB in production
+      max_file_size_mb_production: 100, // Production limit for free plan
       features: {
         storage_limits: true,
         custom_username: true,
@@ -46,7 +47,8 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 10.00,
       yearly_price_usd: 100.00,
       storage_limit_gb: 500,
-      max_file_size_mb: 5, // 5MB (Supabase deployment limit)
+      max_file_size_mb: 5, // 5MB in dev (Supabase free tier), 1GB in production
+      max_file_size_mb_production: 1024, // Production limit for pro plan (1GB)
       features: {
         storage_limits: true,
         custom_username: true,
@@ -72,7 +74,8 @@ export const PLAN_CONFIGURATION = {
       monthly_price_usd: 35.00,
       yearly_price_usd: 350.00,
       storage_limit_gb: 2048, // 2TB
-      max_file_size_mb: 5, // 5MB (Supabase deployment limit)
+      max_file_size_mb: 5, // 5MB in dev (Supabase free tier), 5GB in production
+      max_file_size_mb_production: 5120, // Production limit for business plan (5GB)
       features: {
         storage_limits: true,
         custom_username: true,
@@ -101,7 +104,7 @@ export const PLAN_CONFIGURATION = {
     },
     file_size_limit: {
       name: 'File Size Limits',
-      description: 'Maximum file size per upload. All plans: 5MB (Supabase deployment limit).',
+      description: 'Maximum file size per upload. Development: 5MB (Supabase free tier). Production: Free 100MB, Pro 1GB, Business 5GB.',
       category: 'storage',
     },
     custom_username: {
