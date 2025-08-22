@@ -235,6 +235,9 @@ export class ChunkedUploadManager {
         for (const result of results) {
           if (!result.success) {
             const chunk = session.chunks[result.chunkIndex];
+            if (!chunk) {
+              throw new Error(`Chunk ${result.chunkIndex} not found in session`);
+            }
             if (chunk.retries < UPLOAD_CONFIG.retry.maxRetries) {
               // Retry failed chunk
               const retryResult = await this.uploadChunk(
@@ -478,7 +481,7 @@ export class ChunkedUploadManager {
       
       localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
-      logger.warn('Failed to save upload session to storage', error);
+      logger.warn('Failed to save upload session to storage', { error: String(error) });
     }
   }
   
@@ -500,7 +503,7 @@ export class ChunkedUploadManager {
         };
       }
     } catch (error) {
-      logger.warn('Failed to load upload session from storage', error);
+      logger.warn('Failed to load upload session from storage', { error: String(error) });
     }
     
     return null;
@@ -516,7 +519,7 @@ export class ChunkedUploadManager {
       const key = `upload-session-${sessionId}`;
       localStorage.removeItem(key);
     } catch (error) {
-      logger.warn('Failed to remove upload session from storage', error);
+      logger.warn('Failed to remove upload session from storage', { error: String(error) });
     }
   }
   

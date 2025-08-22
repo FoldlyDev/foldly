@@ -52,10 +52,10 @@ export class LinkUploadHandler extends BaseUploadHandler {
       if (result.success && result.data) {
         const uploadResult: UploadResult = {
           success: true,
-          fileId: result.data,
-          fileName: handle.file.name,
-          fileSize: handle.file.size,
-          storagePath: result.data,
+          fileId: result.data.fileId,
+          fileName: result.data.fileName,
+          fileSize: result.data.fileSize,
+          storagePath: result.data.fileId, // Using fileId as storage path
         };
         
         this.logComplete(handle, uploadResult);

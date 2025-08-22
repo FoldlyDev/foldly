@@ -16,7 +16,8 @@ import type {
 import { isWorkspaceContext, isLinkContext, UploadError } from './types';
 import { logger } from '@/lib/services/logging/logger';
 import { UPLOAD_CONFIG, shouldUseChunkedUpload, getRetryDelay } from '@/lib/config/upload-config';
-import { PLAN_CONFIGURATION, type PlanKey } from '@/lib/config/plan-configuration';
+import type { PlanKey } from '@/lib/config/plan-configuration';
+import { getCurrentPlan } from '@/features/billing/lib/services/clerk-billing-integration';
 
 // Import modular components
 import { WorkspaceUploadHandler } from './handlers/workspace-handler';
@@ -45,7 +46,7 @@ export class UploadManager {
     this.progressTracker = new ProgressTracker();
     this.retryManager = new RetryManager({
       maxRetries: UPLOAD_CONFIG.retry.maxRetries,
-      retryDelays: UPLOAD_CONFIG.retry.retryDelays,
+      retryDelays: [...UPLOAD_CONFIG.retry.retryDelays], // Convert readonly to mutable array
     });
     this.workspaceHandler = new WorkspaceUploadHandler();
     this.linkHandler = new LinkUploadHandler();
@@ -123,11 +124,19 @@ export class UploadManager {
     
     // Determine user's plan for file size validation
     let planKey: PlanKey = 'free';
+    
+    // For workspace uploads, get the user's actual plan from Clerk
     if (isWorkspaceContext(context)) {
-      // In production, you would fetch the user's actual plan from database
-      // For now, we'll use 'free' as default
-      planKey = 'free';
+      try {
+        planKey = await getCurrentPlan();
+        logger.debug('User plan determined for upload', { uploadId, planKey });
+      } catch (error) {
+        logger.warn('Failed to get user plan, defaulting to free', { uploadId, error });
+        planKey = 'free';
+      }
     }
+    // For link uploads, always use free plan limits
+    // (external uploaders don't have subscriptions)
     
     // Validate before starting
     const validationOptions: any = {
@@ -462,7 +471,7 @@ export class UploadManager {
     const previousStatus = handle.status;
     handle.status = status;
     
-    if (this.config.enableLogging) {
+    if (UPLOAD_CONFIG.debug.enableLogging) {
       logger.debug('Upload status changed', {
         uploadId: handle.id,
         previousStatus,

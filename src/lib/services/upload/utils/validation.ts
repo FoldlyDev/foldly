@@ -10,18 +10,6 @@ import { isWorkspaceContext } from '../types';
 const DEFAULT_MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
 
 /**
- * Allowed file types by category
- */
-const ALLOWED_FILE_TYPES = {
-  images: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
-  documents: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
-  spreadsheets: ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-  videos: ['video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'],
-  audio: ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm'],
-  archives: ['application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed'],
-};
-
-/**
  * Blocked file extensions for security
  */
 const BLOCKED_EXTENSIONS = [
@@ -125,23 +113,39 @@ async function checkUserQuota(
   fileSize: number
 ): Promise<{
   canUpload: boolean;
-  reason?: string;
+  reason?: string | undefined;
   currentUsage: number;
   limit: number;
   percentageUsed: number;
   nearLimit: boolean;
 }> {
   try {
-    const quotaStatus = await storageQuotaService.checkUserQuota(userId, fileSize);
+    const quotaResult = await storageQuotaService.checkUserQuota(userId, fileSize);
     
-    return {
-      canUpload: quotaStatus.canUpload,
-      reason: quotaStatus.canUpload ? undefined : 'Storage quota exceeded',
-      currentUsage: quotaStatus.currentUsage,
-      limit: quotaStatus.limit,
-      percentageUsed: Math.round((quotaStatus.currentUsage / quotaStatus.limit) * 100),
-      nearLimit: quotaStatus.currentUsage / quotaStatus.limit > 0.8,
-    };
+    // Check if the result is successful
+    if (quotaResult.success && quotaResult.data) {
+      const quotaStatus = quotaResult.data;
+      return {
+        canUpload: quotaStatus.allowed,
+        reason: quotaStatus.allowed ? undefined : (quotaStatus.message || 'Storage quota exceeded'),
+        currentUsage: quotaStatus.storageUsed,
+        limit: quotaStatus.storageLimit,
+        percentageUsed: Math.round(quotaStatus.usagePercentage),
+        nearLimit: quotaStatus.usagePercentage > 80,
+      };
+    } else {
+      // Handle error result - quotaResult is ErrorResult when success is false
+      const errorResult = quotaResult as { success: false; error: string };
+      console.error('Quota check failed:', errorResult.error);
+      return {
+        canUpload: false,
+        reason: errorResult.error || 'Unable to verify storage quota',
+        currentUsage: 0,
+        limit: 0,
+        percentageUsed: 100,
+        nearLimit: true,
+      };
+    }
   } catch (error) {
     // SECURITY: Fail closed - if quota check fails, deny upload
     // This prevents potential abuse if quota service is down
