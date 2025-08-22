@@ -6,7 +6,7 @@ import { isFolder } from '../types/tree-types';
  * Callbacks for different drop operations
  */
 export interface DropOperationCallbacks {
-  onReorder?: (parentId: string, itemIds: string[], newOrder: string[]) => Promise<void>;
+  onReorder?: (parentId: string, itemIds: string[], newOrder: string[], draggedItemIds: string[]) => Promise<void>;
   onMove?: (itemIds: string[], fromParentId: string, toParentId: string) => Promise<void>;
 }
 
@@ -123,6 +123,8 @@ export function createTreeDropHandler(
         console.log('🔄 REORDER operation completed:', {
           targetId: targetId.slice(0, 8),
           orderChanged,
+          draggedItems: addedItems.map(id => id.slice(0, 8)),
+          draggedCount: addedItems.length,
           oldOrder: oldChildren.map(id => id.slice(0, 8)),
           newOrder: newChildren.map(id => id.slice(0, 8)),
           hasCallback: !!callbacks?.onReorder
@@ -130,12 +132,17 @@ export function createTreeDropHandler(
         
         if (orderChanged && callbacks?.onReorder) {
           try {
-            await callbacks.onReorder(targetId, newChildren, newChildren);
+            // For reorder, we need to pass ALL children in their new order
+            // because all items' sort orders need to be updated
+            // Also pass the specific items that were dragged
+            await callbacks.onReorder(targetId, oldChildren, newChildren, addedItems);
           } catch (error) {
             console.error('Reorder operation failed:', error);
             // Don't update local state if the operation failed
             return;
           }
+        } else if (!orderChanged) {
+          console.log('📊 Order unchanged, skipping database update');
         }
       } else {
         // Edge case or direct drop - just update state

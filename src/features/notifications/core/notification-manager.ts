@@ -69,6 +69,7 @@ class NotificationManager {
   private deduplicationMap: Map<string, DeduplicationEntry> = new Map();
   private activeToasts: Set<string> = new Set();
   private progressToasts: Map<string, string> = new Map(); // Maps event ID to toast ID
+  private completedUploads: Set<string> = new Set(); // Track completed uploads to prevent recreation
 
   private constructor(config?: Partial<NotificationManagerConfig>) {
     this.config = {
@@ -255,6 +256,8 @@ class NotificationManager {
     // Map of event types to title generators
     const titleMap: Record<string, string> = {
       // File events
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_START]: `Uploading ${payload.fileName || 'file'}`,
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS]: `Uploading ${payload.fileName || 'file'}`,
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS]: 'File uploaded successfully',
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR]: 'File upload failed',
       [NotificationEventType.WORKSPACE_FILE_DELETE_SUCCESS]: 'File deleted',
@@ -271,7 +274,12 @@ class NotificationManager {
       // Batch events
       [NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS]: 'Items deleted',
       [NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR]: 'Failed to delete items',
+      [NotificationEventType.WORKSPACE_ITEMS_REORDER_START]: 'Reordering items...',
       [NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS]: 'Items reordered',
+      [NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR]: 'Failed to reorder items',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_START]: 'Moving items...',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS]: 'Items moved',
+      [NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR]: 'Failed to move items',
       
       // Link events
       [NotificationEventType.LINK_CREATE_SUCCESS]: 'Link created',
@@ -286,6 +294,16 @@ class NotificationManager {
       [NotificationEventType.STORAGE_THRESHOLD_CRITICAL]: 'Storage critical',
       [NotificationEventType.STORAGE_LIMIT_EXCEEDED]: 'Storage limit exceeded',
       [NotificationEventType.STORAGE_UPLOAD_BLOCKED]: 'Upload blocked',
+      
+      // File limit events
+      [NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED]: 'Too many files selected',
+      [NotificationEventType.WORKSPACE_FOLDER_DROPPED]: `Processing ${payload.fileCount || 0} files`,
+      
+      // Batch upload events
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_START]: `Uploading ${payload.totalItems || 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: `Uploading ${payload.totalItems || 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: 'Files uploaded successfully',
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: 'Failed to upload files',
     };
 
     return titleMap[event.type] || 'Notification';
@@ -299,6 +317,13 @@ class NotificationManager {
     
     // Generate descriptions based on event type
     switch (event.type) {
+      case NotificationEventType.WORKSPACE_FILE_UPLOAD_START:
+        return `Starting upload (${this.formatFileSize(payload.fileSize)})`;
+      
+      case NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS:
+        const progress = Math.round(payload.uploadProgress || 0);
+        return `${progress}% complete (${this.formatFileSize(payload.fileSize)})`;
+        
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS:
         return payload.fileName;
       
@@ -310,6 +335,24 @@ class NotificationManager {
       
       case NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS:
         return `${payload.completedItems} items deleted`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_START:
+        return `Reordering ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS:
+        return `Successfully reordered ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR:
+        return payload.error || `Failed to reorder ${payload.totalItems} items`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_START:
+        return `Moving ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS:
+        return `Successfully moved ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR:
+        return payload.error || `Failed to move ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
       
       case NotificationEventType.LINK_NEW_UPLOAD:
         const items = [];
@@ -326,6 +369,28 @@ class NotificationManager {
       
       case NotificationEventType.STORAGE_LIMIT_EXCEEDED:
         return 'Free up space to continue uploading files';
+      
+      case NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED:
+        return payload.message || `You tried to upload ${payload.attemptedCount} files, but the maximum is ${payload.maxAllowed} files at once. Please select fewer files or upload in smaller batches.`;
+      
+      case NotificationEventType.WORKSPACE_FOLDER_DROPPED:
+        return payload.message || 'Files will be uploaded to the selected location.';
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_START:
+        return `Starting upload of ${payload.totalItems} files`;
+        
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS:
+        const uploadProgress = Math.round(((payload.completedItems || 0) / (payload.totalItems || 1)) * 100);
+        return `${payload.completedItems} of ${payload.totalItems} completed${payload.failedItems ? ` (${payload.failedItems} failed)` : ''} - ${uploadProgress}%`;
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS:
+        if (payload.failedItems && payload.failedItems > 0) {
+          return `Uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}, ${payload.failedItems} failed`;
+        }
+        return `Successfully uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}`;
+      
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR:
+        return payload.error || `Failed to upload ${payload.failedItems} file${payload.failedItems === 1 ? '' : 's'}`;
       
       default:
         return payload.error || payload.message || undefined;
@@ -500,13 +565,99 @@ class NotificationManager {
       return;
     }
 
-    // Check if this is an update to existing progress
+    // Check if this upload was already completed - if so, ignore all further events
+    if (this.completedUploads.has(progressId)) {
+      return;
+    }
+
+    // For file upload start, create a loading toast
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START) {
+      // Check if already exists
+      const existingToastId = this.progressToasts.get(progressId);
+      if (!existingToastId && !this.completedUploads.has(progressId)) {
+        const toastIdKey = `progress-${progressId}`;
+        toast.loading(display.title, {
+          description: display.description,
+          id: toastIdKey,
+        });
+        this.progressToasts.set(progressId, toastIdKey);
+      }
+      return;
+    }
+    
+    // For file upload progress, update the existing toast (but don't create new ones)
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS) {
+      // Only update if the toast still exists in our tracking
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId && !this.completedUploads.has(progressId)) {
+        // Just update the text, don't recreate
+        toast.loading(display.title, {
+          description: display.description,
+          id: existingToastId,
+        });
+      }
+      // If no existing toast, just ignore the progress update (file probably already completed)
+      return;
+    }
+    
+    // For file upload success, dismiss loading and show success
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS) {
+      // Mark as completed to prevent any further updates
+      this.completedUploads.add(progressId);
+      
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId) {
+        // Force dismiss the loading toast completely
+        toast.dismiss(existingToastId);
+        // Remove all traces of it
+        this.progressToasts.delete(progressId);
+      }
+      // Create a new success toast with a different ID to avoid conflicts
+      toast.success(display.title, {
+        description: display.description,
+        duration: 3000,
+        id: `success-${progressId}`, // Different ID to avoid conflicts
+      });
+      
+      // Clean up completed uploads after a delay
+      setTimeout(() => {
+        this.completedUploads.delete(progressId);
+      }, 10000);
+      return;
+    }
+    
+    // For file upload error, dismiss loading and show error
+    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR) {
+      // Mark as completed to prevent any further updates
+      this.completedUploads.add(progressId);
+      
+      const existingToastId = this.progressToasts.get(progressId);
+      if (existingToastId) {
+        // Force dismiss the loading toast completely
+        toast.dismiss(existingToastId);
+        // Remove all traces of it
+        this.progressToasts.delete(progressId);
+      }
+      // Create a new error toast with a different ID to avoid conflicts
+      toast.error(display.title, {
+        description: display.description,
+        duration: 5000,
+        id: `error-${progressId}`, // Different ID to avoid conflicts
+      });
+      
+      // Clean up completed uploads after a delay
+      setTimeout(() => {
+        this.completedUploads.delete(progressId);
+      }, 10000);
+      return;
+    }
+
+    // For other progress events, use standard loading toast
     const existingToastId = this.progressToasts.get(progressId);
     if (existingToastId) {
       toast.dismiss(existingToastId);
     }
 
-    // Create new progress toast
     const toastId = toast.loading(display.title, {
       description: display.description,
       id: `progress-${progressId}`,
@@ -533,6 +684,17 @@ class NotificationManager {
     // This will be implemented with stacked notifications component
     // For now, fall back to simple toast
     this.showToast(event, display);
+  }
+
+  /**
+   * Format file size for display
+   */
+  private formatFileSize(bytes: number): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   }
 
   /**

@@ -246,7 +246,7 @@ export function DashboardNavigation() {
     return (
       <>
         {/* Header with Logo */}
-        <div className='nav-header'>
+        <div className='nav-header px-3'>
           <div className='flex items-center justify-center mb-4'>
             <AnimatedLogoButton
               href='/'

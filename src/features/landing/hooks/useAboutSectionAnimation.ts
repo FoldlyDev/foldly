@@ -13,6 +13,7 @@ interface AboutSectionRefs {
 interface UseAboutSectionAnimationProps {
   refs: AboutSectionRefs;
   isEnabled: boolean;
+  isMobile?: boolean;
 }
 
 export function useAboutSectionAnimation({
@@ -22,7 +23,13 @@ export function useAboutSectionAnimation({
   useGSAP(() => {
     if (!isEnabled || !refs || !refs.sectionRef) return;
 
-    // GSAP plugins are registered by the orchestrator
+    // Ensure ScrollTrigger is registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+    } else {
+      console.warn('[AboutAnimation] GSAP or ScrollTrigger not available');
+      return;
+    }
 
     const section = refs.sectionRef.current;
     const header = refs.headerRef?.current;
@@ -69,9 +76,5 @@ export function useAboutSectionAnimation({
         }
       });
     };
-  }, {
-    dependencies: [isEnabled, refs],
-    scope: refs.sectionRef?.current || undefined,
-    revertOnUpdate: true
-  });
+  }, [isEnabled, refs]);
 }

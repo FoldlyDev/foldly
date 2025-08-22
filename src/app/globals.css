@@ -109,7 +109,7 @@
 @import '../features/links/styles/link-cards.css';
 
 /* 📁 Workspace Feature Styles */
-@import '../features/workspace/styles/workspace-responsive.css';
+@import '../features/workspace/styles/workspace.css';
 
 /* 🔗 Link Upload Feature Styles */
 @import '../features/link-upload/styles/link-upload.css';

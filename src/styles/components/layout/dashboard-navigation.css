@@ -45,14 +45,14 @@
   .dashboard-navigation {
     /* Define RGB values for primary color */
     --primary-rgb: 195, 225, 247; /* #c3e1f7 in RGB */
-    
+
     /* Define missing base variables */
     --background: #ffffff;
     --border: #e5e7eb;
     --card: #ffffff;
     --success-green: #10b981;
     --primary: #c3e1f7;
-    
+
     /* Background & Borders */
     --nav-sidebar-bg: var(--background);
     --nav-sidebar-border: var(--border);
@@ -117,14 +117,14 @@
   .dark .dashboard-navigation {
     /* Define RGB values for primary color in dark mode */
     --primary-rgb: 154, 190, 222; /* #9abede in RGB */
-    
+
     /* Define missing base variables for dark mode */
     --background: #09090b;
     --border: rgba(255, 255, 255, 0.1);
     --card: rgba(255, 255, 255, 0.05);
     --success-green: #10b981;
     --primary: #9abede;
-    
+
     /* Background & Borders */
     --nav-sidebar-bg: rgba(2, 6, 24, 0.85);
     --nav-sidebar-border: rgba(255, 255, 255, 0.1);
@@ -472,7 +472,6 @@
 
   /* Navigation Header */
   .nav-header {
-    padding: var(--nav-padding);
     padding-bottom: calc(var(--nav-padding) * 0.75);
     border-bottom: 1px solid var(--nav-sidebar-border);
   }
@@ -539,7 +538,6 @@
   a.nav-item > div {
     position: relative;
   }
-
 
   /* Active Indicator */
   .nav-active-indicator {
@@ -734,7 +732,7 @@
     .dashboard-navigation {
       -webkit-overflow-scrolling: touch;
     }
-    
+
     /* Improve mobile sidebar performance */
     .nav-sidebar-mobile {
       transform: translateZ(0);
@@ -744,7 +742,7 @@
       perspective: 1000;
       -webkit-perspective: 1000;
     }
-    
+
     /* Prevent text selection during swipe */
     .nav-sidebar-mobile * {
       -webkit-user-select: none;

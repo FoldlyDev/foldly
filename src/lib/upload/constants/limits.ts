@@ -42,9 +42,11 @@ export const FILE_SIZE_LIMITS = {
  */
 export const UPLOAD_PROCESSING = {
   batch: {
-    size: 3, // Number of files uploaded simultaneously
+    size: 10, // Maximum number of files in a single upload batch (Supabase rate limit)
     maxRetries: 3, // Maximum retry attempts per file
     retryDelays: [1000, 2000, 4000, 8000, 10000], // Exponential backoff in ms
+    maxFilesPerUpload: 10, // Maximum number of files in a single upload batch (Supabase rate limit)
+    parallelUploads: 3, // Number of files uploaded simultaneously
   },
   rateLimit: {
     maxUploadsPerMinute: 10, // Maximum uploads per user per minute

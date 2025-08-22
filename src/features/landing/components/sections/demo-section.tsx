@@ -44,36 +44,48 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>(
         src: '/assets/img/landing_page/step_1.png',
         title: 'Step 1',
         description: "Hit JUMP IN and let's get rollin' 🚀",
+        width: 1920,
+        height: 1080,
       },
       {
         id: 'STEP-02',
         src: '/assets/img/landing_page/step_2.png',
         title: 'Step 2',
         description: 'Log in or sign up like a pro.',
+        width: 1920,
+        height: 1080,
       },
       {
         id: 'STEP-03',
         src: '/assets/img/landing_page/step_3.png',
         title: 'Step 3',
         description: "Drop your username (bonus points if it's spicy).",
+        width: 1920,
+        height: 1080,
       },
       {
         id: 'STEP-04',
         src: '/assets/img/landing_page/step_4.png',
         title: 'Step 4',
         description: 'Cruise to the Links section.',
+        width: 1920,
+        height: 1080,
       },
       {
         id: 'STEP-05',
         src: '/assets/img/landing_page/step_5.png',
         title: 'Step 5',
         description: 'Setup your Base Link, your VIP file drop-off spot 📦✨',
+        width: 1920,
+        height: 1080,
       },
       {
         id: 'STEP-06',
         src: '/assets/img/landing_page/step_6.png',
         title: 'Step 6',
         description: 'Share it and watch the magic happen ✨',
+        width: 1920,
+        height: 1080,
       },
     ];
 
@@ -177,9 +189,16 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>(
               <div className='gallery-card-img'>
                 <Image
                   src={image.src}
-                  alt=''
-                  fill
-                  style={{ objectFit: 'contain' }}
+                  alt={image.title}
+                  width={image.width}
+                  height={image.height}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  style={{ 
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain' 
+                  }}
+                  priority={index < 2}
                 />
               </div>
               <div className='gallery-card-content'>

@@ -20,16 +20,24 @@ interface DemoSectionRefs {
 interface UseDemoSectionAnimationProps {
   refs: DemoSectionRefs;
   isEnabled: boolean;
+  isMobile?: boolean;
 }
 
 export function useDemoSectionAnimation({
   refs,
   isEnabled,
+  isMobile: isMobileProp,
 }: UseDemoSectionAnimationProps) {
   useGSAP(() => {
     if (!isEnabled || !refs || !refs.sectionRef) return;
 
-    // GSAP plugins are registered by the orchestrator
+    // Ensure ScrollTrigger and SplitText are registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined' && typeof SplitText !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger, SplitText);
+    } else {
+      console.warn('[DemoAnimation] GSAP plugins not available');
+      return;
+    }
 
     const section = refs.sectionRef.current;
     const galleryCards = refs.galleryCardsRef?.current || [];
@@ -42,9 +50,9 @@ export function useDemoSectionAnimation({
     // Initialize text animations for scramble and line-reveal
     initTextAnimations();
 
-    // Mobile optimizations
-    const isMobile = window.innerWidth < 1200;
-    const scrollMultiplier = isMobile ? 0.6 : 1; // Shorter scroll distance on mobile
+    // Use passed isMobile or fallback to standard breakpoint
+    const isMobile = isMobileProp !== undefined ? isMobileProp : window.innerWidth < 768;
+    const scrollMultiplier = isMobile ? 0.35 : 1; // Much shorter scroll distance on mobile
 
     // Setup gallery cards initial positions and rotations
     const rotations = isMobile ? [0, 0, 0, 0, 0, 0] : [-12, 10, -5, 5, -5, -2]; // No rotation on mobile
@@ -67,14 +75,19 @@ export function useDemoSectionAnimation({
       gsap.set(headerSplit.words, { opacity: 0 });
     }
 
+    // Calculate responsive scroll distance
+    const scrollDistance = isMobile 
+      ? window.innerHeight * 1.5  // Much shorter on mobile (was 4 * 0.6 = 2.4)
+      : window.innerHeight * 4;    // Desktop distance
+
     // Create the unified animation - optimized for mobile
     ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 4 * scrollMultiplier}px`, // Reduced from 7x to 4x for faster animation
+      end: `+=${scrollDistance}px`,
       pin: true,
       pinSpacing: true,
-      scrub: isMobile ? 0.5 : 1, // Smoother scrub on mobile
+      scrub: isMobile ? 0.3 : 1, // Even faster scrub on mobile
       onUpdate: (self) => {
         const progress = self.progress;
         

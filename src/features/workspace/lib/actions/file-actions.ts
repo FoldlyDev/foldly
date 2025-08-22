@@ -533,6 +533,10 @@ export async function uploadFileAction(
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
 
+    // IMPORTANT: If folderId equals workspaceId, it means we're uploading to the workspace root
+    // In this case, folderId should be NULL because the workspace root is not a folder
+    const actualFolderId = folderId === workspaceId ? null : folderId || null;
+    
     // Create database record with storage information using unique file name
     const fileData = {
       fileName: uniqueFileName, // Use the unique name (auto-incremented if needed)
@@ -540,7 +544,7 @@ export async function uploadFileAction(
       fileSize: file.size,
       mimeType: file.type,
       extension: uniqueFileName.split('.').pop() || '',
-      folderId: folderId || null,
+      folderId: actualFolderId,
       workspaceId: workspaceId, // Workspace file - NOT a link file
       linkId: null, // NULL for workspace files
       batchId: null, // NULL for workspace files

@@ -14,16 +14,24 @@ interface FeatureHighlightSectionRefs {
 interface UseFeatureHighlightSectionAnimationProps {
   refs: FeatureHighlightSectionRefs;
   isEnabled: boolean;
+  isMobile?: boolean;
 }
 
 export function useFeatureHighlightSectionAnimation({
   refs,
   isEnabled,
+  isMobile: isMobileProp,
 }: UseFeatureHighlightSectionAnimationProps) {
   useGSAP(() => {
     if (!isEnabled || !refs || !refs.sectionRef) return;
 
-    // GSAP plugins are registered by the orchestrator
+    // Ensure ScrollTrigger and SplitText are registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined' && typeof SplitText !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger, SplitText);
+    } else {
+      console.warn('[FeatureHighlightAnimation] GSAP plugins not available');
+      return;
+    }
 
     const section = refs.sectionRef.current;
     const header = refs.headerRef?.current;
@@ -41,17 +49,25 @@ export function useFeatureHighlightSectionAnimation({
       gsap.set(headerSplit.words, { opacity: 0 });
     }
 
+    // Use passed isMobile or fallback to standard breakpoint
+    const isMobile = isMobileProp !== undefined ? isMobileProp : window.innerWidth < 768;
+
     // Strip movement speeds (matching template)
     const stripSpeeds = [0.3, 0.4, 0.25, 0.35, 0.2, 0.25];
+
+    // Calculate responsive scroll distance
+    const textRevealDistance = isMobile 
+      ? window.innerHeight * 0.5  // Much shorter on mobile
+      : window.innerHeight * 1;    // Desktop distance
 
     // Create pinned scroll animation for text reveal (matching template exactly)
     const textRevealTrigger = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: `+=${window.innerHeight * 1}px`, // Reduced from 1.5x to 1x for faster animation
+      end: `+=${textRevealDistance}px`,
       pin: true,
       pinSpacing: true,
-      scrub: 1,
+      scrub: isMobile ? 0.5 : 1,
       onUpdate: (self) => {
         const progress = self.progress;
         
@@ -78,12 +94,17 @@ export function useFeatureHighlightSectionAnimation({
       },
     });
 
+    // Calculate responsive scroll distance for strips
+    const stripMovementDistance = isMobile 
+      ? window.innerHeight * 1    // Much shorter on mobile
+      : window.innerHeight * 2;   // Desktop distance
+
     // Create strip movement animation (separate trigger - matching template)
     const stripMovementTrigger = ScrollTrigger.create({
       trigger: section,
       start: 'top bottom',
-      end: `+=${window.innerHeight * 2}px`, // Reduced from 3x to 2x for faster animation
-      scrub: 1,
+      end: `+=${stripMovementDistance}px`,
+      scrub: isMobile ? 0.5 : 1,
       onUpdate: (self) => {
         const progress = self.progress;
         

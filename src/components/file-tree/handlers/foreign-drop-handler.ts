@@ -2,18 +2,183 @@ import type { DragTarget, ItemInstance } from '@headless-tree/core';
 import { insertItemsAtTarget, removeItemsFromParents } from '@headless-tree/core';
 import type { TreeItem as TreeItemType, TreeFolderItem } from '../types/tree-types';
 import { isFolder } from '../types/tree-types';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
+import { UPLOAD_PROCESSING } from '@/lib/upload/constants/limits';
+
+/**
+ * Recursively reads all files from a directory entry
+ */
+async function readDirectoryRecursively(
+  directoryEntry: any,
+  path: string = ''
+): Promise<{ file: File; path: string }[]> {
+  return new Promise((resolve) => {
+    const dirReader = directoryEntry.createReader();
+    const entries: any[] = [];
+    
+    const readEntries = () => {
+      dirReader.readEntries((results: any[]) => {
+        if (!results.length) {
+          // All entries have been read
+          Promise.all(
+            entries.map(async (entry) => {
+              if (entry.isFile) {
+                return new Promise<{ file: File; path: string }>((resolveFile) => {
+                  entry.file((file: File) => {
+                    // Create a new File with the full path as the name
+                    const fullPath = path ? `${path}/${file.name}` : file.name;
+                    const fileWithPath = new File([file], fullPath, { type: file.type });
+                    resolveFile({ file: fileWithPath, path: fullPath });
+                  });
+                });
+              } else if (entry.isDirectory) {
+                const subPath = path ? `${path}/${entry.name}` : entry.name;
+                return readDirectoryRecursively(entry, subPath);
+              }
+              return [];
+            })
+          ).then((results) => {
+            const allFiles = results.flat();
+            resolve(allFiles);
+          });
+        } else {
+          // Continue reading
+          entries.push(...results);
+          readEntries();
+        }
+      });
+    };
+    
+    readEntries();
+  });
+}
 
 /**
  * Creates handlers for foreign drag and drop operations
  */
 export function createForeignDropHandlers(
   data: Record<string, TreeItemType>,
-  insertNewItem: (dataTransfer: DataTransfer) => string
+  insertNewItem: (dataTransfer: DataTransfer) => string,
+  onExternalFileDrop?: (files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => void
 ) {
-  const onDropForeignDragObject = (
+  const onDropForeignDragObject = async (
     dataTransfer: DataTransfer,
     target: DragTarget<TreeItemType>
   ) => {
+    // Check if this is a file/folder drop from outside
+    const items = Array.from(dataTransfer.items);
+    
+    if (items.length > 0 && items.some(item => item.kind === 'file')) {
+      // This is a file drop from outside the application
+      // DragTarget can be either just {item} or {item, childIndex, insertionIndex, etc}
+      // If it has childIndex, it's a reorder operation (drop between items)
+      // Otherwise it's a drop on the item itself
+      const isReorderTarget = 'childIndex' in target;
+      const targetFolderId = !isReorderTarget ? target.item.getId() : 
+                            target.item.getParent()?.getId() || null;
+      
+      // Process all dropped items
+      const allFiles: File[] = [];
+      const folderStructure: { [folder: string]: File[] } = {};
+      
+      await Promise.all(
+        items.map(async (item) => {
+          if (item.kind === 'file') {
+            const entry = (item as any).webkitGetAsEntry?.();
+            
+            if (entry) {
+              if (entry.isDirectory) {
+                // Read all files from the directory recursively
+                try {
+                  const filesInFolder = await readDirectoryRecursively(entry);
+                  
+                  // Group files by their folder path
+                  filesInFolder.forEach(({ file, path }) => {
+                    const folderPath = path.substring(0, path.lastIndexOf('/'));
+                    if (!folderStructure[folderPath]) {
+                      folderStructure[folderPath] = [];
+                    }
+                    folderStructure[folderPath].push(file);
+                    allFiles.push(file);
+                  });
+                } catch (error) {
+                  console.error('Error reading directory:', error);
+                  eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_DROPPED, {
+                    fileCount: 0,
+                    folderCount: 1,
+                    message: `Error reading folder "${entry.name}". Please try selecting files directly.`,
+                  }, {
+                    priority: NotificationPriority.MEDIUM,
+                    uiType: NotificationUIType.TOAST_SIMPLE,
+                    duration: 5000,
+                  });
+                }
+              } else if (entry.isFile) {
+                // Regular file
+                return new Promise<void>((resolve) => {
+                  entry.file((file: File) => {
+                    allFiles.push(file);
+                    resolve();
+                  });
+                });
+              }
+            } else {
+              // Fallback for browsers that don't support webkitGetAsEntry
+              const file = item.getAsFile();
+              if (file) {
+                allFiles.push(file);
+              }
+            }
+          }
+        })
+      );
+      
+      // Check if too many files are being uploaded
+      const maxFiles = UPLOAD_PROCESSING.batch.maxFilesPerUpload;
+      if (allFiles.length > maxFiles) {
+        // Too many files - show error notification using event system
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED, {
+          attemptedCount: allFiles.length,
+          maxAllowed: maxFiles,
+          currentCount: 0,
+          message: `You tried to upload ${allFiles.length} files, but the maximum is ${maxFiles} files at once. Please select fewer files or upload in smaller batches.`,
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 8000,
+        });
+        
+        // Log for debugging
+        console.warn(`Attempted to upload ${allFiles.length} files, exceeding limit of ${maxFiles}`);
+        
+        // Don't proceed with the upload
+        return;
+      }
+      
+      // Trigger file upload if handler is provided
+      if (allFiles.length > 0 && onExternalFileDrop) {
+        onExternalFileDrop(allFiles, targetFolderId, Object.keys(folderStructure).length > 0 ? folderStructure : undefined);
+        
+        // Show info about folder structure if detected
+        if (Object.keys(folderStructure).length > 0) {
+          const folderCount = new Set(Object.keys(folderStructure).map(p => p.split('/')[0])).size;
+          const fileCount = allFiles.length;
+          eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_DROPPED, {
+            fileCount,
+            folderCount,
+            message: 'Files will be uploaded to the selected location.',
+          }, {
+            priority: NotificationPriority.LOW,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          });
+        }
+      }
+      
+      return;
+    }
+    
+    // Original behavior for internal drag operations
     const newId = insertNewItem(dataTransfer);
     insertItemsAtTarget([newId], target, (item, newChildrenIds) => {
       const itemData = data[item.getId()];

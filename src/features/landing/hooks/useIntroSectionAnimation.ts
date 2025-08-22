@@ -17,6 +17,7 @@ interface IntroAnimationRefs {
   registerScrollTrigger?: (st: ScrollTrigger) => void;
   registerCleanup?: (fn: () => void) => void;
   prefersReducedMotion?: boolean;
+  isMobile?: boolean;
 }
 
 export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
@@ -40,7 +41,13 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
 
     if (!allRefsReady) return;
 
-    // GSAP should already be registered by the orchestrator
+    // Ensure ScrollTrigger is registered
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+      gsap.registerPlugin(ScrollTrigger);
+    } else {
+      console.warn('[IntroAnimation] GSAP or ScrollTrigger not available');
+      return;
+    }
 
     const animatedIcons = refs.animatedIconsRef.current;
     const iconElements = refs.iconRefs.map(ref => ref.current!);
@@ -78,23 +85,28 @@ export function useIntroSectionAnimation(refs: IntroAnimationRefs) {
       textAnimationOrder[j] = temp;
     }
 
-    // Calculate icon sizing
-    const isMobile = window.innerWidth <= 1000;
+    // Calculate icon sizing - use passed isMobile or fallback to standard breakpoint
+    const isMobile = refs.isMobile !== undefined ? refs.isMobile : window.innerWidth < 768;
     const headerIconSize = isMobile ? 30 : 60;
     const currentIconSize =
       iconElements[0]?.getBoundingClientRect().width || 60;
     const exactScale = headerIconSize / currentIconSize;
 
     try {
+      // Adjust scroll distance for mobile
+      const scrollDistance = isMobile 
+        ? window.innerHeight * 1.2  // Much shorter on mobile
+        : window.innerHeight * 2.5; // Desktop distance
+
       // Create the main scroll trigger animation
       scrollTriggerRef.current = ScrollTrigger.create({
         trigger: heroSection,
         start: 'top top',
-        end: `+=${window.innerHeight * 2.5}px`, // Reduced from 4x to 2.5x for faster animation
+        end: `+=${scrollDistance}px`,
         pin: true,
         pinSpacing: true,
-        anticipatePin: 1, // Helps prevent jumping with smooth scroll
-        scrub: 1, // Match reference template timing
+        anticipatePin: isMobile ? 0 : 1, // Disable anticipate pin on mobile
+        scrub: isMobile ? 0.5 : 1, // Faster scrub on mobile
         onUpdate: self => {
           const progress = self.progress;
 

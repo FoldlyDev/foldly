@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/shadcn/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
+import { UploadHighlight } from '@/components/feedback/upload-highlight';
 import {
   type TreeItem as TreeItemType,
   type TreeFolderItem,
@@ -163,6 +164,8 @@ interface FileTreeProps {
   renameCallback?: RenameOperationCallback;
   // Context menu provider
   contextMenuProvider?: ContextMenuProvider;
+  // External file drop handler
+  onExternalFileDrop?: (files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => void;
 }
 
 export default function FileTree({
@@ -185,9 +188,10 @@ export default function FileTree({
   dropCallbacks,
   renameCallback,
   contextMenuProvider,
+  onExternalFileDrop,
 }: FileTreeProps) {
   // Update counter for re-syncing data
-  const [updateCounter] = React.useReducer(x => x + 1, 0);
+  const [updateCounter, forceUpdate] = React.useReducer(x => x + 1, 0);
   
   // Get the data and syncDataLoader for this specific tree instance
   // IMPORTANT: Only get this once when treeId changes, not on every render
@@ -310,13 +314,13 @@ export default function FileTree({
   );
   
   const { onDropForeignDragObject, onCompleteForeignDrop } = React.useMemo(
-    () => createForeignDropHandlers(data, insertNewItem),
-    [insertNewItem] // Only depend on insertNewItem, not data
+    () => createForeignDropHandlers(data, insertNewItem, onExternalFileDrop),
+    [insertNewItem, onExternalFileDrop] // Depend on both
   );
 
   const onRename = React.useMemo(
-    () => createRenameHandler(data, renameCallback),
-    [renameCallback] // Depend on renameCallback to update if it changes
+    () => createRenameHandler(data, renameCallback, forceUpdate),
+    [renameCallback, forceUpdate] // Depend on renameCallback and forceUpdate
   );
   
   // Log once when callbacks are set up
@@ -423,7 +427,14 @@ export default function FileTree({
         data: JSON.stringify(itemsData),
       };
     },
-    canDropForeignDragObject: (_: any, target: any) => target.item.isFolder(),
+    canDropForeignDragObject: (dataTransfer: any, target: any) => {
+      // Allow file drops on folders
+      if (dataTransfer.files && dataTransfer.files.length > 0) {
+        return target.item.isFolder() || target.mode === 'inside';
+      }
+      // Original behavior for other drops
+      return target.item.isFolder();
+    },
     indent: 20,
     dataLoader: syncDataLoader,
     features: [
@@ -531,6 +542,30 @@ export default function FileTree({
   // Track filtered items for display
   const [filteredItems, setFilteredItems] = React.useState<string[]>([]);
   
+  // Check if workspace is empty (only root item with no children)
+  const isWorkspaceEmpty = React.useMemo(() => {
+    // Check the current tree data, not just initial data
+    const currentDataKeys = Object.keys(data);
+    
+    // If we have more than one item (root + others), not empty
+    if (currentDataKeys.length > 1) return false;
+    
+    // If we only have one item, check if it's the root and has no children
+    if (currentDataKeys.length === 1) {
+      const rootItem = data[rootId];
+      if (!rootItem) return false;
+      
+      // Check if it's a folder with children
+      if (isFolder(rootItem)) {
+        const folderItem = rootItem as TreeFolderItem;
+        return !folderItem.children || folderItem.children.length === 0;
+      }
+    }
+    
+    // No data at all
+    return currentDataKeys.length === 0;
+  }, [data, rootId, tree?.getItems()?.length]); // Add tree items length as dependency to trigger updates
+  
   // Update filtered items when search changes or tree items change
   React.useEffect(() => {
     if (!searchQuery || searchQuery.length === 0) {
@@ -589,6 +624,29 @@ export default function FileTree({
         {searchQuery && filteredItems.length === 0 ? (
           <div className='px-3 py-4 text-center text-sm text-muted-foreground'>
             No items found for "{searchQuery}"
+          </div>
+        ) : isWorkspaceEmpty && !searchQuery ? (
+          // Show upload highlight when workspace is empty and not searching
+          <div className='flex h-full flex-col items-center justify-center p-8 gap-4'>
+            <UploadHighlight 
+              multiple
+              onChange={(e) => {
+                const files = e.target.files;
+                if (files && files.length > 0 && onExternalFileDrop) {
+                  // Convert FileList to File array and trigger the external drop handler
+                  const fileArray = Array.from(files);
+                  onExternalFileDrop(fileArray, rootId, undefined);
+                }
+              }}
+            />
+            <div className='text-center'>
+              <p className='text-sm text-muted-foreground'>
+                Drop files here or click to upload
+              </p>
+              <p className='text-xs text-muted-foreground mt-1'>
+                You can also drag folders from your computer
+              </p>
+            </div>
           </div>
         ) : (
           (() => {

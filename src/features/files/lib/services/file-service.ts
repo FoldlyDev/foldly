@@ -95,15 +95,14 @@ export class FileService {
     try {
       // For root files in workspace context, we need to get files where:
       // 1. folderId is null (root level)
-      // 2. linkId or batchId matches the workspace ID (depending on implementation)
-      // For now, let's get files with null folderId and check linkId/batchId pattern
+      // 2. workspaceId matches (these are workspace files, not link files)
       const rootFiles = await db
         .select()
         .from(files)
         .where(
           and(
             isNull(files.folderId), // No folder (root level)
-            eq(files.linkId, workspaceId) // Links to workspace
+            eq(files.workspaceId, workspaceId) // Belongs to this workspace
           )
         )
         .orderBy(files.sortOrder, files.createdAt);

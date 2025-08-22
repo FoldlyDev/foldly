@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import {
@@ -14,17 +14,20 @@ import { useFileUpload } from '../../hooks/use-file-upload';
 import { UploadProgress } from '../upload/upload-progress';
 import { UploadValidation, StorageWarning } from '../upload/upload-validation';
 import { StorageInfoDisplay } from '../storage/storage-info-display';
-import { FileUploadArea } from '../upload/file-upload-area';
+// Removed FileUploadArea - using CentralizedFileUpload instead
 import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
-import { useAuth, Protect } from '@clerk/nextjs';
+import { Protect } from '@clerk/nextjs';
 import { useStorageTracking } from '../../hooks/use-storage-tracking';
+import { UPLOAD_CONFIG } from '../../lib/config/upload-config';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   workspaceId?: string;
   folderId?: string;
+  onFileUploaded?: (file: any) => void;
+  initialFiles?: File[]; // Pre-selected files from drag-and-drop
 }
 
 export function UploadModal({
@@ -32,6 +35,8 @@ export function UploadModal({
   onClose,
   workspaceId,
   folderId,
+  onFileUploaded,
+  initialFiles,
 }: UploadModalProps) {
   const { refetchStorage } = useStorageTracking();
   const {
@@ -40,12 +45,8 @@ export function UploadModal({
     isUploading,
     uploadValidation,
     handleFileSelect,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
     handleRemoveFile,
     handleUpload,
-    formatFileSize,
     formatSize,
     totalFiles,
     completedFiles,
@@ -53,14 +54,17 @@ export function UploadModal({
     quotaStatus,
     storageInfo,
     clearFiles,
-  } = useFileUpload({ workspaceId, folderId, onClose });
+  } = useFileUpload({ workspaceId, folderId, onClose, onFileUploaded });
+  
+  // Track if initial files have been processed
+  const [initialFilesProcessed, setInitialFilesProcessed] = useState(false);
 
   const handleClose = useCallback(() => {
     if (isUploading) return;
     onClose();
   }, [isUploading, onClose]);
 
-  // Refetch storage data when modal opens
+  // Refetch storage data when modal opens and handle initial files
   useEffect(() => {
     if (isOpen) {
       // Refresh storage data to ensure we have the latest info
@@ -68,12 +72,28 @@ export function UploadModal({
     }
   }, [isOpen, refetchStorage]);
 
+  // Handle initial files separately to prevent re-adding
+  useEffect(() => {
+    if (isOpen && initialFiles && initialFiles.length > 0 && !initialFilesProcessed) {
+      console.log('📥 [UPLOAD-MODAL] Processing initial files from tree drop:', {
+        fileCount: initialFiles.length,
+        fileNames: initialFiles.map(f => f.name),
+        fileTypes: initialFiles.map(f => f.type)
+      });
+      // Only add initial files once when they are first provided
+      handleFileSelect(initialFiles);
+      setInitialFilesProcessed(true);
+    }
+  }, [isOpen, initialFiles, initialFilesProcessed, handleFileSelect]);
+
   // Clear files when modal closes
   useEffect(() => {
     if (!isOpen) {
       // Reset files state when modal is closed
       // This prevents files from appearing when reopening
       clearFiles();
+      // Reset the processed flag for next time
+      setInitialFilesProcessed(false);
     }
   }, [isOpen, clearFiles]);
 
@@ -147,23 +167,42 @@ export function UploadModal({
               )}
             </AnimatePresence>
 
-            {/* File Upload Area */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <FileUploadArea
-                onFileSelect={handleFileSelect}
-                isDragging={isDragging}
-                isUploading={isUploading}
-                isExceeded={quotaStatus.status === 'exceeded'}
-                storageInfo={storageInfo}
-                formatSize={formatSize}
-                files={files}
-                onRemoveFile={handleRemoveFile}
-              />
-            </div>
+            {/* Centralized File Upload Area with Folder Support */}
+            <CentralizedFileUpload
+              onChange={handleFileSelect}
+              onRemove={(index) => {
+                const fileId = files[index]?.id;
+                if (fileId) {
+                  handleRemoveFile(fileId);
+                }
+              }}
+              files={(() => {
+                const mappedFiles = files.map(f => f.file);
+                console.log('🔍 [UPLOAD-MODAL] Passing files to CentralizedFileUpload:', {
+                  count: mappedFiles.length,
+                  fileNames: mappedFiles.map(f => f.name),
+                  fileTypes: mappedFiles.map(f => f.type)
+                });
+                return mappedFiles;
+              })()}
+              skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
+              multiple={true}
+              maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}
+              maxFileSize={UPLOAD_CONFIG.fileSizeLimits[storageInfo.planKey as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024}
+              disabled={isUploading || quotaStatus.status === 'exceeded'}
+              uploadText="Upload files"
+              uploadDescription={
+                isDragging 
+                  ? "Release to start uploading" 
+                  : "Drag and drop files or folders here, or click to browse"
+              }
+              showFileSize={true}
+              showFileType={true}
+              showModifiedDate={false}
+              onError={(error) => {
+                console.error('Upload error:', error);
+              }}
+            />
 
             {/* Upload Limits Info - Always show for user reference */}
             <motion.div
@@ -240,13 +279,14 @@ export function UploadModal({
                 Cancel
               </Button>
               <Button
+                variant='outline'
                 onClick={handleUpload}
                 disabled={
                   files.length === 0 ||
                   isUploading ||
                   uploadValidation?.valid === false
                 }
-                className='w-full sm:w-auto min-w-0 sm:min-w-[140px] bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-200 cursor-pointer disabled:cursor-not-allowed'
+                className='w-full sm:w-auto min-w-0 sm:min-w-[140px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
               >
                 {isUploading ? (
                   <>

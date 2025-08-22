@@ -13,11 +13,56 @@ export interface FileWithPreview extends File {
 
 // Remove custom type - use react-dropzone's FileRejection type instead
 
+/**
+ * Recursively reads all files from a directory entry
+ */
+async function readDirectoryRecursively(directoryEntry: any): Promise<File[]> {
+  return new Promise((resolve) => {
+    const dirReader = directoryEntry.createReader();
+    const entries: any[] = [];
+    const files: File[] = [];
+    
+    const readEntries = () => {
+      dirReader.readEntries((results: any[]) => {
+        if (!results.length) {
+          // All entries have been read
+          Promise.all(
+            entries.map(async (entry) => {
+              if (entry.isFile) {
+                return new Promise<void>((resolveFile) => {
+                  entry.file((file: File) => {
+                    files.push(file);
+                    resolveFile();
+                  });
+                });
+              } else if (entry.isDirectory) {
+                const subFiles = await readDirectoryRecursively(entry);
+                files.push(...subFiles);
+              }
+            })
+          ).then(() => {
+            resolve(files);
+          });
+        } else {
+          // Continue reading
+          entries.push(...results);
+          readEntries();
+        }
+      });
+    };
+    
+    readEntries();
+  });
+}
+
 export interface CentralizedFileUploadProps {
   // File handling
   onChange?: (files: File[]) => void;
   onRemove?: (index: number) => void;
   files?: File[];
+  
+  // Skip recursive folder extraction if files are already pre-processed
+  skipFolderExtraction?: boolean;
   
   // Constraints from database schema
   multiple?: boolean;
@@ -48,6 +93,7 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
   onChange,
   onRemove,
   files: externalFiles = [],
+  skipFolderExtraction = false,
   multiple = false,
   maxFiles,
   maxFileSize,
@@ -68,8 +114,28 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
   const [showError, setShowError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Track preview URLs we create so we can clean them up
+  const createdPreviewsRef = React.useRef<Map<File, string>>(new Map());
+  
   // Use external files if provided, otherwise use internal state
-  const files = externalFiles.length > 0 ? externalFiles : internalFiles;
+  // Files should already have preview URLs if they're images (created in use-file-upload)
+  const files = React.useMemo(() => {
+    if (externalFiles.length > 0) {
+      console.log('📁 [CENTRALIZED-UPLOAD] Using external files:', {
+        count: externalFiles.length,
+        withPreviews: externalFiles.filter(f => 'preview' in f).length,
+        fileNames: externalFiles.map(f => f.name),
+        previews: externalFiles.map(f => ('preview' in f ? (f as any).preview : 'none'))
+      });
+      // Just return the files as-is, they should already have previews
+      return externalFiles;
+    }
+    console.log('📁 [CENTRALIZED-UPLOAD] Using internal files:', {
+      count: internalFiles.length,
+      fileNames: internalFiles.map(f => f.name)
+    });
+    return internalFiles;
+  }, [externalFiles, internalFiles]);
 
   // Check if we've reached max files
   const hasReachedMaxFiles = maxFiles ? files.length >= maxFiles : false;
@@ -84,6 +150,15 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
   };
 
   const handleFileChange = (newFiles: File[]) => {
+    console.log('🔄 [CENTRALIZED-UPLOAD] handleFileChange called:', {
+      newFilesCount: newFiles.length,
+      currentFilesCount: files.length,
+      hasReachedMax: hasReachedMaxFiles,
+      fileNames: newFiles.map(f => f.name),
+      fileTypes: newFiles.map(f => f.type),
+      isExternalFiles: externalFiles.length > 0
+    });
+    
     // Don't add files if we've reached the limit
     if (hasReachedMaxFiles) {
       const message = `Maximum file limit (${maxFiles}) reached`;
@@ -165,9 +240,28 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
         return file;
       });
       
-      const updatedFiles = [...files, ...filesWithPreviews];
-      setInternalFiles(updatedFiles as FileWithPreview[]);
-      onChange && onChange(updatedFiles);
+      // When using external files, we should not modify internal state
+      // Only append to existing files if we're managing state internally
+      let updatedFiles: File[];
+      if (externalFiles.length > 0) {
+        // External files are being managed by parent - don't append to existing
+        // Just pass the new files to onChange, parent will handle accumulation
+        console.log('📊 [CENTRALIZED-UPLOAD] External mode - passing new files only:', {
+          existingCount: files.length,
+          newCount: filesWithPreviews.length
+        });
+        onChange && onChange(filesWithPreviews);
+      } else {
+        // We're managing state internally - append new files to existing
+        updatedFiles = [...files, ...filesWithPreviews];
+        console.log('📊 [CENTRALIZED-UPLOAD] Internal mode - accumulating files:', {
+          previousCount: files.length,
+          newCount: filesWithPreviews.length,
+          totalCount: updatedFiles.length
+        });
+        setInternalFiles(updatedFiles as FileWithPreview[]);
+        onChange && onChange(updatedFiles);
+      }
     } else {
       // Single file mode - replace existing file
       if (validFiles.length > 0) {
@@ -229,6 +323,52 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
     noClick: true,
     disabled: disabled || hasReachedMaxFiles,
     onDrop: handleFileChange,
+    // Only use custom folder extraction if not already pre-processed
+    ...(skipFolderExtraction ? {} : {
+      getFilesFromEvent: async (event) => {
+        // Custom file handling to support folder drops
+        const fileList: File[] = [];
+        const items = (event as any).dataTransfer?.items;
+        
+        if (!items) {
+          // Fallback to default behavior
+          return Array.from((event as any).dataTransfer?.files || []);
+        }
+        
+        // Process each dropped item
+        await Promise.all(
+          Array.from(items).map(async (item: any) => {
+            if (item.kind === 'file') {
+              const entry = item.webkitGetAsEntry?.();
+              
+              if (entry) {
+                if (entry.isDirectory) {
+                  // Recursively read all files from the directory
+                  const filesInFolder = await readDirectoryRecursively(entry);
+                  fileList.push(...filesInFolder);
+                } else if (entry.isFile) {
+                  // Regular file
+                  await new Promise<void>((resolve) => {
+                    entry.file((file: File) => {
+                      fileList.push(file);
+                      resolve();
+                    });
+                  });
+                }
+              } else {
+                // Fallback for browsers that don't support webkitGetAsEntry
+                const file = item.getAsFile();
+                if (file) {
+                  fileList.push(file);
+                }
+              }
+            }
+          })
+        );
+        
+        return fileList;
+      }
+    }),
     onDropRejected: (fileRejections: FileRejection[]) => {
       console.error('Files rejected:', fileRejections);
       fileRejections.forEach(rejection => {
@@ -260,6 +400,25 @@ export const CentralizedFileUpload: React.FC<CentralizedFileUploadProps> = ({
   };
 
   const { getRootProps, isDragActive } = useDropzone(dropzoneOptions);
+  
+  // Reset internal files when external files are provided to prevent accumulation
+  React.useEffect(() => {
+    if (externalFiles.length > 0) {
+      // Clear internal files when external files are being used
+      setInternalFiles([]);
+    }
+  }, [externalFiles.length]);
+  
+  // Clean up preview URLs when component unmounts
+  React.useEffect(() => {
+    return () => {
+      // Only clean up URLs we created
+      createdPreviewsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+      createdPreviewsRef.current.clear();
+    };
+  }, []);
   
   // Clean up previews on unmount
   React.useEffect(() => {

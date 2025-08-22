@@ -12,7 +12,8 @@ import {
 import { Badge } from '@/components/ui/shadcn/badge';
 import { Alert, AlertDescription } from '@/components/ui/shadcn/alert';
 import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
-import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
+// TODO: Replace with new FileTree component from @/components/file-tree
+// import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
 import { useFilesManagementStore } from '../../store/files-management-store';
 import { cn } from '@/lib/utils';
 import type { TreeNode } from '../../types';
@@ -133,6 +134,7 @@ export function WorkspacePanel({
           <div className='flex-1 overflow-hidden px-4'>
             <ScrollArea className='h-full'>
               <div className='pb-4'>
+                {/* TODO: Replace with new FileTree component
                 <WorkspaceTree
                   onRootDrop={dataTransfer => {
                     // Handle drop on root
@@ -141,6 +143,16 @@ export function WorkspacePanel({
                     handleDrop(e);
                   }}
                 />
+                */}
+                <div className='flex flex-col items-center justify-center py-12 text-center'>
+                  <FolderTree className='h-12 w-12 text-muted-foreground mb-4' />
+                  <p className='text-muted-foreground text-sm mb-2'>
+                    Tree component temporarily disabled
+                  </p>
+                  <p className='text-muted-foreground text-xs'>
+                    Migration to new FileTree in progress
+                  </p>
+                </div>
               </div>
             </ScrollArea>
           </div>
