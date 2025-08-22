@@ -1,1 +1,0 @@
-ALTER TABLE "folders" ALTER COLUMN "user_id" SET DATA TYPE text;

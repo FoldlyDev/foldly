@@ -11,6 +11,7 @@ import {
   deleteLinkActionSchema,
   bulkDeleteActionSchema,
 } from '../validations';
+import { brandingStorageService } from '../services/branding-storage-service';
 
 /**
  * Delete a link
@@ -51,7 +52,20 @@ export async function deleteLinkAction(
       };
     }
 
-    // 5. Delete link from database (using hard delete)
+    // 5. Delete branding images if they exist
+    if (existingLink.data.branding?.imagePath) {
+      try {
+        await brandingStorageService.deleteBrandingImage(
+          existingLink.data.branding.imagePath
+        );
+        console.log('Deleted branding image for link:', validatedId);
+      } catch (error) {
+        console.error('Failed to delete branding image:', error);
+        // Don't fail the link deletion if image cleanup fails
+      }
+    }
+
+    // 6. Delete link from database (using hard delete)
     const result = await linksDbService.hardDelete(validatedId);
 
     if (!result.success) {
@@ -61,7 +75,7 @@ export async function deleteLinkAction(
       };
     }
 
-    // 5. Audit log
+    // 7. Audit log
     await logAudit({
       userId: user.id,
       action: 'deleted',
@@ -144,7 +158,28 @@ export async function bulkDeleteLinksAction(
       };
     }
 
-    // 5. Delete all links
+    // 5. Clean up branding images for all links
+    const linksWithBranding = ownershipResults
+      .filter(result => result.success && result.data?.branding?.imagePath)
+      .map(result => result.data!);
+
+    if (linksWithBranding.length > 0) {
+      const brandingCleanupPromises = linksWithBranding.map(async (link) => {
+        try {
+          if (link.branding?.imagePath) {
+            await brandingStorageService.deleteBrandingImage(link.branding.imagePath);
+            console.log('Deleted branding image for link:', link.id);
+          }
+        } catch (error) {
+          console.error(`Failed to delete branding image for link ${link.id}:`, error);
+          // Don't fail the bulk operation if image cleanup fails
+        }
+      });
+
+      await Promise.all(brandingCleanupPromises);
+    }
+
+    // 6. Delete all links
     const deletionResults = await Promise.all(
       validatedIds.map(id => linksDbService.hardDelete(id))
     );

@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { linksDbService } from '../db-service';
 import { requireAuth, logAudit } from './shared';
 import { type ActionResult, duplicateLinkActionSchema } from '../validations';
-import type { LinkInsert, Link } from '@/lib/supabase/types/links';
+import type { LinkInsert, Link } from '@/lib/database/types/links';
 
 /**
  * Duplicate a link
@@ -50,19 +50,20 @@ export async function duplicateLinkAction(
       requireEmail: originalLink.data.requireEmail,
       requirePassword: originalLink.data.requirePassword,
       passwordHash: originalLink.data.passwordHash,
-      isPublic: originalLink.data.isPublic,
       isActive: originalLink.data.isActive,
       maxFiles: originalLink.data.maxFiles,
       maxFileSize: originalLink.data.maxFileSize,
       allowedFileTypes: originalLink.data.allowedFileTypes,
       expiresAt: originalLink.data.expiresAt,
-      brandEnabled: originalLink.data.brandEnabled,
-      brandColor: originalLink.data.brandColor,
+      branding: originalLink.data.branding,
       // Initialize stats fields
       totalUploads: 0,
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
+      // Initialize storage quota fields (copy from original)
+      storageUsed: 0, // Start with 0 for the duplicate
+      storageLimit: originalLink.data.storageLimit,
     };
 
     // 5. Create duplicate link

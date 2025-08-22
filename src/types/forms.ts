@@ -10,13 +10,13 @@
  * Standard validation error type for forms across the application
  * Used consistently across all features for validation errors
  */
-export type ValidationError = string;
+export type FormValidationError = string;
 
 /**
  * Field validation errors map for form fields
  */
 export type FieldValidationErrors<T extends Record<string, any>> = Partial<
-  Record<keyof T, ValidationError>
+  Record<keyof T, FormValidationError>
 >;
 
 // =============================================================================

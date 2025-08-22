@@ -669,7 +669,7 @@ export const calculateTreeStats = (nodes: FileTreeNode[]): FileTreeStats => {
     selectedNodes: 0,
   };
 
-  let allFiles: FileData[] = [];
+  const allFiles: FileData[] = [];
 
   traverseDepthFirst(nodes, node => {
     stats.totalNodes++;

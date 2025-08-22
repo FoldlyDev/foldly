@@ -4,6 +4,8 @@ import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { moveItemAction } from './tree-actions';
 import type { ActionResult } from './tree-actions';
+import { logger } from '@/lib/services/logging/logger';
+import { sanitizeUserId } from '@/lib/utils/security';
 
 /**
  * Batch move items with hierarchical handling
@@ -24,10 +26,12 @@ export async function batchMoveItemsAction(
     }
 
     // Get workspace to determine root handling
-    const { WorkspaceService } = await import('@/lib/services/workspace');
-    const { FileService } = await import('@/lib/services/shared/file-service');
-    const { FolderService } = await import('@/lib/services/shared/folder-service');
-    
+    const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
+    const { FileService } = await import('@/features/files/lib/services/file-service');
+    const { FolderService } = await import(
+      '@/features/files/lib/services/folder-service'
+    );
+
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
     const folderService = new FolderService();
@@ -38,7 +42,8 @@ export async function batchMoveItemsAction(
     }
 
     // Determine actual target ID (handle 'root' case)
-    const actualTargetId = targetId === 'root' || targetId === workspace.id ? null : targetId;
+    const actualTargetId =
+      targetId === 'root' || targetId === workspace.id ? null : targetId;
 
     // Get all folders and files to analyze hierarchy
     const [foldersResult, filesResult] = await Promise.all([
@@ -55,7 +60,7 @@ export async function batchMoveItemsAction(
 
     // Create hierarchy map for efficient lookup
     const hierarchyMap = new Map<string, string[]>(); // parentId -> childIds
-    
+
     // Build folder hierarchy
     allFolders.forEach(folder => {
       const parentId = folder.parentFolderId || workspace.id;
@@ -78,13 +83,13 @@ export async function batchMoveItemsAction(
     const getAllDescendants = (itemId: string): Set<string> => {
       const descendants = new Set<string>();
       const children = hierarchyMap.get(itemId) || [];
-      
+
       for (const childId of children) {
         descendants.add(childId);
         const childDescendants = getAllDescendants(childId);
         childDescendants.forEach(desc => descendants.add(desc));
       }
-      
+
       return descendants;
     };
 
@@ -97,50 +102,74 @@ export async function batchMoveItemsAction(
       });
     });
 
-    console.log(`🚚 Batch move: ${itemIds.length} items selected, ${topLevelItems.length} top-level items to move`);
-    console.log('📋 Items to move:', { itemIds, topLevelItems, targetId, actualTargetId });
+    logger.debug('Starting batch move operation', {
+      metadata: {
+        totalItems: itemIds.length,
+        topLevelItems: topLevelItems.length,
+        targetId,
+        actualTargetId
+      }
+    });
 
     // Move only the top-level items - their children will be moved automatically
     const results = await Promise.all(
       topLevelItems.map(id => {
-        console.log(`🔄 Moving item ${id} to target ${targetId}`);
+        logger.debug('Moving individual item', { itemId: id, targetId });
         return moveItemAction(id, targetId);
       })
     );
 
-    console.log('📊 Move results:', results);
+    logger.debug('Batch move results processed', {
+      metadata: {
+        totalResults: results.length,
+        successful: results.filter(r => r.success).length,
+        failed: results.filter(r => !r.success).length
+      }
+    });
 
     const failed = results.filter(r => !r.success);
     if (failed.length > 0) {
-      console.log('❌ Some moves failed:', failed);
+      logger.error('Some batch moves failed', undefined, {
+        metadata: {
+          failedCount: failed.length,
+          totalCount: topLevelItems.length,
+          errors: failed.map(f => f.error)
+        }
+      });
       return {
         success: false,
         error: `Failed to move ${failed.length} of ${topLevelItems.length} top-level items`,
       };
     }
 
-    console.log('✅ All moves completed successfully, revalidating path');
+    logger.info('All batch moves completed successfully');
     revalidatePath('/dashboard/workspace');
-    
-    const result = { 
-      success: true, 
+
+    const result = {
+      success: true,
       data: {
         movedItems: topLevelItems.length,
         totalItems: itemIds.length,
-        results 
-      }
+        results,
+      },
     };
-    
-    console.log('🎯 Batch move action completed:', result);
+
+    logger.info('Batch move action completed', {
+      metadata: {
+        success: result.success,
+        movedItems: result.data?.movedItems || 0,
+        totalItems: result.data?.totalItems || 0
+      }
+    });
     return result;
   } catch (error) {
-    console.error('Batch move failed:', error);
+    logger.error('Batch move failed', error);
     return { success: false, error: 'Failed to move items' };
   }
 }
 
 /**
- * Batch delete items - simplified version
+ * Batch delete items - optimized with storage cleanup
  */
 export async function batchDeleteItemsAction(
   itemIds: string[]
@@ -156,13 +185,23 @@ export async function batchDeleteItemsAction(
     }
 
     // Import services
-    const { WorkspaceService } = await import('@/lib/services/workspace');
-    const { FileService } = await import('@/lib/services/shared/file-service');
-    const { FolderService } = await import('@/lib/services/shared/folder-service');
-    
+    const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
+    const { FileService } = await import('@/features/files/lib/services/file-service');
+    const { FolderService } = await import(
+      '@/features/files/lib/services/folder-service'
+    );
+    const { StorageService } = await import(
+      '@/features/files/lib/services/storage-service'
+    );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+
     const workspaceService = new WorkspaceService();
     const fileService = new FileService();
     const folderService = new FolderService();
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
 
     // Verify workspace ownership
     const workspace = await workspaceService.getWorkspaceByUserId(userId);
@@ -183,49 +222,91 @@ export async function batchDeleteItemsAction(
     const workspaceFileIds = new Set(filesResult.data.map(f => f.id));
     const workspaceFolderIds = new Set(foldersResult.data.map(f => f.id));
 
-    // Filter items to only those that belong to this user's workspace
-    const validItemIds = itemIds.filter(id => 
-      workspaceFileIds.has(id) || workspaceFolderIds.has(id)
-    );
+    // Separate files and folders for optimized deletion
+    const fileIdsToDelete = itemIds.filter(id => workspaceFileIds.has(id));
+    const folderIdsToDelete = itemIds.filter(id => workspaceFolderIds.has(id));
 
-    if (validItemIds.length === 0) {
-      return { success: false, error: 'No valid items to delete - items may not have workspaceId set' };
-    }
-
-    if (validItemIds.length < itemIds.length) {
-      console.warn(`⚠️ Filtered out ${itemIds.length - validItemIds.length} items not owned by user`);
-    }
-
-    // Delete each item (determine type first, then delete accordingly)
-    const results = await Promise.all(
-      validItemIds.map(async (id) => {
-        // Check if it's a file first
-        if (workspaceFileIds.has(id)) {
-          return await fileService.deleteFile(id);
-        }
-        
-        // Otherwise it must be a folder
-        if (workspaceFolderIds.has(id)) {
-          return await folderService.deleteFolder(id);
-        }
-        
-        // This shouldn't happen since we validated, but just in case
-        return { success: false, error: `Item ${id} not found` };
-      })
-    );
-
-    const failed = results.filter(r => !r.success);
-    if (failed.length > 0) {
+    if (fileIdsToDelete.length === 0 && folderIdsToDelete.length === 0) {
       return {
         success: false,
-        error: `Failed to delete ${failed.length} of ${itemIds.length} items`,
+        error: 'No valid items to delete - items may not have workspaceId set',
       };
     }
 
+    const deletionResults = [];
+
+    // Delete files with storage cleanup using batch method
+    if (fileIdsToDelete.length > 0) {
+      const filesDeleteResult = await fileService.batchDeleteFilesWithStorage(
+        fileIdsToDelete,
+        storageService
+      );
+      
+      if (!filesDeleteResult.success) {
+        return {
+          success: false,
+          error: `Failed to delete files: ${filesDeleteResult.error}`,
+        };
+      }
+      
+      deletionResults.push({
+        type: 'files',
+        total: fileIdsToDelete.length,
+        storageDeleted: filesDeleteResult.data?.storageDeleted || 0,
+      });
+    }
+
+    // Delete folders with storage cleanup
+    if (folderIdsToDelete.length > 0) {
+      let totalStorageDeleted = 0;
+      let totalFilesDeleted = 0;
+      
+      // Delete each folder with storage cleanup
+      const folderResults = await Promise.all(
+        folderIdsToDelete.map(async id => {
+          const result = await folderService.deleteFolderWithStorage(id, storageService);
+          if (result.success && result.data) {
+            totalStorageDeleted += result.data.storageDeleted;
+            totalFilesDeleted += result.data.filesDeleted;
+          }
+          return result;
+        })
+      );
+      
+      const failedFolders = folderResults.filter(r => !r.success);
+      if (failedFolders.length > 0) {
+        return {
+          success: false,
+          error: `Failed to delete ${failedFolders.length} folders`,
+        };
+      }
+      
+      deletionResults.push({
+        type: 'folders',
+        total: folderIdsToDelete.length,
+        filesDeleted: totalFilesDeleted,
+        storageDeleted: totalStorageDeleted,
+      });
+    }
+
+    // Get updated storage info after deletion
+    const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+    const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
+
     revalidatePath('/dashboard/workspace');
-    return { success: true, data: results };
+    return {
+      success: true,
+      data: {
+        deletionResults,
+        storageInfo: {
+          usagePercentage: updatedStorageInfo.usagePercentage,
+          remainingBytes: updatedStorageInfo.remainingBytes,
+          shouldShowWarning: false, // Deletion always reduces usage
+        },
+      },
+    };
   } catch (error) {
-    console.error('Batch delete failed:', error);
+    logger.error('Batch delete failed', error);
     return { success: false, error: 'Failed to delete items' };
   }
 }

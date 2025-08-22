@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { uuidSchema } from './base';
+import { uuidSchema, brandingSchema } from './base';
 
 // =============================================================================
 // DATABASE CONSTRAINT SCHEMAS
@@ -18,21 +18,31 @@ import { uuidSchema } from './base';
  */
 export const databaseLinkSchema = z.object({
   id: uuidSchema,
-  userId: uuidSchema,
+  userId: z.string(), // Clerk user ID is string, not UUID
   workspaceId: uuidSchema,
-  title: z.string().min(1).max(100),
-  topic: z.string().min(1).max(50),
-  description: z.string().max(500).nullable(),
+  slug: z.string().max(100),
+  topic: z.string().max(100).nullable(),
+  linkType: z.enum(['base', 'custom', 'generated']),
+  title: z.string().max(255),
+  description: z.string().nullable(),
   requireEmail: z.boolean(),
   requirePassword: z.boolean(),
-  password: z.string().nullable(),
-  isPublic: z.boolean(),
+  passwordHash: z.string().nullable(),
   isActive: z.boolean(),
+  maxFiles: z.number(),
+  maxFileSize: z.number(),
+  allowedFileTypes: z.array(z.string()).nullable(),
   expiresAt: z.date().nullable(),
-  brandingEnabled: z.boolean(),
-  brandColor: z.string().nullable(),
-  accentColor: z.string().nullable(),
-  logoUrl: z.string().nullable(),
+  branding: brandingSchema,
+  totalUploads: z.number(),
+  totalFiles: z.number(),
+  totalSize: z.number(),
+  lastUploadAt: z.date().nullable(),
+  storageUsed: z.number(),
+  storageLimit: z.number(),
+  unreadUploads: z.number(),
+  lastNotificationAt: z.date().nullable(),
+  sourceFolderId: uuidSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

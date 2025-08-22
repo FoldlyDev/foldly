@@ -52,7 +52,10 @@ export function handleFieldErrors(error: z.ZodError): Record<string, string[]> {
  */
 export const hexColorSchema = z
   .string()
-  .regex(/^#[A-Fa-f0-9]{6}$/, 'Must be a valid 6-digit hex color (e.g., #FF5733)')
+  .regex(
+    /^#[A-Fa-f0-9]{6}$/,
+    'Must be a valid 6-digit hex color (e.g., #FF5733)'
+  )
   .or(z.literal(''));
 
 /**
@@ -94,7 +97,8 @@ export const slugSchema = z
       return /^[a-zA-Z0-9_-]+$/.test(slug);
     },
     {
-      message: 'Slug can only contain letters, numbers, hyphens, and underscores',
+      message:
+        'Slug can only contain letters, numbers, hyphens, and underscores',
     }
   )
   .optional();
@@ -172,6 +176,17 @@ export function withPasswordRequirement<T extends z.ZodRawShape>(
 }
 
 /**
+ * Branding object schema - matches database schema
+ */
+export const brandingSchema = z.object({
+  enabled: z.boolean(),
+  color: hexColorSchema.optional(),
+  image: z.string().optional(), // Legacy: base64 image data (deprecated)
+  imagePath: z.string().optional(), // Storage path in branding-images bucket
+  imageUrl: z.string().optional(), // Public URL for the branding image
+});
+
+/**
  * Branding validation refinement
  * Use this to add conditional branding validation to any schema
  */
@@ -180,15 +195,15 @@ export function withBrandingValidation<T extends z.ZodRawShape>(
 ) {
   return schema.refine(
     (data: any) => {
-      if (data.brandEnabled) {
+      if (data.branding?.enabled) {
         // If branding is enabled, brand color must be provided
-        return !!data.brandColor;
+        return !!data.branding?.color;
       }
       return true;
     },
     {
       message: 'Brand color must be configured when branding is enabled',
-      path: ['brandEnabled'],
+      path: ['branding', 'color'],
     }
   );
 }

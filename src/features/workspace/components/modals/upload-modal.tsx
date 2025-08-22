@@ -1,37 +1,33 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
-import { Input } from '@/components/ui/shadcn/input';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
-} from '@/components/ui/shadcn/dialog';
-import { Progress } from '@/components/ui/shadcn/progress';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
-import { uploadFileAction } from '../../lib/actions';
-import { useQueryClient } from '@tanstack/react-query';
-import { workspaceQueryKeys } from '../../lib/query-keys';
-import { toast } from 'sonner';
-import type { DatabaseId } from '@/lib/supabase/types';
+  DialogDescription,
+} from '@/components/ui/animate-ui/radix/dialog';
+import { CloudUpload, AlertCircle } from 'lucide-react';
+import { useFileUpload } from '../../hooks/use-file-upload';
+import { UploadProgress } from '../upload/upload-progress';
+import { UploadValidation, StorageWarning } from '../upload/upload-validation';
+import { StorageInfoDisplay } from '../storage/storage-info-display';
+// Removed FileUploadArea - using CentralizedFileUpload instead
+import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
+import { UploadLimitsInfo } from '../upload/upload-limits-info';
+import { Protect } from '@clerk/nextjs';
+import { useStorageTracking } from '../../hooks/use-storage-tracking';
+import { UPLOAD_CONFIG } from '../../lib/config/upload-config';
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   workspaceId?: string;
   folderId?: string;
-}
-
-interface UploadFile {
-  id: string;
-  file: File;
-  progress: number;
-  status: 'pending' | 'uploading' | 'success' | 'error';
-  error?: string;
+  onFileUploaded?: (file: any) => void;
+  initialFiles?: File[]; // Pre-selected files from drag-and-drop
 }
 
 export function UploadModal({
@@ -39,293 +35,287 @@ export function UploadModal({
   onClose,
   workspaceId,
   folderId,
+  onFileUploaded,
+  initialFiles,
 }: UploadModalProps) {
-  const [files, setFiles] = useState<UploadFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const queryClient = useQueryClient();
-
-  const handleFileSelect = useCallback((selectedFiles: FileList | null) => {
-    if (!selectedFiles) return;
-
-    const newFiles: UploadFile[] = Array.from(selectedFiles).map(file => ({
-      id: Math.random().toString(36).substring(7),
-      file,
-      progress: 0,
-      status: 'pending',
-    }));
-
-    setFiles(prev => [...prev, ...newFiles]);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      handleFileSelect(e.dataTransfer.files);
-    },
-    [handleFileSelect]
-  );
-
-  const handleRemoveFile = useCallback((fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
-  }, []);
-
-  const uploadSingleFile = useCallback(
-    async (uploadFile: UploadFile) => {
-      if (!workspaceId) {
-        throw new Error('Workspace ID is required');
-      }
-
-      setFiles(prev =>
-        prev.map(f =>
-          f.id === uploadFile.id
-            ? { ...f, status: 'uploading' as const, progress: 0 }
-            : f
-        )
-      );
-
-      try {
-        // Simulate progress updates
-        for (let progress = 0; progress < 90; progress += 10) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          setFiles(prev =>
-            prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
-          );
-        }
-
-        // Perform actual upload
-        const result = await uploadFileAction(
-          uploadFile.file,
-          workspaceId,
-          folderId
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || 'Upload failed');
-        }
-
-        // Complete the progress
-        setFiles(prev =>
-          prev.map(f =>
-            f.id === uploadFile.id
-              ? { ...f, progress: 100, status: 'success' as const }
-              : f
-          )
-        );
-
-        return result.data;
-      } catch (error) {
-        setFiles(prev =>
-          prev.map(f =>
-            f.id === uploadFile.id
-              ? {
-                  ...f,
-                  status: 'error' as const,
-                  error:
-                    error instanceof Error ? error.message : 'Upload failed',
-                }
-              : f
-          )
-        );
-        throw error;
-      }
-    },
-    [workspaceId, folderId]
-  );
-
-  const handleUpload = useCallback(async () => {
-    if (files.length === 0 || !workspaceId) return;
-
-    setIsUploading(true);
-
-    try {
-      // Upload files sequentially to avoid overwhelming the server
-      const results = [];
-      for (const file of files) {
-        if (file.status === 'pending') {
-          const result = await uploadSingleFile(file);
-          results.push(result);
-        }
-      }
-
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
-      });
-
-      const successCount = results.length;
-      const failedCount = files.filter(f => f.status === 'error').length;
-
-      if (successCount > 0) {
-        toast.success(`Successfully uploaded ${successCount} file(s)`);
-      }
-      if (failedCount > 0) {
-        toast.error(`Failed to upload ${failedCount} file(s)`);
-      }
-
-      // Clear files after upload attempt
-      setTimeout(() => {
-        setFiles([]);
-        onClose();
-      }, 1000);
-    } catch (error) {
-      toast.error('Upload failed');
-    } finally {
-      setIsUploading(false);
-    }
-  }, [files, workspaceId, uploadSingleFile, queryClient, onClose]);
+  const { refetchStorage } = useStorageTracking();
+  const {
+    files,
+    isDragging,
+    isUploading,
+    uploadValidation,
+    handleFileSelect,
+    handleRemoveFile,
+    handleUpload,
+    formatSize,
+    totalFiles,
+    completedFiles,
+    failedFiles,
+    quotaStatus,
+    storageInfo,
+    clearFiles,
+  } = useFileUpload({ workspaceId, folderId, onClose, onFileUploaded });
+  
+  // Track if initial files have been processed
+  const [initialFilesProcessed, setInitialFilesProcessed] = useState(false);
 
   const handleClose = useCallback(() => {
     if (isUploading) return;
-    setFiles([]);
     onClose();
   }, [isUploading, onClose]);
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  // Refetch storage data when modal opens and handle initial files
+  useEffect(() => {
+    if (isOpen) {
+      // Refresh storage data to ensure we have the latest info
+      refetchStorage();
+    }
+  }, [isOpen, refetchStorage]);
 
-  const totalFiles = files.length;
-  const completedFiles = files.filter(f => f.status === 'success').length;
-  const failedFiles = files.filter(f => f.status === 'error').length;
+  // Handle initial files separately to prevent re-adding
+  useEffect(() => {
+    if (isOpen && initialFiles && initialFiles.length > 0 && !initialFilesProcessed) {
+      console.log('📥 [UPLOAD-MODAL] Processing initial files from tree drop:', {
+        fileCount: initialFiles.length,
+        fileNames: initialFiles.map(f => f.name),
+        fileTypes: initialFiles.map(f => f.type)
+      });
+      // Only add initial files once when they are first provided
+      handleFileSelect(initialFiles);
+      setInitialFilesProcessed(true);
+    }
+  }, [isOpen, initialFiles, initialFilesProcessed, handleFileSelect]);
+
+  // Clear files when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset files state when modal is closed
+      // This prevents files from appearing when reopening
+      clearFiles();
+      // Reset the processed flag for next time
+      setInitialFilesProcessed(false);
+    }
+  }, [isOpen, clearFiles]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className='sm:max-w-[500px]'>
-        <DialogHeader>
-          <DialogTitle>Upload Files</DialogTitle>
-          <DialogDescription>
-            Upload files to your workspace. You can drag and drop or click to
-            select files.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-lg lg:max-w-3xl h-[90vh] sm:h-[85vh] md:h-[80vh] max-h-[90vh] p-0 overflow-hidden flex flex-col'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
+      >
+        {/* Accessibility Labels */}
+        <DialogTitle className='sr-only'>Upload Files to Workspace</DialogTitle>
+        <DialogDescription className='sr-only'>
+          Upload files to your workspace. Drag and drop or click to select
+          files.
+        </DialogDescription>
 
-        <div className='space-y-4'>
-          {/* Upload Area */}
-          <div
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragging
-                ? 'border-[var(--primary)] bg-[var(--primary-subtle)]'
-                : 'border-[var(--neutral-300)] hover:border-[var(--neutral-400)]'
-            }`}
-          >
-            <input
-              type='file'
-              multiple
-              onChange={e => handleFileSelect(e.target.files)}
-              className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
-              disabled={isUploading}
-            />
-
-            <div className='space-y-2'>
-              <Upload className='w-8 h-8 mx-auto text-[var(--neutral-500)]' />
-              <p className='text-sm text-[var(--neutral-600)]'>
-                <span className='font-medium'>Click to upload</span> or drag and
-                drop
+        {/* Protect component wrapper - ensures user has valid authentication */}
+        <Protect
+          fallback={
+            <div className='flex flex-col items-center justify-center h-full p-8 text-center'>
+              <AlertCircle className='w-12 h-12 text-muted-foreground mb-4' />
+              <h3 className='text-lg font-semibold text-foreground mb-2'>
+                Authentication Required
+              </h3>
+              <p className='text-sm text-muted-foreground max-w-sm'>
+                Please sign in to upload files to your workspace.
               </p>
-              <p className='text-xs text-[var(--neutral-500)]'>
-                Any file type supported
-              </p>
+              <Button variant='outline' onClick={handleClose} className='mt-6'>
+                Close
+              </Button>
+            </div>
+          }
+        >
+          {/* Modal Header */}
+          <div className='modal-header relative shrink-0'>
+            <div className='p-4 sm:p-6 lg:p-8'>
+              <div className='flex items-center gap-3 sm:gap-4'>
+                <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                  <CloudUpload className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
+                </div>
+                <div className='min-w-0 flex-1'>
+                  <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
+                    Add to Workspace
+                  </h1>
+                  <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                    Fast, secure uploads with automatic organization
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* File List */}
-          {files.length > 0 && (
-            <div className='max-h-60 overflow-y-auto space-y-2'>
-              {files.map(file => (
+          {/* Content Area */}
+          <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
+            {/* Storage Warning - Animated Alert */}
+            <AnimatePresence>
+              {quotaStatus.status !== 'safe' && (
                 <motion.div
-                  key={file.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className='flex items-center gap-3 p-3 border rounded-lg'
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
-                  <File className='w-4 h-4 text-[var(--neutral-500)]' />
-
-                  <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-medium truncate'>
-                      {file.file.name}
-                    </p>
-                    <p className='text-xs text-[var(--neutral-500)]'>
-                      {formatFileSize(file.file.size)}
-                    </p>
-
-                    {file.status === 'uploading' && (
-                      <Progress value={file.progress} className='mt-1' />
-                    )}
-                  </div>
-
-                  <div className='flex items-center gap-2'>
-                    {file.status === 'success' && (
-                      <CheckCircle className='w-4 h-4 text-green-500' />
-                    )}
-                    {file.status === 'error' && (
-                      <AlertCircle className='w-4 h-4 text-red-500' />
-                    )}
-                    {file.status === 'pending' && !isUploading && (
-                      <button
-                        onClick={() => handleRemoveFile(file.id)}
-                        className='p-1 hover:bg-[var(--neutral-100)] rounded'
-                      >
-                        <X className='w-3 h-3' />
-                      </button>
-                    )}
-                  </div>
+                  <StorageWarning
+                    status={quotaStatus.status}
+                    remainingSpace={storageInfo.remainingBytes}
+                    formatSize={formatSize}
+                  />
                 </motion.div>
-              ))}
-            </div>
-          )}
+              )}
+            </AnimatePresence>
 
-          {/* Progress Summary */}
-          {isUploading && (
-            <div className='bg-[var(--neutral-50)] rounded-lg p-3'>
-              <div className='flex items-center justify-between text-sm'>
-                <span>Uploading files...</span>
-                <span>
-                  {completedFiles}/{totalFiles}
-                </span>
-              </div>
-              <Progress
-                value={(completedFiles / totalFiles) * 100}
-                className='mt-2'
+            {/* Centralized File Upload Area with Folder Support */}
+            <CentralizedFileUpload
+              onChange={handleFileSelect}
+              onRemove={(index) => {
+                const fileId = files[index]?.id;
+                if (fileId) {
+                  handleRemoveFile(fileId);
+                }
+              }}
+              files={(() => {
+                const mappedFiles = files.map(f => f.file);
+                console.log('🔍 [UPLOAD-MODAL] Passing files to CentralizedFileUpload:', {
+                  count: mappedFiles.length,
+                  fileNames: mappedFiles.map(f => f.name),
+                  fileTypes: mappedFiles.map(f => f.type)
+                });
+                return mappedFiles;
+              })()}
+              skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
+              multiple={true}
+              maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}
+              maxFileSize={UPLOAD_CONFIG.fileSizeLimits[storageInfo.planKey as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024}
+              disabled={isUploading || quotaStatus.status === 'exceeded'}
+              uploadText="Upload files"
+              uploadDescription={
+                isDragging 
+                  ? "Release to start uploading" 
+                  : "Drag and drop files or folders here, or click to browse"
+              }
+              showFileSize={true}
+              showFileType={true}
+              showModifiedDate={false}
+              onError={(error) => {
+                console.error('Upload error:', error);
+              }}
+            />
+
+            {/* Upload Limits Info - Always show for user reference */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <UploadLimitsInfo
+                plan={storageInfo.planKey as 'free' | 'pro' | 'business'}
               />
-            </div>
-          )}
-        </div>
+            </motion.div>
 
-        {/* Actions */}
-        <div className='flex justify-end gap-2 pt-4'>
-          <Button
-            variant='outline'
-            onClick={handleClose}
-            disabled={isUploading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={files.length === 0 || isUploading}
-          >
-            {isUploading ? 'Uploading...' : `Upload ${files.length} file(s)`}
-          </Button>
-        </div>
+            {/* Storage Info Display - Always show for user awareness */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <StorageInfoDisplay
+                showHeader={true}
+                compact={false}
+                showLiveUpdates={isUploading}
+              />
+            </motion.div>
+
+            {/* Upload Progress - Only show for batch summary */}
+            <AnimatePresence>
+              {isUploading && totalFiles > 3 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <UploadProgress
+                    isUploading={isUploading}
+                    totalFiles={totalFiles}
+                    completedFiles={completedFiles}
+                    failedFiles={failedFiles}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Upload Validation - Shows Error States with Details */}
+            <AnimatePresence>
+              {uploadValidation && !uploadValidation.valid && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <UploadValidation
+                    validation={uploadValidation}
+                    formatSize={formatSize}
+                    planKey={storageInfo.planKey}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Modal Footer */}
+          <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
+            <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
+              {/* Action Buttons */}
+              <Button
+                variant='outline'
+                onClick={handleClose}
+                disabled={isUploading}
+                className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
+              >
+                Cancel
+              </Button>
+              <Button
+                variant='outline'
+                onClick={handleUpload}
+                disabled={
+                  files.length === 0 ||
+                  isUploading ||
+                  uploadValidation?.valid === false
+                }
+                className='w-full sm:w-auto min-w-0 sm:min-w-[140px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
+              >
+                {isUploading ? (
+                  <>
+                    <div className='w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin' />
+                    <span>Uploading...</span>
+                  </>
+                ) : uploadValidation?.valid === false ? (
+                  <>
+                    <AlertCircle className='w-4 h-4' />
+                    <span>Cannot Upload</span>
+                  </>
+                ) : files.length > 0 ? (
+                  <>
+                    <CloudUpload className='w-4 h-4' />
+                    <span>
+                      Start Upload
+                      {files.length > 1 ? `ing ${files.length} files` : ''}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CloudUpload className='w-4 h-4' />
+                    <span>Select Files</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </Protect>
       </DialogContent>
     </Dialog>
   );

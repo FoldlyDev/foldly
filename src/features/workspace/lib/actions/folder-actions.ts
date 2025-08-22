@@ -1,9 +1,10 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { workspaceService } from '@/lib/services/workspace';
-import { FolderService } from '@/lib/services/shared/folder-service';
-import type { DatabaseId } from '@/lib/supabase/types';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { FolderService } from '@/features/files/lib/services/folder-service';
+import type { DatabaseId } from '@/lib/database/types';
+import { logger } from '@/lib/services/logging/logger';
 
 // =============================================================================
 // TYPES
@@ -100,7 +101,6 @@ export async function createFolderAction(
       name: trimmedName,
       parentFolderId: parentId,
       workspaceId: workspace.id,
-      userId,
       path: folderPath,
       depth,
     });
@@ -112,7 +112,7 @@ export async function createFolderAction(
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to create folder:', error);
+    logger.error('Failed to create folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create folder',
@@ -146,7 +146,7 @@ export async function renameFolderAction(
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to rename folder:', error);
+    logger.error('Failed to rename folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to rename folder',
@@ -155,7 +155,7 @@ export async function renameFolderAction(
 }
 
 /**
- * Delete a folder
+ * Delete a folder with storage cleanup
  */
 export async function deleteFolderAction(
   folderId: DatabaseId
@@ -167,17 +167,41 @@ export async function deleteFolderAction(
       return { success: false, error: 'Unauthorized' };
     }
 
+    const { StorageService } = await import(
+      '@/features/files/lib/services/storage-service'
+    );
+    const { createServerSupabaseClient } = await import(
+      '@/lib/config/supabase-server'
+    );
+    
+    const supabaseClient = await createServerSupabaseClient();
+    const storageService = new StorageService(supabaseClient);
     const folderService = new FolderService();
-    const result = await folderService.deleteFolder(folderId);
+    
+    // Use the optimized deletion method that handles both DB and storage
+    const result = await folderService.deleteFolderWithStorage(folderId, storageService);
 
     if (result.success) {
-      // Don't revalidate path - React Query handles cache updates
-      return { success: true, data: result.data };
+      // Get updated storage info after deletion
+      const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+      const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
+      
+      return { 
+        success: true, 
+        data: {
+          ...result.data,
+          storageInfo: {
+            usagePercentage: updatedStorageInfo.usagePercentage,
+            remainingBytes: updatedStorageInfo.remainingBytes,
+            shouldShowWarning: false, // Deletion always reduces usage
+          },
+        },
+      };
     } else {
       return { success: false, error: result.error };
     }
   } catch (error) {
-    console.error('Failed to delete folder:', error);
+    logger.error('Failed to delete folder', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete folder',

@@ -8,9 +8,11 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createLinkAction } from '../../lib/actions/create';
 import { linksQueryKeys } from '../../lib/query-keys';
-import type { Link, LinkWithStats } from '@/lib/supabase/types/links';
-import type { ActionResult, CreateLinkActionData } from '../../lib/validations';
-import { toast } from 'sonner';
+import { filesQueryKeys } from '@/features/files/lib/query-keys';
+import type { Link, LinkWithStats } from '@/lib/database/types/links';
+import type { CreateLinkActionData } from '../../lib/validations';
+import { NotificationEventType } from '@/features/notifications/core';
+import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseCreateLinkMutationOptions {
   onSuccess?: (data: Link) => void;
@@ -19,8 +21,8 @@ interface UseCreateLinkMutationOptions {
 }
 
 interface UseCreateLinkMutationResult {
-  mutate: (data: CreateLinkActionData) => void;
-  mutateAsync: (data: CreateLinkActionData) => Promise<Link>;
+  mutate: (data: CreateLinkActionData & { brandingImageFile?: File }) => void;
+  mutateAsync: (data: CreateLinkActionData & { brandingImageFile?: File }) => Promise<Link>;
   isLoading: boolean;
   isPending: boolean;
   isError: boolean;
@@ -36,11 +38,17 @@ export function useCreateLinkMutation(
   options: UseCreateLinkMutationOptions = {}
 ): UseCreateLinkMutationResult {
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
-    mutationFn: async (input: CreateLinkActionData): Promise<Link> => {
-      const result = await createLinkAction(input);
+    mutationFn: async (input: CreateLinkActionData & { brandingImageFile?: File }): Promise<Link> => {
+      // Check if we have a branding image file to upload
+      const hasBrandingImage = input.brandingImageFile && input.branding?.enabled;
+      
+      // First, create the link without the image
+      const { brandingImageFile, ...linkData } = input;
+      const result = await createLinkAction(linkData);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to create link');
@@ -50,10 +58,40 @@ export function useCreateLinkMutation(
         throw new Error('No data returned from create action');
       }
 
+      // If we have a branding image, upload it via API route
+      if (hasBrandingImage && brandingImageFile) {
+        try {
+          // Create FormData for upload
+          const formData = new FormData();
+          formData.append('file', brandingImageFile);
+          formData.append('linkId', result.data.id);
+          formData.append('enabled', String(input.branding?.enabled || false));
+          if (input.branding?.color) {
+            formData.append('color', input.branding.color);
+          }
+
+          // Upload to API route
+          const uploadResponse = await fetch('/api/links/branding/upload', {
+            method: 'POST',
+            body: formData,
+          });
+
+          const uploadResult = await uploadResponse.json();
+
+          if (uploadResult.success && uploadResult.data?.link) {
+            // Return the updated link with branding
+            return uploadResult.data.link;
+          }
+        } catch (uploadError) {
+          console.error('Failed to upload branding image:', uploadError);
+          // Still return the created link even if image upload failed
+        }
+      }
+
       return result.data;
     },
 
-    onMutate: async (input: CreateLinkActionData) => {
+    onMutate: async (input: CreateLinkActionData & { brandingImageFile?: File }) => {
       if (!optimistic) return;
 
       // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
@@ -68,7 +106,7 @@ export function useCreateLinkMutation(
           id: `temp-${Date.now()}`, // Temporary ID
           userId: 'temp-user-id',
           workspaceId: 'temp-workspace-id',
-          slug: input.slug || 'username', // Use input slug or default fallback
+          slug: (input as any).slug || 'username', // Use input slug or default fallback
           linkType: input.topic ? 'custom' : 'base',
           passwordHash: null,
           ...input,
@@ -76,13 +114,22 @@ export function useCreateLinkMutation(
           description: input.description || null,
           allowedFileTypes: input.allowedFileTypes || null,
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
-          brandColor: input.brandColor || null,
+          branding: input.branding ? {
+            enabled: input.branding.enabled,
+            ...(input.branding.color && { color: input.branding.color }),
+            // Note: imageUrl and imagePath will be set after actual upload
+          } : { enabled: false },
           createdAt: new Date(),
           updatedAt: new Date(),
           totalUploads: 0,
           totalFiles: 0,
           totalSize: 0,
           lastUploadAt: null,
+          storageUsed: 0,
+          storageLimit: 1000000000, // 1GB default
+          unreadUploads: 0,
+          lastNotificationAt: null,
+          sourceFolderId: null,
           stats: {
             fileCount: 0,
             batchCount: 0,
@@ -111,22 +158,91 @@ export function useCreateLinkMutation(
         queryClient.setQueryData(linksQueryKeys.list(), context.previousLinks);
       }
 
-      toast.error(error.message || 'Failed to create link');
+      // Emit error event instead of direct toast
+      emit(NotificationEventType.LINK_CREATE_ERROR, {
+        linkId: 'temp-' + Date.now(),
+        linkTitle: variables.title || 'New Link',
+        linkType: variables.slug ? 'custom' : 'base',
+        error: error.message || 'Failed to create link',
+      });
+      
       onError?.(error);
     },
 
-    onSuccess: (data, variables, context) => {
+    onSuccess: (data) => {
+      // Update the cache with the complete link data (including imageUrl if uploaded)
+      queryClient.setQueryData(linksQueryKeys.list(), (old: LinkWithStats[] | undefined) => {
+        if (!old) return [data as LinkWithStats];
+        
+        // Replace the optimistic link with the real one
+        const updated = old.map(link => {
+          // Check if this is the optimistic link (temp ID) or matching real ID
+          if (link.id.startsWith('temp-') || link.id === data.id) {
+            // Return the real link with stats
+            return {
+              ...data,
+              stats: {
+                fileCount: 0,
+                batchCount: 0,
+                folderCount: 0,
+                totalViewCount: 0,
+                uniqueViewCount: 0,
+                averageFileSize: 0,
+                storageUsedPercentage: 0,
+                isNearLimit: false,
+              },
+            } as LinkWithStats;
+          }
+          return link;
+        });
+        
+        // If we didn't find a match, add it to the beginning
+        const hasMatch = updated.some(link => link.id === data.id);
+        if (!hasMatch) {
+          return [{
+            ...data,
+            stats: {
+              fileCount: 0,
+              batchCount: 0,
+              folderCount: 0,
+              totalViewCount: 0,
+              uniqueViewCount: 0,
+              averageFileSize: 0,
+              storageUsedPercentage: 0,
+              isNearLimit: false,
+            },
+          } as LinkWithStats, ...old];
+        }
+        
+        return updated;
+      });
+      
       // Invalidate and refetch queries to get the real data
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.stats() });
+      
+      // Invalidate files feature queries to ensure new link appears there
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
-      toast.success('Link created successfully');
+      // Emit success event for notification
+      emit(NotificationEventType.LINK_CREATE_SUCCESS, {
+        linkId: data.id,
+        linkTitle: data.title,
+        linkUrl: data.slug,
+        linkType: data.topic ? 'custom' : 'base',
+      });
+
       onSuccess?.(data);
     },
 
     onSettled: () => {
       // Always refetch after error or success to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
+      
+      // Also invalidate files feature queries
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
 
@@ -148,7 +264,7 @@ export function useCreateLinkMutation(
 export function useCreateLinkForm(options: UseCreateLinkMutationOptions = {}) {
   const mutation = useCreateLinkMutation(options);
 
-  const handleSubmit = async (data: CreateLinkActionData) => {
+  const handleSubmit = async (data: CreateLinkActionData & { brandingImageFile?: File }) => {
     try {
       await mutation.mutateAsync(data);
       return { success: true };

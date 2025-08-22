@@ -7,7 +7,12 @@ export type NotificationEvent =
   | 'folder_renamed'
   | 'folder_deleted'
   | 'folder_created'
-  | 'items_reordered';
+  | 'items_reordered'
+  | 'storage_warning'
+  | 'storage_critical'
+  | 'storage_exceeded'
+  | 'upload_blocked'
+  | 'link_upload';
 
 export interface NotificationConfig {
   event: NotificationEvent;
@@ -22,4 +27,22 @@ export interface WorkspaceNotificationData {
   targetLocation?: string;
   sourcePath?: string;
   targetPath?: string;
+}
+
+export interface StorageNotificationData {
+  currentUsage: number;
+  totalLimit: number;
+  remainingSpace: number;
+  usagePercentage: number;
+  planKey: string;
+  filesCount?: number;
+}
+
+export interface LinkUploadNotificationData {
+  linkId: string;
+  linkTitle: string;
+  uploaderName: string;
+  uploaderEmail?: string;
+  fileCount: number;
+  folderCount: number;
 }

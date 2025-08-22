@@ -2,21 +2,14 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Eye, Clock, Share2, AlertTriangle } from 'lucide-react';
-import { Checkbox } from '@/components/animate-ui/radix/checkbox';
-import {
-  LinkStatusIndicator,
-  LinkVisibilityIndicator,
-  LinkTypeIcon,
-} from '../indicators';
-import {
-  SearchHighlight,
-  CardActionsMenu,
-  ActionButton,
-  AnimatedCopyButton,
-} from '@/components/ui';
-import type { ActionItem } from '@/components/ui/types';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import { Clock, AlertTriangle } from 'lucide-react';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
+import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
+import { SearchHighlight, CardActionsMenu } from '@/components/core';
+import type { ActionItem } from '@/components/core/types';
+import type { LinkWithStats } from '@/lib/database/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
 interface LinkCardMobileProps {
   link: LinkWithStats;
@@ -27,8 +20,10 @@ interface LinkCardMobileProps {
   onOpenDetails: () => void;
   onMultiSelect?: ((linkId: string) => void) | undefined;
   actions: ActionItem[];
-  quickActions: ActionItem[];
+  quickActions?: ActionItem[];
   searchQuery?: string;
+  unreadCount?: number;
+  onClearNotifications?: () => void;
 }
 
 export const LinkCardMobile = memo(
@@ -41,9 +36,12 @@ export const LinkCardMobile = memo(
     onOpenDetails,
     onMultiSelect,
     actions,
-    quickActions,
+    quickActions: _quickActions,
     searchQuery,
+    unreadCount = 0,
+    onClearNotifications,
   }: LinkCardMobileProps) => {
+    const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -55,7 +53,7 @@ export const LinkCardMobile = memo(
           transition-all duration-200 group cursor-pointer
           ${
             isBaseLink
-              ? 'border-l-4 border-l-purple-400 shadow-sm' // Special base link styling
+              ? 'border-l-4 shadow-sm' // Special base link styling
               : 'border border-gray-200 hover:border-gray-300' // Regular topic link styling
           }
           ${
@@ -64,6 +62,14 @@ export const LinkCardMobile = memo(
               : ''
           }
         `}
+        style={{
+          borderLeftColor:
+            link.branding?.enabled && link.branding?.color
+              ? link.branding.color
+              : isBaseLink
+                ? '#c084fc'
+                : undefined, // purple-400 as fallback for base links
+        }}
       >
         <div className='p-4 space-y-3'>
           {/* Header Row: Title + Status */}
@@ -74,14 +80,21 @@ export const LinkCardMobile = memo(
                 <div onClick={e => e.stopPropagation()}>
                   <Checkbox
                     checked={isMultiSelected || false}
-                    onCheckedChange={checked => onMultiSelect(link.id)}
+                    onCheckedChange={() => onMultiSelect(link.id)}
                     className='w-4 h-4 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
                   />
                 </div>
               )}
 
               {/* Icon */}
-              <LinkTypeIcon isBaseLink={isBaseLink} size='md' />
+              <LinkTypeIcon
+                isBaseLink={isBaseLink}
+                size='md'
+                brandingEnabled={link.branding?.enabled}
+                {...(link.branding?.imageUrl && {
+                  brandingImageUrl: link.branding.imageUrl,
+                })}
+              />
 
               {/* Title & URL */}
               <div className='min-w-0 flex-1'>
@@ -93,17 +106,27 @@ export const LinkCardMobile = memo(
                     />
                   </h3>
                 </div>
-                <p className='text-sm text-gray-500 truncate'>
-                  foldly.io/{link.slug}
-                  {link.topic ? `/${link.topic}` : ''}
-                </p>
+                <p className='text-sm text-gray-500 truncate'>{displayUrl}</p>
               </div>
             </div>
 
-            {/* Status Badge */}
-            <LinkStatusIndicator status={link.isActive ? 'active' : 'paused'} />
+            {/* Status Badge and Notification Badge */}
+            <div className='flex items-center gap-2'>
+              {unreadCount > 0 && (
+                <div onClick={e => e.stopPropagation()}>
+                  <NotificationBadge
+                    count={unreadCount}
+                    {...(onClearNotifications && {
+                      onClick: onClearNotifications,
+                    })}
+                  />
+                </div>
+              )}
+              <LinkStatusIndicator
+                status={link.isActive ? 'active' : 'paused'}
+              />
+            </div>
           </div>
-
 
           {/* Expiry Date Row */}
           {link.expiresAt && (

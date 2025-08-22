@@ -7,6 +7,9 @@ export * from './use-slug-validation';
 // 🚀 Quick start hooks
 export * from './use-quick-start';
 
+// 🔗 URL hooks
+export * from './use-link-url';
+
 // 🔄 React Query hooks
 export * from './react-query/use-links-query';
 export * from './react-query/use-link-query';

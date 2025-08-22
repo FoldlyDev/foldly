@@ -10,7 +10,8 @@ import {
 import { useModalStore } from '../../store';
 import { useCreateLinkMutation } from '../../hooks/react-query/use-create-link-mutation';
 import { LinkBrandingSection } from '../sections/LinkBrandingSection';
-import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
+import { CreateLinkFormButtons } from '@/components/core/create-link-form-buttons';
+import { DEFAULT_BASE_LINK_TITLE } from '../../lib/constants/base-link-defaults';
 
 /**
  * Branding step for create link modal
@@ -43,20 +44,33 @@ export const CreateLinkBrandingStep = () => {
   // Handle branding form changes
   const handleBrandingChange = useCallback(
     (updates: any) => {
-      // Update form fields individually
-      Object.entries(updates).forEach(([field, value]) => {
-        updateFormField(field as any, value);
-      });
+      // Map nested branding structure to flat form structure
+      if (updates.branding) {
+        if (updates.branding.enabled !== undefined) {
+          updateFormField('brandEnabled', updates.branding.enabled);
+        }
+        if (updates.branding.color !== undefined) {
+          updateFormField('brandColor', updates.branding.color);
+        }
+        if (updates.branding.image !== undefined) {
+          updateFormField('logoUrl', updates.branding.image);
+        }
+        // Handle file separately
+        if (updates.brandingFile !== undefined) {
+          updateFormField('logoFile', updates.brandingFile);
+        }
+      }
     },
     [updateFormField]
   );
 
   // Prepare branding form data for the LinkBrandingSection
   const brandingFormData = {
-    brandEnabled: formData.brandEnabled || false,
-    brandColor: formData.brandColor || '#6c47ff',
-    logoUrl: formData.logoUrl || '',
-    logoFile: formData.logoFile || null,
+    branding: {
+      enabled: formData.brandEnabled || false,
+      color: formData.brandColor || '#6c47ff',
+      image: formData.logoUrl || '',
+    },
   };
 
   // Handle form submission
@@ -71,15 +85,14 @@ export const CreateLinkBrandingStep = () => {
       const linkInput = {
         title:
           linkType === 'base'
-            ? formData.title || 'Personal Collection' // Use form title, fallback to default
+            ? formData.title || DEFAULT_BASE_LINK_TITLE // Use form title, fallback to centralized default
             : formData.title || formData.topic || 'Untitled Link',
-        slug: linkType === 'base' ? (formData.topic || '') : undefined, // For base links, topic field is actually the slug
-        topic: linkType === 'base' ? null : (formData.topic || undefined), // Base links have no topic
+        slug: linkType === 'base' ? formData.topic || '' : undefined, // For base links, topic field is actually the slug
+        topic: linkType === 'base' ? null : formData.topic || undefined, // Base links have no topic
         description: formData.description || undefined,
         requireEmail: formData.requireEmail,
         requirePassword: formData.requirePassword,
         password: formData.requirePassword ? formData.password : undefined,
-        isPublic: formData.isPublic,
         isActive: formData.isActive,
         maxFiles: formData.maxFiles,
         maxFileSize: formData.maxFileSize,
@@ -87,11 +100,18 @@ export const CreateLinkBrandingStep = () => {
         expiresAt: formData.expiresAt
           ? formData.expiresAt.toISOString()
           : undefined,
-        brandEnabled: formData.brandEnabled,
-        brandColor: formData.brandEnabled ? formData.brandColor : undefined,
+        branding: formData.brandEnabled
+          ? {
+              enabled: formData.brandEnabled,
+              color: formData.brandColor,
+              // Don't include the base64 image in branding
+            }
+          : undefined,
+        // Include the file separately for upload
+        brandingImageFile: formData.logoFile || undefined,
       };
 
-      // Create link using React Query mutation
+      // Create link using React Query mutation (handles file upload)
       await createLink.mutateAsync(linkInput);
 
       // Close modal and reset form
@@ -126,7 +146,7 @@ export const CreateLinkBrandingStep = () => {
         username={user?.username?.toLowerCase() || 'username'}
         linkName={
           linkType === 'base'
-            ? 'Personal Collection'
+            ? DEFAULT_BASE_LINK_TITLE
             : formData.title || formData.topic || 'Untitled'
         }
         description={formData.description || ''}

@@ -1,5 +1,7 @@
-// Settings Components Barrel Export
-// Export all settings-related components
+// =============================================================================
+// SETTINGS COMPONENTS - Simplified Components Exports
+// =============================================================================
+// 🎯 Settings feature components - Clerk UserProfile integration only
 
 // Views
 export * from './views';

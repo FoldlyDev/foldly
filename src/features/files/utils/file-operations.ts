@@ -461,7 +461,6 @@ export const searchFiles = (
     dateTo?: Date;
     tags?: string[];
     isShared?: boolean;
-    isPublic?: boolean;
   }
 ): FileData[] => {
   let results = files;
@@ -509,9 +508,6 @@ export const searchFiles = (
       results = results.filter(file => file.isShared === filters.isShared);
     }
 
-    if (filters.isPublic !== undefined) {
-      results = results.filter(file => file.isPublic === filters.isPublic);
-    }
   }
 
   return results;
@@ -526,7 +522,6 @@ export const searchFolders = (
   filters?: {
     color?: FolderColor[];
     isShared?: boolean;
-    isPublic?: boolean;
     tags?: string[];
   }
 ): FolderData[] => {
@@ -553,9 +548,6 @@ export const searchFolders = (
       results = results.filter(folder => folder.isShared === filters.isShared);
     }
 
-    if (filters.isPublic !== undefined) {
-      results = results.filter(folder => folder.isPublic === filters.isPublic);
-    }
 
     if (filters.tags && filters.tags.length > 0) {
       results = results.filter(folder =>

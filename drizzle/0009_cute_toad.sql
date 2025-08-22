@@ -1,0 +1,2 @@
+ALTER TABLE "folders" ADD COLUMN "batch_id" uuid;--> statement-breakpoint
+ALTER TABLE "folders" ADD CONSTRAINT "folders_batch_id_batches_id_fk" FOREIGN KEY ("batch_id") REFERENCES "public"."batches"("id") ON DELETE set null ON UPDATE no action;

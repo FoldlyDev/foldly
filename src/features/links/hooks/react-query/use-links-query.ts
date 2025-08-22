@@ -8,7 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchLinksAction } from '../../lib/actions/fetch';
 import { linksQueryKeys, type LinksQueryFilters } from '../../lib/query-keys';
-import type { LinkWithStats } from '@/lib/supabase/types/links';
+import type { LinkWithStats } from '@/lib/database/types/links';
 import type { ActionResult } from '../../lib/validations';
 import { useMemo } from 'react';
 

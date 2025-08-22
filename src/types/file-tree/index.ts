@@ -2,7 +2,7 @@
 // FILE TREE TYPES INDEX - Single entry point for all file tree types
 // =============================================================================
 
-// Re-export commonly used types from supabase
+// Re-export commonly used types from database
 export type {
   DatabaseId,
   File,
@@ -10,4 +10,4 @@ export type {
   Link,
   UploadFile,
   // Add other commonly used types as needed
-} from '@/lib/supabase/types';
+} from '@/lib/database/types';

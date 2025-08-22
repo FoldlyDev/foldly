@@ -40,7 +40,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Annual project presentation for Q4 review',
     downloadCount: 15,
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-12-15T11:00:00Z'),
     sharedBy: 'user_1',
     permissions: {
@@ -101,7 +100,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Complete design assets package for the new website',
     downloadCount: 8,
     isShared: false,
-    isPublic: false,
     sharedAt: null,
     sharedBy: null,
     permissions: {
@@ -162,7 +160,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Product demonstration video for client presentation',
     downloadCount: 25,
     isShared: true,
-    isPublic: true,
     sharedAt: new Date('2024-12-08T10:00:00Z'),
     sharedBy: 'user_2',
     permissions: {
@@ -223,7 +220,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Official team photo for the company website',
     downloadCount: 12,
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-12-05T17:00:00Z'),
     sharedBy: 'user_3',
     permissions: {
@@ -285,7 +281,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Quarterly budget report with financial analysis',
     downloadCount: 6,
     isShared: false,
-    isPublic: false,
     sharedAt: null,
     sharedBy: null,
     permissions: {
@@ -356,7 +351,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Quarterly performance metrics presentation',
     downloadCount: 9,
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-12-01T14:00:00Z'),
     sharedBy: 'user_1',
     permissions: {
@@ -418,7 +412,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Background music for video presentations',
     downloadCount: 4,
     isShared: false,
-    isPublic: false,
     sharedAt: null,
     sharedBy: null,
     permissions: {
@@ -479,7 +472,6 @@ export const MOCK_FILES: FileData[] = [
     description: 'Official company logo in PNG format',
     downloadCount: 18,
     isShared: true,
-    isPublic: true,
     sharedAt: new Date('2024-11-25T16:00:00Z'),
     sharedBy: 'user_2',
     permissions: {
@@ -543,7 +535,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 2,
     totalSize: 8844352, // ~8.4MB
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-11-20T11:00:00Z'),
     sharedBy: 'user_1',
     permissions: {
@@ -585,7 +576,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 1,
     totalSize: 17825792, // ~17MB
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-11-18T15:00:00Z'),
     sharedBy: 'user_2',
     permissions: {
@@ -627,7 +617,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 0,
     totalSize: 94994353, // ~95MB
     isShared: true,
-    isPublic: true,
     sharedAt: new Date('2024-11-15T10:00:00Z'),
     sharedBy: 'user_3',
     permissions: {
@@ -669,7 +658,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 0,
     totalSize: 3145728, // ~3MB
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-11-10T17:00:00Z'),
     sharedBy: 'user_3',
     permissions: {
@@ -711,7 +699,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 1,
     totalSize: 3145728, // ~3MB (includes subfolder)
     isShared: true,
-    isPublic: false,
     sharedAt: new Date('2024-11-10T16:30:00Z'),
     sharedBy: 'user_3',
     permissions: {
@@ -753,7 +740,6 @@ export const MOCK_FOLDERS: FolderData[] = [
     subfolderCount: 0,
     totalSize: 0,
     isShared: false,
-    isPublic: false,
     sharedAt: null,
     sharedBy: null,
     permissions: {
@@ -957,12 +943,6 @@ export const getSharedFiles = (): FileData[] => {
   return MOCK_FILES.filter(file => file.isShared);
 };
 
-/**
- * Get public files
- */
-export const getPublicFiles = (): FileData[] => {
-  return MOCK_FILES.filter(file => file.isPublic);
-};
 
 /**
  * Get workspace statistics
@@ -977,7 +957,6 @@ export const getWorkspaceStats = () => {
     totalFolders,
     totalSize,
     sharedFiles: MOCK_FILES.filter(file => file.isShared).length,
-    publicFiles: MOCK_FILES.filter(file => file.isPublic).length,
     recentFiles: getRecentFiles().length,
   };
 };

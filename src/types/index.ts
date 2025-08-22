@@ -22,7 +22,7 @@ export * from './utils';
 // - Analytics types: @/features/analytics/types
 // - Links types: @/features/links/types
 // - Files types: @/features/files/types
-// - Upload types: @/features/upload/types
+// - Upload types: @/features/link-upload/types
 // - Notifications types: @/features/notifications/types
 // - Auth types: @/features/auth/types
 // - UI component types: @/components/ui/types
@@ -30,4 +30,4 @@ export * from './utils';
 // Use individual feature exports:
 // import { LinkType } from '@/features/links/types';
 // import { FileProcessingStatus } from '@/features/files/types';
-// import { UploadFlowStep } from '@/features/upload/types';
+// import { UploadFlowStep } from '@/features/link-upload/types';

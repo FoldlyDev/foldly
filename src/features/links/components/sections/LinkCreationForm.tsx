@@ -7,8 +7,8 @@ import { useMemo } from 'react';
 import type {
   LinkCreateForm,
   LinkUpdateForm,
-} from '@/lib/supabase/types/links';
-import type { LinkType } from '@/lib/supabase/types/enums';
+} from '@/lib/database/types/links';
+import type { LinkType } from '@/lib/database/types/enums';
 
 // Local form types
 type ValidationError = string;
@@ -30,6 +30,7 @@ import {
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
 import { useUser } from '@clerk/nextjs';
+import { getDisplayDomain } from '@/lib/config/url-config';
 
 // Import modular sections
 import {
@@ -94,7 +95,7 @@ export function LinkCreationForm({
   // Real-time URL generation with validation
   // Use 'topic' field from database schema, fallback to 'name' for compatibility
   const topicValue = formData.topic || formData.name || '';
-  
+
   // Real-time topic validation for topic links
   const topicValidation = useTopicValidation(topicValue, {
     enabled: linkType === 'topic' && !!user?.id,
@@ -104,10 +105,12 @@ export function LinkCreationForm({
   });
 
   const urlData = useMemo(() => {
+    const displayDomain = getDisplayDomain();
+    
     if (linkType === 'base') {
       const slug = formData.slug || baseSlug;
       return {
-        displayUrl: `foldly.io/${slug}`,
+        displayUrl: `${displayDomain}/${slug}`,
         slug: formData.slug || '',
         isValidTopic: true,
         topicError: null,
@@ -118,12 +121,14 @@ export function LinkCreationForm({
     const slug = topicValue ? generateUrlSlug(topicValue) : '';
     const displayUrl = topicValue
       ? generateTopicUrl(baseSlug, topicValue)
-      : `foldly.io/${baseSlug}/[topic-name]`;
+      : `${displayDomain}/${baseSlug}/[topic-name]`;
 
     // Combine format validation and uniqueness validation
-    const isValidTopic = formatValidation.isValid && (topicValidation.isAvailable || !topicValue);
-    const topicError = formatValidation.error || 
-                      (topicValidation.isUnavailable ? topicValidation.message : null);
+    const isValidTopic =
+      formatValidation.isValid && (topicValidation.isAvailable || !topicValue);
+    const topicError =
+      formatValidation.error ||
+      (topicValidation.isUnavailable ? topicValidation.message : null);
 
     return {
       displayUrl,
@@ -131,7 +136,15 @@ export function LinkCreationForm({
       isValidTopic,
       topicError,
     };
-  }, [linkType, baseSlug, topicValue, formData.slug, topicValidation.isAvailable, topicValidation.isUnavailable, topicValidation.message]);
+  }, [
+    linkType,
+    baseSlug,
+    topicValue,
+    formData.slug,
+    topicValidation.isAvailable,
+    topicValidation.isUnavailable,
+    topicValidation.message,
+  ]);
 
   return (
     <div className='space-y-6'>

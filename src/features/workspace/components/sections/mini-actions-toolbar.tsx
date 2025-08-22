@@ -6,7 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { batchDeleteItemsAction } from '../../lib/actions';
 import { setDragOperationActive } from '../../lib/tree-data';
-import { toast } from 'sonner';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
 
 interface MiniActionsToolbarProps {
   selectMode: {
@@ -33,7 +33,7 @@ export function MiniActionsToolbar({
 
       // Set operation active to prevent data rebuilds during batch operation
       setDragOperationActive(true);
-      
+
       try {
         const result = await batchDeleteItemsAction(selectMode.selectedItems);
         if (!result.success) {
@@ -47,26 +47,48 @@ export function MiniActionsToolbar({
     },
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
-        refetchType: 'none'
+        refetchType: 'none',
       });
-      toast.success(`${selectedCount} item${selectedCount > 1 ? 's' : ''} deleted`);
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS, {
+        items: selectMode.selectedItems.map(id => ({
+          id,
+          name: 'Item',
+          type: 'file' as const,
+        })),
+        batchId: `delete-${Date.now()}`,
+        totalItems: selectedCount,
+        completedItems: selectedCount,
+      });
       selectMode.clearSelection();
     },
-    onError: (error) => {
+    onError: error => {
       // Force refetch on error to ensure consistency
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.error(
-        error instanceof Error ? error.message : 'Failed to delete items'
-      );
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
+        items: selectMode.selectedItems.map(id => ({
+          id,
+          name: 'Item',
+          type: 'file' as const,
+        })),
+        batchId: `delete-${Date.now()}`,
+        totalItems: selectedCount,
+        completedItems: 0,
+        failedItems: selectedCount,
+        error: error instanceof Error ? error.message : 'Failed to delete items',
+      });
     },
   });
 
   const handleDelete = () => {
     if (selectedCount === 0) return;
-    
-    if (confirm(`Are you sure you want to delete ${selectedCount} item${selectedCount > 1 ? 's' : ''}?`)) {
+
+    if (
+      confirm(
+        `Are you sure you want to delete ${selectedCount} item${selectedCount > 1 ? 's' : ''}?`
+      )
+    ) {
       batchDeleteMutation.mutate();
     }
   };
@@ -74,29 +96,29 @@ export function MiniActionsToolbar({
   if (!selectMode.isSelectMode || selectedCount === 0) return null;
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-md">
-      <span className="text-sm font-medium text-blue-700">
+    <div className='flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-md'>
+      <span className='text-sm font-medium text-primary'>
         {selectedCount} selected
       </span>
-      
-      <div className="flex items-center gap-1">
+
+      <div className='flex items-center gap-1'>
         <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2"
+          size='sm'
+          variant='ghost'
+          className='h-7 px-2'
           onClick={handleDelete}
           disabled={batchDeleteMutation.isPending}
         >
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className='h-4 w-4' />
         </Button>
 
         <Button
-          size="sm"
-          variant="ghost"
-          className="h-7 px-2"
+          size='sm'
+          variant='ghost'
+          className='h-7 px-2'
           onClick={selectMode.clearSelection}
         >
-          <X className="h-4 w-4" />
+          <X className='h-4 w-4' />
         </Button>
       </div>
     </div>

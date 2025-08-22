@@ -10,7 +10,7 @@
  * - links.stats(): ['links', 'stats'] - Links statistics
  */
 
-import type { LinkType, LinkSortField, DatabaseId } from '@/lib/supabase/types';
+import type { LinkType, LinkSortField, DatabaseId } from '@/lib/database/types';
 
 export interface LinksQueryFilters {
   searchQuery?: string;

@@ -11,17 +11,37 @@ import {
 interface LinkTypeIconProps {
   isBaseLink: boolean;
   size?: 'sm' | 'md' | 'lg';
+  brandingImageUrl?: string;
+  brandingEnabled?: boolean;
 }
 
 export const LinkTypeIcon = memo(
   ({
     isBaseLink,
     size = COMPONENT_DEFAULTS.linkTypeIcon.size,
+    brandingImageUrl,
+    brandingEnabled = false,
   }: LinkTypeIconProps) => {
     const sizeConfig = COMPONENT_SIZES.linkTypeIcon[size];
     const linkTypeKey = isBaseLink ? 'base' : 'topic';
     const styling = LINK_TYPE_STYLING[linkTypeKey];
 
+    // If branding is enabled and there's a custom image URL, use it
+    if (brandingEnabled && brandingImageUrl) {
+      return (
+        <div
+          className={`${sizeConfig.container} rounded-lg flex items-center justify-center overflow-hidden bg-gray-100`}
+        >
+          <img 
+            src={brandingImageUrl} 
+            alt="Brand logo" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+      );
+    }
+
+    // Otherwise, use the default icons
     if (isBaseLink) {
       // Special icon for base links - user's personal collection
       return (

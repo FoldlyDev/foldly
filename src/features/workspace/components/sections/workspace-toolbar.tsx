@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
@@ -13,6 +13,8 @@ import {
   Maximize2,
   X,
   Trash2,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -24,28 +26,40 @@ import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
-import { setDragOperationActive } from '../../lib/tree-data';
-import { toast } from 'sonner';
-import { 
-  BatchOperationModal, 
+// Removed: import { setDragOperationActive } from '../../lib/tree-data';
+import { eventBus, NotificationEventType } from '@/features/notifications/core';
+import {
+  BatchOperationModal,
   type BatchOperationItem,
-  type BatchOperationProgress 
+  type BatchOperationProgress,
 } from '../modals/batch-operation-modal';
 
 interface WorkspaceToolbarProps {
   className?: string;
   treeInstance?: {
-    getSelectedItems?: () => Array<{ getId: () => string; getItemName: () => string; isFolder: () => boolean }>;
-    getItemInstance?: (id: string) => { expand: () => void; isExpanded: () => boolean } | null;
+    getSelectedItems?: () => Array<{
+      getId: () => string;
+      getItemName: () => string;
+      isFolder: () => boolean;
+    }>;
+    getItemInstance?: (
+      id: string
+    ) => { expand: () => void; isExpanded: () => boolean } | null;
     addFolder?: (name: string, parentId?: string) => string | null;
     deleteItems?: (itemIds: string[]) => void;
     expandAll?: () => void;
     collapseAll?: () => void;
+    isTouchDevice?: () => boolean;
+    isSelectionMode?: () => boolean;
+    setSelectionMode?: (mode: boolean) => void;
+    addFolderToTree?: (folder: any) => void;
   };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedItems?: string[];
   onClearSelection?: () => void;
+  selectionMode?: boolean;
+  onSelectionModeChange?: (mode: boolean) => void;
 }
 
 export function WorkspaceToolbar({
@@ -55,20 +69,50 @@ export function WorkspaceToolbar({
   setSearchQuery,
   selectedItems = [],
   onClearSelection,
+  selectionMode = false,
+  onSelectionModeChange,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<BatchOperationProgress | undefined>();
+  const [batchProgress, setBatchProgress] = useState<
+    BatchOperationProgress | undefined
+  >();
   const queryClient = useQueryClient();
 
   const { openUploadModal } = useWorkspaceUI();
+
+  // Get mobile state from tree instance
+  const isMobile = treeInstance?.isTouchDevice?.() || false;
+
+  // Use external selection mode state if provided, otherwise fallback to tree instance
+  const isSelectionMode =
+    selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
+
+  // Handle selection mode toggle
+  const handleToggleSelectionMode = () => {
+    const newMode = !isSelectionMode;
+    // Update external state if handler provided
+    if (onSelectionModeChange) {
+      onSelectionModeChange(newMode);
+    }
+    // Also update tree instance if available
+    if (treeInstance?.setSelectionMode) {
+      treeInstance.setSelectionMode(newMode);
+    }
+  };
 
   // Collapse all functionality
   const handleCollapseAll = () => {
     if (treeInstance?.collapseAll) {
       treeInstance.collapseAll();
-      toast.success('All folders collapsed');
+      // Use a simple success event for UI operations
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+        items: [],
+        batchId: `collapse-${Date.now()}`,
+        totalItems: 0,
+        completedItems: 0,
+      });
     }
   };
 
@@ -76,7 +120,13 @@ export function WorkspaceToolbar({
   const handleExpandAll = () => {
     if (treeInstance?.expandAll) {
       treeInstance.expandAll();
-      toast.success('All folders expanded');
+      // Use a simple success event for UI operations
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
+        items: [],
+        batchId: `expand-${Date.now()}`,
+        totalItems: 0,
+        completedItems: 0,
+      });
     }
   };
 
@@ -88,10 +138,9 @@ export function WorkspaceToolbar({
       }
 
       const totalItems = selectedItems.length;
-      
-      // Set operation active to prevent data rebuilds during batch operation
-      setDragOperationActive(true);
-      
+
+      // Removed: setDragOperationActive(true) - no longer needed without old tree
+
       try {
         // Initialize progress
         setBatchProgress({
@@ -106,16 +155,22 @@ export function WorkspaceToolbar({
         }
 
         // Track progress
-        setBatchProgress(prev => prev ? { ...prev, currentItem: 'Processing items...' } : undefined);
+        setBatchProgress(prev =>
+          prev ? { ...prev, currentItem: 'Processing items...' } : undefined
+        );
 
         const result = await batchDeleteItemsAction(selectedItems);
-        
+
         if (!result.success) {
-          setBatchProgress(prev => prev ? { 
-            ...prev, 
-            failed: [result.error || 'Unknown error'],
-            completed: totalItems 
-          } : undefined);
+          setBatchProgress(prev =>
+            prev
+              ? {
+                  ...prev,
+                  failed: [result.error || 'Unknown error'],
+                  completed: totalItems,
+                }
+              : undefined
+          );
           throw new Error(result.error || 'Failed to delete items');
         }
 
@@ -125,25 +180,24 @@ export function WorkspaceToolbar({
           const { currentItem, ...rest } = prev;
           return {
             ...rest,
-            completed: totalItems
+            completed: totalItems,
           };
         });
 
         return result.data;
       } finally {
-        // Always clear operation state
-        setDragOperationActive(false);
+        // Removed: setDragOperationActive(false) - no longer needed without old tree
       }
     },
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.tree(),
-        refetchType: 'none'
+        refetchType: 'none',
       });
       onClearSelection?.();
     },
-    onError: (error) => {
+    onError: error => {
       // If database deletion fails, restore the tree state with immediate refetch
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
     },
@@ -158,7 +212,6 @@ export function WorkspaceToolbar({
     },
   });
 
-
   // Create folder mutation - simplified
   const createFolderMutation = useMutation({
     mutationFn: async (folderName: string) => {
@@ -169,28 +222,45 @@ export function WorkspaceToolbar({
 
       // Get selected folder from tree if available
       const selectedItems = treeInstance?.getSelectedItems?.() || [];
-      const parentFolderId = selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
+      const parentFolderId =
+        selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
 
-      // Add to tree UI immediately
-      if (treeInstance?.addFolder) {
-        treeInstance.addFolder(trimmedName, parentFolderId);
-      }
-
+      // Don't add to tree immediately - addFolder returns null to indicate server action should handle it
+      const tempId = treeInstance?.addFolder?.(trimmedName, parentFolderId);
+      
       const result = await createFolderAction(trimmedName, parentFolderId);
       if (!result.success) {
         throw new Error(result.error || 'Failed to create folder');
       }
+      
+      // If we didn't add a temp folder (tempId is null), add the real folder to tree now
+      if (!tempId && result.data && treeInstance?.addFolderToTree) {
+        treeInstance.addFolderToTree(result.data);
+      }
+      
       return result.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.success('Folder created successfully');
+    onSuccess: (data) => {
+      // Don't invalidate queries immediately - the tree is already updated
+      // Only invalidate to sync any other data that might depend on this
+      queryClient.invalidateQueries({ 
+        queryKey: workspaceQueryKeys.tree(),
+        refetchType: 'none' // Don't refetch immediately
+      });
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
+        folderId: data?.id || '',
+        folderName: data?.name || newFolderName,
+      });
       setNewFolderName('');
       setIsCreatingFolder(false);
     },
-    onError: (error) => {
+    onError: error => {
       queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      toast.error(error instanceof Error ? error.message : 'Failed to create folder');
+      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+        folderId: '',
+        folderName: newFolderName,
+        error: error instanceof Error ? error.message : 'Failed to create folder',
+      });
     },
   });
 
@@ -204,41 +274,43 @@ export function WorkspaceToolbar({
   const getBatchOperationItems = (): BatchOperationItem[] => {
     try {
       const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
-      return selectedItems.map(id => {
-        const treeItem = selectedTreeItems.find(item => {
+      return selectedItems
+        .map(id => {
+          const treeItem = selectedTreeItems.find(item => {
+            try {
+              return item?.getId?.() === id;
+            } catch {
+              return false;
+            }
+          });
+
+          let name = 'Unknown';
+          let type: 'file' | 'folder' = 'file';
+
           try {
-            return item?.getId?.() === id;
+            name = treeItem?.getItemName?.() || 'Unknown';
           } catch {
-            return false;
+            name = 'Unknown';
           }
-        });
-        
-        let name = 'Unknown';
-        let type: 'file' | 'folder' = 'file';
-        
-        try {
-          name = treeItem?.getItemName?.() || 'Unknown';
-        } catch {
-          name = 'Unknown';
-        }
-        
-        try {
-          type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
-        } catch {
-          type = 'file';
-        }
-        
-        return { id, name, type };
-      }).filter(item => item.name !== 'Unknown'); // Filter out invalid items
+
+          try {
+            type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
+          } catch {
+            type = 'file';
+          }
+
+          return { id, name, type };
+        })
+        .filter(item => item.name !== 'Unknown'); // Filter out invalid items
     } catch (error) {
-      console.warn('Error in getBatchOperationItems:', error);
+      // Error in getBatchOperationItems - return empty array
       return [];
     }
   };
 
   const handleDelete = () => {
     if (selectedItems.length === 0) return;
-    
+
     // Always show the modal for confirmation (both single and multiple items)
     setShowBatchModal(true);
   };
@@ -251,7 +323,7 @@ export function WorkspaceToolbar({
   const getTargetFolderName = () => {
     const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
     const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
-    
+
     if (selectedFolders.length === 1) {
       return selectedFolders[0]?.getItemName?.() || 'Selected Folder';
     } else if (selectedFolders.length > 1) {
@@ -262,15 +334,44 @@ export function WorkspaceToolbar({
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
-      className={`${className}`}>
+      className={`${className}`}
+    >
       {/* Main toolbar */}
       <div className='workspace-toolbar-main'>
         {/* Left side - Main actions */}
         <div className='workspace-toolbar-left'>
+          {/* Selection mode toggle - show for all users */}
+          <div className='flex items-center mr-3'>
+            <label className='flex items-center cursor-pointer'>
+              <input
+                type='checkbox'
+                checked={isSelectionMode}
+                onChange={handleToggleSelectionMode}
+                className='sr-only'
+              />
+              <Button
+                size='sm'
+                variant={isSelectionMode ? 'default' : 'ghost'}
+                onClick={handleToggleSelectionMode}
+                className='flex items-center'
+                type='button'
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className='h-4 w-4 mr-2' />
+                ) : (
+                  <Square className='h-4 w-4 mr-2' />
+                )}
+                <span>
+                  {isMobile ? (isSelectionMode ? 'Exit' : 'Select') : 'Select'}
+                </span>
+              </Button>
+            </label>
+          </div>
+
           {/* Create folder */}
           {isCreatingFolder ? (
             <div className='workspace-folder-creation'>
@@ -279,8 +380,8 @@ export function WorkspaceToolbar({
                   type='text'
                   placeholder='Folder name'
                   value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  onKeyDown={(e) => {
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => {
                     if (e.key === 'Enter') {
                       handleCreateFolder();
                     } else if (e.key === 'Escape') {
@@ -294,7 +395,9 @@ export function WorkspaceToolbar({
                 <Button
                   size='sm'
                   onClick={handleCreateFolder}
-                  disabled={!newFolderName.trim() || createFolderMutation.isPending}
+                  disabled={
+                    !newFolderName.trim() || createFolderMutation.isPending
+                  }
                 >
                   Create
                 </Button>
@@ -309,7 +412,7 @@ export function WorkspaceToolbar({
                   Cancel
                 </Button>
               </div>
-              <span className="text-xs text-muted-foreground">
+              <span className='text-xs text-muted-foreground'>
                 Creating in: {getTargetFolderName()}
               </span>
             </div>
@@ -333,7 +436,7 @@ export function WorkspaceToolbar({
               type='text'
               placeholder='Search files and folders...'
               value={searchQuery}
-              onChange={(e) => setSearchQuery?.(e.target.value)}
+              onChange={e => setSearchQuery?.(e.target.value)}
               className='h-8 w-full pl-8'
             />
             <Search className='absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
@@ -360,35 +463,52 @@ export function WorkspaceToolbar({
         </div>
       </div>
 
-      {/* Mini-actions toolbar - shows when items are selected */}
-      {selectedItems.length > 0 && (
-        <div className="flex items-center justify-between px-6 py-2 bg-blue-50 border-b border-[var(--neutral-200)]">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-blue-700">
-              {selectedItems.length} item{selectedItems.length > 1 ? 's' : ''} selected
+      {/* Mini-actions toolbar - shows when items are selected or in selection mode */}
+      {(selectedItems.length > 0 || (isMobile && isSelectionMode)) && (
+        <div className='flex items-center justify-between px-6 py-2 bg-tertiary/10 dark:bg-primary/10 border-b border-neutral-200 dark:border-border'>
+          <div className='flex items-center gap-3'>
+            <span className='text-sm font-medium text-tertiary dark:text-primary'>
+              {selectedItems.length > 0 ? (
+                <>
+                  {selectedItems.length} item
+                  {selectedItems.length > 1 ? 's' : ''} selected
+                </>
+              ) : (
+                'Tap items to select'
+              )}
             </span>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={handleDelete}
-              disabled={batchDeleteMutation.isPending}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
+
+          <div className='flex items-center gap-2'>
+            {selectedItems.length > 0 && (
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-8 px-3 text-destructive hover:text-destructive/90 hover:bg-destructive/10'
+                onClick={handleDelete}
+                disabled={batchDeleteMutation.isPending}
+              >
+                <Trash2 className='h-4 w-4 mr-2' />
+                Delete
+              </Button>
+            )}
 
             <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-3"
-              onClick={onClearSelection}
+              size='sm'
+              variant='ghost'
+              className='h-8 px-3'
+              onClick={() => {
+                onClearSelection?.();
+                // Exit selection mode on mobile when clearing
+                if (isMobile && isSelectionMode) {
+                  handleToggleSelectionMode();
+                }
+              }}
             >
-              <X className="h-4 w-4 mr-2" />
-              Clear
+              <X className='h-4 w-4 mr-2' />
+              {isMobile && isSelectionMode && selectedItems.length === 0
+                ? 'Cancel'
+                : 'Clear'}
             </Button>
           </div>
         </div>
@@ -401,7 +521,7 @@ export function WorkspaceToolbar({
           setShowBatchModal(false);
           setBatchProgress(undefined);
         }}
-        operation="delete"
+        operation='delete'
         items={getBatchOperationItems()}
         onConfirm={handleBatchDeleteConfirm}
         progress={batchProgress}

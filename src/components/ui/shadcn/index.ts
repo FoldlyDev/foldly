@@ -49,6 +49,7 @@ export {
   ChartLegendContent,
   type ChartConfig,
 } from './chart';
+export { Checkbox } from './checkbox';
 
 export {
   Collapsible,
@@ -241,7 +242,13 @@ export {
   TableHeader,
   TableRow,
 } from './table';
-
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { Textarea } from './textarea';
 export { Toggle, toggleVariants } from './toggle';
 export { ToggleGroup, ToggleGroupItem } from './toggle-group';
+export {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './tooltip';

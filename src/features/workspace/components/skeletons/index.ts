@@ -1,1 +1,6 @@
-export { WorkspaceSkeleton, WorkspaceHeaderSkeleton, WorkspaceToolbarSkeleton, WorkspaceTreeSkeleton } from './workspace-skeleton';
+export {
+  WorkspaceSkeleton,
+  WorkspaceHeaderSkeleton,
+  WorkspaceToolbarSkeleton,
+  WorkspaceTreeSkeleton,
+} from './workspace-skeleton';

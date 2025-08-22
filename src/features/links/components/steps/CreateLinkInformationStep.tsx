@@ -9,7 +9,7 @@ import {
   type CreateLinkFormData,
 } from '../../hooks/use-create-link-form';
 import { LinkCreationForm } from '../sections/LinkCreationForm';
-import { CreateLinkFormButtons } from '@/components/ui/create-link-form-buttons';
+import { CreateLinkFormButtons } from '@/components/core/create-link-form-buttons';
 import { LINK_TYPE_LABELS, FORM_DEFAULTS } from '../../lib/constants';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
@@ -23,13 +23,15 @@ import { useLinksQuery } from '../../hooks/react-query/use-links-query';
  */
 export const CreateLinkInformationStep = () => {
   const { user } = useUser();
-  
+
   // Get user's links to find their base link slug
   const { data: links } = useLinksQuery();
-  
+
   // Find the user's base link slug
   const userBaseSlug = useMemo(() => {
-    const baseLink = links?.find(link => link.linkType === 'base' && !link.topic);
+    const baseLink = links?.find(
+      link => link.linkType === 'base' && !link.topic
+    );
     return baseLink?.slug || user?.username?.toLowerCase() || 'username';
   }, [links, user?.username]);
 
@@ -40,26 +42,20 @@ export const CreateLinkInformationStep = () => {
     createLinkFormSelectors.isSubmitting
   );
   const canGoNext = useCreateLinkFormStore(createLinkFormSelectors.canProceed);
-  
+
   // Add slug validation for base links
-  const slugValidation = useSlugValidation(
-    formData.slug || '', 
-    { 
-      enabled: linkType === 'base',
-      debounceMs: 500 
-    }
-  );
+  const slugValidation = useSlugValidation(formData.slug || '', {
+    enabled: linkType === 'base',
+    debounceMs: 500,
+  });
 
   // Add topic validation for topic links
-  const topicValidation = useTopicValidation(
-    formData.topic || '',
-    {
-      enabled: linkType === 'custom' || linkType === 'generated',
-      ...(user?.id && { userId: user.id }),
-      slug: userBaseSlug,
-      debounceMs: 500
-    }
-  );
+  const topicValidation = useTopicValidation(formData.topic || '', {
+    enabled: linkType === 'custom' || linkType === 'generated',
+    ...(user?.id && { userId: user.id }),
+    slug: userBaseSlug,
+    debounceMs: 500,
+  });
 
   // Form actions
   const updateFormField = useCreateLinkFormStore(
@@ -81,13 +77,11 @@ export const CreateLinkInformationStep = () => {
       requireEmail: formData.requireEmail,
       requirePassword: formData.requirePassword,
       password: formData.password || '', // Convert undefined to empty string
-      isPublic: formData.isPublic,
       maxFiles: formData.maxFiles,
       maxFileSize: formData.maxFileSize,
       allowedFileTypes: formData.allowedFileTypes,
       ...(formData.expiresAt && { expiresAt: new Date(formData.expiresAt) }),
-      brandEnabled: formData.brandEnabled,
-      ...(formData.brandColor && { brandColor: formData.brandColor }),
+      branding: formData.branding || { enabled: false },
 
       // Additional field for UI (now included in CreateLinkFormData)
       isActive: formData.isActive,
@@ -104,7 +98,6 @@ export const CreateLinkInformationStep = () => {
   // Handle form changes with proper typing
   const handleFormChange = useCallback(
     (updates: Record<string, any>) => {
-
       // Convert updates to CreateLinkFormData format
       const convertedUpdates: Partial<typeof formData> = {};
 
@@ -158,10 +151,6 @@ export const CreateLinkInformationStep = () => {
         );
       }
 
-      if (updates.isPublic !== undefined) {
-        convertedUpdates.isPublic = Boolean(updates.isPublic);
-      }
-
       if (updates.isActive !== undefined) {
         convertedUpdates.isActive = Boolean(updates.isActive);
       }
@@ -189,14 +178,9 @@ export const CreateLinkInformationStep = () => {
         convertedUpdates.expiresAt = updates.expiresAt;
       }
 
-      if (updates.brandEnabled !== undefined) {
-        convertedUpdates.brandEnabled = Boolean(updates.brandEnabled);
+      if (updates.branding !== undefined) {
+        convertedUpdates.branding = updates.branding;
       }
-
-      if (updates.brandColor !== undefined) {
-        convertedUpdates.brandColor = String(updates.brandColor);
-      }
-
 
       // Update form fields individually since updateMultipleFields doesn't exist
       Object.entries(convertedUpdates).forEach(([field, value]) => {
@@ -210,12 +194,15 @@ export const CreateLinkInformationStep = () => {
   const canProceedToNext = useMemo(() => {
     // Basic form validation
     if (!canGoNext) return false;
-    
+
     // Password validation - if password protection is enabled, password must be 8+ characters
-    if (formData.requirePassword && (!formData.password || formData.password.length < 8)) {
+    if (
+      formData.requirePassword &&
+      (!formData.password || formData.password.length < 8)
+    ) {
       return false;
     }
-    
+
     // For base links, also check slug validation
     if (linkType === 'base') {
       // If slug is provided, it must be available
@@ -225,7 +212,7 @@ export const CreateLinkInformationStep = () => {
       // If no slug provided, it's OK (will use username)
       return true;
     }
-    
+
     // For topic links, check topic validation
     if (linkType === 'custom' || linkType === 'generated') {
       // If topic is provided, it must be available
@@ -235,11 +222,20 @@ export const CreateLinkInformationStep = () => {
       // Topic is required for topic links
       return false;
     }
-    
+
     return true;
-  }, [canGoNext, linkType, formData.slug, formData.topic, formData.requirePassword, formData.password,
-      slugValidation.isAvailable, slugValidation.isChecking,
-      topicValidation.isAvailable, topicValidation.isChecking]);
+  }, [
+    canGoNext,
+    linkType,
+    formData.slug,
+    formData.topic,
+    formData.requirePassword,
+    formData.password,
+    slugValidation.isAvailable,
+    slugValidation.isChecking,
+    topicValidation.isAvailable,
+    topicValidation.isChecking,
+  ]);
 
   // Handle next step
   const handleNext = useCallback(() => {

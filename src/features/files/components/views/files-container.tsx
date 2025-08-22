@@ -4,7 +4,7 @@
 
 'use client';
 
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Grid3X3,
@@ -36,6 +36,8 @@ import FileCard from '../cards/FileCard';
 import FolderCard from '../cards/FolderCard';
 import EmptyFilesState from './EmptyFilesState';
 import TwoPanelFilesView from './TwoPanelFilesView';
+import { FadeTransitionWrapper } from '@/components/feedback';
+import { FilesSkeleton } from '../skeletons/files-skeleton';
 import {
   VIEW_MODE,
   SORT_BY,
@@ -180,214 +182,11 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
     );
   }
 
-  return (
-    <div className={cn('h-full flex flex-col', className)}>
-      {/* Header with controls */}
-      <div className='flex flex-col gap-4 mb-6'>
-        {/* Top row - Title and actions */}
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <h1 className='text-2xl font-semibold'>
-              {currentFolderId ? 'Folder Contents' : 'My Files'}
-            </h1>
-            <Badge variant='secondary'>
-              {stats.totalFiles} files, {stats.totalFolders} folders
-            </Badge>
-            {selection.hasSelection && (
-              <Badge variant='outline'>
-                {selection.totalSelected} selected
-              </Badge>
-            )}
-          </div>
-
-          <div className='flex items-center gap-2'>
-            {selection.hasSelection && (
-              <>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={openBulkActionsModal}
-                >
-                  Bulk Actions
-                </Button>
-                <Button variant='ghost' size='sm' onClick={clearSelection}>
-                  Clear Selection
-                </Button>
-                <Separator orientation='vertical' className='h-6' />
-              </>
-            )}
-
-            <Button variant='outline' size='sm' onClick={openCreateFolderModal}>
-              <FolderPlus className='w-4 h-4 mr-2' />
-              New Folder
-            </Button>
-            <Button variant='outline' size='sm' onClick={openUploadModal}>
-              <Upload className='w-4 h-4 mr-2' />
-              Upload
-            </Button>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={toggleMultiSelectMode}
-              className={selection.isMultiSelectMode ? 'bg-blue-100' : ''}
-            >
-              <Grid3X3 className='w-4 h-4' />
-            </Button>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
-              <RefreshCw
-                className={cn('w-4 h-4', isLoading && 'animate-spin')}
-              />
-            </Button>
-          </div>
-        </div>
-
-        {/* Second row - Search, filters, and view controls */}
-        <div className='flex items-center gap-4'>
-          {/* Search */}
-          <div className='relative flex-1 max-w-md'>
-            <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400' />
-            <Input
-              placeholder='Search files and folders...'
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className='pl-9'
-            />
-          </div>
-
-          {/* Filters */}
-          <Select
-            value={filters.status}
-            onValueChange={handleFilterStatusChange}
-          >
-            <SelectTrigger className='w-32'>
-              <SelectValue placeholder='Status' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={FILTER_STATUS.ALL}>All Status</SelectItem>
-              <SelectItem value={FILTER_STATUS.ACTIVE}>Active</SelectItem>
-              <SelectItem value={FILTER_STATUS.PROCESSING}>
-                Processing
-              </SelectItem>
-              <SelectItem value={FILTER_STATUS.ERROR}>Error</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={filters.type} onValueChange={handleFilterTypeChange}>
-            <SelectTrigger className='w-32'>
-              <SelectValue placeholder='Type' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={FILTER_TYPE.ALL}>All Types</SelectItem>
-              <SelectItem value={FILTER_TYPE.FILES}>Files</SelectItem>
-              <SelectItem value={FILTER_TYPE.FOLDERS}>Folders</SelectItem>
-              <SelectItem value={FILTER_TYPE.IMAGES}>Images</SelectItem>
-              <SelectItem value={FILTER_TYPE.DOCUMENTS}>Documents</SelectItem>
-              <SelectItem value={FILTER_TYPE.VIDEOS}>Videos</SelectItem>
-              <SelectItem value={FILTER_TYPE.AUDIO}>Audio</SelectItem>
-            </SelectContent>
-          </Select>
-
-          {/* Sort */}
-          <div className='flex items-center gap-1'>
-            <Select value={sorting.sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className='w-32'>
-                <SelectValue placeholder='Sort by' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SORT_BY.NAME}>Name</SelectItem>
-                <SelectItem value={SORT_BY.SIZE}>Size</SelectItem>
-                <SelectItem value={SORT_BY.TYPE}>Type</SelectItem>
-                <SelectItem value={SORT_BY.CREATED_AT}>Created</SelectItem>
-                <SelectItem value={SORT_BY.UPDATED_AT}>Modified</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={handleSortOrderToggle}
-              className='p-2'
-            >
-              {sorting.sortOrder === SORT_ORDER.ASC ? (
-                <SortAsc className='w-4 h-4' />
-              ) : (
-                <SortDesc className='w-4 h-4' />
-              )}
-            </Button>
-          </div>
-
-          {/* View mode toggles */}
-          <div className='flex items-center border rounded-lg p-1'>
-            <Button
-              variant={viewMode === VIEW_MODE.GRID ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleViewModeChange(VIEW_MODE.GRID)}
-              className='p-2'
-            >
-              <Grid3X3 className='w-4 h-4' />
-            </Button>
-            <Button
-              variant={viewMode === VIEW_MODE.CARD ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleViewModeChange(VIEW_MODE.CARD)}
-              className='p-2'
-            >
-              <LayoutGrid className='w-4 h-4' />
-            </Button>
-            <Button
-              variant={viewMode === VIEW_MODE.LIST ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => handleViewModeChange(VIEW_MODE.LIST)}
-              className='p-2'
-            >
-              <List className='w-4 h-4' />
-            </Button>
-          </div>
-
-          {/* Panel mode toggle */}
-          <div className='flex items-center border rounded-lg p-1 ml-2'>
-            <Button
-              variant={panelMode === 'single' ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => setPanelMode('single')}
-              className='p-2 text-xs'
-              title='Single Panel View'
-            >
-              Single
-            </Button>
-            <Button
-              variant={panelMode === 'dual' ? 'default' : 'ghost'}
-              size='sm'
-              onClick={() => setPanelMode('dual')}
-              className='p-2 text-xs'
-              title='Dual Panel View'
-            >
-              Dual
-            </Button>
-          </div>
-
-          {/* Clear filters */}
-          {filters.hasActiveFilters && (
-            <Button
-              variant='ghost'
-              size='sm'
-              onClick={clearFilters}
-              className='text-red-600 hover:text-red-700'
-            >
-              <Filter className='w-4 h-4 mr-2' />
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Error state */}
-      {error && (
-        <div className='flex items-center justify-center p-8 text-red-600'>
+  // Show error state without loading
+  if (error && !isLoading) {
+    return (
+      <div className={cn('h-full flex flex-col', className)}>
+        <div className='flex items-center justify-center p-8 text-red-600 h-full'>
           <div className='text-center'>
             <p className='text-lg font-medium'>Error loading files</p>
             <p className='text-sm text-red-500 mt-1'>{error}</p>
@@ -401,84 +200,294 @@ const FilesContainer = memo(({ className }: FilesContainerProps) => {
             </Button>
           </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* Loading state */}
-      {isLoading && (
-        <div className='flex items-center justify-center p-8'>
-          <div className='flex items-center gap-3 text-gray-600'>
-            <RefreshCw className='w-5 h-5 animate-spin' />
-            <span>Loading files...</span>
-          </div>
-        </div>
-      )}
-
-      {/* No results state */}
-      {!isLoading && !error && totalItems === 0 && filters.hasActiveFilters && (
-        <div className='flex items-center justify-center p-8 text-gray-500'>
-          <div className='text-center'>
-            <Search className='w-12 h-12 mx-auto mb-4 text-gray-300' />
-            <p className='text-lg font-medium'>No files found</p>
-            <p className='text-sm mt-1'>Try adjusting your search or filters</p>
-            <Button
-              variant='outline'
-              size='sm'
-              onClick={clearFilters}
-              className='mt-4'
-            >
-              Clear Filters
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Main Content - Conditional rendering based on panel mode */}
-      {!isLoading && !error && (
-        <>
-          {/* Dual Panel View */}
-          {panelMode === 'dual' ? (
-            <div className='flex-1'>
-              <TwoPanelFilesView />
+  return (
+    <FadeTransitionWrapper
+      isLoading={isLoading}
+      loadingComponent={<FilesSkeleton />}
+      duration={300}
+      className={cn('h-full flex flex-col', className)}
+    >
+      <div className={cn('h-full flex flex-col', className)}>
+        {/* Header with controls */}
+        <div className='flex flex-col gap-4 mb-6'>
+          {/* Top row - Title and actions */}
+          <div className='flex items-center justify-between'>
+            <div className='flex items-center gap-3'>
+              <h1 className='text-2xl font-semibold'>
+                {currentFolderId ? 'Folder Contents' : 'My Files'}
+              </h1>
+              <Badge variant='secondary'>
+                {stats.totalFiles} files, {stats.totalFolders} folders
+              </Badge>
+              {selection.hasSelection && (
+                <Badge variant='outline'>
+                  {selection.totalSelected} selected
+                </Badge>
+              )}
             </div>
-          ) : /* Single Panel View - Traditional Files Grid */
-          totalItems > 0 ? (
-            <motion.div
-              variants={containerVariants}
-              initial='hidden'
-              animate='visible'
-              className={cn('flex-1 overflow-auto', gridClasses)}
-            >
-              {/* Folders first */}
-              <AnimatePresence mode='popLayout'>
-                {folders.map((folder, index) => (
-                  <FolderCard
-                    key={folder.id}
-                    folderId={folder.id}
-                    view={viewMode}
-                    index={index}
-                  />
-                ))}
-              </AnimatePresence>
 
-              {/* Then files */}
-              <AnimatePresence mode='popLayout'>
-                {files.map((file, index) => (
-                  <FileCard
-                    key={file.id}
-                    fileId={file.id}
-                    view={viewMode}
-                    index={folders.length + index}
-                  />
-                ))}
-              </AnimatePresence>
-            </motion.div>
-          ) : (
-            /* Empty state for single panel */
-            <EmptyFilesState />
-          )}
-        </>
-      )}
-    </div>
+            <div className='flex items-center gap-2'>
+              {selection.hasSelection && (
+                <>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={openBulkActionsModal}
+                  >
+                    Bulk Actions
+                  </Button>
+                  <Button variant='ghost' size='sm' onClick={clearSelection}>
+                    Clear Selection
+                  </Button>
+                  <Separator orientation='vertical' className='h-6' />
+                </>
+              )}
+
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={openCreateFolderModal}
+              >
+                <FolderPlus className='w-4 h-4 mr-2' />
+                New Folder
+              </Button>
+              <Button variant='outline' size='sm' onClick={openUploadModal}>
+                <Upload className='w-4 h-4 mr-2' />
+                Upload
+              </Button>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={toggleMultiSelectMode}
+                className={selection.isMultiSelectMode ? 'bg-blue-100' : ''}
+              >
+                <Grid3X3 className='w-4 h-4' />
+              </Button>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={handleRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={cn('w-4 h-4', isLoading && 'animate-spin')}
+                />
+              </Button>
+            </div>
+          </div>
+
+          {/* Second row - Search, filters, and view controls */}
+          <div className='flex items-center gap-4'>
+            {/* Search */}
+            <div className='relative flex-1 max-w-md'>
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400' />
+              <Input
+                placeholder='Search files and folders...'
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className='pl-9'
+              />
+            </div>
+
+            {/* Filters */}
+            <Select
+              value={filters.status}
+              onValueChange={handleFilterStatusChange}
+            >
+              <SelectTrigger className='w-32'>
+                <SelectValue placeholder='Status' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_STATUS.ALL}>All Status</SelectItem>
+                <SelectItem value={FILTER_STATUS.ACTIVE}>Active</SelectItem>
+                <SelectItem value={FILTER_STATUS.PROCESSING}>
+                  Processing
+                </SelectItem>
+                <SelectItem value={FILTER_STATUS.ERROR}>Error</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={filters.type} onValueChange={handleFilterTypeChange}>
+              <SelectTrigger className='w-32'>
+                <SelectValue placeholder='Type' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={FILTER_TYPE.ALL}>All Types</SelectItem>
+                <SelectItem value={FILTER_TYPE.FILES}>Files</SelectItem>
+                <SelectItem value={FILTER_TYPE.FOLDERS}>Folders</SelectItem>
+                <SelectItem value={FILTER_TYPE.IMAGES}>Images</SelectItem>
+                <SelectItem value={FILTER_TYPE.DOCUMENTS}>Documents</SelectItem>
+                <SelectItem value={FILTER_TYPE.VIDEOS}>Videos</SelectItem>
+                <SelectItem value={FILTER_TYPE.AUDIO}>Audio</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Sort */}
+            <div className='flex items-center gap-1'>
+              <Select value={sorting.sortBy} onValueChange={handleSortChange}>
+                <SelectTrigger className='w-32'>
+                  <SelectValue placeholder='Sort by' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SORT_BY.NAME}>Name</SelectItem>
+                  <SelectItem value={SORT_BY.SIZE}>Size</SelectItem>
+                  <SelectItem value={SORT_BY.TYPE}>Type</SelectItem>
+                  <SelectItem value={SORT_BY.CREATED_AT}>Created</SelectItem>
+                  <SelectItem value={SORT_BY.UPDATED_AT}>Modified</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={handleSortOrderToggle}
+                className='p-2'
+              >
+                {sorting.sortOrder === SORT_ORDER.ASC ? (
+                  <SortAsc className='w-4 h-4' />
+                ) : (
+                  <SortDesc className='w-4 h-4' />
+                )}
+              </Button>
+            </div>
+
+            {/* View mode toggles */}
+            <div className='flex items-center border rounded-lg p-1'>
+              <Button
+                variant={viewMode === VIEW_MODE.GRID ? 'default' : 'ghost'}
+                size='sm'
+                onClick={() => handleViewModeChange(VIEW_MODE.GRID)}
+                className='p-2'
+              >
+                <Grid3X3 className='w-4 h-4' />
+              </Button>
+              <Button
+                variant={viewMode === VIEW_MODE.CARD ? 'default' : 'ghost'}
+                size='sm'
+                onClick={() => handleViewModeChange(VIEW_MODE.CARD)}
+                className='p-2'
+              >
+                <LayoutGrid className='w-4 h-4' />
+              </Button>
+              <Button
+                variant={viewMode === VIEW_MODE.LIST ? 'default' : 'ghost'}
+                size='sm'
+                onClick={() => handleViewModeChange(VIEW_MODE.LIST)}
+                className='p-2'
+              >
+                <List className='w-4 h-4' />
+              </Button>
+            </div>
+
+            {/* Panel mode toggle */}
+            <div className='flex items-center border rounded-lg p-1 ml-2'>
+              <Button
+                variant={panelMode === 'single' ? 'default' : 'ghost'}
+                size='sm'
+                onClick={() => setPanelMode('single')}
+                className='p-2 text-xs'
+                title='Single Panel View'
+              >
+                Single
+              </Button>
+              <Button
+                variant={panelMode === 'dual' ? 'default' : 'ghost'}
+                size='sm'
+                onClick={() => setPanelMode('dual')}
+                className='p-2 text-xs'
+                title='Dual Panel View'
+              >
+                Dual
+              </Button>
+            </div>
+
+            {/* Clear filters */}
+            {filters.hasActiveFilters && (
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={clearFilters}
+                className='text-red-600 hover:text-red-700'
+              >
+                <Filter className='w-4 h-4 mr-2' />
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* No results state */}
+        {totalItems === 0 && filters.hasActiveFilters && (
+          <div className='flex items-center justify-center p-8 text-gray-500'>
+            <div className='text-center'>
+              <Search className='w-12 h-12 mx-auto mb-4 text-gray-300' />
+              <p className='text-lg font-medium'>No files found</p>
+              <p className='text-sm mt-1'>
+                Try adjusting your search or filters
+              </p>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={clearFilters}
+                className='mt-4'
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content - Conditional rendering based on panel mode */}
+        {totalItems > 0 && (
+          <>
+            {/* Dual Panel View */}
+            {panelMode === 'dual' ? (
+              <div className='flex-1'>
+                <TwoPanelFilesView />
+              </div>
+            ) : /* Single Panel View - Traditional Files Grid */
+            totalItems > 0 ? (
+              <motion.div
+                variants={containerVariants}
+                initial='hidden'
+                animate='visible'
+                className={cn('flex-1 overflow-auto', gridClasses)}
+              >
+                {/* Folders first */}
+                <AnimatePresence mode='popLayout'>
+                  {folders.map((folder, index) => (
+                    <FolderCard
+                      key={folder.id}
+                      folderId={folder.id}
+                      view={viewMode}
+                      index={index}
+                    />
+                  ))}
+                </AnimatePresence>
+
+                {/* Then files */}
+                <AnimatePresence mode='popLayout'>
+                  {files.map((file, index) => (
+                    <FileCard
+                      key={file.id}
+                      fileId={file.id}
+                      view={viewMode}
+                      index={folders.length + index}
+                    />
+                  ))}
+                </AnimatePresence>
+              </motion.div>
+            ) : (
+              /* Empty state for single panel */
+              <EmptyFilesState />
+            )}
+          </>
+        )}
+      </div>
+    </FadeTransitionWrapper>
   );
 });
 

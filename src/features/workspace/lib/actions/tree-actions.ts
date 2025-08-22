@@ -2,11 +2,11 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
-import { WorkspaceService } from '@/lib/services/workspace';
-import { FileService } from '@/lib/services/shared/file-service';
-import { FolderService } from '@/lib/services/shared/folder-service';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { FileService } from '@/features/files/lib/services/file-service';
+import { FolderService } from '@/features/files/lib/services/folder-service';
+import { logger } from '@/lib/services/logging/logger';
 
-const workspaceService = new WorkspaceService();
 const fileService = new FileService();
 const folderService = new FolderService();
 
@@ -52,7 +52,7 @@ export async function fetchWorkspaceTreeAction(): Promise<ActionResult> {
       },
     };
   } catch (error) {
-    console.error('Failed to get workspace tree:', error);
+    logger.error('Failed to get workspace tree', error);
     return { success: false, error: 'Failed to get workspace tree' };
   }
 }
@@ -65,6 +65,11 @@ export async function moveItemAction(
   targetId: string
 ): Promise<ActionResult> {
   try {
+    console.log('🚚 [moveItemAction] Called with:', {
+      itemId: itemId.slice(0, 8),
+      targetId: targetId.slice(0, 8)
+    });
+    
     const { userId } = await auth();
     if (!userId) {
       return { success: false, error: 'Unauthorized' };
@@ -78,6 +83,12 @@ export async function moveItemAction(
 
     // If target is workspace ID, set parent to null (workspace root)
     const newParentId = targetId === workspace.id ? null : targetId;
+    
+    console.log('🚚 [moveItemAction] Parent resolution:', {
+      targetId: targetId.slice(0, 8),
+      workspaceId: workspace.id.slice(0, 8),
+      newParentId: newParentId ? newParentId.slice(0, 8) : 'null (root)'
+    });
 
     // Try to move as file first, then as folder
     const fileMove = await fileService.moveFile(itemId, newParentId);
@@ -94,7 +105,7 @@ export async function moveItemAction(
 
     return { success: false, error: 'Item not found' };
   } catch (error) {
-    console.error('Failed to move item:', error);
+    logger.error('Failed to move item', error);
     return { success: false, error: 'Failed to move item' };
   }
 }
@@ -107,6 +118,12 @@ export async function updateItemOrderAction(
   orderedChildIds: string[]
 ): Promise<ActionResult> {
   try {
+    console.log('📊 [updateItemOrderAction] Called with:', {
+      parentId: parentId.slice(0, 8),
+      childCount: orderedChildIds.length,
+      childIds: orderedChildIds.map(id => id.slice(0, 8))
+    });
+    
     const { userId } = await auth();
     if (!userId) {
       return { success: false, error: 'Unauthorized' };
@@ -118,45 +135,68 @@ export async function updateItemOrderAction(
       return { success: false, error: 'Workspace not found' };
     }
 
-    // Get current files and folders to distinguish between them
+    // Determine the actual parent folder ID (null for workspace root)
+    const actualParentId = parentId === workspace.id ? null : parentId;
+    
+    console.log('📊 [updateItemOrderAction] Parent resolution:', {
+      parentId: parentId.slice(0, 8),
+      workspaceId: workspace.id.slice(0, 8),
+      actualParentId: actualParentId ? actualParentId.slice(0, 8) : 'null (root)',
+    });
+
+    // Get current files and folders for this specific parent
     const [foldersResult, filesResult] = await Promise.all([
-      folderService.getFoldersByWorkspace(workspace.id),
-      fileService.getFilesByWorkspace(workspace.id),
+      folderService.getFoldersByParent(actualParentId, workspace.id),
+      actualParentId 
+        ? fileService.getFilesByFolder(actualParentId)
+        : fileService.getRootFilesByWorkspace(workspace.id),
     ]);
 
     if (!foldersResult.success || !filesResult.success) {
-      return { success: false, error: 'Failed to fetch workspace data' };
+      return { success: false, error: 'Failed to fetch parent items' };
     }
 
-    const folderIds = new Set(foldersResult.data?.map(f => f.id) || []);
-    const fileIds = new Set(filesResult.data?.map(f => f.id) || []);
+    const folders = foldersResult.data || [];
+    const files = filesResult.data || [];
+    const folderIds = new Set(folders.map(f => f.id));
+    const fileIds = new Set(files.map(f => f.id));
+    
+    console.log('📊 [updateItemOrderAction] Found items:', {
+      folders: folderIds.size,
+      files: fileIds.size,
+      requestedToUpdate: orderedChildIds.length
+    });
 
-    // Separate files and folders, then update their sortOrder
+    // Update sortOrder for ALL items provided in their new order
+    // The tree sends us the complete new order for all children
     const updates = orderedChildIds.map(async (id, index) => {
       if (folderIds.has(id)) {
+        console.log(`  📁 Updating folder ${id.slice(0, 8)} sortOrder to ${index}`);
         return folderService.updateFolder(id, { sortOrder: index });
       } else if (fileIds.has(id)) {
+        console.log(`  📄 Updating file ${id.slice(0, 8)} sortOrder to ${index}`);
         return fileService.updateFile(id, { sortOrder: index });
       } else {
-        console.warn(`Item ${id} not found in workspace`);
-        return { success: false, error: `Item ${id} not found` };
+        // Skip items that don't belong to this parent (they might be from other folders during multi-select)
+        console.warn(`  ⚠️ Item ${id.slice(0, 8)} not found in parent - skipping`);
+        return { success: true }; // Not an error, just skip it
       }
     });
 
     const results = await Promise.all(updates);
-    
+
     // Check if any updates failed
     const failedUpdates = results.filter(result => !result.success);
     if (failedUpdates.length > 0) {
-      console.error('Some updates failed:', failedUpdates);
+      logger.error('Some sort order updates failed', undefined, { failedUpdates });
       return { success: false, error: 'Some items failed to update' };
     }
 
     revalidatePath('/dashboard/workspace');
-    
+
     return { success: true };
   } catch (error) {
-    console.error('Failed to update order:', error);
+    logger.error('Failed to update sort order', error);
     return { success: false, error: 'Failed to update order' };
   }
 }

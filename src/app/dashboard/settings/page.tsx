@@ -3,18 +3,9 @@ import { SettingsContainer } from '@/features/settings';
 
 export const metadata: Metadata = {
   title: 'Settings | Foldly',
-  description: 'Manage your account, privacy, and notification preferences',
+  description: 'Manage your account, profile, and security settings with Clerk',
 };
 
 export default function SettingsPage() {
-  // In a real app, you would fetch data here on the server
-  // const settingsData = await getSettingsData();
-
-  return (
-    <SettingsContainer
-    // initialData={settingsData}
-    // isLoading={false}
-    // error={null}
-    />
-  );
+  return <SettingsContainer />;
 }

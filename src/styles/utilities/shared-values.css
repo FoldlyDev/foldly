@@ -1,0 +1,90 @@
+/* =============================================================================
+   SHARED CSS VALUES - Common Patterns & Variables
+   ============================================================================= */
+
+:root {
+  /* =============================================================================
+     COMMON GRADIENTS
+     ============================================================================= */
+  
+  /* Status Gradients */
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-error: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  
+  /* Brand Gradients */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  --gradient-premium: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-multicolor: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+  
+  /* UI Gradients */
+  --gradient-modal-bg: linear-gradient(
+    to bottom right,
+    rgb(248 250 252),
+    rgb(238 242 255),
+    rgb(226 232 240)
+  );
+  
+  /* =============================================================================
+     COMMON BOX SHADOWS
+     ============================================================================= */
+  
+  /* Elevation Shadows */
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+  
+  /* Interactive Shadows */
+  --shadow-card-hover: 0 20px 40px -12px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.1);
+  --shadow-display-hover: 0 10px 25px -8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.05);
+  
+  /* Glow Shadows */
+  --shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.3);
+  --shadow-glow-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --shadow-glow-error: 0 0 20px rgba(239, 68, 68, 0.3);
+  --shadow-glow-primary: 0 0 20px rgba(59, 130, 246, 0.3);
+  
+  /* Focus Shadows */
+  --shadow-focus-sm: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  --shadow-focus-md: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 12px rgba(59, 130, 246, 0.15);
+  
+  /* =============================================================================
+     COMMON TRANSITIONS
+     ============================================================================= */
+  
+  /* Timing Functions */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.19, 1, 0.22, 1);
+  
+  /* Transition Durations */
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+  
+  /* Common Transitions */
+  --transition-all: all var(--duration-normal) var(--ease-default);
+  --transition-transform: transform var(--duration-normal) var(--ease-default);
+  --transition-colors: background-color var(--duration-normal) var(--ease-default), 
+                       color var(--duration-normal) var(--ease-default), 
+                       border-color var(--duration-normal) var(--ease-default);
+  --transition-shadow: box-shadow var(--duration-normal) var(--ease-default);
+  
+  /* Interactive Transitions */
+  --transition-bounce: all var(--duration-slow) var(--ease-bounce);
+  --transition-elastic: all var(--duration-slower) var(--ease-elastic);
+  --transition-smooth: all var(--duration-slower) var(--ease-smooth);
+}
+
+/* Dark mode shadow adjustments */
+.dark {
+  --shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+}

@@ -1,9 +1,14 @@
 // =============================================================================
-// SERVICES INDEX - Central Export Hub for All Services
+// CROSS-CUTTING SERVICES INDEX
 // =============================================================================
-// 🎯 Central location for importing all services organized by category
+// This file exports only cross-cutting services that are used across multiple features
+// Feature-specific services have been moved to their respective feature directories:
+// - Billing services: @/features/billing/lib/services
+// - Files services: @/features/files/lib/services
+// - Links services: @/features/links/lib/services
+// - Users services: @/features/users/lib/services
+// - Workspace services: @/features/workspace/lib/services
 
-// Re-export all service categories
-export * from './shared'; // FileService, FolderService - used across features
-export * from './user'; // UserDeletionService, UserWorkspaceService - user operations
-export * from './workspace'; // WorkspaceService - workspace operations
+// Cross-cutting services (used by multiple features)
+export * from './storage';
+export * from './logging/logger';

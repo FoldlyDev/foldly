@@ -4,6 +4,8 @@
  * Following 2025 best practices with proper typing and const assertions
  */
 
+import { DEFAULT_BASE_LINK_TITLE } from './base-link-defaults';
+
 /**
  * Link type display names and descriptions
  */
@@ -37,7 +39,6 @@ export const FORM_LABELS = {
   requireEmail: 'Require Email',
   requirePassword: 'Password Protection',
   password: 'Password',
-  isPublic: 'Public Access',
   maxFiles: 'Maximum Files',
   maxFileSize: 'Maximum File Size',
   allowedFileTypes: 'Allowed File Types',
@@ -111,8 +112,6 @@ export const STATUS_MESSAGES = {
   active: 'Active',
   paused: 'Paused',
   expired: 'Expired',
-  public: 'Public',
-  private: 'Private',
   loading: 'Loading...',
   creating: 'Creating...',
   updating: 'Updating...',
@@ -259,8 +258,6 @@ export const ACCESSIBILITY_LABELS = {
 export const HELP_TEXT = {
   requireEmail: 'Require uploaders to provide their email address',
   requirePassword: 'Protect your link with a password',
-  publicAccess: 'Anyone with the link can access it',
-  privateAccess: 'Only authorized users can access this link',
   autoCreateFolders: 'Automatically organize uploads by date',
   maxFiles: 'Maximum number of files that can be uploaded',
   maxFileSize: 'Maximum size for individual files',
@@ -316,7 +313,7 @@ export const ERROR_MESSAGES = {
  * Placeholder text for form fields
  */
 export const PLACEHOLDER_TEXT = {
-  linkName: 'My Collection',
+  linkName: DEFAULT_BASE_LINK_TITLE,
   topic: 'project-files',
   description: 'Upload your files here...',
   instructions: 'Please upload your files in the correct format...',

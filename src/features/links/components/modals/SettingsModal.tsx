@@ -3,20 +3,28 @@
 import React, { useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Save, Sliders } from 'lucide-react';
+import { Save, Sliders, Palette } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from '@/components/animate-ui/radix/dialog';
-import { ActionButton } from '@/components/ui/action-button';
+} from '@/components/ui/animate-ui/radix/dialog';
+import { Button } from '@/components/ui/shadcn/button';
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContents,
+  TabsContent,
+} from '@/components/ui/animate-ui/components/tabs';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { LinkSettingsForm } from '../sections/LinkSettingsForm';
+import { BrandingSettingsForm } from '../sections/BrandingSettingsForm';
 import {
   generalSettingsSchema,
   type GeneralSettingsFormData,
-} from '../../lib/validations';
+} from '../../lib/validations/forms';
 import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
@@ -40,16 +48,14 @@ export function SettingsModal() {
       topic: '',
       title: '',
       description: '',
-      isPublic: true,
       isActive: true,
       requireEmail: false,
       requirePassword: false,
       password: '',
       maxFiles: 100,
-      maxFileSize: 10,
+      maxFileSize: 5, // 5MB (Supabase deployment limit)
       allowedFileTypes: [],
-      brandEnabled: false,
-      brandColor: '',
+      branding: undefined,
       expiresAt: undefined,
     },
   });
@@ -65,26 +71,20 @@ export function SettingsModal() {
   const isSubmitting = updateLink.isPending;
 
   // Add slug validation for base links
-  const slugValidation = useSlugValidation(
-    watchedValues.slug || '', 
-    { 
-      enabled: link?.linkType === 'base',
-      ...(link?.id && { excludeId: link.id }),
-      debounceMs: 500 
-    }
-  );
+  const slugValidation = useSlugValidation(watchedValues.slug || '', {
+    enabled: link?.linkType === 'base',
+    ...(link?.id && { excludeId: link.id }),
+    debounceMs: 500,
+  });
 
   // Add topic validation for topic/custom links
-  const topicValidation = useTopicValidation(
-    watchedValues.topic || '',
-    {
-      enabled: link?.linkType === 'custom',
-      ...(link?.id && { excludeId: link.id }),
-      ...(link?.userId && { userId: link.userId }),
-      ...(link?.slug && { slug: link.slug }),
-      debounceMs: 500
-    }
-  );
+  const topicValidation = useTopicValidation(watchedValues.topic || '', {
+    enabled: link?.linkType === 'custom',
+    ...(link?.id && { excludeId: link.id }),
+    ...(link?.userId && { userId: link.userId }),
+    ...(link?.slug && { slug: link.slug }),
+    debounceMs: 500,
+  });
 
   // Enhanced validation that includes slug availability
   const canSubmit = useMemo(() => {
@@ -97,45 +97,63 @@ export function SettingsModal() {
       topic: watchedValues.topic,
       slugValidation: {
         isAvailable: slugValidation.isAvailable,
-        isChecking: slugValidation.isChecking
+        isChecking: slugValidation.isChecking,
       },
       topicValidation: {
         isAvailable: topicValidation.isAvailable,
-        isChecking: topicValidation.isChecking
-      }
+        isChecking: topicValidation.isChecking,
+      },
     });
-    
+
     if (!isDirty || !isValid || isSubmitting) return false;
-    
+
     // For base links, check slug validation if slug is provided
     if (link?.linkType === 'base') {
       // If slug is provided, it must be available
       if (watchedValues.slug) {
         const result = slugValidation.isAvailable && !slugValidation.isChecking;
-        console.log('🔧 SETTINGS MODAL: Base link with slug validation result:', result);
+        console.log(
+          '🔧 SETTINGS MODAL: Base link with slug validation result:',
+          result
+        );
         return result;
       }
       // If no slug (empty), it's valid (will use username)
       console.log('🔧 SETTINGS MODAL: Base link with empty slug - valid');
       return true;
     }
-    
+
     // For topic/custom links, check topic validation if topic is provided
     if (link?.linkType === 'custom') {
       // If topic is provided, it must be available
       if (watchedValues.topic) {
-        const result = topicValidation.isAvailable && !topicValidation.isChecking;
-        console.log('🔧 SETTINGS MODAL: Custom link with topic validation result:', result);
+        const result =
+          topicValidation.isAvailable && !topicValidation.isChecking;
+        console.log(
+          '🔧 SETTINGS MODAL: Custom link with topic validation result:',
+          result
+        );
         return result;
       }
       // Topic is required for custom links, so empty is not valid
       console.log('🔧 SETTINGS MODAL: Custom link with empty topic - invalid');
       return false;
     }
-    
+
     console.log('🔧 SETTINGS MODAL: Default case - valid');
     return true;
-  }, [isDirty, isValid, isSubmitting, link?.linkType, watchedValues.slug, slugValidation.isAvailable, slugValidation.isChecking, watchedValues.topic, topicValidation.isAvailable, topicValidation.isChecking]);
+  }, [
+    isDirty,
+    isValid,
+    isSubmitting,
+    link?.linkType,
+    watchedValues.slug,
+    slugValidation.isAvailable,
+    slugValidation.isChecking,
+    watchedValues.topic,
+    topicValidation.isAvailable,
+    topicValidation.isChecking,
+  ]);
 
   // Initialize form with real link data when modal opens
   // Following 2025 React Hook Form best practices for async data loading
@@ -150,16 +168,16 @@ export function SettingsModal() {
         topic: link.topic || '',
         title: link.title || '',
         description: link.description || '',
-        isPublic: link.isPublic,
         isActive: link.isActive,
         requireEmail: link.requireEmail,
         requirePassword: link.requirePassword,
-        password: link.passwordHash ? Buffer.from(link.passwordHash, 'base64').toString() : '', // Decode password for editing
+        password: link.passwordHash
+          ? Buffer.from(link.passwordHash, 'base64').toString()
+          : '', // Decode password for editing
         maxFiles: link.maxFiles,
         maxFileSize: Math.round(link.maxFileSize / (1024 * 1024)), // Convert bytes to MB
         allowedFileTypes: link.allowedFileTypes || [],
-        brandEnabled: link.brandEnabled,
-        brandColor: link.brandColor || '',
+        branding: link.branding || undefined,
         expiresAt: link.expiresAt ? new Date(link.expiresAt) : undefined,
       });
 
@@ -178,7 +196,6 @@ export function SettingsModal() {
         topic: data.topic || undefined,
         title: data.title || undefined,
         description: data.description || undefined,
-        isPublic: data.isPublic ?? true,
         isActive: data.isActive ?? true,
         requireEmail: data.requireEmail ?? false,
         requirePassword: data.requirePassword ?? false,
@@ -190,9 +207,7 @@ export function SettingsModal() {
           ? data.allowedFileTypes
           : undefined,
         expiresAt: data.expiresAt ? data.expiresAt.toISOString() : undefined,
-        brandEnabled: data.brandEnabled ?? false,
-        brandColor:
-          data.brandEnabled && data.brandColor ? data.brandColor : undefined,
+        branding: data.branding,
       };
 
       // Use React Query mutation with proper structure
@@ -224,100 +239,139 @@ export function SettingsModal() {
   return (
     <Dialog open={isOpen} onOpenChange={handleCancel}>
       <DialogContent
-        className='w-[calc(100vw-1rem)] max-w-sm sm:max-w-lg lg:max-w-4xl h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-4rem)] p-0 overflow-hidden'
-        from='right'
-        transition={{ type: 'spring', stiffness: 160, damping: 20 }}
+        className='w-[calc(100vw-2rem)] max-w-[95vw] sm:max-w-lg lg:max-w-4xl h-[90vh] sm:h-[85vh] md:h-[80vh] max-h-[90vh] p-0 overflow-hidden flex flex-col'
+        from='bottom'
+        transition={{ type: 'spring', stiffness: 180, damping: 25 }}
       >
         {/* Accessibility Labels */}
-        <DialogTitle className="sr-only">
+        <DialogTitle className='sr-only'>
           Link Settings: {link.title}
         </DialogTitle>
-        <DialogDescription className="sr-only">
-          Configure how "{link.title}" works for uploaders including privacy, security, and upload restrictions
+        <DialogDescription className='sr-only'>
+          Configure how "{link.title}" works for uploaders including privacy,
+          security, and upload restrictions
         </DialogDescription>
-        {/* Premium Header with Gradient Background */}
-        <div className="relative overflow-hidden modal-gradient-purple border-b border-gray-200/50">
-          {/* Decorative Background */}
-          <div className="modal-decoration-overlay" />
-          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-purple-400/10 to-transparent rounded-full -translate-y-32 -translate-x-32" />
-          
-          <div className="relative p-4 sm:p-6 pb-4">
-            <div className="text-center mb-4">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 sm:p-4 rounded-2xl modal-icon-purple">
-                  <Sliders className='w-6 h-6 sm:w-8 sm:h-8 text-white' />
-                </div>
+        {/* Modal Header */}
+        <div className='modal-header relative shrink-0'>
+          <div className='p-4 sm:p-6 lg:p-8'>
+            <div className='flex items-center gap-3 sm:gap-4'>
+              <div className='p-2 sm:p-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg'>
+                <Sliders className='w-5 h-5 sm:w-6 sm:h-6 text-primary-foreground' />
               </div>
-              <div className="text-center">
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold leading-normal modal-title-gradient-purple mb-2">
+              <div className='min-w-0 flex-1'>
+                <h1 className='text-lg sm:text-xl lg:text-2xl font-bold text-foreground truncate'>
                   Link Settings
                 </h1>
-                <div className="flex justify-center">
-                  <p className="text-sm sm:text-base text-gray-600 text-center max-w-md">
-                    Configure how "{link.title}" works for uploaders
-                  </p>
-                </div>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5 hidden sm:block'>
+                  Configure how "{link.title}" works for uploaders
+                </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Premium Form Content */}
-        <div className="p-4 sm:p-6 max-h-[65vh] sm:max-h-[70vh] overflow-y-auto pb-20 sm:pb-12">
-          <form onSubmit={handleSubmit(onSubmit)} className='space-y-6 max-w-2xl mx-auto'>
-          {/* General Settings Section */}
-          <LinkSettingsForm
-            link={{
-              ...link,
-              stats: {
-                fileCount: link.totalFiles || 0,
-                batchCount: 0,
-                folderCount: 0,
-                totalViewCount: 0,
-                uniqueViewCount: 0,
-                averageFileSize:
-                  link.totalFiles > 0
-                    ? (link.totalSize || 0) / link.totalFiles
-                    : 0,
-                storageUsedPercentage: 0,
-                isNearLimit: false,
-              },
-            }}
-            form={form}
-          />
+        {/* Content Area with Tabs */}
+        <div className='flex-1 overflow-hidden px-4 sm:px-6 lg:px-8 py-4'>
+          <Tabs defaultValue='general' className='h-full flex flex-col'>
+            <TabsList className='grid w-full grid-cols-2 mb-6'>
+              <TabsTrigger value='general'>
+                <Sliders className='w-4 h-4 mr-2' />
+                General Settings
+              </TabsTrigger>
+              <TabsTrigger value='branding'>
+                <Palette className='w-4 h-4 mr-2' />
+                Branding
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Premium Action Buttons */}
-            <div className='flex flex-col-reverse sm:flex-row gap-3 pt-6 border-t border-gray-200/50'>
-              <ActionButton
-                type='button'
-                variant='outline'
-                onClick={handleCancel}
-                disabled={isSubmitting}
-                className='flex-1 bg-white hover:bg-gray-50 border-gray-300 text-gray-700 transition-colors duration-200'
-              >
-                Cancel
-              </ActionButton>
+            <TabsContents className='flex-1 overflow-y-auto'>
+              <TabsContent value='general' className='h-full'>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className='space-y-6 max-w-2xl mx-auto pb-6'
+                >
+                  {/* General Settings Section */}
+                  <LinkSettingsForm
+                    link={{
+                      ...link,
+                      stats: {
+                        fileCount: link.totalFiles || 0,
+                        batchCount: 0,
+                        folderCount: 0,
+                        totalViewCount: 0,
+                        uniqueViewCount: 0,
+                        averageFileSize:
+                          link.totalFiles > 0
+                            ? (link.totalSize || 0) / link.totalFiles
+                            : 0,
+                        storageUsedPercentage: 0,
+                        isNearLimit: false,
+                      },
+                    }}
+                    form={form}
+                  />
+                </form>
+              </TabsContent>
 
-              <ActionButton
-                type='submit'
-                variant='default'
-                disabled={!canSubmit}
-                className='flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white border-0 shadow-lg transition-all duration-200 disabled:opacity-50'
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className='w-4 h-4' />
-                    Save Settings
-                  </>
-                )}
-              </ActionButton>
-            </div>
-          </form>
+              <TabsContent value='branding' className='h-full'>
+                <div className='max-w-2xl mx-auto pb-6'>
+                  <BrandingSettingsForm
+                    link={{
+                      ...link,
+                      stats: {
+                        fileCount: link.totalFiles || 0,
+                        batchCount: 0,
+                        folderCount: 0,
+                        totalViewCount: 0,
+                        uniqueViewCount: 0,
+                        averageFileSize:
+                          link.totalFiles > 0
+                            ? (link.totalSize || 0) / link.totalFiles
+                            : 0,
+                        storageUsedPercentage: 0,
+                        isNearLimit: false,
+                      },
+                    }}
+                    form={form}
+                  />
+                </div>
+              </TabsContent>
+            </TabsContents>
+          </Tabs>
+        </div>
+
+        {/* Modal Footer */}
+        <div className='modal-footer mt-auto p-4 sm:p-6 lg:p-8 shrink-0'>
+          <div className='flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3'>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={handleCancel}
+              disabled={isSubmitting}
+              className='w-full sm:w-auto min-w-0 sm:min-w-[100px] border-border hover:bg-muted/50 hover:border-border/80 transition-all duration-200'
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={handleSubmit(onSubmit)}
+              disabled={!canSubmit}
+              variant='outline'
+              className='w-full sm:w-auto min-w-0 sm:min-w-[140px] border-border hover:bg-muted/50 hover:border-border/80 transition-all duration-200'
+            >
+              {isSubmitting ? (
+                <>
+                  <div className='w-4 h-4 border-2 border-current/30 border-t-current rounded-full animate-spin' />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className='w-4 h-4' />
+                  <span>Save Settings</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

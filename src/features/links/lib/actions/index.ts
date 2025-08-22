@@ -7,7 +7,7 @@
 export { createLinkAction } from './create';
 
 // Fetch actions
-export { fetchLinksAction, fetchLinkByIdAction } from './fetch';
+export { fetchLinksAction, fetchLinkByIdAction, fetchLinkDetailsWithStatsAction } from './fetch';
 
 // Update actions
 export { updateLinkAction, updateLinkSettingsAction } from './update';
@@ -21,11 +21,20 @@ export { toggleLinkActiveAction } from './toggle';
 // Duplicate actions
 export { duplicateLinkAction } from './duplicate';
 
+// Generate link actions
+export { generateLinkFromFolderAction, checkFolderHasGeneratedLinkAction } from './generate-from-folder';
+
 // Validation actions
 export { checkSlugAvailabilityAction } from './check-slug-availability';
-export type { CheckSlugAvailabilityInput, SlugAvailabilityResult } from './check-slug-availability';
+export type {
+  CheckSlugAvailabilityInput,
+  SlugAvailabilityResult,
+} from './check-slug-availability';
 export { checkTopicAvailabilityAction } from './check-topic-availability';
-export type { CheckTopicAvailabilityInput, TopicAvailabilityResult } from './check-topic-availability';
+export type {
+  CheckTopicAvailabilityInput,
+  TopicAvailabilityResult,
+} from './check-topic-availability';
 
 // Shared utilities and types
 export type { AuditEntry } from './shared';

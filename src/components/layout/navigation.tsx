@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { LayoutDashboard } from 'lucide-react';
-import { ActionButton } from '@/components/ui/action-button';
+import { ActionButton } from '../../core/action-button';
 import { useScrollPosition } from '@/lib/hooks/use-scroll-position';
 import { cn } from '@/lib/utils/utils';
 

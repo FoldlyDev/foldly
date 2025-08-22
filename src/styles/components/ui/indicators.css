@@ -1,0 +1,72 @@
+/* =============================================================================
+   INDICATOR STYLES - Status, Progress, and Utility Components
+   ============================================================================= */
+
+/* Status indicators with glow effects */
+.status-active {
+  background: var(--gradient-success);
+  box-shadow: var(--shadow-glow-success);
+}
+
+.status-inactive {
+  background: var(--gradient-warning);
+  box-shadow: var(--shadow-glow-warning);
+}
+
+.status-error {
+  background: var(--gradient-error);
+  box-shadow: var(--shadow-glow-error);
+}
+
+/* Progress indicators */
+.premium-progress {
+  background: var(--gradient-multicolor);
+  height: 4px;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-progress::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Stats utilities */
+@utility stats-number {
+  background: var(--gradient-primary);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  @apply font-bold;
+}
+
+/* Micro-interactions for icons */
+.icon-hover {
+  transition: var(--transition-all);
+}
+
+.icon-hover:hover {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.3));
+}

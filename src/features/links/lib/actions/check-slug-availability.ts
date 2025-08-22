@@ -16,7 +16,9 @@ const checkSlugAvailabilitySchema = z.object({
   excludeId: z.string().uuid().optional(), // Exclude current link when editing
 });
 
-export type CheckSlugAvailabilityInput = z.infer<typeof checkSlugAvailabilitySchema>;
+export type CheckSlugAvailabilityInput = z.infer<
+  typeof checkSlugAvailabilitySchema
+>;
 
 export interface SlugAvailabilityResult {
   available: boolean;
@@ -38,7 +40,7 @@ export async function checkSlugAvailabilityAction(
     // 2. Validate input and normalize slug
     const validatedData = checkSlugAvailabilitySchema.parse(input);
     const { excludeId } = validatedData;
-    
+
     // Ensure slug is defined (schema validation should guarantee this)
     if (!validatedData.slug) {
       return {
@@ -46,13 +48,16 @@ export async function checkSlugAvailabilityAction(
         error: 'Slug is required for availability check',
       };
     }
-    
+
     const slug = normalizeSlug(validatedData.slug); // Normalize to lowercase
 
     // 3. Check if slug is globally available (base links must be globally unique)
     // Use getBySlugAndTopic to search globally across all users for base links
-    const existingLinkResult = await linksDbService.getBySlugAndTopic(slug, null);
-    
+    const existingLinkResult = await linksDbService.getBySlugAndTopic(
+      slug,
+      null
+    );
+
     if (!existingLinkResult.success) {
       return {
         success: false,
@@ -61,10 +66,11 @@ export async function checkSlugAvailabilityAction(
     }
 
     const conflictingLink = existingLinkResult.data;
-    
+
     // Check if there's a conflicting base link (excluding current one if editing)
-    const hasConflict = conflictingLink && 
-      conflictingLink.linkType === 'base' && 
+    const hasConflict =
+      conflictingLink &&
+      conflictingLink.linkType === 'base' &&
       (!excludeId || conflictingLink.id !== excludeId);
 
     if (hasConflict) {
@@ -80,14 +86,47 @@ export async function checkSlugAvailabilityAction(
 
     // 4. Check against reserved slugs
     const reservedSlugs = [
-      'api', 'app', 'www', 'admin', 'dashboard', 'settings', 'help', 'support',
-      'blog', 'about', 'contact', 'privacy', 'terms', 'login', 'signup',
-      'register', 'auth', 'oauth', 'callback', 'webhook', 'assets', 'static',
-      'public', 'upload', 'download', 'share', 'embed', 'widget', 'iframe',
-      'root', 'home', 'index', 'main', 'default', 'foldly', 'undefined', 'null'
+      'api',
+      'app',
+      'www',
+      'admin',
+      'dashboard',
+      'settings',
+      'help',
+      'support',
+      'blog',
+      'about',
+      'contact',
+      'privacy',
+      'terms',
+      'login',
+      'signup',
+      'register',
+      'auth',
+      'oauth',
+      'callback',
+      'webhook',
+      'assets',
+      'static',
+      'public',
+      'upload',
+      'download',
+      'share',
+      'embed',
+      'widget',
+      'iframe',
+      'root',
+      'home',
+      'index',
+      'main',
+      'default',
+      'foldly',
+      'undefined',
+      'null',
     ];
 
-    if (reservedSlugs.includes(slug)) { // slug is already normalized to lowercase
+    if (reservedSlugs.includes(slug)) {
+      // slug is already normalized to lowercase
       return {
         success: true,
         data: {
@@ -107,7 +146,6 @@ export async function checkSlugAvailabilityAction(
         message: 'This slug is available.',
       },
     };
-
   } catch (error) {
     console.error('Check slug availability error:', error);
 

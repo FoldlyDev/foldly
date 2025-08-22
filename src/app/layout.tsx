@@ -1,15 +1,10 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import {
-  ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from '@clerk/nextjs';
-import { QueryProvider } from '@/lib/providers/query-client-provider';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Toaster } from '@/components/ui/shadcn/sonner';
+import { PerformanceMonitor } from '@/components/performance/PerformanceMonitor';
+import PageTransition from '@/components/layout/page-transition';
+import { Providers } from './providers';
 import './globals.css';
 
 const geistSans = Geist({
@@ -80,15 +75,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang='en'>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <QueryProvider>{children}</QueryProvider>
+    <html lang='en' suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Providers>
+          <PageTransition>{children}</PageTransition>
           <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+          <SpeedInsights />
+          <PerformanceMonitor />
+        </Providers>
+      </body>
+    </html>
   );
 }

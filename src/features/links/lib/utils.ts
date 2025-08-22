@@ -3,7 +3,7 @@
  * Consolidated from utils/index.ts to resolve module resolution conflicts
  */
 
-import type { LinkWithStats, DatabaseId, LinkType } from '@/lib/supabase/types';
+import type { LinkWithStats, DatabaseId, LinkType } from '@/lib/database/types';
 
 // Re-export slug normalization utilities for convenience
 export {
@@ -42,7 +42,6 @@ export function createSeedLinks(): LinkWithStats[] {
       linkType: 'topic' as LinkType,
       title: 'Portfolio Submissions',
       description: 'Upload your portfolio files for review',
-      isPublic: true,
       isActive: true,
       requireEmail: false,
       requirePassword: false,
@@ -57,6 +56,8 @@ export function createSeedLinks(): LinkWithStats[] {
       totalFiles: 24,
       totalSize: 156789123,
       lastUploadAt: new Date('2024-01-15T10:30:00Z'),
+      storageUsed: 156789123,
+      storageLimit: 524288000,
       createdAt: new Date(),
       updatedAt: new Date(),
       stats: {
@@ -79,7 +80,6 @@ export function createSeedLinks(): LinkWithStats[] {
       linkType: 'topic' as LinkType,
       title: 'Feedback Forms',
       description: 'Upload feedback documents and forms',
-      isPublic: true,
       isActive: true,
       requireEmail: true,
       requirePassword: false,
@@ -94,6 +94,8 @@ export function createSeedLinks(): LinkWithStats[] {
       totalFiles: 12,
       totalSize: 45123456,
       lastUploadAt: new Date('2024-01-14T16:45:00Z'),
+      storageUsed: 45123456,
+      storageLimit: 524288000,
       createdAt: new Date(),
       updatedAt: new Date(),
       stats: {
@@ -175,9 +177,11 @@ export function generateUrlSlug(input: string): string {
  * Generates a complete URL preview for a topic link
  */
 export function generateTopicUrl(baseSlug: string, topic: string): string {
+  const { getDisplayDomain } = require('@/lib/config/url-config');
+  const domain = getDisplayDomain();
   const topicSlug = generateUrlSlug(topic);
-  if (!topicSlug) return `foldly.io/${baseSlug}`;
-  return `foldly.io/${baseSlug}/${topicSlug}`;
+  if (!topicSlug) return `${domain}/${baseSlug}`;
+  return `${domain}/${baseSlug}/${topicSlug}`;
 }
 
 /**

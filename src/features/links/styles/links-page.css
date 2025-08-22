@@ -1,7 +1,7 @@
 /* Links Page Custom Styles */
 
 .links-page {
-  background: linear-gradient(135deg, var(--neutral-50) 0%, white 100%);
+  background: transparent;
   min-height: 100vh;
 }
 

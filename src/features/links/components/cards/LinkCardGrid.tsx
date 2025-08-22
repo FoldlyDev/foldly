@@ -9,20 +9,16 @@ import {
   ExternalLink,
   AlertTriangle,
 } from 'lucide-react';
-import { Checkbox } from '@/components/animate-ui/radix/checkbox';
-import {
-  LinkStatusIndicator,
-  LinkVisibilityIndicator,
-  LinkTypeIcon,
-} from '../indicators';
-import {
-  CardActionsMenu,
-  SearchHighlight,
-  ActionButton,
-  AnimatedCopyButton,
-} from '@/components/ui';
-import type { LinkWithStats } from '@/lib/supabase/types';
-import type { ActionItem } from '@/components/ui/types';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
+import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
+import { CardActionsMenu } from '@/components/core/card-actions-menu';
+import { SearchHighlight } from '@/components/core/search-highlight';
+import { ActionButton } from '@/components/core/action-button';
+import { AnimatedCopyButton } from '@/components/core/animated-copy-button';
+import type { LinkWithStats } from '@/lib/database/types';
+import type { ActionItem } from '@/components/core/types';
+import { useLinkUrl } from '../../hooks/use-link-url';
+import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
 
 interface LinkCardGridProps {
   link: LinkWithStats;
@@ -35,6 +31,8 @@ interface LinkCardGridProps {
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
+  unreadCount?: number;
+  onClearNotifications?: () => void;
 }
 
 export const LinkCardGrid = memo(
@@ -49,7 +47,10 @@ export const LinkCardGrid = memo(
     actions,
     quickActions,
     searchQuery,
+    unreadCount = 0,
+    onClearNotifications,
   }: LinkCardGridProps) => {
+    const { displayUrl } = useLinkUrl(link.slug, link.topic);
     return (
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
@@ -58,37 +59,33 @@ export const LinkCardGrid = memo(
         whileHover={{ y: -4, transition: { duration: 0.2 } }}
         onClick={onOpenDetails}
         className={`
-        group relative bg-white rounded-2xl p-6 transition-all duration-300 cursor-pointer
-        ${
-          isBaseLink
-            ? 'border-2 border-purple-200 shadow-sm hover:shadow-lg hover:border-purple-300' // Special base link styling
-            : 'border border-gray-200 shadow-sm hover:shadow-lg' // Regular topic link styling
-        }
-        ${
-          isMultiSelected && !isBaseLink
-            ? 'ring-2 ring-blue-400 ring-opacity-50' // Selection ring only for topic links
-            : ''
-        }
+        link-card-grid group
+        ${isBaseLink ? 'link-card-grid--base' : ''}
+        ${isMultiSelected && !isBaseLink ? 'link-card--selected' : ''}
       `}
+        style={{
+          borderLeftColor:
+            link.branding?.enabled && link.branding?.color
+              ? link.branding.color
+              : undefined,
+        }}
       >
-        {/* Background Gradient */}
-        <div
-          className='absolute inset-0 bg-gradient-to-br from-white via-white to-gray-50 
-                      rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300'
-        />
-
         <div className='relative z-10'>
           {/* Header */}
-          <div className='flex items-start justify-between mb-4'>
+          <div className='link-card-grid-header'>
             <div className='flex-1 min-w-0'>
               <div className='flex items-center gap-3 mb-2'>
-                <LinkTypeIcon isBaseLink={isBaseLink} size='lg' />
-                <div className='flex items-center gap-2'>
-                  <LinkStatusIndicator
-                    status={link.isActive ? 'active' : 'paused'}
-                  />
-                  <LinkVisibilityIndicator isPublic={link.isPublic} />
-                </div>
+                <LinkTypeIcon
+                  isBaseLink={isBaseLink}
+                  size='lg'
+                  brandingEnabled={link.branding?.enabled}
+                  {...(link.branding?.imageUrl && {
+                    brandingImageUrl: link.branding.imageUrl,
+                  })}
+                />
+                <LinkStatusIndicator
+                  status={link.isActive ? 'active' : 'paused'}
+                />
               </div>
 
               <div className='flex items-center gap-3 mb-1'>
@@ -100,12 +97,12 @@ export const LinkCardGrid = memo(
                   >
                     <Checkbox
                       checked={isMultiSelected || false}
-                      onCheckedChange={checked => onMultiSelect(link.id)}
+                      onCheckedChange={() => onMultiSelect(link.id)}
                       className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
                     />
                   </div>
                 )}
-                <h3 className='font-bold text-slate-900 text-lg truncate flex-1 min-w-0'>
+                <h3 className='link-card-grid-title flex-1 min-w-0'>
                   <SearchHighlight
                     text={link.title}
                     searchQuery={searchQuery || ''}
@@ -114,15 +111,23 @@ export const LinkCardGrid = memo(
               </div>
 
               <div className='flex items-center gap-1 text-slate-500 text-sm'>
-                <span className='truncate'>
-                  foldly.io/{link.slug}
-                  {link.topic ? `/${link.topic}` : ''}
-                </span>
+                <span className='truncate'>{displayUrl}</span>
                 <ExternalLink className='w-3 h-3 flex-shrink-0' />
               </div>
             </div>
 
-            <CardActionsMenu actions={actions} />
+            <div className='flex items-start gap-2'>
+              {unreadCount > 0 && (
+                <NotificationBadge
+                  count={unreadCount}
+                  className='mt-1'
+                  {...(onClearNotifications && {
+                    onClick: onClearNotifications,
+                  })}
+                />
+              )}
+              <CardActionsMenu actions={actions} />
+            </div>
           </div>
 
           {/* Stats Grid */}

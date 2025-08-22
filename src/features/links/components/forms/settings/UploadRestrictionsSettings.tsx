@@ -1,8 +1,15 @@
 'use client';
 
 import * as React from 'react';
-import { HardDrive } from 'lucide-react';
-import { HelpPopover, AnimatedSelect } from '@/components/ui';
+import { HardDrive, FileType, Check } from 'lucide-react';
+import { HelpPopover } from '@/components/core/help-popover';
+import { Badge } from '@/components/ui/shadcn/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 import { FILE_TYPE_OPTIONS, FILE_SIZE_OPTIONS } from '../../../lib/constants';
@@ -11,7 +18,9 @@ interface UploadRestrictionsSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsProps) {
+export function UploadRestrictionsSettings({
+  form,
+}: UploadRestrictionsSettingsProps) {
   const {
     watch,
     setValue,
@@ -23,15 +32,15 @@ export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsP
 
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <HardDrive className='w-4 h-4' />
         Upload Limits
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         <div className='space-y-3'>
-          <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Maximum Files
+          <label className='form-label'>
+            <span>Maximum Files</span>
             <HelpPopover
               title='File Count Limit'
               description='Total number of files that can be uploaded to this link.
@@ -52,7 +61,7 @@ export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsP
             }
             placeholder='0 = unlimited'
             min='0'
-            className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+            className='form-input'
           />
           {errors.maxFiles && (
             <p className='text-xs text-red-600'>{errors.maxFiles.message}</p>
@@ -60,8 +69,8 @@ export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsP
         </div>
 
         <div className='space-y-3'>
-          <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Maximum File Size (MB)
+          <label className='form-label'>
+            <span>Maximum File Size (MB)</span>
             <HelpPopover
               title='File Size Limit'
               description='Largest individual file size allowed.
@@ -70,29 +79,48 @@ export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsP
 • Common sizes: 50MB (documents), 100MB (images), 500MB+ (videos)'
             />
           </label>
-          <AnimatedSelect
-            options={fileSizeOptions}
-            value={(watchedValues.maxFileSize || 10).toString()}
-            onChange={value => {
-              // Ensure we're working with a string for single-select file size
-              const fileSize = Array.isArray(value) ? value[0] : value;
-              if (fileSize) {
-                setValue('maxFileSize', parseInt(fileSize), {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }
-            }}
-            placeholder='Select file size limit'
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer'>
+              <span>{watchedValues.maxFileSize || 10} MB</span>
+              <svg
+                className='w-4 h-4 text-muted-foreground'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M19 9l-7 7-7-7'
+                />
+              </svg>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='w-full min-w-[200px]'>
+              {fileSizeOptions.map(option => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => {
+                    setValue('maxFileSize', parseInt(option.value), {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  className='cursor-pointer'
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {errors.maxFileSize && (
             <p className='text-xs text-red-600'>{errors.maxFileSize.message}</p>
           )}
         </div>
 
         <div className='space-y-3'>
-          <label className='block text-sm font-medium text-[var(--quaternary)]'>
-            Allowed File Types
+          <label className='form-label'>
+            <span>Allowed File Types</span>
             <HelpPopover
               title='File Type Restrictions'
               description='Control what types of files can be uploaded.
@@ -102,20 +130,107 @@ export function UploadRestrictionsSettings({ form }: UploadRestrictionsSettingsP
 • More restrictive = better security'
             />
           </label>
-          <AnimatedSelect
-            options={fileTypeOptions}
-            value={watchedValues.allowedFileTypes || []}
-            onChange={values => {
-              // Ensure we're working with an array for multi-select
-              const fileTypes = Array.isArray(values) ? values : [];
-              setValue('allowedFileTypes', fileTypes, {
-                shouldDirty: true,
-                shouldValidate: true,
-              });
-            }}
-            placeholder='All file types allowed'
-            multiple
-          />
+          <DropdownMenu>
+            <DropdownMenuTrigger className='w-full flex items-center justify-between px-3 py-2 text-sm bg-background border border-border rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer min-h-[40px] h-auto'>
+              <div className='flex flex-wrap gap-1'>
+                {!watchedValues.allowedFileTypes ||
+                watchedValues.allowedFileTypes.length === 0 ? (
+                  <span className='text-muted-foreground'>
+                    All file types allowed
+                  </span>
+                ) : watchedValues.allowedFileTypes.length <= 3 ? (
+                  watchedValues.allowedFileTypes.map(type => {
+                    const option = fileTypeOptions.find(
+                      opt => opt.value === type
+                    );
+                    return (
+                      <Badge key={type} variant='secondary' className='text-xs'>
+                        {option?.label?.split(' ')[0] || type}
+                      </Badge>
+                    );
+                  })
+                ) : (
+                  <Badge variant='secondary' className='text-xs'>
+                    {watchedValues.allowedFileTypes.length} types selected
+                  </Badge>
+                )}
+              </div>
+              <svg
+                className='w-4 h-4 text-muted-foreground shrink-0 ml-2'
+                fill='none'
+                stroke='currentColor'
+                viewBox='0 0 24 24'
+              >
+                <path
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
+                  strokeWidth={2}
+                  d='M19 9l-7 7-7-7'
+                />
+              </svg>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align='end'
+              className='w-full min-w-[280px] max-h-[300px] overflow-y-auto'
+            >
+              {fileTypeOptions.map(option => {
+                const isSelected =
+                  watchedValues.allowedFileTypes?.includes(option.value) ||
+                  false;
+
+                return (
+                  <DropdownMenuItem
+                    key={option.value}
+                    onClick={() => {
+                      const currentTypes = watchedValues.allowedFileTypes || [];
+                      let newTypes: string[];
+
+                      if (isSelected) {
+                        // Remove from selection
+                        newTypes = currentTypes.filter(
+                          type => type !== option.value
+                        );
+                      } else {
+                        // Add to selection
+                        newTypes = [...currentTypes, option.value];
+                      }
+
+                      setValue('allowedFileTypes', newTypes, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }}
+                    className='cursor-pointer'
+                  >
+                    <div className='flex items-center justify-between w-full'>
+                      <span className='flex-1'>{option.label}</span>
+                      {isSelected && (
+                        <Check className='w-4 h-4 text-primary ml-2' />
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                );
+              })}
+
+              {watchedValues.allowedFileTypes &&
+                watchedValues.allowedFileTypes.length > 0 && (
+                  <>
+                    <div className='h-px bg-border my-1' />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setValue('allowedFileTypes', [], {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      className='cursor-pointer text-center justify-center text-muted-foreground'
+                    >
+                      Clear all
+                    </DropdownMenuItem>
+                  </>
+                )}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {errors.allowedFileTypes && (
             <p className='text-xs text-red-600'>
               {errors.allowedFileTypes.message}

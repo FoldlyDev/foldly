@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { checkTopicAvailabilityAction, type TopicAvailabilityResult } from '../lib/actions';
+import {
+  checkTopicAvailabilityAction,
+  type TopicAvailabilityResult,
+} from '../lib/actions';
 import { validateTopicName } from '../lib/utils';
 
 export interface TopicValidationState {
@@ -25,7 +28,7 @@ export function useTopicValidation(
   options: UseTopicValidationOptions = {}
 ) {
   const { debounceMs = 500, excludeId, enabled = true, userId, slug } = options;
-  
+
   const [state, setState] = useState<TopicValidationState>({
     isChecking: false,
     result: null,

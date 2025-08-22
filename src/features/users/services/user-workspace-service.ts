@@ -1,0 +1,431 @@
+import { db } from '@/lib/database/connection';
+import { users, workspaces } from '@/lib/database/schemas';
+import { eq, and, not, sql } from 'drizzle-orm';
+import { workspaceService } from '@/features/workspace/services/workspace-service';
+import type { User, Workspace, DatabaseResult } from '@/lib/database/types';
+import type { WebhookUserData } from '@/lib/webhooks';
+
+// Combined user + workspace creation result
+export interface UserWorkspaceCreateResult {
+  user: User;
+  workspace: Workspace;
+}
+
+export class UserWorkspaceService {
+  /**
+   * Atomically create user and workspace in a single transaction
+   * Handles idempotency for both user and workspace creation
+   */
+  async createUserWithWorkspace(
+    userData: WebhookUserData
+  ): Promise<DatabaseResult<UserWorkspaceCreateResult>> {
+
+    try {
+      return await db.transaction(async tx => {
+        // Phase 1: Create or update user (idempotent)
+        // Handle conflicts on multiple unique constraints (id, email, username)
+        let user;
+
+        // Strategy: Check by Clerk ID first (most reliable)
+        const existingUserById = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, userData.id))
+          .limit(1);
+
+        if (existingUserById.length > 0) {
+          // User with this Clerk ID already exists - update their info
+          user = existingUserById[0];
+          
+          // Update user info if needed (email might have changed in Clerk)
+          // Normalize username to lowercase before updating
+          const normalizedUsername = userData.username?.toLowerCase() || '';
+          
+          const [updatedUser] = await tx
+            .update(users)
+            .set({
+              email: userData.email,
+              username: normalizedUsername, // Always store lowercase
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              avatarUrl: userData.avatarUrl,
+              updatedAt: new Date(),
+            })
+            .where(eq(users.id, userData.id))
+            .returning();
+          
+          user = updatedUser || user;
+        } else {
+          // No existing user with this ID - check for email conflicts before creating
+          const existingUserByEmail = await tx
+            .select()
+            .from(users)
+            .where(eq(users.email, userData.email))
+            .limit(1);
+
+          if (existingUserByEmail.length > 0) {
+            // Email conflict - different Clerk ID with same email
+            const existingUser = existingUserByEmail[0];
+            if (!existingUser) {
+              throw new Error('Unexpected: existing user not found');
+            }
+            console.error(
+              `EMAIL_CONFLICT: Email ${userData.email} already exists with different Clerk ID`,
+              {
+                existingUserId: existingUser.id,
+                newUserId: userData.id,
+              }
+            );
+            
+            // For organization users, this might be expected - throw specific error
+            throw new Error(
+              `Email ${userData.email} is already registered to another account`
+            );
+          }
+          // No existing user - try to create new one
+          try {
+            // Normalize username to lowercase before inserting
+            const normalizedUsername = userData.username?.toLowerCase() || '';
+            
+            [user] = await tx
+              .insert(users)
+              .values({
+                id: userData.id,
+                email: userData.email,
+                username: normalizedUsername, // Always store lowercase
+                firstName: userData.firstName,
+                lastName: userData.lastName,
+                avatarUrl: userData.avatarUrl,
+                // Storage tracking now handled by real-time calculation
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .onConflictDoNothing()
+              .returning();
+          } catch (insertError: any) {
+            // If we get a constraint violation at this point, it's likely a username conflict
+            if (insertError?.code === '23505') {
+              // Check if it's a username conflict
+              if (insertError.message?.includes('username')) {
+                throw new Error(
+                  `Username ${userData.username} is already taken`
+                );
+              }
+            }
+            throw insertError;
+          }
+        }
+
+        if (!user) {
+          throw new Error('Failed to create or update user');
+        }
+
+        // Phase 2: Create workspace (with 1:1 constraint)
+        const [workspace] = await tx
+          .insert(workspaces)
+          .values({
+            userId: user.id,
+            name: 'My Workspace',
+            createdAt: new Date(),
+          })
+          .onConflictDoNothing()
+          .returning();
+
+        // If workspace wasn't created, fetch existing one
+        if (!workspace) {
+          const [existingWorkspace] = await tx
+            .select()
+            .from(workspaces)
+            .where(eq(workspaces.userId, user.id))
+            .limit(1);
+
+          if (!existingWorkspace) {
+            throw new Error('Failed to create or retrieve workspace');
+          }
+
+          return {
+            success: true,
+            data: {
+              user,
+              workspace: existingWorkspace,
+            },
+          };
+        }
+
+        return {
+          success: true,
+          data: {
+            user,
+            workspace,
+          },
+        };
+      });
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Check if user already has a workspace (idempotency check)
+   */
+  async hasExistingWorkspace(userId: string): Promise<boolean> {
+    return await workspaceService.hasExistingWorkspace(userId);
+  }
+
+  /**
+   * Get user with their workspace (for workspace feature)
+   */
+  async getUserWithWorkspace(
+    userId: string
+  ): Promise<DatabaseResult<UserWorkspaceCreateResult>> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      const workspace = await workspaceService.getWorkspaceByUserId(userId);
+      if (!workspace) {
+        return { success: false, error: 'Workspace not found' };
+      }
+
+      return {
+        success: true,
+        data: {
+          user,
+          workspace,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Create user separately (fallback strategy)
+   */
+  async createUser(userData: WebhookUserData): Promise<DatabaseResult<User>> {
+    try {
+      let user;
+
+      // Check by Clerk ID first (most reliable)
+      const existingUserById = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userData.id))
+        .limit(1);
+
+      if (existingUserById.length > 0) {
+        // User exists with same Clerk ID - simple update
+        // Normalize username to lowercase before updating
+        const normalizedUsername = userData.username?.toLowerCase() || '';
+        
+        [user] = await db
+          .update(users)
+          .set({
+            email: userData.email,
+            username: normalizedUsername, // Always store lowercase
+            firstName: userData.firstName,
+            lastName: userData.lastName,
+            avatarUrl: userData.avatarUrl,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, userData.id))
+          .returning();
+      } else {
+        // Check for email conflict before creating
+        const existingUserByEmail = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, userData.email))
+          .limit(1);
+
+        if (existingUserByEmail.length > 0) {
+          // Different Clerk ID but same email - error
+          const existingUser = existingUserByEmail[0];
+          if (!existingUser) {
+            throw new Error('Unexpected: existing user not found');
+          }
+          console.error(
+            `EMAIL_CONFLICT_IN_CREATE_USER: Email ${userData.email} already exists`,
+            {
+              existingUserId: existingUser.id,
+              attemptedUserId: userData.id,
+            }
+          );
+          
+          throw new Error(
+            `Email ${userData.email} is already registered to another account`
+          );
+        }
+        
+        // No existing user - create new one
+        try {
+          // Normalize username to lowercase before inserting
+          const normalizedUsername = userData.username?.toLowerCase() || '';
+          
+          [user] = await db
+            .insert(users)
+            .values({
+              id: userData.id,
+              email: userData.email,
+              username: normalizedUsername, // Always store lowercase
+              firstName: userData.firstName,
+              lastName: userData.lastName,
+              avatarUrl: userData.avatarUrl,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .returning();
+        } catch (insertError: any) {
+          // Handle username conflicts
+          if (insertError?.code === '23505' && insertError.message?.includes('username')) {
+            throw new Error(`Username ${userData.username} is already taken`);
+          }
+          throw insertError;
+        }
+      }
+
+      if (!user) {
+        throw new Error('Failed to create or update user');
+      }
+
+      return { success: true, data: user };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(userId: string): Promise<User | null> {
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      return user || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Check if user exists
+   */
+  async userExists(userId: string): Promise<boolean> {
+    try {
+      const [user] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      return !!user;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get combined user and workspace data with performance optimization
+   */
+  async getUserWithWorkspaceOptimized(
+    userId: string
+  ): Promise<DatabaseResult<UserWorkspaceCreateResult>> {
+    try {
+      // Single query with JOIN instead of separate queries
+      const result = await db
+        .select({
+          user: users,
+          workspace: workspaces,
+        })
+        .from(users)
+        .leftJoin(workspaces, eq(workspaces.userId, users.id))
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!result[0]) {
+        return { success: false, error: 'User not found' };
+      }
+
+      const { user, workspace } = result[0];
+
+      if (!user) {
+        return { success: false, error: 'User not found' };
+      }
+
+      if (!workspace) {
+        return { success: false, error: 'Workspace not found' };
+      }
+
+      return {
+        success: true,
+        data: {
+          user,
+          workspace,
+        },
+      };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Check if a username is available with transaction isolation
+   * @param username The username to check
+   * @param excludeUserId Optional user ID to exclude from the check (for current user)
+   * @returns Boolean indicating if username is available
+   */
+  async isUsernameAvailable(
+    username: string,
+    excludeUserId?: string
+  ): Promise<boolean> {
+    try {
+      // Use transaction with serializable isolation level to prevent race conditions
+      return await db.transaction(async tx => {
+        // Convert username to lowercase for comparison
+        const lowerUsername = username.toLowerCase();
+
+        // Check if username exists (case-insensitive)
+        const existingUser = excludeUserId
+          ? await tx
+              .select({ id: users.id, username: users.username })
+              .from(users)
+              .where(
+                and(
+                  sql`LOWER(${users.username}) = ${lowerUsername}`,
+                  not(eq(users.id, excludeUserId))
+                )
+              )
+              .limit(1)
+          : await tx
+              .select({ id: users.id, username: users.username })
+              .from(users)
+              .where(sql`LOWER(${users.username}) = ${lowerUsername}`)
+              .limit(1);
+        
+        // Return true if no existing user found
+        return existingUser.length === 0;
+      }, {
+        isolationLevel: 'serializable', // Prevent phantom reads
+        accessMode: 'read only' // Optimize for read-only transaction
+      });
+    } catch (error) {
+      console.error('Error checking username availability:', error);
+      // Return false on error to be safe (assume username is taken)
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const userWorkspaceService = new UserWorkspaceService();

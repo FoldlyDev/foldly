@@ -1,0 +1,38 @@
+/* Dynamic theming for branded upload pages */
+:root {
+  --brand-color: hsl(var(--primary));
+}
+
+/* Apply brand color to various elements when set */
+[style*="--brand-color"] {
+  .brand-accent {
+    color: var(--brand-color);
+  }
+
+  .brand-border {
+    border-color: var(--brand-color);
+  }
+
+  .brand-bg {
+    background-color: var(--brand-color);
+  }
+
+  .brand-bg-subtle {
+    background-color: color-mix(in srgb, var(--brand-color) 10%, transparent);
+  }
+
+  /* Progress bar with brand color */
+  .progress [data-state="complete"] {
+    background-color: var(--brand-color);
+  }
+
+  /* Buttons with brand color */
+  .btn-brand {
+    background-color: var(--brand-color);
+    color: white;
+  }
+
+  .btn-brand:hover {
+    background-color: color-mix(in srgb, var(--brand-color) 90%, black);
+  }
+}

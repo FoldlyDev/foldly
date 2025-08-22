@@ -1,0 +1,149 @@
+/* =============================================================================
+   FILES FEATURE LAYOUT STYLES
+   ============================================================================= */
+
+@layer components {
+  /* =============================================================================
+     FILES CONTAINER LAYOUT
+     ============================================================================= */
+
+  .files-layout {
+    /* Base - Mobile First */
+    --files-padding: 0;
+    /* Account for dashboard wrapper padding (p-6 = 1.5rem = 24px) and header */
+    --files-container-height: calc(100vh - 48px); /* 24px top + 24px bottom */
+
+    display: flex;
+    flex-direction: column;
+    height: var(--files-container-height);
+    overflow: hidden;
+  }
+
+  .files-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flex scrolling */
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* =============================================================================
+     HIGHLIGHT ANIMATION FOR NOTIFICATIONS
+     ============================================================================= */
+  
+  .highlight-animation {
+    animation: highlightPulse 2s ease-in-out;
+    position: relative;
+  }
+
+  @keyframes highlightPulse {
+    0% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+    25% {
+      background-color: hsl(var(--primary) / 0.1);
+      box-shadow: 0 0 0 4px hsl(var(--primary) / 0.2);
+    }
+    50% {
+      background-color: hsl(var(--primary) / 0.15);
+      box-shadow: 0 0 0 6px hsl(var(--primary) / 0.15);
+    }
+    100% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+  }
+
+  /* Link highlight animation */
+  .highlight-link {
+    animation: linkHighlightPulse 3s ease-in-out;
+    position: relative;
+  }
+
+  @keyframes linkHighlightPulse {
+    0% {
+      border-color: hsl(var(--border));
+      background-color: transparent;
+    }
+    20% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.1);
+      transform: scale(1.02);
+    }
+    40% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.05);
+      transform: scale(1.01);
+    }
+    60% {
+      border-color: hsl(var(--primary));
+      background-color: hsl(var(--primary) / 0.1);
+      transform: scale(1.02);
+    }
+    100% {
+      border-color: hsl(var(--border));
+      background-color: transparent;
+      transform: scale(1);
+    }
+  }
+
+  /* =============================================================================
+     RESPONSIVE BREAKPOINTS
+     ============================================================================= */
+
+  /* Small Mobile (xs: 480px+) */
+  @media (min-width: 30rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Tablet Portrait (sm: 640px+) */
+  @media (min-width: 40rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Tablet Landscape (md: 768px+) */
+  @media (min-width: 48rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Desktop (lg: 1024px+) */
+  @media (min-width: 64rem) {
+    .files-layout {
+      /* On desktop, account for collapsed sidebar and padding */
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Large Desktop (xl: 1280px+) */
+  @media (min-width: 80rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* Extra Large Desktop (2xl: 1536px+) */
+  @media (min-width: 96rem) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+
+  /* =============================================================================
+     MOBILE-SPECIFIC OPTIMIZATIONS
+     ============================================================================= */
+
+  /* Mobile Landscape */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .files-layout {
+      --files-container-height: calc(100vh - 48px);
+    }
+  }
+}

@@ -1,33 +1,31 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Plus, Filter, SlidersHorizontal } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { memo, useMemo, useCallback, useState } from 'react';
 import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
 import { LinksOverviewCards } from '../cards/LinksOverviewCards';
 import { useModalStore, useUIStore } from '../../store';
-import { ActionButton } from '@/components/ui/action-button';
-import { SearchInput } from '@/components/ui/search-input';
-import { ViewToggle } from '@/components/ui/view-toggle';
+import { ActionButton } from '@/components/core/action-button';
+import { SecondaryCTAButton } from '@/components/core';
+import { SearchInput } from '@/components/core/search-input';
+import { ViewToggle } from '@/components/core/view-toggle';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/shadcn/select';
-import { toast } from 'sonner';
-import type { LinkWithStats } from '@/lib/supabase/types';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
+import { Filter } from 'lucide-react';
+import type { LinkWithStats } from '@/lib/database/types';
 
 interface PopulatedLinksStateProps {
   links: LinkWithStats[];
 }
 
 export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
-  function PopulatedLinksState({
-    links = [],
-  }: PopulatedLinksStateProps) {
+  function PopulatedLinksState({ links = [] }: PopulatedLinksStateProps) {
     // Single store subscription instead of multiple selectors to prevent cascading re-renders
     const {
       openCreateModal,
@@ -50,7 +48,9 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     } = useUIStore();
 
     // Selection state for checkboxes
-    const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(new Set());
+    const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(
+      new Set()
+    );
 
     // Memoize stats calculation using the passed-in links (already filtered)
     const overviewData = useMemo(() => {
@@ -74,17 +74,14 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     }, [links]);
 
     // Stabilize callbacks to prevent unnecessary re-renders
-    const handleTemplatesClick = useCallback(() => {
-      toast.info('Templates functionality coming soon');
-    }, []);
-
     const handleCreateClick = useCallback(() => {
       // Check if user has a base link already
       const hasBaseLink = links.some(link => link.linkType === 'base');
 
       // If no base link exists, create base link first
       if (!hasBaseLink) {
-        toast.info('Setting up your base link first...');
+        // This is just informational UI feedback, not really a notification event
+        // We'll keep it simple and just open the modal without a toast
         openCreateModal('base');
       } else {
         // User has base link, create topic link
@@ -188,9 +185,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
           {/* No Results Message */}
           <div className='text-center py-12'>
-            <p className='text-[var(--neutral-600)]'>
-              No links found matching "{searchQuery}"
-            </p>
+            <p>No links found matching "{searchQuery}"</p>
             <button
               onClick={handleClearSearch}
               className='mt-2 text-[var(--primary)] hover:underline'
@@ -212,9 +207,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         {/* Header with Search and Filters */}
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <div className='flex items-center gap-3'>
-            <h2 className='text-xl font-semibold text-[var(--quaternary)]'>
-              Your Links ({links.length})
-            </h2>
+            <h2>Your Links ({links.length})</h2>
 
             {/* Filter Badges */}
             {(filterType !== 'all' || filterStatus !== 'all') && (
@@ -235,28 +228,10 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className='flex items-center gap-2'>
-            <ActionButton
-              variant='outline'
-              size='sm'
-              onClick={handleTemplatesClick}
-              className='text-[var(--neutral-600)] border-[var(--neutral-200)]'
-            >
-              <SlidersHorizontal className='w-4 h-4' />
-              Templates
-            </ActionButton>
-
-            <ActionButton
-              variant='default'
-              size='sm'
-              onClick={handleCreateClick}
-              className='bg-[var(--primary)] hover:bg-[var(--primary-dark)] text-[var(--quaternary)]'
-            >
-              <Plus className='w-4 h-4' />
-              Create Link
-            </ActionButton>
-          </div>
+          {/* Action Button */}
+          <SecondaryCTAButton onClick={handleCreateClick} icon={Plus}>
+            Create Link
+          </SecondaryCTAButton>
         </div>
 
         {/* Search and Filter Controls */}
@@ -276,45 +251,124 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             {/* Filter Buttons Row */}
             <div className='flex gap-2 lg:gap-3'>
               {/* Type Filter */}
-              <div className='flex-1 lg:w-36'>
-                <Select value={filterType} onValueChange={handleFilterTypeChange}>
-                  <SelectTrigger
-                    size='sm'
-                    className='border-[var(--neutral-200)] w-full justify-between'
+              <DropdownMenu>
+                <DropdownMenuTrigger className='flex-1 lg:w-36 flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer'>
+                  <div className='flex items-center gap-2'>
+                    <Filter className='w-4 h-4 text-muted-foreground' />
+                    <span>
+                      {filterType === 'all'
+                        ? 'All Types'
+                        : filterType === 'base'
+                          ? 'Base'
+                          : filterType === 'custom'
+                            ? 'Custom'
+                            : 'Generated'}
+                    </span>
+                  </div>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                   >
-                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                    <SelectValue placeholder='Type' />
-                  </SelectTrigger>
-                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
-                    <SelectItem value='all'>All Types</SelectItem>
-                    <SelectItem value='base'>Base</SelectItem>
-                    <SelectItem value='custom'>Custom</SelectItem>
-                    <SelectItem value='generated'>Generated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align='end'
+                  className='w-full min-w-[150px]'
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('all')}
+                    className='cursor-pointer'
+                  >
+                    All Types
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('base')}
+                    className='cursor-pointer'
+                  >
+                    Base
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('custom')}
+                    className='cursor-pointer'
+                  >
+                    Custom
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterTypeChange('generated')}
+                    className='cursor-pointer'
+                  >
+                    Generated
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Status Filter */}
-              <div className='flex-1 lg:w-36'>
-                <Select
-                  value={filterStatus}
-                  onValueChange={handleFilterStatusChange}
-                >
-                  <SelectTrigger
-                    size='sm'
-                    className='border-[var(--neutral-200)] w-full justify-between'
+              <DropdownMenu>
+                <DropdownMenuTrigger className='flex-1 lg:w-36 flex items-center justify-between px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[var(--primary)] cursor-pointer'>
+                  <div className='flex items-center gap-2'>
+                    <Filter className='w-4 h-4 text-muted-foreground' />
+                    <span>
+                      {filterStatus === 'all'
+                        ? 'All Status'
+                        : filterStatus === 'active'
+                          ? 'Active'
+                          : filterStatus === 'paused'
+                            ? 'Paused'
+                            : 'Expired'}
+                    </span>
+                  </div>
+                  <svg
+                    className='w-4 h-4 text-muted-foreground'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                   >
-                    <Filter className='w-4 h-4 mr-2 text-[var(--neutral-500)]' />
-                    <SelectValue placeholder='Status' />
-                  </SelectTrigger>
-                  <SelectContent className='bg-white border-[var(--neutral-200)]'>
-                    <SelectItem value='all'>All Status</SelectItem>
-                    <SelectItem value='active'>Active</SelectItem>
-                    <SelectItem value='paused'>Paused</SelectItem>
-                    <SelectItem value='expired'>Expired</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M19 9l-7 7-7-7'
+                    />
+                  </svg>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align='end'
+                  className='w-full min-w-[150px]'
+                >
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('all')}
+                    className='cursor-pointer'
+                  >
+                    All Status
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('active')}
+                    className='cursor-pointer'
+                  >
+                    Active
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('paused')}
+                    className='cursor-pointer'
+                  >
+                    Paused
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleFilterStatusChange('expired')}
+                    className='cursor-pointer'
+                  >
+                    Expired
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* View Toggle */}
@@ -330,47 +384,47 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
 
         {/* Links Grid/List */}
         <motion.div
-            className={
-              viewMode === 'grid'
-                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
-                : 'space-y-3 md:space-y-4'
-            }
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {links.map((link, index) => (
-              <motion.div
-                key={`${link.id}-${viewMode}`}
-                initial={
-                  viewMode === 'grid'
-                    ? { opacity: 0, y: 20 }
-                    : { opacity: 0, y: -10 }
-                }
-                animate={
-                  viewMode === 'grid'
-                    ? { opacity: 1, y: 0 }
-                    : { opacity: 1, y: 0 }
-                }
-                transition={
-                  viewMode === 'grid'
-                    ? { duration: 0.3, delay: index * 0.05 }
-                    : { duration: 0.25, delay: index * 0.04, ease: 'easeOut' }
-                }
-              >
-                <LinkCard
-                  link={link}
-                  viewMode={viewMode}
-                  onDetails={() => handleDetailsModal(link)} 
-                  onShare={() => handleShareModal(link)}
-                  onSettings={() => handleSettingsModal(link)}
-                  onDelete={() => handleDeleteModal(link)}
-                  isMultiSelected={selectedLinkIds.has(link.id)}
-                  onMultiSelect={handleMultiSelect}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
+          className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6'
+              : 'space-y-3 md:space-y-4'
+          }
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {links.map((link, index) => (
+            <motion.div
+              key={`${link.id}-${viewMode}`}
+              initial={
+                viewMode === 'grid'
+                  ? { opacity: 0, y: 20 }
+                  : { opacity: 0, y: -10 }
+              }
+              animate={
+                viewMode === 'grid'
+                  ? { opacity: 1, y: 0 }
+                  : { opacity: 1, y: 0 }
+              }
+              transition={
+                viewMode === 'grid'
+                  ? { duration: 0.3, delay: index * 0.05 }
+                  : { duration: 0.25, delay: index * 0.04, ease: 'easeOut' }
+              }
+            >
+              <LinkCard
+                link={link}
+                viewMode={viewMode}
+                onDetails={() => handleDetailsModal(link)}
+                onShare={() => handleShareModal(link)}
+                onSettings={() => handleSettingsModal(link)}
+                onDelete={() => handleDeleteModal(link)}
+                isMultiSelected={selectedLinkIds.has(link.id)}
+                onMultiSelect={handleMultiSelect}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       </div>
     );
   }

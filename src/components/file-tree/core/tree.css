@@ -1,0 +1,339 @@
+/* File tree styles - Enhanced with workspace tree animations and hover effects */
+
+/* File tree specific namespace to avoid conflicts */
+.file-tree-component {
+  /* Light mode tree colors */
+  --tree-selected-color: rgba(0, 0, 0, 0.05);
+  --tree-primary-blue: #2d4f6b;
+  --tree-drop-target-color: rgba(45, 79, 107, 0.1);
+  --tree-search-match-color: rgba(195, 225, 247, 0.3);
+  --tree-hover-color: rgba(0, 0, 0, 0.04);
+  --tree-active-color: rgba(0, 0, 0, 0.08);
+  --tree-focus-ring: #2d4f6b;
+  --indent-guide-size: 1px;
+  --indent-guide-color: rgba(128, 128, 128, 0.2);
+}
+
+.file-tree-component[data-theme="dark"],
+[data-theme="dark"] .file-tree-component {
+  /* Dark mode tree colors */
+  --tree-selected-color: rgba(255, 255, 255, 0.1);
+  --tree-primary-blue: #9abede;
+  --tree-drop-target-color: rgba(195, 225, 247, 0.2);
+  --tree-search-match-color: rgba(195, 225, 247, 0.2);
+  --tree-hover-color: rgba(255, 255, 255, 0.08);
+  --tree-active-color: rgba(255, 255, 255, 0.15);
+  --tree-focus-ring: #9abede;
+}
+
+.file-tree-component .tree {
+  user-select: none;
+  position: relative;
+  min-height: 100px;
+}
+
+.file-tree-component .tree button[role="treeitem"] {
+  display: flex;
+  background: transparent;
+  border: none;
+  width: 100%;
+  padding: 0 0 2px 0;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.file-tree-component .treeitem {
+  width: 100%;
+  text-align: left;
+  background-color: transparent;
+  padding: 6px 10px;
+  position: relative;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+}
+
+.file-tree-component .treeitem:hover {
+  background-color: var(--tree-hover-color);
+}
+
+.file-tree-component .treeitem.focused {
+  /* Remove focus styles - keyboard navigation will still work */
+  outline: none;
+}
+
+.file-tree-component .treeitem.selected {
+  background-color: var(--tree-selected-color);
+}
+
+/* Selection indicator - blue left border */
+.file-tree-component .treeitem.selected::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: -2px;
+  height: calc(100% - 10px);
+  width: 4px;
+  background-color: var(--tree-primary-blue);
+  border-radius: 2px;
+}
+
+.file-tree-component .treeitem.folder {
+  font-weight: 500;
+}
+
+/* Enhanced drop target styling with dashed border */
+.file-tree-component .treeitem.drop {
+  background-color: var(--tree-drop-target-color);
+  border-color: var(--tree-primary-blue);
+  border-style: dashed;
+}
+
+/* Enhanced reordering feedback - top drop indicator */
+.file-tree-component .treeitem.drop-above {
+  border-top: 2px solid var(--tree-primary-blue);
+}
+
+/* Enhanced reordering feedback - bottom drop indicator */
+.file-tree-component .treeitem.drop-below {
+  border-bottom: 2px solid var(--tree-primary-blue);
+}
+
+.file-tree-component .treeitem.searchmatch {
+  background-color: var(--tree-search-match-color);
+}
+
+/* Focus visible for keyboard navigation */
+.file-tree-component .tree button:focus-visible .treeitem.focused {
+  outline: 2px solid var(--tree-primary-blue);
+  outline-offset: 1px;
+}
+
+.file-tree-component .treeitem.searchmatch.focused {
+  outline: 2px solid var(--tree-primary-blue);
+  outline-offset: 1px;
+}
+
+.file-tree-component .renaming-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: var(--tree-selected-color);
+  margin-bottom: 2px;
+  border-radius: 6px;
+}
+
+.file-tree-component .renaming-item input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* Enhanced drag line with indicator circle */
+.file-tree-component .dragline {
+  position: absolute;
+  background-color: var(--tree-primary-blue);
+  pointer-events: none;
+}
+
+.file-tree-component .dragline::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  height: 4px;
+  width: 4px;
+  background: var(--color-background, #fff);
+  border: 2px solid var(--tree-primary-blue);
+  border-radius: 99px;
+}
+
+/* Drag preview element */
+.file-tree-component .drag-preview {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.file-tree-component .outeritem {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+}
+
+/* Indentation guides for nested items */
+.file-tree-component .outeritem[data-depth]:not([data-depth="0"]) {
+  position: relative;
+}
+
+/* Create indent guides for each level */
+.file-tree-component .outeritem[data-depth]:not([data-depth="0"])::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--depth) * 20px - 5px);
+  top: 0;
+  bottom: 0;
+  width: var(--indent-guide-size);
+  background: var(--indent-guide-color);
+}
+
+/* Hide guide for last child */
+.file-tree-component .outeritem[data-last-child="true"]::before {
+  height: 50%;
+}
+
+/* Horizontal connector */
+.file-tree-component .outeritem[data-depth]:not([data-depth="0"])::after {
+  content: '';
+  position: absolute;
+  left: calc(var(--depth) * 20px - 5px);
+  top: 50%;
+  width: 10px;
+  height: var(--indent-guide-size);
+  background: var(--indent-guide-color);
+}
+
+.file-tree-component .outeritem button:not([role="treeitem"]) {
+  padding: 2px 4px;
+  height: 80%;
+}
+
+.file-tree-component .description {
+  font-family: sans-serif;
+  font-size: .8rem;
+  background-color: #eee;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.file-tree-component .searchbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Touch-friendly sizing */
+  .file-tree-component .tree button[role='treeitem'] {
+    min-height: 48px; /* Touch-friendly minimum height */
+    padding: 4px 0;
+  }
+  
+  .file-tree-component .treeitem {
+    padding: 12px 10px; /* More padding for touch targets */
+    font-size: 14px;
+  }
+  
+  /* Larger icons for easier tapping */
+  .file-tree-component .treeitem .size-4 {
+    width: 20px;
+    height: 20px;
+  }
+  
+  /* Selection mode styles */
+  .file-tree-component .tree.selection-mode .treeitem {
+    padding-left: 8px; /* Make room for checkboxes */
+  }
+  
+  /* Better visual feedback for touch */
+  .file-tree-component .treeitem:active {
+    background-color: var(--tree-active-color);
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Prevent text selection on mobile */
+  .file-tree-component .tree {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Improve scrolling performance */
+  .file-tree-component .tree {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Larger renaming input on mobile */
+  .file-tree-component .renaming-item input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 8px 12px;
+  }
+}
+
+/* Action bar styles */
+.file-tree-component .actionbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.file-tree-component .foreign-dragsource, 
+.file-tree-component .foreign-dropzone, 
+.file-tree-component .actionbtn {
+  height: 30px;
+  background-color: transparent;
+  border: 1px solid #808080;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: .8rem;
+  color: #393939;
+  display: flex;
+  align-items: center;
+  justify-items: center;
+}
+
+.file-tree-component .foreign-dragsource {
+  cursor: grab;
+}
+
+.file-tree-component .foreign-dragsource:active {
+  cursor: grabbing;
+}
+
+.file-tree-component .foreign-dragsource:before {
+  content: url(data:image/svg+xml;base64,PHN2ZyBzdHJva2U9ImN1cnJlbnRDb2xvciIgZmlsbD0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIGhlaWdodD0iMThweCIgd2lkdGg9IjE4cHgiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTkgMTNhMSAxIDAgMSAxIDAtMiAxIDEgMCAwIDEgMCAyWm03LTFhMSAxIDAgMSAxLTIgMCAxIDEgMCAwIDEgMiAwWk05IDhhMSAxIDAgMSAxIDAtMiAxIDEgMCAwIDEgMCAyWm03LTFhMSAxIDAgMSAxLTIgMCAxIDEgMCAwIDEgMiAwWk05IDE4YTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMlptNiAwYTEgMSAwIDEgMSAwLTIgMSAxIDAgMCAxIDAgMloiPjwvcGF0aD48L3N2Zz4=);
+  width: 10px;
+  display: inline-block;
+  z-index: 1;
+  margin-right: 8px;
+  margin-top: 2px;
+}
+
+.file-tree-component .foreign-dropzone {
+  border: 1px dashed #808080;
+  padding: 0 26px;
+}
+
+.file-tree-component .actionbtn:hover {
+  cursor: pointer;
+  background-color: var(--tree-hover-color);
+}
+
+.file-tree-component .visible-assistive-text {
+  position: unset !important;
+  width: unset !important;
+  height: 60px !important;
+  margin: unset !important;
+  overflow: auto !important;
+  clip: unset !important;
+  display: block;
+  margin-bottom: 1rem !important;
+  background-color: #e1f1f8;
+}

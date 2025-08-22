@@ -11,13 +11,7 @@
 // DATABASE SERVICES
 // =============================================================================
 
-export { linksDbService } from './db-service';
-export type {
-  LinksDbService,
-  CreateLinkParams,
-  UpdateLinkParams,
-  LinkFilters,
-} from './db-service';
+export { linksDbService, LinksDbService } from './db-service';
 
 // =============================================================================
 // SERVER ACTIONS (CLEAN MODULAR ARCHITECTURE)

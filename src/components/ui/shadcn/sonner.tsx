@@ -13,24 +13,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'group toast group-[.toaster]:bg-popover group-[.toaster]:text-popover-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg rounded-lg border-2 px-4 py-3 font-medium',
+            'group toast bg-popover text-popover-foreground border-border shadow-lg rounded-lg border pl-12 pr-4 py-3 font-medium relative dark:bg-[var(--foldly-glass-bg-solid)] dark:backdrop-blur-[12px] dark:border-white/10',
           title:
-            'group-[.toast]:text-sm group-[.toast]:font-semibold group-[.toast]:text-foreground',
+            'text-sm font-semibold text-foreground',
           description:
-            'group-[.toast]:text-xs group-[.toast]:text-muted-foreground group-[.toast]:mt-1',
+            'text-xs text-muted-foreground mt-1 pr-4',
           actionButton:
-            'group-[.toast]:bg-primary group-[.toast]:text-primary-foreground hover:group-[.toast]:bg-primary/90 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+            'bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
           cancelButton:
-            'group-[.toast]:bg-muted group-[.toast]:text-muted-foreground hover:group-[.toast]:bg-muted/80 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
+            'bg-muted text-muted-foreground hover:bg-muted/80 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
           closeButton:
-            'group-[.toast]:bg-transparent group-[.toast]:text-foreground/50 hover:group-[.toast]:text-foreground group-[.toast]:border-0 hover:group-[.toast]:bg-muted/20 transition-colors',
+            'absolute left-2 top-2.5 rounded-md p-1 text-foreground/50 hover:text-foreground hover:bg-muted/20 transition-colors opacity-100',
           success:
-            'group-[.toaster]:bg-emerald-50 group-[.toaster]:text-emerald-900 group-[.toaster]:border-emerald-200 dark:group-[.toaster]:bg-emerald-950/50 dark:group-[.toaster]:text-emerald-100 dark:group-[.toaster]:border-emerald-800/50',
+            'bg-green-50 text-green-900 border-green-200 dark:bg-[var(--foldly-glass-bg-solid)] dark:text-green-100 dark:border-green-400/30 dark:backdrop-blur-[12px]',
           error:
-            'group-[.toaster]:bg-red-50 group-[.toaster]:text-red-900 group-[.toaster]:border-red-200 dark:group-[.toaster]:bg-red-950/50 dark:group-[.toaster]:text-red-100 dark:group-[.toaster]:border-red-800/50',
+            'bg-red-50 text-red-900 border-red-200 dark:bg-[var(--foldly-glass-bg-solid)] dark:text-red-100 dark:border-red-400/30 dark:backdrop-blur-[12px]',
           warning:
-            'group-[.toaster]:bg-amber-50 group-[.toaster]:text-amber-900 group-[.toaster]:border-amber-200 dark:group-[.toaster]:bg-amber-950/50 dark:group-[.toaster]:text-amber-100 dark:group-[.toaster]:border-amber-800/50',
-          info: 'group-[.toaster]:bg-blue-50 group-[.toaster]:text-blue-900 group-[.toaster]:border-blue-200 dark:group-[.toaster]:bg-blue-950/50 dark:group-[.toaster]:text-blue-100 dark:group-[.toaster]:border-blue-800/50',
+            'bg-amber-50 text-amber-900 border-amber-200 dark:bg-[var(--foldly-glass-bg-solid)] dark:text-amber-100 dark:border-amber-400/30 dark:backdrop-blur-[12px]',
+          info: 'bg-blue-50 text-blue-900 border-blue-200 dark:bg-[var(--foldly-glass-bg-solid)] dark:text-blue-100 dark:border-blue-400/30 dark:backdrop-blur-[12px]',
         },
       }}
       style={
@@ -38,21 +38,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-bg': 'hsl(var(--popover))',
           '--normal-text': 'hsl(var(--popover-foreground))',
           '--normal-border': 'hsl(var(--border))',
-          '--success-bg': 'hsl(142 76% 36%)',
-          '--success-text': 'hsl(0 0% 100%)',
-          '--success-border': 'hsl(142 76% 36%)',
-          '--error-bg': 'hsl(0 84% 60%)',
-          '--error-text': 'hsl(0 0% 100%)',
-          '--error-border': 'hsl(0 84% 60%)',
-          '--warning-bg': 'hsl(43 96% 56%)',
-          '--warning-text': 'hsl(0 0% 100%)',
-          '--warning-border': 'hsl(43 96% 56%)',
-          '--info-bg': 'hsl(var(--primary))',
-          '--info-text': 'hsl(var(--primary-foreground))',
-          '--info-border': 'hsl(var(--primary))',
         } as React.CSSProperties
       }
-      position='top-right'
+      position='bottom-right'
       expand={false}
       visibleToasts={4}
       closeButton

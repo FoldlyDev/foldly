@@ -17,6 +17,7 @@ import {
   fileTypesSchema,
   hexColorSchema,
   withPasswordRequirement,
+  brandingSchema,
 } from './base';
 
 // =============================================================================
@@ -40,7 +41,6 @@ export const createLinkActionSchema = withPasswordRequirement(
     requireEmail: z.boolean().default(false),
     requirePassword: z.boolean().default(false),
     password: z.string().optional(),
-    isPublic: z.boolean().default(true),
     isActive: z.boolean().default(true),
 
     // Upload constraints - aligned with database fields
@@ -51,9 +51,8 @@ export const createLinkActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().default(false),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -70,7 +69,6 @@ export const updateLinkActionSchema = withPasswordRequirement(
     requireEmail: z.boolean().optional(),
     requirePassword: z.boolean().optional(),
     password: z.string().optional(),
-    isPublic: z.boolean().optional(),
     isActive: z.boolean().optional(),
 
     // Upload constraints
@@ -81,9 +79,8 @@ export const updateLinkActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().optional(),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -124,7 +121,6 @@ export const duplicateLinkActionSchema = z.object({
 export const updateSettingsActionSchema = withPasswordRequirement(
   z.object({
     id: uuidSchema,
-    isPublic: z.boolean().optional(),
     requireEmail: z.boolean().optional(),
     requirePassword: z.boolean().optional(),
     password: z.string().optional(),
@@ -137,9 +133,8 @@ export const updateSettingsActionSchema = withPasswordRequirement(
     // Expiration
     expiresAt: z.string().optional(),
 
-    // Branding - aligned with database field names
-    brandEnabled: z.boolean().optional(),
-    brandColor: hexColorSchema.optional(),
+    // Branding - aligned with database schema
+    branding: brandingSchema.optional(),
   })
 );
 
@@ -159,14 +154,16 @@ export type FlexibleLinkUpdate = Partial<{
   requireEmail: boolean;
   requirePassword: boolean;
   password: string | null;
-  isPublic: boolean;
   isActive: boolean;
   maxFiles: number;
   maxFileSize: number;
   allowedFileTypes: string[] | null;
   expiresAt: string | null;
-  brandEnabled: boolean;
-  brandColor: string | null;
+  branding: {
+    enabled: boolean;
+    color?: string;
+    image?: string;
+  };
 }>;
 
 // =============================================================================

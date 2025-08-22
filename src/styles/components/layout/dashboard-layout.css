@@ -1,0 +1,75 @@
+/* =============================================================================
+   DASHBOARD LAYOUT - Theme-aware background styling
+   ============================================================================= */
+
+@layer components {
+  /* Dashboard layout wrapper */
+  .dashboard-layout-wrapper {
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background: var(--foldly-light-gradient-radial);
+  }
+
+  /* Dark mode background */
+  .dark .dashboard-layout-wrapper {
+    background: var(--foldly-dark-gradient-radial);
+  }
+
+  /* Gradient overlay for depth effect */
+  .dashboard-gradient-overlay {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    background: transparent;
+    transition: opacity 0.3s ease;
+  }
+
+  /* Dark mode gradient overlay */
+  .dark .dashboard-gradient-overlay {
+    opacity: 0.3;
+    background: var(--foldly-dark-gradient);
+  }
+
+  /* Main content area */
+  .dashboard-main {
+    position: relative;
+    min-height: 100vh;
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Navigation expanded state */
+  .dashboard-main-expanded {
+    margin-left: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-main-expanded {
+      margin-left: 16rem; /* 64 in tailwind */
+    }
+  }
+
+  /* Navigation collapsed state */
+  .dashboard-main-collapsed {
+    margin-left: 0;
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-main-collapsed {
+      margin-left: 5rem; /* 20 in tailwind */
+    }
+  }
+
+  /* Content padding */
+  .dashboard-content {
+    padding: 1.5rem;
+    padding-top: 5rem; /* Account for mobile header */
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-content {
+      padding-top: 1.5rem; /* Desktop doesn't need extra top padding */
+    }
+  }
+}

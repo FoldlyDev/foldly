@@ -13,16 +13,31 @@
 
 #### **Base Upload Links**
 
-- **Format**: `foldly.com/username`
+- **Format**: `foldly.com/[any-slug]` (users can set ANY slug they want, not tied to username)
 - **Purpose**: General "data dump" area for any file uploads
 - **Use Case**: Primary collection point for various file types
+- **Examples**: `foldly.com/myfiles`, `foldly.com/portfolio`, `foldly.com/uploads2025`
 
 #### **Custom Topic Links**
 
-- **Format**: `foldly.com/username/topic_or_folder`
-- **Examples**: `foldly.com/mike/logo_competition`, `foldly.com/sarah/wedding-photos`
+- **Format**: `foldly.com/[any-slug]/[topic]` (base slug with a topic)
+- **Examples**: `foldly.com/portfolio/designs`, `foldly.com/myfiles/documents`
 - **Purpose**: Project-specific links with automatic folder organization
 - **Creation**: Right-click any folder to generate custom upload link
+
+#### **Generated Links**
+
+- **Format**: `foldly.com/[any-slug]/[generated-slug]` (base slug + generated slug)
+- **Examples**: `foldly.com/myfiles/xY7k9m2`, `foldly.com/portfolio/aB3n5K8`
+- **Purpose**: Auto-generated links for folder shares
+- **Creation**: System generates unique slug when sharing folders
+
+### Dynamic URL System
+
+- **Multi-Environment Support**: Automatic detection for localhost, Vercel preview, and production
+- **No Hardcoded Domains**: Centralized configuration handles all URL generation
+- **Security**: Host validation prevents header injection attacks
+- **Configuration**: Optional `NEXT_PUBLIC_APP_URL` for production domain
 
 ### Advanced Upload & Organization System
 
@@ -48,8 +63,8 @@
 - **Email Requirement**: Toggle to require uploader email
 - **Password Protection**: Optional password-lock for upload links
 - **Visibility Settings**: Public vs private sublink configurations
-  - **Public**: `foldly.com/mikes_wedding_photos` (viewable by all)
-  - **Private**: `foldly.com/contractor_bids` (recipient-only access)
+  - **Public**: `foldly.com/wedding/photos` (viewable by all)
+  - **Private**: `foldly.com/private/contractor-bids` (recipient-only access)
 
 #### **Security Features**
 
@@ -74,14 +89,38 @@
 - **Supabase Storage** (file storage with global CDN)
 - **Vercel** (hosting) + **Stripe** (payments)
 
+## 🗄️ Database Architecture
+
+### Key Schema Design Principles
+
+1. **Context-Based File/Folder Ownership**:
+   - Files belong to EITHER workspace (personal) OR link (shared) context - never both
+   - Folders inherit parent context - workspace folders for personal files, link folders for shared
+   - Clean separation prevents data confusion and simplifies permissions
+
+2. **Three Link Types with Different Behaviors**:
+   - **Base Links** (`/[slug]`): Uploads go to link root, no folder pre-selection
+   - **Custom Links** (`/[slug]/[topic]`): Uploads go to link root, topic for organization
+   - **Generated Links** (`/[slug]/[generated]`): Created from workspace folders, uploads go directly to that folder
+
+3. **Batch-Based Upload Tracking**:
+   - All external uploads require a batch record for tracking and organization
+   - Batches removed redundant fields (userId, name, displayName) - derive from link
+   - `targetFolderId` field specifically for generated links to route uploads
+
+4. **Streamlined Foreign Key Relationships**:
+   - All tables now have proper CASCADE UPDATE rules for data consistency
+   - Removed userId from files/folders tables - derive from workspace/link context
+   - Clean parent-child relationships with proper null handling
+
 ## 📚 Documentation
 
 This project follows documentation-first development with comprehensive planning:
 
-- **[📋 PLANNING.md](docs/PLANNING.md)** - Complete development strategy, multi-link architecture, and security requirements
-- **[📝 TASK.md](docs/TASK.md)** - Task management, sprint planning, and advanced feature development roadmap
-- **[🏗️ ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Technical specifications, simplified database schemas, and multi-link system design
-- **[📖 PROJECT_OVERVIEW.md](docs/project_overview.md)** - Business requirements, advanced features, and UX specifications
+- **[📚 Documentation Hub](docs/README.md)** - Organized documentation with clear navigation
+- **[🗄️ Database Documentation](docs/database/README.md)** - Complete database schema and operations
+- **[🛠️ Implementation Guides](docs/implementation/README.md)** - Consolidated technical implementation guides
+- **[💼 Business Documentation](docs/business/README.md)** - Strategy, planning, and market analysis
 
 ## 🚀 Getting Started
 
@@ -104,14 +143,15 @@ This project follows documentation-first development with comprehensive planning
 
 ### Database Foundation ✅ Complete
 
-**Database-First Architecture (95% Complete)**:
+**Database-First Architecture (100% Complete)**:
 
-- ✅ **Schema Design**: 6-table PostgreSQL schema with multi-link architecture
+- ✅ **Schema Design**: 8-table PostgreSQL schema with multi-link architecture
 - ✅ **Type System**: Complete TypeScript types generated from database schema
 - ✅ **Drizzle ORM**: Configured with Supabase integration and migrations
 - ✅ **Row Level Security**: Implemented with Clerk JWT authentication
 - ✅ **File Types Support**: Added `allowedFileTypes` field for MIME type restrictions
-- ✅ **MVP Simplification**: Removed tasks table, simplified folders for core functionality
+- ✅ **Schema Updates**: Streamlined file/folder ownership model for cleaner context separation
+- ✅ **CASCADE Rules**: Proper CASCADE UPDATE rules across all foreign key relationships
 
 ### Next Development Phase
 

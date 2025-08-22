@@ -50,7 +50,6 @@ const CreateFolderModal = memo(() => {
           await createFolder({
             name: folderName.trim(),
             parentId: modalData?.currentFolderId || null,
-            isPublic: false,
           });
 
           handleClose();

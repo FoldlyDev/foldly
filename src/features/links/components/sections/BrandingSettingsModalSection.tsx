@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { Eye, Crown } from 'lucide-react';
 import { Switch } from '@/components/ui/shadcn/switch';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
 
@@ -45,19 +45,29 @@ export function BrandingSettingsSection({
             </div>
           </div>
           <Switch
-            checked={watchedValues.brandEnabled || false}
+            checked={watchedValues.branding?.enabled || false}
             onCheckedChange={checked =>
-              setValue('brandEnabled', checked, {
-                shouldDirty: true,
-                shouldValidate: true,
-              })
+              setValue(
+                'branding',
+                {
+                  enabled: checked,
+                  color: watchedValues.branding?.color,
+                  image: watchedValues.branding?.image,
+                  imagePath: watchedValues.branding?.imagePath,
+                  imageUrl: watchedValues.branding?.imageUrl,
+                },
+                {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                }
+              )
             }
             className='data-[state=unchecked]:bg-muted-foreground/20'
           />
         </div>
 
         {/* Branding Options */}
-        {watchedValues.brandEnabled && (
+        {watchedValues.branding?.enabled && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -74,35 +84,56 @@ export function BrandingSettingsSection({
                 <div className='flex items-center gap-3'>
                   <input
                     type='color'
-                    value={watchedValues.brandColor || '#6c47ff'}
+                    value={watchedValues.branding?.color || '#6c47ff'}
                     onChange={e =>
-                      setValue('brandColor', e.target.value, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          image: watchedValues.branding?.image,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     className='w-12 h-10 rounded-lg cursor-pointer border border-border'
                   />
                   <input
                     type='text'
-                    value={watchedValues.brandColor || ''}
+                    value={watchedValues.branding?.color || ''}
                     onChange={e =>
-                      setValue('brandColor', e.target.value, {
-                        shouldDirty: true,
-                        shouldValidate: true,
-                      })
+                      setValue(
+                        'branding',
+                        {
+                          enabled: watchedValues.branding?.enabled || false,
+                          color: e.target.value,
+                          image: watchedValues.branding?.image,
+                          imagePath: watchedValues.branding?.imagePath,
+                          imageUrl: watchedValues.branding?.imageUrl,
+                        },
+                        {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        }
+                      )
                     }
                     placeholder='#6c47ff'
                     className='flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring'
                   />
                 </div>
-                {errors.brandColor && (
+                {errors.branding && (
                   <p className='text-sm text-destructive'>
-                    {errors.brandColor.message}
+                    Invalid branding configuration
                   </p>
                 )}
                 <p className='text-xs text-muted-foreground'>
-                  Choose your brand color that will be used throughout your upload page
+                  Choose your brand color that will be used throughout your
+                  upload page
                 </p>
               </div>
             </div>
@@ -118,15 +149,17 @@ export function BrandingSettingsSection({
               <div
                 className='w-full p-6 rounded-xl border border-gray-200/50 bg-gradient-to-br from-white to-gray-50/30'
                 style={{
-                  background: `linear-gradient(135deg, ${watchedValues.brandColor || '#6c47ff'}03 0%, ${watchedValues.brandColor || '#6c47ff'}08 100%)`,
-                  borderColor: `${watchedValues.brandColor || '#6c47ff'}20`,
+                  background: `linear-gradient(135deg, ${watchedValues.branding?.color || '#6c47ff'}03 0%, ${watchedValues.branding?.color || '#6c47ff'}08 100%)`,
+                  borderColor: `${watchedValues.branding?.color || '#6c47ff'}20`,
                 }}
               >
                 {/* Title with brand color */}
                 <div className='flex items-center gap-3 mb-4'>
                   <h3
                     className='text-xl font-semibold leading-tight'
-                    style={{ color: watchedValues.brandColor || '#6c47ff' }}
+                    style={{
+                      color: watchedValues.branding?.color || '#6c47ff',
+                    }}
                   >
                     {link.title}
                   </h3>
@@ -143,7 +176,7 @@ export function BrandingSettingsSection({
                 <button
                   className='inline-flex items-center justify-center px-5 py-2.5 rounded-lg text-sm font-medium text-white transition-all hover:opacity-90 hover:scale-[1.02] disabled:cursor-not-allowed'
                   style={{
-                    backgroundColor: watchedValues.brandColor || '#6c47ff',
+                    backgroundColor: watchedValues.branding?.color || '#6c47ff',
                   }}
                   disabled
                 >

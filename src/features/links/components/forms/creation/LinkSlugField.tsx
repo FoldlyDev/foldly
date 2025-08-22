@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Hash, CheckCircle, AlertCircle } from 'lucide-react';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';
+import { getDisplayDomain } from '@/lib/config/url-config';
 
 interface LinkSlugFieldProps {
   formData: {
@@ -27,6 +28,7 @@ export function LinkSlugField({
   isLoading = false,
 }: LinkSlugFieldProps) {
   const { normalizeSlug } = useSlugNormalization();
+  const displayDomain = getDisplayDomain();
 
   return (
     <motion.div
@@ -40,8 +42,10 @@ export function LinkSlugField({
             <Hash className='w-4 h-4 text-primary' />
           </div>
           <div>
-            <h3 className='font-medium text-foreground'>Personal Collection Link URL</h3>
-            <p className='text-sm text-muted-foreground'>
+            <label className='form-label'>
+              Personal Collection Link URL
+            </label>
+            <p className='form-helper'>
               Customize your Personal Collection Link URL (optional)
             </p>
           </div>
@@ -50,8 +54,8 @@ export function LinkSlugField({
         <div className='space-y-3'>
           <div className='relative'>
             <div className='flex items-center'>
-              <span className='px-3 py-2 bg-gray-100 border border-r-0 border-[var(--neutral-200)] rounded-l-md text-sm text-gray-600'>
-                foldly.io/
+              <span className='px-3 py-2 bg-muted border border-r-0 border-input rounded-l-md text-sm text-muted-foreground'>
+                {displayDomain}/
               </span>
               <input
                 type='text'
@@ -64,25 +68,25 @@ export function LinkSlugField({
                 }}
                 placeholder={`Leave empty to use: ${baseSlug}`}
                 disabled={isLoading}
-                className={`flex-1 px-3 py-2 pr-10 text-sm bg-white border rounded-r-md focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-[var(--neutral-700)] placeholder:text-[var(--neutral-400)] ${
+                className={`premium-input rounded-l-none border-l-0 pr-10 ${
                   formData.slug
                     ? slugValidation.isAvailable
-                      ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
+                      ? '!border-green-600 focus:!border-green-600'
                       : slugValidation.isUnavailable
-                        ? 'border-red-500 focus:ring-red-500/20 focus:border-red-500'
-                        : 'border-[var(--neutral-200)]'
-                    : 'border-[var(--neutral-200)]'
+                        ? 'form-input-error'
+                        : ''
+                    : ''
                 }`}
               />
               {/* Validation icon */}
               {formData.slug && (
                 <div className='absolute right-3 top-1/2 -translate-y-1/2'>
                   {slugValidation.isChecking ? (
-                    <div className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin' />
+                    <div className='w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
                   ) : slugValidation.isAvailable ? (
-                    <CheckCircle className='w-4 h-4 text-green-500' />
+                    <CheckCircle className='w-4 h-4 text-green-600' />
                   ) : slugValidation.isUnavailable ? (
-                    <AlertCircle className='w-4 h-4 text-red-500' />
+                    <AlertCircle className='w-4 h-4 text-destructive' />
                   ) : null}
                 </div>
               )}
@@ -91,22 +95,22 @@ export function LinkSlugField({
 
           {/* Error feedback for unavailable slugs */}
           {formData.slug && slugValidation.isUnavailable && (
-            <div className='flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded text-xs'>
-              <AlertCircle className='w-3 h-3 text-red-500 flex-shrink-0' />
-              <p className='text-red-700'>{slugValidation.message}</p>
+            <div className='flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md'>
+              <AlertCircle className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0' />
+              <p className='text-sm font-medium text-red-800 dark:text-red-200'>{slugValidation.message}</p>
             </div>
           )}
 
           {/* Success feedback for available slugs */}
           {formData.slug && slugValidation.isAvailable && (
-            <div className='flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded text-xs'>
-              <CheckCircle className='w-3 h-3 text-green-600 flex-shrink-0' />
-              <p className='text-green-700'>This URL is available!</p>
+            <div className='flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-md'>
+              <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0' />
+              <p className='text-sm font-medium text-green-800 dark:text-green-200'>This URL is available!</p>
             </div>
           )}
 
           {/* Help text */}
-          <p className='text-xs text-[var(--neutral-500)]'>
+          <p className='form-helper text-xs'>
             Use letters, numbers, hyphens, and underscores only
           </p>
         </div>

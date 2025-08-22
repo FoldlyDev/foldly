@@ -1,8 +1,8 @@
 import { useUser } from '@clerk/nextjs';
-import { toast } from 'sonner';
 import { useCreateLinkMutation } from './react-query/use-create-link-mutation';
-import { useModalStore } from '../store';
 import { normalizeSlug } from '../lib/utils/slug-normalization';
+import { DEFAULT_BASE_LINK_TITLE } from '../lib/constants/base-link-defaults';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseQuickStartOptions {
   onSuccess?: () => void;
@@ -15,16 +15,19 @@ interface UseQuickStartOptions {
  */
 export function useQuickStart(options: UseQuickStartOptions = {}) {
   const { user } = useUser();
-  const { openCreateModal } = useModalStore();
   const createLinkMutation = useCreateLinkMutation();
+  const { emit } = useEventBus();
 
   const quickStart = async () => {
     console.log('🚀 QUICK START: Starting quick start process');
     console.log('🚀 QUICK START: User object:', user);
-    
+
     if (!user?.username) {
       console.error('🚀 QUICK START: Username not available');
-      toast.error('Username not available');
+      emit(NotificationEventType.SYSTEM_ERROR_PERMISSION, {
+        message: 'Username not available. Please complete your profile to create links.',
+        severity: 'error',
+      });
       options.onError?.(new Error('Username not available'));
       return;
     }
@@ -32,24 +35,23 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
     console.log('🚀 QUICK START: Username available:', user.username);
 
     try {
-      toast.loading('Setting up your base link...', { id: 'quick-start' });
-      
+      // Note: Loading state is handled by the UI, no need for loading toast
+
       // Create base link with sensible defaults - matching manual creation exactly
       const quickStartData = {
         // Required fields matching manual creation
-        title: 'Base link', // Match exactly with manual creation
-        
+        title: DEFAULT_BASE_LINK_TITLE, // Use centralized default
+
         // Optional fields with exact same structure as manual creation
         slug: normalizeSlug(user.username), // Normalize username for consistent slug handling
         topic: undefined, // undefined for base links
-        description: 'My personal file collection hub',
+        description: 'Upload your files here', // Use consistent description
         requireEmail: false,
         requirePassword: false,
         password: undefined, // undefined when no password required
-        isPublic: true,
         isActive: true,
         maxFiles: 100,
-        maxFileSize: 10, // 10MB (server action will convert to bytes)
+        maxFileSize: 5, // 5MB (Supabase deployment limit, server action will convert to bytes)
         allowedFileTypes: undefined, // undefined instead of empty array
         expiresAt: undefined, // undefined for no expiration
         brandEnabled: false,
@@ -64,7 +66,6 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
         description: typeof quickStartData.description,
         requireEmail: typeof quickStartData.requireEmail,
         requirePassword: typeof quickStartData.requirePassword,
-        isPublic: typeof quickStartData.isPublic,
         isActive: typeof quickStartData.isActive,
         maxFiles: typeof quickStartData.maxFiles,
         maxFileSize: typeof quickStartData.maxFileSize,
@@ -76,28 +77,34 @@ export function useQuickStart(options: UseQuickStartOptions = {}) {
       const result = await createLinkMutation.mutateAsync(quickStartData);
       console.log('🚀 QUICK START: Mutation successful! Result:', result);
 
-      toast.success('Base link created successfully! 🎉', { 
-        id: 'quick-start' 
-      });
-      
+      // Success event is now emitted by the mutation hook itself
       // Call success callback (for refreshing dashboard, etc.)
       options.onSuccess?.();
-      
     } catch (error) {
       console.error('🚀 QUICK START: Error caught:', error);
       console.error('🚀 QUICK START: Error type:', typeof error);
-      console.error('🚀 QUICK START: Error constructor:', error?.constructor?.name);
-      console.error('🚀 QUICK START: Error message:', error?.message);
-      console.error('🚀 QUICK START: Error stack:', error?.stack);
       
-      if (error && typeof error === 'object') {
-        console.error('🚀 QUICK START: Error object properties:', Object.keys(error));
-        console.error('🚀 QUICK START: Full error object:', JSON.stringify(error, null, 2));
+      // Type-safe error handling
+      if (error instanceof Error) {
+        console.error(
+          '🚀 QUICK START: Error constructor:',
+          error.constructor.name
+        );
+        console.error('🚀 QUICK START: Error message:', error.message);
+        console.error('🚀 QUICK START: Error stack:', error.stack);
+      } else if (error && typeof error === 'object') {
+        console.error(
+          '🚀 QUICK START: Error object properties:',
+          Object.keys(error)
+        );
+        console.error(
+          '🚀 QUICK START: Full error object:',
+          JSON.stringify(error, null, 2)
+        );
       }
-      
-      toast.error('Failed to create base link. Please try the custom setup.', { 
-        id: 'quick-start' 
-      });
+
+      // Error is already emitted by the mutation hook
+      // No need to emit another error event here
       options.onError?.(error);
     }
   };

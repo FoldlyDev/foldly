@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { Clock } from 'lucide-react';
-import { HelpPopover } from '@/components/ui';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 
 interface LinkExpirationSettingsProps {
@@ -25,17 +25,15 @@ export function LinkExpirationSettings({
 
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <Clock className='w-4 h-4' />
         Expiration Date
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         <div className='space-y-3'>
           <div className='flex items-center gap-2'>
-            <label className='text-sm font-medium text-[var(--quaternary)]'>
-              Expiry Date
-            </label>
+            <label className='form-label'>Expiry Date</label>
             <HelpPopover
               title='Link Expiration'
               description='When this date is reached, the link is marked as "Expired" in your dashboard.
@@ -65,7 +63,7 @@ All files remain accessible regardless of expiry status.'
                 }
               )
             }
-            className='w-full px-3 py-2 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+            className='form-input'
           />
           {errors.expiresAt && (
             <p className='text-xs text-red-600'>{errors.expiresAt.message}</p>

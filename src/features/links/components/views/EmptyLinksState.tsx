@@ -1,35 +1,23 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import { useUser } from '@clerk/nextjs';
-import { GradientButton } from '@/components/ui';
-import { ActionButton } from '@/components/ui/action-button';
+import { useState } from 'react';
+import { SecondaryCTAButton, TertiaryCTAButton } from '@/components/core';
 import { useModalStore } from '../../store';
 import { useQuickStart } from '../../hooks/use-quick-start';
-import {
-  Link2,
-  Plus,
-  Sparkles,
-  User,
-  Globe,
-  ArrowRight,
-  Crown,
-  Target,
-  Zap,
-} from 'lucide-react';
+import { getDisplayDomain } from '@/lib/config/url-config';
+import { Sparkles, Globe, ArrowRight, Crown, Zap } from 'lucide-react';
 
 interface EmptyLinksStateProps {
   readonly onRefreshDashboard?: () => void; // For refreshing dashboard after base link creation
 }
 
 export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
-  const { user } = useUser();
   const { openCreateModal } = useModalStore();
-  
+
   // Local loading state to persist until component unmounts
   const [isCreatingLink, setIsCreatingLink] = useState(false);
-  
+
   // Quick start hook with clean separation of concerns
   const { quickStart, isLoading, username } = useQuickStart({
     onSuccess: () => {
@@ -41,6 +29,9 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
 
   // Fallback username for display purposes
   const displayUsername = username || 'your-username';
+
+  // Get the display domain from centralized configuration
+  const displayDomain = getDisplayDomain();
 
   // Enhanced quick start function that manages local loading state
   const handleQuickStart = async () => {
@@ -77,30 +68,6 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
                 <div className='w-16 h-16 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin' />
               </div>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Loading Content */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className='max-w-md mx-auto space-y-4'
-        >
-          <h2 className='text-2xl font-bold text-[var(--quaternary)]'>
-            Setting up your base link...
-          </h2>
-          
-          <p className='text-[var(--neutral-600)]'>
-            Creating your personalized collection hub at{' '}
-            <span className='font-mono text-[var(--primary)]'>
-              foldly.io/{displayUsername}
-            </span>
-          </p>
-
-          <div className='flex items-center justify-center gap-2 text-sm text-[var(--neutral-500)]'>
-            <div className='w-2 h-2 bg-[var(--primary)] rounded-full animate-pulse' />
-            <span>This will only take a moment</span>
           </div>
         </motion.div>
       </motion.div>
@@ -174,13 +141,7 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         transition={{ delay: 0.4, duration: 0.6 }}
         className='max-w-2xl mx-auto mb-8'
       >
-        <h2 className='text-3xl font-bold text-[var(--quaternary)] mb-6'>
-          Create Your Base Link
-        </h2>
-
-        <p className='text-lg text-[var(--neutral-600)] leading-relaxed max-w-lg mx-auto'>
-          Your personal hub for collecting files from clients and collaborators.
-        </p>
+        <h1 className='mb-6'>Create Your Base Link</h1>
       </motion.div>
 
       {/* URL Preview */}
@@ -188,18 +149,16 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.5 }}
-        className='bg-gradient-to-br from-[var(--primary-subtle)] to-[var(--secondary-subtle)] 
-                   border border-[var(--primary)]/30 rounded-xl p-5 mb-10 max-w-md mx-auto'
+        className='foldly-glass-light foldly-glass-shadow-bg border border-[var(--primary)]/30 rounded-xl p-5 mb-10 max-w-md mx-auto'
       >
-        <div className='flex items-center justify-center gap-2 text-sm text-[var(--tertiary)] mb-3'>
+        <div className='flex items-center justify-center gap-2 text-sm mb-3'>
           <Globe className='w-4 h-4' />
-          <span>Your Link</span>
+          <span>Preview</span>
         </div>
-        <div className='text-xl font-mono text-[var(--quaternary)] font-bold'>
-          foldly.io/<span className='text-[var(--primary)]'>{displayUsername}</span>
+        <div className='font-mono text-lg'>
+          {displayDomain}/<span className=''>{displayUsername}</span>
         </div>
       </motion.div>
-
 
       {/* Actions & Descriptions */}
       <motion.div
@@ -212,12 +171,11 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
         <div className='flex flex-col sm:flex-row gap-6 max-w-2xl mx-auto'>
           {/* Quick Start Option */}
           <div className='flex-1 text-center space-y-3'>
-            <GradientButton
-              variant='primary'
-              size='lg'
+            <SecondaryCTAButton
               onClick={handleQuickStart}
               disabled={showLoadingState}
-              className='group shadow-brand text-lg px-8 py-4 w-full h-[60px] flex items-center justify-center gap-3'
+              {...(!showLoadingState && { icon: Zap })}
+              className='group shadow-brand text-lg px-8 py-4 !w-full !h-[60px] flex items-center justify-center gap-3'
             >
               {showLoadingState ? (
                 <>
@@ -226,50 +184,46 @@ export function EmptyLinksState({ onRefreshDashboard }: EmptyLinksStateProps) {
                 </>
               ) : (
                 <>
-                  <Zap className='w-6 h-6' />
                   Quick Start
-                  <ArrowRight className='w-5 h-5 transition-transform group-hover:translate-x-1' />
+                  <ArrowRight className='w-5 h-5 ml-2 transition-transform group-hover:translate-x-1' />
                 </>
               )}
-            </GradientButton>
+            </SecondaryCTAButton>
             <div className='space-y-1'>
-              <p className='font-medium text-[var(--quaternary)] text-sm'>⚡ Ready in seconds</p>
-              <p className='text-xs text-[var(--neutral-600)]'>
-                We'll set up "{displayUsername}" as your link and get you started right away
+              <h5 className='text-xl'>⚡ Ready in seconds</h5>
+              <p className='text-sm'>
+                We'll set up "{displayUsername}" as your link and get you
+                started right away
               </p>
             </div>
           </div>
 
           {/* Custom Setup Option */}
           <div className='flex-1 text-center space-y-3'>
-            <ActionButton
-              variant='outline'
-              size='lg'
+            <TertiaryCTAButton
               onClick={() => {
                 console.log('🔥 EMPTY STATE: Custom Setup button clicked');
                 openCreateModal('base');
                 console.log('🔥 EMPTY STATE: openCreateModal("base") called');
               }}
               disabled={showLoadingState}
-              className='text-lg px-8 py-4 border-2 w-full h-[60px] flex items-center justify-center gap-3'
+              icon={Crown}
+              className='w-full'
             >
-              <Crown className='w-6 h-6' />
               Custom Setup
-            </ActionButton>
+            </TertiaryCTAButton>
             <div className='space-y-1'>
-              <p className='font-medium text-[var(--quaternary)] text-sm'>👑 Make it yours</p>
-              <p className='text-xs text-[var(--neutral-600)]'>
+              <h5 className='text-xl'>👑 Make it yours</h5>
+              <p className='text-sm'>
                 Choose your perfect URL and configure everything to your liking
               </p>
             </div>
           </div>
         </div>
-        
+
         {/* Reassurance Message */}
-        <div className='text-[var(--neutral-500)] text-sm max-w-md mx-auto pt-4 border-t border-[var(--neutral-200)]'>
-          <p>
-            Don't worry—you can always change everything later! ✨
-          </p>
+        <div className='text-muted-foreground max-w-md mx-auto pt-4 border-t border-[var(--neutral-200)]'>
+          <p>Don't worry—you can always change everything later! ✨</p>
         </div>
       </motion.div>
     </motion.div>

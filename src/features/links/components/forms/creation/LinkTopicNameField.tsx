@@ -18,10 +18,12 @@ interface LinkTopicNameFieldProps {
     topicError: string | null;
     slug: string;
   };
-  errors?: {
-    topic?: string;
-    name?: string;
-  } | undefined;
+  errors?:
+    | {
+        topic?: string;
+        name?: string;
+      }
+    | undefined;
   isLoading?: boolean;
 }
 
@@ -47,8 +49,10 @@ export function LinkTopicNameField({
             <Hash className='w-4 h-4 text-primary' />
           </div>
           <div>
-            <h3 className='font-medium text-foreground'>Custom Topic Link Name</h3>
-            <p className='text-sm text-muted-foreground'>
+            <label className='form-label'>
+              Custom Topic Link Name
+            </label>
+            <p className='form-helper'>
               Choose a name for your Custom Topic Link
             </p>
           </div>
@@ -68,21 +72,21 @@ export function LinkTopicNameField({
               }}
               placeholder='e.g., resumes, portfolios, feedback'
               disabled={isLoading}
-              className={`w-full px-3 py-2 pr-10 text-sm bg-background border rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${
+              className={`premium-input pr-10 ${
                 topicValue
                   ? urlData.isValidTopic
-                    ? 'border-green-500 focus:ring-green-500/20 focus:border-green-500'
-                    : 'border-destructive focus:ring-destructive/20 focus:border-destructive'
-                  : 'border-border focus:ring-ring focus:border-ring'
+                    ? '!border-green-600 focus:!border-green-600'
+                    : 'form-input-error'
+                  : ''
               }`}
             />
             {/* Validation icon */}
             {topicValue && (
               <div className='absolute right-3 top-1/2 -translate-y-1/2'>
                 {topicValidation.isChecking ? (
-                  <div className='w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin' />
+                  <div className='w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
                 ) : urlData.isValidTopic ? (
-                  <CheckCircle className='w-4 h-4 text-green-500' />
+                  <CheckCircle className='w-4 h-4 text-green-600' />
                 ) : (
                   <AlertCircle className='w-4 h-4 text-destructive' />
                 )}
@@ -92,9 +96,9 @@ export function LinkTopicNameField({
 
           {/* Error message from real-time validation */}
           {topicValue && urlData.topicError && (
-            <div className='flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
-              <AlertCircle className='w-4 h-4 text-destructive flex-shrink-0' />
-              <p className='text-sm text-destructive leading-4 m-0'>
+            <div className='flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md'>
+              <AlertCircle className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0' />
+              <p className='text-sm font-medium text-red-800 dark:text-red-200 leading-5 m-0'>
                 {urlData.topicError}
               </p>
             </div>
@@ -102,9 +106,9 @@ export function LinkTopicNameField({
 
           {/* Schema validation error (from form validation) */}
           {(errors?.topic || errors?.name) && (
-            <div className='flex items-center gap-2 p-3 bg-destructive/5 border border-destructive/20 rounded-lg'>
-              <AlertCircle className='w-4 h-4 text-destructive flex-shrink-0' />
-              <p className='text-sm text-destructive leading-4 m-0'>
+            <div className='flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-md'>
+              <AlertCircle className='w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0' />
+              <p className='text-sm font-medium text-red-800 dark:text-red-200 leading-5 m-0'>
                 {errors?.topic || errors?.name}
               </p>
             </div>
@@ -112,10 +116,10 @@ export function LinkTopicNameField({
 
           {/* Success message for valid topics */}
           {topicValue && urlData.isValidTopic && urlData.slug && (
-            <div className='flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg'>
-              <CheckCircle className='w-4 h-4 text-green-600 flex-shrink-0' />
+            <div className='flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-md'>
+              <CheckCircle className='w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0' />
               <div className='flex-1'>
-                <p className='text-sm text-green-800 leading-4 m-0'>
+                <p className='text-sm font-medium text-green-800 dark:text-green-200 leading-5 m-0'>
                   Custom Topic Link name is valid and ready to use!
                 </p>
               </div>
@@ -124,9 +128,9 @@ export function LinkTopicNameField({
 
           {/* Help text */}
           <div className='space-y-2'>
-            <p className='text-xs text-muted-foreground'>
-              <strong>Allowed characters:</strong> Letters, numbers,
-              spaces, hyphens, and underscores
+            <p className='form-helper text-xs'>
+              <strong>Allowed characters:</strong> Letters, numbers, spaces,
+              hyphens, and underscores
             </p>
           </div>
         </div>

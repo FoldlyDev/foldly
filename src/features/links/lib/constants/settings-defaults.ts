@@ -10,7 +10,6 @@ interface GeneralSettingsData {
   description: string;
   requireEmail: boolean;
   requirePassword: boolean;
-  isPublic: boolean;
   maxFiles: number;
   maxFileSize: number;
   expiresAt: Date | null;
@@ -33,14 +32,13 @@ interface LinkBrandingFormData {
  */
 export const FORM_FIELD_DEFAULTS = {
   // Security defaults
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   password: '',
 
   // Upload limits (business defaults)
   maxFiles: 100,
-  maxFileSize: 100, // 100MB in MB
+  maxFileSize: 5, // 5MB in MB (Supabase deployment limit)
   allowedFileTypes: [] as readonly string[], // Allow all by default
   allowMultiple: true,
   autoCreateFolders: false,
@@ -83,7 +81,6 @@ export const CREATE_LINK_FORM_DEFAULTS = {
   requireEmail: FORM_FIELD_DEFAULTS.requireEmail,
   requirePassword: FORM_FIELD_DEFAULTS.requirePassword,
   password: FORM_FIELD_DEFAULTS.password,
-  isPublic: FORM_FIELD_DEFAULTS.isPublic,
 
   // Upload settings
   maxFiles: FORM_FIELD_DEFAULTS.maxFiles,
@@ -107,22 +104,20 @@ export const CREATE_LINK_FORM_DEFAULTS = {
 /**
  * Default values for general settings modal initialization
  */
-export const GENERAL_SETTINGS_MODAL_DEFAULTS: Omit<
-  GeneralSettingsData,
-  'brandColor' | 'accentColor'
-> = {
-  isPublic: FORM_FIELD_DEFAULTS.isPublic,
+export const GENERAL_SETTINGS_MODAL_DEFAULTS = {
   requireEmail: FORM_FIELD_DEFAULTS.requireEmail,
   requirePassword: FORM_FIELD_DEFAULTS.requirePassword,
   password: FORM_FIELD_DEFAULTS.password,
-  expiresAt: undefined,
+  expiresAt: null,
   maxFiles: FORM_FIELD_DEFAULTS.maxFiles,
   maxFileSize: FORM_FIELD_DEFAULTS.maxFileSize,
+  title: '',
+  description: '',
   allowedFileTypes: [...FORM_FIELD_DEFAULTS.allowedFileTypes],
   autoCreateFolders: FORM_FIELD_DEFAULTS.autoCreateFolders,
   allowMultiple: FORM_FIELD_DEFAULTS.allowMultiple,
   customMessage: FORM_FIELD_DEFAULTS.customMessage,
-};
+} as const;
 
 // =============================================================================
 // LINK TYPE SPECIFIC DEFAULTS (Business logic, not user prefs)

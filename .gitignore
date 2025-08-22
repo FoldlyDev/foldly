@@ -45,3 +45,6 @@ next-env.d.ts
 
 # example templates
 /example_templates/
+
+# drizzle backups
+/drizzle/backup/

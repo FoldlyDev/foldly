@@ -3,7 +3,7 @@
 // Following 2025 TypeScript best practices with strict type safety
 
 import type { FileId, FolderId, WorkspaceId, UserId, BatchId } from '@/types';
-import type { Workspace } from '@/lib/supabase/types';
+import type { Workspace } from '@/lib/database/types';
 
 // =============================================================================
 // LOCAL TYPE DEFINITIONS
@@ -148,12 +148,139 @@ export const isValidDataClassification = (
 export type { FileData, FolderData } from './database';
 /**
  * Re-export canonical workspace type from single source of truth
- * @deprecated Use Workspace directly from @/lib/supabase/types instead
+ * @deprecated Use Workspace directly from @/lib/database/types instead
  */
 export type WorkspaceData = Workspace;
 export type FileType = string;
 export type FileTreeNode = any; // Define based on your tree structure
 export type FileTreeStats = any; // Define based on your stats structure
+
+// =============================================================================
+// FILES FEATURE - TREE AND COPY OPERATIONS
+// =============================================================================
+
+import type { Link } from '@/lib/database/types/links';
+
+/**
+ * Tree node structure for displaying files and folders
+ */
+export interface TreeNode {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  parentId: string | null;
+  path: string;
+  size?: number;
+  mimeType?: string;
+  children?: TreeNode[];
+  metadata?: {
+    uploadedAt?: Date;
+    uploaderName?: string;
+    uploaderEmail?: string;
+  };
+}
+
+/**
+ * Link with its associated file tree structure
+ */
+export interface LinkWithFileTree extends Link {
+  fileTree: TreeNode[];
+  totalFiles: number;
+  totalSize: number;
+}
+
+/**
+ * Copy operation result
+ */
+export interface CopyResult {
+  success: boolean;
+  copiedFiles: number;
+  copiedFolders: number;
+  errors: Array<{
+    fileId: string;
+    fileName: string;
+    error: string;
+  }>;
+  totalSize: number;
+}
+
+/**
+ * Copy progress tracking
+ */
+export interface CopyProgress {
+  fileId: string;
+  fileName: string;
+  progress: number; // 0-100
+  status: 'pending' | 'copying' | 'completed' | 'error';
+  error?: string;
+}
+
+/**
+ * UI State for files feature
+ */
+export interface FilesUIState {
+  // Selection state
+  selectedLinkId: string | null;
+  selectedFiles: Set<string>;
+  selectedFolders: Set<string>;
+  
+  // Copy operation state
+  copyOperations: Map<string, CopyProgress>;
+  isCopying: boolean;
+  destinationFolderId: string | null;
+  
+  // UI state
+  expandedLinks: Set<string>;
+  searchQuery: string;
+  viewMode: ViewMode;
+  
+  // Modal states
+  isWorkspaceFolderPickerOpen: boolean;
+  contextMenuPosition: { x: number; y: number } | null;
+  contextMenuTarget: { id: string; type: 'file' | 'folder' } | null;
+}
+
+/**
+ * Context menu actions
+ */
+export type ContextMenuAction = 
+  | 'copyToWorkspace'
+  | 'viewDetails'
+  | 'select'
+  | 'expand'
+  | 'collapse'
+  | 'selectAll'
+  | 'deselectAll';
+
+/**
+ * File operation permissions
+ */
+export interface FilePermissions {
+  canCopy: boolean;
+  canView: boolean;
+  reason?: string;
+}
+
+/**
+ * Workspace folder for picker
+ */
+export interface WorkspaceFolder {
+  id: string;
+  name: string;
+  path: string;
+  parentId: string | null;
+  depth: number;
+  hasChildren: boolean;
+}
+
+/**
+ * Copy options
+ */
+export interface CopyOptions {
+  maintainStructure: boolean;
+  handleDuplicates: 'skip' | 'rename' | 'replace';
+  notifyOnComplete: boolean;
+}
 
 // =============================================================================
 // EXPORT ALL FILES TYPES

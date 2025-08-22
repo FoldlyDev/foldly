@@ -27,7 +27,7 @@ export function useWorkspaceRealtime(workspaceId?: string) {
     if (invalidationTimeoutRef.current) {
       clearTimeout(invalidationTimeoutRef.current);
     }
-    
+
     invalidationTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Processing batched realtime update');
       queryClient.invalidateQueries({
@@ -127,7 +127,7 @@ export function useWorkspaceRealtime(workspaceId?: string) {
         clearTimeout(invalidationTimeoutRef.current);
         invalidationTimeoutRef.current = null;
       }
-      
+
       if (channelRef.current) {
         console.log('Unsubscribing from workspace realtime');
         supabase.removeChannel(channelRef.current);

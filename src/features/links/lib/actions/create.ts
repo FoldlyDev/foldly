@@ -10,8 +10,10 @@ import {
   type ActionResult,
   createLinkActionSchema,
 } from '../validations';
-import type { LinkInsert, Link } from '@/lib/supabase/types/links';
+import type { LinkInsert, Link } from '@/lib/database/types/links';
 import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
+import { getSupabaseClient } from '@/lib/config/supabase-client';
+import { brandingStorageService } from '../services/branding-storage-service';
 
 /**
  * Create a new link
@@ -39,7 +41,7 @@ export async function createLinkAction(
 
     // 4. Determine link type and get base link slug for topic links
     const linkType = validatedData.topic ? 'custom' : 'base';
-    
+
     // Get user's existing links to find base link slug
     const existingLinksResult = await linksDbService.getByUserId(user.id);
     let baseSlug = validatedData.slug || user.username || user.id;
@@ -65,7 +67,7 @@ export async function createLinkAction(
         const userBaseLink = existingLinksResult.data.find(
           (link: Link) => link.linkType === 'base' && !link.topic
         );
-        
+
         if (userBaseLink) {
           baseSlug = userBaseLink.slug;
         } else {
@@ -97,7 +99,6 @@ export async function createLinkAction(
         ? // In production, use proper password hashing
           Buffer.from(validatedData.password).toString('base64')
         : null,
-      isPublic: validatedData.isPublic ?? true, // Default to true if not provided
       isActive: validatedData.isActive ?? true, // Default to true if not provided
       maxFiles: validatedData.maxFiles,
       maxFileSize: validatedData.maxFileSize * 1024 * 1024, // Convert MB to bytes
@@ -109,13 +110,15 @@ export async function createLinkAction(
       expiresAt: validatedData.expiresAt
         ? new Date(validatedData.expiresAt)
         : null,
-      brandEnabled: validatedData.brandEnabled,
-      brandColor: validatedData.brandColor || null,
+      branding: validatedData.branding || { enabled: false },
       // Initialize stats fields
       totalUploads: 0,
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
+      // Initialize storage quota fields
+      storageUsed: 0,
+      storageLimit: 524288000, // 500MB default per link
     };
 
     // 6. Create link in database
@@ -138,7 +141,26 @@ export async function createLinkAction(
       details: { title: linkData.title, linkType: linkData.linkType },
     });
 
-    // 6. DISABLED: No revalidatePath to prevent page refresh
+    // 6. Broadcast real-time update for new link creation
+    try {
+      const supabase = getSupabaseClient();
+      const userChannel = supabase.channel(`files:user:${user.id}`);
+      await userChannel.send({
+        type: 'broadcast',
+        event: 'file_update',
+        payload: {
+          type: 'file_added', // Using file_added to trigger files list refresh
+          linkId: result.data!.id,
+          userId: user.id,
+        },
+      });
+      console.log('Broadcasted new link creation to files channel');
+    } catch (error) {
+      console.error('Failed to broadcast link creation:', error);
+      // Don't fail the operation if broadcast fails
+    }
+
+    // 7. DISABLED: No revalidatePath to prevent page refresh
     // We handle UI updates manually via React state in LinksContainer
     // revalidatePath('/dashboard/links');
     // revalidatePath(`/dashboard/links/${result.data!.id}`);
@@ -158,6 +180,73 @@ export async function createLinkAction(
       };
     }
 
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Create a new link with branding image
+ * This action handles both link creation and image upload in sequence
+ */
+export async function createLinkWithBrandingAction(
+  input: z.infer<typeof createLinkActionSchema> & { brandingImageFile?: File }
+): Promise<ActionResult<Link>> {
+  try {
+    // 1. Extract the image file from input
+    const { brandingImageFile, ...linkData } = input;
+    
+    // 2. Create the link first
+    const createResult = await createLinkAction(linkData);
+    
+    if (!createResult.success || !createResult.data) {
+      return createResult;
+    }
+    
+    // 3. If there's a branding image, upload it
+    if (brandingImageFile && linkData.branding?.enabled) {
+      const user = await requireAuth();
+      
+      try {
+        const uploadResult = await brandingStorageService.uploadBrandingImage(
+          brandingImageFile,
+          user.id,
+          createResult.data.id
+        );
+        
+        if (uploadResult.success) {
+          // Update the link with the image paths
+          const updatedBranding = {
+            ...createResult.data.branding,
+            imagePath: uploadResult.data!.path,
+            imageUrl: uploadResult.data!.publicUrl,
+          };
+          
+          // Update the link in the database
+          const updateResult = await linksDbService.update(createResult.data.id, {
+            branding: updatedBranding,
+          } as any);
+          
+          if (updateResult.success) {
+            return {
+              success: true,
+              data: updateResult.data,
+            };
+          }
+        }
+      } catch (error) {
+        console.error('Failed to upload branding image during creation:', error);
+        // Don't fail the entire operation if image upload fails
+        // The link is already created successfully
+      }
+    }
+    
+    // Return the created link (with or without image)
+    return createResult;
+  } catch (error) {
+    console.error('Create link with branding error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

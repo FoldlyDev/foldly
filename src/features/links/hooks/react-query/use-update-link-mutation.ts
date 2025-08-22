@@ -8,9 +8,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLinkAction } from '../../lib/actions/update';
 import { linksQueryKeys } from '../../lib/query-keys';
-import type { Link, DatabaseId } from '@/lib/supabase/types';
+import { filesQueryKeys } from '@/features/files/lib/query-keys';
+import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
+import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
-import { toast } from 'sonner';
+import { NotificationEventType } from '@/features/notifications/core';
+import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
 
 interface UseUpdateLinkMutationOptions {
   onSuccess?: (result: UpdateLinkResult) => void;
@@ -20,11 +23,13 @@ interface UseUpdateLinkMutationOptions {
 
 interface UpdateLinkResult {
   data: Link;
-  meta?: {
-    isCascadeUpdate?: boolean;
-    affectedLinksCount?: number;
-    affectedLinkIds?: string[];
-  } | undefined;
+  meta?:
+    | {
+        isCascadeUpdate?: boolean;
+        affectedLinksCount?: number;
+        affectedLinkIds?: string[];
+      }
+    | undefined;
 }
 
 interface UseUpdateLinkMutationResult {
@@ -45,10 +50,13 @@ export function useUpdateLinkMutation(
   options: UseUpdateLinkMutationOptions = {}
 ): UseUpdateLinkMutationResult {
   const queryClient = useQueryClient();
+  const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
 
   const mutation = useMutation({
-    mutationFn: async (input: UpdateLinkActionData): Promise<UpdateLinkResult> => {
+    mutationFn: async (
+      input: UpdateLinkActionData
+    ): Promise<UpdateLinkResult> => {
       const result = await updateLinkAction(input);
 
       if (!result.success) {
@@ -117,7 +125,10 @@ export function useUpdateLinkMutation(
       // Roll back optimistic updates (only if we made them)
       if (context && !context.skipOptimistic) {
         if (context.previousLinks) {
-          queryClient.setQueryData(linksQueryKeys.list(), context.previousLinks);
+          queryClient.setQueryData(
+            linksQueryKeys.list(),
+            context.previousLinks
+          );
         }
         if (context.previousLink) {
           queryClient.setQueryData(
@@ -127,7 +138,12 @@ export function useUpdateLinkMutation(
         }
       }
 
-      toast.error(error.message || 'Failed to update link');
+      // Emit error event
+      emit(NotificationEventType.LINK_UPDATE_ERROR, {
+        linkId: variables.id,
+        linkTitle: variables.title || 'Link',
+        error: error.message || 'Failed to update link',
+      });
       onError?.(error);
     },
 
@@ -135,22 +151,37 @@ export function useUpdateLinkMutation(
       // Handle cascade updates with comprehensive cache invalidation
       if (result.meta?.isCascadeUpdate) {
         // Invalidate all link queries for cascade updates
-        queryClient.invalidateQueries({ 
+        queryClient.invalidateQueries({
           queryKey: ['links'],
-          exact: false 
+          exact: false,
         });
-        
+
         const affectedCount = result.meta.affectedLinksCount || 0;
-        toast.success(`Base link updated - ${affectedCount} links updated successfully`);
+        // Emit success event for cascade update
+        emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+          linkId: variables.id,
+          linkTitle: `Base link updated - ${affectedCount} links updated`,
+        });
       } else {
         // Regular single link update
         queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
         queryClient.invalidateQueries({
           queryKey: linksQueryKeys.detail(variables.id),
         });
-        
-        toast.success('Link updated successfully');
+
+        // Emit success event for regular update
+        emit(NotificationEventType.LINK_UPDATE_SUCCESS, {
+          linkId: variables.id,
+          linkTitle: variables.title || result.data?.title || 'Link',
+        });
       }
+      
+      // Invalidate storage queries to reflect any changes in storage usage
+      queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
+      
+      // Invalidate files feature queries to ensure updates are reflected there
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       onSuccess?.(result);
     },
@@ -159,9 +190,9 @@ export function useUpdateLinkMutation(
       // Handle settled state based on whether it was a cascade update
       if (result?.meta?.isCascadeUpdate) {
         // For cascade updates, invalidate all link-related queries
-        queryClient.invalidateQueries({ 
+        queryClient.invalidateQueries({
           queryKey: ['links'],
-          exact: false 
+          exact: false,
         });
       } else {
         // For regular updates, invalidate specific queries
@@ -170,6 +201,10 @@ export function useUpdateLinkMutation(
           queryKey: linksQueryKeys.detail(variables.id),
         });
       }
+      
+      // Always invalidate files feature queries regardless of success/error
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
 

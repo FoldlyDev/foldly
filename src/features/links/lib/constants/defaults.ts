@@ -12,7 +12,6 @@ import type { HexColor } from '@/types';
 export const FORM_DEFAULTS = {
   // Link creation defaults
   linkType: 'custom' as const,
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   password: '',
@@ -21,14 +20,15 @@ export const FORM_DEFAULTS = {
 
   // File upload defaults
   maxFiles: 100,
-  maxFileSize: 100, // MB
+  maxFileSize: 5, // MB (Supabase deployment limit)
   allowedFileTypes: [] as string[],
 
   // Branding defaults
-  brandingEnabled: false,
-  brandColor: '#3B82F6' as HexColor,
-  accentColor: '#10B981' as HexColor,
-  logoUrl: '',
+  branding: {
+    enabled: false,
+    color: '#3B82F6' as HexColor,
+    image: '',
+  },
 
   // Text defaults
   title: '',
@@ -56,11 +56,6 @@ export const COMPONENT_DEFAULTS = {
     isBaseLink: false,
   },
 
-  // Visibility indicator
-  visibilityIndicator: {
-    size: 'sm' as const,
-    isPublic: true,
-  },
 
   // Loading states
   loading: {
@@ -101,7 +96,6 @@ export const LINK_DEFAULTS = {
   status: 'active' as const,
   uploads: 0,
   views: 0,
-  isPublic: true,
   requireEmail: false,
   requirePassword: false,
   maxFiles: 100,
@@ -110,10 +104,11 @@ export const LINK_DEFAULTS = {
   autoCreateFolders: false,
 
   // Branding
-  brandingEnabled: false,
-  brandColor: '#3B82F6' as HexColor,
-  accentColor: '#10B981' as HexColor,
-  logoUrl: '',
+  branding: {
+    enabled: false,
+    color: '#3B82F6' as HexColor,
+    image: '',
+  },
 
   // Timestamps
   lastActivity: new Date().toISOString(),
@@ -148,10 +143,11 @@ export const MODAL_DEFAULTS = {
   // Branding context
   brandingContext: null as 'creation' | 'settings' | null,
   brandingFormData: {
-    brandingEnabled: false,
-    brandColor: '',
-    accentColor: '',
-    logoUrl: '',
+    branding: {
+      enabled: false,
+      color: '',
+      image: '',
+    },
   },
 } as const;
 

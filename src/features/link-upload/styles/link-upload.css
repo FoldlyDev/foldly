@@ -1,0 +1,114 @@
+/* Link Upload Styles - Matching Workspace Feature Styling */
+
+/* Main Container */
+.link-upload-container {
+  @apply min-h-screen flex flex-col;
+}
+
+/* Toolbar Styles - Glass Morphism like Workspace */
+.link-upload-toolbar {
+  @apply foldly-glass rounded-lg overflow-hidden mb-6;
+}
+
+.link-upload-toolbar-main {
+  @apply flex flex-col gap-3 p-3;
+}
+
+.link-upload-toolbar-left {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.link-upload-toolbar-right {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+/* Search Container */
+.link-upload-search-container {
+  @apply relative min-w-[200px] flex-1 max-w-[300px];
+}
+
+/* Folder Creation */
+.link-upload-folder-creation {
+  @apply flex flex-col gap-2 w-full;
+}
+
+.link-upload-folder-input-group {
+  @apply flex items-center gap-2;
+}
+
+.link-upload-folder-input {
+  @apply flex-1;
+}
+
+/* Tree Container - Glass Morphism */
+.link-upload-tree-container {
+  @apply flex-1 min-h-0;
+}
+
+.link-upload-tree-wrapper {
+  @apply h-full foldly-glass rounded-lg overflow-hidden;
+}
+
+.link-upload-tree-content {
+  @apply h-full overflow-auto p-4;
+}
+
+/* Light Theme Overrides */
+.light .link-upload-toolbar {
+  @apply foldly-glass-light foldly-glass-shadow-bg;
+}
+
+.light .link-upload-tree-wrapper {
+  @apply foldly-glass-light foldly-glass-shadow-bg;
+}
+
+/* Dark Theme - using default foldly-glass */
+.dark .link-upload-tree-wrapper {
+  @apply foldly-glass;
+}
+
+/* Responsive - Tablet and Desktop */
+@media (min-width: 768px) {
+  .link-upload-toolbar-main {
+    @apply flex-row items-center justify-between p-4;
+  }
+
+  .link-upload-search-container {
+    @apply min-w-[280px] max-w-[400px];
+  }
+
+  .link-upload-folder-creation {
+    @apply w-auto;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 767px) {
+  .link-upload-toolbar-main {
+    @apply p-4;
+  }
+
+  .link-upload-tree-content {
+    @apply p-5;
+  }
+
+  /* Larger tap targets on mobile */
+  .link-upload-toolbar button {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
+
+/* High Contrast */
+@media (prefers-contrast: high) {
+  .link-upload-toolbar,
+  .link-upload-tree-wrapper {
+    @apply border-2;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .link-upload-toolbar-main {
+    @apply transition-none;
+  }
+}

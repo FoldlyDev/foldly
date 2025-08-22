@@ -1,10 +1,18 @@
 'use client';
 
 import * as React from 'react';
-import { Globe, Mail, Lock, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
+import {
+  Globe,
+  Mail,
+  Lock,
+  ToggleLeft,
+  ToggleRight,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Checkbox } from '@/components/ui/shadcn/checkbox';
-import { HelpPopover } from '@/components/ui';
+import { Switch } from '@/components/ui/shadcn/switch';
+import { HelpPopover } from '@/components/core/help-popover';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../../lib/validations';
 
@@ -12,9 +20,7 @@ interface LinkAccessSettingsProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function LinkAccessSettings({
-  form,
-}: LinkAccessSettingsProps) {
+export function LinkAccessSettings({ form }: LinkAccessSettingsProps) {
   const {
     watch,
     setValue,
@@ -25,20 +31,18 @@ export function LinkAccessSettings({
 
   return (
     <div className='space-y-4'>
-      <h3 className='font-semibold text-[var(--quaternary)] flex items-center gap-2'>
+      <h3 className='text-sm font-medium text-foreground flex items-center gap-2'>
         <Globe className='w-4 h-4' />
         Visibility & Access
       </h3>
 
-      <div className='space-y-4 bg-[var(--neutral-50)] p-4 rounded-lg transition-all duration-300 ease-in-out'>
+      <div className='rounded-lg border border-border bg-card p-4 space-y-4'>
         {/* Active Status Toggle */}
-        <div className='space-y-3 pb-3 border-b border-[var(--neutral-200)]'>
+        <div className='space-y-3 pb-3 border-b border-border'>
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
-                  Link Status
-                </span>
+                <span className='form-label'>Link Status</span>
                 <HelpPopover
                   title='Active vs Inactive Links'
                   description="Active: Link is live and accepts uploads.
@@ -46,7 +50,7 @@ export function LinkAccessSettings({
 Inactive: Link is disabled - users see a 'Link unavailable' message."
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 {watchedValues.isActive
                   ? 'Link is active and accepting uploads'
                   : 'Link is disabled - no uploads allowed'}
@@ -60,7 +64,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
               >
                 {watchedValues.isActive ? 'Active' : 'Inactive'}
               </span>
-              <Checkbox
+              <Switch
                 checked={watchedValues.isActive ?? true}
                 onCheckedChange={(checked: boolean) =>
                   setValue('isActive', checked, {
@@ -68,6 +72,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
                     shouldValidate: true,
                   })
                 }
+                className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
               />
             </div>
           </label>
@@ -77,39 +82,7 @@ Inactive: Link is disabled - users see a 'Link unavailable' message."
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
-                  Public Access
-                </span>
-                <HelpPopover
-                  title='Public vs Private Access'
-                  description="Public: Users can see all uploaded files from everyone.
-
-Private: Users only see their own uploads - others' files stay hidden."
-                />
-              </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
-                When private, uploaders cannot see each other's files
-              </p>
-            </div>
-            <Checkbox
-              checked={watchedValues.isPublic ?? true}
-              onCheckedChange={(checked: boolean) =>
-                setValue('isPublic', checked, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                })
-              }
-            />
-          </label>
-        </div>
-
-        <div className='space-y-3'>
-          <label className='flex items-center justify-between'>
-            <div className='space-y-1'>
-              <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
-                  Require Email Address
-                </span>
+                <span className='form-label'>Require Email Address</span>
                 <HelpPopover
                   title='Email Collection'
                   description='Collects uploader email addresses before upload.
@@ -119,11 +92,11 @@ Private: Users only see their own uploads - others' files stay hidden."
 • Export for follow-up'
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 Collect uploader contact info for tracking and follow-up
               </p>
             </div>
-            <Checkbox
+            <Switch
               checked={watchedValues.requireEmail ?? false}
               onCheckedChange={(checked: boolean) =>
                 setValue('requireEmail', checked, {
@@ -131,6 +104,7 @@ Private: Users only see their own uploads - others' files stay hidden."
                   shouldValidate: true,
                 })
               }
+              className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
             />
           </label>
         </div>
@@ -139,9 +113,7 @@ Private: Users only see their own uploads - others' files stay hidden."
           <label className='flex items-center justify-between'>
             <div className='space-y-1'>
               <div className='flex items-center gap-2'>
-                <span className='text-sm font-medium text-[var(--quaternary)]'>
-                  Password Protection
-                </span>
+                <span className='form-label'>Password Protection</span>
                 <HelpPopover
                   title='Password Protection'
                   description='Requires password before accessing upload page.
@@ -151,11 +123,11 @@ Share both:
 • The password'
                 />
               </div>
-              <p className='text-xs text-[var(--neutral-500)]'>
+              <p className='form-helper'>
                 Extra security layer - users need both link and password
               </p>
             </div>
-            <Checkbox
+            <Switch
               checked={watchedValues.requirePassword ?? false}
               onCheckedChange={(checked: boolean) =>
                 setValue('requirePassword', checked, {
@@ -163,6 +135,7 @@ Share both:
                   shouldValidate: true,
                 })
               }
+              className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
             />
           </label>
 
@@ -190,9 +163,7 @@ Share both:
                 }}
                 className='ml-4 space-y-2 overflow-hidden'
               >
-                <label className='block text-xs font-medium text-[var(--quaternary)]'>
-                  Set Password
-                </label>
+                <label className='form-label'>Set Password</label>
                 <div className='relative'>
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -203,17 +174,33 @@ Share both:
                         shouldValidate: true,
                       })
                     }
-                    placeholder='Enter password (minimum 8 characters)'
-                    className='w-full px-3 py-2 pr-10 text-sm border border-[var(--neutral-300)] rounded-md focus:ring-2 focus:ring-[var(--primary)] focus:border-[var(--primary)]'
+                    placeholder='Enter password (8+ characters)'
+                    className={`form-input pr-10 ${
+                      watchedValues.password &&
+                      watchedValues.password.length < 8
+                        ? 'form-input-error'
+                        : ''
+                    }`}
                   />
                   <button
                     type='button'
                     onClick={() => setShowPassword(!showPassword)}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 text-[var(--neutral-500)] hover:text-[var(--neutral-700)] transition-colors'
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
                   >
-                    {showPassword ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
+                    {showPassword ? (
+                      <EyeOff className='w-4 h-4' />
+                    ) : (
+                      <Eye className='w-4 h-4' />
+                    )}
                   </button>
                 </div>
+                {watchedValues.password &&
+                  watchedValues.password.length < 8 && (
+                    <p className='text-sm font-medium text-red-600 dark:text-red-400 flex items-center gap-1'>
+                      <span>⚠️</span>
+                      Password must be at least 8 characters long
+                    </p>
+                  )}
                 {errors.password && (
                   <p className='text-xs text-red-600'>
                     {errors.password.message}

@@ -15,6 +15,7 @@ Foldly implements a **sophisticated feature-based architecture** following 2025 
 3. **Performance Optimized**: Sub-3-second load times with efficient state management
 4. **Security Layered**: Multi-tier security with Row Level Security and audit logging
 5. **Scalable Foundation**: Architecture supports 10,000+ concurrent users
+6. **Environment-Agnostic**: Dynamic URL configuration supports multiple deployment environments
 
 ---
 
@@ -88,40 +89,54 @@ foldly/
 │   │       └── index.ts              # Feature barrel exports
 │   │
 │   ├── components/                   # Shared UI Components
-│   │   ├── ui/                       # Global UI Components
-│   │   │   ├── shadcn/               # Shadcn/ui components
-│   │   │   ├── animate-ui/           # Custom animated components
-│   │   │   └── [component].tsx       # Custom UI components
-│   │   │
-│   │   ├── layout/                   # Global Layout Components
-│   │   │   ├── navigation.tsx        # Main navigation
-│   │   │   └── dashboard-navigation.tsx # Dashboard sidebar
-│   │   │
-│   │   └── shared/                   # Shared/Common Components
+│   │   ├── ui/                       # Global UI System
+│   │   │   ├── core/                 # Base UI components (includes shadcn/)
+│   │   │   ├── composite/            # Complex composite components
+│   │   │   ├── feedback/             # Loading and feedback components
+│   │   │   └── layout/               # Layout components
+│   │   └── marketing/                # Marketing page components
+│   │       └── animate-ui/           # Custom animated components
 │   │
 │   ├── lib/                          # Global Utilities & Configuration
 │   │   ├── hooks/                    # Global custom hooks
 │   │   ├── utils/                    # Global utility functions
 │   │   ├── validations/              # Global validation schemas
 │   │   ├── config/                   # Global configuration
+│   │   │   └── url-config.ts         # Centralized URL configuration
 │   │   ├── constants/                # Global constants
 │   │   └── animations/               # Global animation utilities
 │   │
 │   ├── types/                        # Global Type Definitions
-│   │   ├── api/                      # Global API types
-│   │   ├── auth/                     # Global auth types
-│   │   ├── global/                   # Global utility types
-│   │   ├── database/                 # Global database types
-│   │   └── features/                 # General component types
+│   │   ├── file-tree/                # File tree types
+│   │   └── global/                   # Global utility types
 │   │
-│   ├── server/                       # Server-Side Architecture
-│   │   ├── api/routers/              # tRPC API routers
-│   │   ├── auth/                     # Server-side auth configuration
-│   │   ├── db/schema/                # Database schemas (Drizzle ORM)
-│   │   └── uploadthing/              # File upload configuration
+│   ├── lib/                          # Global Utilities & Configuration
+│   │   ├── database/                 # Database layer with Drizzle ORM
+│   │   │   ├── schemas/              # Modular database schemas
+│   │   │   ├── types/                # Database type definitions
+│   │   │   ├── migrations/           # Database migration utilities
+│   │   │   └── connection.ts         # Database connection setup
+│   │   ├── services/                 # Service Layer Architecture
+│   │   │   ├── billing/              # Subscription services
+│   │   │   ├── files/                # File management services
+│   │   │   ├── users/                # User management services
+│   │   │   └── workspace/            # Workspace services
+│   │   ├── hooks/                    # Global custom hooks
+│   │   ├── utils/                    # Global utility functions
+│   │   ├── validations/              # Global validation schemas
+│   │   ├── config/                   # Global configuration
+│   │   ├── constants/                # Global constants
+│   │   ├── providers/                # React context providers
+│   │   └── webhooks/                 # Webhook handlers
 │   │
-│   ├── store/                        # Global State Management
-│   │   └── slices/                   # Global Zustand stores
+│   ├── components/                   # Shared UI Components
+│   │   ├── ui/                       # Global UI System
+│   │   │   ├── core/                 # Base UI components (includes shadcn/)
+│   │   │   ├── composite/            # Complex composite components
+│   │   │   ├── feedback/             # Loading and feedback components
+│   │   │   └── layout/               # Layout components
+│   │   └── marketing/                # Marketing page components
+│   │       └── animate-ui/           # Custom animated components
 │   │
 │   ├── styles/                       # Global Styling
 │   │   └── components/               # Global component styles
@@ -142,7 +157,7 @@ foldly/
 │   ├── components/                   # Component tests
 │   ├── e2e/                          # End-to-end tests
 │   ├── lib/                          # Utility tests
-│   └── server/                       # Server-side tests
+│   └── lib/                          # Library and utility tests
 │
 └── public/                           # Static Assets
     └── assets/img/logo/              # Branding assets
@@ -202,9 +217,9 @@ src/features/links/
 ```typescript
 // Advanced link type architecture
 export const LINK_TYPES = {
-  BASE: 'base', // foldly.com/username
-  CUSTOM: 'custom', // foldly.com/username/topic
-  GENERATED: 'generated', // Right-click folder creation
+  BASE: 'base', // foldly.com/[any-slug]
+  CUSTOM: 'custom', // foldly.com/[any-slug]/[topic]
+  GENERATED: 'generated', // foldly.com/[any-slug]/[generated-slug]
 } as const satisfies Record<string, string>;
 
 export type LinkType = (typeof LINK_TYPES)[keyof typeof LINK_TYPES];
@@ -353,7 +368,10 @@ interface LinksModalStore {
 #### **Database Layer**
 
 ```sql
--- Simplified Multi-Link Database Architecture (MVP)
+-- 9-Table Database Architecture with Simplified Subscription System
+-- Schema managed with Drizzle ORM at @/lib/database/schemas/
+
+-- Core User Management
 CREATE TABLE users (
   id UUID PRIMARY KEY,              -- Clerk user ID
   email VARCHAR(255) UNIQUE NOT NULL,
@@ -363,11 +381,12 @@ CREATE TABLE users (
   avatar_url TEXT,
   subscription_tier VARCHAR(20) DEFAULT 'free',
   storage_used BIGINT DEFAULT 0,
-  storage_limit BIGINT DEFAULT 2147483648, -- 2GB
+  storage_limit BIGINT DEFAULT 2147483648, -- 2GB default
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Workspace Organization
 CREATE TABLE workspaces (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -375,6 +394,7 @@ CREATE TABLE workspaces (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Multi-Link System (base/custom/generated)
 CREATE TABLE links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -383,11 +403,10 @@ CREATE TABLE links (
   -- URL Components
   slug VARCHAR(100) NOT NULL,
   topic VARCHAR(100),              -- NULL for base links
-  link_type VARCHAR(20) NOT NULL DEFAULT 'base'
-    CHECK (link_type IN ('base','custom','generated')),
+  link_type link_type_enum NOT NULL DEFAULT 'base',
 
   -- Display & Security
-  title VARCHAR(255) NOT NULL DEFAULT (COALESCE(topic, 'Personal base link')),
+  title VARCHAR(255) NOT NULL,
   description TEXT,
   require_email BOOLEAN DEFAULT FALSE,
   require_password BOOLEAN DEFAULT FALSE,
@@ -395,18 +414,28 @@ CREATE TABLE links (
   is_public BOOLEAN DEFAULT TRUE,
   is_active BOOLEAN DEFAULT TRUE,
 
-  -- Constraints & branding
+  -- Upload Constraints
   max_files INTEGER DEFAULT 100,
-  max_file_size BIGINT DEFAULT 104857600,
+  max_file_size BIGINT DEFAULT 104857600, -- 100MB
   expires_at TIMESTAMP WITH TIME ZONE,
+
+  -- Branding Options
   brand_enabled BOOLEAN DEFAULT FALSE,
   brand_color VARCHAR(7),
+  welcome_message TEXT,
+
+  -- Usage Statistics
+  view_count INTEGER DEFAULT 0,
+  upload_count INTEGER DEFAULT 0,
+  total_files INTEGER DEFAULT 0,
+  total_size BIGINT DEFAULT 0,
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE (user_id, slug, topic)
 );
 
+-- Hierarchical Folder Structure
 CREATE TABLE folders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -415,12 +444,13 @@ CREATE TABLE folders (
   link_id UUID REFERENCES links(id) ON DELETE SET NULL,
 
   name VARCHAR(255) NOT NULL,
-  path TEXT NOT NULL,
+  path TEXT NOT NULL,              -- Materialized path for efficient queries
   depth SMALLINT NOT NULL DEFAULT 0,
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Upload Batch Management
 CREATE TABLE batches (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
@@ -428,14 +458,15 @@ CREATE TABLE batches (
 
   uploader_name VARCHAR(255) NOT NULL,
   uploader_email VARCHAR(255),
-  status VARCHAR(12) NOT NULL DEFAULT 'uploading',
+  status batch_status_enum NOT NULL DEFAULT 'uploading',
 
-  total_files INT DEFAULT 0,
+  total_files INTEGER DEFAULT 0,
   total_size BIGINT DEFAULT 0,
 
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- File Storage and Metadata
 CREATE TABLE files (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   link_id UUID NOT NULL REFERENCES links(id) ON DELETE CASCADE,
@@ -449,33 +480,102 @@ CREATE TABLE files (
   mime_type VARCHAR(100) NOT NULL,
   storage_path TEXT NOT NULL,
 
-  processing_status VARCHAR(20) DEFAULT 'pending',
+  processing_status file_processing_status_enum DEFAULT 'pending',
   is_safe BOOLEAN DEFAULT TRUE,
 
   uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Row Level Security for multi-tenant architecture
+-- Simplified Subscription Plans (UI Metadata Only)
+CREATE TABLE subscription_plans (
+  id SERIAL PRIMARY KEY,
+  plan_key VARCHAR(50) UNIQUE NOT NULL,           -- 'free', 'pro', 'business'
+  plan_name VARCHAR(100) NOT NULL,                -- 'Free', 'Pro', 'Business'
+  plan_description TEXT,                          -- UI description
+  monthly_price_usd DECIMAL(10,2) NOT NULL,       -- For pricing display
+  yearly_price_usd DECIMAL(10,2),                 -- For pricing display
+  storage_limit_gb INTEGER NOT NULL,              -- 50, 500, -1 for unlimited
+  highlight_features JSONB,                       -- Array of feature names for display
+  feature_descriptions JSONB,                     -- Detailed feature explanations
+  is_popular BOOLEAN DEFAULT FALSE,               -- For "Most Popular" badge
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Subscription Analytics (Business Metrics)
+CREATE TABLE subscription_analytics (
+  id SERIAL PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  plan_key VARCHAR(50) NOT NULL,
+  event_type VARCHAR(50) NOT NULL,               -- 'upgrade', 'downgrade', 'cancel'
+  previous_plan VARCHAR(50),
+  new_plan VARCHAR(50),
+  revenue_impact DECIMAL(10,2),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- PostgreSQL Enums (managed in @/lib/database/schemas/enums.ts)
+CREATE TYPE link_type_enum AS ENUM ('base', 'custom', 'generated');
+CREATE TYPE file_processing_status_enum AS ENUM ('pending', 'processing', 'completed', 'failed');
+CREATE TYPE batch_status_enum AS ENUM ('uploading', 'processing', 'completed', 'failed');
+CREATE TYPE subscription_tier_enum AS ENUM ('free', 'pro', 'enterprise');
+
+-- Row Level Security Policies (Clerk JWT Integration)
 CREATE POLICY "Users manage own data" ON users FOR ALL USING (id = auth.jwt()->>'sub'::uuid);
 CREATE POLICY "Users manage own workspaces" ON workspaces FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
 CREATE POLICY "Users manage own links" ON links FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+CREATE POLICY "Users manage own folders" ON folders FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+CREATE POLICY "Users manage own batches" ON batches FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
+CREATE POLICY "Users manage own files" ON files FOR ALL USING (user_id = auth.jwt()->>'sub'::uuid);
 ```
 
 #### **API Architecture**
 
 - **Server Actions**: Direct database mutations with Next.js App Router
-- **React Query**: Client-side caching and real-time synchronization
-- **Supabase**: PostgreSQL with Row Level Security
-- **Real-time**: React Query background refetching + automatic invalidation
+- **React Query v5**: Server state management with optimistic updates and automatic cache invalidation
+- **Drizzle ORM**: Type-safe database operations with PostgreSQL
+- **Supabase**: PostgreSQL hosting with Row Level Security
+- **Real-time**: React Query background refetching with intelligent cache management
+
+#### **Subscription System Architecture (2025 Clerk Integration)**
+
+**Modern Hybrid Clerk + Database Approach**
+
+- **Clerk 2025 Integration**: Source of truth for subscription state and feature access control
+  - Real-time plan detection via `user.has({ plan: 'plan_name' })` method
+  - Feature access control via `user.has({ feature: 'feature_name' })` method
+  - Automatic subscription state synchronization with Stripe
+  - Comprehensive billing webhook integration for state updates
+- **Database**: Business intelligence and UI metadata management
+  - Subscription analytics tracking for revenue optimization
+  - Plan metadata for pricing displays and feature descriptions
+  - User behavior analytics and conversion funnel tracking
+  - Storage quota management and usage monitoring
+
+**Modern Architecture Benefits**:
+
+- **Enterprise Integration**: Direct Clerk 2025 billing API integration
+- **Business Intelligence**: Comprehensive subscription analytics and revenue tracking
+- **Performance Optimized**: Real-time feature checking with intelligent caching
+- **Developer Experience**: 50% code reduction with centralized service architecture
+- **Error Resilience**: Multi-layer fallback systems with graceful degradation
 
 ```typescript
-// Server Action pattern
+// Modern Service Layer Integration Pattern
 'use server';
+
+import { db } from '@/lib/database/connection';
+import { billing } from '@/lib/services/billing';
+import { linksService } from '@/lib/services/workspace/workspace-service';
+import { revalidatePath } from 'next/cache';
 
 export async function createLinkAction(
   data: CreateLinkActionData
 ): Promise<ActionResult<LinkWithStats>> {
   try {
+    // Use centralized service layer for business logic
     const result = await linksService.createLink(data);
 
     if (!result.success) {
@@ -484,13 +584,62 @@ export async function createLinkAction(
 
     // Automatic cache revalidation
     revalidatePath('/dashboard/links');
+    revalidatePath('/dashboard/workspace');
 
     return { success: true, data: result.data };
   } catch (error) {
+    console.error('Link creation failed:', error);
     return { success: false, error: { message: 'Failed to create link' } };
   }
 }
+
+// Modern Billing Integration (2025 Patterns)
+import { billing } from '@/lib/services/billing';
+
+// Centralized billing service with convenience object
+const currentPlan = await billing.getCurrentPlan(); // Returns 'free' | 'pro' | 'business'
+const hasCustomBranding = await billing.hasFeature('custom_branding');
+const isSubscribed = await billing.isUserSubscribed();
+
+// Service-specific operations
+const analytics = await billing.analytics.getUserInsights(userId);
+const billingData = await billing.billingData.getOverviewData(userId);
+const planMetadata = await billing.integration.getPlanUIMetadata('pro');
 ```
+
+#### **Modern Service Layer Architecture**
+
+**Centralized Service Integration (2025 Pattern)**
+
+```typescript
+// NEW: Centralized billing service exports
+export const billing = {
+  // Plan access
+  getCurrentPlan,
+  hasFeature,
+  isUserSubscribed,
+
+  // Core services
+  integration: ClerkBillingIntegrationService,
+  analytics: SubscriptionAnalyticsService,
+  billingData: BillingAnalyticsService,
+  errorRecovery: BillingErrorRecoveryService,
+} as const;
+
+// Service consolidation benefits:
+// - Single import for all billing functionality
+// - Type-safe service methods with comprehensive error handling
+// - Intelligent caching and performance optimization
+// - Graceful degradation and fallback systems
+```
+
+**Service Layer Benefits**:
+
+- **Centralized Access**: Single import patterns for all domain services
+- **Type Safety**: Comprehensive TypeScript coverage with branded types
+- **Error Recovery**: Multi-layer fallback systems with health monitoring
+- **Performance**: Intelligent caching strategies with React Query integration
+- **Developer Experience**: Intuitive API design with excellent discoverability
 
 ---
 
@@ -682,6 +831,52 @@ links/tests/
 - **Extensibility**: Easy addition of new business capabilities as independent domains
 - **Performance**: Domain-optimized loading and execution patterns
 - **Security**: Multi-layer protection with domain-specific security policies
+
+---
+
+## 🌐 **Configuration & Environment Management**
+
+### **Centralized URL Configuration**
+
+Foldly implements a sophisticated URL configuration system that enables seamless operation across multiple environments without hardcoding domains:
+
+#### **Dynamic Environment Detection**
+
+```typescript
+// src/lib/config/url-config.ts
+export function getBaseUrl(): string {
+  // Priority order:
+  // 1. Production environment variable
+  // 2. Vercel deployment URL
+  // 3. Client-side detection
+  // 4. Development fallback
+}
+```
+
+#### **Security Features**
+
+- **Host Validation**: Whitelist of allowed domains prevents header injection
+- **Environment Isolation**: Separate configurations for dev/staging/production
+- **Dynamic Resolution**: No hardcoded domains throughout the codebase
+
+#### **Usage Patterns**
+
+```typescript
+// Server Components
+import { getBaseUrl } from '@/lib/config/url-config';
+const apiUrl = `${getBaseUrl()}/api/endpoint`;
+
+// Client Components
+import { useLinkUrl } from '@/features/links/hooks/use-link-url';
+const { displayUrl, fullUrl } = useLinkUrl(slug, topic);
+```
+
+### **Environment Variables Architecture**
+
+- **Public Variables**: Prefixed with `NEXT_PUBLIC_` for client access
+- **Server Variables**: Protected from client exposure
+- **Automatic Detection**: Vercel environment variables for deployments
+- **Local Development**: Optional `.env.local` overrides
 
 ---
 

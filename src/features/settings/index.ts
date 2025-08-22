@@ -1,4 +1,7 @@
-// ===== 2025 FEATURE-BASED SETTINGS ARCHITECTURE =====
+// =============================================================================
+// SETTINGS FEATURE - Simplified Index (Clerk UserProfile Only)
+// =============================================================================
+// 🎯 Settings feature exports - Clerk handles all settings functionality
 
-// 👁️ View Components - Settings Container
-export { SettingsContainer } from './components/views/settings-container';
+// Components
+export * from './components';

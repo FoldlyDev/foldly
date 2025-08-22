@@ -1,0 +1,1 @@
+CREATE INDEX "files_user_id_uploaded_at_idx" ON "files" USING btree ("user_id","uploaded_at");

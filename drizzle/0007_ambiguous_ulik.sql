@@ -1,0 +1,1 @@
+ALTER TABLE "subscription_plans" ADD COLUMN "max_file_size_mb" integer;

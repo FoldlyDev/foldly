@@ -1,0 +1,497 @@
+/* =============================================================================
+   FORM STYLES - Premium Form Field Components with Enhanced Theme Support
+   ============================================================================= */
+
+/* Base Form Input Styles */
+.form-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(209 213 219);
+  background-color: white;
+  color: rgb(17 24 39);
+  transition: all 200ms;
+}
+
+.form-input::placeholder {
+  color: rgb(107 114 128);
+}
+
+.form-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.5);
+  border-color: var(--primary);
+}
+
+.dark .form-input {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+  color: rgb(243 244 246);
+}
+
+.dark .form-input::placeholder {
+  color: rgb(156 163 175);
+}
+
+.dark .form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.3);
+}
+
+/* Premium Input Enhancement */
+.premium-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid;
+  color: rgb(17 24 39);
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--neutral-200);
+  transition: all 200ms ease;
+}
+
+.premium-input::placeholder {
+  color: rgb(107 114 128);
+}
+
+.premium-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.5);
+  border-color: var(--primary);
+}
+
+.premium-input:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--neutral-300);
+}
+
+.premium-input:focus {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(195, 225, 247, 0.2);
+  transform: translateY(-1px);
+}
+
+.dark .premium-input {
+  background: var(--foldly-glass-bg);
+  backdrop-filter: blur(8px);
+  border-color: var(--foldly-glass-border);
+}
+
+.dark .premium-input:hover {
+  background: var(--foldly-glass-bg-solid);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark .premium-input:focus {
+  background: var(--foldly-glass-bg-solid);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(195, 225, 247, 0.1);
+}
+
+/* Glass Input Style */
+.form-input-glass {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(209 213 219);
+  color: rgb(17 24 39);
+  transition: all 200ms;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.form-input-glass::placeholder {
+  color: rgb(107 114 128);
+}
+
+.form-input-glass:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.5);
+  border-color: var(--primary);
+}
+
+.dark .form-input-glass {
+  background: var(--foldly-glass-bg);
+  border-color: var(--foldly-glass-border);
+}
+
+/* Form Labels */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+  color: rgb(55 65 81);
+}
+
+.dark .form-label {
+  color: rgb(229 231 235);
+}
+
+/* Form Helper Text */
+.form-helper {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: rgb(107 114 128);
+}
+
+.dark .form-helper {
+  color: rgb(156 163 175);
+}
+
+/* Form Error State */
+.form-input-error {
+  border-color: rgb(239 68 68);
+}
+
+.form-input-error:focus {
+  border-color: rgb(239 68 68);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.5);
+}
+
+.dark .form-input-error {
+  border-color: rgb(248 113 113);
+}
+
+.dark .form-input-error:focus {
+  border-color: rgb(248 113 113);
+  box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.3);
+}
+
+/* Select Dropdown */
+.form-select {
+  width: 100%;
+  padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(209 213 219);
+  background-color: white;
+  color: rgb(17 24 39);
+  transition: all 200ms;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.form-select::placeholder {
+  color: rgb(107 114 128);
+}
+
+.form-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.5);
+  border-color: var(--primary);
+}
+
+.dark .form-select {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+  color: rgb(243 244 246);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+}
+
+.dark .form-select::placeholder {
+  color: rgb(156 163 175);
+}
+
+.dark .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.3);
+}
+
+/* Textarea */
+.form-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(209 213 219);
+  background-color: white;
+  color: rgb(17 24 39);
+  transition: all 200ms;
+  min-height: 100px;
+  resize: vertical;
+}
+
+.form-textarea::placeholder {
+  color: rgb(107 114 128);
+}
+
+.form-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.5);
+  border-color: var(--primary);
+}
+
+.dark .form-textarea {
+  background-color: rgb(31 41 55);
+  border-color: rgb(75 85 99);
+  color: rgb(243 244 246);
+}
+
+.dark .form-textarea::placeholder {
+  color: rgb(156 163 175);
+}
+
+.dark .form-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(195, 225, 247, 0.3);
+}
+
+/* =============================================================================
+   CHECKBOX STYLES
+   ============================================================================= */
+
+/* Remove unwanted focus outlines on bulk selection checkboxes */
+[data-bulk-select] input[type='checkbox']:focus,
+[data-bulk-select] input[type='checkbox']:focus-visible,
+.bulk-select-mode input[type='checkbox']:focus,
+.bulk-select-mode input[type='checkbox']:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Ensure all checkboxes have cursor pointer and are visible */
+[role='checkbox'],
+input[type='checkbox'],
+[data-state='checked'],
+[data-state='unchecked'],
+button[data-state],
+[role='button'][data-state] {
+  cursor: pointer !important;
+}
+
+/* Checkbox Base Styles */
+[role='checkbox'] {
+  border: 2px solid var(--neutral-400) !important;
+  background-color: white !important;
+  transition: all 200ms ease !important;
+}
+
+[role='checkbox']:hover {
+  border-color: var(--neutral-500) !important;
+}
+
+[role='checkbox'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Dark mode checkbox styles */
+.dark [role='checkbox'] {
+  border-color: var(--neutral-600) !important;
+  background-color: var(--neutral-800) !important;
+}
+
+.dark [role='checkbox']:hover {
+  border-color: var(--neutral-500) !important;
+  background-color: var(--neutral-700) !important;
+}
+
+.dark [role='checkbox'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* =============================================================================
+   FORM SELECT/DROPDOWN STYLES - Premium dropdown design matching settings
+   ============================================================================= */
+
+/* Select trigger button - matches settings dropdown trigger */
+[data-slot='select-trigger'] {
+  @apply rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
+  border: 1px solid rgba(229, 231, 235, 1); /* gray-200 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Light mode select trigger */
+.light [data-slot='select-trigger'] {
+  background: var(--foldly-glass-gradient-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgb(17 24 39); /* Ensure dark text in light mode */
+}
+
+/* Dark mode select trigger */
+.dark [data-slot='select-trigger'] {
+  background: var(--foldly-glass-bg);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+  color: rgb(243 244 246); /* Ensure light text in dark mode */
+}
+
+/* Select content dropdown - matches context menu styling */
+[data-slot='select-content'] {
+  @apply rounded-xl;
+  min-width: 14rem;
+}
+
+/* Light mode select content */
+.light [data-slot='select-content'] {
+  background: var(--foldly-glass-gradient-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: rgb(17 24 39); /* Ensure dark text in light mode */
+}
+
+/* Dark mode select content */
+.dark [data-slot='select-content'] {
+  background: var(--foldly-glass-bg);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+  color: rgb(243 244 246); /* Ensure light text in dark mode */
+}
+
+/* Select label - match dropdown menu labels */
+[data-slot='select-label'] {
+  @apply text-xs px-2 py-1;
+  color: rgb(107 114 128); /* gray-500 in light mode */
+}
+
+.dark [data-slot='select-label'] {
+  color: rgba(255, 255, 255, 0.5); /* white/50 in dark mode */
+}
+
+/* Select separator */
+[data-slot='select-separator'] {
+  @apply h-px bg-gray-200 dark:bg-white/10 my-1;
+}
+
+/* Select items - ensure proper text colors */
+[data-slot='select-item'] {
+  color: rgb(17 24 39); /* Dark text in light mode */
+}
+
+.dark [data-slot='select-item'] {
+  color: rgb(243 244 246); /* Light text in dark mode */
+}
+
+/* Select value - ensure proper text colors */
+[data-slot='select-value'] {
+  color: inherit; /* Inherit from parent */
+}
+
+/* =============================================================================
+   SWITCH/TOGGLE STYLES - Enhanced light mode compatibility
+   ============================================================================= */
+
+/* Switch base styles with better light mode colors */
+[data-slot='switch'] {
+  position: relative;
+  transition: all 200ms ease;
+}
+
+/* Light mode switch unchecked state - better contrast */
+.light [data-slot='switch'][data-state='unchecked'] {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+  border: 1px solid rgb(209 213 219) !important; /* gray-300 */
+}
+
+.light [data-slot='switch'][data-state='unchecked']:hover {
+  background-color: rgb(209 213 219) !important; /* gray-300 */
+  border-color: rgb(156 163 175) !important; /* gray-400 */
+}
+
+/* Light mode switch checked state */
+.light [data-slot='switch'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Dark mode switch states (keep existing behavior) */
+.dark [data-slot='switch'][data-state='unchecked'] {
+  background-color: rgba(107, 114, 128, 0.3) !important; /* gray-500/30 */
+  border-color: transparent !important;
+}
+
+.dark [data-slot='switch'][data-state='checked'] {
+  background-color: var(--primary) !important;
+  border-color: var(--primary) !important;
+}
+
+/* Switch thumb enhanced visibility */
+[data-slot='switch-thumb'] {
+  transition: transform 200ms ease, background-color 200ms ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Light mode thumb */
+.light [data-slot='switch-thumb'] {
+  background-color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode thumb */
+.dark [data-slot='switch-thumb'][data-state='unchecked'] {
+  background-color: rgb(243 244 246) !important; /* gray-100 */
+}
+
+.dark [data-slot='switch-thumb'][data-state='checked'] {
+  background-color: white !important;
+}
+
+/* Focus states for accessibility */
+[data-slot='switch']:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Disabled state */
+[data-slot='switch']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[data-slot='switch']:disabled [data-slot='switch-thumb'] {
+  opacity: 0.8;
+}
+
+/* =============================================================================
+   FORM DROPDOWN MENU STYLES - For DropdownMenu components in forms
+   ============================================================================= */
+
+/* Dropdown menu content - matches context menu */
+[role='menu'],
+[data-radix-menu-content] {
+  @apply rounded-xl;
+}
+
+/* Light mode dropdown content */
+.light [role='menu'],
+.light [data-radix-menu-content] {
+  background: rgba(245, 245, 245, 0.98) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  /* Add foldly-glass-shadow-bg effects */
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-top-color: rgba(0, 0, 0, 0.1);
+  border-right-color: rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: rgb(17 24 39) !important; /* Ensure dark text in light mode */
+}
+
+/* Dark mode dropdown content */
+.dark [role='menu'],
+.dark [data-radix-menu-content] {
+  background: rgba(20, 20, 20, 0.98) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  /* Add foldly-glass-shadow-bg effects for dark mode */
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-top-color: rgba(255, 255, 255, 0.15);
+  border-right-color: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}

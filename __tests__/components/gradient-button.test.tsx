@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { GradientButton } from '@/components/ui/gradient-button';
+import { GradientButton } from '@/components/core/gradient-button';
 
 describe('GradientButton Component', () => {
   // Normal behavior tests
@@ -141,8 +141,7 @@ describe('GradientButton Component', () => {
 
     it('handles undefined props gracefully', () => {
       // Testing that component works with undefined props
-      const props = { variant: undefined, size: undefined };
-      render(<GradientButton {...props}>Fallback Button</GradientButton>);
+      render(<GradientButton>Fallback Button</GradientButton>);
       const button = screen.getByRole('button');
 
       // Should fallback to primary variant and medium size

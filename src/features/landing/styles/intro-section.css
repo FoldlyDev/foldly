@@ -1,0 +1,164 @@
+.intro-hero {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #020618;
+  color: #e3e4d8;
+  overflow: hidden;
+  flex-direction: column;
+  transition: background-color 0.3s ease;
+  font-family: 'Host Grotesk', sans-serif;
+}
+
+/* Hero Header - Initial content that fades out */
+.intro-hero-header {
+  position: absolute;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  will-change: transform, opacity;
+}
+
+.intro-hero-header h1 {
+  font-size: 7vw !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  font-family: 'Host Grotesk', sans-serif !important;
+}
+
+.intro-hero-header p {
+  font-size: 1.5rem !important;
+  font-weight: 400 !important;
+  font-family: 'Host Grotesk', sans-serif;
+}
+
+/* Animated Icons Container */
+.intro-animated-icons {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  will-change: transform;
+  z-index: 2;
+}
+
+.intro-animated-icon {
+  flex: 1;
+  aspect-ratio: 1;
+  will-change: transform;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e3e4d8;
+}
+
+.intro-animated-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Animated Text */
+.intro-animated-text {
+  position: relative;
+  max-width: 1000px;
+  text-align: center;
+  color: #141414;
+  font-size: clamp(2rem, 5vw, 4rem) !important;
+  font-family: var(--font-condensed);
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-transform: uppercase;
+  margin: 0;
+  padding: 0;
+  word-wrap: break-word;
+}
+
+/* Text segments that reveal */
+.intro-text-segment {
+  opacity: 0;
+}
+
+/* Placeholder icons in the text */
+.intro-placeholder-icon {
+  margin-top: -10px;
+  width: 60px;
+  height: 60px;
+  display: inline-block;
+  vertical-align: middle;
+  will-change: transform;
+  visibility: hidden;
+}
+
+/* Container for duplicate icons */
+.intro-duplicate-icons-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50; /* Higher z-index to ensure visibility */
+  overflow: visible; /* Allow icons to be visible */
+}
+
+/* Duplicate icons created by GSAP */
+.intro-duplicate-icon {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: #141414;
+}
+
+.intro-duplicate-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Mobile styles - exact same breakpoint as template */
+@media (max-width: 1000px) {
+  .intro-hero-header h1 {
+    font-size: 12vw !important;
+    text-align: center;
+    line-height: 1 !important;
+  }
+
+  .intro-hero-header p {
+    font-size: 18px !important;
+  }
+
+  .intro-hero-header {
+    top: 45%;
+    width: 100%;
+  }
+
+  .intro-animated-text {
+    font-size: clamp(1.75rem, 4vw, 3rem) !important;
+  }
+
+  .intro-placeholder-icon {
+    margin-top: -4px;
+    width: 30px;
+    height: 30px;
+  }
+
+  .intro-duplicate-icon {
+    width: 30px;
+    height: 30px;
+  }
+}

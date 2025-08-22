@@ -6,7 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/animate-ui/radix/dropdown-menu';
+} from '@/components/ui/animate-ui/radix/dropdown-menu';
 
 interface UploadFileLimitsProps {
   formData: {
@@ -56,7 +56,7 @@ export function UploadFileLimits({
               />
             </svg>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-full min-w-[200px]'>
+          <DropdownMenuContent align='end' className='w-full min-w-[200px]'>
             {fileOptions.map(option => (
               <DropdownMenuItem
                 key={option}
@@ -99,13 +99,11 @@ export function UploadFileLimits({
               />
             </svg>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className='w-full min-w-[200px]'>
+          <DropdownMenuContent align='end' className='w-full min-w-[200px]'>
             {fileSizeOptions.map(option => (
               <DropdownMenuItem
                 key={option.value}
-                onClick={() =>
-                  onDataChange({ maxFileSize: option.value })
-                }
+                onClick={() => onDataChange({ maxFileSize: option.value })}
                 className='cursor-pointer'
               >
                 {option.label}

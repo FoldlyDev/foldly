@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 
-import type { LinkWithStats } from '@/lib/supabase/types';
+import type { LinkWithStats } from '@/lib/database/types';
 import type { UseFormReturn } from 'react-hook-form';
 import type { GeneralSettingsFormData } from '../../lib/validations';
 
@@ -21,10 +21,7 @@ interface LinkSettingsFormProps {
   form: UseFormReturn<GeneralSettingsFormData>;
 }
 
-export function LinkSettingsForm({
-  link,
-  form,
-}: LinkSettingsFormProps) {
+export function LinkSettingsForm({ link, form }: LinkSettingsFormProps) {
   const isBaseLink = link.linkType === 'base';
 
   return (

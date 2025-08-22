@@ -21,9 +21,7 @@ export function UploaderEmailRequirement({
       <div className='space-y-1'>
         <div className='flex items-center gap-2'>
           <Mail className='h-4 w-4 text-indigo-600' />
-          <p className='text-sm font-medium text-foreground'>
-            Require Email
-          </p>
+          <p className='text-sm font-medium text-foreground'>Require Email</p>
         </div>
         <p className='text-xs text-muted-foreground'>
           Visitors must provide their email before uploading
@@ -31,9 +29,7 @@ export function UploaderEmailRequirement({
       </div>
       <Switch
         checked={formData.requireEmail || false}
-        onCheckedChange={checked =>
-          onDataChange({ requireEmail: checked })
-        }
+        onCheckedChange={checked => onDataChange({ requireEmail: checked })}
         disabled={isLoading}
         className='data-[state=unchecked]:bg-muted-foreground/20 cursor-pointer'
       />

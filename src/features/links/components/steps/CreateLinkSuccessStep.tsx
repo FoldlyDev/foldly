@@ -3,13 +3,13 @@
 import { motion } from 'framer-motion';
 import { CheckCircle, ExternalLink } from 'lucide-react';
 import { useCallback } from 'react';
-import { toast } from 'sonner';
 import {
   useCreateLinkFormStore,
   createLinkFormSelectors,
 } from '../../hooks/use-create-link-form';
 import { useModalStore } from '../../store';
-import { GradientButton, AnimatedCopyButton } from '@/components/ui';
+import { GradientButton } from '@/components/core/gradient-button';
+import { AnimatedCopyButton } from '@/components/core/animated-copy-button';
 
 /**
  * Success step for create link modal

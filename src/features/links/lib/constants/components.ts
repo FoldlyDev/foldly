@@ -17,10 +17,6 @@ export const COMPONENT_SIZES = {
     sm: { classes: 'px-2 py-1 text-xs', dot: 'w-2 h-2' },
     md: { classes: 'px-3 py-1.5 text-sm', dot: 'w-2.5 h-2.5' },
   },
-  visibilityIndicator: {
-    sm: { classes: 'px-2 py-1 text-xs', icon: 'w-3 h-3' },
-    md: { classes: 'px-3 py-1.5 text-sm', icon: 'w-4 h-4' },
-  },
 } as const;
 
 /**
@@ -166,19 +162,6 @@ export const LINK_TYPE_STYLING = {
   },
 } as const;
 
-/**
- * Visibility and access styling
- */
-export const VISIBILITY_STYLING = {
-  public: {
-    badge: 'bg-green-100 text-green-800 border-green-200',
-    icon: 'text-green-600',
-  },
-  private: {
-    badge: 'bg-orange-100 text-orange-800 border-orange-200',
-    icon: 'text-orange-600',
-  },
-} as const;
 
 /**
  * Loading and skeleton configurations

@@ -12,8 +12,11 @@ import {
 } from '@/components/ui/shadcn/dialog';
 import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
-import { toast } from 'sonner';
-import type { DatabaseId } from '@/lib/supabase/types';
+import type { DatabaseId } from '@/lib/database/types';
+import { useInvalidateStorage } from '../../hooks/use-storage-tracking';
+import { useQueryClient } from '@tanstack/react-query';
+import { workspaceQueryKeys } from '../../lib/query-keys';
+import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
 interface DeleteModalProps {
   isOpen: boolean;
@@ -27,6 +30,9 @@ interface DeleteModalProps {
 
 export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const invalidateStorage = useInvalidateStorage();
+  const queryClient = useQueryClient();
+  const { emit } = useEventBus();
 
   const handleDelete = async () => {
     if (!item) return;
@@ -40,17 +46,59 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
           : await deleteFileAction(item.id);
 
       if (result.success) {
+        // Invalidate both storage and workspace tree queries for real-time updates
+        await Promise.all([
+          invalidateStorage(),
+          queryClient.invalidateQueries({
+            queryKey: workspaceQueryKeys.tree(),
+          }),
+        ]);
+
         onClose();
-        toast.success(
-          `${item.type === 'folder' ? 'Folder' : 'File'} deleted successfully`
-        );
+        
+        // Emit appropriate success event based on item type
+        if (item.type === 'folder') {
+          emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_SUCCESS, {
+            folderId: item.id as string,
+            folderName: item.name,
+          });
+        } else {
+          emit(NotificationEventType.WORKSPACE_FILE_DELETE_SUCCESS, {
+            fileId: item.id as string,
+            fileName: item.name,
+          });
+        }
       } else {
-        toast.error(result.error || `Failed to delete ${item.type}`);
+        // Emit appropriate error event based on item type
+        if (item.type === 'folder') {
+          emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_ERROR, {
+            folderId: item.id as string,
+            folderName: item.name,
+            error: result.error || `Failed to delete ${item.type}`,
+          });
+        } else {
+          emit(NotificationEventType.WORKSPACE_FILE_DELETE_ERROR, {
+            fileId: item.id as string,
+            fileName: item.name,
+            error: result.error || `Failed to delete ${item.type}`,
+          });
+        }
       }
     } catch (error) {
-      toast.error(
-        `Failed to delete ${item.type}: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+      // Emit appropriate error event for exceptions
+      if (item.type === 'folder') {
+        emit(NotificationEventType.WORKSPACE_FOLDER_DELETE_ERROR, {
+          folderId: item.id as string,
+          folderName: item.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      } else {
+        emit(NotificationEventType.WORKSPACE_FILE_DELETE_ERROR, {
+          fileId: item.id as string,
+          fileName: item.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -68,7 +116,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
-            <AlertTriangle className='w-5 h-5 text-red-500' />
+            <AlertTriangle className='w-5 h-5 text-destructive' />
             Delete {item.type === 'folder' ? 'Folder' : 'File'}
           </DialogTitle>
           <DialogDescription>
@@ -78,15 +126,19 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
         </DialogHeader>
 
         <div className='py-4'>
-          <div className='flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-lg'>
+          <div className='flex items-center gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg'>
             {item.type === 'folder' ? (
-              <Folder className='w-8 h-8 text-blue-500 flex-shrink-0' />
+              <Folder className='w-8 h-8 text-primary flex-shrink-0' />
             ) : (
-              <FileText className='w-8 h-8 text-gray-500 flex-shrink-0' />
+              <FileText className='w-8 h-8 text-muted-foreground flex-shrink-0' />
             )}
             <div className='min-w-0 flex-1'>
-              <p className='font-medium text-gray-900 truncate'>{item.name}</p>
-              <p className='text-sm text-gray-500 capitalize'>{item.type}</p>
+              <p className='font-medium text-foreground truncate'>
+                {item.name}
+              </p>
+              <p className='text-sm text-muted-foreground capitalize'>
+                {item.type}
+              </p>
             </div>
           </div>
         </div>
@@ -109,7 +161,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
           >
             {isSubmitting ? (
               <>
-                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                <div className='w-4 h-4 border-2 border-destructive-foreground border-t-transparent rounded-full animate-spin' />
                 Deleting...
               </>
             ) : (

@@ -1,5 +1,5 @@
-import { userWorkspaceService } from '@/lib/services/user/user-workspace-service';
-import type { DatabaseResult } from '@/lib/supabase/types';
+import { userWorkspaceService } from '@/features/users/services/user-workspace-service';
+import type { DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
 
 /**
@@ -20,9 +20,7 @@ export async function retryOperation<T>(
 
       // Exponential backoff: 1s, 2s, 4s
       const delay = baseDelay * Math.pow(2, attempt - 1);
-      console.log(
-        `⏳ RETRY_ATTEMPT: ${attempt}/${maxRetries} | Waiting ${delay}ms`
-      );
+      console.log(`Retry attempt ${attempt}/${maxRetries}, waiting ${delay}ms`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -31,20 +29,17 @@ export async function retryOperation<T>(
 }
 
 /**
- * Graceful workspace creation with fallback strategies
+ * Create user with workspace, with fallback strategies
  */
 export async function createUserWithWorkspaceGraceful(
   userData: WebhookUserData
 ): Promise<DatabaseResult<any>> {
   try {
     // Primary path: Transactional creation
-    console.log(
-      `🎯 PRIMARY_PATH: Attempting transactional creation for ${userData.id}`
-    );
     return await userWorkspaceService.createUserWithWorkspace(userData);
   } catch (error) {
     console.warn(
-      `⚠️ FALLBACK_TRIGGERED: Transactional creation failed for ${userData.id}`,
+      `Transactional creation failed for user ${userData.id}`,
       error
     );
 
@@ -53,16 +48,13 @@ export async function createUserWithWorkspaceGraceful(
       const existingUserWorkspace =
         await userWorkspaceService.getUserWithWorkspace(userData.id);
       if (existingUserWorkspace.success) {
-        console.log(
-          `✅ FALLBACK_SUCCESS: Found existing user+workspace for ${userData.id}`
-        );
         return existingUserWorkspace;
       }
 
       // If no existing data, this is a genuine failure
       throw new Error('No existing user+workspace found and creation failed');
     } catch (fallbackError) {
-      console.error(`❌ ALL_RECOVERY_FAILED: ${userData.id}`, fallbackError);
+      console.error(`All recovery failed for user ${userData.id}`, fallbackError);
       return { success: false, error: (fallbackError as Error).message };
     }
   }
@@ -94,7 +86,7 @@ export function validateWebhookPrerequisites(): {
 }
 
 /**
- * Enhanced webhook processing with retry and recovery
+ * Process webhook with retry and recovery
  */
 export async function processWebhookWithRecovery(
   userData: WebhookUserData,
@@ -118,7 +110,7 @@ export async function processWebhookWithRecovery(
     );
   } catch (error) {
     console.error(
-      `❌ WEBHOOK_PROCESSING_FAILED: All retries exhausted for ${userData.id}`,
+      `Webhook processing failed for user ${userData.id} after ${maxRetries} attempts`,
       error
     );
     return {
