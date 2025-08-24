@@ -20,3 +20,6 @@ export * from './links';
 export * from './folders';
 export * from './batches';
 export * from './files';
+
+// User settings types (for cloud storage and other features)
+export * from './user-settings';
