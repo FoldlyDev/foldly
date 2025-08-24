@@ -7,6 +7,7 @@
 import { useRouter } from 'next/navigation';
 import { FileUp, FolderUp, XIcon, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Progress, ProgressTrack } from '@/components/ui/animate-ui/components/progress';
 
 interface UploadNotificationContentProps {
   toastId: string | number;
@@ -123,6 +124,7 @@ interface FileUploadProgressProps {
   fileSize: number;
   progress: number;
   status?: 'uploading' | 'success' | 'error';
+  onCancel?: () => void;
 }
 
 export function FileUploadProgressContent({
@@ -131,6 +133,7 @@ export function FileUploadProgressContent({
   fileSize,
   progress,
   status = 'uploading',
+  onCancel,
 }: FileUploadProgressProps) {
   const formatFileSize = (bytes: number): string => {
     if (!bytes || bytes === 0) return '0 B';
@@ -139,6 +142,9 @@ export function FileUploadProgressContent({
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
+
+  // Ensure progress is a valid number between 0 and 100
+  const normalizedProgress = Math.min(100, Math.max(0, progress || 0));
 
   return (
     <div className="bg-background text-foreground w-full rounded-lg border border-border px-4 py-3 shadow-lg sm:w-[var(--width)] animate-in slide-in-from-bottom-2">
@@ -149,20 +155,35 @@ export function FileUploadProgressContent({
           <div className="flex grow flex-col gap-2">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Uploading {fileName}</p>
-              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+              <span className="text-xs text-muted-foreground">{Math.round(normalizedProgress)}%</span>
             </div>
             
-            {/* Progress bar */}
-            <div className="w-full bg-secondary rounded-full h-2">
-              <div 
-                className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
-                style={{ width: `${progress}%` }}
+            {/* Animated Progress bar using animate-ui component */}
+            <Progress value={normalizedProgress} className="w-full">
+              <ProgressTrack 
+                className="h-2 bg-secondary"
+                transition={{ type: 'spring', stiffness: 100, damping: 30 }}
               />
-            </div>
+            </Progress>
             
             <p className="text-xs text-muted-foreground">
-              {formatFileSize(fileSize)} • {Math.round(progress)}% complete
+              {formatFileSize(fileSize)} • {Math.round(normalizedProgress)}% complete
             </p>
+            
+            {/* Cancel button for active uploads */}
+            {status === 'uploading' && onCancel && (
+              <div className="mt-2">
+                <button
+                  className="text-xs font-medium text-destructive hover:text-destructive/80 hover:underline"
+                  onClick={() => {
+                    onCancel();
+                    toast.dismiss(toastId);
+                  }}
+                >
+                  Cancel Upload
+                </button>
+              </div>
+            )}
           </div>
         </div>
         

@@ -55,6 +55,8 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
   
   // Store abort controllers for each upload
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  // Store upload service IDs for cancellation
+  const uploadServiceIdsRef = useRef<Map<string, string>>(new Map());
 
   // File selection handler
   const handleFileSelect = useCallback(async (selectedFiles: FileList | File[] | null) => {
@@ -315,6 +317,10 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
           workspaceId,
           folderId || undefined,
           {
+            onStart: (uploadServiceId) => {
+              // Track the upload service ID for cancellation
+              uploadServiceIdsRef.current.set(uploadFile.id, uploadServiceId);
+            },
             onProgress: (progress) => {
               // Update file progress
               setFiles(prev =>
@@ -325,7 +331,7 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
               const estimatedLoaded = (progress / 100) * uploadFile.file.size;
               liveStorage.updateFileProgress(uploadFile.id, estimatedLoaded);
               
-              // Emit progress event (only for single uploads)
+              // Emit progress event with cancel action (only for single uploads)
               if (!skipNotifications) {
                 emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS, {
                   fileId: uploadFile.id,
@@ -339,7 +345,36 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
                   uiType: NotificationUIType.PROGRESS,
                   duration: 0,
                   persistent: true,
-                  deduplicationKey: `upload-${uploadFile.id}`
+                  deduplicationKey: `upload-${uploadFile.id}`,
+                  actions: [
+                    {
+                      id: 'cancel',
+                      label: 'Cancel',
+                      style: 'danger' as const,
+                      handler: () => {
+                        // Cancel the upload
+                        const uploadServiceId = uploadServiceIdsRef.current.get(uploadFile.id);
+                        if (uploadServiceId) {
+                          clientUploadService.cancelUpload(uploadServiceId);
+                          // Clean up refs
+                          uploadServiceIdsRef.current.delete(uploadFile.id);
+                          abortControllersRef.current.delete(uploadFile.id);
+                          // Update file status
+                          setFiles(prev => prev.map(f => 
+                            f.id === uploadFile.id 
+                              ? { ...f, status: 'error' as const, error: 'Upload cancelled' }
+                              : f
+                          ));
+                          // Show cancellation notification
+                          emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+                            fileId: uploadFile.id,
+                            fileName: uploadFile.file.name,
+                            error: 'Upload cancelled by user'
+                          });
+                        }
+                      }
+                    }
+                  ]
                 });
               }
             },
@@ -452,7 +487,7 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
           )
         );
         
-        // Emit error event (only for single uploads)
+        // Emit error event with retry and dismiss actions (only for single uploads)
         if (!skipNotifications) {
           emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
             fileId: uploadFile.id,
@@ -464,12 +499,55 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
           }, {
             priority: NotificationPriority.HIGH,
             uiType: NotificationUIType.PROGRESS,
-            duration: 5000,
-            deduplicationKey: `upload-${uploadFile.id}`
+            duration: 0, // Keep it persistent until user action
+            persistent: true,
+            deduplicationKey: `upload-${uploadFile.id}`,
+            actions: [
+              {
+                id: 'retry',
+                label: 'Retry',
+                style: 'primary' as const,
+                handler: async () => {
+                  // Reset file status for retry
+                  setFiles(prev => prev.map((f): UploadFile => {
+                    if (f.id === uploadFile.id) {
+                      const updatedFile: UploadFile = {
+                        ...f,
+                        status: 'pending',
+                        progress: 0
+                      };
+                      delete updatedFile.error;
+                      return updatedFile;
+                    }
+                    return f;
+                  }));
+                  // Retry the upload
+                  try {
+                    await uploadSingleFile(uploadFile, false, uploadFile.retryCount || 0);
+                  } catch (retryError) {
+                    // Error will be handled by uploadSingleFile
+                    console.error('Retry failed:', retryError);
+                  }
+                }
+              },
+              {
+                id: 'dismiss',
+                label: 'Dismiss',
+                style: 'secondary' as const,
+                handler: () => {
+                  // Remove the failed file from the list
+                  setFiles(prev => prev.filter(f => f.id !== uploadFile.id));
+                  // Clean up refs
+                  uploadServiceIdsRef.current.delete(uploadFile.id);
+                  abortControllersRef.current.delete(uploadFile.id);
+                }
+              }
+            ]
           });
         }
         
-        // Clean up abort controller
+        // Clean up refs
+        uploadServiceIdsRef.current.delete(uploadFile.id);
         abortControllersRef.current.delete(uploadFile.id);
         
         throw error;
@@ -536,11 +614,15 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       
       // For batch uploads, show a single aggregated notification
       if (isBatchUpload && batchId) {
+        // Calculate total size of all files
+        const totalSize = validFiles.reduce((sum, file) => sum + file.file.size, 0);
+        
         // Show a loading notification for batch upload
         emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_START, {
           batchId: batchId,
           totalItems: validFiles.length,
           completedItems: 0,
+          totalSize: totalSize,
         }, {
           priority: NotificationPriority.MEDIUM,
           uiType: NotificationUIType.PROGRESS,
@@ -575,12 +657,15 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
             
             // Update batch progress notification
             if (isBatchUpload && batchId) {
+              const totalSize = validFiles.reduce((sum, file) => sum + file.file.size, 0);
+              
               // Update the progress notification
               emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS, {
                 batchId: batchId,
                 totalItems: validFiles.length,
                 completedItems: completedCount,
                 failedItems: uploadFailedCount,
+                totalSize: totalSize,
               }, {
                 priority: NotificationPriority.LOW,
                 uiType: NotificationUIType.PROGRESS,

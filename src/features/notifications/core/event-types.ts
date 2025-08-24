@@ -236,6 +236,7 @@ export interface BatchEventPayload {
   currentItem?: string;
   items?: Array<{ id: string; name: string; type: 'file' | 'folder' }>;
   error?: string;
+  totalSize?: number; // Total size of all files in batch (for upload operations)
 }
 
 /**

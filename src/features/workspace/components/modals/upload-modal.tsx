@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/animate-ui/radix/dialog';
 import { CloudUpload, AlertCircle } from 'lucide-react';
 import { useFileUpload } from '../../hooks/use-file-upload';
+import { emitNotification } from '@/features/notifications/core/event-bus';
+import { NotificationEventType, NotificationPriority } from '@/features/notifications/core/event-types';
+import { clientUploadService } from '@/lib/services/upload/client-upload-service';
 import { UploadProgress } from '../upload/upload-progress';
 import { UploadValidation, StorageWarning } from '../upload/upload-validation';
 import { StorageInfoDisplay } from '../storage/storage-info-display';
@@ -60,9 +63,68 @@ export function UploadModal({
   const [initialFilesProcessed, setInitialFilesProcessed] = useState(false);
 
   const handleClose = useCallback(() => {
-    if (isUploading) return;
+    if (isUploading) {
+      // Show background upload notification when closing during upload
+      const uploadingFiles = files.filter(f => f.status === 'uploading');
+      const pendingFiles = files.filter(f => f.status === 'pending');
+      const totalActive = uploadingFiles.length + pendingFiles.length;
+      
+      if (totalActive > 0) {
+        emitNotification(
+          NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS,
+          {
+            totalItems: totalFiles,
+            completedItems: completedFiles,
+            failedItems: failedFiles,
+            batchId: `background-batch-${Date.now()}`
+          },
+          {
+            priority: NotificationPriority.MEDIUM,
+            persistent: true,
+            deduplicationKey: 'background-upload-batch',
+            actions: [
+              {
+                id: 'view',
+                label: 'View Progress',
+                style: 'primary' as const,
+                handler: () => {
+                  // Note: To reopen the modal, you'd need to pass a callback prop
+                  // For now, we'll just log
+                  console.log('TODO: Implement modal reopen');
+                }
+              },
+              {
+                id: 'cancel-all',
+                label: 'Cancel All',
+                style: 'danger' as const,
+                handler: () => {
+                  // Cancel all uploads
+                  clientUploadService.cancelAll();
+                  // Clear the files
+                  clearFiles();
+                  // Show cancellation notification
+                  emitNotification(
+                    NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR,
+                    {
+                      totalItems: totalFiles,
+                      completedItems: completedFiles,
+                      failedItems: totalFiles - completedFiles,
+                      batchId: `background-batch-${Date.now()}`
+                    },
+                    {
+                      priority: NotificationPriority.HIGH,
+                      duration: 3000
+                    }
+                  );
+                }
+              }
+            ]
+          }
+        );
+      }
+    }
     onClose();
-  }, [isUploading, onClose]);
+  }, [isUploading, files, totalFiles, completedFiles, failedFiles, clearFiles, onClose]);
 
   // Refetch storage data when modal opens and handle initial files
   useEffect(() => {
@@ -176,15 +238,7 @@ export function UploadModal({
                   handleRemoveFile(fileId);
                 }
               }}
-              files={(() => {
-                const mappedFiles = files.map(f => f.file);
-                console.log('🔍 [UPLOAD-MODAL] Passing files to CentralizedFileUpload:', {
-                  count: mappedFiles.length,
-                  fileNames: mappedFiles.map(f => f.name),
-                  fileTypes: mappedFiles.map(f => f.type)
-                });
-                return mappedFiles;
-              })()}
+              files={files.map(f => f.file)}
               skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
               multiple={true}
               maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}

@@ -111,6 +111,9 @@ export function showBatchUploadNotification(
   });
 }
 
+// Keep track of existing toasts to avoid recreating
+const activeToasts = new Set<string>();
+
 /**
  * Show file upload progress notification
  */
@@ -119,24 +122,64 @@ export function showFileUploadProgress(
   fileName: string,
   fileSize: number,
   progress: number,
-  status: 'uploading' | 'success' | 'error' = 'uploading'
+  status: 'uploading' | 'success' | 'error' = 'uploading',
+  onCancel?: () => void
 ): string {
   const toastId = `upload-progress-${fileId}`;
   
-  // Use custom toast with progress bar
-  toast.custom((t) => (
-    <FileUploadProgressContent
-      toastId={t}
-      fileName={fileName}
-      fileSize={fileSize}
-      progress={progress}
-      status={status}
-    />
-  ), {
-    id: toastId,
-    duration: status === 'uploading' ? Infinity : 3000, // Don't auto-dismiss while uploading
-    position: 'bottom-right',
-  });
+  // Use custom toast with progress bar and optional cancel button
+  const props: React.ComponentProps<typeof FileUploadProgressContent> = {
+    toastId: toastId,
+    fileName,
+    fileSize,
+    progress,
+    status,
+  };
+  
+  if (onCancel) {
+    props.onCancel = onCancel;
+  }
+  
+  // Check if toast already exists
+  const toastExists = activeToasts.has(toastId);
+  
+  if (!toastExists) {
+    // Create new toast for first time
+    activeToasts.add(toastId);
+    toast.custom((t) => (
+      <FileUploadProgressContent 
+        {...props} 
+        toastId={t} 
+      />
+    ), {
+      id: toastId,
+      duration: status === 'uploading' ? Infinity : 3000, // Don't auto-dismiss while uploading
+      position: 'bottom-right',
+    });
+    
+    // Clean up when done
+    if (status !== 'uploading') {
+      setTimeout(() => activeToasts.delete(toastId), 3000);
+    }
+  } else {
+    // Update existing toast by recreating with same ID
+    // Sonner will replace the existing one smoothly
+    toast.custom((t) => (
+      <FileUploadProgressContent 
+        {...props} 
+        toastId={t}
+      />
+    ), {
+      id: toastId,
+      duration: status === 'uploading' ? Infinity : 3000,
+      position: 'bottom-right',
+    });
+    
+    // Clean up when done
+    if (status !== 'uploading') {
+      setTimeout(() => activeToasts.delete(toastId), 3000);
+    }
+  }
   
   return toastId;
 }

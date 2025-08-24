@@ -19,6 +19,7 @@ import { logger } from '@/lib/services/logging/logger';
 // =============================================================================
 
 export interface UploadOptions {
+  onStart?: (uploadId: string) => void;
   onProgress?: (progress: number) => void;
   onComplete?: (result: UploadResult) => void;
   onError?: (error: Error) => void;
@@ -59,6 +60,11 @@ export class ClientUploadService {
     options: UploadOptions = {}
   ): Promise<UploadResult> {
     const uploadId = this.generateUploadId();
+    
+    // Call onStart callback with uploadId
+    if (options.onStart) {
+      options.onStart(uploadId);
+    }
     
     try {
       // Create form data
@@ -196,12 +202,76 @@ export class ClientUploadService {
       // Store XHR for cancellation
       this.activeUploads.set(uploadId, xhr);
       
-      // Set up progress tracking
+      // Set up progress tracking with simulated intermediate updates for small files
       if (options.onProgress) {
+        let lastProgress = 0;
+        let simulatedProgress = 0;
+        let simulationInterval: NodeJS.Timeout | null = null;
+        let hasReceivedRealProgress = false;
+        
+        // For small files or fast connections, simulate gradual progress
+        const startSimulation = () => {
+          // Start at 0
+          options.onProgress!(0);
+          
+          simulationInterval = setInterval(() => {
+            if (simulatedProgress < 85 && !hasReceivedRealProgress) {
+              simulatedProgress += Math.random() * 10 + 8; // Increment by 8-18%
+              simulatedProgress = Math.min(simulatedProgress, 85); // Cap at 85% until real progress
+              const roundedProgress = Math.round(simulatedProgress);
+              options.onProgress!(roundedProgress);
+              lastProgress = roundedProgress;
+            }
+          }, 150); // Update every 150ms for smoother animation
+        };
+        
+        // Start simulation for smoother progress
+        startSimulation();
+        
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
             const progress = Math.round((event.loaded / event.total) * 100);
-            options.onProgress!(progress);
+            
+            hasReceivedRealProgress = true;
+            
+            // If real progress jumps to 100%, simulate gradual increase
+            if (progress === 100 && lastProgress < 85) {
+              // Clear simulation
+              if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+              }
+              
+              // Animate from current to 100
+              let currentProgress = lastProgress;
+              const animationInterval = setInterval(() => {
+                currentProgress = Math.min(currentProgress + 10, 100);
+                options.onProgress!(currentProgress);
+                
+                if (currentProgress >= 100) {
+                  clearInterval(animationInterval);
+                }
+              }, 50);
+            } else {
+              // Clear simulation when we get gradual real progress
+              if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+              }
+              
+              // Only update if progress increased
+              if (progress > lastProgress) {
+                lastProgress = progress;
+                options.onProgress!(progress);
+              }
+            }
+          }
+        });
+        
+        // Clean up simulation on completion
+        xhr.addEventListener('loadend', () => {
+          if (simulationInterval) {
+            clearInterval(simulationInterval);
           }
         });
       }

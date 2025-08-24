@@ -4,6 +4,7 @@
  */
 
 import { toast } from 'sonner';
+import { showFileUploadProgress } from '../utils/upload-notifications';
 import {
   NotificationEventType,
   NotificationPriority,
@@ -377,11 +378,13 @@ class NotificationManager {
         return payload.message || 'Files will be uploaded to the selected location.';
       
       case NotificationEventType.WORKSPACE_BATCH_UPLOAD_START:
-        return `Starting upload of ${payload.totalItems} files`;
+        const totalSizeStart = payload.totalSize ? ` (${this.formatFileSize(payload.totalSize)})` : '';
+        return `Starting upload of ${payload.totalItems} files${totalSizeStart}`;
         
       case NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS:
         const uploadProgress = Math.round(((payload.completedItems || 0) / (payload.totalItems || 1)) * 100);
-        return `${payload.completedItems} of ${payload.totalItems} completed${payload.failedItems ? ` (${payload.failedItems} failed)` : ''} - ${uploadProgress}%`;
+        const totalSizeProgress = payload.totalSize ? ` (${this.formatFileSize(payload.totalSize)})` : '';
+        return `${payload.completedItems} of ${payload.totalItems} completed${payload.failedItems ? ` (${payload.failedItems} failed)` : ''} - ${uploadProgress}%${totalSizeProgress}`;
       
       case NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS:
         if (payload.failedItems && payload.failedItems > 0) {
@@ -509,12 +512,44 @@ class NotificationManager {
       options.duration = display.duration;
     }
 
+    // Add action buttons from event config
+    if (event.config?.actions && event.config.actions.length > 0) {
+      // Primary action button
+      const primaryAction = event.config.actions[0];
+      if (primaryAction) {
+        options.action = {
+          label: primaryAction.label,
+          onClick: () => {
+            primaryAction.handler?.();
+            // Remove from active toasts when action is clicked
+            this.activeToasts.delete(toastId);
+          }
+        };
+      }
+
+      // Secondary cancel/dismiss button
+      if (event.config.actions.length > 1) {
+        const secondaryAction = event.config.actions[1];
+        if (secondaryAction) {
+          options.cancel = {
+            label: secondaryAction.label,
+            onClick: () => {
+              secondaryAction.handler?.();
+              // Remove from active toasts when cancel is clicked
+              this.activeToasts.delete(toastId);
+            }
+          };
+        }
+      }
+    }
+
     // Track active toast
     this.activeToasts.add(toastId);
     setTimeout(() => {
       this.activeToasts.delete(toastId);
     }, display.duration || this.config.defaultDuration);
 
+    // Show toast based on type (removed progress check as it's handled separately)
     if (isError) {
       toast.error(display.title, options);
     } else if (isSuccess) {
@@ -570,33 +605,49 @@ class NotificationManager {
       return;
     }
 
-    // For file upload start, create a loading toast
+    // For file upload start, create initial progress toast
     if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START) {
       // Check if already exists
       const existingToastId = this.progressToasts.get(progressId);
       if (!existingToastId && !this.completedUploads.has(progressId)) {
-        const toastIdKey = `progress-${progressId}`;
-        toast.loading(display.title, {
-          description: display.description,
-          id: toastIdKey,
-        });
-        this.progressToasts.set(progressId, toastIdKey);
+        const payload = event.payload as any;
+        
+        // Get cancel handler if provided (though usually not for START event)
+        const cancelHandler = event.config?.actions?.[0]?.handler;
+        
+        // Use the helper function to show custom progress notification starting at 0%
+        const toastId = showFileUploadProgress(
+          progressId,
+          payload.fileName || 'file',
+          payload.fileSize || 0,
+          0,
+          'uploading',
+          cancelHandler
+        );
+        
+        this.progressToasts.set(progressId, toastId);
       }
       return;
     }
     
-    // For file upload progress, update the existing toast (but don't create new ones)
+    // For file upload progress, update the existing toast
     if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS) {
-      // Only update if the toast still exists in our tracking
-      const existingToastId = this.progressToasts.get(progressId);
-      if (existingToastId && !this.completedUploads.has(progressId)) {
-        // Just update the text, don't recreate
-        toast.loading(display.title, {
-          description: display.description,
-          id: existingToastId,
-        });
-      }
-      // If no existing toast, just ignore the progress update (file probably already completed)
+      const payload = event.payload as any;
+      
+      // Get cancel handler if provided
+      const cancelHandler = event.config?.actions?.[0]?.handler;
+      
+      // Use the helper function to show custom progress notification with cancel button
+      const toastId = showFileUploadProgress(
+        progressId,
+        payload.fileName || 'file',
+        payload.fileSize || 0,
+        payload.uploadProgress || 0,
+        'uploading',
+        cancelHandler
+      );
+      
+      this.progressToasts.set(progressId, toastId);
       return;
     }
     
@@ -649,6 +700,14 @@ class NotificationManager {
       setTimeout(() => {
         this.completedUploads.delete(progressId);
       }, 10000);
+      return;
+    }
+
+    // For batch upload events with only 1 item, suppress the notification
+    if ((event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_START || 
+         event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS) && 
+        payload.totalItems === 1) {
+      // Suppress batch notifications for single file uploads
       return;
     }
 
