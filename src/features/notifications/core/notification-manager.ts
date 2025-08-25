@@ -769,11 +769,17 @@ class NotificationManager {
         ? uploadProgress 
         : (totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0);
       
+      // Calculate estimated completed count based on progress for display
+      // This gives users visual feedback of files being processed
+      const estimatedCompleted = completedItems > 0 
+        ? completedItems 
+        : Math.floor((progress / 100) * totalItems);
+      
       // Use the progress toast for batch uploads
       showProgressToast(
         useBatchId,
         `Uploading ${totalItems} files`,
-        `${completedItems} of ${totalItems} completed${failedItems ? ` (${failedItems} failed)` : ''}`,
+        `${estimatedCompleted} of ${totalItems} completed${failedItems ? ` (${failedItems} failed)` : ''}`,
         progress,
         'uploading'
       );
