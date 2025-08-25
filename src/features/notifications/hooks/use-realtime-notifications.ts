@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { getSupabaseClient } from '@/lib/config/supabase-client';
 import { useAuth } from '@clerk/nextjs';
 import { useNotificationStore } from '../store/notification-store';
-import { showUploadNotification } from '../utils/upload-notifications';
+import { showLinkUploadNotification } from '../utils/upload-notifications';
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 interface NotificationPayload {
@@ -91,10 +91,9 @@ export function useRealtimeNotifications() {
     const linkTitle = data.linkTitle || 'your link';
 
     // Show toast notification
-    showUploadNotification({
+    showLinkUploadNotification({
       linkId: data.linkId,
       linkTitle: linkTitle || 'your link',
-      uploaderName: data.uploaderName || 'Someone',
       fileCount: data.fileCount || 0,
       folderCount: data.folderCount || 0,
     });

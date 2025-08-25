@@ -95,11 +95,14 @@ class NotificationEventBus extends EventEmitter {
     payload: EventPayloadMap[T],
     config?: Partial<NotificationConfig>
   ): void {
+    const userId = this.getCurrentUserId();
+    const source = this.getCallerSource();
+    
     const metadata: EventMetadata = {
       timestamp: Date.now(),
-      userId: this.getCurrentUserId(),
+      ...(userId && { userId }),
       sessionId: this.getSessionId(),
-      source: this.getCallerSource(),
+      ...(source && { source }),
       correlationId: this.generateCorrelationId(),
       version: '1.0.0',
     };
@@ -108,18 +111,18 @@ class NotificationEventBus extends EventEmitter {
       type,
       payload,
       metadata,
-      config,
+      ...(config && { config }),
     };
 
-    // Log event if enabled
-    if (this.options.enableLogging) {
-      console.log('[NotificationEventBus] Emitting event:', {
-        type,
-        payload,
-        config,
-        metadata,
-      });
-    }
+    // Log event if enabled (commented out to reduce console noise)
+    // if (this.options.enableLogging) {
+    //   console.log('[NotificationEventBus] Emitting event:', {
+    //     type,
+    //     payload,
+    //     config,
+    //     metadata,
+    //   });
+    // }
 
     // Track analytics
     if (this.options.enableAnalytics) {
@@ -174,7 +177,8 @@ class NotificationEventBus extends EventEmitter {
    * Subscribe to all events (useful for logging/monitoring)
    */
   public subscribeAll(listener: (event: NotificationEvent) => void): () => void {
-    const wrappedListener = (_eventType: string, event: NotificationEvent) => {
+    // The wrapped listener handles the wildcard emission format
+    const wrappedListener = (eventType: string, event: NotificationEvent) => {
       listener(event);
     };
 
@@ -385,11 +389,12 @@ export { NotificationEventBus };
 /**
  * Development helper to log all events
  */
-if (process.env.NODE_ENV === 'development') {
-  eventBus.subscribeAll((event) => {
-    console.log('[NotificationEvent]', event.type, event);
-  });
-}
+// Commented out to reduce console noise - uncomment for debugging
+// if (process.env.NODE_ENV === 'development') {
+//   eventBus.subscribeAll((event) => {
+//     console.log('[NotificationEvent]', event.type, event);
+//   });
+// }
 
 /**
  * Export analytics getter for monitoring

@@ -1,5 +1,7 @@
-// Notifications Feature Utilities
-// Notification utility functions and helpers
+/**
+ * Notifications Feature Utilities
+ * Pure utility functions for notifications (no JSX/components)
+ */
 
-// Move existing workspace-notifications logic here
-export * from './workspace-notifications';
+export * from './upload-notifications';
+export * from './link-notifications';

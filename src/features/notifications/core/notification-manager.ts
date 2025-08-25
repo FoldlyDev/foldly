@@ -5,6 +5,7 @@
 
 import { toast } from 'sonner';
 import { showFileUploadProgress } from '../utils/upload-notifications';
+import { showProgressToast } from '../components/ProgressToast';
 import {
   NotificationEventType,
   NotificationPriority,
@@ -15,6 +16,9 @@ import {
   isProgressEvent,
 } from './event-types';
 import type { NotificationEvent } from './event-types';
+import {
+  getPayloadProperty,
+} from './notification-manager-types';
 import { eventBus } from './event-bus';
 import { useUserSettingsStore } from '@/features/settings/store/user-settings-store';
 import { playGeneralNotificationSound, playWarningNotificationSound } from '@/lib/utils/notification-sound';
@@ -69,7 +73,6 @@ class NotificationManager {
   private config: NotificationManagerConfig;
   private deduplicationMap: Map<string, DeduplicationEntry> = new Map();
   private activeToasts: Set<string> = new Set();
-  private progressToasts: Map<string, string> = new Map(); // Maps event ID to toast ID
   private completedUploads: Set<string> = new Set(); // Track completed uploads to prevent recreation
 
   private constructor(config?: Partial<NotificationManagerConfig>) {
@@ -113,8 +116,9 @@ class NotificationManager {
       return;
     }
 
-    // Check for deduplication
-    if (this.isDuplicate(event)) {
+    // Skip deduplication for progress events - they need to update continuously
+    const isProgress = isProgressEvent(event.type);
+    if (!isProgress && this.isDuplicate(event)) {
       this.handleDuplicate(event);
       return;
     }
@@ -206,14 +210,19 @@ class NotificationManager {
     }
 
     // Generate key based on event type and key payload fields
-    const payload = event.payload as any;
-    const keyParts = [event.type];
+    const payload = event.payload;
+    const keyParts: string[] = [event.type];
 
     // Add relevant payload fields based on event type
-    if (payload.fileId) keyParts.push(payload.fileId);
-    if (payload.folderId) keyParts.push(payload.folderId);
-    if (payload.linkId) keyParts.push(payload.linkId);
-    if (payload.batchId) keyParts.push(payload.batchId);
+    const fileId = getPayloadProperty<string>(payload, 'fileId');
+    const folderId = getPayloadProperty<string>(payload, 'folderId');
+    const linkId = getPayloadProperty<string>(payload, 'linkId');
+    const batchId = getPayloadProperty<string>(payload, 'batchId');
+    
+    if (fileId) keyParts.push(fileId);
+    if (folderId) keyParts.push(folderId);
+    if (linkId) keyParts.push(linkId);
+    if (batchId) keyParts.push(batchId);
 
     return keyParts.join('-');
   }
@@ -252,13 +261,13 @@ class NotificationManager {
    * Generate title for notification
    */
   private generateTitle(event: NotificationEvent): string {
-    const payload = event.payload as any;
+    const payload = event.payload;
     
     // Map of event types to title generators
     const titleMap: Record<string, string> = {
       // File events
-      [NotificationEventType.WORKSPACE_FILE_UPLOAD_START]: `Uploading ${payload.fileName || 'file'}`,
-      [NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS]: `Uploading ${payload.fileName || 'file'}`,
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_START]: `Uploading ${'fileName' in payload ? payload.fileName : 'file'}`,
+      [NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS]: `Uploading ${'fileName' in payload ? payload.fileName : 'file'}`,
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS]: 'File uploaded successfully',
       [NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR]: 'File upload failed',
       [NotificationEventType.WORKSPACE_FILE_DELETE_SUCCESS]: 'File deleted',
@@ -288,7 +297,7 @@ class NotificationManager {
       [NotificationEventType.LINK_DELETE_SUCCESS]: 'Link deleted',
       [NotificationEventType.LINK_GENERATE_SUCCESS]: 'Link generated',
       [NotificationEventType.LINK_COPY_SUCCESS]: 'Link copied to clipboard',
-      [NotificationEventType.LINK_NEW_UPLOAD]: `New upload to: ${payload.linkTitle}`,
+      [NotificationEventType.LINK_NEW_UPLOAD]: `New upload to: ${'linkTitle' in payload ? payload.linkTitle : 'link'}`,
       
       // Storage events
       [NotificationEventType.STORAGE_THRESHOLD_WARNING]: 'Storage warning',
@@ -298,11 +307,11 @@ class NotificationManager {
       
       // File limit events
       [NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED]: 'Too many files selected',
-      [NotificationEventType.WORKSPACE_FOLDER_DROPPED]: `Processing ${payload.fileCount || 0} files`,
+      [NotificationEventType.WORKSPACE_FOLDER_DROPPED]: `Processing ${'fileCount' in payload ? payload.fileCount : 0} files`,
       
       // Batch upload events
-      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_START]: `Uploading ${payload.totalItems || 0} files`,
-      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: `Uploading ${payload.totalItems || 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_START]: `Uploading ${'totalItems' in payload ? payload.totalItems : 0} files`,
+      [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: `Uploading ${'totalItems' in payload ? payload.totalItems : 0} files`,
       [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: 'Files uploaded successfully',
       [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: 'Failed to upload files',
     };
@@ -310,93 +319,125 @@ class NotificationManager {
     return titleMap[event.type] || 'Notification';
   }
 
+
   /**
    * Generate description for notification
    */
   private generateDescription(event: NotificationEvent): string | undefined {
-    const payload = event.payload as any;
+    const payload = event.payload;
     
     // Generate descriptions based on event type
     switch (event.type) {
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_START:
-        return `Starting upload (${this.formatFileSize(payload.fileSize)})`;
+        return `Starting upload (${this.formatFileSize(getPayloadProperty<number>(payload, 'fileSize', 0))})`;
       
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS:
-        const progress = Math.round(payload.uploadProgress || 0);
-        return `${progress}% complete (${this.formatFileSize(payload.fileSize)})`;
+        const progress = Math.round(getPayloadProperty<number>(payload, 'uploadProgress', 0) || 0);
+        return `${progress}% complete (${this.formatFileSize(getPayloadProperty<number>(payload, 'fileSize', 0))})`;
         
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS:
-        return payload.fileName;
+        return getPayloadProperty<string>(payload, 'fileName');
       
       case NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR:
-        return `${payload.fileName}: ${payload.error || 'Unknown error'}`;
+        const fileName = getPayloadProperty<string>(payload, 'fileName', 'File');
+        const error = getPayloadProperty<string>(payload, 'error', 'Unknown error');
+        return `${fileName}: ${error}`;
       
       case NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS:
-        return payload.folderName;
+        return getPayloadProperty<string>(payload, 'folderName');
       
       case NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS:
-        return `${payload.completedItems} items deleted`;
+        return `${getPayloadProperty<number>(payload, 'completedItems', 0)} items deleted`;
       
       case NotificationEventType.WORKSPACE_ITEMS_REORDER_START:
-        return `Reordering ${payload.totalItems} items`;
+        return `Reordering ${getPayloadProperty<number>(payload, 'totalItems', 0)} items`;
       
       case NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS:
-        return `Successfully reordered ${payload.totalItems} items`;
+        return `Successfully reordered ${getPayloadProperty<number>(payload, 'totalItems', 0)} items`;
       
       case NotificationEventType.WORKSPACE_ITEMS_REORDER_ERROR:
-        return payload.error || `Failed to reorder ${payload.totalItems} items`;
+        return getPayloadProperty<string>(payload, 'error') || `Failed to reorder ${getPayloadProperty<number>(payload, 'totalItems', 0)} items`;
       
-      case NotificationEventType.WORKSPACE_ITEMS_MOVE_START:
-        return `Moving ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_START: {
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 0);
+        return `Moving ${totalItems} item${totalItems === 1 ? '' : 's'}`;
+      }
       
-      case NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS:
-        return `Successfully moved ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS: {
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 0);
+        return `Successfully moved ${totalItems} item${totalItems === 1 ? '' : 's'}`;
+      }
       
-      case NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR:
-        return payload.error || `Failed to move ${payload.totalItems} item${payload.totalItems === 1 ? '' : 's'}`;
+      case NotificationEventType.WORKSPACE_ITEMS_MOVE_ERROR: {
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 0);
+        return getPayloadProperty<string>(payload, 'error') || `Failed to move ${totalItems} item${totalItems === 1 ? '' : 's'}`;
+      }
       
-      case NotificationEventType.LINK_NEW_UPLOAD:
+      case NotificationEventType.LINK_NEW_UPLOAD: {
         const items = [];
-        if (payload.fileCount > 0) {
-          items.push(`${payload.fileCount} file${payload.fileCount === 1 ? '' : 's'}`);
+        const fileCount = getPayloadProperty<number>(payload, 'fileCount', 0);
+        const folderCount = getPayloadProperty<number>(payload, 'folderCount', 0);
+        const uploaderName = getPayloadProperty<string>(payload, 'uploaderName', 'Someone');
+        
+        if (fileCount > 0) {
+          items.push(`${fileCount} file${fileCount === 1 ? '' : 's'}`);
         }
-        if (payload.folderCount > 0) {
-          items.push(`${payload.folderCount} folder${payload.folderCount === 1 ? '' : 's'}`);
+        if (folderCount > 0) {
+          items.push(`${folderCount} folder${folderCount === 1 ? '' : 's'}`);
         }
-        return `${payload.uploaderName} uploaded ${items.join(' and ')}`;
+        return `${uploaderName} uploaded ${items.join(' and ')}`;
+      }
       
       case NotificationEventType.STORAGE_THRESHOLD_WARNING:
-        return `${payload.usagePercentage}% of storage used`;
+        return `${getPayloadProperty<number>(payload, 'usagePercentage', 0)}% of storage used`;
       
       case NotificationEventType.STORAGE_LIMIT_EXCEEDED:
         return 'Free up space to continue uploading files';
       
-      case NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED:
-        return payload.message || `You tried to upload ${payload.attemptedCount} files, but the maximum is ${payload.maxAllowed} files at once. Please select fewer files or upload in smaller batches.`;
+      case NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED: {
+        const message = getPayloadProperty<string>(payload, 'message');
+        const attemptedCount = getPayloadProperty<number>(payload, 'attemptedCount', 0);
+        const maxAllowed = getPayloadProperty<number>(payload, 'maxAllowed', 0);
+        return message || `You tried to upload ${attemptedCount} files, but the maximum is ${maxAllowed} files at once. Please select fewer files or upload in smaller batches.`;
+      }
       
       case NotificationEventType.WORKSPACE_FOLDER_DROPPED:
-        return payload.message || 'Files will be uploaded to the selected location.';
+        return getPayloadProperty<string>(payload, 'message') || 'Files will be uploaded to the selected location.';
       
-      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_START:
-        const totalSizeStart = payload.totalSize ? ` (${this.formatFileSize(payload.totalSize)})` : '';
-        return `Starting upload of ${payload.totalItems} files${totalSizeStart}`;
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_START: {
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 0);
+        const totalSize = getPayloadProperty<number>(payload, 'totalSize');
+        const totalSizeStart = totalSize ? ` (${this.formatFileSize(totalSize)})` : '';
+        return `Starting upload of ${totalItems} files${totalSizeStart}`;
+      }
         
-      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS:
-        const uploadProgress = Math.round(((payload.completedItems || 0) / (payload.totalItems || 1)) * 100);
-        const totalSizeProgress = payload.totalSize ? ` (${this.formatFileSize(payload.totalSize)})` : '';
-        return `${payload.completedItems} of ${payload.totalItems} completed${payload.failedItems ? ` (${payload.failedItems} failed)` : ''} - ${uploadProgress}%${totalSizeProgress}`;
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS: {
+        const completedItems = getPayloadProperty<number>(payload, 'completedItems', 0);
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 1);
+        const failedItems = getPayloadProperty<number>(payload, 'failedItems', 0);
+        const totalSize = getPayloadProperty<number>(payload, 'totalSize');
+        const uploadProgress = Math.round((completedItems / totalItems) * 100);
+        const totalSizeProgress = totalSize ? ` (${this.formatFileSize(totalSize)})` : '';
+        return `${completedItems} of ${totalItems} completed${failedItems ? ` (${failedItems} failed)` : ''} - ${uploadProgress}%${totalSizeProgress}`;
+      }
       
-      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS:
-        if (payload.failedItems && payload.failedItems > 0) {
-          return `Uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}, ${payload.failedItems} failed`;
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS: {
+        const completedItems = getPayloadProperty<number>(payload, 'completedItems', 0);
+        const failedItems = getPayloadProperty<number>(payload, 'failedItems', 0);
+        if (failedItems > 0) {
+          return `Uploaded ${completedItems} file${completedItems === 1 ? '' : 's'}, ${failedItems} failed`;
         }
-        return `Successfully uploaded ${payload.completedItems} file${payload.completedItems === 1 ? '' : 's'}`;
+        return `Successfully uploaded ${completedItems} file${completedItems === 1 ? '' : 's'}`;
+      }
       
-      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR:
-        return payload.error || `Failed to upload ${payload.failedItems} file${payload.failedItems === 1 ? '' : 's'}`;
+      case NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR: {
+        const failedItems = getPayloadProperty<number>(payload, 'failedItems', 0);
+        const error = getPayloadProperty<string>(payload, 'error');
+        return error || `Failed to upload ${failedItems} file${failedItems === 1 ? '' : 's'}`;
+      }
       
       default:
-        return payload.error || payload.message || undefined;
+        return getPayloadProperty<string>(payload, 'error') || getPayloadProperty<string>(payload, 'message') || undefined;
     }
   }
 
@@ -410,7 +451,6 @@ class NotificationManager {
     }
 
     // Determine based on event characteristics
-    const isError = isErrorEvent(event.type);
     const isProgress = isProgressEvent(event.type);
     const priority = event.config?.priority || NotificationPriority.MEDIUM;
 
@@ -447,14 +487,17 @@ class NotificationManager {
     uiType: NotificationUIType
   ): void {
 
-    // Add to deduplication map
-    const key = this.getDeduplicationKey(event);
-    this.deduplicationMap.set(key, {
-      eventType: event.type,
-      key,
-      timestamp: Date.now(),
-      count: 1,
-    });
+    // Add to deduplication map (except for progress events which need continuous updates)
+    const isProgress = isProgressEvent(event.type);
+    if (!isProgress) {
+      const key = this.getDeduplicationKey(event);
+      this.deduplicationMap.set(key, {
+        eventType: event.type,
+        key,
+        timestamp: Date.now(),
+        count: 1,
+      });
+    }
 
     // Route based on UI type
     switch (uiType) {
@@ -500,7 +543,7 @@ class NotificationManager {
     const isSuccess = isSuccessEvent(event.type);
     const toastId = customId || `${event.type}-${this.getDeduplicationKey(event)}`;
 
-    const options: any = {
+    const options: Record<string, unknown> = {
       id: toastId,
     };
     
@@ -592,148 +635,195 @@ class NotificationManager {
    * Show progress notification
    */
   private showProgress(event: NotificationEvent, display: NotificationDisplay): void {
-    const payload = event.payload as any;
-    const progressId = payload.batchId || payload.fileId || event.metadata.correlationId;
+    const payload = event.payload;
+    const fileId = getPayloadProperty<string>(payload, 'fileId');
+    const batchId = getPayloadProperty<string>(payload, 'batchId');
     
-    if (!progressId) {
-      this.showToast(event, display);
-      return;
+    console.log('[NotificationManager.showProgress] Event type:', event.type, 'FileId:', fileId, 'BatchId:', batchId);
+    
+    // Generate a progress ID if neither fileId nor batchId is available
+    const progressId = fileId || batchId || `progress-${Date.now()}`;
+    
+    // Suppress individual file notifications when they're part of a batch
+    if (fileId && batchId) {
+      // Individual file events within a batch should be suppressed
+      // The batch-level notifications will handle the UI updates
+      if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START || 
+          event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS ||
+          event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS ||
+          event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR) {
+        return; // Suppress individual file notifications within batches
+      }
     }
+    
+    // Handle single file uploads (they have fileId but no batchId)
+    if (fileId && !batchId) {
+      // Check if this upload was already completed - if so, ignore all further events
+      if (this.completedUploads.has(fileId)) {
+        return;
+      }
 
-    // Check if this upload was already completed - if so, ignore all further events
-    if (this.completedUploads.has(progressId)) {
-      return;
-    }
-
-    // For file upload start, create initial progress toast
-    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START) {
-      // Check if already exists
-      const existingToastId = this.progressToasts.get(progressId);
-      if (!existingToastId && !this.completedUploads.has(progressId)) {
-        const payload = event.payload as any;
+      // For file upload start or progress, just call showFileUploadProgress
+      // It will create or update the toast as needed
+      if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_START || 
+          event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS) {
         
-        // Get cancel handler if provided (though usually not for START event)
+        const fileName = getPayloadProperty<string>(payload, 'fileName') || 'file';
+        const fileSize = getPayloadProperty<number>(payload, 'fileSize') || 0;
+        const uploadProgress = getPayloadProperty<number>(payload, 'uploadProgress') || 0;
         const cancelHandler = event.config?.actions?.[0]?.handler;
         
-        // Use the helper function to show custom progress notification starting at 0%
-        const toastId = showFileUploadProgress(
-          progressId,
-          payload.fileName || 'file',
-          payload.fileSize || 0,
-          0,
+        // Simply call showFileUploadProgress - it handles both create and update
+        showFileUploadProgress(
+          fileId,
+          fileName,
+          fileSize,
+          uploadProgress,
           'uploading',
           cancelHandler
         );
         
-        this.progressToasts.set(progressId, toastId);
+        return;
       }
-      return;
-    }
-    
-    // For file upload progress, update the existing toast
-    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS) {
-      const payload = event.payload as any;
       
-      // Get cancel handler if provided
-      const cancelHandler = event.config?.actions?.[0]?.handler;
-      
-      // Use the helper function to show custom progress notification with cancel button
-      const toastId = showFileUploadProgress(
-        progressId,
-        payload.fileName || 'file',
-        payload.fileSize || 0,
-        payload.uploadProgress || 0,
-        'uploading',
-        cancelHandler
-      );
-      
-      this.progressToasts.set(progressId, toastId);
-      return;
-    }
-    
-    // For file upload success, dismiss loading and show success
-    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS) {
-      // Mark as completed to prevent any further updates
-      this.completedUploads.add(progressId);
-      
-      const existingToastId = this.progressToasts.get(progressId);
-      if (existingToastId) {
-        // Force dismiss the loading toast completely
-        toast.dismiss(existingToastId);
-        // Remove all traces of it
-        this.progressToasts.delete(progressId);
+      // For file upload success, dismiss progress and show success
+      if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS) {
+        // Mark as completed to prevent any further updates
+        this.completedUploads.add(fileId);
+        
+        const fileName = getPayloadProperty<string>(payload, 'fileName') || 'file';
+        const fileSize = getPayloadProperty<number>(payload, 'fileSize') || 0;
+        
+        // Call showFileUploadProgress with 'success' status - it will dismiss the toast
+        showFileUploadProgress(
+          fileId,
+          fileName,
+          fileSize,
+          100,
+          'success'
+        );
+        
+        // Show a standard success toast
+        toast.success(display.title, {
+          description: display.description,
+          duration: 3000,
+        });
+        
+        // Clean up completed uploads after a delay
+        setTimeout(() => {
+          this.completedUploads.delete(fileId);
+        }, 10000);
+        return;
       }
-      // Create a new success toast with a different ID to avoid conflicts
-      toast.success(display.title, {
-        description: display.description,
-        duration: 3000,
-        id: `success-${progressId}`, // Different ID to avoid conflicts
-      });
       
-      // Clean up completed uploads after a delay
-      setTimeout(() => {
-        this.completedUploads.delete(progressId);
-      }, 10000);
-      return;
-    }
-    
-    // For file upload error, dismiss loading and show error
-    if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR) {
-      // Mark as completed to prevent any further updates
-      this.completedUploads.add(progressId);
-      
-      const existingToastId = this.progressToasts.get(progressId);
-      if (existingToastId) {
-        // Force dismiss the loading toast completely
-        toast.dismiss(existingToastId);
-        // Remove all traces of it
-        this.progressToasts.delete(progressId);
+      // For file upload error, dismiss progress and show error
+      if (event.type === NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR) {
+        // Mark as completed to prevent any further updates
+        this.completedUploads.add(fileId);
+        
+        const fileName = getPayloadProperty<string>(payload, 'fileName') || 'file';
+        const fileSize = getPayloadProperty<number>(payload, 'fileSize') || 0;
+        
+        // Call showFileUploadProgress with 'error' status - it will dismiss the toast
+        showFileUploadProgress(
+          fileId,
+          fileName,
+          fileSize,
+          0,
+          'error'
+        );
+        
+        // Show an error toast with the error details
+        toast.error(display.title, {
+          description: display.description,
+          duration: 5000,
+        });
+        
+        // Clean up completed uploads after a delay
+        setTimeout(() => {
+          this.completedUploads.delete(fileId);
+        }, 10000);
+        return;
       }
-      // Create a new error toast with a different ID to avoid conflicts
-      toast.error(display.title, {
-        description: display.description,
-        duration: 5000,
-        id: `error-${progressId}`, // Different ID to avoid conflicts
-      });
-      
-      // Clean up completed uploads after a delay
-      setTimeout(() => {
-        this.completedUploads.delete(progressId);
-      }, 10000);
-      return;
     }
 
     // For batch upload events with only 1 item, suppress the notification
     if ((event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_START || 
          event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS) && 
-        payload.totalItems === 1) {
+        getPayloadProperty<number>(payload, 'totalItems') === 1) {
       // Suppress batch notifications for single file uploads
       return;
     }
 
-    // For other progress events, use standard loading toast
-    const existingToastId = this.progressToasts.get(progressId);
-    if (existingToastId) {
-      toast.dismiss(existingToastId);
+    // Handle batch upload progress with proper progress bar
+    if (event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_START || 
+        event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS) {
+      const useBatchId = batchId || progressId;
+      const totalItems = getPayloadProperty<number>(payload, 'totalItems') || 0;
+      const completedItems = getPayloadProperty<number>(payload, 'completedItems') || 0;
+      const failedItems = getPayloadProperty<number>(payload, 'failedItems') || 0;
+      
+      // Use uploadProgress if provided (smooth progress), otherwise calculate from completed items
+      const uploadProgress = getPayloadProperty<number>(payload, 'uploadProgress');
+      const progress = uploadProgress !== undefined 
+        ? uploadProgress 
+        : (totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0);
+      
+      // Use the progress toast for batch uploads
+      showProgressToast(
+        useBatchId,
+        `Uploading ${totalItems} files`,
+        `${completedItems} of ${totalItems} completed${failedItems ? ` (${failedItems} failed)` : ''}`,
+        progress,
+        'uploading'
+      );
+      return;
     }
 
-    const toastId = toast.loading(display.title, {
+    // Handle batch upload success
+    if (event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS) {
+      const useBatchId = batchId || progressId;
+      const completedItems = getPayloadProperty<number>(payload, 'completedItems') || 0;
+      const failedItems = getPayloadProperty<number>(payload, 'failedItems') || 0;
+      
+      // Dismiss the progress toast
+      toast.dismiss(`progress-${useBatchId}`);
+      
+      // Show success notification
+      if (failedItems > 0) {
+        toast.warning(display.title, {
+          description: `Uploaded ${completedItems} file${completedItems === 1 ? '' : 's'}, ${failedItems} failed`,
+          duration: 4000,
+        });
+      } else {
+        toast.success(display.title, {
+          description: `Successfully uploaded ${completedItems} file${completedItems === 1 ? '' : 's'}`,
+          duration: 3000,
+        });
+      }
+      return;
+    }
+
+    // Handle batch upload error
+    if (event.type === NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR) {
+      const useBatchId = batchId || progressId;
+      
+      // Dismiss the progress toast
+      toast.dismiss(`progress-${useBatchId}`);
+      
+      // Show error notification
+      toast.error(display.title, {
+        description: display.description,
+        duration: 5000,
+      });
+      return;
+    }
+
+    // For other progress events, use standard loading toast
+    toast.loading(display.title, {
       description: display.description,
       id: `progress-${progressId}`,
     });
-
-    this.progressToasts.set(progressId, toastId as string);
-
-    // If this is a completion event, convert to success
-    if (event.type.includes('.success')) {
-      setTimeout(() => {
-        toast.success(display.title, {
-          id: toastId,
-          description: display.description,
-        });
-        this.progressToasts.delete(progressId);
-      }, 100);
-    }
   }
 
   /**
@@ -748,7 +838,7 @@ class NotificationManager {
   /**
    * Format file size for display
    */
-  private formatFileSize(bytes: number): string {
+  private formatFileSize(bytes: number | undefined): string {
     if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -762,6 +852,11 @@ class NotificationManager {
   private playNotificationSound(event: NotificationEvent): void {
     const { silentNotifications } = useUserSettingsStore.getState();
     if (silentNotifications) {
+      return;
+    }
+
+    // Don't play sound for progress updates (only for start, success, error)
+    if (event.type.includes('.progress')) {
       return;
     }
 
@@ -787,7 +882,6 @@ class NotificationManager {
   public clearAll(): void {
     toast.dismiss();
     this.activeToasts.clear();
-    this.progressToasts.clear();
     this.deduplicationMap.clear();
   }
 

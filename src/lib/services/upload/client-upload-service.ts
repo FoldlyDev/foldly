@@ -13,6 +13,8 @@
  */
 
 import { logger } from '@/lib/services/logging/logger';
+import { emitNotification } from '@/features/notifications/core/event-bus';
+import { NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core/event-types';
 
 // =============================================================================
 // TYPES
@@ -24,6 +26,8 @@ export interface UploadOptions {
   onComplete?: (result: UploadResult) => void;
   onError?: (error: Error) => void;
   signal?: AbortSignal;
+  skipNotifications?: boolean; // Skip automatic notification emission
+  batchId?: string; // Associated batch ID for correlation
 }
 
 export interface UploadResult {
@@ -60,10 +64,29 @@ export class ClientUploadService {
     options: UploadOptions = {}
   ): Promise<UploadResult> {
     const uploadId = this.generateUploadId();
+    const skipNotifications = options.skipNotifications || false;
     
     // Call onStart callback with uploadId
     if (options.onStart) {
       options.onStart(uploadId);
+    }
+    
+    // Emit upload start notification unless explicitly skipped
+    if (!skipNotifications) {
+      emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_START, {
+        fileId: uploadId,
+        fileName: file.name,
+        fileSize: file.size,
+        workspaceId,
+        ...(folderId && { parentId: folderId }),
+        ...(options.batchId && { batchId: options.batchId }),
+        uploadProgress: 0
+      }, {
+        priority: NotificationPriority.MEDIUM,
+        uiType: NotificationUIType.PROGRESS,
+        duration: 0,
+        persistent: true
+      });
     }
     
     try {
@@ -75,13 +98,58 @@ export class ClientUploadService {
         formData.append('folderId', folderId);
       }
 
+      // Wrap progress callback to emit notifications
+      const wrappedOptions = {
+        ...options,
+        onProgress: (progress: number) => {
+          // Emit progress notification
+          if (!skipNotifications) {
+            emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS, {
+              fileId: uploadId,
+              fileName: file.name,
+              fileSize: file.size,
+              workspaceId,
+              ...(folderId && { parentId: folderId }),
+              ...(options.batchId && { batchId: options.batchId }),
+              uploadProgress: progress
+            }, {
+              priority: NotificationPriority.LOW,
+              uiType: NotificationUIType.PROGRESS,
+              duration: 0,
+              persistent: true
+            });
+          }
+          
+          // Call original progress callback
+          if (options.onProgress) {
+            options.onProgress(progress);
+          }
+        }
+      };
+
       // Upload with progress tracking
       const result = await this.uploadWithProgress(
         '/api/workspace/upload',
         formData,
         uploadId,
-        options
+        wrappedOptions
       );
+
+      // Emit success notification
+      if (!skipNotifications && result.success) {
+        emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS, {
+          fileId: uploadId,
+          fileName: file.name,
+          fileSize: file.size,
+          workspaceId,
+          ...(folderId && { parentId: folderId }),
+          ...(options.batchId && { batchId: options.batchId })
+        }, {
+          priority: NotificationPriority.LOW,
+          uiType: NotificationUIType.PROGRESS, // Route to showProgress to handle dismissal
+          duration: 3000
+        });
+      }
 
       // Call completion callback
       if (options.onComplete) {
@@ -95,6 +163,23 @@ export class ClientUploadService {
         success: false,
         error: errorMessage
       };
+
+      // Emit error notification
+      if (!skipNotifications) {
+        emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
+          fileId: uploadId,
+          fileName: file.name,
+          fileSize: file.size,
+          workspaceId,
+          ...(folderId && { parentId: folderId }),
+          ...(options.batchId && { batchId: options.batchId }),
+          error: errorMessage
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.PROGRESS, // Route to showProgress to handle dismissal
+          duration: 5000
+        });
+      }
 
       // Call error callback
       if (options.onError) {
@@ -114,7 +199,7 @@ export class ClientUploadService {
   }
 
   /**
-   * Upload multiple files with concurrent control
+   * Upload multiple files with concurrent control and smooth progress tracking
    */
   async uploadBatch(
     files: File[],
@@ -124,32 +209,119 @@ export class ClientUploadService {
   ): Promise<UploadResult[]> {
     const maxConcurrent = options.maxConcurrent || 3;
     const results: UploadResult[] = [];
-    let completed = 0;
+    const batchId = `batch-${Date.now()}`;
+    
+    // Track progress for each file
+    const fileProgress = new Map<string, number>();
+    const fileSizes = new Map<string, number>();
+    let completedCount = 0;
+    let failedCount = 0;
+    
+    // Initialize file tracking
+    files.forEach((file, index) => {
+      const fileId = `${batchId}-file-${index}`;
+      fileProgress.set(fileId, 0);
+      fileSizes.set(fileId, file.size);
+    });
+    
+    // Calculate total size for weighted progress
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+    
+    // Helper to calculate overall progress
+    const calculateOverallProgress = (): number => {
+      if (totalSize === 0) return 0;
+      
+      let weightedProgress = 0;
+      fileProgress.forEach((progress, fileId) => {
+        const fileSize = fileSizes.get(fileId) || 0;
+        weightedProgress += (progress / 100) * fileSize;
+      });
+      
+      return Math.round((weightedProgress / totalSize) * 100);
+    };
+    
+    // Emit batch upload start
+    emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_START, {
+      batchId,
+      totalItems: files.length,
+      completedItems: 0,
+      totalSize
+    }, {
+      priority: NotificationPriority.MEDIUM,
+      uiType: NotificationUIType.PROGRESS,
+      duration: 0,
+      persistent: true
+    });
 
     // Process files in chunks for concurrent uploads
     for (let i = 0; i < files.length; i += maxConcurrent) {
       const chunk = files.slice(i, Math.min(i + maxConcurrent, files.length));
+      const chunkIndexStart = i;
       
       const chunkResults = await Promise.all(
-        chunk.map(async (file) => {
+        chunk.map(async (file, chunkIndex) => {
+          const fileIndex = chunkIndexStart + chunkIndex;
+          const fileId = `${batchId}-file-${fileIndex}`;
+          
           const result = await this.uploadFile(file, workspaceId, folderId, {
             ...options,
+            skipNotifications: true, // Skip individual file notifications for batch uploads
+            batchId, // Pass batch context for correlation
+            onProgress: (progress) => {
+              // Update individual file progress
+              fileProgress.set(fileId, progress);
+              
+              // Calculate and emit overall batch progress
+              const overallProgress = calculateOverallProgress();
+              
+              emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS, {
+                batchId,
+                totalItems: files.length,
+                completedItems: completedCount,
+                failedItems: failedCount,
+                totalSize,
+                uploadProgress: overallProgress
+              }, {
+                priority: NotificationPriority.LOW,
+                uiType: NotificationUIType.PROGRESS,
+                duration: 0,
+                persistent: true
+              });
+              
+              // Call original progress callback if provided
+              if (options.onProgress) {
+                options.onProgress(overallProgress);
+              }
+            },
             onComplete: (res) => {
-              completed++;
+              if (res.success) {
+                completedCount++;
+                fileProgress.set(fileId, 100);
+              } else {
+                failedCount++;
+              }
               
               // Call individual file completion
               if (options.onFileComplete) {
                 options.onFileComplete(file.name, res);
               }
               
-              // Call batch progress
+              // Call batch progress with updated counts
               if (options.onBatchProgress) {
-                options.onBatchProgress(completed, files.length);
+                options.onBatchProgress(completedCount, files.length);
               }
               
               // Call original completion if provided
               if (options.onComplete) {
                 options.onComplete(res);
+              }
+            },
+            onError: (error) => {
+              failedCount++;
+              
+              // Call original error handler if provided
+              if (options.onError) {
+                options.onError(error);
               }
             }
           });
@@ -159,6 +331,42 @@ export class ClientUploadService {
       );
       
       results.push(...chunkResults);
+    }
+    
+    // Emit final batch result
+    if (failedCount === 0) {
+      emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
+        batchId,
+        totalItems: files.length,
+        completedItems: completedCount
+      }, {
+        priority: NotificationPriority.LOW,
+        uiType: NotificationUIType.PROGRESS,
+        duration: 3000
+      });
+    } else if (completedCount > 0) {
+      emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
+        batchId,
+        totalItems: files.length,
+        completedItems: completedCount,
+        failedItems: failedCount
+      }, {
+        priority: NotificationPriority.MEDIUM,
+        uiType: NotificationUIType.PROGRESS,
+        duration: 5000
+      });
+    } else {
+      emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR, {
+        batchId,
+        totalItems: files.length,
+        completedItems: completedCount,
+        failedItems: failedCount,
+        error: `Failed to upload ${failedCount} file${failedCount === 1 ? '' : 's'}`
+      }, {
+        priority: NotificationPriority.HIGH,
+        uiType: NotificationUIType.PROGRESS,
+        duration: 5000
+      });
     }
 
     return results;
