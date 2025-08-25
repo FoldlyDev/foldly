@@ -104,58 +104,6 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>(
           </div>
           <div ref={topBarRef} className='home-spotlight-top-bar'>
             <div className='container'>
-              <div className='symbols-container'>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s1-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s2-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s3-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-              </div>
-              <div className='symbols-container'>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s3-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s2-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-                <div className='symbol'>
-                  <Image
-                    src='/assets/landing/symbols/s1-light.png'
-                    alt='Symbol'
-                    width={24}
-                    height={24}
-                  />
-                </div>
-              </div>
             </div>
           </div>
           <div ref={bottomBarRef} className='home-spotlight-bottom-bar'>
