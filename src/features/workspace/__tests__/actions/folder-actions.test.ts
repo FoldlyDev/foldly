@@ -7,7 +7,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 }));
 
 // Mock the folder service
-vi.mock('@/lib/services/files/folder-service', () => ({
+vi.mock('@/lib/services/file-system/folder-service', () => ({
   FolderService: vi.fn().mockImplementation(() => ({
     deleteFolderWithStorage: vi.fn().mockResolvedValue({
       success: true,
@@ -17,7 +17,7 @@ vi.mock('@/lib/services/files/folder-service', () => ({
 }));
 
 // Mock storage service
-vi.mock('@/lib/services/files/storage-service', () => ({
+vi.mock('@/lib/services/storage/storage-operations-service', () => ({
   StorageService: vi.fn().mockImplementation(() => ({
     deleteFile: vi.fn().mockResolvedValue({ success: true }),
   })),
@@ -68,7 +68,7 @@ describe('Folder Actions', () => {
     });
 
     it('should handle folder service errors gracefully', async () => {
-      const { FolderService } = await import('@/features/files/lib/services/folder-service');
+      const { FolderService } = await import('@/lib/services/file-system/folder-service');
       vi.mocked(FolderService).mockImplementationOnce(() => ({
         deleteFolderWithStorage: vi.fn().mockResolvedValue({
           success: false,
@@ -83,7 +83,7 @@ describe('Folder Actions', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const { FolderService } = await import('@/features/files/lib/services/folder-service');
+      const { FolderService } = await import('@/lib/services/file-system/folder-service');
       vi.mocked(FolderService).mockImplementationOnce(() => ({
         deleteFolderWithStorage: vi.fn().mockRejectedValue(new Error('Database error')),
       } as any));

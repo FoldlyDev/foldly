@@ -2,8 +2,8 @@
 // Service for file CRUD operations and data fetching
 // Following 2025 TypeScript best practices
 
-import { FileService } from '@/features/files/lib/services/file-service';
-import { FolderService } from '@/features/files/lib/services/folder-service';
+import { FileService } from '@/lib/services/file-system/file-service';
+import { FolderService } from '@/lib/services/file-system/folder-service';
 import { files, folders } from '@/lib/database/schemas';
 
 // Use the correct types from src/lib/supabase (single source of truth)

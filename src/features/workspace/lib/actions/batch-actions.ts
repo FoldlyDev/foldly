@@ -27,9 +27,9 @@ export async function batchMoveItemsAction(
 
     // Get workspace to determine root handling
     const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
-    const { FileService } = await import('@/features/files/lib/services/file-service');
+    const { FileService } = await import('@/lib/services/file-system/file-service');
     const { FolderService } = await import(
-      '@/features/files/lib/services/folder-service'
+      '@/lib/services/file-system/folder-service'
     );
 
     const workspaceService = new WorkspaceService();
@@ -186,12 +186,12 @@ export async function batchDeleteItemsAction(
 
     // Import services
     const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
-    const { FileService } = await import('@/features/files/lib/services/file-service');
+    const { FileService } = await import('@/lib/services/file-system/file-service');
     const { FolderService } = await import(
-      '@/features/files/lib/services/folder-service'
+      '@/lib/services/file-system/folder-service'
     );
     const { StorageService } = await import(
-      '@/features/files/lib/services/storage-service'
+      '@/lib/services/storage/storage-operations-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'

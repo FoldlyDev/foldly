@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { FileService } from '@/features/files/lib/services/file-service';
+import { FileService } from '@/lib/services/file-system/file-service';
 import type { DatabaseId } from '@/lib/database/types';
 import { sanitizePath, isValidFolderId, sanitizeUserId } from '@/lib/utils/security';
 import { logger } from '@/lib/services/logging/logger';
@@ -115,7 +115,7 @@ export async function deleteFileAction(
     }
 
     const { StorageService } = await import(
-      '@/features/files/lib/services/storage-service'
+      '@/lib/services/storage/storage-operations-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -350,7 +350,7 @@ export async function downloadFileAction(
     }
 
     const { StorageService } = await import(
-      '@/features/files/lib/services/storage-service'
+      '@/lib/services/storage/storage-operations-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -448,7 +448,7 @@ export async function uploadFileAction(
     }
 
     const { StorageService } = await import(
-      '@/features/files/lib/services/storage-service'
+      '@/lib/services/storage/storage-operations-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
@@ -645,7 +645,7 @@ export async function uploadFileToLinkAction(
     }
 
     const { StorageService } = await import(
-      '@/features/files/lib/services/storage-service'
+      '@/lib/services/storage/storage-operations-service'
     );
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'

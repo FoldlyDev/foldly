@@ -7,7 +7,7 @@ import { batches, links, files } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import { success } from '@/lib/database/types/common';
-import { FolderService } from '@/features/files/lib/services/folder-service';
+import { FolderService } from '@/lib/services/file-system/folder-service';
 
 interface FileData {
   fileName: string;
