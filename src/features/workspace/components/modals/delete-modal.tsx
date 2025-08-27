@@ -13,7 +13,7 @@ import {
 import { AlertTriangle, Folder, FileText, Trash2 } from 'lucide-react';
 import { deleteFileAction, deleteFolderAction } from '../../lib/actions';
 import type { DatabaseId } from '@/lib/database/types';
-import { useInvalidateStorage } from '../../hooks/use-storage-tracking';
+import { useInvalidateStorage } from '../../hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateClientIP } from '@/lib/utils/security';
 import { logger } from '@/lib/services/logging/logger';
 import { createErrorResponse, createSuccessResponse, ERROR_CODES, type ErrorCode } from '@/lib/types/error-response';
-import { createBatchAction, completeBatchAction } from '@/features/link-upload/lib/actions';
-import { createLinkFolderAction } from '@/features/link-upload/lib/actions/link-folder-actions';
-import { linkUploadService } from '@/features/link-upload/lib/services';
+// TODO: Uncomment when actions and services are re-implemented with new tree
+// import { createBatchAction, completeBatchAction } from '@/features/link-upload/lib/actions';
+// import { createLinkFolderAction } from '@/features/link-upload/lib/actions/link-folder-actions';
+// import { linkUploadService } from '@/features/link-upload/lib/services';
 import { createClient } from '@supabase/supabase-js';
 import { db } from '@/lib/database/connection';
 import { files as filesTable, batches, links, users } from '@/lib/database/schemas';
@@ -57,6 +58,13 @@ interface CreatedFolder {
 }
 
 export async function POST(req: NextRequest) {
+  // TODO: Re-implement with new tree system
+  return NextResponse.json(
+    { error: 'Link upload API temporarily disabled during tree migration' },
+    { status: 503 }
+  );
+  
+  /* Commented out until new tree system is implemented
   try {
     logger.debug('Link batch upload request received');
     
@@ -694,4 +702,5 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+  */
 }

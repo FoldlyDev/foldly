@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateClientIP } from '@/lib/utils/security';
 import { logger } from '@/lib/services/logging/logger';
 import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/types/error-response';
-import { validateLinkAccessAction } from '@/features/link-upload/lib/actions';
+// TODO: Uncomment when actions are re-implemented with new tree
+// import { validateLinkAccessAction } from '@/features/link-upload/lib/actions';
 import { db } from '@/lib/database/connection';
 import { files, batches, links, users } from '@/lib/database/schemas';
 import { eq, and, sql } from 'drizzle-orm';
@@ -86,18 +87,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate link access if needed
-    if (linkSlug) {
-      const accessResult = await validateLinkAccessAction({
-        slugParts: linkSlug.split('/')
-      });
-      if (!accessResult.success) {
-        return NextResponse.json(
-          createErrorResponse(accessResult.error || 'Access denied', ERROR_CODES.UNAUTHORIZED),
-          { status: 401 }
-        );
-      }
-    }
+    // TODO: Re-implement link validation with new tree system
+    // if (linkSlug) {
+    //   const accessResult = await validateLinkAccessAction({
+    //     slugParts: linkSlug.split('/')
+    //   });
+    //   if (!accessResult.success) {
+    //     return NextResponse.json(
+    //       createErrorResponse(accessResult.error || 'Access denied', ERROR_CODES.UNAUTHORIZED),
+    //       { status: 401 }
+    //     );
+    //   }
+    // }
 
     // Get the file record that was created during batch creation
     const [fileRecord] = await db

@@ -21,7 +21,7 @@ import { StorageInfoDisplay } from '../storage/storage-info-display';
 import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
 import { UploadLimitsInfo } from '../upload/upload-limits-info';
 import { Protect } from '@clerk/nextjs';
-import { useStorageTracking } from '../../hooks/use-storage-tracking';
+import { useInvalidateStorage } from '../../hooks';
 import { UPLOAD_CONFIG } from '../../lib/config/upload-config';
 
 interface UploadModalProps {
@@ -41,7 +41,7 @@ export function UploadModal({
   onFileUploaded,
   initialFiles,
 }: UploadModalProps) {
-  const { refetchStorage } = useStorageTracking();
+  const invalidateStorage = useInvalidateStorage();
   const {
     files,
     isDragging,
@@ -130,9 +130,9 @@ export function UploadModal({
   useEffect(() => {
     if (isOpen) {
       // Refresh storage data to ensure we have the latest info
-      refetchStorage();
+      invalidateStorage();
     }
-  }, [isOpen, refetchStorage]);
+  }, [isOpen, invalidateStorage]);
 
   // Handle initial files separately to prevent re-adding
   useEffect(() => {
@@ -213,7 +213,7 @@ export function UploadModal({
           <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
             {/* Storage Warning - Animated Alert */}
             <AnimatePresence>
-              {quotaStatus.status !== 'safe' && (
+              {quotaStatus.warningLevel !== 'normal' && storageInfo && (
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -221,8 +221,8 @@ export function UploadModal({
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 >
                   <StorageWarning
-                    status={quotaStatus.status}
-                    remainingSpace={storageInfo.remainingBytes}
+                    status={quotaStatus.warningLevel}
+                    remainingSpace={storageInfo.availableSpace}
                     formatSize={formatSize}
                   />
                 </motion.div>
@@ -242,8 +242,8 @@ export function UploadModal({
               skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
               multiple={true}
               maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}
-              maxFileSize={UPLOAD_CONFIG.fileSizeLimits[storageInfo.planKey as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024}
-              disabled={isUploading || quotaStatus.status === 'exceeded'}
+              maxFileSize={storageInfo ? UPLOAD_CONFIG.fileSizeLimits[storageInfo.plan as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024 : 100 * 1024 * 1024}
+              disabled={isUploading || quotaStatus.isFull}
               uploadText="Upload files"
               uploadDescription={
                 isDragging 
@@ -265,7 +265,7 @@ export function UploadModal({
               transition={{ duration: 0.2 }}
             >
               <UploadLimitsInfo
-                plan={storageInfo.planKey as 'free' | 'pro' | 'business'}
+                plan={storageInfo ? storageInfo.plan as 'free' | 'pro' | 'business' : 'free'}
               />
             </motion.div>
 
@@ -313,7 +313,7 @@ export function UploadModal({
                   <UploadValidation
                     validation={uploadValidation}
                     formatSize={formatSize}
-                    planKey={storageInfo.planKey}
+                    planKey={storageInfo ? storageInfo.plan : 'free'}
                   />
                 </motion.div>
               )}

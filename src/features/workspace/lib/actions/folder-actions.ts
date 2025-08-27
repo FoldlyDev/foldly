@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { workspaceService } from '@/features/workspace/lib/services/workspace-service';
 import { FolderService } from '@/lib/services/file-system/folder-service';
 import type { DatabaseId } from '@/lib/database/types';
 import { logger } from '@/lib/services/logging/logger';
@@ -173,21 +173,26 @@ export async function deleteFolderAction(
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
     );
-    
+
     const supabaseClient = await createServerSupabaseClient();
     const storageService = new StorageService(supabaseClient);
     const folderService = new FolderService();
-    
+
     // Use the optimized deletion method that handles both DB and storage
-    const result = await folderService.deleteFolderWithStorage(folderId, storageService);
+    const result = await folderService.deleteFolderWithStorage(
+      folderId,
+      storageService
+    );
 
     if (result.success) {
       // Get updated storage info after deletion
-      const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+      const { getUserStorageDashboard } = await import(
+        '@/lib/services/storage/storage-tracking-service'
+      );
       const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
-      
-      return { 
-        success: true, 
+
+      return {
+        success: true,
         data: {
           ...result.data,
           storageInfo: {

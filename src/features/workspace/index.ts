@@ -21,11 +21,7 @@ export {
 export { WorkspaceContainer } from './components';
 
 // Workspace hooks
-export {
-  useWorkspaceTree,
-  useWorkspaceRealtime,
-  useWorkspaceUI,
-} from './hooks';
+export { useWorkspaceTree, useWorkspaceRealtime } from './hooks';
 
 // Workspace services
-export * from './services';
+export * from './lib/services';

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  uploadFileToLinkAction,
-  validateLinkForUploadAction,
-} from '@/features/link-upload/lib/actions/upload-to-link';
-import { linkUploadValidationService } from '@/features/link-upload/lib/services/link-validation';
+// TODO: Uncomment when actions and services are re-implemented with new tree
+// import {
+//   uploadFileToLinkAction,
+//   validateLinkForUploadAction,
+// } from '@/features/link-upload/lib/actions/upload-to-link';
+// import { linkUploadValidationService } from '@/features/link-upload/lib/services/link-validation';
 
 // =============================================================================
 // TYPES
@@ -18,6 +19,18 @@ import { linkUploadValidationService } from '@/features/link-upload/lib/services
  * Includes comprehensive real-time validation including expiration checking
  */
 export async function POST(
+  req: NextRequest,
+  context: { params: Promise<{ linkId: string }> }
+) {
+  // TODO: Re-implement with new tree system
+  return NextResponse.json(
+    { error: 'Upload API temporarily disabled during tree migration' },
+    { status: 503 }
+  );
+}
+
+/* Commented out until new tree system is implemented
+export async function POST_DISABLED(
   request: NextRequest,
   { params }: { params: Promise<{ linkId: string }> }
 ) {

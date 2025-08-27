@@ -42,15 +42,18 @@ export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
             </div>
             
             <h1 className="text-xl lg:text-2xl font-bold text-foreground">
-              {link.title || `${link.owner.username}'s Upload Link`}
+              {link.title || 'Upload Link'}
+              {/* TODO: Re-implement with proper link data */}
+              {/* {link.title || `${link.owner?.username}'s Upload Link`} */}
             </h1>
           </div>
           
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground mb-2">
-            <span className="flex items-center gap-1">
+            {/* TODO: Re-implement owner display with proper link data */}
+            {/* <span className="flex items-center gap-1">
               <User className="h-4 w-4" />
-              by {link.owner.username?.charAt(0).toUpperCase() + link.owner.username?.slice(1) || 'Anonymous'}
-            </span>
+              by {link.owner?.username?.charAt(0).toUpperCase() + link.owner?.username?.slice(1) || 'Anonymous'}
+            </span> */}
 
             {link.expiresAt && (
               <span className={`flex items-center gap-1 ${isExpired ? 'text-red-600' : ''}`}>

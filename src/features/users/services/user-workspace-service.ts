@@ -1,7 +1,7 @@
 import { db } from '@/lib/database/connection';
 import { users, workspaces } from '@/lib/database/schemas';
 import { eq, and, not, sql } from 'drizzle-orm';
-import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { workspaceService } from '@/features/workspace/lib/services/workspace-service';
 import type { User, Workspace, DatabaseResult } from '@/lib/database/types';
 import type { WebhookUserData } from '@/lib/webhooks';
 
@@ -19,7 +19,6 @@ export class UserWorkspaceService {
   async createUserWithWorkspace(
     userData: WebhookUserData
   ): Promise<DatabaseResult<UserWorkspaceCreateResult>> {
-
     try {
       return await db.transaction(async tx => {
         // Phase 1: Create or update user (idempotent)
@@ -36,11 +35,11 @@ export class UserWorkspaceService {
         if (existingUserById.length > 0) {
           // User with this Clerk ID already exists - update their info
           user = existingUserById[0];
-          
+
           // Update user info if needed (email might have changed in Clerk)
           // Normalize username to lowercase before updating
           const normalizedUsername = userData.username?.toLowerCase() || '';
-          
+
           const [updatedUser] = await tx
             .update(users)
             .set({
@@ -53,7 +52,7 @@ export class UserWorkspaceService {
             })
             .where(eq(users.id, userData.id))
             .returning();
-          
+
           user = updatedUser || user;
         } else {
           // No existing user with this ID - check for email conflicts before creating
@@ -76,7 +75,7 @@ export class UserWorkspaceService {
                 newUserId: userData.id,
               }
             );
-            
+
             // For organization users, this might be expected - throw specific error
             throw new Error(
               `Email ${userData.email} is already registered to another account`
@@ -86,7 +85,7 @@ export class UserWorkspaceService {
           try {
             // Normalize username to lowercase before inserting
             const normalizedUsername = userData.username?.toLowerCase() || '';
-            
+
             [user] = await tx
               .insert(users)
               .values({
@@ -224,7 +223,7 @@ export class UserWorkspaceService {
         // User exists with same Clerk ID - simple update
         // Normalize username to lowercase before updating
         const normalizedUsername = userData.username?.toLowerCase() || '';
-        
+
         [user] = await db
           .update(users)
           .set({
@@ -258,17 +257,17 @@ export class UserWorkspaceService {
               attemptedUserId: userData.id,
             }
           );
-          
+
           throw new Error(
             `Email ${userData.email} is already registered to another account`
           );
         }
-        
+
         // No existing user - create new one
         try {
           // Normalize username to lowercase before inserting
           const normalizedUsername = userData.username?.toLowerCase() || '';
-          
+
           [user] = await db
             .insert(users)
             .values({
@@ -284,7 +283,10 @@ export class UserWorkspaceService {
             .returning();
         } catch (insertError: any) {
           // Handle username conflicts
-          if (insertError?.code === '23505' && insertError.message?.includes('username')) {
+          if (
+            insertError?.code === '23505' &&
+            insertError.message?.includes('username')
+          ) {
             throw new Error(`Username ${userData.username} is already taken`);
           }
           throw insertError;
@@ -391,34 +393,37 @@ export class UserWorkspaceService {
   ): Promise<boolean> {
     try {
       // Use transaction with serializable isolation level to prevent race conditions
-      return await db.transaction(async tx => {
-        // Convert username to lowercase for comparison
-        const lowerUsername = username.toLowerCase();
+      return await db.transaction(
+        async tx => {
+          // Convert username to lowercase for comparison
+          const lowerUsername = username.toLowerCase();
 
-        // Check if username exists (case-insensitive)
-        const existingUser = excludeUserId
-          ? await tx
-              .select({ id: users.id, username: users.username })
-              .from(users)
-              .where(
-                and(
-                  sql`LOWER(${users.username}) = ${lowerUsername}`,
-                  not(eq(users.id, excludeUserId))
+          // Check if username exists (case-insensitive)
+          const existingUser = excludeUserId
+            ? await tx
+                .select({ id: users.id, username: users.username })
+                .from(users)
+                .where(
+                  and(
+                    sql`LOWER(${users.username}) = ${lowerUsername}`,
+                    not(eq(users.id, excludeUserId))
+                  )
                 )
-              )
-              .limit(1)
-          : await tx
-              .select({ id: users.id, username: users.username })
-              .from(users)
-              .where(sql`LOWER(${users.username}) = ${lowerUsername}`)
-              .limit(1);
-        
-        // Return true if no existing user found
-        return existingUser.length === 0;
-      }, {
-        isolationLevel: 'serializable', // Prevent phantom reads
-        accessMode: 'read only' // Optimize for read-only transaction
-      });
+                .limit(1)
+            : await tx
+                .select({ id: users.id, username: users.username })
+                .from(users)
+                .where(sql`LOWER(${users.username}) = ${lowerUsername}`)
+                .limit(1);
+
+          // Return true if no existing user found
+          return existingUser.length === 0;
+        },
+        {
+          isolationLevel: 'serializable', // Prevent phantom reads
+          accessMode: 'read only', // Optimize for read-only transaction
+        }
+      );
     } catch (error) {
       console.error('Error checking username availability:', error);
       // Return false on error to be safe (assume username is taken)

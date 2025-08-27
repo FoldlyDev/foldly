@@ -14,12 +14,12 @@ import { WorkspaceHeader } from '../sections/workspace-header';
 import { WorkspaceToolbar } from '../sections/workspace-toolbar';
 import { UploadModal } from '../modals/upload-modal';
 import { BatchOperationModal, type BatchOperationItem, type BatchOperationProgress } from '../modals/batch-operation-modal';
-import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
+import { useWorkspaceData } from '@/features/workspace/hooks/use-workspace-data';
 import { useWorkspaceRealtime } from '@/features/workspace/hooks/use-workspace-realtime';
 import { useWorkspaceUploadModal, useWorkspaceModalStore } from '@/features/workspace/stores/workspace-modal-store';
 import {
   useStorageTracking,
-  useStorageQuotaStatus,
+  useStorageWarnings,
   shouldShowStorageWarning,
 } from '../../hooks';
 import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
@@ -65,7 +65,7 @@ const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 
 export function WorkspaceContainer() {
   // Get workspace data with loading states
-  const { data: workspaceData, isLoading, isError, error } = useWorkspaceTree();
+  const { data: workspaceData, isLoading, isError, error } = useWorkspaceData();
 
 
   // Set up real-time subscription for workspace changes
@@ -79,8 +79,8 @@ export function WorkspaceContainer() {
   } = useWorkspaceUploadModal();
 
   // Storage tracking
-  const { storageInfo, isLoading: storageLoading } = useStorageTracking();
-  const quotaStatus = useStorageQuotaStatus();
+  const { data: storageInfo, isLoading: storageLoading } = useStorageTracking();
+  const quotaStatus = useStorageWarnings();
   const [previousStoragePercentage, setPreviousStoragePercentage] = useState<
     number | undefined
   >(undefined);
@@ -714,12 +714,12 @@ export function WorkspaceContainer() {
 
       if (shouldShowStorageWarning(currentPercentage)) {
         const storageData: StorageNotificationData = {
-          currentUsage: storageInfo.storageUsedBytes,
-          totalLimit: storageInfo.storageLimitBytes,
-          remainingSpace: storageInfo.remainingBytes,
+          currentUsage: storageInfo.storageUsed,
+          totalLimit: storageInfo.storageLimit,
+          remainingSpace: storageInfo.availableSpace,
           usagePercentage: currentPercentage,
-          planKey: storageInfo.planKey,
-          filesCount: storageInfo.filesCount,
+          planKey: storageInfo.plan,
+          filesCount: 0, // Files count not tracked in centralized storage
         };
 
         // Only show notifications when crossing thresholds
@@ -869,7 +869,7 @@ export function WorkspaceContainer() {
       />
 
       {/* Global Storage Status Overlay for Critical States */}
-      {quotaStatus.status === 'exceeded' && (
+      {quotaStatus.isFull && (
         <div className='fixed bottom-4 right-4 z-50 max-w-sm'>
           <div className='bg-destructive/10 border border-destructive/30 rounded-lg p-4 shadow-lg'>
             <div className='flex items-center gap-2'>

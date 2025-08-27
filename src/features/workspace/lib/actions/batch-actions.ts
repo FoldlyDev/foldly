@@ -26,8 +26,12 @@ export async function batchMoveItemsAction(
     }
 
     // Get workspace to determine root handling
-    const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
-    const { FileService } = await import('@/lib/services/file-system/file-service');
+    const { WorkspaceService } = await import(
+      '@/features/workspace/lib/services/workspace-service'
+    );
+    const { FileService } = await import(
+      '@/lib/services/file-system/file-service'
+    );
     const { FolderService } = await import(
       '@/lib/services/file-system/folder-service'
     );
@@ -107,8 +111,8 @@ export async function batchMoveItemsAction(
         totalItems: itemIds.length,
         topLevelItems: topLevelItems.length,
         targetId,
-        actualTargetId
-      }
+        actualTargetId,
+      },
     });
 
     // Move only the top-level items - their children will be moved automatically
@@ -123,8 +127,8 @@ export async function batchMoveItemsAction(
       metadata: {
         totalResults: results.length,
         successful: results.filter(r => r.success).length,
-        failed: results.filter(r => !r.success).length
-      }
+        failed: results.filter(r => !r.success).length,
+      },
     });
 
     const failed = results.filter(r => !r.success);
@@ -133,8 +137,8 @@ export async function batchMoveItemsAction(
         metadata: {
           failedCount: failed.length,
           totalCount: topLevelItems.length,
-          errors: failed.map(f => f.error)
-        }
+          errors: failed.map(f => f.error),
+        },
       });
       return {
         success: false,
@@ -158,8 +162,8 @@ export async function batchMoveItemsAction(
       metadata: {
         success: result.success,
         movedItems: result.data?.movedItems || 0,
-        totalItems: result.data?.totalItems || 0
-      }
+        totalItems: result.data?.totalItems || 0,
+      },
     });
     return result;
   } catch (error) {
@@ -185,8 +189,12 @@ export async function batchDeleteItemsAction(
     }
 
     // Import services
-    const { WorkspaceService } = await import('@/features/workspace/services/workspace-service');
-    const { FileService } = await import('@/lib/services/file-system/file-service');
+    const { WorkspaceService } = await import(
+      '@/features/workspace/lib/services/workspace-service'
+    );
+    const { FileService } = await import(
+      '@/lib/services/file-system/file-service'
+    );
     const { FolderService } = await import(
       '@/lib/services/file-system/folder-service'
     );
@@ -241,14 +249,14 @@ export async function batchDeleteItemsAction(
         fileIdsToDelete,
         storageService
       );
-      
+
       if (!filesDeleteResult.success) {
         return {
           success: false,
           error: `Failed to delete files: ${filesDeleteResult.error}`,
         };
       }
-      
+
       deletionResults.push({
         type: 'files',
         total: fileIdsToDelete.length,
@@ -260,11 +268,14 @@ export async function batchDeleteItemsAction(
     if (folderIdsToDelete.length > 0) {
       let totalStorageDeleted = 0;
       let totalFilesDeleted = 0;
-      
+
       // Delete each folder with storage cleanup
       const folderResults = await Promise.all(
         folderIdsToDelete.map(async id => {
-          const result = await folderService.deleteFolderWithStorage(id, storageService);
+          const result = await folderService.deleteFolderWithStorage(
+            id,
+            storageService
+          );
           if (result.success && result.data) {
             totalStorageDeleted += result.data.storageDeleted;
             totalFilesDeleted += result.data.filesDeleted;
@@ -272,7 +283,7 @@ export async function batchDeleteItemsAction(
           return result;
         })
       );
-      
+
       const failedFolders = folderResults.filter(r => !r.success);
       if (failedFolders.length > 0) {
         return {
@@ -280,7 +291,7 @@ export async function batchDeleteItemsAction(
           error: `Failed to delete ${failedFolders.length} folders`,
         };
       }
-      
+
       deletionResults.push({
         type: 'folders',
         total: folderIdsToDelete.length,
@@ -290,7 +301,9 @@ export async function batchDeleteItemsAction(
     }
 
     // Get updated storage info after deletion
-    const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
+    const { getUserStorageDashboard } = await import(
+      '@/lib/services/storage/storage-tracking-service'
+    );
     const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
 
     revalidatePath('/dashboard/workspace');

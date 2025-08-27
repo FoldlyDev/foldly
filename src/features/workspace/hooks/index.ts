@@ -2,33 +2,24 @@
 
 // Core workspace hooks
 export { useWorkspaceRealtime } from './use-workspace-realtime';
-export { useWorkspaceTree } from './use-workspace-tree';
+export { useWorkspaceData } from './use-workspace-data';
+export { useLiveStorage } from './use-live-storage';
+export { usePreUploadValidation } from './use-pre-upload-validation';
 export { useWorkspaceUI } from './use-workspace-ui';
 
-// Billing integration hooks
-export { useUserPlan } from './use-user-plan';
-
-// Storage tracking hooks
-export { 
+// Re-export centralized storage hooks
+export {
   useStorageTracking,
-  useStorageQuotaStatus,
   useInvalidateStorage,
-  usePreUploadValidation,
-} from './use-storage-tracking';
-
-// Live storage tracking
-export { 
-  useLiveStorage,
-  useFileUploadProgress,
-  type LiveStorageData,
-  type LiveStorageState,
-  type LiveStorageActions,
-} from './use-live-storage';
+  useStorageWarnings,
+  useStorageState,
+  type StorageInfo,
+} from '@/lib/hooks/use-storage-tracking';
 
 // Storage utilities (client-safe)
 export {
   getStorageQuotaStatus,
   shouldShowStorageWarning,
   formatBytes,
-  type StorageQuotaStatus
+  type StorageQuotaStatus,
 } from '../lib/utils/storage-utils';

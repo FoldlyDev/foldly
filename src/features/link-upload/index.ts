@@ -1,5 +1,2 @@
+// Link upload feature exports
 export * from './components';
-export * from './hooks';
-export * from './lib';
-export * from './stores';
-export * from './types';

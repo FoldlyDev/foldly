@@ -24,13 +24,15 @@ import {
 import { CopyButton } from '@/components/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import { useLinkUrl } from '../../hooks/use-link-url';
-import { useUserPlan } from '@/features/link-upload/hooks/use-user-plan';
+// TODO: Replace with actual user plan fetching from user metadata
 
 export function ShareModal() {
   const currentModal = useCurrentModal();
   const { link } = useModalData();
   const { closeModal } = useModalStore();
-  const { isPro, isBusiness } = useUserPlan();
+  // TODO: Get plan from user metadata
+  const isPro = false;
+  const isBusiness = false;
 
   const isOpen = currentModal === 'share-link';
 

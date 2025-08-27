@@ -41,13 +41,20 @@ export function useWorkspaceUI(): WorkspaceUIState & WorkspaceUIActions {
   const [filterBy, setFilterBy] = useState<FilterBy>('all');
   const [sortBy, setSortBy] = useState<SortBy>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  
-  // Use Zustand store for modal state
-  const { isOpen: isUploadModalOpen, openModal, closeModal } = useWorkspaceUploadModal();
 
-  const openUploadModal = useCallback((workspaceId?: string, folderId?: string) => {
-    openModal(workspaceId, folderId);
-  }, [openModal]);
+  // Use Zustand store for modal state
+  const {
+    isOpen: isUploadModalOpen,
+    openModal,
+    closeModal,
+  } = useWorkspaceUploadModal();
+
+  const openUploadModal = useCallback(
+    (workspaceId?: string, folderId?: string) => {
+      openModal(workspaceId, folderId);
+    },
+    [openModal]
+  );
 
   const closeUploadModal = useCallback(() => {
     closeModal();

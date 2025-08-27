@@ -2,18 +2,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../lib/query-keys';
-import { fetchWorkspaceTreeAction } from '../lib/actions';
+import { fetchWorkspaceDataAction } from '../lib/actions';
 
 /**
- * Hook to fetch workspace tree data
+ * Hook to fetch workspace data including folders, files, and stats
  */
-export function useWorkspaceTree() {
+export function useWorkspaceData() {
   return useQuery({
-    queryKey: workspaceQueryKeys.tree(),
+    queryKey: workspaceQueryKeys.data(),
     queryFn: async () => {
-      const result = await fetchWorkspaceTreeAction();
+      const result = await fetchWorkspaceDataAction();
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch workspace tree');
+        throw new Error(result.error || 'Failed to fetch workspace data');
       }
       return result.data;
     },

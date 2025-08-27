@@ -1,8 +1,9 @@
 // Workspace actions exports
 
-// Tree operations
+// Workspace data operations
 export {
-  fetchWorkspaceTreeAction,
+  fetchWorkspaceDataAction,
+  fetchWorkspaceTreeAction, // Legacy alias
   moveItemAction,
   updateItemOrderAction,
   type ActionResult,
@@ -18,3 +19,4 @@ export * from './billing-actions';
 export * from './folder-actions';
 export * from './file-actions';
 export * from './workspace-actions';
+export * from './storage-actions';

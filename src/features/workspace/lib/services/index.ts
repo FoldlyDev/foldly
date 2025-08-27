@@ -1,5 +1,10 @@
 // =============================================================================
-// WORKSPACE SERVICES - Cross-cutting workspace utilities
+// WORKSPACE SERVICES - Workspace-Specific Services
 // =============================================================================
-// This directory is for cross-cutting workspace utilities only.
-// The main WorkspaceService is located in @/features/workspace/services/
+// 🎯 Service layer for workspace operations
+
+// Workspace service
+export { WorkspaceService, workspaceService } from './workspace-service';
+
+// Export service types for consumers
+export type { WorkspaceService as WorkspaceServiceType } from './workspace-service';

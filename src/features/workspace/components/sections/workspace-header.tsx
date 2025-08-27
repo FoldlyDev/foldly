@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
-import { GradientButton } from '@/components/core/gradient-button';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
-import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
-import { useStorageQuotaStatus } from '../../hooks';
+import { useWorkspaceUI, useStorageWarnings } from '../../hooks';
 import { NotificationCenter } from '../notifications/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
@@ -26,7 +24,7 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
   const { user } = useUser();
   const { openUploadModal } = useWorkspaceUI();
-  const quotaStatus = useStorageQuotaStatus();
+  const quotaStatus = useStorageWarnings();
   const { emit } = useEventBus();
   const [showNotifications, setShowNotifications] = useState(false);
   const totalUnread = useNotificationStore(state => state.totalUnread);
@@ -44,23 +42,23 @@ export function WorkspaceHeader({
 
   // Handle upload button click with storage validation
   const handleUploadClick = () => {
-    if (quotaStatus.status === 'exceeded') {
+    if (quotaStatus.isFull) {
       emit(NotificationEventType.STORAGE_LIMIT_EXCEEDED, {
         currentUsage: 0, // We don't have exact bytes here
         totalLimit: 0,   // We don't have exact limit here
         remainingSpace: 0,
-        usagePercentage: quotaStatus.percentage || 100,
+        usagePercentage: 100,
         planKey: 'free', // Default to free plan
       });
       return;
     }
 
-    if (quotaStatus.status === 'critical') {
+    if (quotaStatus.warningLevel === 'critical') {
       emit(NotificationEventType.STORAGE_THRESHOLD_CRITICAL, {
         currentUsage: 0, // We don't have exact bytes here
         totalLimit: 0,   // We don't have exact limit here
         remainingSpace: 0,
-        usagePercentage: quotaStatus.percentage || 90,
+        usagePercentage: 90,
         planKey: 'free', // Default to free plan
       });
     }
@@ -69,9 +67,9 @@ export function WorkspaceHeader({
   };
 
   // Determine upload button state
-  const isUploadDisabled = quotaStatus.status === 'exceeded';
+  const isUploadDisabled = quotaStatus.isFull;
   const showStorageWarning =
-    quotaStatus.status === 'critical' || quotaStatus.status === 'warning';
+    quotaStatus.warningLevel === 'critical' || quotaStatus.warningLevel === 'warning';
 
   return (
     <motion.div

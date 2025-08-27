@@ -3,8 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/shadcn/progress';
 import { HardDrive, AlertTriangle, CheckCircle, Upload } from 'lucide-react';
-import { useStorageTracking, useStorageQuotaStatus } from '../../hooks';
-import { useLiveStorage } from '../../hooks/use-live-storage';
+import { useStorageTracking, useStorageWarnings, formatBytes, useLiveStorage } from '../../hooks';
 import { cn } from '@/lib/utils';
 
 // =============================================================================
@@ -32,24 +31,24 @@ export function StorageInfoDisplay({
   className,
   showLiveUpdates = true,
 }: StorageInfoDisplayProps) {
-  const { storageInfo, isLoading, formatSize } = useStorageTracking();
-  const quotaStatus = useStorageQuotaStatus();
+  const { data: storageInfo, isLoading } = useStorageTracking();
+  const quotaStatus = useStorageWarnings();
   const liveStorage = useLiveStorage();
 
   // Use live data if available and uploads are in progress
   const displayUsage =
     showLiveUpdates && liveStorage.isUploading
       ? liveStorage.realtimeUsage
-      : storageInfo.storageUsedBytes;
+      : storageInfo?.storageUsed || 0;
 
   const projectedUsage =
     showLiveUpdates && liveStorage.isUploading
       ? liveStorage.projectedUsage
-      : storageInfo.storageUsedBytes;
+      : storageInfo?.storageUsed || 0;
 
-  const usagePercentage = (displayUsage / storageInfo.storageLimitBytes) * 100;
-  const projectedPercentage =
-    (projectedUsage / storageInfo.storageLimitBytes) * 100;
+  const storageLimit = storageInfo?.storageLimit || 1; // Avoid division by zero
+  const usagePercentage = storageInfo?.usagePercentage || 0;
+  const projectedPercentage = (projectedUsage / storageLimit) * 100;
 
   if (isLoading) {
     return (
@@ -70,8 +69,8 @@ export function StorageInfoDisplay({
 
   // Determine status colors and icons
   const getStatusColor = () => {
-    switch (quotaStatus.status) {
-      case 'exceeded':
+    switch (quotaStatus.warningLevel) {
+      case 'critical': // Full storage
         return 'text-destructive';
       case 'critical':
         return 'text-destructive/90';
@@ -83,8 +82,8 @@ export function StorageInfoDisplay({
   };
 
   const getProgressGradient = () => {
-    switch (quotaStatus.status) {
-      case 'exceeded':
+    switch (quotaStatus.warningLevel) {
+      case 'critical': // Full storage
         return 'from-destructive to-destructive/80';
       case 'critical':
         return 'from-destructive/90 to-destructive/70';
@@ -96,8 +95,8 @@ export function StorageInfoDisplay({
   };
 
   const getStatusIcon = () => {
-    switch (quotaStatus.status) {
-      case 'exceeded':
+    switch (quotaStatus.warningLevel) {
+      case 'critical': // Full storage
       case 'critical':
       case 'warning':
         return <AlertTriangle className='w-4 h-4' />;
@@ -107,8 +106,8 @@ export function StorageInfoDisplay({
   };
 
   const getIconBackground = () => {
-    switch (quotaStatus.status) {
-      case 'exceeded':
+    switch (quotaStatus.warningLevel) {
+      case 'critical': // Full storage
         return 'bg-destructive/10';
       case 'critical':
         return 'bg-destructive/10';
@@ -211,28 +210,26 @@ export function StorageInfoDisplay({
               </div>
               <div>
                 <p className='font-medium text-foreground'>
-                  {formatSize(displayUsage)} /{' '}
-                  {formatSize(storageInfo.storageLimitBytes)}
+                  {formatBytes(displayUsage)} /{' '}
+                  {formatBytes(storageLimit)}
                   {liveStorage.isUploading && (
                     <motion.span
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
                       className='text-primary dark:text-primary ml-1 font-semibold'
                     >
-                      +{formatSize(liveStorage.uploadingBytes)}
+                      +{formatBytes(liveStorage.uploadingBytes)}
                     </motion.span>
                   )}
                 </p>
                 <p className='text-xs text-muted-foreground mt-0.5'>
-                  {storageInfo.filesCount} files •{' '}
-                  {formatSize(storageInfo.remainingBytes)} remaining
+                  {formatBytes(storageInfo?.availableSpace || 0)} remaining
                 </p>
               </div>
             </div>
             <div className='text-right'>
               <p className='font-medium text-foreground/80'>
-                {storageInfo.planKey.charAt(0).toUpperCase() +
-                  storageInfo.planKey.slice(1)}
+                {storageInfo?.plan ? storageInfo.plan.charAt(0).toUpperCase() + storageInfo.plan.slice(1) : 'Free'}
               </p>
               <p className='text-xs text-muted-foreground'>plan</p>
             </div>
@@ -241,16 +238,16 @@ export function StorageInfoDisplay({
 
         {/* Status message - Premium alert style */}
         <AnimatePresence>
-          {quotaStatus.status !== 'safe' && (
+          {quotaStatus.warningLevel !== 'normal' && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className={cn(
                 'overflow-hidden rounded-xl border',
-                quotaStatus.status === 'exceeded'
+                quotaStatus.isFull
                   ? 'bg-red-50/80 border-red-200/50'
-                  : quotaStatus.status === 'critical'
+                  : quotaStatus.isAtLimit
                     ? 'bg-red-50/60 border-red-200/40'
                     : 'bg-yellow-50/80 border-yellow-200/50'
               )}
@@ -259,8 +256,8 @@ export function StorageInfoDisplay({
                 <div
                   className={cn(
                     'p-1.5 rounded-lg flex-shrink-0',
-                    quotaStatus.status === 'exceeded' ||
-                      quotaStatus.status === 'critical'
+                    quotaStatus.isFull ||
+                      quotaStatus.isAtLimit
                       ? 'bg-red-100'
                       : 'bg-yellow-100'
                   )}
@@ -268,8 +265,8 @@ export function StorageInfoDisplay({
                   <AlertTriangle
                     className={cn(
                       'w-4 h-4',
-                      quotaStatus.status === 'exceeded' ||
-                        quotaStatus.status === 'critical'
+                      quotaStatus.isFull ||
+                        quotaStatus.isAtLimit
                         ? 'text-red-600'
                         : 'text-yellow-600'
                     )}
@@ -279,8 +276,8 @@ export function StorageInfoDisplay({
                   <p
                     className={cn(
                       'text-sm font-medium',
-                      quotaStatus.status === 'exceeded' ||
-                        quotaStatus.status === 'critical'
+                      quotaStatus.isFull ||
+                        quotaStatus.isAtLimit
                         ? 'text-destructive'
                         : 'text-warning'
                     )}
@@ -289,10 +286,10 @@ export function StorageInfoDisplay({
                   </p>
                   {liveStorage.isUploading && (
                     <p className='text-xs text-muted-foreground mt-1'>
-                      {formatSize(
+                      {formatBytes(
                         Math.max(
                           0,
-                          storageInfo.storageLimitBytes - projectedUsage
+                          storageLimit - projectedUsage
                         )
                       )}{' '}
                       will remain after uploads
@@ -333,16 +330,16 @@ export function CompactStorageInfo({ className }: { className?: string }) {
  * Storage warning banner for critical storage situations
  */
 export function StorageWarningBanner() {
-  const quotaStatus = useStorageQuotaStatus();
-  const { storageInfo, formatSize } = useStorageTracking();
+  const quotaStatus = useStorageWarnings();
+  const { storageInfo, formatBytes } = useStorageTracking();
 
-  if (quotaStatus.status === 'safe') {
+  if (quotaStatus.warningLevel === 'normal') {
     return null;
   }
 
   const getBannerStyles = () => {
-    switch (quotaStatus.status) {
-      case 'exceeded':
+    switch (quotaStatus.warningLevel) {
+      case 'critical': // Full storage
         return {
           container:
             'from-destructive/10 to-destructive/5 border-destructive/30',
@@ -377,7 +374,7 @@ export function StorageWarningBanner() {
 
   const styles = getBannerStyles();
   const usagePercentage = Math.round(
-    (storageInfo.storageUsedBytes / storageInfo.storageLimitBytes) * 100
+    storageInfo?.usagePercentage || 0
   );
 
   return (
@@ -400,11 +397,11 @@ export function StorageWarningBanner() {
         <motion.div
           className={cn('p-2 rounded-xl flex-shrink-0', styles.icon)}
           animate={{
-            scale: quotaStatus.status === 'exceeded' ? [1, 1.1, 1] : 1,
+            scale: quotaStatus.isFull ? [1, 1.1, 1] : 1,
           }}
           transition={{
             duration: 1.5,
-            repeat: quotaStatus.status === 'exceeded' ? Infinity : 0,
+            repeat: quotaStatus.isFull ? Infinity : 0,
             ease: 'easeInOut',
           }}
         >
@@ -418,10 +415,10 @@ export function StorageWarningBanner() {
                 {quotaStatus.message}
               </p>
               <p className={cn('text-xs', styles.subtext)}>
-                Using {formatSize(storageInfo.storageUsedBytes)} of{' '}
-                {formatSize(storageInfo.storageLimitBytes)}
-                {storageInfo.remainingBytes > 0 && (
-                  <> • {formatSize(storageInfo.remainingBytes)} remaining</>
+                Using {formatBytes(displayUsage)} of{' '}
+                {formatBytes(storageLimit)}
+                {(storageInfo?.availableSpace || 0) > 0 && (
+                  <> • {formatBytes(storageInfo?.availableSpace || 0)} remaining</>
                 )}
               </p>
             </div>
@@ -438,11 +435,11 @@ export function StorageWarningBanner() {
             <motion.div
               className={cn(
                 'absolute inset-y-0 left-0 rounded-full',
-                quotaStatus.status === 'exceeded'
+                quotaStatus.isFull
                   ? 'bg-destructive'
-                  : quotaStatus.status === 'critical'
+                  : quotaStatus.isAtLimit
                     ? 'bg-destructive/80'
-                    : quotaStatus.status === 'warning'
+                    : quotaStatus.isNearLimit
                       ? 'bg-yellow-500'
                       : 'bg-primary'
               )}

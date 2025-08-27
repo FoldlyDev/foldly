@@ -1,12 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { 
-  getUserStorageDashboard,
-  canUserUpload,
-  type UserStorageInfo,
-  type StorageValidationResult,
-} from '@/lib/services/storage/storage-tracking-service';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 import { logger } from '@/lib/services/logging/logger';
 
 // =============================================================================
@@ -26,10 +21,9 @@ interface StorageActionResult<T> {
 /**
  * Get user storage dashboard data
  * Server action to safely access storage service from client components
+ * Plan is determined from Clerk - no planKey parameter needed
  */
-export async function getStorageDashboardAction(
-  userPlanKey: string = 'free'
-): Promise<StorageActionResult<UserStorageInfo>> {
+export async function getStorageDashboardAction(): Promise<StorageActionResult<any>> {
   try {
     const { userId } = await auth();
 
@@ -37,17 +31,25 @@ export async function getStorageDashboardAction(
       return { success: false, error: 'Unauthorized' };
     }
 
-    const storageInfo = await getUserStorageDashboard(userId, userPlanKey);
+    // Use centralized storage service that gets plan from Clerk
+    const result = await storageQuotaService.getUserStorageInfo(userId);
+
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
 
     return {
       success: true,
-      data: storageInfo,
+      data: result.data,
     };
   } catch (error) {
     logger.error('Failed to get storage dashboard', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to get storage dashboard',
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Failed to get storage dashboard',
     };
   }
 }
@@ -55,48 +57,51 @@ export async function getStorageDashboardAction(
 /**
  * Check if user can upload a file of given size
  * Server action to safely validate uploads from client components
+ * Plan is determined from Clerk - no planKey parameter needed
  */
 export async function validateUploadAction(
-  fileSizeBytes: number,
-  userPlanKey: string = 'free'
-): Promise<StorageActionResult<StorageValidationResult>> {
+  fileSizeBytes: number
+): Promise<StorageActionResult<any>> {
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'Unauthorized',
-        data: {
-          canUpload: false,
-          reason: 'User not authenticated',
-          wouldExceedLimit: true,
-          currentUsage: 0,
-          newTotal: fileSizeBytes,
-          limit: 0,
-        }
       };
     }
 
-    const validationResult = await canUserUpload(userId, fileSizeBytes, userPlanKey);
+    // Use checkUserQuota from centralized service
+    const result = await storageQuotaService.checkUserQuota(
+      userId,
+      fileSizeBytes
+    );
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
 
     return {
       success: true,
-      data: validationResult,
+      data: {
+        canUpload: result.data?.allowed || false,
+        reason: result.data?.message,
+        wouldExceedLimit: !result.data?.allowed || false,
+        currentUsage: result.data?.storageUsed || 0,
+        newTotal: (result.data?.storageUsed || 0) + fileSizeBytes,
+        limit: result.data?.storageLimit || 0,
+      },
     };
   } catch (error) {
     logger.error('Failed to validate upload', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to validate upload',
-      data: {
-        canUpload: false,
-        reason: 'Error validating storage limits',
-        wouldExceedLimit: true,
-        currentUsage: 0,
-        newTotal: fileSizeBytes,
-        limit: 0,
-      }
+      error:
+        error instanceof Error ? error.message : 'Failed to validate upload',
     };
   }
 }
@@ -104,35 +109,37 @@ export async function validateUploadAction(
 /**
  * Validate multiple files for upload
  * Server action to check if multiple files can be uploaded within storage limits
+ * Plan is determined from Clerk - no planKey parameter needed
  */
 export async function validateMultipleFilesAction(
-  fileSizes: number[],
-  userPlanKey: string = 'free'
-): Promise<StorageActionResult<{
-  valid: boolean;
-  reason?: string;
-  totalSize: number;
-  exceedsLimit: boolean;
-  invalidFiles?: Array<{
-    index: number;
-    size: number;
-    reason: string;
-  }>;
-  maxFileSize?: number;
-}>> {
+  fileSizes: number[]
+): Promise<
+  StorageActionResult<{
+    valid: boolean;
+    reason?: string;
+    totalSize: number;
+    exceedsLimit: boolean;
+    invalidFiles?: Array<{
+      index: number;
+      size: number;
+      reason: string;
+    }>;
+    maxFileSize?: number;
+  }>
+> {
   try {
     const { userId } = await auth();
 
     if (!userId) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: 'Unauthorized',
         data: {
           valid: false,
           reason: 'User not authenticated',
           totalSize: 0,
           exceedsLimit: true,
-        }
+        },
       };
     }
 
@@ -150,33 +157,35 @@ export async function validateMultipleFilesAction(
       };
     }
 
-    // Get plan limits for file size validation
-    const { getPlanLimits } = await import('@/features/billing/lib/services/plan-limits-service');
-    const planLimitsResult = await getPlanLimits(userPlanKey);
-    
-    if (!planLimitsResult.success) {
+    // Get user storage info to check plan limits
+    const storageInfoResult = await storageQuotaService.getUserStorageInfo(userId);
+
+    if (!storageInfoResult.success) {
       return {
         success: false,
-        error: 'Failed to get plan limits',
+        error: 'Failed to get storage info',
         data: {
           valid: false,
-          reason: 'Could not verify plan limits',
+          reason: 'Could not verify storage limits',
           totalSize,
           exceedsLimit: true,
-        }
+        },
       };
     }
 
-    const planLimits = planLimitsResult.data!;
-    const invalidFiles: Array<{ index: number; size: number; reason: string }> = [];
+    const storageInfo = storageInfoResult.data!;
+    const maxFileSize = storageInfo.maxFileSize;
+    const plan = storageInfo.plan;
+    const invalidFiles: Array<{ index: number; size: number; reason: string }> =
+      [];
 
     // Check each file against plan's max file size
     fileSizes.forEach((size, index) => {
-      if (size > planLimits.maxFileSize) {
+      if (size > maxFileSize) {
         invalidFiles.push({
           index,
           size,
-          reason: `File exceeds ${planLimits.maxFileSizeMb}MB limit for ${userPlanKey} plan`
+          reason: `File exceeds limit for ${plan} plan`,
         });
       }
     });
@@ -187,39 +196,55 @@ export async function validateMultipleFilesAction(
         success: true,
         data: {
           valid: false,
-          reason: `${invalidFiles.length} file(s) exceed your plan's ${planLimits.maxFileSizeMb}MB size limit`,
+          reason: `${invalidFiles.length} file(s) exceed your plan's size limit`,
           totalSize,
           exceedsLimit: false, // This is about storage quota, not file size
           invalidFiles,
-          maxFileSize: planLimits.maxFileSize,
+          maxFileSize: maxFileSize,
         },
       };
     }
 
-    // Now check total storage quota
-    const validation = await canUserUpload(userId, totalSize, userPlanKey);
+    // Now check total storage quota using centralized service
+    const quotaResult = await storageQuotaService.checkUserQuota(userId, totalSize);
+
+    if (!quotaResult.success) {
+      return {
+        success: false,
+        error: quotaResult.error,
+        data: {
+          valid: false,
+          reason: 'Failed to check storage quota',
+          totalSize,
+          exceedsLimit: true,
+        },
+      };
+    }
+
+    const quotaData = quotaResult.data!;
 
     return {
       success: true,
       data: {
-        valid: validation.canUpload,
-        ...(validation.reason && { reason: validation.reason }),
+        valid: quotaData.allowed,
+        ...(quotaData.message && { reason: quotaData.message }),
         totalSize,
-        exceedsLimit: validation.wouldExceedLimit,
-        maxFileSize: planLimits.maxFileSize,
+        exceedsLimit: !quotaData.allowed && quotaData.storageUsed + totalSize > quotaData.storageLimit,
+        maxFileSize: maxFileSize,
       },
     };
   } catch (error) {
     logger.error('Failed to validate multiple files', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to validate files',
+      error:
+        error instanceof Error ? error.message : 'Failed to validate files',
       data: {
         valid: false,
         reason: 'Validation error occurred',
         totalSize: fileSizes.reduce((sum, size) => sum + size, 0),
         exceedsLimit: true,
-      }
+      },
     };
   }
 }

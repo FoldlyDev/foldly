@@ -34,7 +34,7 @@ import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import { useStorageTracking } from '@/features/workspace/hooks/use-storage-tracking';
-import { useUserPlan } from '@/features/workspace/hooks/use-user-plan';
+// TODO: Replace with actual user plan fetching from user metadata
 import { fetchLinkDetailsWithStatsAction } from '../../lib/actions';
 
 export function LinkDetailsModal() {
@@ -44,7 +44,8 @@ export function LinkDetailsModal() {
 
   // Get real-time storage and plan data
   const { storageInfo, refetchStorage, formatSize } = useStorageTracking();
-  const { planKey } = useUserPlan();
+  // TODO: Get plan from user metadata
+  const planKey = 'free';
 
   const isOpen = currentModal === 'link-details';
 
