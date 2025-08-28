@@ -8,9 +8,6 @@ export const workspaceQueryKeys = {
 
   // Workspace data (files, folders, and stats)
   data: () => [...workspaceQueryKeys.all, 'data'] as const,
-  
-  // Legacy tree key for backwards compatibility (deprecated)
-  tree: () => [...workspaceQueryKeys.all, 'tree'] as const,
 
   // Workspace settings
   settings: () => [...workspaceQueryKeys.all, 'settings'] as const,

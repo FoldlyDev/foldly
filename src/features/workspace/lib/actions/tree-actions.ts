@@ -57,11 +57,6 @@ export async function fetchWorkspaceDataAction(): Promise<ActionResult> {
   }
 }
 
-/**
- * Legacy alias for backwards compatibility
- * @deprecated Use fetchWorkspaceDataAction instead
- */
-export const fetchWorkspaceTreeAction = fetchWorkspaceDataAction;
 
 /**
  * Move a single item to a new parent
@@ -71,10 +66,6 @@ export async function moveItemAction(
   targetId: string
 ): Promise<ActionResult> {
   try {
-    console.log('🚚 [moveItemAction] Called with:', {
-      itemId: itemId.slice(0, 8),
-      targetId: targetId.slice(0, 8),
-    });
 
     const { userId } = await auth();
     if (!userId) {
@@ -90,11 +81,6 @@ export async function moveItemAction(
     // If target is workspace ID, set parent to null (workspace root)
     const newParentId = targetId === workspace.id ? null : targetId;
 
-    console.log('🚚 [moveItemAction] Parent resolution:', {
-      targetId: targetId.slice(0, 8),
-      workspaceId: workspace.id.slice(0, 8),
-      newParentId: newParentId ? newParentId.slice(0, 8) : 'null (root)',
-    });
 
     // Try to move as file first, then as folder
     const fileMove = await fileService.moveFile(itemId, newParentId);
@@ -124,11 +110,6 @@ export async function updateItemOrderAction(
   orderedChildIds: string[]
 ): Promise<ActionResult> {
   try {
-    console.log('📊 [updateItemOrderAction] Called with:', {
-      parentId: parentId.slice(0, 8),
-      childCount: orderedChildIds.length,
-      childIds: orderedChildIds.map(id => id.slice(0, 8)),
-    });
 
     const { userId } = await auth();
     if (!userId) {
@@ -144,13 +125,6 @@ export async function updateItemOrderAction(
     // Determine the actual parent folder ID (null for workspace root)
     const actualParentId = parentId === workspace.id ? null : parentId;
 
-    console.log('📊 [updateItemOrderAction] Parent resolution:', {
-      parentId: parentId.slice(0, 8),
-      workspaceId: workspace.id.slice(0, 8),
-      actualParentId: actualParentId
-        ? actualParentId.slice(0, 8)
-        : 'null (root)',
-    });
 
     // Get current files and folders for this specific parent
     const [foldersResult, filesResult] = await Promise.all([
@@ -169,24 +143,13 @@ export async function updateItemOrderAction(
     const folderIds = new Set(folders.map(f => f.id));
     const fileIds = new Set(files.map(f => f.id));
 
-    console.log('📊 [updateItemOrderAction] Found items:', {
-      folders: folderIds.size,
-      files: fileIds.size,
-      requestedToUpdate: orderedChildIds.length,
-    });
 
     // Update sortOrder for ALL items provided in their new order
     // The tree sends us the complete new order for all children
     const updates = orderedChildIds.map(async (id, index) => {
       if (folderIds.has(id)) {
-        console.log(
-          `  📁 Updating folder ${id.slice(0, 8)} sortOrder to ${index}`
-        );
         return folderService.updateFolder(id, { sortOrder: index });
       } else if (fileIds.has(id)) {
-        console.log(
-          `  📄 Updating file ${id.slice(0, 8)} sortOrder to ${index}`
-        );
         return fileService.updateFile(id, { sortOrder: index });
       } else {
         // Skip items that don't belong to this parent (they might be from other folders during multi-select)

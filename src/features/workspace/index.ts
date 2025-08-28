@@ -3,7 +3,7 @@
 
 // Workspace actions
 export {
-  fetchWorkspaceTreeAction,
+  fetchWorkspaceDataAction,
   moveItemAction,
   updateItemOrderAction,
   batchMoveItemsAction,
@@ -21,7 +21,7 @@ export {
 export { WorkspaceContainer } from './components';
 
 // Workspace hooks
-export { useWorkspaceTree, useWorkspaceRealtime } from './hooks';
+export { useWorkspaceRealtime, useWorkspaceData } from './hooks';
 
 // Workspace services
 export * from './lib/services';

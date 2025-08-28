@@ -20,8 +20,8 @@ import { useWorkspaceUploadModal, useWorkspaceModalStore } from '@/features/work
 import {
   useStorageTracking,
   useStorageWarnings,
-  shouldShowStorageWarning,
 } from '../../hooks';
+import { shouldShowStorageWarning } from '../../lib/utils/storage-utils';
 import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 import { checkAndShowStorageThresholds } from '@/features/notifications/internal/workspace-notifications';
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
@@ -170,7 +170,7 @@ export function WorkspaceContainer() {
       
       // Invalidate cache but don't refetch immediately
       queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
         refetchType: 'none',
       });
       
@@ -187,7 +187,7 @@ export function WorkspaceContainer() {
     },
     onError: (error) => {
       // Force refetch on error to ensure consistency  
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
       
       eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
         items: itemsToDelete,
@@ -212,15 +212,6 @@ export function WorkspaceContainer() {
         newOrder: string[],
         draggedItemIds: string[]
       ) => {
-        console.log(
-          '🔄 [WorkspaceContainer] Executing REORDER database update:',
-          {
-            parentId: parentId.slice(0, 8),
-            draggedItems: draggedItemIds.map(id => id.slice(0, 8)),
-            draggedCount: draggedItemIds.length,
-            newOrder: newOrder.map(id => id.slice(0, 8)),
-          }
-        );
 
         // Show loading notification for reorder - use dragged items count
         const reorderBatchId = `reorder-${Date.now()}`;
@@ -238,7 +229,6 @@ export function WorkspaceContainer() {
         try {
           const result = await updateItemOrderAction(parentId, newOrder);
           if (result.success) {
-            console.log('✅ [WorkspaceContainer] REORDER succeeded');
             
             // Emit success notification with correct count
             eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_REORDER_SUCCESS, {
@@ -279,10 +269,6 @@ export function WorkspaceContainer() {
         _fromParentId: string,
         toParentId: string
       ) => {
-        console.log('➡️ [WorkspaceContainer] Executing MOVE database update:', {
-          items: itemIds.map(id => id.slice(0, 8)),
-          to: toParentId.slice(0, 8),
-        });
 
         // Show loading notification for move
         const moveBatchId = `move-${Date.now()}`;
@@ -309,7 +295,6 @@ export function WorkspaceContainer() {
             );
           }
 
-          console.log('✅ [WorkspaceContainer] MOVE succeeded');
           
           // Emit success notification
           eventBus.emitNotification(NotificationEventType.WORKSPACE_ITEMS_MOVE_SUCCESS, {
@@ -587,28 +572,18 @@ export function WorkspaceContainer() {
   
   // Handle external file drops from outside the application
   const handleExternalFileDrop = useCallback((files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => {
-    console.log('🎯 [TREE-DROP] External files dropped on tree:', {
-      fileCount: files.length,
-      targetFolderId,
-      fileNames: files.map(f => f.name),
-      fileTypes: files.map(f => f.type),
-      hasFolderStructure: !!folderStructure
-    });
     
     // Store dropped files for processing
     setDroppedFiles({ files, targetFolderId });
-    console.log('💾 [TREE-DROP] Files stored in droppedFiles state');
     
     // TODO: Handle folder structure by creating folders first if needed
     if (folderStructure) {
-      console.log('📂 [TREE-DROP] Folder structure detected:', Object.keys(folderStructure));
       // In the future, we could automatically create the folder structure
       // For now, we'll just upload all files to the target folder
     }
     
     // Open upload modal to handle the files
     // Access the store directly since we're in a callback
-    console.log('🚀 [TREE-DROP] Opening upload modal with workspace:', workspaceData?.workspace?.id);
     useWorkspaceModalStore.getState().openUploadModal(workspaceData?.workspace?.id, targetFolderId || undefined);
   }, [workspaceData?.workspace?.id]);
 
@@ -848,7 +823,6 @@ export function WorkspaceContainer() {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => {
-          console.log('🚪 [WORKSPACE] Modal closing, clearing dropped files');
           closeUploadModal();
           // Clear dropped files after closing modal
           setDroppedFiles(null);
@@ -857,14 +831,7 @@ export function WorkspaceContainer() {
         {...(droppedFiles?.targetFolderId && { folderId: droppedFiles.targetFolderId })}
         onFileUploaded={treeInstance?.addFileToTree}
         {...(droppedFiles?.files && { 
-          initialFiles: (() => {
-            console.log('📦 [WORKSPACE] Passing initial files to modal:', {
-              hasDroppedFiles: !!droppedFiles?.files,
-              count: droppedFiles?.files?.length || 0,
-              fileNames: droppedFiles?.files?.map(f => f.name) || []
-            });
-            return droppedFiles.files;
-          })()
+          initialFiles: droppedFiles.files
         })}
       />
 
@@ -903,6 +870,3 @@ export function WorkspaceContainer() {
     </FadeTransitionWrapper>
   );
 }
-
-// Maintain backward compatibility
-export const HomeContainer = WorkspaceContainer;

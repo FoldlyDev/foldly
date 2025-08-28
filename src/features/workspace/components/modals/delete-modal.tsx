@@ -50,7 +50,7 @@ export function DeleteModal({ isOpen, onClose, item }: DeleteModalProps) {
         await Promise.all([
           invalidateStorage(),
           queryClient.invalidateQueries({
-            queryKey: workspaceQueryKeys.tree(),
+            queryKey: workspaceQueryKeys.data(),
           }),
         ]);
 

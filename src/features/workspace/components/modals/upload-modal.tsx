@@ -104,11 +104,6 @@ export function UploadModal({
   // Handle initial files separately to prevent re-adding
   useEffect(() => {
     if (isOpen && initialFiles && initialFiles.length > 0 && !initialFilesProcessed) {
-      console.log('📥 [UPLOAD-MODAL] Processing initial files from tree drop:', {
-        fileCount: initialFiles.length,
-        fileNames: initialFiles.map(f => f.name),
-        fileTypes: initialFiles.map(f => f.type)
-      });
       // Only add initial files once when they are first provided
       handleFileSelect(initialFiles);
       setInitialFilesProcessed(true);

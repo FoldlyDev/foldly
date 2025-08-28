@@ -3,7 +3,8 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/shadcn/progress';
 import { HardDrive, AlertTriangle, CheckCircle, Upload } from 'lucide-react';
-import { useStorageTracking, useStorageWarnings, formatBytes, useLiveStorage } from '../../hooks';
+import { useStorageTracking, useStorageWarnings, useLiveStorage } from '../../hooks';
+import { formatBytes } from '../../lib/utils/storage-utils';
 import { cn } from '@/lib/utils';
 
 // =============================================================================

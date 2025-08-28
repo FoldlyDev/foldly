@@ -48,7 +48,7 @@ export function MiniActionsToolbar({
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
       queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
         refetchType: 'none',
       });
       eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS, {
@@ -65,7 +65,7 @@ export function MiniActionsToolbar({
     },
     onError: error => {
       // Force refetch on error to ensure consistency
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
       eventBus.emitNotification(NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR, {
         items: selectMode.selectedItems.map(id => ({
           id,

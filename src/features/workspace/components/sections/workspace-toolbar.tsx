@@ -192,14 +192,14 @@ export function WorkspaceToolbar({
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
       queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
         refetchType: 'none',
       });
       onClearSelection?.();
     },
     onError: error => {
       // If database deletion fails, restore the tree state with immediate refetch
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
     },
     onSettled: () => {
       // Auto-close modal after a delay for successful operations
@@ -244,7 +244,7 @@ export function WorkspaceToolbar({
       // Don't invalidate queries immediately - the tree is already updated
       // Only invalidate to sync any other data that might depend on this
       queryClient.invalidateQueries({ 
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
         refetchType: 'none' // Don't refetch immediately
       });
       eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
@@ -255,7 +255,7 @@ export function WorkspaceToolbar({
       setIsCreatingFolder(false);
     },
     onError: error => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
       eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
         folderId: '',
         folderName: newFolderName,

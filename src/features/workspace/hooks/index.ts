@@ -18,11 +18,3 @@ export {
   useStorageState,
   type StorageInfo,
 } from '@/lib/hooks/use-storage-tracking';
-
-// Storage utilities (client-safe)
-export {
-  getStorageQuotaStatus,
-  shouldShowStorageWarning,
-  formatBytes,
-  type StorageQuotaStatus,
-} from '../lib/utils/storage-utils';
