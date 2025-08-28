@@ -59,6 +59,9 @@ import { showGeneratedLinkNotification } from '@/features/notifications/utils/li
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
+import { sanitizeInput } from '@/lib/utils/validation';
+import { withOptimisticUpdate } from '../../lib/utils/optimistic-updates';
+import { useSelectionManager } from '../../lib/managers/selection-manager';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -95,9 +98,20 @@ export function WorkspaceContainer() {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Selection state
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [selectionMode, setSelectionMode] = useState(false);
+  // Selection management
+  const {
+    selectedItems,
+    selectionMode,
+    setSelectedItems,
+    clearSelection,
+    setSelectionMode,
+  } = useSelectionManager({
+    treeInstance,
+    onSelectionChange: (items) => {
+      // This will be called when selection changes
+      // Can be used for any side effects if needed
+    },
+  });
 
   // Track if we have touch support
   const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -128,18 +142,6 @@ export function WorkspaceContainer() {
     return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
   }, [workspaceData?.workspace?.id]);
   
-  // Helper function to clear selection
-  const clearSelectionState = useCallback(() => {
-    // Clear tree instance selection
-    if (treeInstance?.setSelectedItems) {
-      treeInstance.setSelectedItems([]);
-    }
-    // Clear local state
-    setSelectedItems([]);
-    // Exit selection mode when clearing
-    setSelectionMode(false);
-  }, [treeInstance]);
-  
   // Batch delete mutation (same as toolbar)
   const batchDeleteMutation = useMutation({
     mutationFn: async () => {
@@ -166,7 +168,7 @@ export function WorkspaceContainer() {
     },
     onSuccess: () => {
       // Clear selection after successful deletion
-      clearSelectionState();
+      clearSelection();
       
       // Invalidate cache but don't refetch immediately
       queryClient.invalidateQueries({
@@ -334,11 +336,26 @@ export function WorkspaceContainer() {
   // Create rename operation callback for database persistence
   const renameCallback = useCallback(
     async (itemId: string, newName: string, itemType: 'file' | 'folder') => {
+      // Sanitize the new name to prevent XSS
+      const sanitizedName = sanitizeInput(newName);
+      if (!sanitizedName) {
+        eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+          folderId: itemId,
+          folderName: newName,
+          error: 'Invalid name provided',
+        }, {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 3000,
+        });
+        return;
+      }
+      
       try {
         const result =
           itemType === 'folder'
-            ? await renameFolderAction(itemId, newName)
-            : await renameFileAction(itemId, newName);
+            ? await renameFolderAction(itemId, sanitizedName)
+            : await renameFileAction(itemId, sanitizedName);
 
         if (result.success) {
           // Use event-driven notifications
@@ -468,9 +485,24 @@ export function WorkspaceContainer() {
             const folderName = prompt('Enter folder name:');
             if (!folderName || !folderName.trim()) return;
             
+            // Sanitize the folder name to prevent XSS
+            const sanitizedFolderName = sanitizeInput(folderName.trim());
+            if (!sanitizedFolderName) {
+              eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
+                folderId: '',
+                folderName: folderName || '',
+                error: 'Invalid folder name',
+              }, {
+                priority: NotificationPriority.HIGH,
+                uiType: NotificationUIType.TOAST_SIMPLE,
+                duration: 3000,
+              });
+              return;
+            }
+            
             try {
               // Create folder inside the selected folder
-              const result = await createFolderAction(folderName.trim(), item.id);
+              const result = await createFolderAction(sanitizedFolderName, item.id);
               
               if (result.success && result.data) {
                 // Add to tree immediately for responsive UI
@@ -559,16 +591,6 @@ export function WorkspaceContainer() {
     [workspaceData?.workspace?.id, treeInstance, setItemsToDelete, setShowDeleteModal]
   );
 
-  const handleClearSelection = () => {
-    // Clear tree instance selection
-    if (treeInstance?.setSelectedItems) {
-      treeInstance.setSelectedItems([]);
-    }
-    // Clear local state
-    setSelectedItems([]);
-    // Exit selection mode when clearing
-    setSelectionMode(false);
-  };
   
   // Handle external file drops from outside the application
   const handleExternalFileDrop = useCallback((files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => {
@@ -612,7 +634,7 @@ export function WorkspaceContainer() {
           if (tree && treeIdRef.current) {
             removeTreeItem(tree, itemIds, treeIdRef.current);
             // Clear selection after deletion
-            clearSelectionState();
+            clearSelection();
           }
         },
         // Add a method to add folder after successful server action
@@ -673,7 +695,8 @@ export function WorkspaceContainer() {
           setSelectionMode(mode);
         },
         setSelectedItems: (items: string[]) => {
-          if (tree.setSelectedItems) tree.setSelectedItems(items);
+          // Use the selection manager to handle this
+          setSelectedItems(items);
         },
       };
 
@@ -773,7 +796,7 @@ export function WorkspaceContainer() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           selectedItems={selectedItems}
-          onClearSelection={handleClearSelection}
+          onClearSelection={clearSelection}
           selectionMode={selectionMode}
           onSelectionModeChange={setSelectionMode}
         />

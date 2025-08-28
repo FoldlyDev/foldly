@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ClientUploadService } from '@/lib/services/upload/client-upload-service';
 import { workspaceQueryKeys } from '../lib/query-keys';
@@ -362,6 +362,30 @@ export function useFileUpload({
     
     clearFiles();
   }, [clearFiles]);
+
+  /**
+   * Cleanup preview URLs on component unmount
+   */
+  useEffect(() => {
+    return () => {
+      // Clean up all preview URLs when the component unmounts
+      pendingFiles.forEach(uploadFile => {
+        if ('preview' in uploadFile.file && (uploadFile.file as any).preview) {
+          URL.revokeObjectURL((uploadFile.file as any).preview);
+        }
+      });
+      
+      uploadingFiles.forEach(uploadFile => {
+        if ('preview' in uploadFile.file && (uploadFile.file as any).preview) {
+          URL.revokeObjectURL((uploadFile.file as any).preview);
+        }
+      });
+      
+      // Also abort any pending uploads
+      abortControllersRef.current.forEach(controller => controller.abort());
+      abortControllersRef.current.clear();
+    };
+  }, []); // Empty dependency array - only run on unmount
 
   /**
    * Get all files for UI display (pending + uploading)
