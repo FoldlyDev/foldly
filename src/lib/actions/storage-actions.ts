@@ -35,6 +35,37 @@ export async function getUserStorageInfoAction() {
 }
 
 /**
+ * Check if user can upload a file based on quota
+ * Delegates to the centralized StorageQuotaService
+ */
+export async function checkUserQuotaAction(
+  fileSize: number,
+  clientIp?: string
+) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return {
+        success: false,
+        error: 'Unauthorized - please sign in',
+      };
+    }
+
+    // Use centralized quota service
+    const result = await storageQuotaService.checkUserQuota(userId, fileSize, clientIp);
+    
+    return result;
+  } catch (error) {
+    console.error('Error in checkUserQuotaAction:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to check quota',
+    };
+  }
+}
+
+/**
  * Type export for the storage info response
  */
 export type StorageInfoResponse = Awaited<ReturnType<typeof getUserStorageInfoAction>>;

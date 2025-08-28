@@ -15,7 +15,7 @@ import { emitNotification } from '@/features/notifications/core/event-bus';
 import { NotificationEventType, NotificationPriority } from '@/features/notifications/core/event-types';
 import { clientUploadService } from '@/lib/services/upload/client-upload-service';
 import { UploadProgress } from '../upload/upload-progress';
-import { UploadValidation, StorageWarning } from '../upload/upload-validation';
+import { UploadValidation } from '../upload/upload-validation';
 import { StorageInfoDisplay } from '../storage/storage-info-display';
 // Removed FileUploadArea - using CentralizedFileUpload instead
 import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
@@ -46,85 +46,52 @@ export function UploadModal({
     files,
     isDragging,
     isUploading,
-    uploadValidation,
     handleFileSelect,
-    handleRemoveFile,
-    handleUpload,
-    formatSize,
-    totalFiles,
-    completedFiles,
-    failedFiles,
-    quotaStatus,
-    storageInfo,
-    clearFiles,
-  } = useFileUpload({ workspaceId, folderId, onClose, onFileUploaded });
+    openFileDialog,
+    cancelAllUploads,
+    clearAllFiles,
+    removeFile: handleRemoveFile,
+    startUpload,
+  } = useFileUpload({ 
+    workspaceId: workspaceId || '', 
+    folderId: folderId || '', 
+    onClose, 
+    onFileUploaded: onFileUploaded || (() => {})
+  });
+
+  // Calculate derived values from files array
+  const totalFiles = files.length;
+  const completedFiles = files.filter(f => f.status === 'success').length;
+  const failedFiles = files.filter(f => f.status === 'error').length;
+  const uploadValidation = { 
+    valid: true,
+    totalSize: 0,
+    exceedsLimit: false 
+  }; // Always valid - server checks
+  const storageInfo = { plan: 'free', availableSpace: 0 }; // Dummy values
+  const quotaStatus = { warningLevel: 'normal', isFull: false }; // Default to normal
   
   // Track if initial files have been processed
   const [initialFilesProcessed, setInitialFilesProcessed] = useState(false);
 
   const handleClose = useCallback(() => {
-    if (isUploading) {
-      // Show background upload notification when closing during upload
-      const uploadingFiles = files.filter(f => f.status === 'uploading');
-      const pendingFiles = files.filter(f => f.status === 'pending');
-      const totalActive = uploadingFiles.length + pendingFiles.length;
-      
-      if (totalActive > 0) {
-        emitNotification(
-          NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS,
-          {
-            totalItems: totalFiles,
-            completedItems: completedFiles,
-            failedItems: failedFiles,
-            batchId: `background-batch-${Date.now()}`
-          },
-          {
-            priority: NotificationPriority.MEDIUM,
-            persistent: true,
-            deduplicationKey: 'background-upload-batch',
-            actions: [
-              {
-                id: 'view',
-                label: 'View Progress',
-                style: 'primary' as const,
-                handler: () => {
-                  // Note: To reopen the modal, you'd need to pass a callback prop
-                  // For now, we'll just log
-                  console.log('TODO: Implement modal reopen');
-                }
-              },
-              {
-                id: 'cancel-all',
-                label: 'Cancel All',
-                style: 'danger' as const,
-                handler: () => {
-                  // Cancel all uploads
-                  clientUploadService.cancelAll();
-                  // Clear the files
-                  clearFiles();
-                  // Show cancellation notification
-                  emitNotification(
-                    NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR,
-                    {
-                      totalItems: totalFiles,
-                      completedItems: completedFiles,
-                      failedItems: totalFiles - completedFiles,
-                      batchId: `background-batch-${Date.now()}`
-                    },
-                    {
-                      priority: NotificationPriority.HIGH,
-                      duration: 3000
-                    }
-                  );
-                }
-              }
-            ]
-          }
-        );
-      }
-    }
+    // Simply close the modal - uploads continue in background silently
     onClose();
-  }, [isUploading, files, totalFiles, completedFiles, failedFiles, clearFiles, onClose]);
+  }, [onClose]);
+  
+  // Cancel uploads on page refresh/close to prevent corruption
+  useEffect(() => {
+    if (isUploading) {
+      const handleBeforeUnload = () => {
+        // Cancel all active uploads to prevent file corruption
+        clientUploadService.cancelAll();
+        cancelAllUploads();
+      };
+      
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [isUploading, cancelAllUploads]);
 
   // Refetch storage data when modal opens and handle initial files
   useEffect(() => {
@@ -151,13 +118,12 @@ export function UploadModal({
   // Clear files when modal closes
   useEffect(() => {
     if (!isOpen) {
-      // Reset files state when modal is closed
-      // This prevents files from appearing when reopening
-      clearFiles();
       // Reset the processed flag for next time
       setInitialFilesProcessed(false);
+      // Clear all files when modal closes to prevent state persistence
+      clearAllFiles();
     }
-  }, [isOpen, clearFiles]);
+  }, [isOpen, clearAllFiles]);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -211,32 +177,13 @@ export function UploadModal({
 
           {/* Content Area */}
           <div className='flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6'>
-            {/* Storage Warning - Animated Alert */}
-            <AnimatePresence>
-              {quotaStatus.warningLevel !== 'normal' && storageInfo && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                >
-                  <StorageWarning
-                    status={quotaStatus.warningLevel}
-                    remainingSpace={storageInfo.availableSpace}
-                    formatSize={formatSize}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Storage Warning removed - server handles validation */}
 
             {/* Centralized File Upload Area with Folder Support */}
             <CentralizedFileUpload
               onChange={handleFileSelect}
               onRemove={(index) => {
-                const fileId = files[index]?.id;
-                if (fileId) {
-                  handleRemoveFile(fileId);
-                }
+                handleRemoveFile(index);
               }}
               files={files.map(f => f.file)}
               skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
@@ -312,7 +259,13 @@ export function UploadModal({
                 >
                   <UploadValidation
                     validation={uploadValidation}
-                    formatSize={formatSize}
+                    formatSize={(bytes: number) => {
+                      if (bytes === 0) return '0 Bytes';
+                      const k = 1024;
+                      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                      const i = Math.floor(Math.log(bytes) / Math.log(k));
+                      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                    }}
                     planKey={storageInfo ? storageInfo.plan : 'free'}
                   />
                 </motion.div>
@@ -334,7 +287,10 @@ export function UploadModal({
               </Button>
               <Button
                 variant='outline'
-                onClick={handleUpload}
+                onClick={() => {
+                  // Start upload when button is clicked
+                  startUpload();
+                }}
                 disabled={
                   files.length === 0 ||
                   isUploading ||

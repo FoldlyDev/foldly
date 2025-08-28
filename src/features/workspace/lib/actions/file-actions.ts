@@ -25,7 +25,6 @@ interface ActionResult<T> {
   data?: T;
   error?: string;
   code?: string;
-  quotaInfo?: any;
   storageInfo?: {
     usagePercentage: number;
     remainingBytes: number;
@@ -148,13 +147,17 @@ export async function deleteFileAction(
     }
 
     // Get updated storage info after deletion
-    const { getUserStorageDashboard } = await import(
-      '@/lib/services/storage/storage-tracking-service'
+    const { getUserStorageInfoAction } = await import(
+      '@/lib/actions/storage-actions'
     );
-    const updatedStorageInfo = await getUserStorageDashboard(
-      sanitizedUserId,
-      'free'
-    ); // TODO: Get actual user plan
+    const storageResult = await getUserStorageInfoAction();
+    const updatedStorageInfo = storageResult.success && 'data' in storageResult && storageResult.data ? {
+      usagePercentage: storageResult.data.usagePercentage,
+      remainingBytes: storageResult.data.availableSpace,
+    } : {
+      usagePercentage: 0,
+      remainingBytes: 0,
+    };
 
     logger.info('File deleted successfully', {
       userId: sanitizedUserId,
@@ -548,14 +551,22 @@ export async function uploadFileAction(
         basePath
       : basePath;
 
-    // Upload file with quota validation (workspace context for personal files)
-    const uploadResult = await storageService.uploadFileWithQuotaCheck(
+    // Check quota first using centralized service
+    const { checkUserQuotaAction } = await import('@/lib/actions/storage-actions');
+    const quotaCheck = await checkUserQuotaAction(file.size, clientIp);
+    
+    if (!quotaCheck.success || !('data' in quotaCheck) || !quotaCheck.data?.allowed) {
+      return createErrorResponse(
+        ('data' in quotaCheck && quotaCheck.data?.message) || ('error' in quotaCheck && quotaCheck.error) || 'Quota exceeded',
+        ERROR_CODES.QUOTA_EXCEEDED
+      );
+    }
+
+    // Upload file without redundant quota check
+    const uploadResult = await storageService.uploadFile(
       file,
       uploadPath,
-      sanitizedUserId,
-      undefined, // No linkId for workspace files
-      'workspace',
-      clientIp
+      sanitizedUserId
     );
 
     if (!uploadResult.success) {
@@ -598,12 +609,19 @@ export async function uploadFileAction(
     const result = await fileService.createFile(fileData);
 
     if (result.success) {
-      // Calculate storage info for client
-      const quotaInfo = uploadResult.data!.quotaInfo;
-      const storageInfo = {
-        usagePercentage: quotaInfo.usagePercentage,
-        remainingBytes: quotaInfo.storageLimit - quotaInfo.newUsage,
-        shouldShowWarning: quotaInfo.usagePercentage >= 80,
+      // Get updated storage info after successful upload
+      const { getUserStorageInfoAction } = await import('@/lib/actions/storage-actions');
+      const storageResult = await getUserStorageInfoAction();
+      
+      // Prepare storage info for client
+      const storageInfo = storageResult.success && 'data' in storageResult && storageResult.data ? {
+        usagePercentage: storageResult.data.usagePercentage,
+        remainingBytes: storageResult.data.availableSpace,
+        shouldShowWarning: storageResult.data.usagePercentage >= 80,
+      } : {
+        usagePercentage: 0,
+        remainingBytes: 0,
+        shouldShowWarning: false,
       };
 
       logger.info(
@@ -730,14 +748,22 @@ export async function uploadFileToLinkAction(
       ? sanitizePath(`${linkId}/folders/${folderId}`, basePath) || basePath
       : basePath;
 
-    // Upload file with quota validation (shared context for link files)
-    const uploadResult = await storageService.uploadFileWithQuotaCheck(
+    // Check quota first using centralized service
+    const { checkUserQuotaAction } = await import('@/lib/actions/storage-actions');
+    const quotaCheck = await checkUserQuotaAction(file.size, clientIp);
+    
+    if (!quotaCheck.success || !('data' in quotaCheck) || !quotaCheck.data?.allowed) {
+      return createErrorResponse(
+        ('data' in quotaCheck && quotaCheck.data?.message) || ('error' in quotaCheck && quotaCheck.error) || 'Quota exceeded',
+        ERROR_CODES.QUOTA_EXCEEDED
+      );
+    }
+
+    // Upload file without redundant quota check
+    const uploadResult = await storageService.uploadFile(
       file,
       uploadPath,
-      sanitizedUserId,
-      linkId, // Include linkId for link-specific quota checking
-      'shared',
-      clientIp
+      sanitizedUserId
     );
 
     if (!uploadResult.success) {
@@ -841,9 +867,17 @@ export async function uploadFileToLinkAction(
             }
       );
 
-      return createSuccessResponse(result.data, {
-        quotaInfo: uploadResult.data!.quotaInfo,
-      });
+      // Get updated storage info after successful upload
+      const { getUserStorageInfoAction } = await import('@/lib/actions/storage-actions');
+      const storageResult = await getUserStorageInfoAction();
+      
+      const storageInfo = storageResult.success && 'data' in storageResult && storageResult.data ? {
+        usagePercentage: storageResult.data.usagePercentage,
+        remainingBytes: storageResult.data.availableSpace,
+        shouldShowWarning: storageResult.data.usagePercentage >= 80,
+      } : null;
+
+      return createSuccessResponse(result.data, { storageInfo });
     } else {
       // If database creation fails, clean up the uploaded file
       await storageService.deleteFile(uploadResult.data!.path, 'shared');

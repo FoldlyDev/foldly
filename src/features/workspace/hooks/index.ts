@@ -4,8 +4,11 @@
 export { useWorkspaceRealtime } from './use-workspace-realtime';
 export { useWorkspaceData } from './use-workspace-data';
 export { useLiveStorage } from './use-live-storage';
-export { usePreUploadValidation } from './use-pre-upload-validation';
 export { useWorkspaceUI } from './use-workspace-ui';
+
+// File upload hooks - simplified
+export { useFileUpload } from './use-file-upload';
+export { useFileSelection } from './use-file-selection';
 
 // Re-export centralized storage hooks
 export {

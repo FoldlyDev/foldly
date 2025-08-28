@@ -185,11 +185,18 @@ export async function deleteFolderAction(
     );
 
     if (result.success) {
-      // Get updated storage info after deletion
-      const { getUserStorageDashboard } = await import(
-        '@/lib/services/storage/storage-tracking-service'
+      // Get updated storage info after deletion using centralized action
+      const { getUserStorageInfoAction } = await import(
+        '@/lib/actions/storage-actions'
       );
-      const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
+      const storageResult = await getUserStorageInfoAction();
+      const updatedStorageInfo = storageResult.success && 'data' in storageResult && storageResult.data ? {
+        usagePercentage: storageResult.data.usagePercentage,
+        remainingBytes: storageResult.data.availableSpace,
+      } : {
+        usagePercentage: 0,
+        remainingBytes: 0,
+      };
 
       return {
         success: true,

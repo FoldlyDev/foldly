@@ -1,976 +1,389 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { ClientUploadService } from '@/lib/services/upload/client-upload-service';
 import { workspaceQueryKeys } from '../lib/query-keys';
+import { useFileSelection } from './use-file-selection';
 import type { UploadFile } from '../components/upload/file-upload-area';
-import { UPLOAD_CONFIG } from '../lib/config/upload-config';
-import {
-  useStorageTracking,
-  useInvalidateStorage,
-  useStorageWarnings,
-  useLiveStorage,
-  formatBytes,
-  usePreUploadValidation,
-} from './index';
-import {
-  showStorageWarning,
-  showStorageCritical,
-  checkAndShowStorageThresholds,
-} from '@/features/notifications/internal/workspace-notifications';
-import type { StorageNotificationData } from '@/features/notifications/internal/types';
-import { logger } from '@/lib/services/logging/logger';
-import { emitNotification } from '@/features/notifications/core/event-bus';
-import {
-  NotificationEventType,
-  NotificationPriority,
-  NotificationUIType,
-} from '@/features/notifications/core/event-types';
-
-/**
- * Upload function using XMLHttpRequest for real progress tracking
- * XMLHttpRequest is still the best way to track upload progress natively
- */
-async function uploadWithProgress(
-  url: string,
-  formData: FormData,
-  onProgress?: (loaded: number, total: number) => void,
-  abortSignal?: AbortSignal
-): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    // Set up progress tracking
-    if (onProgress) {
-      xhr.upload.addEventListener('progress', event => {
-        if (event.lengthComputable) {
-          onProgress(event.loaded, event.total);
-        }
-      });
-    }
-
-    // Handle completion
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (!data.success) {
-            reject(new Error(data.error || 'Upload failed'));
-          } else {
-            resolve(data);
-          }
-        } catch (error) {
-          reject(new Error('Invalid response from server'));
-        }
-      } else {
-        try {
-          const errorData = JSON.parse(xhr.responseText);
-          reject(
-            new Error(
-              errorData.error || `Upload failed with status ${xhr.status}`
-            )
-          );
-        } catch {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      }
-    });
-
-    // Handle errors
-    xhr.addEventListener('error', () => {
-      reject(new Error('Network error during upload'));
-    });
-
-    xhr.addEventListener('abort', () => {
-      reject(new Error('Upload cancelled'));
-    });
-
-    xhr.addEventListener('timeout', () => {
-      reject(new Error('Upload timeout'));
-    });
-
-    // Set up abort signal if provided
-    if (abortSignal) {
-      abortSignal.addEventListener('abort', () => {
-        xhr.abort();
-      });
-    }
-
-    // Configure and send request
-    xhr.open('POST', url);
-    xhr.timeout = 300000; // 5 minute timeout for large files
-    xhr.send(formData);
-  });
-}
 
 interface UseFileUploadProps {
-  workspaceId?: string | undefined;
-  folderId?: string | undefined;
-  onClose?: (() => void) | undefined;
-  onFileUploaded?: ((file: any) => void) | undefined;
+  workspaceId?: string;
+  folderId?: string;
+  onClose?: () => void;
+  onFileUploaded?: (file: any) => void;
 }
 
+/**
+ * Simplified file upload hook
+ * Files are selected first, then uploaded when user triggers upload
+ */
 export function useFileUpload({
   workspaceId,
   folderId,
   onClose,
   onFileUploaded,
 }: UseFileUploadProps) {
-  const [files, setFiles] = useState<UploadFile[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<Map<string, UploadFile>>(new Map());
+  const [pendingFiles, setPendingFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadValidation, setUploadValidation] = useState<{
-    valid: boolean;
-    reason?: string;
-    totalSize: number;
-    exceedsLimit: boolean;
-    invalidFiles?: Array<{
-      file: File;
-      reason: string;
-    }>;
-    maxFileSize?: number;
-  } | null>(null);
-
   const queryClient = useQueryClient();
-  const { data: storageInfo } = useStorageTracking();
-  const preUploadValidation = usePreUploadValidation();
-  const invalidateStorage = useInvalidateStorage();
-  const quotaStatus = useStorageWarnings();
-  const liveStorage = useLiveStorage();
-
-  // Store abort controllers for each upload
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
-  // File selection handler
+  // Use file selection for drag-drop
+  const {
+    isDragging,
+    fileInputRef,
+    handleFileSelect: selectFiles,
+    clearFiles,
+    removeFile,
+    openFileDialog,
+    dragHandlers,
+  } = useFileSelection();
+
+  /**
+   * Handle file selection - just add to pending, don't upload yet
+   */
   const handleFileSelect = useCallback(
-    async (selectedFiles: FileList | File[] | null) => {
-      if (!selectedFiles) return;
-
-      const fileArray =
-        selectedFiles instanceof FileList
-          ? Array.from(selectedFiles)
-          : selectedFiles;
-
-      console.log('📤 [USE-FILE-UPLOAD] handleFileSelect called:', {
-        source: selectedFiles instanceof FileList ? 'FileList' : 'File[]',
-        fileCount: fileArray.length,
-        currentFiles: files.length,
-        fileNames: fileArray.map(f => f.name),
-        fileTypes: fileArray.map(f => f.type),
-      });
-
-      // Check if adding these files would exceed the maximum limit
-      const maxFiles = UPLOAD_CONFIG.batch.maxFilesPerUpload || 50;
-      const totalFiles = files.length + fileArray.length;
-
-      if (totalFiles > maxFiles) {
-        emitNotification(
-          NotificationEventType.WORKSPACE_FILES_LIMIT_EXCEEDED,
-          {
-            attemptedCount: totalFiles,
-            maxAllowed: maxFiles,
-            currentCount: files.length,
-            message: `You can upload a maximum of ${maxFiles} files at once. You currently have ${files.length} file${files.length !== 1 ? 's' : ''} and are trying to add ${fileArray.length} more.`,
-          },
-          {
-            priority: NotificationPriority.HIGH,
-            uiType: NotificationUIType.TOAST_SIMPLE,
-            duration: 6000,
-          }
-        );
-        return;
-      }
-
-      // Always add files to the list for visibility
-      // Generate preview URLs for image files here, at the source
-      const newFiles: UploadFile[] = fileArray.map(file => {
-        // If it's an image, create a preview URL and attach it to the file
+    (files: FileList | File[] | null) => {
+      if (!files) return;
+      
+      const fileArray = Array.from(files);
+      
+      // Create UploadFile entries and add to pending
+      // Add preview URLs for image files
+      const newPendingFiles = fileArray.map(file => {
+        // Create preview URL for image files
         if (file.type.startsWith('image/')) {
           const preview = URL.createObjectURL(file);
-          // Attach preview to the file object
+          // Add preview property to the file object
           Object.assign(file, { preview });
-          console.log(
-            '🎨 [USE-FILE-UPLOAD] Created preview for image:',
-            file.name,
-            preview
-          );
         }
-
+        
         return {
-          id: Math.random().toString(36).substring(7),
+          id: `${file.name}-${Date.now()}-${Math.random()}`,
           file,
           progress: 0,
-          status: 'pending',
-          retryCount: 0,
-          maxRetries: UPLOAD_CONFIG.batch.maxRetries,
+          status: 'pending' as const,
         };
       });
-
-      console.log('➕ [USE-FILE-UPLOAD] Adding files to state:', {
-        newFilesCount: newFiles.length,
-        previousCount: files.length,
-        totalAfter: files.length + newFiles.length,
-      });
-      setFiles(prev => [...prev, ...newFiles]);
-
-      // Validate storage after adding files
-      const validation = await preUploadValidation(fileArray);
-      setUploadValidation(validation);
-
-      // Show appropriate notifications based on validation
-      if (!validation.valid) {
-        if (validation.invalidFiles && validation.invalidFiles.length > 0) {
-          // File size limit exceeded
-          emitNotification(
-            NotificationEventType.STORAGE_UPLOAD_BLOCKED,
-            {
-              currentUsage: storageInfo?.storageUsed || 0,
-              totalLimit: storageInfo?.storageLimit || 0,
-              remainingSpace: storageInfo?.availableSpace || 0,
-              usagePercentage: storageInfo?.usagePercentage || 0,
-              planKey: storageInfo?.plan || 'free',
-              message: `${validation.invalidFiles.length} file(s) exceed your plan's size limit`,
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-            }
-          );
-        } else if (validation.exceedsLimit) {
-          // Storage quota exceeded
-          emitNotification(
-            NotificationEventType.STORAGE_LIMIT_EXCEEDED,
-            {
-              currentUsage: storageInfo?.storageUsed || 0,
-              totalLimit: storageInfo?.storageLimit || 0,
-              remainingSpace: storageInfo?.availableSpace || 0,
-              usagePercentage: storageInfo?.usagePercentage || 0,
-              planKey: storageInfo?.plan || 'free',
-              ...(validation.reason && { message: validation.reason }),
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-            }
-          );
-        } else {
-          // Other validation errors
-          emitNotification(
-            NotificationEventType.STORAGE_UPLOAD_BLOCKED,
-            {
-              currentUsage: storageInfo?.storageUsed || 0,
-              totalLimit: storageInfo?.storageLimit || 0,
-              remainingSpace: storageInfo?.availableSpace || 0,
-              usagePercentage: storageInfo?.usagePercentage || 0,
-              planKey: storageInfo?.plan || 'free',
-              message:
-                validation.reason || 'Please check your files and try again',
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-            }
-          );
-        }
-      } else if (validation.valid && quotaStatus.warningLevel !== 'normal') {
-        // Show warning if approaching limit
-        emitNotification(
-          NotificationEventType.STORAGE_THRESHOLD_WARNING,
-          {
-            currentUsage: (storageInfo?.storageUsed || 0) + validation.totalSize,
-            totalLimit: storageInfo?.storageLimit || 0,
-            remainingSpace: (storageInfo?.availableSpace || 0) - validation.totalSize,
-            usagePercentage:
-              (((storageInfo?.storageUsed || 0) + validation.totalSize) /
-                (storageInfo?.storageLimit || 1)) *
-              100,
-            planKey: storageInfo?.plan || 'free',
-            message: `${formatBytes(validation.totalSize)} will be added. ${formatBytes((storageInfo?.availableSpace || 0) - validation.totalSize)} remaining.`,
-          },
-          {
-            priority: NotificationPriority.MEDIUM,
-            uiType: NotificationUIType.TOAST_SIMPLE,
-            duration: 4000,
-          }
-        );
-      }
+      
+      setPendingFiles(prev => [...prev, ...newPendingFiles]);
+      selectFiles(files);
     },
-    [
-      files.length,
-      preUploadValidation,
-      quotaStatus.warningLevel,
-      storageInfo,
-    ]
+    [selectFiles]
   );
 
-  // Drag handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      handleFileSelect(e.dataTransfer.files);
-    },
-    [handleFileSelect]
-  );
-
-  // Remove file handler
-  const handleRemoveFile = useCallback((fileId: string) => {
-    setFiles(prev => prev.filter(f => f.id !== fileId));
-  }, []);
-
-  // Clear all files
-  const clearFiles = useCallback(() => {
-    console.log('🗑️ [USE-FILE-UPLOAD] Clearing all files');
-    setFiles([]);
-    setUploadValidation(null);
-  }, []);
-
-  // Cancel a specific upload
-  const cancelUpload = useCallback(
-    (fileId: string) => {
-      const controller = abortControllersRef.current.get(fileId);
+  /**
+   * Remove a file from pending or cancel if uploading
+   */
+  const handleRemoveFile = useCallback((index: number) => {
+    // Get the file to remove for cleanup
+    const allFiles = [...pendingFiles, ...Array.from(uploadingFiles.values())];
+    const fileToRemove = allFiles[index];
+    
+    // Clean up preview URL if it exists
+    if (fileToRemove && 'preview' in fileToRemove.file && (fileToRemove.file as any).preview) {
+      URL.revokeObjectURL((fileToRemove.file as any).preview);
+    }
+    
+    // Remove from pending files
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+    removeFile(index);
+    
+    // If it's uploading, cancel it
+    const file = pendingFiles[index];
+    if (file && uploadingFiles.has(file.id)) {
+      const controller = abortControllersRef.current.get(file.id);
       if (controller) {
         controller.abort();
-        abortControllersRef.current.delete(fileId);
-
-        // Update file status
-        setFiles(prev =>
-          prev.map(f =>
-            f.id === fileId
-              ? { ...f, status: 'error' as const, error: 'Upload cancelled' }
-              : f
-          )
-        );
-
-        // Mark as failed in live storage
-        liveStorage.failFileUpload(fileId);
+        abortControllersRef.current.delete(file.id);
       }
-    },
-    [liveStorage]
-  );
+      setUploadingFiles(prev => {
+        const updated = new Map(prev);
+        updated.delete(file.id);
+        return updated;
+      });
+    }
+  }, [pendingFiles, uploadingFiles, removeFile]);
 
-  // Cancel all uploads
-  const cancelAllUploads = useCallback(() => {
-    abortControllersRef.current.forEach(controller => {
-      controller.abort();
-    });
-    abortControllersRef.current.clear();
+  /**
+   * Start uploading all pending files
+   */
+  const startUpload = useCallback(
+    async () => {
+      if (pendingFiles.length === 0 || !workspaceId || isUploading) return;
 
-    // Update all uploading files to cancelled
-    setFiles(prev =>
-      prev.map(f =>
-        f.status === 'uploading'
-          ? { ...f, status: 'error' as const, error: 'Upload cancelled' }
-          : f
-      )
-    );
+      setIsUploading(true);
+      const uploads = new Map<string, UploadFile>();
 
-    setIsUploading(false);
-    liveStorage.resetLiveTracking();
-  }, [liveStorage]);
+      // Move pending files to uploading state
+      pendingFiles.forEach(file => {
+        uploads.set(file.id, { ...file, status: 'uploading' });
+      });
+      
+      setUploadingFiles(uploads);
+      setPendingFiles([]); // Clear pending since they're now uploading
 
-  // Single file upload with retry logic
-  const uploadSingleFile = useCallback(
-    async (
-      uploadFile: UploadFile,
-      skipNotifications = false,
-      retryCount = 0
-    ): Promise<any> => {
-      if (!workspaceId) {
-        throw new Error('Workspace ID is required');
-      }
-
-      const maxRetries =
-        uploadFile.maxRetries || UPLOAD_CONFIG.batch.maxRetries;
-
-      // Create abort controller for this upload
-      const abortController = new AbortController();
-      abortControllersRef.current.set(uploadFile.id, abortController);
-
-      // Start tracking this file in live storage
-      liveStorage.startFileUpload(uploadFile.id, uploadFile.file.size);
-
-      setFiles(prev =>
-        prev.map(f =>
-          f.id === uploadFile.id
-            ? { ...f, status: 'uploading' as const, progress: 0 }
-            : f
-        )
-      );
-
-      // Emit upload start event (only for single uploads)
-      if (!skipNotifications) {
-        emitNotification(
-          NotificationEventType.WORKSPACE_FILE_UPLOAD_START,
-          {
-            fileId: uploadFile.id,
-            fileName: uploadFile.file.name,
-            fileSize: uploadFile.file.size,
-            workspaceId: workspaceId,
-            ...(folderId && { parentId: folderId }),
-            uploadProgress: 0,
-          },
-          {
-            priority: NotificationPriority.MEDIUM,
-            uiType: NotificationUIType.PROGRESS,
-            duration: 0, // Don't auto-dismiss progress notifications
-            persistent: true,
-            deduplicationKey: `upload-${uploadFile.id}`,
-          }
-        );
-      }
-
-      try {
-        // Create FormData for upload
-        const formData = new FormData();
-        formData.append('file', uploadFile.file);
-        formData.append('workspaceId', workspaceId);
-        if (folderId) {
-          formData.append('folderId', folderId);
-        }
-
-        logger.debug('Uploading file', {
-          metadata: {
-            fileName: uploadFile.file.name,
-            fileSize: uploadFile.file.size,
-            workspaceId,
-            folderId,
-          },
+      const uploadService = new ClientUploadService();
+      
+      // Check if we should use batch upload (more than 1 file)
+      if (uploads.size > 1) {
+        // Prepare files for batch upload
+        const filesToUpload = Array.from(uploads.values()).map(uf => uf.file);
+        const fileIdMap = new Map<string, string>(); // Map file names to upload IDs
+        
+        Array.from(uploads.entries()).forEach(([id, uploadFile]) => {
+          // Create a unique key for each file (name + size for uniqueness)
+          const fileKey = `${uploadFile.file.name}-${uploadFile.file.size}`;
+          fileIdMap.set(fileKey, id);
         });
 
-        // Upload with real progress tracking using XMLHttpRequest
-        const result = await uploadWithProgress(
-          '/api/workspace/upload',
-          formData,
-          (loaded, total) => {
-            const progress = (loaded / total) * 100;
-
-            // Update file progress
-            setFiles(prev =>
-              prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
-            );
-
-            // Update live storage tracking
-            liveStorage.updateFileProgress(uploadFile.id, loaded);
-
-            // Emit progress event (only for single uploads)
-            if (!skipNotifications) {
-              emitNotification(
-                NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS,
-                {
-                  fileId: uploadFile.id,
-                  fileName: uploadFile.file.name,
-                  fileSize: uploadFile.file.size,
-                  workspaceId: workspaceId,
-                  ...(folderId && { parentId: folderId }),
-                  uploadProgress: progress,
-                },
-                {
-                  priority: NotificationPriority.LOW,
-                  uiType: NotificationUIType.PROGRESS,
-                  duration: 0,
-                  persistent: true,
-                  deduplicationKey: `upload-${uploadFile.id}`,
-                }
-              );
-            }
-          },
-          abortController.signal
-        );
-
-        if (!result.success) {
-          throw new Error(result.error || 'Upload failed');
-        }
-
-        // Handle storage notifications based on upload result
-        if (result.storageInfo && result.storageInfo.shouldShowWarning) {
-          const storageData: StorageNotificationData = {
-            currentUsage:
-              ((storageInfo?.storageLimit || 0) *
-                result.storageInfo.usagePercentage) /
-              100,
-            totalLimit: storageInfo?.storageLimit || 0,
-            remainingSpace: result.storageInfo.remainingBytes,
-            usagePercentage: result.storageInfo.usagePercentage,
-            planKey: storageInfo?.plan || 'free',
-            filesCount: 1,
-          };
-
-          checkAndShowStorageThresholds(
-            storageData,
-            (storageInfo?.usagePercentage || 0)
-          );
-        }
-
-        // Complete the progress
-        setFiles(prev =>
-          prev.map(f =>
-            f.id === uploadFile.id
-              ? { ...f, progress: 100, status: 'success' as const }
-              : f
-          )
-        );
-
-        // Mark file as completed in live storage
-        liveStorage.completeFileUpload(uploadFile.id);
-
-        // Emit success event (only for single uploads)
-        if (!skipNotifications) {
-          emitNotification(
-            NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS,
+        try {
+          // Use batch upload for multiple files
+          const results = await uploadService.uploadBatch(
+            filesToUpload,
+            workspaceId,
+            folderId,
             {
-              fileId: uploadFile.id, // Use consistent ID, not the server's ID
-              fileName: uploadFile.file.name,
-              fileSize: uploadFile.file.size,
-              workspaceId: workspaceId,
-              ...(folderId && { parentId: folderId }),
-            },
-            {
-              priority: NotificationPriority.LOW,
-              uiType: NotificationUIType.PROGRESS,
-              duration: 3000,
-              deduplicationKey: `upload-${uploadFile.id}`,
-            }
-          );
-        }
-
-        // Clean up abort controller
-        abortControllersRef.current.delete(uploadFile.id);
-
-        // Call the onFileUploaded callback to add file to tree
-        if (onFileUploaded && result.data) {
-          onFileUploaded(result.data);
-        }
-
-        return result.data;
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Upload failed';
-
-        // Check if we should retry
-        const isRetryableError =
-          errorMessage.includes('Network error') ||
-          errorMessage.includes('status 502') ||
-          errorMessage.includes('status 503') ||
-          errorMessage.includes('status 504') ||
-          errorMessage.includes('timeout');
-
-        if (isRetryableError && retryCount < maxRetries) {
-          // Update retry count in UI
-          setFiles(prev =>
-            prev.map(f =>
-              f.id === uploadFile.id
-                ? {
-                    ...f,
-                    retryCount: retryCount + 1,
-                    status: 'uploading' as const,
-                    error: `Retrying... (${retryCount + 1}/${maxRetries})`,
+              maxConcurrent: 3,
+              onProgress: (overallProgress) => {
+                // Update all files with the overall progress
+                setUploadingFiles(prev => {
+                  const updated = new Map(prev);
+                  updated.forEach(file => {
+                    if (file.status === 'uploading') {
+                      file.progress = overallProgress;
+                    }
+                  });
+                  return updated;
+                });
+              },
+              onFileComplete: (fileName, result) => {
+                // Find the corresponding upload ID
+                const matchingEntry = Array.from(uploads.values()).find(
+                  uf => uf.file.name === fileName
+                );
+                
+                if (matchingEntry) {
+                  const id = Array.from(uploads.entries()).find(
+                    ([_, uf]) => uf === matchingEntry
+                  )?.[0];
+                  
+                  if (id) {
+                    setUploadingFiles(prev => {
+                      const updated = new Map(prev);
+                      const file = updated.get(id);
+                      if (file) {
+                        file.progress = 100;
+                        file.status = result.success ? 'success' : 'error';
+                        if (!result.success) {
+                          file.error = result.error || 'Upload failed';
+                        }
+                      }
+                      return updated;
+                    });
+                    
+                    if (result.success) {
+                      onFileUploaded?.(result.data);
+                    }
                   }
-                : f
-            )
-          );
-
-          // Exponential backoff: wait longer between retries
-          const delay = UPLOAD_CONFIG.batch.retryDelays[retryCount] || 10000;
-          await new Promise(resolve => setTimeout(resolve, delay));
-
-          // Retry the upload
-          return uploadSingleFile(
-            { ...uploadFile, retryCount: retryCount + 1 },
-            skipNotifications,
-            retryCount + 1
-          );
-        }
-
-        // Mark file as failed in live storage
-        liveStorage.failFileUpload(uploadFile.id);
-
-        setFiles(prev =>
-          prev.map(f =>
-            f.id === uploadFile.id
-              ? {
-                  ...f,
-                  status: 'error' as const,
-                  error: errorMessage,
-                  retryCount,
                 }
-              : f
-          )
-        );
-
-        // Emit error event (only for single uploads)
-        if (!skipNotifications) {
-          emitNotification(
-            NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
-            {
-              fileId: uploadFile.id,
-              fileName: uploadFile.file.name,
-              fileSize: uploadFile.file.size,
-              workspaceId: workspaceId,
-              ...(folderId && { parentId: folderId }),
-              error: errorMessage,
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.PROGRESS,
-              duration: 5000,
-              deduplicationKey: `upload-${uploadFile.id}`,
+              }
             }
           );
-        }
 
-        // Clean up abort controller
-        abortControllersRef.current.delete(uploadFile.id);
-
-        throw error;
-      }
-    },
-    [workspaceId, folderId, liveStorage, storageInfo, onFileUploaded]
-  );
-
-  // Batch upload handler with parallel uploads
-  const handleUpload = useCallback(async () => {
-    if (files.length === 0 || !workspaceId) return;
-
-    // Prevent upload if validation failed
-    if (uploadValidation && !uploadValidation.valid) {
-      emitNotification(
-        NotificationEventType.STORAGE_UPLOAD_BLOCKED,
-        {
-          currentUsage: storageInfo?.storageUsed || 0,
-          totalLimit: storageInfo?.storageLimit || 0,
-          remainingSpace: storageInfo?.availableSpace || 0,
-          usagePercentage: storageInfo?.usagePercentage || 0,
-          planKey: storageInfo?.plan || 'free',
-          message:
-            uploadValidation.reason || 'Some files exceed the size limit',
-        },
-        {
-          priority: NotificationPriority.HIGH,
-          uiType: NotificationUIType.TOAST_SIMPLE,
-          duration: 5000,
-        }
-      );
-      return;
-    }
-
-    setIsUploading(true);
-
-    // Update base usage in live storage before starting
-    liveStorage.updateBaseUsage(storageInfo?.storageUsed || 0);
-
-    // Check if this is a batch upload (multiple files)
-    const isBatchUpload = files.length > 1;
-    const batchId = isBatchUpload ? `batch-${Date.now()}` : null;
-
-    try {
-      // Filter out files that are too large based on validation
-      const validFiles = uploadValidation?.invalidFiles
-        ? files.filter(
-            file =>
-              !uploadValidation.invalidFiles?.some(
-                (invalid: { file: File; reason: string }) =>
-                  invalid.file.name === file.file.name
-              )
-          )
-        : files;
-
-      if (validFiles.length === 0) {
-        // Only show notification if there were actually invalid files
-        if (
-          uploadValidation?.invalidFiles &&
-          uploadValidation.invalidFiles.length > 0
-        ) {
-          emitNotification(
-            NotificationEventType.STORAGE_UPLOAD_BLOCKED,
-            {
-              currentUsage: storageInfo?.storageUsed || 0,
-              totalLimit: storageInfo?.storageLimit || 0,
-              remainingSpace: storageInfo?.availableSpace || 0,
-              usagePercentage: storageInfo?.usagePercentage || 0,
-              planKey: storageInfo?.plan || 'free',
-              message: 'All files exceed the size limit',
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-            }
-          );
-        }
-        setIsUploading(false);
-        return;
-      }
-
-      // For batch uploads, show a single aggregated notification
-      if (isBatchUpload && batchId) {
-        // Show a loading notification for batch upload
-        emitNotification(
-          NotificationEventType.WORKSPACE_BATCH_UPLOAD_START,
-          {
-            batchId: batchId,
-            totalItems: validFiles.length,
-            completedItems: 0,
-          },
-          {
-            priority: NotificationPriority.MEDIUM,
-            uiType: NotificationUIType.PROGRESS,
-            duration: 0,
-            persistent: true,
-            deduplicationKey: batchId,
-          }
-        );
-      }
-
-      // Upload files in parallel batches to improve performance
-      const PARALLEL_UPLOADS = UPLOAD_CONFIG.batch.parallelUploads || 3;
-      const results: any[] = [];
-      let completedCount = 0;
-      let uploadFailedCount = 0;
-
-      for (let i = 0; i < validFiles.length; i += PARALLEL_UPLOADS) {
-        const batch = validFiles
-          .slice(i, i + PARALLEL_UPLOADS)
-          .filter(file => file.status === 'pending' || file.status === 'error');
-
-        if (batch.length > 0) {
-          const batchResults = await Promise.allSettled(
-            batch.map(file => uploadSingleFile(file, isBatchUpload))
-          );
-
-          batchResults.forEach(result => {
-            if (result.status === 'fulfilled') {
-              results.push(result.value);
-              completedCount++;
-            } else {
-              uploadFailedCount++;
-            }
-
-            // Update batch progress notification
-            if (isBatchUpload && batchId) {
-              // Update the progress notification
-              emitNotification(
-                NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS,
-                {
-                  batchId: batchId,
-                  totalItems: validFiles.length,
-                  completedItems: completedCount,
-                  failedItems: uploadFailedCount,
-                },
-                {
-                  priority: NotificationPriority.LOW,
-                  uiType: NotificationUIType.PROGRESS,
-                  duration: 0,
-                  persistent: true,
-                  deduplicationKey: batchId,
-                }
-              );
+          // Process final results
+          results.forEach((result, index) => {
+            const file = filesToUpload[index];
+            if (file) {
+              const fileKey = `${file.name}-${file.size}`;
+              const id = fileIdMap.get(fileKey);
+              
+              if (id) {
+                setUploadingFiles(prev => {
+                  const updated = new Map(prev);
+                  const uploadFile = updated.get(id);
+                  if (uploadFile) {
+                    uploadFile.progress = 100;
+                    uploadFile.status = result.success ? 'success' : 'error';
+                    if (!result.success) {
+                      uploadFile.error = result.error || 'Upload failed';
+                    }
+                  }
+                  return updated;
+                });
+              }
             }
           });
+        } catch (error) {
+          // Handle batch upload error
+          setUploadingFiles(prev => {
+            const updated = new Map(prev);
+            updated.forEach(file => {
+              if (file.status === 'uploading') {
+                file.status = 'error';
+                file.error = error instanceof Error ? error.message : 'Batch upload failed';
+              }
+            });
+            return updated;
+          });
+        }
+      } else {
+        // Single file upload - use existing logic
+        for (const [id, uploadFile] of uploads) {
+          const controller = new AbortController();
+          abortControllersRef.current.set(id, controller);
+
+          try {
+            const result = await uploadService.uploadFile(
+              uploadFile.file,
+              workspaceId,
+              folderId,
+              {
+                onProgress: (progress) => {
+                  setUploadingFiles(prev => {
+                    const updated = new Map(prev);
+                    const file = updated.get(id);
+                    if (file) file.progress = progress;
+                    return updated;
+                  });
+                },
+                signal: controller.signal,
+                skipNotifications: false
+              }
+            );
+
+            if (result.success) {
+              // Update to completed
+              setUploadingFiles(prev => {
+                const updated = new Map(prev);
+                const file = updated.get(id);
+                if (file) {
+                  file.progress = 100;
+                  file.status = 'success';
+                }
+                return updated;
+              });
+              
+              onFileUploaded?.(result.data);
+            } else {
+              // Update to error
+              setUploadingFiles(prev => {
+                const updated = new Map(prev);
+                const file = updated.get(id);
+                if (file) {
+                  file.status = 'error';
+                  file.error = result.error || 'Upload failed';
+                }
+                return updated;
+              });
+            }
+          } catch (error) {
+            // Handle unexpected errors
+            setUploadingFiles(prev => {
+              const updated = new Map(prev);
+              const file = updated.get(id);
+              if (file) {
+                file.status = 'error';
+                file.error = error instanceof Error ? error.message : 'Upload failed';
+              }
+              return updated;
+            });
+          } finally {
+            abortControllersRef.current.delete(id);
+          }
         }
       }
 
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+      // Refresh data
+      await queryClient.invalidateQueries({
+        queryKey: workspaceQueryKeys.data(),
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ['storage-info'],
       });
 
-      // Invalidate storage data to reflect changes
-      invalidateStorage();
-
-      const successCount = results.length;
-      const finalFailedCount = files.filter(f => f.status === 'error').length;
-
-      // Show final batch notification
-      if (isBatchUpload && batchId) {
-        if (successCount > 0 && finalFailedCount === 0) {
-          emitNotification(
-            NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS,
-            {
-              batchId: batchId,
-              totalItems: validFiles.length,
-              completedItems: successCount,
-            },
-            {
-              priority: NotificationPriority.LOW,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 3000,
-              deduplicationKey: batchId,
-            }
-          );
-        } else if (successCount > 0 && finalFailedCount > 0) {
-          emitNotification(
-            NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS,
-            {
-              batchId: batchId,
-              totalItems: validFiles.length,
-              completedItems: successCount,
-              failedItems: finalFailedCount,
-            },
-            {
-              priority: NotificationPriority.MEDIUM,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-              deduplicationKey: batchId,
-            }
-          );
-        } else if (finalFailedCount > 0) {
-          emitNotification(
-            NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR,
-            {
-              batchId: batchId,
-              totalItems: validFiles.length,
-              completedItems: 0,
-              failedItems: finalFailedCount,
-              error: `Failed to upload ${finalFailedCount} file${finalFailedCount === 1 ? '' : 's'}`,
-            },
-            {
-              priority: NotificationPriority.HIGH,
-              uiType: NotificationUIType.TOAST_SIMPLE,
-              duration: 5000,
-              deduplicationKey: batchId,
-            }
-          );
-        }
-      }
-
-      // Show final storage status if approaching limits
-      const finalResult = results[results.length - 1];
-      if (
-        finalResult &&
-        finalResult.storageInfo &&
-        finalResult.storageInfo.usagePercentage >= 90
-      ) {
-        const storageData: StorageNotificationData = {
-          currentUsage:
-            ((storageInfo?.storageLimit || 0) *
-              finalResult.storageInfo.usagePercentage) /
-            100,
-          totalLimit: storageInfo?.storageLimit || 0,
-          remainingSpace: finalResult.storageInfo.remainingBytes,
-          usagePercentage: finalResult.storageInfo.usagePercentage,
-          planKey: storageInfo?.plan || 'free',
-          filesCount: successCount,
-        };
-
-        if (finalResult.storageInfo.usagePercentage >= 95) {
-          showStorageCritical(storageData);
-        } else {
-          showStorageWarning(storageData);
-        }
-      }
-
-      // Only close modal and clear files if all uploads succeeded
-      if (finalFailedCount === 0 && successCount > 0) {
-        setTimeout(() => {
-          setFiles([]);
-          onClose?.();
-          // Reset live storage tracking
-          liveStorage.resetLiveTracking();
-        }, 1000);
-      } else {
-        // Keep files visible on error but reset live storage
-        liveStorage.resetLiveTracking();
-      }
-    } catch (error) {
-      emitNotification(
-        NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
-        {
-          fileId: 'batch',
-          fileName: 'Multiple files',
-          workspaceId: workspaceId || '',
-          error: error instanceof Error ? error.message : 'Upload failed',
-        },
-        {
-          priority: NotificationPriority.HIGH,
-          uiType: NotificationUIType.TOAST_SIMPLE,
-          duration: 5000,
-        }
-      );
-    } finally {
       setIsUploading(false);
-      // Reset live storage if all uploads are done
-      if (!files.some(f => f.status === 'uploading')) {
-        liveStorage.resetLiveTracking();
+      clearFiles();
+      
+      // Only close if all succeeded
+      const allSucceeded = Array.from(uploadingFiles.values()).every(
+        f => f.status === 'success'
+      );
+      if (allSucceeded) {
+        onClose?.();
       }
-    }
-  }, [
-    files,
-    workspaceId,
-    uploadSingleFile,
-    queryClient,
-    onClose,
-    liveStorage,
-    storageInfo,
-    invalidateStorage,
-  ]);
+    },
+    [pendingFiles, workspaceId, folderId, queryClient, onFileUploaded, clearFiles, onClose, isUploading, uploadingFiles]
+  );
 
-  // Re-validate when files change
-  useEffect(() => {
-    if (files.length > 0) {
-      const fileList = files.map(f => f.file);
-      preUploadValidation(fileList).then(setUploadValidation);
-    } else {
-      setUploadValidation(null);
-    }
-  }, [files, preUploadValidation]);
+  /**
+   * Cancel all uploads
+   */
+  const cancelAllUploads = useCallback(() => {
+    // Use the service's cancelAll method
+    const uploadService = new ClientUploadService();
+    uploadService.cancelAll();
+    
+    // Also abort our local controllers
+    abortControllersRef.current.forEach(controller => controller.abort());
+    abortControllersRef.current.clear();
+    
+    // Clear state
+    setUploadingFiles(new Map());
+    setPendingFiles([]);
+    setIsUploading(false);
+    clearFiles();
+  }, [clearFiles]);
 
-  // Format file size utility
-  const formatFileSize = useCallback((bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }, []);
+  /**
+   * Clear all files (pending and uploading) - used when modal closes
+   */
+  const clearAllFiles = useCallback(() => {
+    // Clean up preview URLs before clearing
+    setPendingFiles(prev => {
+      prev.forEach(uploadFile => {
+        if ('preview' in uploadFile.file && (uploadFile.file as any).preview) {
+          URL.revokeObjectURL((uploadFile.file as any).preview);
+        }
+      });
+      return [];
+    });
+    
+    setUploadingFiles(prev => {
+      prev.forEach(uploadFile => {
+        if ('preview' in uploadFile.file && (uploadFile.file as any).preview) {
+          URL.revokeObjectURL((uploadFile.file as any).preview);
+        }
+      });
+      return new Map();
+    });
+    
+    clearFiles();
+  }, [clearFiles]);
 
-  // Computed values
-  const totalFiles = files.length;
-  const completedFiles = files.filter(f => f.status === 'success').length;
-  const failedFiles = files.filter(f => f.status === 'error').length;
+  /**
+   * Get all files for UI display (pending + uploading)
+   */
+  const files = [...pendingFiles, ...Array.from(uploadingFiles.values())];
 
   return {
     // State
     files,
     isDragging,
     isUploading,
-    uploadValidation,
+    fileInputRef,
 
-    // Handlers
+    // Actions
     handleFileSelect,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleRemoveFile,
-    handleUpload,
-    clearFiles,
-    cancelUpload,
+    openFileDialog,
+    removeFile: handleRemoveFile,
     cancelAllUploads,
-
-    // Utils
-    formatFileSize,
-    formatSize: formatBytes,
-
-    // Computed
-    totalFiles,
-    completedFiles,
-    failedFiles,
-
-    // Storage
-    quotaStatus,
-    storageInfo,
+    clearAllFiles,
+    startUpload, // Now exposed for manual trigger
+    
+    // Drag handlers
+    ...dragHandlers,
   };
 }

@@ -6,7 +6,6 @@
 
 // Core services
 export * from './storage-tracking-service';
-export * from './storage-actions';
 export { storageQuotaService } from './storage-quota-service';
 export { storageBackgroundService } from './storage-background-service';
 export { storageCleanupService } from './storage-cleanup-service';
