@@ -10,10 +10,11 @@ import type { GeneralSettingsFormData } from '../../lib/validations';
 import {
   LinkIdentitySettings,
   LinkAccessSettings,
+  LinkVisibilitySettings,
+  LinkSecuritySettings,
   LinkWelcomeMessageSettings,
   LinkExpirationSettings,
   UploadRestrictionsSettings,
-  FileOrganizationSection,
 } from '../forms/settings';
 
 interface LinkSettingsFormProps {
@@ -26,19 +27,19 @@ export function LinkSettingsForm({ link, form }: LinkSettingsFormProps) {
 
   return (
     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
-      {/* Left Column - Basic Info & Visibility */}
+      {/* Left Column - Basic Info & Security */}
       <div className='space-y-6'>
         <LinkIdentitySettings form={form} link={link} />
-        <LinkAccessSettings form={form} />
+        <LinkSecuritySettings form={form} />
         {!isBaseLink && link.isActive && (
           <LinkExpirationSettings link={link} form={form} />
         )}
       </div>
 
-      {/* Right Column - Upload Limits & File Management */}
+      {/* Right Column - Upload Limits & Visibility */}
       <div className='space-y-6'>
         <UploadRestrictionsSettings form={form} />
-        <FileOrganizationSection form={form} />
+        <LinkVisibilitySettings form={form} />
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { type ActionResult } from '../validations';
 import type { Link } from '@/lib/database/types/links';
 import { getSupabaseClient } from '@/lib/config/supabase-client';
 import { linkFolderService } from '../services/link-folder-service';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 
 /**
  * Schema for generating a link from a folder
@@ -108,7 +109,16 @@ export async function generateLinkFromFolderAction(
       };
     }
 
-    // 6. Use folder name as the suffix for the generated link
+    // 6. Get current user storage info for plan-based limits
+    const storageInfo = await storageQuotaService.getUserStorageInfo(user.id);
+    if (!storageInfo.success || !storageInfo.data) {
+      return {
+        success: false,
+        error: 'Failed to get storage information for link generation',
+      };
+    }
+
+    // 7. Use folder name as the suffix for the generated link
     // Clean the folder name to make it URL-safe
     const generatedSuffix = folder.name
       .toLowerCase()
@@ -147,8 +157,6 @@ export async function generateLinkFromFolderAction(
         totalFiles: 0,
         totalSize: 0,
         lastUploadAt: null,
-        storageUsed: 0,
-        storageLimit: baseLink.storageLimit,
         unreadUploads: 0,
         lastNotificationAt: null,
       })

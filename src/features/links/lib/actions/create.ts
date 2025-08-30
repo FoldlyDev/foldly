@@ -14,6 +14,7 @@ import type { LinkInsert, Link } from '@/lib/database/types/links';
 import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace-actions';
 import { getSupabaseClient } from '@/lib/config/supabase-client';
 import { brandingStorageService } from '../services/branding-storage-service';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 
 /**
  * Create a new link
@@ -39,7 +40,16 @@ export async function createLinkAction(
       };
     }
 
-    // 4. Determine link type and get base link slug for topic links
+    // 4. Get user storage info for plan-based limits
+    const storageInfo = await storageQuotaService.getUserStorageInfo(user.id);
+    if (!storageInfo.success || !storageInfo.data) {
+      return {
+        success: false,
+        error: 'Failed to get storage information for link creation',
+      };
+    }
+
+    // 5. Determine link type and get base link slug for topic links
     const linkType = validatedData.topic ? 'custom' : 'base';
 
     // Get user's existing links to find base link slug
@@ -116,9 +126,9 @@ export async function createLinkAction(
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
-      // Initialize storage quota fields
-      storageUsed: 0,
-      storageLimit: 524288000, // 500MB default per link
+      unreadUploads: 0,
+      lastNotificationAt: null,
+      sourceFolderId: null
     };
 
     // 6. Create link in database

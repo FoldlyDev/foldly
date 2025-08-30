@@ -38,8 +38,6 @@ export const databaseLinkSchema = z.object({
   totalFiles: z.number(),
   totalSize: z.number(),
   lastUploadAt: z.date().nullable(),
-  storageUsed: z.number(),
-  storageLimit: z.number(),
   unreadUploads: z.number(),
   lastNotificationAt: z.date().nullable(),
   sourceFolderId: uuidSchema.nullable(),

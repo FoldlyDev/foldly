@@ -9,13 +9,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateLinkAction } from '../../lib/actions/update';
 import { linksQueryKeys } from '../../lib/query-keys';
 import { filesQueryKeys } from '@/features/files/lib/query-keys';
-// TODO: Fix import - storageQueryKeys should be imported from correct location
-// import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
-// Temporary fix - define locally
-const storageQueryKeys = {
-  info: () => ['storage', 'info'] as const,
-  all: () => ['storage'] as const,
-};
 import type { Link, DatabaseId } from '@/lib/database/types';
 import type { UpdateLinkActionData } from '../../lib/validations';
 import { NotificationEventType } from '@/features/notifications/core';
@@ -183,9 +176,8 @@ export function useUpdateLinkMutation(
       }
       
       // Invalidate storage queries to reflect any changes in storage usage
-      // TODO: Fix - storageQueryKeys.all is not a function  
-      // queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
-      queryClient.invalidateQueries({ queryKey: storageQueryKeys.all() });
+      // Invalidate storage tracking queries to reflect any storage changes
+      queryClient.invalidateQueries({ queryKey: ['storage', 'tracking'] });
       
       // Invalidate files feature queries to ensure updates are reflected there
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });

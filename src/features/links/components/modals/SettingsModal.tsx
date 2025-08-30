@@ -28,6 +28,7 @@ import {
 import { useUpdateLinkMutation } from '../../hooks/react-query/use-update-link-mutation';
 import { useSlugValidation } from '../../hooks/use-slug-validation';
 import { useTopicValidation } from '../../hooks/use-topic-validation';
+import { useStorageTracking } from '@/lib/hooks/use-storage-tracking';
 
 export function SettingsModal() {
   const currentModal = useCurrentModal();
@@ -35,6 +36,10 @@ export function SettingsModal() {
   const { closeModal, setLoading } = useModalStore();
 
   const isOpen = currentModal === 'link-settings';
+
+  // Get storage information for percentage calculations
+  const storageQuery = useStorageTracking();
+  const storageInfo = storageQuery.data;
 
   // React Query mutation hook
   const updateLink = useUpdateLinkMutation();
@@ -304,7 +309,7 @@ export function SettingsModal() {
                           link.totalFiles > 0
                             ? (link.totalSize || 0) / link.totalFiles
                             : 0,
-                        storageUsedPercentage: 0,
+                        storageUsedPercentage: storageInfo?.usagePercentage || 0,
                         isNearLimit: false,
                       },
                     }}
@@ -328,7 +333,7 @@ export function SettingsModal() {
                           link.totalFiles > 0
                             ? (link.totalSize || 0) / link.totalFiles
                             : 0,
-                        storageUsedPercentage: 0,
+                        storageUsedPercentage: storageInfo?.usagePercentage || 0,
                         isNearLimit: false,
                       },
                     }}

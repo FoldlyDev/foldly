@@ -13,6 +13,7 @@ import type { Link, LinkWithStats } from '@/lib/database/types/links';
 import type { CreateLinkActionData } from '../../lib/validations';
 import { NotificationEventType } from '@/features/notifications/core';
 import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
+import { useStorageTracking } from '@/lib/hooks/use-storage-tracking';
 
 interface UseCreateLinkMutationOptions {
   onSuccess?: (data: Link) => void;
@@ -40,6 +41,7 @@ export function useCreateLinkMutation(
   const queryClient = useQueryClient();
   const { emit } = useEventBus();
   const { onSuccess, onError, optimistic = true } = options;
+  const storageInfo = useStorageTracking();
 
   const mutation = useMutation({
     mutationFn: async (input: CreateLinkActionData & { brandingImageFile?: File }): Promise<Link> => {
@@ -125,8 +127,6 @@ export function useCreateLinkMutation(
           totalFiles: 0,
           totalSize: 0,
           lastUploadAt: null,
-          storageUsed: 0,
-          storageLimit: 1000000000, // 1GB default
           unreadUploads: 0,
           lastNotificationAt: null,
           sourceFolderId: null,
