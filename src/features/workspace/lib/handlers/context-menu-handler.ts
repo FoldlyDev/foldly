@@ -41,6 +41,7 @@ interface UseContextMenuHandlerProps {
   treeInstance: any;
   setItemsToDelete: (items: BatchOperationItem[]) => void;
   setShowDeleteModal: (show: boolean) => void;
+  createFolder?: (name: string, parentId?: string) => Promise<void>;
 }
 
 interface ContextMenuHandler {
@@ -55,6 +56,7 @@ export function useContextMenuHandler({
   treeInstance,
   setItemsToDelete,
   setShowDeleteModal,
+  createFolder,
 }: UseContextMenuHandlerProps): ContextMenuHandler {
   
   /**
@@ -65,6 +67,17 @@ export function useContextMenuHandler({
     const folderName = prompt('Enter folder name:');
     if (!folderName || !folderName.trim()) return;
     
+    // If createFolder handler is provided, use it (it handles all logic including sanitization)
+    if (createFolder) {
+      try {
+        await createFolder(folderName, parentId);
+      } catch (error) {
+        // Error notification is already handled by the createFolder handler
+      }
+      return;
+    }
+    
+    // Fallback to inline implementation if no handler provided
     // Sanitize the folder name to prevent XSS
     const sanitizedFolderName = sanitizeInput(folderName.trim());
     if (!sanitizedFolderName) {
@@ -112,7 +125,7 @@ export function useContextMenuHandler({
         error: error instanceof Error ? error.message : 'Failed to create folder',
       });
     }
-  }, [treeInstance]);
+  }, [treeInstance, createFolder]);
 
   /**
    * Handle link generation for folders

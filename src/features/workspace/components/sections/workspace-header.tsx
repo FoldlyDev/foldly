@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
-import { useWorkspaceUI, useStorageWarnings } from '../../hooks';
+import { useStorageWarnings } from '../../hooks';
+import { useWorkspaceUploadModal } from '../../stores/workspace-modal-store';
 import { NotificationCenter } from '../ui/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import {
@@ -26,7 +27,7 @@ export function WorkspaceHeader({
   workspaceId,
 }: WorkspaceHeaderProps) {
   const { user } = useUser();
-  const { openUploadModal } = useWorkspaceUI();
+  const { openModal: openUploadModal } = useWorkspaceUploadModal();
   const quotaStatus = useStorageWarnings();
   const { emit } = useEventBus();
   const [showNotifications, setShowNotifications] = useState(false);

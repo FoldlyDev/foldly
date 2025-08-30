@@ -4,14 +4,22 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ClientUploadService } from '@/lib/services/upload/client-upload-service';
 import { workspaceQueryKeys } from '../lib/query-keys';
-import { useFileSelection } from './use-file-selection';
-import type { UploadFile } from '../components/upload/file-upload-area';
+
+// Upload file tracking type
+export interface UploadFile {
+  id: string;
+  file: File;
+  progress: number;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
 
 interface UseFileUploadProps {
   workspaceId?: string;
   folderId?: string;
   onClose?: () => void;
   onFileUploaded?: (file: any) => void;
+  initialFiles?: File[]; // Files passed from external drop handler
 }
 
 /**
@@ -23,23 +31,14 @@ export function useFileUpload({
   folderId,
   onClose,
   onFileUploaded,
+  initialFiles,
 }: UseFileUploadProps) {
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, UploadFile>>(new Map());
   const [pendingFiles, setPendingFiles] = useState<UploadFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
-
-  // Use file selection for drag-drop
-  const {
-    isDragging,
-    fileInputRef,
-    handleFileSelect: selectFiles,
-    clearFiles,
-    removeFile,
-    openFileDialog,
-    dragHandlers,
-  } = useFileSelection();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   /**
    * Handle file selection - just add to pending, don't upload yet
@@ -69,18 +68,17 @@ export function useFileUpload({
       });
       
       setPendingFiles(prev => [...prev, ...newPendingFiles]);
-      selectFiles(files);
     },
-    [selectFiles]
+    []
   );
 
   /**
    * Remove a file from pending or cancel if uploading
    */
-  const handleRemoveFile = useCallback((index: number) => {
-    // Get the file to remove for cleanup
-    const allFiles = [...pendingFiles, ...Array.from(uploadingFiles.values())];
-    const fileToRemove = allFiles[index];
+  const handleRemoveFile = useCallback((fileId: string) => {
+    // Find the file to remove
+    const fileToRemove = pendingFiles.find(f => f.id === fileId) || 
+                        uploadingFiles.get(fileId);
     
     // Clean up preview URL if it exists
     if (fileToRemove && 'preview' in fileToRemove.file && (fileToRemove.file as any).preview) {
@@ -88,24 +86,22 @@ export function useFileUpload({
     }
     
     // Remove from pending files
-    setPendingFiles(prev => prev.filter((_, i) => i !== index));
-    removeFile(index);
+    setPendingFiles(prev => prev.filter(f => f.id !== fileId));
     
     // If it's uploading, cancel it
-    const file = pendingFiles[index];
-    if (file && uploadingFiles.has(file.id)) {
-      const controller = abortControllersRef.current.get(file.id);
+    if (uploadingFiles.has(fileId)) {
+      const controller = abortControllersRef.current.get(fileId);
       if (controller) {
         controller.abort();
-        abortControllersRef.current.delete(file.id);
+        abortControllersRef.current.delete(fileId);
       }
       setUploadingFiles(prev => {
         const updated = new Map(prev);
-        updated.delete(file.id);
+        updated.delete(fileId);
         return updated;
       });
     }
-  }, [pendingFiles, uploadingFiles, removeFile]);
+  }, [pendingFiles, uploadingFiles]);
 
   /**
    * Start uploading all pending files
@@ -305,7 +301,6 @@ export function useFileUpload({
       });
 
       setIsUploading(false);
-      clearFiles();
       
       // Only close if all succeeded
       const allSucceeded = Array.from(uploadingFiles.values()).every(
@@ -315,7 +310,7 @@ export function useFileUpload({
         onClose?.();
       }
     },
-    [pendingFiles, workspaceId, folderId, queryClient, onFileUploaded, clearFiles, onClose, isUploading, uploadingFiles]
+    [pendingFiles, workspaceId, folderId, queryClient, onFileUploaded, onClose, isUploading, uploadingFiles]
   );
 
   /**
@@ -334,8 +329,7 @@ export function useFileUpload({
     setUploadingFiles(new Map());
     setPendingFiles([]);
     setIsUploading(false);
-    clearFiles();
-  }, [clearFiles]);
+  }, []);
 
   /**
    * Clear all files (pending and uploading) - used when modal closes
@@ -359,9 +353,7 @@ export function useFileUpload({
       });
       return new Map();
     });
-    
-    clearFiles();
-  }, [clearFiles]);
+  }, []);
 
   /**
    * Cleanup preview URLs on component unmount
@@ -392,10 +384,21 @@ export function useFileUpload({
    */
   const files = [...pendingFiles, ...Array.from(uploadingFiles.values())];
 
+  // Open file dialog helper
+  const openFileDialog = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  // Process initial files if provided
+  useEffect(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      handleFileSelect(initialFiles);
+    }
+  }, [initialFiles, handleFileSelect]);
+
   return {
     // State
     files,
-    isDragging,
     isUploading,
     fileInputRef,
 
@@ -406,8 +409,5 @@ export function useFileUpload({
     cancelAllUploads,
     clearAllFiles,
     startUpload, // Now exposed for manual trigger
-    
-    // Drag handlers
-    ...dragHandlers,
   };
 }

@@ -4,8 +4,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useWorkspaceUploadModal } from '../stores/workspace-modal-store';
+import { useState } from 'react';
 
 // =============================================================================
 // TYPES
@@ -20,7 +19,6 @@ interface WorkspaceUIState {
   filterBy: FilterBy;
   sortBy: SortBy;
   sortOrder: SortOrder;
-  isUploadModalOpen: boolean;
 }
 
 interface WorkspaceUIActions {
@@ -28,37 +26,21 @@ interface WorkspaceUIActions {
   setFilterBy: (filter: FilterBy) => void;
   setSortBy: (sort: SortBy) => void;
   setSortOrder: (order: SortOrder) => void;
-  openUploadModal: (workspaceId?: string, folderId?: string) => void;
-  closeUploadModal: () => void;
 }
 
 // =============================================================================
 // HOOK IMPLEMENTATION
 // =============================================================================
 
+/**
+ * Hook for managing workspace UI state (search, filter, sort)
+ * Note: Modal state is managed by the workspace-modal-store directly
+ */
 export function useWorkspaceUI(): WorkspaceUIState & WorkspaceUIActions {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<FilterBy>('all');
   const [sortBy, setSortBy] = useState<SortBy>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-
-  // Use Zustand store for modal state
-  const {
-    isOpen: isUploadModalOpen,
-    openModal,
-    closeModal,
-  } = useWorkspaceUploadModal();
-
-  const openUploadModal = useCallback(
-    (workspaceId?: string, folderId?: string) => {
-      openModal(workspaceId, folderId);
-    },
-    [openModal]
-  );
-
-  const closeUploadModal = useCallback(() => {
-    closeModal();
-  }, [closeModal]);
 
   return {
     // State
@@ -66,14 +48,11 @@ export function useWorkspaceUI(): WorkspaceUIState & WorkspaceUIActions {
     filterBy,
     sortBy,
     sortOrder,
-    isUploadModalOpen,
 
     // Actions
     setSearchQuery,
     setFilterBy,
     setSortBy,
     setSortOrder,
-    openUploadModal,
-    closeUploadModal,
   };
 }

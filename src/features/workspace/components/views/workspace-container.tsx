@@ -56,6 +56,7 @@ import { useContextMenuHandler } from '../../lib/handlers/context-menu-handler';
 import { useDragDropHandler } from '../../lib/handlers/drag-drop-handler';
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useRenameHandler } from '../../lib/handlers/rename-handler';
+import { useFolderCreationHandler } from '../../lib/handlers/folder-creation-handler';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -123,6 +124,11 @@ export function WorkspaceContainer() {
     clearSelection,
   });
 
+  // Folder creation handler - moved before context menu handler that uses it
+  const { createFolder, createFolderMutation } = useFolderCreationHandler({
+    treeInstance,
+  });
+
   // Context menu handler
   const { getMenuItems, handleNewFolder, handleGenerateLink, handleDelete } =
     useContextMenuHandler({
@@ -130,6 +136,7 @@ export function WorkspaceContainer() {
       treeInstance,
       setItemsToDelete,
       setShowDeleteModal,
+      createFolder, // Pass the folder creation handler
     });
 
   // Drag-drop handler
@@ -147,6 +154,7 @@ export function WorkspaceContainer() {
 
   // Rename handler
   const { renameCallback } = useRenameHandler();
+  
   const [batchProgress, setBatchProgress] = useState<
     BatchOperationProgress | undefined
   >();
@@ -402,6 +410,8 @@ export function WorkspaceContainer() {
           onClearSelection={clearSelection}
           selectionMode={selectionMode}
           onSelectionModeChange={setSelectionMode}
+          onCreateFolder={createFolder}
+          isCreatingFolder={createFolderMutation.isPending}
         />
       </div>
 
