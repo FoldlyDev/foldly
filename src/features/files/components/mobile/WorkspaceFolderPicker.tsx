@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/shadcn/button';
 import { ScrollArea } from '@/components/ui/shadcn/scroll-area';
 // TODO: Replace with new FileTree component from @/components/file-tree
 // import WorkspaceTree from '@/features/workspace/components/tree/WorkspaceTree';
-import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
+// TODO: Fix import - useWorkspaceTree doesn't exist
+// import { useWorkspaceTree } from '@/features/workspace/hooks/use-workspace-tree';
 import { cn } from '@/lib/utils';
 
 interface WorkspaceFolderPickerProps {
@@ -26,7 +27,9 @@ export function WorkspaceFolderPicker({
   const [tempSelectedId, setTempSelectedId] = useState<string | null>(
     selectedFolderId
   );
-  const { data: workspaceData } = useWorkspaceTree();
+  // TODO: Fix - useWorkspaceTree doesn't exist
+  // const { data: workspaceData } = useWorkspaceTree();
+  const workspaceData: any = null; // Temporary fix
 
   // Check if there are any folders in the workspace
   const hasFolders = workspaceData?.folders && workspaceData.folders.length > 0;

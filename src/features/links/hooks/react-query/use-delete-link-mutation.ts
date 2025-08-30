@@ -9,7 +9,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteLinkAction } from '../../lib/actions/delete';
 import { linksQueryKeys } from '../../lib/query-keys';
 import { filesQueryKeys } from '@/features/files/lib/query-keys';
-import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
+// TODO: Fix import - storageQueryKeys should be imported from correct location
+// import { storageQueryKeys } from '@/features/workspace/hooks/use-storage-tracking';
+// Temporary fix - define locally
+const storageQueryKeys = {
+  info: () => ['storage', 'info'] as const,
+  all: () => ['storage'] as const,
+};
 import type { Link, DatabaseId } from '@/lib/database/types';
 import { NotificationEventType } from '@/features/notifications/core';
 import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
@@ -107,7 +113,9 @@ export function useDeleteLinkMutation(
       queryClient.removeQueries({ queryKey: linksQueryKeys.detail(linkId) });
       
       // Invalidate storage queries since deleting a link frees up storage
-      queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
+      // TODO: Fix - storageQueryKeys.all is not a function
+      // queryClient.invalidateQueries({ queryKey: storageQueryKeys.all });
+      queryClient.invalidateQueries({ queryKey: storageQueryKeys.all() });
       
       // Invalidate files feature queries to ensure deleted link is removed there
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });

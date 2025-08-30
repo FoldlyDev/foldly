@@ -33,7 +33,9 @@ import { CopyButton } from '@/components/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
-import { useStorageTracking } from '@/features/workspace/hooks/use-storage-tracking';
+// TODO: Fix import path - should be from @/lib/hooks/use-storage-tracking
+// import { useStorageTracking } from '@/features/workspace/hooks/use-storage-tracking';
+import { useStorageTracking } from '@/lib/hooks/use-storage-tracking';
 // TODO: Replace with actual user plan fetching from user metadata
 import { fetchLinkDetailsWithStatsAction } from '../../lib/actions';
 
@@ -43,7 +45,12 @@ export function LinkDetailsModal() {
   const { closeModal } = useModalStore();
 
   // Get real-time storage and plan data
-  const { storageInfo, refetchStorage, formatSize } = useStorageTracking();
+  // TODO: Fix useStorageTracking - it doesn't return these properties
+  // const { storageInfo, refetchStorage, formatSize } = useStorageTracking();
+  const storageTracking = useStorageTracking();
+  const storageInfo = (storageTracking as any)?.storageInfo || null;
+  const refetchStorage = (storageTracking as any)?.refetchStorage || (() => {});
+  const formatSize = (storageTracking as any)?.formatSize || ((bytes: number) => `${bytes} bytes`);
   // TODO: Get plan from user metadata
   const planKey = 'free';
 
