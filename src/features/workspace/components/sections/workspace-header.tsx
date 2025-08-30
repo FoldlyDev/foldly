@@ -5,10 +5,13 @@ import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
 import { useWorkspaceUI, useStorageWarnings } from '../../hooks';
-import { NotificationCenter } from '../notifications/NotificationCenter';
+import { NotificationCenter } from '../ui/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
-import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
-import { SettingsDropdown } from '../settings/SettingsDropdown';
+import {
+  useEventBus,
+  NotificationEventType,
+} from '@/features/notifications/hooks/use-event-bus';
+import { SettingsDropdown } from '../ui/SettingsDropdown';
 import { SecondaryCTAButton } from '@/components/core';
 
 interface WorkspaceHeaderProps {
@@ -45,7 +48,7 @@ export function WorkspaceHeader({
     if (quotaStatus.isFull) {
       emit(NotificationEventType.STORAGE_LIMIT_EXCEEDED, {
         currentUsage: 0, // We don't have exact bytes here
-        totalLimit: 0,   // We don't have exact limit here
+        totalLimit: 0, // We don't have exact limit here
         remainingSpace: 0,
         usagePercentage: 100,
         planKey: 'free', // Default to free plan
@@ -56,7 +59,7 @@ export function WorkspaceHeader({
     if (quotaStatus.warningLevel === 'critical') {
       emit(NotificationEventType.STORAGE_THRESHOLD_CRITICAL, {
         currentUsage: 0, // We don't have exact bytes here
-        totalLimit: 0,   // We don't have exact limit here
+        totalLimit: 0, // We don't have exact limit here
         remainingSpace: 0,
         usagePercentage: 90,
         planKey: 'free', // Default to free plan
@@ -69,7 +72,8 @@ export function WorkspaceHeader({
   // Determine upload button state
   const isUploadDisabled = quotaStatus.isFull;
   const showStorageWarning =
-    quotaStatus.warningLevel === 'critical' || quotaStatus.warningLevel === 'warning';
+    quotaStatus.warningLevel === 'critical' ||
+    quotaStatus.warningLevel === 'warning';
 
   return (
     <motion.div

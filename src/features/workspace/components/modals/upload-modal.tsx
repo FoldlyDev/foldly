@@ -11,15 +11,13 @@ import {
 } from '@/components/ui/animate-ui/radix/dialog';
 import { CloudUpload, AlertCircle } from 'lucide-react';
 import { useFileUpload } from '../../hooks/use-file-upload';
-import { emitNotification } from '@/features/notifications/core/event-bus';
-import { NotificationEventType, NotificationPriority } from '@/features/notifications/core/event-types';
 import { clientUploadService } from '@/lib/services/upload/client-upload-service';
-import { UploadProgress } from '../upload/upload-progress';
-import { UploadValidation } from '../upload/upload-validation';
-import { StorageInfoDisplay } from '../storage/storage-info-display';
+import { UploadProgress } from '../ui/upload-progress';
+import { UploadValidation } from '../ui/upload-validation';
+import { StorageInfoDisplay } from '../ui/storage-info-display';
 // Removed FileUploadArea - using CentralizedFileUpload instead
 import { CentralizedFileUpload } from '@/components/composite/centralized-file-upload';
-import { UploadLimitsInfo } from '../upload/upload-limits-info';
+import { UploadLimitsInfo } from '../ui/upload-limits-info';
 import { Protect } from '@clerk/nextjs';
 import { useInvalidateStorage } from '../../hooks';
 import { UPLOAD_CONFIG } from '../../lib/config/upload-config';
@@ -52,25 +50,25 @@ export function UploadModal({
     clearAllFiles,
     removeFile: handleRemoveFile,
     startUpload,
-  } = useFileUpload({ 
-    workspaceId: workspaceId || '', 
-    folderId: folderId || '', 
-    onClose, 
-    onFileUploaded: onFileUploaded || (() => {})
+  } = useFileUpload({
+    workspaceId: workspaceId || '',
+    folderId: folderId || '',
+    onClose,
+    onFileUploaded: onFileUploaded || (() => {}),
   });
 
   // Calculate derived values from files array
   const totalFiles = files.length;
   const completedFiles = files.filter(f => f.status === 'success').length;
   const failedFiles = files.filter(f => f.status === 'error').length;
-  const uploadValidation = { 
+  const uploadValidation = {
     valid: true,
     totalSize: 0,
-    exceedsLimit: false 
+    exceedsLimit: false,
   }; // Always valid - server checks
   const storageInfo = { plan: 'free', availableSpace: 0 }; // Dummy values
   const quotaStatus = { warningLevel: 'normal', isFull: false }; // Default to normal
-  
+
   // Track if initial files have been processed
   const [initialFilesProcessed, setInitialFilesProcessed] = useState(false);
 
@@ -78,7 +76,7 @@ export function UploadModal({
     // Simply close the modal - uploads continue in background silently
     onClose();
   }, [onClose]);
-  
+
   // Cancel uploads on page refresh/close to prevent corruption
   useEffect(() => {
     if (isUploading) {
@@ -87,9 +85,10 @@ export function UploadModal({
         clientUploadService.cancelAll();
         cancelAllUploads();
       };
-      
+
       window.addEventListener('beforeunload', handleBeforeUnload);
-      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+      return () =>
+        window.removeEventListener('beforeunload', handleBeforeUnload);
     }
   }, [isUploading, cancelAllUploads]);
 
@@ -103,7 +102,12 @@ export function UploadModal({
 
   // Handle initial files separately to prevent re-adding
   useEffect(() => {
-    if (isOpen && initialFiles && initialFiles.length > 0 && !initialFilesProcessed) {
+    if (
+      isOpen &&
+      initialFiles &&
+      initialFiles.length > 0 &&
+      !initialFilesProcessed
+    ) {
       // Only add initial files once when they are first provided
       handleFileSelect(initialFiles);
       setInitialFilesProcessed(true);
@@ -177,25 +181,31 @@ export function UploadModal({
             {/* Centralized File Upload Area with Folder Support */}
             <CentralizedFileUpload
               onChange={handleFileSelect}
-              onRemove={(index) => {
+              onRemove={index => {
                 handleRemoveFile(index);
               }}
               files={files.map(f => f.file)}
               skipFolderExtraction={false} // Always allow folder extraction to ensure proper preview generation
               multiple={true}
               maxFiles={UPLOAD_CONFIG.batch.maxFilesPerUpload || 50}
-              maxFileSize={storageInfo ? UPLOAD_CONFIG.fileSizeLimits[storageInfo.plan as 'free' | 'pro' | 'business']?.maxFileSize || 100 * 1024 * 1024 : 100 * 1024 * 1024}
+              maxFileSize={
+                storageInfo
+                  ? UPLOAD_CONFIG.fileSizeLimits[
+                      storageInfo.plan as 'free' | 'pro' | 'business'
+                    ]?.maxFileSize || 100 * 1024 * 1024
+                  : 100 * 1024 * 1024
+              }
               disabled={isUploading || quotaStatus.isFull}
-              uploadText="Upload files"
+              uploadText='Upload files'
               uploadDescription={
-                isDragging 
-                  ? "Release to start uploading" 
-                  : "Drag and drop files or folders here, or click to browse"
+                isDragging
+                  ? 'Release to start uploading'
+                  : 'Drag and drop files or folders here, or click to browse'
               }
               showFileSize={true}
               showFileType={true}
               showModifiedDate={false}
-              onError={(error) => {
+              onError={error => {
                 console.error('Upload error:', error);
               }}
             />
@@ -207,7 +217,11 @@ export function UploadModal({
               transition={{ duration: 0.2 }}
             >
               <UploadLimitsInfo
-                plan={storageInfo ? storageInfo.plan as 'free' | 'pro' | 'business' : 'free'}
+                plan={
+                  storageInfo
+                    ? (storageInfo.plan as 'free' | 'pro' | 'business')
+                    : 'free'
+                }
               />
             </motion.div>
 
@@ -259,7 +273,11 @@ export function UploadModal({
                       const k = 1024;
                       const sizes = ['Bytes', 'KB', 'MB', 'GB'];
                       const i = Math.floor(Math.log(bytes) / Math.log(k));
-                      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+                      return (
+                        Math.round((bytes / Math.pow(k, i)) * 100) / 100 +
+                        ' ' +
+                        sizes[i]
+                      );
                     }}
                     planKey={storageInfo ? storageInfo.plan : 'free'}
                   />

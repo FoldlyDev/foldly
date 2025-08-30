@@ -3,7 +3,6 @@
 // Workspace data operations
 export {
   fetchWorkspaceDataAction,
-  fetchWorkspaceTreeAction, // Legacy alias
   moveItemAction,
   updateItemOrderAction,
   type ActionResult,
@@ -11,9 +10,6 @@ export {
 
 // Batch operations
 export { batchMoveItemsAction, batchDeleteItemsAction } from './batch-actions';
-
-// Billing integration
-export * from './billing-actions';
 
 // Other actions
 export * from './folder-actions';
