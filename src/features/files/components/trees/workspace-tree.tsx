@@ -1,0 +1,101 @@
+'use client';
+
+import React, { lazy, Suspense, useMemo } from 'react';
+import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
+import { useWorkspaceData } from '../../hooks/use-workspace-data';
+import { useTreeFactory } from '../../hooks/tree/use-tree-factory';
+import { workspaceReadOnlyTreeConfig } from '../../lib/tree-configs/readonly-tree';
+
+// Lazy load the file-tree component
+const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
+
+export interface WorkspaceTreeProps {
+  onCopyToWorkspace?: (items: any[], targetFolderId: string) => Promise<void>;
+  onExternalFileDrop?: (files: File[], targetFolderId?: string) => void;
+}
+
+export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: WorkspaceTreeProps) {
+  // Fetch workspace data with React Query
+  const { data: workspaceData, isLoading, isError, error } = useWorkspaceData();
+
+  // Transform workspace data to tree format
+  const treeData = useMemo(() => {
+    if (!workspaceData) return {};
+    return transformToTreeStructure(
+      workspaceData.folders || [],
+      workspaceData.files || [],
+      workspaceData.workspace
+    );
+  }, [workspaceData]);
+
+  // Get initially expanded items (workspace root)
+  const initialExpandedItems = useMemo(() => {
+    return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
+  }, [workspaceData?.workspace?.id]);
+
+  // Use the tree factory with read-only workspace configuration
+  const { treeProps } = useTreeFactory({
+    treeId: `files-workspace-${workspaceData?.workspace?.id || 'loading'}`,
+    config: workspaceReadOnlyTreeConfig,
+    data: treeData,
+    // Workspace is read-only, so most operations are not available
+    onCopyToWorkspace, // For accepting drops from link trees
+  });
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="files-tree-loading">
+          <div className="files-tree-spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="files-tree-empty">
+          <p className="files-tree-empty-text text-destructive">
+            Failed to load workspace: {error?.message || 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!workspaceData?.workspace?.id) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="files-tree-empty">
+          <p className="files-tree-empty-text">No workspace data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="files-tree-wrapper">
+      <div className="files-tree-content">
+        <Suspense
+          fallback={
+            <div className="files-tree-loading">
+              <div className="files-tree-spinner" />
+            </div>
+          }
+        >
+          <FileTree
+            {...treeProps}
+            initialExpandedItems={initialExpandedItems}
+            searchQuery=""
+            // Override external file drop if provided (for OS file drops to workspace)
+            {...(onExternalFileDrop && { onExternalFileDrop })}
+          />
+        </Suspense>
+      </div>
+    </div>
+  );
+}

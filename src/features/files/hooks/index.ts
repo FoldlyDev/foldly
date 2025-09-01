@@ -1,13 +1,6 @@
-// Files Hooks Exports
-// Export all composite hooks for files feature
-// Following 2025 feature-based architecture principles
+// Files Feature Hooks
 
-// Composite hooks
-export {
-  useFileCardStore,
-  useFolderCardStore,
-  useFilesListStore,
-  useFilesModalsStore,
-  useFilesUploadStore,
-  useFilesWorkspaceCompositeStore,
-} from './use-files-composite';
+// Data fetching hooks
+export { useUserLinks, useLinkFiles } from './use-files-data';
+
+// TODO: Add composite store hooks when needed

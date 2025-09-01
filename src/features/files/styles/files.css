@@ -1,0 +1,422 @@
+/* =============================================================================
+   FILES FEATURE STYLES - Two-Panel Layout with Mobile-First Design
+   ============================================================================= */
+
+@layer components {
+  /* =============================================================================
+     FILES CONTAINER LAYOUT
+     ============================================================================= */
+
+  .files-layout {
+    @apply flex flex-col gap-4 p-3 min-h-screen bg-transparent;
+    --files-padding: 0.75rem;
+    --files-gap: 1rem;
+    --header-spacing: 1.5rem;
+    --panel-height: calc(100vh - 200px);
+  }
+
+  /* =============================================================================
+     FILES HEADER - matches workspace-header styling
+     ============================================================================= */
+
+  .files-header {
+    @apply mb-6;
+  }
+
+  .files-header-content {
+    @apply flex flex-col gap-4;
+  }
+
+  .files-header-text {
+    @apply flex-1;
+  }
+
+  /* =============================================================================
+     MOBILE LAYOUT
+     ============================================================================= */
+
+  .files-mobile-container {
+    @apply flex flex-col h-full;
+  }
+
+  .files-panel-switcher {
+    @apply flex gap-2 mb-4 p-1 foldly-glass rounded-lg;
+  }
+
+  .files-panel-switch-btn {
+    @apply flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all;
+    @apply opacity-70 hover:opacity-100;
+  }
+
+  .files-panel-switch-btn.active {
+    @apply bg-primary text-white opacity-100;
+  }
+
+  .files-mobile-panel {
+    @apply flex-1 flex flex-col foldly-glass rounded-lg;
+    min-height: var(--panel-height);
+    overflow-y: auto;
+  }
+
+  /* =============================================================================
+     DESKTOP LAYOUT
+     ============================================================================= */
+
+  .files-desktop-container {
+    @apply flex gap-4 h-full;
+  }
+
+  .files-left-panel {
+    @apply flex-1 flex flex-col;
+    @apply foldly-glass rounded-lg;
+    height: var(--panel-height);
+    overflow-y: auto;
+  }
+
+  .files-right-panel {
+    @apply flex-1 flex flex-col;
+    @apply foldly-glass rounded-lg;
+    height: var(--panel-height);
+    overflow-y: auto;
+  }
+
+  /* =============================================================================
+     LINKS PANEL STYLES
+     ============================================================================= */
+
+  .links-panel-container {
+    @apply flex flex-col h-full;
+  }
+
+  .links-panel-header {
+    @apply p-4 border-b border-black/10 dark:border-white/10;
+  }
+
+  .links-panel-title {
+    @apply text-lg font-semibold;
+  }
+
+  .links-panel-subtitle {
+    @apply text-sm mt-1 opacity-70;
+  }
+
+  .links-panel-content {
+    @apply flex-1 overflow-y-auto p-2 flex flex-col;
+  }
+
+  /* Link item styles for draggable items */
+
+  .link-item {
+    @apply p-3 rounded-md bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors;
+    @apply cursor-pointer select-none;
+  }
+
+  .link-item-name {
+    @apply text-sm;
+  }
+
+  .link-item-count {
+    @apply text-xs opacity-60;
+  }
+
+  .link-item.draggable {
+    @apply cursor-move;
+  }
+
+  .link-item.draggable:active {
+    @apply opacity-50;
+  }
+
+  /* Accordion customizations */
+  .links-panel-content [data-slot="accordion-trigger"]:hover {
+    text-decoration: none !important;
+  }
+
+  /* =============================================================================
+     WORKSPACE PANEL STYLES
+     ============================================================================= */
+
+  .workspace-panel-container {
+    @apply flex flex-col h-full;
+  }
+
+  .workspace-panel-header {
+    @apply p-4 border-b border-black/10 dark:border-white/10;
+  }
+
+  .workspace-panel-header-content {
+    @apply flex items-center justify-between;
+  }
+
+  .workspace-panel-title {
+    @apply text-lg font-semibold;
+  }
+
+  .workspace-panel-subtitle {
+    @apply text-sm mt-1 opacity-70;
+  }
+
+  .workspace-panel-status {
+    @apply flex items-center gap-1 text-warning;
+  }
+
+  .workspace-panel-status-text {
+    @apply text-xs;
+  }
+
+  .workspace-panel-content {
+    @apply flex-1 overflow-y-auto p-4 flex flex-col;
+  }
+
+  .workspace-panel-loading {
+    @apply flex items-center justify-center h-64;
+  }
+
+  .workspace-panel-spinner {
+    @apply h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent;
+  }
+
+  .workspace-empty-state {
+    @apply flex items-center justify-center h-full;
+  }
+
+  .workspace-empty-content {
+    @apply flex flex-col items-center justify-center h-64 opacity-70;
+  }
+
+  .workspace-empty-icon {
+    @apply h-12 w-12 mb-3 opacity-50;
+  }
+
+  .workspace-empty-title {
+    @apply text-sm font-medium;
+  }
+
+  .workspace-empty-subtitle {
+    @apply text-xs mt-1;
+  }
+
+  .workspace-drop-zone {
+    @apply p-4 border-t border-black/10 dark:border-white/10;
+  }
+
+  .workspace-drop-area {
+    @apply border-2 border-dashed rounded-lg p-8 text-center border-black/20 dark:border-white/20 opacity-70;
+  }
+
+  .workspace-drop-icon {
+    @apply h-8 w-8 mx-auto mb-2 opacity-50;
+  }
+
+  .workspace-drop-text {
+    @apply text-sm opacity-70;
+  }
+
+  /* =============================================================================
+     THEME VARIANTS
+     ============================================================================= */
+
+  /* Light Theme */
+  .light .files-left-panel,
+  .light .files-right-panel,
+  .light .files-mobile-panel {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  .light .files-panel-switcher {
+    @apply foldly-glass-light;
+  }
+
+  /* Dark Theme - using default foldly-glass */
+  .dark .files-left-panel,
+  .dark .files-right-panel,
+  .dark .files-mobile-panel {
+    @apply foldly-glass;
+  }
+
+  /* =============================================================================
+     RESPONSIVE BREAKPOINTS - Mobile First
+     ============================================================================= */
+
+  /* Small Mobile (xs: 480px+) */
+  @media (min-width: 30rem) {
+    .files-layout {
+      @apply p-4 gap-5;
+      --panel-height: calc(100vh - 140px);
+    }
+  }
+
+  /* Tablet Portrait (sm: 640px+) */
+  @media (min-width: 40rem) {
+    .files-layout {
+      @apply p-6 gap-6;
+      --panel-height: calc(100vh - 160px);
+    }
+
+    .links-panel-header,
+    .workspace-panel-header {
+      @apply p-5;
+    }
+  }
+
+  /* Tablet Landscape (md: 768px+) */
+  @media (min-width: 48rem) {
+    .files-layout {
+      @apply p-8 gap-8;
+      --panel-height: calc(100vh - 180px);
+    }
+
+    /* Both panels remain equal width with flex-1 */
+  }
+
+  /* Desktop (lg: 1024px+) */
+  @media (min-width: 64rem) {
+    .files-layout {
+      @apply p-10 gap-10;
+      --panel-height: calc(100vh - 200px);
+    }
+
+    /* Both panels remain equal width with flex-1 */
+  }
+
+  /* Large Desktop (xl: 1280px+) */
+  @media (min-width: 80rem) {
+    .files-layout {
+      @apply p-12;
+      --panel-height: calc(100vh - 220px);
+    }
+
+    .files-desktop-container {
+      @apply max-w-[1400px] mx-auto;
+    }
+  }
+
+  /* Extra Large Desktop (2xl: 1536px+) */
+  @media (min-width: 96rem) {
+    .files-layout {
+      @apply p-14;
+    }
+
+    .files-desktop-container {
+      @apply max-w-[1600px];
+    }
+  }
+
+  /* =============================================================================
+     DRAG AND DROP STATES
+     ============================================================================= */
+
+  .files-right-panel.drag-over {
+    @apply ring-2 ring-primary ring-offset-2;
+  }
+
+  .workspace-drop-zone.drag-over {
+    @apply bg-primary/10;
+  }
+
+  /* =============================================================================
+     ACCESSIBILITY & PERFORMANCE
+     ============================================================================= */
+
+  /* Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    .link-item,
+    .files-panel-switch-btn {
+      @apply transition-none;
+    }
+  }
+
+  /* High Contrast */
+  @media (prefers-contrast: high) {
+    .files-left-panel,
+    .files-right-panel {
+      @apply border-2;
+    }
+  }
+
+  /* Touch Device Optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .link-section-header,
+    .link-item {
+      @apply min-h-[44px];
+    }
+
+    .files-panel-switch-btn {
+      @apply min-h-[44px];
+    }
+  }
+
+  /* =============================================================================
+     TREE COMPONENTS - Centralized styles for all trees
+     ============================================================================= */
+
+  /* Tree container wrapper - matches workspace-tree-wrapper */
+  .files-tree-wrapper {
+    @apply flex-1 flex flex-col;
+  }
+
+  /* Tree content area - matches workspace-tree-content */
+  .files-tree-content {
+    @apply flex-1 p-4 overflow-auto;
+    min-height: 0; /* Important for flex scrolling */
+  }
+
+  /* Make the tree fill the full height of its container */
+  .files-tree-content .file-tree-component,
+  .files-tree-content .file-tree-component .tree {
+    @apply h-full;
+  }
+
+  /* Override tree indentation guide styles to match workspace */
+  .files-tree-wrapper .file-tree-component {
+    --indent-guide-size: 1px;
+    --indent-guide-color: rgba(0, 0, 0, 0.08);
+    --tree-hover-color: rgba(0, 0, 0, 0.04);
+    --tree-selected-color: rgba(0, 0, 0, 0.05);
+    min-height: 100%; /* Ensure tree fills container */
+  }
+
+  .dark .files-tree-wrapper .file-tree-component {
+    --indent-guide-color: rgba(255, 255, 255, 0.08);
+    --tree-hover-color: rgba(255, 255, 255, 0.08);
+    --tree-selected-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Fix indent guide alignment - adjust position to align with indented children */
+  .files-tree-wrapper .file-tree-component .outeritem[data-depth]:not([data-depth="0"])::before {
+    left: calc(var(--depth) * 20px + 10px) !important; /* Align with children indentation */
+    opacity: 0.5; /* Make indent guides more subtle */
+  }
+
+  .files-tree-wrapper .file-tree-component .outeritem[data-depth]:not([data-depth="0"])::after {
+    left: calc(var(--depth) * 20px + 10px) !important; /* Align horizontal connector */
+    opacity: 0.5; /* Make horizontal connectors more subtle */
+  }
+
+  /* Tree loading state */
+  .files-tree-loading {
+    @apply flex items-center justify-center h-64;
+  }
+
+  .files-tree-spinner {
+    @apply h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent;
+  }
+
+  /* Tree empty state */
+  .files-tree-empty {
+    @apply flex items-center justify-center h-32;
+  }
+
+  .files-tree-empty-text {
+    @apply text-sm opacity-60;
+  }
+
+  /* Tree footer (optional) */
+  .files-tree-footer {
+    @apply p-3 text-center border-t border-black/10 dark:border-white/10;
+  }
+
+  .files-tree-footer-text {
+    @apply text-[0.6875rem] m-0 tracking-[0.01em] font-body leading-[1.4];
+  }
+}

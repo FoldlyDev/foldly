@@ -43,7 +43,7 @@ const navigationData: NavSection[] = [
     items: [
       {
         id: 'home',
-        label: 'Workspace',
+        label: 'Personal Space',
         href: '/dashboard/workspace',
         icon: LayoutDashboard,
         color: 'primary',
