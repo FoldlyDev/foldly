@@ -34,13 +34,18 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
   }, [workspaceData?.workspace?.id]);
 
   // Use the tree factory with read-only workspace configuration
-  const { treeProps } = useTreeFactory({
+  const factoryProps: Parameters<typeof useTreeFactory>[0] = {
     treeId: `files-workspace-${workspaceData?.workspace?.id || 'loading'}`,
     config: workspaceReadOnlyTreeConfig,
     data: treeData,
-    // Workspace is read-only, so most operations are not available
-    onCopyToWorkspace, // For accepting drops from link trees
-  });
+  };
+  
+  // Only add onCopyToWorkspace if it's defined
+  if (onCopyToWorkspace) {
+    factoryProps.onCopyToWorkspace = onCopyToWorkspace;
+  }
+  
+  const { treeProps } = useTreeFactory(factoryProps);
 
   // Loading state
   if (isLoading) {

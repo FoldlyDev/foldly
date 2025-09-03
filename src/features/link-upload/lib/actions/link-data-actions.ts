@@ -52,12 +52,14 @@ export async function fetchLinkBySlugAction(
 
 /**
  * Fetch link tree data (folders and files) for display
- * Thin wrapper around the service method
+ * Includes owner check to determine if redirect should be shown
  */
 export async function fetchLinkTreeDataAction(
   linkId: string
 ): Promise<ActionResult> {
   try {
+    const { auth } = await import('@clerk/nextjs/server');
+    
     const result = await linkUploadService.getLinkTreeData(linkId);
 
     if (!result.success) {
@@ -71,9 +73,20 @@ export async function fetchLinkTreeDataAction(
       };
     }
 
+    // Check if the current user is the owner
+    const { userId } = await auth();
+    let isOwner = false;
+    
+    if (userId && result.data?.link) {
+      isOwner = result.data.link.userId === userId;
+    }
+
     return {
       success: true,
-      data: result.data,
+      data: {
+        ...result.data,
+        isOwner,
+      },
     };
   } catch (error) {
     logger.error('Failed to fetch link tree data', error, { linkId });

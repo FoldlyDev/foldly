@@ -127,6 +127,7 @@ export class LinkUploadService {
       return {
         success: true,
         data: {
+          link: link as Link,
           folders: foldersData,
           files: filesData,
         },

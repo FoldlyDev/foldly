@@ -1,25 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense, useMemo } from 'react';
 
 import { LinkUploadHeader } from '../sections/link-upload-header';
 import { LinkUploadFooter } from '../sections/link-upload-footer';
 import { LinkUploadToolbar } from '../sections/link-upload-toolbar';
-// Modals will be re-implemented with new tree system
+import { OwnerRedirectMessage } from '../ui/owner-redirect-message';
 import { LinkUploadSkeleton } from '../skeletons/link-upload-skeleton';
+import { useLinkTreeData } from '../../hooks/use-link-data';
+import { useLinkTreeInstanceManager } from '../../lib/managers/link-tree-instance-manager';
+import { UploadSessionManager } from '../../lib/managers/upload-session-manager';
+import { useSelectionManager } from '../../lib/managers/selection-manager';
+import { 
+  useContextMenuHandler,
+  useDragDropHandler,
+  useRenameHandler,
+  useFolderCreationHandler,
+  type BatchOperationItem 
+} from '../../lib/handlers';
+import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import type { LinkWithStats } from '@/lib/database/types/links';
-type UploadSession = {
-  linkId: string;
-  uploaderName: string;
-  authenticated: boolean;
-};
+import type { UploadSession } from '../../lib/managers/upload-session-manager';
 import { FadeTransitionWrapper } from '@/components/feedback';
+
+// Lazy load the file-tree component
+const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 
 interface LinkUploadContainerProps {
   linkData: LinkWithStats;
 }
 
 export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
+  // Fetch tree data
+  const { data: treeData, isLoading: treeLoading } = useLinkTreeData(linkData.id);
+  
+  // Check if user is owner (this should be passed from server)
+  const isOwner = treeData?.isOwner || false;
   // Access control state
   const [uploadSession, setUploadSession] = useState<UploadSession | null>(
     null
@@ -42,17 +58,89 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectionMode, setSelectionMode] = useState(false);
+  
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemsToDelete, setItemsToDelete] = useState<BatchOperationItem[]>([]);
+  
+  // Tree instance management
+  const {
+    treeInstance,
+    treeIdRef,
+    handleTreeReady,
+    addFolderToTree,
+    addFileToTree,
+    deleteItemsFromTree,
+  } = useLinkTreeInstanceManager({
+    linkId: linkData.id,
+    isOwner,
+  });
+  
+  // Selection management
+  const selectionManager = useSelectionManager({
+    treeInstance,
+    onSelectionChange: setSelectedItems,
+  });
+  
+  // Folder creation handler (defined first so it can be passed to context menu)
+  const { createFolder } = useFolderCreationHandler({
+    treeInstance,
+    linkId: linkData.id,
+  });
+  
+  // Context menu handler
+  const { getMenuItems, handleDelete } = useContextMenuHandler({
+    linkId: linkData.id,
+    treeInstance,
+    setItemsToDelete,
+    setShowDeleteModal,
+    createFolder, // Now provided by folder creation handler
+  });
+  
+  // Drag-drop handler
+  const { dropCallbacks } = useDragDropHandler({ treeInstance });
+  
+  // Rename handler
+  const { renameCallback } = useRenameHandler({ treeInstance });
+  
+  // Transform data to tree structure (empty for uploaders)
+  const treeDataStructure = useMemo(() => {
+    // Public uploaders always start with empty tree
+    if (!isOwner) {
+      return {
+        [linkData.id]: {
+          id: linkData.id,
+          name: linkData.title || 'Upload Root',
+          type: 'folder' as const,
+          parentId: null,
+          path: '/',
+          depth: 0,
+          fileCount: 0,
+          totalSize: 0,
+          isArchived: false,
+          sortOrder: 0,
+          children: [],
+        },
+      };
+    }
+    // Owners would see full tree but they get redirected
+    return {};
+  }, [linkData, isOwner]);
 
   // Create a minimal session on mount to allow browsing
   React.useEffect(() => {
     // Clear any existing session from localStorage to ensure fresh entry
-    localStorage.removeItem(`upload-session-${linkData.id}`);
+    UploadSessionManager.clearSession(linkData.id);
 
     // Create minimal session to allow browsing without providing info upfront
     const minimalSession: UploadSession = {
       linkId: linkData.id,
       uploaderName: '',
+      uploaderEmail: undefined as string | undefined,
       authenticated: false, // Not fully authenticated until info provided
+      createdAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
     };
     setUploadSession(minimalSession);
   }, [linkData.id]);
@@ -116,9 +204,19 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     };
   }, [linkData.branding?.enabled, linkData.branding?.color]);
 
+  // Show owner redirect message if user owns this link
+  if (isOwner) {
+    return (
+      <OwnerRedirectMessage 
+        linkTitle={linkData.title || linkData.slug}
+        linkSlug={linkData.slug}
+      />
+    );
+  }
+
   return (
     <FadeTransitionWrapper
-      isLoading={false}
+      isLoading={treeLoading}
       loadingComponent={<LinkUploadSkeleton />}
       duration={300}
       className='min-h-screen flex flex-col bg-[--foldly-dark-gradient-radial]'
@@ -137,7 +235,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
               setSearchQuery={setSearchQuery}
               selectedItems={selectedItems}
               onClearSelection={handleClearSelection}
-              selectedFolderId={selectedFolderId || undefined}
+              selectedFolderId={selectedFolderId || ''}
               selectedFolderName={selectedFolderName}
               hasProvidedInfo={hasProvidedInfo}
               onRequestUpload={() => setShowAccessModal(true)}
@@ -146,14 +244,40 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
             />
           </div>
 
-          {/* Main content area - TODO: Add new tree implementation here */}
+          {/* Main content area - File Tree */}
           <div className='link-upload-tree-container'>
             <div className='link-upload-tree-wrapper'>
               <div className='link-upload-tree-content'>
-                {/* Tree will be added here in next step */}
-                <div className='flex items-center justify-center h-64 text-muted-foreground'>
-                  Tree implementation removed - ready for new implementation
-                </div>
+                <Suspense
+                  fallback={
+                    <div className='flex items-center justify-center h-64'>
+                      <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+                    </div>
+                  }
+                >
+                  {linkData.id && (
+                    <FileTree
+                      rootId={linkData.id}
+                      treeId={treeIdRef.current}
+                      initialData={treeDataStructure}
+                      initialExpandedItems={[linkData.id]}
+                      initialSelectedItems={selectedItems}
+                      onTreeReady={handleTreeReady}
+                      onSelectionChange={setSelectedItems}
+                      showCheckboxes={selectionMode}
+                      searchQuery={searchQuery}
+                      onSearchChange={query => setSearchQuery(query)}
+                      showFileSize={true}
+                      showFileDate={false}
+                      showFileStatus={true}
+                      showFolderCount={true}
+                      showFolderSize={true}
+                      dropCallbacks={dropCallbacks}
+                      renameCallback={renameCallback}
+                      contextMenuProvider={(item: any, itemInstance: any) => getMenuItems(item, itemInstance)}
+                    />
+                  )}
+                </Suspense>
               </div>
             </div>
           </div>

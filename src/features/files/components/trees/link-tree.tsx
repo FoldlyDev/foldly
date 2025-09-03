@@ -1,6 +1,6 @@
 'use client';
 
-import React, { lazy, Suspense, useMemo } from 'react';
+import React, { lazy, Suspense, useMemo, useState, useCallback } from 'react';
 import { useTreeFactory } from '../../hooks/tree/use-tree-factory';
 import { 
   baseLinkTreeConfig, 
@@ -9,9 +9,14 @@ import {
   type TreeConfiguration 
 } from '../../lib/tree-configs';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
+import { batchDeleteLinkItemsAction } from '../../lib/actions/link-file-actions';
+import { useQueryClient } from '@tanstack/react-query';
+import { filesQueryKeys } from '../../lib/query-keys';
 import type { LinkListItem } from '../../types/links';
 import type { File, Folder } from '@/lib/database/types';
 import type { LinkType } from '../../types';
+import type { TreeItem } from '@/components/file-tree/types';
+import { isFolder } from '@/components/file-tree/types';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -42,7 +47,6 @@ export function LinkTree({
     switch (linkType) {
       case 'base':
         return baseLinkTreeConfig;
-      case 'topic':
       case 'custom':
         return topicLinkTreeConfig;
       case 'generated':
@@ -67,55 +71,71 @@ export function LinkTree({
     return transformToTreeStructure(folders, files, linkRoot);
   }, [linkData, folders, files]);
   
-  // Tree operation handlers (only used for interactive trees)
-  const handleRename = async (itemId: string, newName: string) => {
-    console.log('Rename item:', itemId, 'to:', newName);
-    // TODO: Implement rename action via server action
-    onRefresh?.();
-  };
+  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
   
-  const handleDelete = async (itemIds: string[]) => {
-    console.log('Delete items:', itemIds);
-    // TODO: Implement delete action via server action
-    onRefresh?.();
-  };
+  // Tree operation handlers - Only delete is implemented for link owners
+  const handleDelete = useCallback(async (itemIds: string[]) => {
+    if (itemIds.length === 0 || isDeleting) return;
+    
+    try {
+      setIsDeleting(true);
+      
+      // Call the server action to delete items
+      const result = await batchDeleteLinkItemsAction(itemIds, linkData.id);
+      
+      if (result.success) {
+        // Invalidate queries to refresh data
+        await queryClient.invalidateQueries({
+          queryKey: filesQueryKeys.linkFiles(linkData.id),
+        });
+        
+        // Call refresh callback if provided
+        onRefresh?.();
+        
+        // Show success notification (if notification system is available)
+        console.log(`Successfully deleted ${result.data?.deletedFiles || 0} files and ${result.data?.deletedFolders || 0} folders`);
+      } else {
+        // Show error notification
+        console.error('Failed to delete items:', result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting items:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [linkData.id, isDeleting, queryClient, onRefresh]);
   
-  const handleDownload = async (itemIds: string[]) => {
+  const handleDownload = useCallback(async (itemIds: string[]) => {
     console.log('Download items:', itemIds);
-    // TODO: Implement download action
-  };
+    // TODO: Implement download action if needed
+  }, []);
   
-  const handleCreateFolder = async (parentId: string, name: string) => {
-    console.log('Create folder:', name, 'in parent:', parentId);
-    // TODO: Implement create folder action via server action
-    onRefresh?.();
-  };
+  // These operations are not available for link owners
+  const handleRename = undefined; // Link owners cannot rename
+  const handleCreateFolder = undefined; // Link owners cannot create folders
+  const handleMove = undefined; // Link owners cannot move items
+  const handleReorder = undefined; // Link owners cannot reorder items
   
-  const handleMove = async (itemIds: string[], fromParentId: string, toParentId: string) => {
-    console.log('Move items:', itemIds, 'from:', fromParentId, 'to:', toParentId);
-    // TODO: Implement move action via server action
-    onRefresh?.();
-  };
-  
-  const handleReorder = async (parentId: string, oldOrder: string[], newOrder: string[]) => {
-    console.log('Reorder in:', parentId, 'new order:', newOrder);
-    // TODO: Implement reorder action
-    onRefresh?.();
-  };
-  
-  // Use tree factory to create configured tree
-  const { treeProps } = useTreeFactory({
+  // Use tree factory to create configured tree - pass only defined handlers
+  const factoryProps: Parameters<typeof useTreeFactory>[0] = {
     treeId: `${linkType}-link-${linkData.id}`,
     config: treeConfig,
     data: treeData,
-    onRename: treeConfig.features.rename ? handleRename : undefined,
-    onDelete: treeConfig.features.delete ? handleDelete : undefined,
-    onDownload: handleDownload,
-    onCreateFolder: treeConfig.permissions.canCreateFolder ? handleCreateFolder : undefined,
-    onMove: treeConfig.features.dragDrop ? handleMove : undefined,
-    onReorder: treeConfig.features.dragDrop ? handleReorder : undefined,
-    onSelectionChange: onFilesSelected,
-  });
+  };
+  
+  // Only add handlers that are defined
+  if (treeConfig.features.delete && handleDelete) {
+    factoryProps.onDelete = handleDelete;
+  }
+  if (handleDownload) {
+    factoryProps.onDownload = handleDownload;
+  }
+  if (onFilesSelected) {
+    factoryProps.onSelectionChange = onFilesSelected;
+  }
+  
+  const { treeProps } = useTreeFactory(factoryProps);
   
   // Check if we have data to display
   const hasData = Object.keys(treeData).length > 0;

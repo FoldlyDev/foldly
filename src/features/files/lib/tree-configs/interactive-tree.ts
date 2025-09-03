@@ -13,34 +13,33 @@ import { createTreeConfig, type TreeConfiguration } from './base-config';
  * - Select items (single and multi)
  * - Use checkboxes for batch operations
  * - Search/filter items
- * - Right-click for context menu
- * - Rename items
+ * - Right-click for context menu (delete only)
  * - Delete items
- * - Drag items OUT to workspace (but not accept drops)
- * - Reorder items within the tree
+ * 
+ * NOTE: Link owners can only DELETE files/folders, not rename or create new ones
  */
 export const interactiveLinkTreeConfig: TreeConfiguration = createTreeConfig(
   'interactive-link-tree',
   'Interactive Link Tree',
-  'Full-featured tree for base and topic links with all interactions enabled',
+  'Tree for base and topic links with delete-only permissions for owners',
   {
     features: {
-      // Core interactions - all enabled
+      // Core interactions - selection enabled
       selection: true,
       multiSelect: true,
       checkboxes: true,
       search: true,
       
-      // Item operations - all enabled
+      // Item operations - delete only
       contextMenu: true,
-      rename: true,
-      delete: true,
+      rename: false,           // Link owners cannot rename
+      delete: true,            // Link owners can delete
       
-      // Drag and drop - can drag out and reorder internally
-      dragDrop: true,           // Internal reordering enabled
-      foreignDrag: true,         // Can drag OUT to workspace
-      acceptDrops: false,        // Cannot accept drops from outside
-      externalFileDrop: false,   // No OS file drops (uploads go through upload modal)
+      // Drag and drop - disabled
+      dragDrop: false,         // No internal reordering
+      foreignDrag: false,      // Cannot drag to other trees
+      acceptDrops: false,      // Cannot accept drops from outside
+      externalFileDrop: false, // No OS file drops
     },
     
     display: {
@@ -52,11 +51,11 @@ export const interactiveLinkTreeConfig: TreeConfiguration = createTreeConfig(
     },
     
     permissions: {
-      canDragItems: true,        // All items can be dragged
-      canDropItems: false,       // Cannot drop items from outside
-      canRename: true,           // Can rename all items
+      canDragItems: false,       // No dragging
+      canDropItems: false,       // Cannot drop items
+      canRename: false,          // Cannot rename items
       canDelete: true,           // Can delete all items
-      canCreateFolder: true,     // Can create folders
+      canCreateFolder: false,    // Cannot create folders
     },
   }
 );
