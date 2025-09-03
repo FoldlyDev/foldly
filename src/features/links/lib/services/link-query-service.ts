@@ -54,6 +54,9 @@ export class LinkQueryService {
       ...dbLink,
       // Ensure branding is always an object, never null
       branding: dbLink.branding || { enabled: false },
+      // Include user info if available
+      username: dbLink.username,
+      avatarUrl: dbLink.avatarUrl,
       stats: {
         fileCount: dbLink.fileCount,
         batchCount: dbLink.batchCount,

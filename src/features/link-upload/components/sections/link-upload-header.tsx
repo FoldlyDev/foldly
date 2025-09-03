@@ -7,10 +7,10 @@ import {
   Clock
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import type { LinkWithOwner } from '../../types';
+import type { LinkWithStats } from '@/lib/database/types/links';
 
 interface LinkUploadHeaderProps {
-  link: LinkWithOwner;
+  link: LinkWithStats;
 }
 
 export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
@@ -29,7 +29,7 @@ export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex flex-col items-center text-center">
           {/* Centered title with icon */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-2">
             {/* Brand/Upload Icon */}
             <div 
               className="p-3 rounded-xl shadow-lg flex-shrink-0"
@@ -42,18 +42,25 @@ export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
             </div>
             
             <h1 className="text-xl lg:text-2xl font-bold text-foreground">
-              {link.title || 'Upload Link'}
-              {/* TODO: Re-implement with proper link data */}
-              {/* {link.title || `${link.owner?.username}'s Upload Link`} */}
+              {link.title || link.slug || 'Upload Link'}
             </h1>
           </div>
           
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground mb-2">
-            {/* TODO: Re-implement owner display with proper link data */}
-            {/* <span className="flex items-center gap-1">
-              <User className="h-4 w-4" />
-              by {link.owner?.username?.charAt(0).toUpperCase() + link.owner?.username?.slice(1) || 'Anonymous'}
-            </span> */}
+          {/* Description if present */}
+          {link.description && (
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto line-clamp-2 mb-2">
+              {link.description}
+            </p>
+          )}
+
+          {/* User and expiration info */}
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
+            {link.username && (
+              <span className="flex items-center gap-1">
+                <User className="h-4 w-4" />
+                by {link.username.charAt(0).toUpperCase() + link.username.slice(1)}
+              </span>
+            )}
 
             {link.expiresAt && (
               <span className={`flex items-center gap-1 ${isExpired ? 'text-red-600' : ''}`}>
@@ -62,12 +69,6 @@ export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
               </span>
             )}
           </div>
-
-          {link.description && (
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto line-clamp-2">
-              {link.description}
-            </p>
-          )}
         </div>
       </div>
     </motion.div>

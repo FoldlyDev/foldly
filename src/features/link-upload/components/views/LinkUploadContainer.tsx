@@ -7,8 +7,7 @@ import { LinkUploadFooter } from '../sections/link-upload-footer';
 import { LinkUploadToolbar } from '../sections/link-upload-toolbar';
 // Modals will be re-implemented with new tree system
 import { LinkUploadSkeleton } from '../skeletons/link-upload-skeleton';
-// Types will be re-implemented with new tree system
-type LinkWithOwner = any;
+import type { LinkWithStats } from '@/lib/database/types/links';
 type UploadSession = {
   linkId: string;
   uploaderName: string;
@@ -17,7 +16,7 @@ type UploadSession = {
 import { FadeTransitionWrapper } from '@/components/feedback';
 
 interface LinkUploadContainerProps {
-  linkData: LinkWithOwner;
+  linkData: LinkWithStats;
 }
 
 export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
@@ -138,7 +137,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
               setSearchQuery={setSearchQuery}
               selectedItems={selectedItems}
               onClearSelection={handleClearSelection}
-              selectedFolderId={selectedFolderId}
+              selectedFolderId={selectedFolderId || undefined}
               selectedFolderName={selectedFolderName}
               hasProvidedInfo={hasProvidedInfo}
               onRequestUpload={() => setShowAccessModal(true)}

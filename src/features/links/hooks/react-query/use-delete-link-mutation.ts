@@ -109,7 +109,7 @@ export function useDeleteLinkMutation(
       queryClient.invalidateQueries({ queryKey: ['storage', 'tracking'] });
       
       // Invalidate files feature queries to ensure deleted link is removed there
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       // Emit success event for notification
@@ -125,7 +125,7 @@ export function useDeleteLinkMutation(
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
       
       // Also invalidate files feature queries
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });

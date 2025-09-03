@@ -1,10 +1,10 @@
 'use client';
 
 import { Sparkles } from 'lucide-react';
-import type { LinkWithOwner } from '../../types';
+import type { LinkWithStats } from '@/lib/database/types/links';
 
 interface BrandedHeaderProps {
-  link: LinkWithOwner;
+  link: LinkWithStats;
 }
 
 export function BrandedHeader({ link }: BrandedHeaderProps) {

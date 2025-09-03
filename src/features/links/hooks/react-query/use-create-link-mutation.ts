@@ -222,7 +222,7 @@ export function useCreateLinkMutation(
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.stats() });
       
       // Invalidate files feature queries to ensure new link appears there
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       // Emit success event for notification
@@ -241,7 +241,7 @@ export function useCreateLinkMutation(
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
       
       // Also invalidate files feature queries
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });

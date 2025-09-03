@@ -2,13 +2,13 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { LinkWithOwner } from '../../types';
+import type { LinkWithStats } from '@/lib/database/types/links';
 
 // Toolbar components will be re-implemented with new tree system
 
 interface LinkUploadToolbarProps {
   className?: string;
-  linkData: LinkWithOwner;
+  linkData: LinkWithStats;
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedItems?: string[];

@@ -109,6 +109,9 @@ export interface LinkWithStats extends Link {
     storageUsedPercentage: number;
     isNearLimit: boolean;
   };
+  // Optional user info when joined
+  username?: string;
+  avatarUrl?: string;
 }
 
 /**

@@ -180,7 +180,7 @@ export function useUpdateLinkMutation(
       queryClient.invalidateQueries({ queryKey: ['storage', 'tracking'] });
       
       // Invalidate files feature queries to ensure updates are reflected there
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
 
       onSuccess?.(result);
@@ -203,7 +203,7 @@ export function useUpdateLinkMutation(
       }
       
       // Always invalidate files feature queries regardless of success/error
-      queryClient.invalidateQueries({ queryKey: filesQueryKeys.linksWithFiles() });
+      queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
     },
   });
