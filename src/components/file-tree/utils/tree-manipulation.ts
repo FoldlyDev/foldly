@@ -44,17 +44,40 @@ export const addTreeItem = (
 
     console.log('🟤 [tree-manipulation] Calling insertItemsAtTarget');
     // Use the same function that drag drop uses!
-    insertItemsAtTarget([item.id], target, (item, newChildrenIds) => {
-      const itemData = data[item.getId()];
+    insertItemsAtTarget([item.id], target, (parentItem, newChildrenIds) => {
+      const parentData = data[parentItem.getId()];
       console.log('🟤 [tree-manipulation] insertItemsAtTarget callback:', {
-        itemId: item.getId(),
+        itemId: parentItem.getId(),
         newChildrenIds,
-        hasItemData: !!itemData
+        hasItemData: !!parentData
       });
-      if (itemData && isFolder(itemData)) {
-        const folderItem = itemData as TreeFolderItem;
-        folderItem.children = newChildrenIds;
-        console.log('🟤 [tree-manipulation] Updated folder children:', newChildrenIds);
+      if (parentData && isFolder(parentData)) {
+        const folderItem = parentData as TreeFolderItem;
+        
+        // Sort the children by type and sortOrder to ensure new items appear in correct position
+        const sortedChildren = [...newChildrenIds].sort((aId, bId) => {
+          const a = data[aId];
+          const b = data[bId];
+          if (!a || !b) return 0;
+          
+          // Folders come before files
+          if (a.type !== b.type) {
+            return a.type === 'folder' ? -1 : 1;
+          }
+          
+          // Sort by sortOrder if both have it
+          const aSortOrder = (a as any).sortOrder ?? 999;
+          const bSortOrder = (b as any).sortOrder ?? 999;
+          if (aSortOrder !== bSortOrder) {
+            return aSortOrder - bSortOrder;
+          }
+          
+          // Fallback to name
+          return a.name.localeCompare(b.name);
+        });
+        
+        folderItem.children = sortedChildren;
+        console.log('🟤 [tree-manipulation] Updated and sorted folder children:', sortedChildren);
       }
     });
     console.log('🟤 [tree-manipulation] insertItemsAtTarget completed');
