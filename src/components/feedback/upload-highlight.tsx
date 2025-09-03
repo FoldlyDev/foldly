@@ -15,7 +15,7 @@ export function UploadHighlight({
   multiple = false
 }: UploadHighlightProps) {
   return (
-    <div className="input-div">
+    <div className="input-div" style={{ position: 'relative' }}>
       <input 
         className="input" 
         name="file" 
@@ -23,6 +23,14 @@ export function UploadHighlight({
         onChange={onChange}
         accept={accept}
         multiple={multiple}
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          opacity: 0,
+          cursor: 'pointer',
+          zIndex: 2
+        }}
       />
       <svg 
         xmlns="http://www.w3.org/2000/svg" 
@@ -35,6 +43,10 @@ export function UploadHighlight({
         fill="none" 
         stroke="currentColor" 
         className="icon"
+        style={{
+          pointerEvents: 'none',
+          zIndex: 1
+        }}
       >
         <polyline points="16 16 12 12 8 16"></polyline>
         <line y2="21" x2="12" y1="12" x1="12"></line>

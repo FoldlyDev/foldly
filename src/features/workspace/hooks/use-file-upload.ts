@@ -120,6 +120,10 @@ export function useFileUpload({
       
       setUploadingFiles(uploads);
       setPendingFiles([]); // Clear pending since they're now uploading
+      
+      // Close modal immediately after starting uploads
+      // Files will appear in the tree as they complete in the background
+      onClose?.();
 
       const uploadService = new ClientUploadService();
       
@@ -181,7 +185,9 @@ export function useFileUpload({
                     });
                     
                     if (result.success) {
-                      onFileUploaded?.(result.data);
+                      // Don't call onFileUploaded here - it will be called in final results processing
+                      // to avoid duplicate tree additions
+                      // onFileUploaded?.(result.data);
                     }
                   }
                 }
@@ -209,6 +215,11 @@ export function useFileUpload({
                   }
                   return updated;
                 });
+                
+                // Call onFileUploaded here for batch uploads to add to tree
+                if (result.success && result.data) {
+                  onFileUploaded?.(result.data);
+                }
               }
             }
           });
@@ -301,14 +312,6 @@ export function useFileUpload({
       });
 
       setIsUploading(false);
-      
-      // Only close if all succeeded
-      const allSucceeded = Array.from(uploadingFiles.values()).every(
-        f => f.status === 'success'
-      );
-      if (allSucceeded) {
-        onClose?.();
-      }
     },
     [pendingFiles, workspaceId, folderId, queryClient, onFileUploaded, onClose, isUploading, uploadingFiles]
   );

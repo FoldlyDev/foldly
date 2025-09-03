@@ -18,6 +18,9 @@ import {
   useFolderCreationHandler,
   type BatchOperationItem 
 } from '../../lib/handlers';
+import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
+import { useLinkUploadStagingStore } from '../../stores/staging-store';
+import { LinkUploadModal } from '../modals/upload-modal';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import type { LinkWithStats } from '@/lib/database/types/links';
 import type { UploadSession } from '../../lib/managers/upload-session-manager';
@@ -64,6 +67,14 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<BatchOperationItem[]>([]);
   
+  // Get staging store state and actions
+  const { 
+    removeStagedItems,
+    isUploadModalOpen,
+    targetFolderId: modalTargetFolderId,
+    closeUploadModal,
+  } = useLinkUploadStagingStore();
+  
   // Tree instance management
   const {
     treeInstance,
@@ -86,6 +97,16 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Folder creation handler (defined first so it can be passed to context menu)
   const { createFolder } = useFolderCreationHandler({
     treeInstance,
+    linkId: linkData.id,
+  });
+  
+  // External file drop handler for staging files
+  const { 
+    droppedFiles,
+    setDroppedFiles,
+    handleExternalFileDrop,
+    clearDroppedFiles,
+  } = useExternalFileDropHandler({
     linkId: linkData.id,
   });
   
@@ -160,6 +181,24 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     // Clear local state
     setSelectedItems([]);
   };
+  
+  // Handle delete confirmation
+  const handleDeleteConfirm = React.useCallback(() => {
+    const itemIds = itemsToDelete.map(item => item.id);
+    
+    // Remove from staging store
+    removeStagedItems(itemIds);
+    
+    // Remove from tree
+    if (deleteItemsFromTree) {
+      deleteItemsFromTree(itemIds);
+    }
+    
+    // Close modal and clear selection
+    setShowDeleteModal(false);
+    setItemsToDelete([]);
+    handleClearSelection();
+  }, [itemsToDelete, removeStagedItems, deleteItemsFromTree]);
 
   // Apply brand theming with enhanced color palette
   React.useEffect(() => {
@@ -275,6 +314,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                       dropCallbacks={dropCallbacks}
                       renameCallback={renameCallback}
                       contextMenuProvider={(item: any, itemInstance: any) => getMenuItems(item, itemInstance)}
+                      onExternalFileDrop={handleExternalFileDrop}
                     />
                   )}
                 </Suspense>
@@ -286,7 +326,19 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
         {/* Foldly branding footer for non-pro/business users */}
         <LinkUploadFooter />
 
-        {/* Modals will be re-implemented with new tree system */}
+        {/* Upload Modal for staging files */}
+        <LinkUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => {
+            closeUploadModal();
+            // Clear dropped files after closing modal
+            clearDroppedFiles();
+          }}
+          linkData={linkData}
+          targetFolderId={droppedFiles?.targetFolderId || modalTargetFolderId}
+          treeInstance={treeInstance}
+          initialFiles={droppedFiles?.files}
+        />
       </div>
     </FadeTransitionWrapper>
   );

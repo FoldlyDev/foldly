@@ -51,8 +51,8 @@ export function UploadModal({
     removeFile: handleRemoveFile,
     startUpload,
   } = useFileUpload({
-    workspaceId: workspaceId || '',
-    folderId: folderId || '',
+    workspaceId: workspaceId,
+    folderId: folderId,
     onClose,
     onFileUploaded: onFileUploaded || (() => {}),
   });
@@ -307,7 +307,8 @@ export function UploadModal({
                 disabled={
                   files.length === 0 ||
                   isUploading ||
-                  uploadValidation?.valid === false
+                  uploadValidation?.valid === false ||
+                  !workspaceId
                 }
                 className='w-full sm:w-auto min-w-0 sm:min-w-[140px] border-gray-300 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200'
               >
@@ -315,6 +316,11 @@ export function UploadModal({
                   <>
                     <div className='w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin' />
                     <span>Uploading...</span>
+                  </>
+                ) : !workspaceId ? (
+                  <>
+                    <AlertCircle className='w-4 h-4' />
+                    <span>No Workspace</span>
                   </>
                 ) : uploadValidation?.valid === false ? (
                   <>

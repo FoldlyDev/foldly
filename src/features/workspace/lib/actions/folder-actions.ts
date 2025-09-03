@@ -97,12 +97,18 @@ export async function createFolderAction(
       depth = parentFolder.depth + 1;
     }
 
+    // Use negative counter for sortOrder to ensure new items appear at the top
+    // We'll use a negative value based on current time but within integer range
+    // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
+    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
+
     const result = await folderService.createFolder({
       name: trimmedName,
       parentFolderId: parentId,
       workspaceId: workspace.id,
       path: folderPath,
       depth,
+      sortOrder,
     });
 
     if (result.success) {

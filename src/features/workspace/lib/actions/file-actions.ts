@@ -344,7 +344,7 @@ export async function uploadFileAction(
 
         // Import the generateUniqueName function
         const { generateUniqueName } = await import(
-          '@/features/files/utils/file-operations'
+          '@/lib/utils/file-conflict-resolution'
         );
 
         // Generate unique name if duplicates exist
@@ -361,7 +361,7 @@ export async function uploadFileAction(
 
         // Import the generateUniqueName function
         const { generateUniqueName } = await import(
-          '@/features/files/utils/file-operations'
+          '@/lib/utils/file-conflict-resolution'
         );
 
         // Generate unique name if duplicates exist
@@ -408,6 +408,11 @@ export async function uploadFileAction(
     // In this case, folderId should be NULL because the workspace root is not a folder
     const actualFolderId = folderId === workspaceId ? null : folderId || null;
 
+    // Use negative counter for sortOrder to ensure new files appear at the top
+    // We'll use a negative value based on current time but within integer range
+    // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
+    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
+
     // Create database record with storage information using unique file name
     const fileData = {
       fileName: uniqueFileName, // Use the unique name (auto-incremented if needed)
@@ -427,6 +432,7 @@ export async function uploadFileAction(
       processingStatus: 'completed' as const,
       isOrganized: false,
       needsReview: false,
+      sortOrder,
       downloadCount: 0,
       uploadedAt: new Date(),
     };
@@ -609,7 +615,7 @@ export async function uploadFileToLinkAction(
 
         // Import the generateUniqueName function
         const { generateUniqueName } = await import(
-          '@/features/files/utils/file-operations'
+          '@/lib/utils/file-conflict-resolution'
         );
 
         // Generate unique name if duplicates exist
@@ -636,7 +642,7 @@ export async function uploadFileToLinkAction(
 
         // Import the generateUniqueName function
         const { generateUniqueName } = await import(
-          '@/features/files/utils/file-operations'
+          '@/lib/utils/file-conflict-resolution'
         );
 
         // Generate unique name if duplicates exist
@@ -646,6 +652,11 @@ export async function uploadFileToLinkAction(
 
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
+
+    // Use negative counter for sortOrder to ensure new files appear at the top
+    // We'll use a negative value based on current time but within integer range
+    // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
+    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
 
     // Create database record with storage information using unique file name
     const fileData = {
@@ -665,6 +676,7 @@ export async function uploadFileToLinkAction(
       processingStatus: 'completed' as const,
       isOrganized: false,
       needsReview: false,
+      sortOrder,
       downloadCount: 0,
       uploadedAt: new Date(),
     };

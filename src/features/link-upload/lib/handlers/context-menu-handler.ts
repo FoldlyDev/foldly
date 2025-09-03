@@ -5,6 +5,7 @@ import type { TreeItem } from '@/components/file-tree/types';
 import { isFolder } from '@/components/file-tree/types';
 import { sanitizeInput } from '@/lib/utils/validation';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
+import { useLinkUploadStagingStore } from '../../stores/staging-store';
 
 /**
  * Context Menu Handler Hook for Link Upload
@@ -89,9 +90,9 @@ export function useContextMenuHandler({
       return;
     }
     
-    // For link upload, folders are created locally in the tree
-    // Generate a temporary ID for the new folder
-    const tempFolderId = `temp-folder-${Date.now()}`;
+    // For link upload, folders are created in staging store
+    const { addStagedFolder } = useLinkUploadStagingStore.getState();
+    const tempFolderId = addStagedFolder(sanitizedFolderName, parentId);
     
     // Add to tree immediately for responsive UI
     if (treeInstance?.addFolderToTree) {

@@ -112,6 +112,7 @@ export function useFolderCreationHandler({
       
       // If we didn't add a temp folder (tempId is null), add the real folder to tree now
       if (!tempId && result.data && treeInstance?.addFolderToTree) {
+        console.log('Adding folder to tree with sortOrder:', result.data.sortOrder);
         treeInstance.addFolderToTree(result.data);
       }
       
