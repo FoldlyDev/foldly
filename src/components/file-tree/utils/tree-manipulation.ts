@@ -2,6 +2,7 @@ import type { DragTarget } from '@headless-tree/core';
 import { insertItemsAtTarget, removeItemsFromParents } from '@headless-tree/core';
 import type { TreeItem as TreeItemType, TreeFolderItem } from '../types/tree-types';
 import { isFolder } from '../types/tree-types';
+import { sortChildren } from './sort-children';
 
 /**
  * Helper function to add items to the tree programmatically
@@ -24,7 +25,17 @@ export const addTreeItem = (
   const { data } = getTreeData(treeId);
   console.log('🟤 [tree-manipulation] Current data keys before add:', Object.keys(data));
   
-  // First add the item to data
+  // Check if item already exists to prevent duplicates
+  if (data[item.id]) {
+    console.log('⚠️ [tree-manipulation] Item already exists in tree, skipping:', {
+      itemId: item.id,
+      itemName: item.name,
+      existingName: data[item.id].name
+    });
+    return; // Don't add duplicates
+  }
+  
+  // Add the item to data
   data[item.id] = item;
   console.log('🟤 [tree-manipulation] Added item to data object');
 
@@ -54,30 +65,13 @@ export const addTreeItem = (
       if (parentData && isFolder(parentData)) {
         const folderItem = parentData as TreeFolderItem;
         
-        // Sort the children by type and sortOrder to ensure new items appear in correct position
-        const sortedChildren = [...newChildrenIds].sort((aId, bId) => {
-          const a = data[aId];
-          const b = data[bId];
-          if (!a || !b) return 0;
-          
-          // Folders come before files
-          if (a.type !== b.type) {
-            return a.type === 'folder' ? -1 : 1;
-          }
-          
-          // Sort by sortOrder if both have it
-          const aSortOrder = (a as any).sortOrder ?? 999;
-          const bSortOrder = (b as any).sortOrder ?? 999;
-          if (aSortOrder !== bSortOrder) {
-            return aSortOrder - bSortOrder;
-          }
-          
-          // Fallback to name
-          return a.name.localeCompare(b.name);
-        });
+        // Remove duplicates from newChildrenIds (defensive programming)
+        const uniqueChildrenIds = [...new Set(newChildrenIds)];
         
-        folderItem.children = sortedChildren;
-        console.log('🟤 [tree-manipulation] Updated and sorted folder children:', sortedChildren);
+        // Use centralized sorting to maintain consistent order
+        // This ensures new items (negative sortOrder) appear at top
+        folderItem.children = sortChildren(uniqueChildrenIds, data);
+        console.log('🟤 [tree-manipulation] Updated folder children with centralized sorting:', folderItem.children);
       }
     });
     console.log('🟤 [tree-manipulation] insertItemsAtTarget completed');

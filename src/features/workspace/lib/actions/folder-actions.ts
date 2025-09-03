@@ -97,10 +97,11 @@ export async function createFolderAction(
       depth = parentFolder.depth + 1;
     }
 
-    // Use negative counter for sortOrder to ensure new items appear at the top
-    // We'll use a negative value based on current time but within integer range
+    // Use negative sortOrder to ensure new items appear at the top
+    // More negative = appears first. Using timestamp ensures uniqueness
+    // and that newer items appear before older negative sortOrder items
     // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
-    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
+    const sortOrder = -Math.floor(Date.now() / 1000); // Divide by 1000 for more granularity
 
     const result = await folderService.createFolder({
       name: trimmedName,

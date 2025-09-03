@@ -408,10 +408,11 @@ export async function uploadFileAction(
     // In this case, folderId should be NULL because the workspace root is not a folder
     const actualFolderId = folderId === workspaceId ? null : folderId || null;
 
-    // Use negative counter for sortOrder to ensure new files appear at the top
-    // We'll use a negative value based on current time but within integer range
+    // Use negative sortOrder to ensure new files appear at the top
+    // More negative = appears first. Using timestamp ensures uniqueness
+    // and that newer items appear before older negative sortOrder items
     // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
-    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
+    const sortOrder = -Math.floor(Date.now() / 1000); // Divide by 1000 for more granularity
 
     // Create database record with storage information using unique file name
     const fileData = {
@@ -653,10 +654,11 @@ export async function uploadFileToLinkAction(
     // Calculate checksum for file integrity
     const checksum = await storageService.calculateChecksum(file);
 
-    // Use negative counter for sortOrder to ensure new files appear at the top
-    // We'll use a negative value based on current time but within integer range
+    // Use negative sortOrder to ensure new files appear at the top
+    // More negative = appears first. Using timestamp ensures uniqueness
+    // and that newer items appear before older negative sortOrder items
     // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
-    const sortOrder = -Math.floor(Date.now() / 1000000); // Divide by 1M to keep within range
+    const sortOrder = -Math.floor(Date.now() / 1000); // Divide by 1000 for more granularity
 
     // Create database record with storage information using unique file name
     const fileData = {

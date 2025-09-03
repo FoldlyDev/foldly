@@ -9,21 +9,16 @@ import { OwnerRedirectMessage } from '../ui/owner-redirect-message';
 import { LinkUploadSkeleton } from '../skeletons/link-upload-skeleton';
 import { useLinkTreeData } from '../../hooks/use-link-data';
 import { useLinkTreeInstanceManager } from '../../lib/managers/link-tree-instance-manager';
-import { UploadSessionManager } from '../../lib/managers/upload-session-manager';
-import { useSelectionManager } from '../../lib/managers/selection-manager';
-import { 
+import {
   useContextMenuHandler,
   useDragDropHandler,
   useRenameHandler,
   useFolderCreationHandler,
-  type BatchOperationItem 
 } from '../../lib/handlers';
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useLinkUploadStagingStore } from '../../stores/staging-store';
 import { LinkUploadModal } from '../modals/upload-modal';
-import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import type { LinkWithStats } from '@/lib/database/types/links';
-import type { UploadSession } from '../../lib/managers/upload-session-manager';
 import { FadeTransitionWrapper } from '@/components/feedback';
 
 // Lazy load the file-tree component
@@ -35,96 +30,64 @@ interface LinkUploadContainerProps {
 
 export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Fetch tree data
-  const { data: treeData, isLoading: treeLoading } = useLinkTreeData(linkData.id);
-  
+  const { data: treeData, isLoading: treeLoading } = useLinkTreeData(
+    linkData.id
+  );
+
   // Check if user is owner (this should be passed from server)
   const isOwner = treeData?.isOwner || false;
-  // Access control state
-  const [uploadSession, setUploadSession] = useState<UploadSession | null>(
-    null
-  );
-  const [showAccessModal, setShowAccessModal] = useState(false);
-  const [hasProvidedInfo, setHasProvidedInfo] = useState(false);
-  const [shouldTriggerUpload, setShouldTriggerUpload] = useState(false);
-
-  // Staging store will be re-implemented with new tree
-
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Selected folder state for folder creation target
-  const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>(
-    undefined
-  );
-  const [selectedFolderName, setSelectedFolderName] =
-    useState<string>('Link Root');
 
   // Selection state
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
-  
-  // Delete modal state
+
+  // Delete modal state for context menu
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemsToDelete, setItemsToDelete] = useState<BatchOperationItem[]>([]);
-  
+  const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
+
   // Get staging store state and actions
-  const { 
-    removeStagedItems,
+  const {
     isUploadModalOpen,
     targetFolderId: modalTargetFolderId,
     closeUploadModal,
   } = useLinkUploadStagingStore();
-  
+
   // Tree instance management
-  const {
-    treeInstance,
-    treeIdRef,
-    handleTreeReady,
-    addFolderToTree,
-    addFileToTree,
-    deleteItemsFromTree,
-  } = useLinkTreeInstanceManager({
-    linkId: linkData.id,
-    isOwner,
-  });
-  
-  // Selection management
-  const selectionManager = useSelectionManager({
-    treeInstance,
-    onSelectionChange: setSelectedItems,
-  });
-  
+  const { treeInstance, treeIdRef, handleTreeReady } =
+    useLinkTreeInstanceManager({
+      linkId: linkData.id,
+      isOwner,
+    });
+
   // Folder creation handler (defined first so it can be passed to context menu)
   const { createFolder } = useFolderCreationHandler({
     treeInstance,
     linkId: linkData.id,
   });
-  
+
   // External file drop handler for staging files
-  const { 
-    droppedFiles,
-    setDroppedFiles,
-    handleExternalFileDrop,
-    clearDroppedFiles,
-  } = useExternalFileDropHandler({
-    linkId: linkData.id,
-  });
-  
+  const { droppedFiles, handleExternalFileDrop, clearDroppedFiles } =
+    useExternalFileDropHandler({
+      linkId: linkData.id,
+    });
+
   // Context menu handler
-  const { getMenuItems, handleDelete } = useContextMenuHandler({
+  const { getMenuItems } = useContextMenuHandler({
     linkId: linkData.id,
     treeInstance,
     setItemsToDelete,
     setShowDeleteModal,
     createFolder, // Now provided by folder creation handler
   });
-  
+
   // Drag-drop handler
   const { dropCallbacks } = useDragDropHandler({ treeInstance });
-  
+
   // Rename handler
   const { renameCallback } = useRenameHandler({ treeInstance });
-  
+
   // Transform data to tree structure (empty for uploaders)
   const treeDataStructure = useMemo(() => {
     // Public uploaders always start with empty tree
@@ -149,56 +112,10 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     return {};
   }, [linkData, isOwner]);
 
-  // Create a minimal session on mount to allow browsing
-  React.useEffect(() => {
-    // Clear any existing session from localStorage to ensure fresh entry
-    UploadSessionManager.clearSession(linkData.id);
-
-    // Create minimal session to allow browsing without providing info upfront
-    const minimalSession: UploadSession = {
-      linkId: linkData.id,
-      uploaderName: '',
-      uploaderEmail: undefined as string | undefined,
-      authenticated: false, // Not fully authenticated until info provided
-      createdAt: new Date(),
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    };
-    setUploadSession(minimalSession);
-  }, [linkData.id]);
-
-  const handleAccessGranted = React.useCallback((session: UploadSession) => {
-    setUploadSession(session);
-    setShowAccessModal(false);
-    setHasProvidedInfo(true);
-    setShouldTriggerUpload(true);
-  }, []);
-
-  const handleCancelUpload = React.useCallback(() => {
-    setShowAccessModal(false);
-  }, []);
-
   const handleClearSelection = () => {
     // Clear local state
     setSelectedItems([]);
   };
-  
-  // Handle delete confirmation
-  const handleDeleteConfirm = React.useCallback(() => {
-    const itemIds = itemsToDelete.map(item => item.id);
-    
-    // Remove from staging store
-    removeStagedItems(itemIds);
-    
-    // Remove from tree
-    if (deleteItemsFromTree) {
-      deleteItemsFromTree(itemIds);
-    }
-    
-    // Close modal and clear selection
-    setShowDeleteModal(false);
-    setItemsToDelete([]);
-    handleClearSelection();
-  }, [itemsToDelete, removeStagedItems, deleteItemsFromTree]);
 
   // Apply brand theming with enhanced color palette
   React.useEffect(() => {
@@ -246,7 +163,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Show owner redirect message if user owns this link
   if (isOwner) {
     return (
-      <OwnerRedirectMessage 
+      <OwnerRedirectMessage
         linkTitle={linkData.title || linkData.slug}
         linkSlug={linkData.slug}
       />
@@ -266,27 +183,29 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
       >
         <LinkUploadHeader link={linkData} />
 
-        <div className='container mx-auto px-4 py-8 max-w-7xl flex-1'>
+        <div className='container mx-auto px-4 py-8 max-w-7xl flex-1 workspace-layout'>
           <div className='mb-6'>
             <LinkUploadToolbar
-              linkData={linkData}
+              treeInstance={treeInstance}
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
               selectedItems={selectedItems}
               onClearSelection={handleClearSelection}
-              selectedFolderId={selectedFolderId || ''}
-              selectedFolderName={selectedFolderName}
-              hasProvidedInfo={hasProvidedInfo}
-              onRequestUpload={() => setShowAccessModal(true)}
-              shouldTriggerUpload={shouldTriggerUpload}
-              onUploadTriggered={() => setShouldTriggerUpload(false)}
+              selectionMode={selectionMode}
+              onSelectionModeChange={setSelectionMode}
+              onOpenUploadModal={() =>
+                useLinkUploadStagingStore.getState().openUploadModal(null)
+              }
+              onOpenVerificationModal={() =>
+                useLinkUploadStagingStore.getState().openVerificationModal()
+              }
             />
           </div>
 
           {/* Main content area - File Tree */}
-          <div className='link-upload-tree-container'>
-            <div className='link-upload-tree-wrapper'>
-              <div className='link-upload-tree-content'>
+          <div className='workspace-tree-container h-[90vh]!'>
+            <div className='workspace-tree-wrapper'>
+              <div className='workspace-tree-content'>
                 <Suspense
                   fallback={
                     <div className='flex items-center justify-center h-64'>
@@ -313,7 +232,9 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                       showFolderSize={true}
                       dropCallbacks={dropCallbacks}
                       renameCallback={renameCallback}
-                      contextMenuProvider={(item: any, itemInstance: any) => getMenuItems(item, itemInstance)}
+                      contextMenuProvider={(item: any, itemInstance: any) =>
+                        getMenuItems(item, itemInstance)
+                      }
                       onExternalFileDrop={handleExternalFileDrop}
                     />
                   )}
@@ -337,7 +258,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
           linkData={linkData}
           targetFolderId={droppedFiles?.targetFolderId || modalTargetFolderId}
           treeInstance={treeInstance}
-          initialFiles={droppedFiles?.files}
+          {...(droppedFiles?.files && { initialFiles: droppedFiles.files })}
         />
       </div>
     </FadeTransitionWrapper>

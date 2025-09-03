@@ -24,7 +24,7 @@ export function LinkUploadHeader({ link }: LinkUploadHeaderProps) {
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="border-b bg-gradient-to-r from-background to-muted/30 sticky top-0 z-40"
+      className="border-b bg-gradient-to-r from-background to-muted/30"
     >
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="flex flex-col items-center text-center">
