@@ -48,7 +48,7 @@ export function useLinkTreeInstanceManager({
     if (!treeInstance || !treeIdRef.current || !folder) return;
 
     const treeFolder: TreeFolderItem = {
-      id: folder.id || `temp-folder-${Date.now()}`,
+      id: folder.id || `folder-temp-${Date.now()}`,
       name: folder.name,
       type: 'folder',
       parentId: folder.parentFolderId || linkId || null,
@@ -73,13 +73,13 @@ export function useLinkTreeInstanceManager({
     if (!treeInstance || !treeIdRef.current || !file) return;
 
     const treeFile: TreeFileItem = {
-      id: file.id || `temp-file-${Date.now()}`,
-      name: file.fileName || file.originalName || file.name || 'Unnamed',
+      id: file.id || `file-temp-${Date.now()}`,
+      name: file.name || file.fileName || file.originalName || 'Unnamed',
       type: 'file',
       parentId: file.folderId || linkId || null,
       mimeType: file.mimeType || 'application/octet-stream',
       fileSize: file.fileSize || 0,
-      extension: file.extension || file.fileName?.split('.').pop() || null,
+      extension: file.extension || file.name?.split('.').pop() || null,
       thumbnailPath: file.thumbnailPath || null,
       processingStatus: file.processingStatus || 'pending',
       sortOrder: file.sortOrder || 999,
@@ -125,7 +125,7 @@ export function useLinkTreeInstanceManager({
       
       // Add folder creation for organizing uploads (inline to avoid deps)
       addFolder: (name: string, parentId?: string) => {
-        const tempId = `temp-folder-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+        const tempId = `folder-temp-${Date.now()}-${Math.random().toString(36).substring(7)}`;  
         const treeFolder: TreeFolderItem = {
           id: tempId,
           name: name,
@@ -157,7 +157,7 @@ export function useLinkTreeInstanceManager({
         if (!tree || !treeIdRef.current || !folder) return;
 
         const treeFolder: TreeFolderItem = {
-          id: folder.id || `temp-folder-${Date.now()}`,
+          id: folder.id || `folder-temp-${Date.now()}`,
           name: folder.name,
           type: 'folder',
           parentId: folder.parentId || folder.parentFolderId || linkId || null,
@@ -180,13 +180,13 @@ export function useLinkTreeInstanceManager({
         if (!tree || !treeIdRef.current || !file) return;
 
         const treeFile: TreeFileItem = {
-          id: file.id || `temp-file-${Date.now()}`,
-          name: file.fileName || file.originalName || file.name || 'Unnamed',
+          id: file.id || `file-temp-${Date.now()}`,
+          name: file.name || file.fileName || file.originalName || 'Unnamed',
           type: 'file',
           parentId: file.parentId || file.folderId || linkId || null,
           mimeType: file.mimeType || 'application/octet-stream',
           fileSize: file.fileSize || 0,
-          extension: file.extension || file.fileName?.split('.').pop() || null,
+          extension: file.extension || file.name?.split('.').pop() || null,
           thumbnailPath: file.thumbnailPath || null,
           processingStatus: file.processingStatus || 'pending',
           sortOrder: file.sortOrder || 999,

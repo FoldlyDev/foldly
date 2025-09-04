@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo } from 'react';
+import React, { useState, lazy, Suspense, useMemo, useRef } from 'react';
+import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 
 import { LinkUploadHeader } from '../sections/link-upload-header';
 import { LinkUploadFooter } from '../sections/link-upload-footer';
@@ -18,6 +19,7 @@ import {
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useLinkUploadStagingStore } from '../../stores/staging-store';
 import { LinkUploadModal } from '../modals/upload-modal';
+import { VerificationModal } from '../modals/verification-modal';
 import type { LinkWithStats } from '@/lib/database/types/links';
 import { FadeTransitionWrapper } from '@/components/feedback';
 
@@ -47,11 +49,15 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
 
-  // Get staging store state and actions
+  // Get staging store state and actions - also subscribe to staged items
   const {
     isUploadModalOpen,
     targetFolderId: modalTargetFolderId,
     closeUploadModal,
+    isVerificationModalOpen,
+    closeVerificationModal,
+    stagedFiles,
+    stagedFolders,
   } = useLinkUploadStagingStore();
 
   // Tree instance management
@@ -88,33 +94,86 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Rename handler
   const { renameCallback } = useRenameHandler({ treeInstance });
 
-  // Transform data to tree structure (empty for uploaders)
+  // Transform staged items to tree structure using the same utility as workspace
   const treeDataStructure = useMemo(() => {
-    // Public uploaders always start with empty tree
-    if (!isOwner) {
-      return {
-        [linkData.id]: {
-          id: linkData.id,
-          name: linkData.title || 'Upload Root',
-          type: 'folder' as const,
-          parentId: null,
-          path: '/',
-          depth: 0,
-          fileCount: 0,
-          totalSize: 0,
-          isArchived: false,
-          sortOrder: 0,
-          children: [],
-        },
-      };
-    }
-    // Owners would see full tree but they get redirected
-    return {};
-  }, [linkData, isOwner]);
+    if (isOwner) return {};
+    
+    // Convert Maps to arrays and map to expected format
+    const foldersArray = Array.from(stagedFolders.values()).map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      parentFolderId: folder.parentId,
+      linkId: linkData.id,
+      workspaceId: null,
+      path: folder.path,
+      depth: folder.depth,
+      isArchived: folder.isArchived,
+      sortOrder: folder.sortOrder,
+      fileCount: folder.fileCount,
+      totalSize: folder.totalSize,
+      createdAt: folder.addedAt,
+      updatedAt: folder.addedAt,
+    }));
+    
+    const filesArray = Array.from(stagedFiles.values()).map((file) => ({
+      id: file.id,
+      fileName: file.name,
+      originalName: file.name,
+      folderId: file.parentId,
+      linkId: linkData.id,
+      workspaceId: null,
+      mimeType: file.mimeType,
+      fileSize: file.fileSize,
+      extension: file.extension,
+      thumbnailPath: file.thumbnailPath,
+      processingStatus: file.processingStatus,
+      sortOrder: file.sortOrder,
+      storagePath: '',
+      uploadedBy: null,
+      createdAt: file.addedAt,
+      updatedAt: file.addedAt,
+    }));
+    
+    // Use the same transform utility that workspace uses
+    return transformToTreeStructure(
+      foldersArray as any,
+      filesArray as any,
+      { id: linkData.id, name: linkData.title || 'Upload Root' }
+    );
+  }, [linkData.id, linkData.title, isOwner, stagedFiles, stagedFolders, stagedFiles.size, stagedFolders.size]);
 
   const handleClearSelection = () => {
     // Clear local state
     setSelectedItems([]);
+  };
+
+  // Handle verification complete - send files to server
+  const handleVerificationComplete = async (verificationData: {
+    uploaderName: string;
+    uploaderEmail?: string;
+    password?: string;
+  }) => {
+    try {
+      // Get all staged items
+      const { files: stagedFilesList, folders: stagedFoldersList } = 
+        useLinkUploadStagingStore.getState().getAllStagedItems();
+      
+      // TODO: Implement actual upload logic here
+      // This will send the files to the server with the verification data
+      console.log('Verification complete, ready to upload:', {
+        verificationData,
+        filesCount: stagedFilesList.length,
+        foldersCount: stagedFoldersList.length,
+      });
+      
+      // For now, just close the modal and show success
+      closeVerificationModal();
+      
+      // Clear staging after successful upload
+      // useLinkUploadStagingStore.getState().clearAllStaged();
+    } catch (error) {
+      console.error('Upload error:', error);
+    }
   };
 
   // Apply brand theming with enhanced color palette
@@ -171,41 +230,41 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   }
 
   return (
-    <FadeTransitionWrapper
-      isLoading={treeLoading}
-      loadingComponent={<LinkUploadSkeleton />}
-      duration={300}
-      className='min-h-screen flex flex-col bg-[--foldly-dark-gradient-radial]'
+    <div
+      className='min-h-screen flex flex-col'
+      style={{ background: 'var(--foldly-dark-gradient-radial)' }}
     >
-      <div
-        className='min-h-screen flex flex-col'
-        style={{ background: 'var(--foldly-dark-gradient-radial)' }}
+      <LinkUploadHeader link={linkData} />
+
+      <FadeTransitionWrapper
+        isLoading={false}  // Public uploaders don't need to load tree data - they start with empty tree
+        loadingComponent={<LinkUploadSkeleton />}
+        duration={300}
+        className='dashboard-container link-upload-layout'
       >
-        <LinkUploadHeader link={linkData} />
+        <div className='link-upload-toolbar'>
+          <LinkUploadToolbar
+            treeInstance={treeInstance}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedItems={selectedItems}
+            onClearSelection={handleClearSelection}
+            selectionMode={selectionMode}
+            onSelectionModeChange={setSelectionMode}
+            onOpenUploadModal={() =>
+              useLinkUploadStagingStore.getState().openUploadModal(null)
+            }
+            onOpenVerificationModal={() =>
+              useLinkUploadStagingStore.getState().openVerificationModal()
+            }
+          />
+        </div>
 
-        <div className='container mx-auto px-4 py-8 max-w-7xl flex-1 workspace-layout'>
-          <div className='mb-6'>
-            <LinkUploadToolbar
-              treeInstance={treeInstance}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedItems={selectedItems}
-              onClearSelection={handleClearSelection}
-              selectionMode={selectionMode}
-              onSelectionModeChange={setSelectionMode}
-              onOpenUploadModal={() =>
-                useLinkUploadStagingStore.getState().openUploadModal(null)
-              }
-              onOpenVerificationModal={() =>
-                useLinkUploadStagingStore.getState().openVerificationModal()
-              }
-            />
-          </div>
-
-          {/* Main content area - File Tree */}
-          <div className='workspace-tree-container h-[90vh]!'>
-            <div className='workspace-tree-wrapper'>
-              <div className='workspace-tree-content'>
+        {/* Main content area - File Tree */}
+        <div className='link-upload-tree-container mt-4 h-screen overflow-y-auto!'>
+          <div className='flex gap-4 h-full'>
+            <div className='link-upload-tree-wrapper flex-1'>
+              <div className='link-upload-tree-content'>
                 <Suspense
                   fallback={
                     <div className='flex items-center justify-center h-64'>
@@ -215,6 +274,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                 >
                   {linkData.id && (
                     <FileTree
+                      key={`file-tree-${linkData.id}`}  // Stable key to prevent unmounting
                       rootId={linkData.id}
                       treeId={treeIdRef.current}
                       initialData={treeDataStructure}
@@ -243,24 +303,33 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
             </div>
           </div>
         </div>
+      </FadeTransitionWrapper>
 
-        {/* Foldly branding footer for non-pro/business users */}
-        <LinkUploadFooter />
+      {/* Foldly branding footer for non-pro/business users */}
+      <LinkUploadFooter />
 
-        {/* Upload Modal for staging files */}
-        <LinkUploadModal
-          isOpen={isUploadModalOpen}
-          onClose={() => {
-            closeUploadModal();
-            // Clear dropped files after closing modal
-            clearDroppedFiles();
-          }}
-          linkData={linkData}
-          targetFolderId={droppedFiles?.targetFolderId || modalTargetFolderId}
-          treeInstance={treeInstance}
-          {...(droppedFiles?.files && { initialFiles: droppedFiles.files })}
-        />
-      </div>
-    </FadeTransitionWrapper>
+      {/* Upload Modal for staging files */}
+      <LinkUploadModal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          closeUploadModal();
+          // Clear dropped files after closing modal
+          clearDroppedFiles();
+        }}
+        linkData={linkData}
+        targetFolderId={droppedFiles?.targetFolderId || modalTargetFolderId}
+        treeInstance={treeInstance}
+        onFileUploaded={treeInstance?.addFileToTree}
+        {...(droppedFiles?.files && { initialFiles: droppedFiles.files })}
+      />
+
+      {/* Verification Modal for collecting uploader info */}
+      <VerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={closeVerificationModal}
+        linkData={linkData}
+        onVerificationComplete={handleVerificationComplete}
+      />
+    </div>
   );
 }

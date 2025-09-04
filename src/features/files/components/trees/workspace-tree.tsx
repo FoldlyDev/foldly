@@ -71,12 +71,36 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     );
   }
 
-  // Empty state
+  // Empty state - no workspace data
   if (!workspaceData?.workspace?.id) {
     return (
       <div className="files-tree-wrapper">
         <div className="files-tree-empty">
           <p className="files-tree-empty-text">No workspace data available</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if workspace has any files or folders
+  const hasContent = useMemo(() => {
+    return (workspaceData.files && workspaceData.files.length > 0) || 
+           (workspaceData.folders && workspaceData.folders.length > 0);
+  }, [workspaceData]);
+
+  // Empty workspace - show "No files available" instead of tree with upload highlight
+  if (!hasContent) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="flex flex-col items-center justify-center h-64 p-8">
+          <div className="text-center space-y-2">
+            <p className="text-sm font-medium text-muted-foreground">
+              Your workspace is a blank canvas
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              Waiting for your first masterpiece
+            </p>
+          </div>
         </div>
       </div>
     );

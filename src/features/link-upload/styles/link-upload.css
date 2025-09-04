@@ -1,114 +1,309 @@
-/* Link Upload Styles - Matching Workspace Feature Styling */
+/* =============================================================================
+   LINK UPLOAD RESPONSIVE STYLES - Copied from Workspace Feature
+   ============================================================================= */
 
-/* Main Container */
-.link-upload-container {
-  @apply min-h-screen flex flex-col;
-}
+@layer components {
+  /* =============================================================================
+       LINK UPLOAD CONTAINER LAYOUT
+       ============================================================================= */
 
-/* Toolbar Styles - Glass Morphism like Workspace */
-.link-upload-toolbar {
-  @apply foldly-glass rounded-lg overflow-hidden mb-6;
-}
+  .link-upload-layout {
+    @apply flex flex-col gap-4 p-3 min-h-screen bg-transparent;
 
-.link-upload-toolbar-main {
-  @apply flex flex-col gap-3 p-3;
-}
+    /* CSS Variables for responsive values */
+    --link-upload-padding: 0.75rem;
+    --link-upload-gap: 1rem;
+    --header-spacing: 1.5rem;
+    --toolbar-height: auto;
+    --tree-container-height: calc(100vh - 200px);
+  }
 
-.link-upload-toolbar-left {
-  @apply flex flex-wrap items-center gap-2;
-}
+  /* =============================================================================
+       LINK UPLOAD HEADER
+       ============================================================================= */
 
-.link-upload-toolbar-right {
-  @apply flex flex-wrap items-center gap-2;
-}
+  .link-upload-header {
+    @apply mb-6;
+  }
 
-/* Search Container */
-.link-upload-search-container {
-  @apply relative min-w-[200px] flex-1 max-w-[300px];
-}
+  .link-upload-header-content {
+    @apply flex flex-col gap-4;
+  }
 
-/* Folder Creation */
-.link-upload-folder-creation {
-  @apply flex flex-col gap-2 w-full;
-}
+  .link-upload-header-text {
+    @apply flex-1;
+  }
 
-.link-upload-folder-input-group {
-  @apply flex items-center gap-2;
-}
+  .link-upload-header-actions {
+    @apply flex flex-wrap items-center justify-between gap-2;
+  }
 
-.link-upload-folder-input {
-  @apply flex-1;
-}
+  /* =============================================================================
+       LINK UPLOAD TOOLBAR
+       ============================================================================= */
 
-/* Tree Container - Glass Morphism */
-.link-upload-tree-container {
-  @apply flex-1 min-h-0;
-}
+  .link-upload-toolbar {
+    @apply foldly-glass rounded-lg overflow-hidden;
+  }
 
-.link-upload-tree-wrapper {
-  @apply h-full foldly-glass rounded-lg overflow-hidden;
-}
-
-.link-upload-tree-content {
-  @apply h-full overflow-auto p-4;
-}
-
-/* Light Theme Overrides */
-.light .link-upload-toolbar {
-  @apply foldly-glass-light foldly-glass-shadow-bg;
-}
-
-.light .link-upload-tree-wrapper {
-  @apply foldly-glass-light foldly-glass-shadow-bg;
-}
-
-/* Dark Theme - using default foldly-glass */
-.dark .link-upload-tree-wrapper {
-  @apply foldly-glass;
-}
-
-/* Responsive - Tablet and Desktop */
-@media (min-width: 768px) {
   .link-upload-toolbar-main {
-    @apply flex-row items-center justify-between p-4;
+    @apply flex flex-col gap-3 p-3;
+  }
+
+  .link-upload-toolbar-left {
+    @apply flex flex-wrap items-center gap-2;
+  }
+
+  .link-upload-toolbar-right {
+    @apply flex flex-wrap items-center gap-2;
   }
 
   .link-upload-search-container {
-    @apply min-w-[280px] max-w-[400px];
+    @apply relative min-w-[200px] flex-1 max-w-[300px];
   }
 
   .link-upload-folder-creation {
-    @apply w-auto;
+    @apply flex flex-col gap-2 w-full;
   }
-}
 
-/* Mobile Optimizations */
-@media (max-width: 767px) {
-  .link-upload-toolbar-main {
-    @apply p-4;
+  .link-upload-folder-input-group {
+    @apply flex items-center gap-2 flex-wrap;
+  }
+
+  .link-upload-folder-input {
+    @apply min-w-[200px] flex-1;
+  }
+
+  /* =============================================================================
+       LINK UPLOAD TREE CONTAINER
+       ============================================================================= */
+
+  .link-upload-tree-container {
+    @apply flex flex-col flex-1 foldly-glass rounded-lg overflow-hidden;
+    min-height: var(--tree-container-height);
+    max-height: var(--tree-container-height);
+  }
+
+  .link-upload-tree-wrapper {
+    @apply flex-1 flex flex-col;
   }
 
   .link-upload-tree-content {
-    @apply p-5;
+    @apply flex-1 p-4 overflow-auto;
+    min-height: 0; /* Important for flex scrolling */
   }
 
-  /* Larger tap targets on mobile */
-  .link-upload-toolbar button {
-    @apply min-h-[44px] min-w-[44px];
+  .link-upload-tree-footer {
+    @apply p-3 text-center;
   }
-}
 
-/* High Contrast */
-@media (prefers-contrast: high) {
-  .link-upload-toolbar,
-  .link-upload-tree-wrapper {
-    @apply border-2;
+  .link-upload-tree-footer-text {
+    @apply text-[0.6875rem] m-0 tracking-[0.01em] font-body leading-[1.4];
   }
-}
 
-/* Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  .link-upload-toolbar-main {
-    @apply transition-none;
+  /* =============================================================================
+       THEME VARIANTS
+       ============================================================================= */
+
+  /* Light Theme */
+  .light .link-upload-toolbar {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  .light .link-upload-tree-container {
+    @apply foldly-glass-light foldly-glass-shadow-bg;
+  }
+
+  /* Dark Theme - using default foldly-glass */
+  .dark .link-upload-tree-container {
+    @apply foldly-glass;
+  }
+
+  /* =============================================================================
+       RESPONSIVE BREAKPOINTS - Mobile First
+       ============================================================================= */
+
+  /* Small Mobile (xs: 480px+) */
+  @media (min-width: 30rem) {
+    .link-upload-layout {
+      @apply p-4 gap-5;
+      --tree-container-height: calc(100vh - 220px);
+    }
+
+    .link-upload-search-container {
+      @apply min-w-[240px] max-w-[350px];
+    }
+
+    .link-upload-folder-input {
+      @apply min-w-[240px];
+    }
+  }
+
+  /* Tablet Portrait (sm: 640px+) */
+  @media (min-width: 40rem) {
+    .link-upload-layout {
+      @apply p-6 gap-6;
+      --header-spacing: 2rem;
+      --tree-container-height: calc(100vh - 240px);
+    }
+
+    .link-upload-tree-footer-text {
+      @apply text-xs;
+    }
+
+    .link-upload-header-content {
+      @apply flex-row items-center justify-between;
+    }
+
+    .link-upload-toolbar-main {
+      @apply flex-row items-center justify-between p-4;
+    }
+
+    .link-upload-search-container {
+      @apply min-w-[280px] max-w-[400px];
+    }
+
+    .link-upload-folder-creation {
+      @apply w-auto;
+    }
+
+    .link-upload-folder-input-group {
+      @apply flex-nowrap;
+    }
+  }
+
+  /* Tablet Landscape (md: 768px+) */
+  @media (min-width: 48rem) {
+    .link-upload-layout {
+      @apply p-8 gap-8;
+      --tree-container-height: calc(100vh - 260px);
+    }
+
+    .link-upload-header-actions {
+      @apply justify-end flex-nowrap;
+    }
+
+    .link-upload-search-container {
+      @apply min-w-[320px] max-w-[450px];
+    }
+  }
+
+  /* Desktop (lg: 1024px+) */
+  @media (min-width: 64rem) {
+    .link-upload-layout {
+      @apply p-10 gap-10;
+      --tree-container-height: calc(100vh - 280px);
+    }
+
+    .link-upload-tree-footer-text {
+      @apply text-[0.6875rem];
+    }
+
+    .link-upload-tree-wrapper {
+      @apply rounded-2xl;
+    }
+
+    .link-upload-search-container {
+      @apply min-w-[360px] max-w-[500px];
+    }
+  }
+
+  /* Large Desktop (xl: 1280px+) */
+  @media (min-width: 80rem) {
+    .link-upload-layout {
+      @apply p-12;
+      --tree-container-height: calc(100vh - 300px);
+    }
+
+    .link-upload-tree-container {
+      @apply max-w-[1200px] mx-auto w-full;
+    }
+  }
+
+  /* Extra Large Desktop (2xl: 1536px+) */
+  @media (min-width: 96rem) {
+    .link-upload-layout {
+      @apply p-14;
+    }
+
+    .link-upload-tree-container {
+      @apply max-w-[1400px];
+    }
+  }
+
+  /* Ultra Wide (3xl: 1920px+) */
+  @media (min-width: 120rem) {
+    .link-upload-layout {
+      @apply p-16;
+    }
+
+    .link-upload-tree-container {
+      @apply max-w-[1600px];
+    }
+  }
+
+  /* =============================================================================
+       ACCESSIBILITY & PERFORMANCE
+       ============================================================================= */
+
+  /* Reduced Motion */
+  @media (prefers-reduced-motion: reduce) {
+    .link-upload-header-content,
+    .link-upload-toolbar-main {
+      @apply transition-none;
+    }
+  }
+
+  /* High Contrast */
+  @media (prefers-contrast: high) {
+    .link-upload-toolbar,
+    .link-upload-tree-wrapper {
+      @apply border-2;
+    }
+  }
+
+  /* Print Styles */
+  @media print {
+    .link-upload-layout {
+      @apply p-4 gap-4;
+    }
+
+    .link-upload-header-actions,
+    .link-upload-toolbar {
+      @apply hidden;
+    }
+
+    .link-upload-tree-container {
+      @apply max-h-none h-auto;
+    }
+  }
+
+  /* =============================================================================
+       MOBILE-SPECIFIC OPTIMIZATIONS
+       ============================================================================= */
+
+  /* Mobile Landscape */
+  @media (max-height: 500px) and (orientation: landscape) {
+    .link-upload-layout {
+      @apply gap-3;
+      --tree-container-height: calc(100vh - 150px);
+      --header-spacing: 1rem;
+    }
+  }
+
+  /* Touch Device Optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .link-upload-toolbar-main {
+      @apply p-4;
+    }
+
+    .link-upload-tree-content {
+      @apply p-5;
+    }
+
+    /* Larger tap targets on mobile */
+    .link-upload-header-actions button {
+      @apply min-h-[44px] min-w-[44px];
+    }
   }
 }

@@ -21,6 +21,7 @@ interface LinkUploadModalProps {
   linkData: LinkWithStats;
   targetFolderId: string | null;
   treeInstance: any;
+  onFileUploaded?: (file: any) => void; // Callback when file is added
   initialFiles?: File[]; // Pre-selected files from drag-and-drop
 }
 
@@ -30,6 +31,7 @@ export function LinkUploadModal({
   linkData,
   targetFolderId,
   treeInstance,
+  onFileUploaded,
   initialFiles,
 }: LinkUploadModalProps) {
   const {
@@ -96,45 +98,31 @@ export function LinkUploadModal({
     }
   }, [isOpen]);
 
-  // Add files to staging and tree
+  // Add files to staging and update tree optimistically
   const handleAddToStaging = useCallback(() => {
     if (selectedFiles.length === 0) return;
     
-    // Get the files before adding
+    // Get files state before adding
     const filesBefore = useLinkUploadStagingStore.getState().stagedFiles;
     
     // Add files to staging store
     const actualTargetId = targetFolderId || linkData.id;
     addStagedFiles(selectedFiles, actualTargetId);
     
-    // Get newly added files
-    const filesAfter = useLinkUploadStagingStore.getState().stagedFiles;
-    const newFiles = Array.from(filesAfter.entries()).filter(
-      ([id]) => !filesBefore.has(id)
-    );
-    
-    // Add to tree
-    newFiles.forEach(([fileId, stagedFile]) => {
-      if (treeInstance?.addFileToTree) {
-        treeInstance.addFileToTree({
-          id: fileId,
-          name: stagedFile.name,
-          parentId: stagedFile.parentId,
-          type: 'file',
-          mimeType: stagedFile.mimeType,
-          fileSize: stagedFile.fileSize,
-          extension: stagedFile.extension,
-          thumbnailPath: stagedFile.thumbnailPath,
-          processingStatus: stagedFile.processingStatus,
-          sortOrder: stagedFile.sortOrder,
-        });
-      }
-    });
+    // Get newly added files and add them to tree immediately for optimistic update
+    if (onFileUploaded) {
+      const filesAfter = useLinkUploadStagingStore.getState().stagedFiles;
+      filesAfter.forEach((file, fileId) => {
+        if (!filesBefore.has(fileId)) {
+          onFileUploaded(file);
+        }
+      });
+    }
     
     // Clear selection and close modal
     setSelectedFiles([]);
     onClose();
-  }, [selectedFiles, targetFolderId, linkData.id, addStagedFiles, treeInstance, onClose]);
+  }, [selectedFiles, targetFolderId, linkData.id, addStagedFiles, onFileUploaded, onClose]);
 
   // Clear selection when modal closes
   useEffect(() => {

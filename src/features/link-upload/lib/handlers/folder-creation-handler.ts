@@ -3,6 +3,7 @@
 import { useCallback } from 'react';
 import { eventBus, NotificationEventType } from '@/features/notifications/core';
 import { sanitizeInput } from '@/lib/utils/validation';
+import { useLinkUploadStagingStore } from '../../stores/staging-store';
 
 /**
  * Folder Creation Handler Hook for Link Upload
@@ -33,6 +34,8 @@ export function useFolderCreationHandler({
   treeInstance,
   linkId,
 }: UseFolderCreationHandlerProps): FolderCreationHandler {
+  // Get the staging store's addStagedFolder function
+  const { addStagedFolder } = useLinkUploadStagingStore();
 
   /**
    * Get the selected parent folder ID from tree
@@ -102,33 +105,16 @@ export function useFolderCreationHandler({
       throw new Error(validation.error);
     }
     
-    // Generate a temporary ID for the new folder
-    const tempFolderId = `temp-folder-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-    
     try {
-      // Add folder to tree locally
-      if (treeInstance?.addFolderToTree) {
-        treeInstance.addFolderToTree({
-          id: tempFolderId,
-          name: sanitizedName,
-          parentId: targetParentId,
-          type: 'folder' as const,
-          depth: 0, // Will be calculated by tree
-          path: '/', // Will be calculated by tree
-          fileCount: 0,
-          totalSize: 0,
-          isArchived: false,
-          sortOrder: 0,
-          children: [],
-        });
-      }
+      // Add folder to staging store - this will generate the ID
+      const folderId = addStagedFolder(sanitizedName, targetParentId || null);
       
       // Simulate a small delay for better UX
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Emit success notification
       eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
-        folderId: tempFolderId,
+        folderId: folderId,
         folderName: sanitizedName,
         parentId: targetParentId || '',
       });
@@ -145,7 +131,7 @@ export function useFolderCreationHandler({
       
       throw error;
     }
-  }, [treeInstance, getSelectedParentId, validateFolderName]);
+  }, [addStagedFolder, getSelectedParentId, validateFolderName]);
 
   return {
     createFolder,

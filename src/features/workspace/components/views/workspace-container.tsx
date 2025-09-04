@@ -88,7 +88,8 @@ export function WorkspaceContainer() {
   // Track if we have touch support
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  // Selection management
+  // Selection management - will be updated with tree instance
+  const [selectionTreeInstance, setSelectionTreeInstance] = useState<any | null>(null);
   const {
     selectedItems,
     selectionMode,
@@ -96,7 +97,7 @@ export function WorkspaceContainer() {
     clearSelection,
     setSelectionMode,
   } = useSelectionManager({
-    treeInstance: undefined, // Initially undefined
+    treeInstance: selectionTreeInstance, // Will be set when tree is ready
     onSelectionChange: items => {
       // This will be called when selection changes
       // Can be used for any side effects if needed
@@ -111,7 +112,7 @@ export function WorkspaceContainer() {
   const {
     treeInstance,
     treeIdRef,
-    handleTreeReady,
+    handleTreeReady: originalHandleTreeReady,
     addFolderToTree,
     addFileToTree,
     deleteItemsFromTree,
@@ -123,6 +124,14 @@ export function WorkspaceContainer() {
     setSelectionMode,
     clearSelection,
   });
+
+  // Enhanced tree ready handler that also updates selection manager
+  const handleTreeReady = useCallback((tree: any) => {
+    // Call the original handler first
+    originalHandleTreeReady(tree);
+    // Update selection manager's tree instance
+    setSelectionTreeInstance(tree);
+  }, [originalHandleTreeReady]);
 
   // Folder creation handler - moved before context menu handler that uses it
   const { createFolder, createFolderMutation } = useFolderCreationHandler({

@@ -90,26 +90,10 @@ export function useContextMenuHandler({
       return;
     }
     
-    // For link upload, folders are created in staging store
+    // For link upload, folders are created in staging store only
+    // The tree will automatically update via the reactive treeDataStructure
     const { addStagedFolder } = useLinkUploadStagingStore.getState();
     const tempFolderId = addStagedFolder(sanitizedFolderName, parentId);
-    
-    // Add to tree immediately for responsive UI
-    if (treeInstance?.addFolderToTree) {
-      treeInstance.addFolderToTree({
-        id: tempFolderId,
-        name: sanitizedFolderName,
-        parentId: parentId,
-        type: 'folder' as const,
-        depth: 0, // Will be calculated by tree
-        path: '/', // Will be calculated by tree
-        fileCount: 0,
-        totalSize: 0,
-        isArchived: false,
-        sortOrder: 0,
-        children: [],
-      });
-    }
     
     // Emit success notification
     eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
