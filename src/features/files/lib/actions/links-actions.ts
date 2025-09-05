@@ -2,41 +2,10 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/lib/database/connection';
-import { links, files, batches } from '@/lib/database/schemas';
+import { links } from '@/lib/database/schemas';
 import { eq, and, desc } from 'drizzle-orm';
 import type { FilesLinksData, LinkListItem } from '@/features/files/types/links';
-import type { FileListItem } from '@/features/files/types/file-operations';
 import type { ActionResult } from '@/features/files/types/file-operations';
-
-// Helper functions for file formatting
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
-
-function getFileTypeCategory(mimeType: string): string {
-  if (mimeType.startsWith('image/')) return 'Image';
-  if (mimeType.startsWith('video/')) return 'Video';
-  if (mimeType.startsWith('audio/')) return 'Audio';
-  if (mimeType.startsWith('application/pdf')) return 'PDF';
-  if (mimeType.startsWith('text/')) return 'Text';
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'Spreadsheet';
-  if (mimeType.includes('document') || mimeType.includes('word')) return 'Document';
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'Presentation';
-  return 'Other';
-}
-
-function canGeneratePreview(mimeType: string): boolean {
-  const previewableTypes = [
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-    'application/pdf', 'text/plain', 'text/html', 'text/css', 'text/javascript',
-    'application/json', 'application/xml'
-  ];
-  return previewableTypes.includes(mimeType) || mimeType.startsWith('image/');
-}
 
 /**
  * Fetch all user links organized by type with file counts
@@ -118,9 +87,10 @@ export async function fetchUserLinksAction(): Promise<ActionResult<FilesLinksDat
 }
 
 /**
- * Fetch files shared through a specific link
+ * Fetch files AND folders shared through a specific link
+ * Uses centralized file system services like workspace does
  */
-export async function fetchLinkFilesAction(linkId: string): Promise<ActionResult<FileListItem[]>> {
+export async function fetchLinkContentAction(linkId: string): Promise<ActionResult<{ files: any[], folders: any[] }>> {
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -138,42 +108,38 @@ export async function fetchLinkFilesAction(linkId: string): Promise<ActionResult
       return { success: false, error: 'Link not found' };
     }
 
-    // Fetch files associated with this link
-    const linkFiles = await db
-      .select({
-        id: files.id,
-        fileName: files.fileName,
-        originalName: files.originalName,
-        fileSize: files.fileSize,
-        mimeType: files.mimeType,
-        folderId: files.folderId,
-        thumbnailPath: files.thumbnailPath,
-        processingStatus: files.processingStatus,
-        downloadCount: files.downloadCount,
-        createdAt: files.createdAt,
-      })
-      .from(files)
-      .where(eq(files.linkId, linkId))
-      .orderBy(desc(files.createdAt));
+    // Use centralized services to get both files and folders
+    const { FileService } = await import('@/lib/services/file-system/file-service');
+    const { FolderService } = await import('@/lib/services/file-system/folder-service');
+    
+    const fileService = new FileService();
+    const folderService = new FolderService();
 
-    // Transform to FileListItem format with computed fields
-    const fileItems: FileListItem[] = linkFiles.map(file => ({
-      ...file,
-      sizeFormatted: formatFileSize(file.fileSize),
-      typeCategory: getFileTypeCategory(file.mimeType),
-      hasPreview: canGeneratePreview(file.mimeType),
-      downloadUrl: `/api/files/${file.id}/download`,
-    }));
+    // Fetch both files and folders in parallel
+    const [filesResult, foldersResult] = await Promise.all([
+      fileService.getFilesByLink(linkId),
+      folderService.getFoldersByLink(linkId),
+    ]);
+
+    if (!filesResult.success || !foldersResult.success) {
+      return { 
+        success: false, 
+        error: 'Failed to fetch link content' 
+      };
+    }
 
     return {
       success: true,
-      data: fileItems,
+      data: {
+        files: filesResult.data || [],
+        folders: foldersResult.data || [],
+      },
     };
   } catch (error) {
-    console.error('Error fetching link files:', error);
+    console.error('Error fetching link content:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch files',
+      error: error instanceof Error ? error.message : 'Failed to fetch content',
     };
   }
 }

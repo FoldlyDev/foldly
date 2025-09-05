@@ -135,7 +135,21 @@ class Logger {
   error(message: string, error?: Error | unknown, context?: LogContext): void {
     if (!this.shouldLog(LogLevel.ERROR)) return;
     
-    const errorObj = error instanceof Error ? error : new Error(String(error));
+    let errorObj: Error;
+    if (error instanceof Error) {
+      errorObj = error;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      // Handle objects with message property (like Supabase errors)
+      errorObj = new Error((error as any).message);
+      // Preserve additional error properties in context
+      if (context) {
+        context.errorDetails = error;
+      }
+    } else {
+      // Convert primitive values to string
+      errorObj = new Error(error ? String(error) : 'Unknown error');
+    }
+    
     const entry = this.createLogEntry(LogLevel.ERROR, message, context, errorObj);
     this.logToConsole(entry);
   }
@@ -143,7 +157,21 @@ class Logger {
   critical(message: string, error?: Error | unknown, context?: LogContext): void {
     if (!this.shouldLog(LogLevel.CRITICAL)) return;
     
-    const errorObj = error instanceof Error ? error : new Error(String(error));
+    let errorObj: Error;
+    if (error instanceof Error) {
+      errorObj = error;
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      // Handle objects with message property (like Supabase errors)
+      errorObj = new Error((error as any).message);
+      // Preserve additional error properties in context
+      if (context) {
+        context.errorDetails = error;
+      }
+    } else {
+      // Convert primitive values to string
+      errorObj = new Error(error ? String(error) : 'Unknown error');
+    }
+    
     const entry = this.createLogEntry(LogLevel.CRITICAL, message, context, errorObj);
     this.logToConsole(entry);
     

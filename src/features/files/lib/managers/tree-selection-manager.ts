@@ -41,35 +41,38 @@ export function useTreeSelectionManager({
   
   /**
    * Set selected items and sync with tree
+   * Matches exact logic from workspace selection-manager
    */
   const setSelectedItems = useCallback(
     (items: string[]) => {
+      // Update local state
       setSelectedItemsState(items);
       
-      // Sync with tree instance
+      // Sync with tree instance if available
       if (treeInstance?.setSelectedItems) {
         treeInstance.setSelectedItems(items);
       }
       
-      // Notify parent
+      // Notify parent if callback provided
       onSelectionChange?.(items);
-      
-      // Update selection mode based on selection
-      if (items.length > 1 && multiSelectEnabled) {
-        setSelectionModeState(true);
-      } else if (items.length === 0) {
-        setSelectionModeState(false);
-      }
     },
-    [treeInstance, onSelectionChange, multiSelectEnabled]
+    [treeInstance, onSelectionChange]
   );
   
   /**
    * Clear all selections
+   * Matches exact logic from workspace selection-manager
    */
   const clearSelection = useCallback(() => {
-    setSelectedItems([]);
-  }, [setSelectedItems]);
+    // Clear tree instance selection first
+    if (treeInstance?.setSelectedItems) {
+      treeInstance.setSelectedItems([]);
+    }
+    // Clear local state
+    setSelectedItemsState([]);
+    // Exit selection mode when clearing
+    setSelectionModeState(false);
+  }, [treeInstance]);
   
   /**
    * Select all items in the tree
@@ -79,30 +82,51 @@ export function useTreeSelectionManager({
     
     const allItems = treeInstance.getAllItems();
     const allItemIds = allItems.map(item => item.id);
-    setSelectedItems(allItemIds);
-  }, [treeInstance, multiSelectEnabled, setSelectedItems]);
+    
+    // Update state directly
+    setSelectedItemsState(allItemIds);
+    
+    // Sync with tree since this is a programmatic change
+    if (treeInstance?.setSelectedItems) {
+      treeInstance.setSelectedItems(allItemIds);
+    }
+    
+    // Notify parent
+    onSelectionChange?.(allItemIds);
+  }, [treeInstance, multiSelectEnabled, onSelectionChange]);
   
   /**
-   * Toggle selection of a single item
+   * Toggle selection of a single item (programmatic change)
    */
   const toggleItemSelection = useCallback(
     (itemId: string) => {
-      const isSelected = selectedItems.includes(itemId);
-      
-      if (isSelected) {
-        // Remove from selection
-        setSelectedItems(selectedItems.filter(id => id !== itemId));
-      } else {
-        // Add to selection
-        if (multiSelectEnabled) {
-          setSelectedItems([...selectedItems, itemId]);
+      setSelectedItemsState(prev => {
+        const isSelected = prev.includes(itemId);
+        
+        let newSelection: string[];
+        if (isSelected) {
+          // Remove from selection
+          newSelection = prev.filter(id => id !== itemId);
         } else {
-          // Single select mode - replace selection
-          setSelectedItems([itemId]);
+          // Add to selection
+          if (multiSelectEnabled) {
+            newSelection = [...prev, itemId];
+          } else {
+            // Single select mode - replace selection
+            newSelection = [itemId];
+          }
         }
-      }
+        
+        // Sync with tree since this is a programmatic change
+        if (treeInstance?.setSelectedItems) {
+          treeInstance.setSelectedItems(newSelection);
+        }
+        onSelectionChange?.(newSelection);
+        
+        return newSelection;
+      });
     },
-    [selectedItems, setSelectedItems, multiSelectEnabled]
+    [treeInstance, onSelectionChange, multiSelectEnabled]
   );
   
   /**
@@ -130,18 +154,14 @@ export function useTreeSelectionManager({
   );
   
   /**
-   * Sync selection from tree instance on change
+   * Sync selection state to tree instance when tree instance changes
+   * (e.g., when tree is re-initialized)
    */
   useEffect(() => {
-    if (!treeInstance) return;
-    
-    // Get current selection from tree
-    const treeSelection = treeInstance.getSelectedItems();
-    if (JSON.stringify(treeSelection) !== JSON.stringify(selectedItems)) {
-      setSelectedItemsState(treeSelection);
-      onSelectionChange?.(treeSelection);
+    if (treeInstance?.setSelectedItems && selectedItems.length > 0) {
+      treeInstance.setSelectedItems(selectedItems);
     }
-  }, [treeInstance]); // Only sync on instance change, not selectedItems
+  }, [treeInstance, selectedItems]);
   
   return {
     selectedItems,

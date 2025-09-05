@@ -46,8 +46,11 @@ export function useLinkContextMenuHandler({
       const menuItems: ContextMenuItem[] = [];
       
       // Get selected items to determine if multi-selection
-      const selectedItems = treeInstance?.getSelectedItems?.() || [];
-      const isMultipleSelection = selectedItems.length > 1;
+      // Note: getSelectedItems returns tree item instances, not raw items
+      const tree = itemInstance?.getTree?.();
+      const selectedTreeItems = tree?.getSelectedItems?.() || [];
+      const selectedItemIds = selectedTreeItems.map((selectedItem: any) => selectedItem.getId());
+      const isMultipleSelection = selectedTreeItems.length > 1;
       
       // For files
       if (isFile(item)) {
@@ -55,7 +58,7 @@ export function useLinkContextMenuHandler({
         menuItems.push({
           label: isMultipleSelection ? 'Download Files' : 'Download',
           onClick: async () => {
-            const itemsToDownload = isMultipleSelection ? selectedItems : [item.id];
+            const itemsToDownload = isMultipleSelection ? selectedItemIds : [item.id];
             await onDownload?.(itemsToDownload);
           },
         });
@@ -82,7 +85,7 @@ export function useLinkContextMenuHandler({
             label: isMultipleSelection ? 'Delete Files' : 'Delete',
             destructive: true,
             onClick: async () => {
-              const itemsToDelete = isMultipleSelection ? selectedItems : [item.id];
+              const itemsToDelete = isMultipleSelection ? selectedItemIds : [item.id];
               if (confirm(`Are you sure you want to delete ${itemsToDelete.length} item(s)?`)) {
                 await onDelete(itemsToDelete);
               }
@@ -111,7 +114,7 @@ export function useLinkContextMenuHandler({
           menuItems.push({
             label: isMultipleSelection ? 'Download Folders' : 'Download Folder',
             onClick: async () => {
-              const itemsToDownload = isMultipleSelection ? selectedItems : [item.id];
+              const itemsToDownload = isMultipleSelection ? selectedItemIds : [item.id];
               await onDownload(itemsToDownload);
             },
           });
@@ -139,7 +142,7 @@ export function useLinkContextMenuHandler({
             label: isMultipleSelection ? 'Delete Folders' : 'Delete Folder',
             destructive: true,
             onClick: async () => {
-              const itemsToDelete = isMultipleSelection ? selectedItems : [item.id];
+              const itemsToDelete = isMultipleSelection ? selectedItemIds : [item.id];
               const itemType = isMultipleSelection ? 'items' : 'folder and its contents';
               if (confirm(`Are you sure you want to delete ${itemsToDelete.length} ${itemType}?`)) {
                 await onDelete(itemsToDelete);
@@ -151,7 +154,7 @@ export function useLinkContextMenuHandler({
       
       return menuItems.length > 0 ? menuItems : null;
     },
-    [linkId, treeInstance, onRename, onDelete, onDownload, onCreateFolder]
+    [linkId, onRename, onDelete, onDownload, onCreateFolder]
   );
   
   return {

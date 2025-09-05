@@ -6,7 +6,7 @@ import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/t
 // import { validateLinkAccessAction } from '@/features/link-upload/lib/actions';
 import { db } from '@/lib/database/connection';
 import { files, batches, links, users } from '@/lib/database/schemas';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     const fileId = formData.get('fileId') as string;
     const folderId = formData.get('folderId') as string | null;
     const linkId = formData.get('linkId') as string;
-    const linkSlug = formData.get('linkSlug') as string;
-    const linkPassword = formData.get('linkPassword') as string | null;
+    // const linkSlug = formData.get('linkSlug') as string;
+    // const linkPassword = formData.get('linkPassword') as string | null;
 
     logger.debug('Upload request data', {
       metadata: {
@@ -100,22 +100,8 @@ export async function POST(req: NextRequest) {
     //   }
     // }
 
-    // Get the file record that was created during batch creation
-    const [fileRecord] = await db
-      .select()
-      .from(files)
-      .where(and(
-        eq(files.id, fileId),
-        eq(files.batchId, batchId)
-      ))
-      .limit(1);
-
-    if (!fileRecord) {
-      return NextResponse.json(
-        createErrorResponse('File record not found', ERROR_CODES.NOT_FOUND),
-        { status: 404 }
-      );
-    }
+    // For link uploads, we create the file record here (unlike workspace uploads where it's pre-created)
+    // The fileId from the client is just a temporary staged ID
 
     // Get the batch to get the user ID (link owner)
     const [batchWithLink] = await db
@@ -135,7 +121,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { batch, link } = batchWithLink;
+    const { link } = batchWithLink;
     const userId = link.userId;
 
     // Generate unique file path
@@ -147,58 +133,71 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    // Upload directly to Supabase Storage
+    // Upload directly to Supabase Storage (using 'shared-files' public bucket for link uploads)
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('files')
+      .from('shared-files')
       .upload(storagePath, uint8Array, {
         contentType: file.type,
         upsert: false,
       });
 
     if (uploadError) {
-      logger.error('Storage upload error', uploadError, {
+      // Properly handle Supabase error object
+      const errorMessage = uploadError?.message || 'Unknown storage error';
+      const errorDetails = {
         fileId,
         fileName: file.name,
         userId,
-        linkId
-      });
+        linkId,
+        storagePath,
+        errorMessage,
+        errorCode: (uploadError as any)?.code,
+        errorDetails: (uploadError as any)?.details,
+      };
+      
+      logger.error('Storage upload error', new Error(errorMessage), errorDetails);
+      
       return NextResponse.json(
-        createErrorResponse('Failed to upload file to storage', ERROR_CODES.STORAGE_ERROR),
+        createErrorResponse(`Failed to upload file to storage: ${errorMessage}`, ERROR_CODES.STORAGE_ERROR),
         { status: 500 }
       );
     }
 
-    // Update the file record with storage path and status
+    // Create the file record with storage path and status
     const fileExtension = file.name.split('.').pop() || '';
     
-    const updateData: any = {
+    const [fileRecord] = await db.insert(files).values({
+      batchId,
+      linkId,
+      workspaceId: null, // Link uploads don't have workspace ID
+      folderId: folderId || null,
+      fileName: file.name,
+      originalName: file.name,
+      fileSize: file.size,
+      mimeType: file.type,
+      extension: fileExtension,
       storagePath: uploadData.path,
       storageProvider: 'supabase',
-      originalName: file.name,
-      extension: fileExtension,
-      processingStatus: 'completed',
-      isSafe: true,
+      checksum: null,
+      isSafe: true, // Mark as safe for now - real virus scan would be async
       virusScanResult: 'clean',
+      processingStatus: 'completed',
+      thumbnailPath: null,
+      isOrganized: false,
+      needsReview: false,
+      sortOrder: 0,
       downloadCount: 0,
+      lastAccessedAt: null,
+      uploadedAt: new Date(),
+      createdAt: new Date(),
       updatedAt: new Date(),
-    };
-    
-    // Update folderId if provided
-    if (folderId) {
-      updateData.folderId = folderId;
-    }
-    
-    const updateResult = await db
-      .update(files)
-      .set(updateData)
-      .where(eq(files.id, fileId))
-      .returning({ id: files.id });
+    }).returning({ id: files.id });
 
-    if (updateResult.length === 0) {
-      // Cleanup storage if database update fails
-      await supabase.storage.from('files').remove([storagePath]);
+    if (!fileRecord) {
+      // Cleanup storage if database insert fails
+      await supabase.storage.from('shared-files').remove([storagePath]);
       return NextResponse.json(
-        createErrorResponse('Failed to update file record', ERROR_CODES.DATABASE_ERROR),
+        createErrorResponse('Failed to create file record', ERROR_CODES.DATABASE_ERROR),
         { status: 500 }
       );
     }
@@ -218,7 +217,6 @@ export async function POST(req: NextRequest) {
       .set({
         totalFiles: sql`${links.totalFiles} + 1`,
         totalSize: sql`${links.totalSize} + ${file.size}`,
-        storageUsed: sql`${links.storageUsed} + ${file.size}`,
         lastUploadAt: new Date(),
         updatedAt: new Date(),
       })
@@ -246,7 +244,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       createSuccessResponse({
-        id: fileId,
+        id: fileRecord.id,
         path: uploadData.path,
         fileName: file.name,
         fileSize: file.size

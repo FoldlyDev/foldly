@@ -16,7 +16,10 @@ export async function POST(request: NextRequest) {
 
     // TODO: Re-implement password validation with new tree system
     // const result = await validatePasswordAction({ linkId, password });
-    const result = { success: false, error: 'Password validation not yet implemented' };
+    const result: { success: boolean; error?: string; data?: { isValid: boolean } } = { 
+      success: false, 
+      error: 'Password validation not yet implemented' 
+    };
 
     if (!result.success) {
       return NextResponse.json(

@@ -40,6 +40,29 @@ export class FileService {
   }
 
   /**
+   * Get all files for a specific link
+   */
+  async getFilesByLink(
+    linkId: string
+  ): Promise<DatabaseResult<DbFile[]>> {
+    try {
+      const linkFiles = await db
+        .select()
+        .from(files)
+        .where(eq(files.linkId, linkId))
+        .orderBy(files.sortOrder, files.createdAt);
+
+      console.log(
+        `✅ LINK_FILES_FETCHED: ${linkFiles.length} files for link ${linkId}`
+      );
+      return { success: true, data: linkFiles };
+    } catch (error) {
+      console.error(`❌ LINK_FILES_FETCH_FAILED: Link ${linkId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
    * Get all files for a workspace ordered by sortOrder
    */
   async getFilesByWorkspaceOrdered(

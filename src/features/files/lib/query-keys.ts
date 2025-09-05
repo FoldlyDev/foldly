@@ -25,6 +25,10 @@ export const filesQueryKeys = {
   linkFiles: (linkId: string) =>
     [...filesQueryKeys.all, 'filesByLink', linkId] as const,
 
+  // Full link content (files and folders)
+  linkContent: (linkId: string) =>
+    [...filesQueryKeys.all, 'linkContent', linkId] as const,
+
   // Workspace data for read-only view
   workspaceView: () => [...filesQueryKeys.all, 'workspace'] as const,
 

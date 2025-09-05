@@ -2,7 +2,7 @@
 
 export {
   fetchUserLinksAction,
-  fetchLinkFilesAction,
+  fetchLinkContentAction,
   markLinkUploadsAsReadAction,
 } from './links-actions';
 
@@ -11,4 +11,5 @@ export {
   deleteLinkFilesAction,
   deleteLinkFolderAction,
   batchDeleteLinkItemsAction,
+  recalculateLinkStatsAction,
 } from './link-file-actions';

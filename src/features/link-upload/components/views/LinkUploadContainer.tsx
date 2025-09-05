@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo, useRef } from 'react';
+import React, { useState, lazy, Suspense, useMemo } from 'react';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 
 import { LinkUploadHeader } from '../sections/link-upload-header';
@@ -20,8 +20,10 @@ import { useExternalFileDropHandler } from '../../lib/handlers/external-file-dro
 import { useLinkUploadStagingStore } from '../../stores/staging-store';
 import { LinkUploadModal } from '../modals/upload-modal';
 import { VerificationModal } from '../modals/verification-modal';
+import { LinkUploadProgress } from '../ui/upload-progress';
 import type { LinkWithStats } from '@/lib/database/types/links';
 import { FadeTransitionWrapper } from '@/components/feedback';
+import { useLinkFileUpload } from '../../hooks/use-link-file-upload';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -32,7 +34,7 @@ interface LinkUploadContainerProps {
 
 export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Fetch tree data
-  const { data: treeData, isLoading: treeLoading } = useLinkTreeData(
+  const { data: treeData } = useLinkTreeData(
     linkData.id
   );
 
@@ -46,8 +48,11 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   const [selectionMode, setSelectionMode] = useState(false);
 
   // Delete modal state for context menu
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemsToDelete, setItemsToDelete] = useState<any[]>([]);
+  const [, setShowDeleteModal] = useState(false);
+  const [, setItemsToDelete] = useState<any[]>([]);
+  
+  // Track uploader info for progress display
+  const [currentUploaderName, setCurrentUploaderName] = useState<string>('');
 
   // Get staging store state and actions - also subscribe to staged items
   const {
@@ -93,6 +98,17 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
 
   // Rename handler
   const { renameCallback } = useRenameHandler({ treeInstance });
+  
+  // File upload hook
+  const { uploadStagedFiles, isUploading, overallProgress } = useLinkFileUpload({ 
+    linkId: linkData.id,
+    sourceFolderId: linkData.sourceFolderId,
+    onUploadComplete: () => {
+      // Tree will be cleared automatically after successful upload
+      // This is intended - external uploaders shouldn't see previous uploads
+      closeVerificationModal();
+    }
+  });
 
   // Transform staged items to tree structure using the same utility as workspace
   const treeDataStructure = useMemo(() => {
@@ -134,7 +150,8 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
       updatedAt: file.addedAt,
     }));
     
-    // Use the same transform utility that workspace uses
+    // Always use transformToTreeStructure - it will handle empty state correctly
+    // Just like workspace does - pass empty arrays when there's no data
     return transformToTreeStructure(
       foldersArray as any,
       filesArray as any,
@@ -153,26 +170,35 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     uploaderEmail?: string;
     password?: string;
   }) => {
+    // Close modal immediately - uploads happen in background
+    closeVerificationModal();
+    
+    // Track uploader name for progress display
+    setCurrentUploaderName(verificationData.uploaderName);
+    
     try {
-      // Get all staged items
-      const { files: stagedFilesList, folders: stagedFoldersList } = 
-        useLinkUploadStagingStore.getState().getAllStagedItems();
+      // Upload staged files using the upload hook
+      const result = await uploadStagedFiles(
+        verificationData.uploaderName,
+        verificationData.uploaderEmail,
+        verificationData.password
+      );
       
-      // TODO: Implement actual upload logic here
-      // This will send the files to the server with the verification data
-      console.log('Verification complete, ready to upload:', {
-        verificationData,
-        filesCount: stagedFilesList.length,
-        foldersCount: stagedFoldersList.length,
-      });
-      
-      // For now, just close the modal and show success
-      closeVerificationModal();
-      
-      // Clear staging after successful upload
-      // useLinkUploadStagingStore.getState().clearAllStaged();
+      if (result.success) {
+        console.log('Upload successful:', {
+          uploadedCount: result.uploadedCount,
+          batchId: result.batchId,
+        });
+        // Clear uploader name after successful upload
+        setCurrentUploaderName('');
+      } else {
+        console.error('Upload failed:', result.error);
+        // Clear uploader name on failure
+        setCurrentUploaderName('');
+      }
     } catch (error) {
       console.error('Upload error:', error);
+      setCurrentUploaderName('');
     }
   };
 
@@ -260,45 +286,69 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
           />
         </div>
 
-        {/* Main content area - File Tree */}
+        {/* Main content area - File Tree or Upload Progress */}
         <div className='link-upload-tree-container mt-4 h-screen overflow-y-auto!'>
           <div className='flex gap-4 h-full'>
             <div className='link-upload-tree-wrapper flex-1'>
               <div className='link-upload-tree-content'>
-                <Suspense
-                  fallback={
-                    <div className='flex items-center justify-center h-64'>
-                      <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
-                    </div>
-                  }
-                >
-                  {linkData.id && (
-                    <FileTree
-                      key={`file-tree-${linkData.id}`}  // Stable key to prevent unmounting
-                      rootId={linkData.id}
-                      treeId={treeIdRef.current}
-                      initialData={treeDataStructure}
-                      initialExpandedItems={[linkData.id]}
-                      initialSelectedItems={selectedItems}
-                      onTreeReady={handleTreeReady}
-                      onSelectionChange={setSelectedItems}
-                      showCheckboxes={selectionMode}
-                      searchQuery={searchQuery}
-                      onSearchChange={query => setSearchQuery(query)}
-                      showFileSize={true}
-                      showFileDate={false}
-                      showFileStatus={true}
-                      showFolderCount={true}
-                      showFolderSize={true}
-                      dropCallbacks={dropCallbacks}
-                      renameCallback={renameCallback}
-                      contextMenuProvider={(item: any, itemInstance: any) =>
-                        getMenuItems(item, itemInstance)
-                      }
-                      onExternalFileDrop={handleExternalFileDrop}
+                {isUploading ? (
+                  // Show upload progress during upload
+                  <div className='flex items-center justify-center min-h-[400px]'>
+                    <LinkUploadProgress
+                      isUploading={isUploading}
+                      totalFiles={stagedFiles.size}
+                      completedFiles={Math.floor((overallProgress / 100) * stagedFiles.size)}
+                      failedFiles={0}
+                      uploaderName={currentUploaderName}
                     />
-                  )}
-                </Suspense>
+                  </div>
+                ) : (
+                  // Show file tree when not uploading
+                  <Suspense
+                    fallback={
+                      <div className='flex items-center justify-center h-64'>
+                        <div className='h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+                      </div>
+                    }
+                  >
+                    {linkData.id && (
+                      <FileTree
+                        key={`file-tree-${linkData.id}`}  // Stable key to prevent unmounting
+                        rootId={linkData.id}
+                        treeId={treeIdRef.current}
+                        initialData={treeDataStructure}
+                        initialExpandedItems={[linkData.id]}
+                        initialSelectedItems={selectedItems}
+                        onTreeReady={handleTreeReady}
+                        onSelectionChange={setSelectedItems}
+                        showCheckboxes={selectionMode}
+                        searchQuery={searchQuery}
+                        onSearchChange={query => setSearchQuery(query)}
+                        showFileSize={true}
+                        showFileDate={false}
+                        showFileStatus={true}
+                        showFolderCount={true}
+                        showFolderSize={true}
+                        dropCallbacks={dropCallbacks}
+                        renameCallback={renameCallback}
+                        contextMenuProvider={(item: any, itemInstance: any) =>
+                          getMenuItems(item, itemInstance)
+                        }
+                        onExternalFileDrop={handleExternalFileDrop}
+                        emptyStateMessage={
+                          <div className='text-center'>
+                            <p className='text-sm font-medium text-muted-foreground'>
+                              Ready to receive your files
+                            </p>
+                            <p className='text-xs text-muted-foreground/70 mt-1'>
+                              Drop files here, create folders, or click to browse
+                            </p>
+                          </div>
+                        }
+                      />
+                    )}
+                  </Suspense>
+                )}
               </div>
             </div>
           </div>

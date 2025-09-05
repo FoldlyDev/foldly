@@ -19,7 +19,11 @@
       "Bash(grep:*)",
       "Bash(find:*)",
       "Bash(npx eslint:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Read(**)"
+    ],
+    "additionalDirectories": [
+      "C:/Users/djedd/Documents/Programming/Work_projects/Memecoin/foldly"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { filesQueryKeys } from '../lib/query-keys';
-import { fetchUserLinksAction, fetchLinkFilesAction } from '../lib/actions';
+import { fetchUserLinksAction, fetchLinkContentAction } from '../lib/actions';
 
 /**
  * Hook to fetch all user links organized by type
@@ -23,16 +23,17 @@ export function useUserLinks() {
 }
 
 /**
- * Hook to fetch files for a specific link
+ * Hook to fetch both files and folders for a specific link
+ * Uses the centralized file system services
  */
-export function useLinkFiles(linkId: string | null) {
+export function useLinkContent(linkId: string | null) {
   return useQuery({
-    queryKey: linkId ? filesQueryKeys.filesByLink(linkId) : ['disabled'],
+    queryKey: linkId ? filesQueryKeys.linkContent(linkId) : ['disabled'],
     queryFn: async () => {
-      if (!linkId) return [];
-      const result = await fetchLinkFilesAction(linkId);
+      if (!linkId) return { files: [], folders: [] };
+      const result = await fetchLinkContentAction(linkId);
       if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch link files');
+        throw new Error(result.error || 'Failed to fetch link content');
       }
       return result.data;
     },

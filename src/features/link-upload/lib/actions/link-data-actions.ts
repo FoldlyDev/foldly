@@ -129,6 +129,117 @@ export async function validateLinkPasswordAction(
 }
 
 /**
+ * Validate a link for upload operations
+ * Uses existing link data fetching and centralized quota checking
+ */
+export async function validateLinkUploadAction(params: {
+  linkId: string;
+  fileSize: number;
+  password?: string;
+}): Promise<ActionResult<{
+  canUpload: boolean;
+  errors: string[];
+  warnings: string[];
+}>> {
+  try {
+    const { linkId, fileSize, password } = params;
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Use existing action to get link tree data which includes the link with owner info
+    const linkDataResult = await fetchLinkTreeDataAction(linkId);
+    
+    if (!linkDataResult.success || !linkDataResult.data?.link) {
+      return {
+        success: false,
+        error: 'Link not found',
+        data: {
+          canUpload: false,
+          errors: ['Link not found'],
+          warnings: [],
+        },
+      };
+    }
+
+    const link = linkDataResult.data.link;
+
+    // Check if link is active
+    if (!link.isActive) {
+      errors.push('This link is disabled');
+    }
+
+    // Check expiration
+    if (link.expiresAt && new Date(link.expiresAt) < new Date()) {
+      errors.push('This link has expired');
+    }
+
+    // Validate password if required
+    if (link.requirePassword && password) {
+      const passwordResult = await validateLinkPasswordAction(linkId, password);
+      if (!passwordResult.success || !passwordResult.data) {
+        errors.push('Invalid password');
+      }
+    } else if (link.requirePassword && !password) {
+      errors.push('Password is required for this link');
+    }
+
+    // Check link's own storage limit
+    if (link.storageLimit && link.totalStorageUsed + fileSize > link.storageLimit) {
+      errors.push(`This link has reached its storage limit (${Math.round(link.storageLimit / (1024 * 1024))}MB)`);
+    }
+
+    // Check the link owner's quota using centralized service
+    if (link.userId && errors.length === 0) {
+      const { StorageQuotaService } = await import('@/lib/services/storage/storage-quota-service');
+      
+      const quotaService = new StorageQuotaService();
+      
+      // Check quota using the link owner's userId
+      const quotaCheck = await quotaService.checkUserQuota(link.userId, fileSize);
+      
+      if (!quotaCheck.success) {
+        const quotaMessage = 'error' in quotaCheck ? quotaCheck.error : 'Storage quota exceeded';
+        errors.push(quotaMessage);
+      } else if (!quotaCheck.data.allowed) {
+        const quotaMessage = quotaCheck.data.message || 'Storage quota exceeded';
+        errors.push(quotaMessage);
+      } else if (quotaCheck.data.usagePercentage >= 80) {
+        warnings.push(`Storage usage is at ${Math.round(quotaCheck.data.usagePercentage)}%`);
+      }
+    }
+
+    // Add warning if close to link storage limit
+    if (link.storageLimit) {
+      const usageAfterUpload = link.totalStorageUsed + fileSize;
+      const usagePercentage = (usageAfterUpload / link.storageLimit) * 100;
+      if (usagePercentage >= 80 && usagePercentage < 100) {
+        warnings.push(`This link is ${Math.round(usagePercentage)}% full`);
+      }
+    }
+
+    return {
+      success: true,
+      data: {
+        canUpload: errors.length === 0,
+        errors,
+        warnings,
+      },
+    };
+  } catch (error) {
+    logger.error('Failed to validate link for upload', error, { linkId: params.linkId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Validation failed',
+      data: {
+        canUpload: false,
+        errors: ['Validation failed'],
+        warnings: [],
+      },
+    };
+  }
+}
+
+/**
  * Combined action to fetch and validate link access
  * This includes checking if link exists, is active, not expired, and handles password validation
  */

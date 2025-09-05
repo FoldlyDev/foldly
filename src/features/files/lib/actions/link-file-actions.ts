@@ -12,15 +12,75 @@
 
 import { db } from '@/lib/database/connection';
 import { files, folders, links } from '@/lib/database/schemas';
-import { eq, and, inArray, isNull } from 'drizzle-orm';
+import { eq, and, inArray, isNull, sql } from 'drizzle-orm';
 import { 
   ownershipValidator, 
   ResourceType,
   validateLinkOwnership 
 } from '@/lib/services/auth/ownership-validation-service';
+import { FileService } from '@/lib/services/file-system/file-service';
+import { StorageService } from '@/lib/services/storage/storage-operations-service';
 import { createServerSupabaseClient } from '@/lib/config/supabase-server';
 import { logger } from '@/lib/services/logging/logger';
 import type { ActionResult } from '@/features/files/types/file-operations';
+
+// =============================================================================
+// UTILITY OPERATIONS
+// =============================================================================
+
+/**
+ * Recalculate and fix link file counts and total size
+ * Useful for fixing any count mismatches
+ */
+export async function recalculateLinkStatsAction(linkId: string): Promise<ActionResult> {
+  try {
+    // Validate link ownership
+    const linkValidation = await validateLinkOwnership(linkId);
+    if (!linkValidation.authorized) {
+      return { 
+        success: false, 
+        error: 'You do not have permission to update this link' 
+      };
+    }
+
+    // Get actual file count and total size from database
+    const linkFiles = await db.query.files.findMany({
+      where: eq(files.linkId, linkId),
+    });
+
+    const actualFileCount = linkFiles.length;
+    const actualTotalSize = linkFiles.reduce((sum, file) => sum + file.fileSize, 0);
+
+    // Update link with correct counts
+    await db
+      .update(links)
+      .set({
+        totalFiles: actualFileCount,
+        totalSize: actualTotalSize,
+      })
+      .where(eq(links.id, linkId));
+
+    logger.info('Link stats recalculated', { 
+      linkId, 
+      fileCount: actualFileCount, 
+      totalSize: actualTotalSize 
+    });
+
+    return { 
+      success: true, 
+      data: { 
+        fileCount: actualFileCount, 
+        totalSize: actualTotalSize 
+      } 
+    };
+  } catch (error) {
+    logger.error('Failed to recalculate link stats', error, { linkId });
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to recalculate stats',
+    };
+  }
+}
 
 // =============================================================================
 // DELETE OPERATIONS - The only operations available for link owners
@@ -60,25 +120,30 @@ export async function deleteLinkFileAction(
       };
     }
 
-    // Delete from storage first
-    if (file.storagePath) {
-      try {
-        const supabase = await createServerSupabaseClient();
-        const { error: storageError } = await supabase.storage
-          .from('files')
-          .remove([file.storagePath]);
-
-        if (storageError) {
-          logger.error('Failed to delete file from storage', storageError, { fileId });
-        }
-      } catch (storageError) {
-        logger.error('Storage deletion error', storageError, { fileId });
-        // Continue with database deletion even if storage fails
-      }
+    // Use FileService for consistent deletion handling
+    const supabase = await createServerSupabaseClient();
+    const storageService = new StorageService(supabase);
+    const fileService = new FileService();
+    
+    // Delete file with storage (automatically uses 'shared' context for link files)
+    const deleteResult = await fileService.deleteFileWithStorage(fileId, storageService);
+    
+    if (!deleteResult.success) {
+      logger.error('Failed to delete link file', deleteResult.error, { fileId, linkId });
+      return { 
+        success: false, 
+        error: deleteResult.error || 'Failed to delete file' 
+      };
     }
 
-    // Delete from database
-    await db.delete(files).where(eq(files.id, fileId));
+    // Update link's file count and total size
+    await db
+      .update(links)
+      .set({
+        totalFiles: sql`GREATEST(0, ${links.totalFiles} - 1)`,
+        totalSize: sql`GREATEST(0, ${links.totalSize} - ${file.fileSize})`,
+      })
+      .where(eq(links.id, linkId));
 
     logger.info('Link file deleted successfully', { fileId, linkId });
     return { 
@@ -135,41 +200,41 @@ export async function deleteLinkFilesAction(
       };
     }
 
+    // Initialize services for deletion
+    const supabase = await createServerSupabaseClient();
+    const storageService = new StorageService(supabase);
+    const fileService = new FileService();
+
     const deletedIds: string[] = [];
     const failedIds: string[] = [];
-    const storagePaths: string[] = [];
+    let totalSizeRemoved = 0;
 
-    // Collect storage paths for batch deletion
+    // Delete each file using FileService for consistency
     for (const file of filesToDelete) {
-      if (file.storagePath) {
-        storagePaths.push(file.storagePath);
+      const deleteResult = await fileService.deleteFileWithStorage(file.id, storageService);
+      
+      if (deleteResult.success) {
+        deletedIds.push(file.id);
+        totalSizeRemoved += file.fileSize;
+      } else {
+        failedIds.push(file.id);
+        logger.error('Failed to delete file in batch', deleteResult.error, { fileId: file.id });
       }
     }
 
-    // Delete from storage in batch
-    if (storagePaths.length > 0) {
-      try {
-        const supabase = await createServerSupabaseClient();
-        const { error: storageError } = await supabase.storage
-          .from('files')
-          .remove(storagePaths);
-
-        if (storageError) {
-          logger.error('Failed to delete files from storage', storageError, { storagePaths });
-        }
-      } catch (storageError) {
-        logger.error('Batch storage deletion error', storageError);
-      }
+    // Update link's file count and total size if any files were deleted
+    if (deletedIds.length > 0) {
+      await db
+        .update(links)
+        .set({
+          totalFiles: sql`GREATEST(0, ${links.totalFiles} - ${deletedIds.length})`,
+          totalSize: sql`GREATEST(0, ${links.totalSize} - ${totalSizeRemoved})`,
+        })
+        .where(eq(links.id, linkId));
     }
-
-    // Delete from database
-    const fileIdsToDelete = filesToDelete.map(f => f.id);
-    await db.delete(files).where(inArray(files.id, fileIdsToDelete));
-    
-    deletedIds.push(...fileIdsToDelete);
 
     // Track any files that weren't found
-    const notFoundIds = fileIds.filter(id => !fileIdsToDelete.includes(id));
+    const notFoundIds = fileIds.filter(id => !filesToDelete.some(f => f.id === id));
     failedIds.push(...notFoundIds);
 
     logger.info('Batch link files deleted', { 
@@ -258,30 +323,38 @@ export async function deleteLinkFolderAction(
       ),
     });
 
-    // Delete files from storage
-    const storagePaths = filesToDelete
-      .map(f => f.storagePath)
-      .filter((path): path is string => path !== null);
+    // Initialize services for deletion
+    const supabase = await createServerSupabaseClient();
+    const storageService = new StorageService(supabase);
+    const fileService = new FileService();
 
-    if (storagePaths.length > 0) {
-      try {
-        const supabase = await createServerSupabaseClient();
-        const { error: storageError } = await supabase.storage
-          .from('files')
-          .remove(storagePaths);
-
-        if (storageError) {
-          logger.error('Failed to delete folder files from storage', storageError);
-        }
-      } catch (storageError) {
-        logger.error('Folder storage deletion error', storageError);
+    // Delete all files using FileService
+    let deletedFilesCount = 0;
+    let totalSizeRemoved = 0;
+    
+    for (const file of filesToDelete) {
+      const deleteResult = await fileService.deleteFileWithStorage(file.id, storageService);
+      
+      if (deleteResult.success) {
+        deletedFilesCount++;
+        totalSizeRemoved += file.fileSize;
+      } else {
+        logger.error('Failed to delete file in folder deletion', deleteResult.error, { 
+          fileId: file.id, 
+          folderId 
+        });
       }
     }
-
-    // Delete files from database
-    if (filesToDelete.length > 0) {
-      await db.delete(files)
-        .where(inArray(files.id, filesToDelete.map(f => f.id)));
+    
+    // Update link's file count and total size if any files were deleted
+    if (deletedFilesCount > 0) {
+      await db
+        .update(links)
+        .set({
+          totalFiles: sql`GREATEST(0, ${links.totalFiles} - ${deletedFilesCount})`,
+          totalSize: sql`GREATEST(0, ${links.totalSize} - ${totalSizeRemoved})`,
+        })
+        .where(eq(links.id, linkId));
     }
 
     // Delete all folders
@@ -291,14 +364,14 @@ export async function deleteLinkFolderAction(
     logger.info('Link folder deleted successfully', {
       folderId,
       linkId,
-      deletedFiles: filesToDelete.length,
+      deletedFiles: deletedFilesCount,
       deletedFolders: allFolderIds.length,
     });
 
     return {
       success: true,
       data: {
-        deletedFiles: filesToDelete.length,
+        deletedFiles: deletedFilesCount,
         deletedFolders: allFolderIds.length,
       },
     };

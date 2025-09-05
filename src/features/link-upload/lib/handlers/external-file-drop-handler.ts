@@ -58,20 +58,72 @@ export function useExternalFileDropHandler({
       fileCount: files.length,
       targetFolderId,
       hasFolderStructure: !!folderStructure,
+      folderStructureKeys: folderStructure ? Object.keys(folderStructure) : []
     });
     
-    // Store dropped files for processing
-    setDroppedFiles({ files, targetFolderId });
+    // Get staging store functions
+    const { addStagedFolder, addStagedFiles } = useLinkUploadStagingStore.getState();
     
-    // TODO: Handle folder structure by creating folders first if needed
-    if (folderStructure) {
-      // In the future, we could automatically create the folder structure
-      // For now, we'll just upload all files to the target folder
+    // If we have a folder structure, create the folders and add files to them
+    if (folderStructure && Object.keys(folderStructure).length > 0) {
+      // Create a map to track created folder IDs
+      const folderIdMap = new Map<string, string>();
+      
+      // Sort folder paths by depth to create parents before children
+      const folderPaths = Object.keys(folderStructure).sort((a, b) => {
+        const depthA = a.split('/').length;
+        const depthB = b.split('/').length;
+        return depthA - depthB;
+      });
+      
+      // Create folders and add files
+      folderPaths.forEach(folderPath => {
+        const filesInFolder = folderStructure[folderPath];
+        if (!filesInFolder || filesInFolder.length === 0) return; // Skip empty folders
+        
+        // Parse the folder path to get folder names
+        const pathParts = folderPath.split('/').filter(p => p);
+        let currentParentId = targetFolderId;
+        
+        // Create nested folder structure
+        pathParts.forEach((folderName, index) => {
+          const pathUpToHere = pathParts.slice(0, index + 1).join('/');
+          
+          // Check if this folder was already created
+          if (!folderIdMap.has(pathUpToHere)) {
+            // Create the folder
+            const folderId = addStagedFolder(folderName, currentParentId);
+            folderIdMap.set(pathUpToHere, folderId);
+            console.log('Created staged folder:', { folderName, folderId, parentId: currentParentId });
+          }
+          
+          // Update parent for next iteration
+          currentParentId = folderIdMap.get(pathUpToHere)!;
+        });
+        
+        // Add files to the deepest folder in this path
+        const finalFolderId = folderIdMap.get(folderPath);
+        if (finalFolderId && filesInFolder.length > 0) {
+          addStagedFiles(filesInFolder, finalFolderId);
+          console.log('Added files to folder:', { 
+            folderPath, 
+            folderId: finalFolderId, 
+            fileCount: filesInFolder.length 
+          });
+        }
+      });
+      
+      // Don't open modal - files are already staged
+      // The tree will update automatically through the staging store
+    } else {
+      // No folder structure - just add files directly
+      // Store dropped files for processing via modal
+      setDroppedFiles({ files, targetFolderId });
+      
+      // Open upload modal to handle the files
+      // The modal will receive the files as initialFiles prop
+      openUploadModal(targetFolderId || linkId);
     }
-    
-    // Open upload modal to handle the files
-    // The modal will receive the files as initialFiles prop
-    openUploadModal(targetFolderId || linkId);
   }, [linkId, openUploadModal]);
 
   /**

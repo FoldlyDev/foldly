@@ -57,7 +57,9 @@ export function useTreeInstanceManager({
   
   /**
    * Set tree instance and extend it with additional methods
+   * NOTE: Dependencies are intentionally limited to prevent infinite re-renders (like workspace)
    */
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const setTreeInstance = useCallback(
     (tree: any) => {
       if (!tree) {
@@ -113,7 +115,7 @@ export function useTreeInstanceManager({
       // Notify parent that tree is ready
       onTreeReady?.(extendedTree);
     },
-    [treeId, onTreeReady]
+    [] // Empty deps like workspace to prevent re-initialization
   );
   
   /**

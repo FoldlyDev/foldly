@@ -1,10 +1,10 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { useTreeInstanceManager } from '../../lib/managers/tree-instance-manager';
 import { useTreeSelectionManager } from '../../lib/managers/tree-selection-manager';
 import { useLinkContextMenuHandler } from '../../lib/handlers/link-context-menu-handler';
-import { useCrossTreeDragHandler } from '../../lib/handlers/cross-tree-drag-handler';
+// import { useCrossTreeDragHandler } from '../../lib/handlers/cross-tree-drag-handler';
 import type { TreeConfiguration } from '../../lib/tree-configs';
 import type { TreeItem } from '@/components/file-tree/types';
 import type { DropOperationCallbacks } from '@/components/file-tree/handlers/drop-handler';
@@ -30,12 +30,9 @@ export interface UseTreeFactoryProps {
   onDelete?: (itemIds: string[]) => Promise<void>;
   onDownload?: (itemIds: string[]) => Promise<void>;
   onCreateFolder?: (parentId: string, name: string) => Promise<void>;
-  onCopyToWorkspace?: (items: TreeItem[], targetFolderId: string) => Promise<void>;
+  // onCopyToWorkspace?: (items: TreeItem[], targetFolderId: string) => Promise<void>;
   onMove?: (itemIds: string[], fromParentId: string, toParentId: string) => Promise<void>;
   onReorder?: (parentId: string, oldOrder: string[], newOrder: string[]) => Promise<void>;
-  
-  // Selection callback
-  onSelectionChange?: (selectedItems: string[]) => void;
   
   // Tree ready callback
   onTreeReady?: (tree: any) => void;
@@ -77,10 +74,9 @@ export function useTreeFactory({
   onDelete,
   onDownload,
   onCreateFolder,
-  onCopyToWorkspace,
+  // onCopyToWorkspace,
   onMove,
   onReorder,
-  onSelectionChange,
   onTreeReady,
 }: UseTreeFactoryProps): TreeFactoryResult {
   
@@ -90,35 +86,51 @@ export function useTreeFactory({
     return rootItems[0]?.id || treeId;
   }, [data, treeId]);
   
+  // Selection management - will be updated with tree instance (EXACTLY LIKE WORKSPACE)
+  const [selectionTreeInstance, setSelectionTreeInstance] = useState<any | null>(null);
+  
   // Initialize managers
-  const { treeInstance, setTreeInstance, isTreeReady } = useTreeInstanceManager({
+  const { treeInstance, setTreeInstance: originalSetTreeInstance, isTreeReady } = useTreeInstanceManager({
     treeId,
-    onTreeReady,
+    ...(onTreeReady && { onTreeReady }),
   });
   
+  // Selection manager with separate tree instance (EXACTLY LIKE WORKSPACE)
   const selectionManager = useTreeSelectionManager({
-    treeInstance,
+    treeInstance: selectionTreeInstance, // Will be set when tree is ready
     multiSelectEnabled: config.features.multiSelect,
-    onSelectionChange,
+    onSelectionChange: items => {
+      // This will be called when selection changes
+      // Can be used for any side effects if needed
+    },
   });
+  
+  // Enhanced tree ready handler that also updates selection manager (EXACTLY LIKE WORKSPACE)
+  const setTreeInstance = useCallback((tree: any) => {
+    // Call the original handler first
+    originalSetTreeInstance(tree);
+    // Update selection manager's tree instance
+    setSelectionTreeInstance(tree);
+  }, [originalSetTreeInstance]);
   
   // Initialize handlers based on configuration
   const { contextMenuProvider } = useLinkContextMenuHandler({
     linkId: treeId,
     treeInstance,
-    onRename: config.features.rename ? onRename : undefined,
-    onDelete: config.features.delete ? onDelete : undefined,
-    onDownload,
-    onCreateFolder: config.permissions.canCreateFolder ? onCreateFolder : undefined,
+    ...(config.features.rename && onRename && { onRename }),
+    ...(config.features.delete && onDelete && { onDelete }),
+    ...(onDownload && { onDownload }),
+    ...(config.permissions.canCreateFolder && onCreateFolder && { onCreateFolder }),
   });
   
-  const crossTreeHandlers = useCrossTreeDragHandler({
-    treeId,
-    treeType: 'link', // This would be dynamic based on tree type
-    onCopyToWorkspace,
-    canAcceptDrops: config.features.acceptDrops,
-    canDragOut: config.features.foreignDrag,
-  });
+  // Cross-tree drag handler - currently unused but may be needed for future drag operations
+  // const crossTreeHandlers = useCrossTreeDragHandler({
+  //   treeId,
+  //   treeType: 'link',
+  //   ...(onCopyToWorkspace && { onCopyToWorkspace }),
+  //   canAcceptDrops: config.features.acceptDrops,
+  //   canDragOut: config.features.foreignDrag,
+  // });
   
   // Create drop callbacks for internal drag-drop
   const dropCallbacks: DropOperationCallbacks | undefined = useMemo(() => {
@@ -128,7 +140,7 @@ export function useTreeFactory({
       onMove: async (itemIds: string[], fromParentId: string, toParentId: string) => {
         await onMove?.(itemIds, fromParentId, toParentId);
       },
-      onReorder: async (parentId: string, oldOrder: string[], newOrder: string[], draggedItemIds: string[]) => {
+      onReorder: async (parentId: string, oldOrder: string[], newOrder: string[]) => {
         await onReorder?.(parentId, oldOrder, newOrder);
       },
     };
@@ -140,7 +152,6 @@ export function useTreeFactory({
     
     return async (itemId: string, newName: string) => {
       await onRename(itemId, newName);
-      return { success: true };
     };
   }, [config.features.rename, onRename]);
   
@@ -155,11 +166,12 @@ export function useTreeFactory({
     [config.features.externalFileDrop]
   );
   
-  // Build tree props
-  const treeProps = useMemo(() => ({
+  // Build tree props - not memoized to match workspace pattern
+  const treeProps = {
     rootId,
     treeId,
     initialData: data,
+    initialSelectedItems: selectionManager.selectedItems, // Add this like workspace
     showCheckboxes: config.features.checkboxes,
     showFileSize: config.display.showFileSize,
     showFileDate: config.display.showFileDate,
@@ -167,23 +179,13 @@ export function useTreeFactory({
     showFolderCount: config.display.showFolderCount,
     showFolderSize: config.display.showFolderSize,
     onTreeReady: setTreeInstance,
-    onSelectionChange: config.features.selection ? selectionManager.setSelectedItems : undefined,
-    dropCallbacks: config.features.dragDrop ? dropCallbacks : undefined,
-    renameCallback: config.features.rename ? renameCallback : undefined,
-    contextMenuProvider: config.features.contextMenu ? contextMenuProvider : undefined,
-    onExternalFileDrop: config.features.externalFileDrop ? handleExternalFileDrop : undefined,
-  }), [
-    rootId,
-    treeId,
-    data,
-    config,
-    setTreeInstance,
-    selectionManager.setSelectedItems,
-    dropCallbacks,
-    renameCallback,
-    contextMenuProvider,
-    handleExternalFileDrop,
-  ]);
+    // Pass setSelectedItems directly, exactly like workspace does
+    onSelectionChange: selectionManager.setSelectedItems,
+    ...(config.features.dragDrop && dropCallbacks && { dropCallbacks }),
+    ...(config.features.rename && renameCallback && { renameCallback }),
+    ...(config.features.contextMenu && { contextMenuProvider }),
+    ...(config.features.externalFileDrop && { onExternalFileDrop: handleExternalFileDrop }),
+  };
   
   return {
     treeProps,

@@ -33,6 +33,12 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     return workspaceData?.workspace?.id ? [workspaceData.workspace.id] : [];
   }, [workspaceData?.workspace?.id]);
 
+  // Check if workspace has any files or folders - moved before useTreeFactory hook
+  const hasContent = useMemo(() => {
+    return (workspaceData?.files && workspaceData.files.length > 0) || 
+           (workspaceData?.folders && workspaceData.folders.length > 0);
+  }, [workspaceData]);
+
   // Use the tree factory with read-only workspace configuration
   const factoryProps: Parameters<typeof useTreeFactory>[0] = {
     treeId: `files-workspace-${workspaceData?.workspace?.id || 'loading'}`,
@@ -81,12 +87,6 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
       </div>
     );
   }
-
-  // Check if workspace has any files or folders
-  const hasContent = useMemo(() => {
-    return (workspaceData.files && workspaceData.files.length > 0) || 
-           (workspaceData.folders && workspaceData.folders.length > 0);
-  }, [workspaceData]);
 
   // Empty workspace - show "No files available" instead of tree with upload highlight
   if (!hasContent) {

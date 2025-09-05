@@ -2,6 +2,7 @@
 
 import React, { lazy, Suspense, useMemo, useState, useCallback } from 'react';
 import { useTreeFactory } from '../../hooks/tree/use-tree-factory';
+import { useLinkContent } from '../../hooks/use-files-data';
 import { 
   baseLinkTreeConfig, 
   topicLinkTreeConfig, 
@@ -13,10 +14,7 @@ import { batchDeleteLinkItemsAction } from '../../lib/actions/link-file-actions'
 import { useQueryClient } from '@tanstack/react-query';
 import { filesQueryKeys } from '../../lib/query-keys';
 import type { LinkListItem } from '../../types/links';
-import type { File, Folder } from '@/lib/database/types';
 import type { LinkType } from '../../types';
-import type { TreeItem } from '@/components/file-tree/types';
-import { isFolder } from '@/components/file-tree/types';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -24,8 +22,6 @@ const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 export interface LinkTreeProps {
   linkData: LinkListItem;
   linkType: LinkType;
-  files: File[];
-  folders?: Folder[];
   onFilesSelected?: (fileIds: string[]) => void;
   onRefresh?: () => void;
 }
@@ -33,15 +29,27 @@ export interface LinkTreeProps {
 /**
  * Link tree component that uses the tree factory with appropriate configuration
  * based on the link type. This component is fully modular and reusable.
+ * It fetches its own files and folders data.
  */
 export function LinkTree({
   linkData,
   linkType,
-  files,
-  folders = [],
   onFilesSelected,
   onRefresh,
 }: LinkTreeProps) {
+  // Fetch both files and folders for this specific link
+  const { data: linkContent, isLoading: filesLoading, error: filesError } = useLinkContent(linkData.id);
+  
+  // Extract files and folders from the content
+  const files = useMemo(() => {
+    if (!linkContent?.files) return [];
+    return linkContent.files;
+  }, [linkContent]);
+  
+  const folders = useMemo(() => {
+    if (!linkContent?.folders) return [];
+    return linkContent.folders;
+  }, [linkContent]);
   // Select the appropriate configuration based on link type
   const treeConfig: TreeConfiguration = useMemo(() => {
     switch (linkType) {
@@ -71,8 +79,14 @@ export function LinkTree({
     return transformToTreeStructure(folders, files, linkRoot);
   }, [linkData, folders, files]);
   
+  // Check if we have actual content (files or folders)
+  const hasContent = useMemo(() => {
+    return files.length > 0 || folders.length > 0;
+  }, [files, folders]);
+  
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [treeInstance, setTreeInstance] = useState<any>(null);
   
   // Tree operation handlers - Only delete is implemented for link owners
   const handleDelete = useCallback(async (itemIds: string[]) => {
@@ -81,13 +95,18 @@ export function LinkTree({
     try {
       setIsDeleting(true);
       
+      // Optimistically remove items from tree immediately for responsive UI
+      if (treeInstance?.removeItems) {
+        treeInstance.removeItems(itemIds);
+      }
+      
       // Call the server action to delete items
       const result = await batchDeleteLinkItemsAction(itemIds, linkData.id);
       
       if (result.success) {
-        // Invalidate queries to refresh data
+        // Invalidate queries to refresh data (in case of any server-side changes)
         await queryClient.invalidateQueries({
-          queryKey: filesQueryKeys.linkFiles(linkData.id),
+          queryKey: filesQueryKeys.linkContent(linkData.id),
         });
         
         // Call refresh callback if provided
@@ -96,32 +115,38 @@ export function LinkTree({
         // Show success notification (if notification system is available)
         console.log(`Successfully deleted ${result.data?.deletedFiles || 0} files and ${result.data?.deletedFolders || 0} folders`);
       } else {
+        // On error, refresh to restore true state
+        await queryClient.invalidateQueries({
+          queryKey: filesQueryKeys.linkContent(linkData.id),
+        });
+        
         // Show error notification
         console.error('Failed to delete items:', result.error);
       }
     } catch (error) {
+      // On error, refresh to restore true state
+      await queryClient.invalidateQueries({
+        queryKey: filesQueryKeys.linkContent(linkData.id),
+      });
       console.error('Error deleting items:', error);
     } finally {
       setIsDeleting(false);
     }
-  }, [linkData.id, isDeleting, queryClient, onRefresh]);
+  }, [linkData.id, isDeleting, queryClient, onRefresh, treeInstance]);
   
   const handleDownload = useCallback(async (itemIds: string[]) => {
     console.log('Download items:', itemIds);
     // TODO: Implement download action if needed
   }, []);
   
-  // These operations are not available for link owners
-  const handleRename = undefined; // Link owners cannot rename
-  const handleCreateFolder = undefined; // Link owners cannot create folders
-  const handleMove = undefined; // Link owners cannot move items
-  const handleReorder = undefined; // Link owners cannot reorder items
-  
   // Use tree factory to create configured tree - pass only defined handlers
   const factoryProps: Parameters<typeof useTreeFactory>[0] = {
     treeId: `${linkType}-link-${linkData.id}`,
     config: treeConfig,
     data: treeData,
+    onTreeReady: (tree: any) => {
+      setTreeInstance(tree);
+    },
   };
   
   // Only add handlers that are defined
@@ -131,20 +156,48 @@ export function LinkTree({
   if (handleDownload) {
     factoryProps.onDownload = handleDownload;
   }
-  if (onFilesSelected) {
-    factoryProps.onSelectionChange = onFilesSelected;
-  }
+  // Don't override onSelectionChange - let the factory handle it internally
+  // This was causing the infinite loop by adding an external handler
   
   const { treeProps } = useTreeFactory(factoryProps);
   
-  // Check if we have data to display
-  const hasData = Object.keys(treeData).length > 0;
-  
-  if (!hasData) {
+  // Loading state
+  if (filesLoading) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="files-tree-loading">
+          <div className="files-tree-spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (filesError) {
     return (
       <div className="files-tree-wrapper">
         <div className="files-tree-empty">
-          <p className="files-tree-empty-text">No files or folders yet</p>
+          <p className="files-tree-empty-text text-destructive">
+            Failed to load files
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
+  // Empty state - show "No files available" instead of tree with upload highlight
+  if (!hasContent) {
+    return (
+      <div className="files-tree-wrapper">
+        <div className="flex flex-col items-center justify-center h-32 p-6">
+          <div className="text-center space-y-1">
+            <p className="text-xs font-medium text-muted-foreground">
+              No files uploaded yet
+            </p>
+            <p className="text-xs text-muted-foreground/70">
+              Share this link to collect files
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -162,7 +215,8 @@ export function LinkTree({
         >
           <FileTree 
             {...treeProps} 
-            initialExpandedItems={[linkData.id]} 
+            initialExpandedItems={[linkData.id]}
+            showEmptyState={false} // Never show the upload highlight for link trees
           />
         </Suspense>
       </div>

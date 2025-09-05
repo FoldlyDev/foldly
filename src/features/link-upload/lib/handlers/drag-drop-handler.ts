@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import type { DropOperationCallbacks } from '@/components/file-tree/handlers/drop-handler';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
+import { useLinkUploadStagingStore } from '../../stores/staging-store';
 
 /**
  * Drag-Drop Handler Hook for Link Upload
@@ -117,8 +118,17 @@ export function useDragDropHandler({ treeInstance }: UseDragDropHandlerProps): D
         });
 
         try {
-          // For link upload, moving is handled locally by the tree
-          // The tree component will update its internal state
+          // For link upload, we need to update the staging store
+          const { moveStagedFile } = useLinkUploadStagingStore.getState();
+          
+          // Update the parentId for each moved item in the staging store
+          itemIds.forEach(itemId => {
+            if (itemId.startsWith('staged-file-')) {
+              moveStagedFile(itemId, toParentId);
+              console.log('Updated staged file parent:', { itemId, toParentId });
+            }
+            // Note: We don't support moving folders yet in staging
+          });
           
           // Simulate a small delay for better UX
           await new Promise(resolve => setTimeout(resolve, 100));
