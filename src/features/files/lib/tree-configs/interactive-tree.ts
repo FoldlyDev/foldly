@@ -35,9 +35,9 @@ export const interactiveLinkTreeConfig: TreeConfiguration = createTreeConfig(
       rename: false,           // Link owners cannot rename
       delete: true,            // Link owners can delete
       
-      // Drag and drop - disabled
+      // Drag and drop
       dragDrop: false,         // No internal reordering
-      foreignDrag: false,      // Cannot drag to other trees
+      foreignDrag: true,       // CAN drag to workspace tree for copying
       acceptDrops: false,      // Cannot accept drops from outside
       externalFileDrop: false, // No OS file drops
     },
@@ -51,7 +51,7 @@ export const interactiveLinkTreeConfig: TreeConfiguration = createTreeConfig(
     },
     
     permissions: {
-      canDragItems: false,       // No dragging
+      canDragItems: true,        // Can drag items to copy to workspace
       canDropItems: false,       // Cannot drop items
       canRename: false,          // Cannot rename items
       canDelete: true,           // Can delete all items

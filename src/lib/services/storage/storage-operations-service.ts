@@ -331,11 +331,22 @@ export class StorageService {
         );
         return { success: true, data: toPath };
       } else {
-        // Cross-bucket copy (download then upload)
-        return {
-          success: false,
-          error: 'Cross-bucket copy not implemented yet',
-        };
+        // Cross-bucket copy using Supabase's native copy method
+        const { data, error } = await this.supabase.storage
+          .from(fromBucket)
+          .copy(fromPath, toPath, {
+            destinationBucket: toBucket,
+          });
+
+        if (error) {
+          console.error('Failed to copy file across buckets:', error);
+          return { success: false, error: error.message };
+        }
+
+        console.log(
+          `✅ FILE_COPIED_CROSS_BUCKET: ${fromPath} (${fromBucket}) -> ${toPath} (${toBucket})`
+        );
+        return { success: true, data: toPath };
       }
     } catch (error) {
       console.error('Failed to copy file:', error);

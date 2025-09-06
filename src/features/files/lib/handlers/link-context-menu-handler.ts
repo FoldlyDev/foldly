@@ -23,6 +23,7 @@ export interface LinkContextMenuHandlerProps {
   onDelete?: (itemIds: string[]) => Promise<void>;
   onDownload?: (itemIds: string[]) => Promise<void>;
   onCreateFolder?: (parentId: string, name: string) => Promise<void>;
+  onCopyToWorkspace?: (itemIds: string[]) => Promise<void>;
 }
 
 interface LinkContextMenuHandler {
@@ -36,6 +37,7 @@ export function useLinkContextMenuHandler({
   onDelete,
   onDownload,
   onCreateFolder,
+  onCopyToWorkspace,
 }: LinkContextMenuHandlerProps): LinkContextMenuHandler {
   
   /**
@@ -54,6 +56,17 @@ export function useLinkContextMenuHandler({
       
       // For files
       if (isFile(item)) {
+        // Copy to Workspace (if available)
+        if (onCopyToWorkspace) {
+          menuItems.push({
+            label: isMultipleSelection ? 'Copy to Workspace' : 'Copy to Workspace',
+            onClick: async () => {
+              const itemsToCopy = isMultipleSelection ? selectedItemIds : [item.id];
+              await onCopyToWorkspace(itemsToCopy);
+            },
+          });
+        }
+        
         // Download is always available
         menuItems.push({
           label: isMultipleSelection ? 'Download Files' : 'Download',
@@ -96,6 +109,17 @@ export function useLinkContextMenuHandler({
       
       // For folders
       if (isFolder(item)) {
+        // Copy to Workspace (if available)
+        if (onCopyToWorkspace) {
+          menuItems.push({
+            label: isMultipleSelection ? 'Copy to Workspace' : 'Copy to Workspace',
+            onClick: async () => {
+              const itemsToCopy = isMultipleSelection ? selectedItemIds : [item.id];
+              await onCopyToWorkspace(itemsToCopy);
+            },
+          });
+        }
+        
         // Create new folder (single selection only)
         if (!isMultipleSelection && onCreateFolder) {
           menuItems.push({
@@ -154,7 +178,7 @@ export function useLinkContextMenuHandler({
       
       return menuItems.length > 0 ? menuItems : null;
     },
-    [linkId, onRename, onDelete, onDownload, onCreateFolder]
+    [linkId, onRename, onDelete, onDownload, onCreateFolder, onCopyToWorkspace]
   );
   
   return {

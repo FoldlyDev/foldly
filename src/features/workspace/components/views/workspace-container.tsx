@@ -44,6 +44,7 @@ import { Trash2, Edit2, Link2, FolderPlus } from 'lucide-react';
 import { batchDeleteItemsAction } from '@/features/workspace/lib/actions';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { workspaceQueryKeys } from '../../lib/query-keys';
+import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 import {
   eventBus,
   NotificationEventType,
@@ -215,15 +216,12 @@ export function WorkspaceContainer() {
         throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // Clear selection after successful deletion
       clearSelection();
 
-      // Invalidate cache but don't refetch immediately
-      queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.data(),
-        refetchType: 'none',
-      });
+      // Use centralized invalidation service to update all workspace queries
+      await QueryInvalidationService.invalidateWorkspaceData(queryClient);
 
       eventBus.emitNotification(
         NotificationEventType.WORKSPACE_BATCH_DELETE_SUCCESS,
@@ -239,9 +237,9 @@ export function WorkspaceContainer() {
       setItemsToDelete([]);
       setBatchProgress(undefined);
     },
-    onError: error => {
+    onError: async error => {
       // Force refetch on error to ensure consistency
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
+      await QueryInvalidationService.invalidateWorkspaceData(queryClient);
 
       eventBus.emitNotification(
         NotificationEventType.WORKSPACE_BATCH_DELETE_ERROR,

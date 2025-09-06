@@ -13,3 +13,11 @@ export {
   batchDeleteLinkItemsAction,
   recalculateLinkStatsAction,
 } from './link-file-actions';
+
+export {
+  copyLinkItemsToWorkspaceAction,
+  copyLinkFileToWorkspaceAction,
+  copyLinkFolderToWorkspaceAction,
+  type CopyItem,
+  type CopyToWorkspaceResult,
+} from './copy-to-workspace-actions';

@@ -1,21 +1,76 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { WorkspaceTree } from '../trees/workspace-tree';
+import { copyLinkItemsToWorkspaceAction, type CopyItem } from '../../lib/actions/copy-to-workspace-actions';
+import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 import type { WorkspacePanelProps } from '../../types/workspace';
 import type { CrossTreeDragData } from '../../lib/handlers/cross-tree-drag-handler';
 
 export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) {
+  const queryClient = useQueryClient();
+  const [isCopying, setIsCopying] = useState(false);
   
   // Handle copying items from link trees to workspace
   const handleCopyToWorkspace = useCallback(async (items: any[], targetFolderId: string) => {
-    console.log('Copying items to workspace:', items, 'target folder:', targetFolderId);
-    // TODO: Implement actual copy logic
-    // This would:
-    // 1. Fetch the actual files from the link
-    // 2. Copy them to the workspace folder
-    // 3. Update the workspace tree
-  }, []);
+    // Extract linkId from the first item or from drag data
+    // Items should have linkId property from the drag operation
+    const linkId = items[0]?.linkId;
+    
+    if (!linkId) {
+      toast.error('Unable to determine source link');
+      return;
+    }
+
+    // Convert items to CopyItem format
+    const copyItems: CopyItem[] = items.map(item => ({
+      id: item.id,
+      name: item.name,
+      type: item.type === 'folder' ? 'folder' : 'file',
+    }));
+
+    setIsCopying(true);
+    
+    try {
+      // Handle special case for workspace root
+      const actualTargetFolderId = targetFolderId === 'workspace-root' ? null : targetFolderId;
+      
+      const result = await copyLinkItemsToWorkspaceAction(
+        copyItems,
+        linkId,
+        actualTargetFolderId
+      );
+
+      if (result.success && result.data) {
+        const { copiedFiles, copiedFolders, failedItems } = result.data;
+        
+        // Use centralized invalidation service to update all workspace queries
+        await QueryInvalidationService.invalidateWorkspaceData(queryClient);
+
+        // Show success message
+        if (failedItems.length === 0) {
+          const message = [];
+          if (copiedFiles > 0) message.push(`${copiedFiles} file${copiedFiles > 1 ? 's' : ''}`);
+          if (copiedFolders > 0) message.push(`${copiedFolders} folder${copiedFolders > 1 ? 's' : ''}`);
+          
+          toast.success(`Successfully copied ${message.join(' and ')} to workspace`);
+        } else {
+          toast.warning(
+            `Copied ${copiedFiles} files and ${copiedFolders} folders. ${failedItems.length} items failed.`
+          );
+        }
+      } else {
+        toast.error(result.error || 'Failed to copy items to workspace');
+      }
+    } catch (error) {
+      console.error('Failed to copy items:', error);
+      toast.error('An unexpected error occurred while copying items');
+    } finally {
+      setIsCopying(false);
+    }
+  }, [queryClient]);
 
   // Handle external file drops (OS files)
   const handleExternalFileDrop = useCallback((files: File[], targetFolderId?: string) => {

@@ -30,7 +30,7 @@ export interface UseTreeFactoryProps {
   onDelete?: (itemIds: string[]) => Promise<void>;
   onDownload?: (itemIds: string[]) => Promise<void>;
   onCreateFolder?: (parentId: string, name: string) => Promise<void>;
-  // onCopyToWorkspace?: (items: TreeItem[], targetFolderId: string) => Promise<void>;
+  onCopyToWorkspace?: (itemIds: string[]) => Promise<void>;
   onMove?: (itemIds: string[], fromParentId: string, toParentId: string) => Promise<void>;
   onReorder?: (parentId: string, oldOrder: string[], newOrder: string[]) => Promise<void>;
   
@@ -74,7 +74,7 @@ export function useTreeFactory({
   onDelete,
   onDownload,
   onCreateFolder,
-  // onCopyToWorkspace,
+  onCopyToWorkspace,
   onMove,
   onReorder,
   onTreeReady,
@@ -121,6 +121,7 @@ export function useTreeFactory({
     ...(config.features.delete && onDelete && { onDelete }),
     ...(onDownload && { onDownload }),
     ...(config.permissions.canCreateFolder && onCreateFolder && { onCreateFolder }),
+    ...(onCopyToWorkspace && { onCopyToWorkspace }),
   });
   
   // Cross-tree drag handler - currently unused but may be needed for future drag operations

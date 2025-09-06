@@ -18,6 +18,7 @@ import { isFolder } from '@/components/file-tree/types';
 export interface CrossTreeDragData {
   sourceTreeId: string;
   sourceType: 'link' | 'workspace';
+  sourceLinkId?: string; // Add linkId for link sources
   items: Array<{
     id: string;
     name: string;
@@ -29,6 +30,7 @@ export interface CrossTreeDragData {
 export interface CrossTreeDragHandlerProps {
   treeId: string;
   treeType: 'link' | 'workspace';
+  linkId?: string; // Add linkId for link trees
   onCopyToWorkspace?: (items: TreeItem[], targetFolderId: string) => Promise<void>;
   canAcceptDrops?: boolean;
   canDragOut?: boolean;
@@ -46,6 +48,7 @@ interface CrossTreeDragHandler {
 export function useCrossTreeDragHandler({
   treeId,
   treeType,
+  linkId,
   onCopyToWorkspace,
   canAcceptDrops = false,
   canDragOut = false,
@@ -62,6 +65,7 @@ export function useCrossTreeDragHandler({
       const dragData: CrossTreeDragData = {
         sourceTreeId: treeId,
         sourceType: treeType,
+        sourceLinkId: linkId, // Include linkId for link sources
         items: items.map(item => ({
           id: item.id,
           name: item.name,
@@ -72,7 +76,7 @@ export function useCrossTreeDragHandler({
       
       return JSON.stringify(dragData);
     },
-    [treeId, treeType, canDragOut]
+    [treeId, treeType, linkId, canDragOut]
   );
   
   /**
@@ -120,13 +124,14 @@ export function useCrossTreeDragHandler({
         // Validate this is a valid drop
         if (treeType === 'workspace' && dragData.sourceType === 'link') {
           // Convert simple items back to TreeItems for the handler
-          // In real implementation, you'd fetch full item data
+          // Add linkId to each item for the copy operation
           const items: TreeItem[] = dragData.items.map(item => ({
             id: item.id,
             name: item.name,
             type: item.type,
             parentId: null, // Will be set by copy operation
-          } as TreeItem));
+            linkId: dragData.sourceLinkId, // Add linkId for the server action
+          } as TreeItem & { linkId?: string }));
           
           await onCopyToWorkspace(items, targetFolderId);
         }

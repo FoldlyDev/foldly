@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchWorkspaceDataAction } from '@/features/workspace/lib/actions';
+import { filesQueryKeys } from '../lib/query-keys';
 
 /**
  * Hook to fetch workspace data for the files feature
@@ -9,7 +10,7 @@ import { fetchWorkspaceDataAction } from '@/features/workspace/lib/actions';
  */
 export function useWorkspaceData() {
   return useQuery({
-    queryKey: ['files', 'workspace', 'data'],
+    queryKey: filesQueryKeys.workspaceView(),
     queryFn: async () => {
       const result = await fetchWorkspaceDataAction();
       if (!result.success) {

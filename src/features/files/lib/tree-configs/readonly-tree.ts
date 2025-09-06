@@ -29,9 +29,9 @@ export const generatedLinkTreeConfig: TreeConfiguration = createTreeConfig(
       rename: false,             // Cannot rename
       delete: false,             // Cannot delete
       
-      // No drag and drop
+      // Drag and drop - limited to dragging out
       dragDrop: false,           // No internal reordering
-      foreignDrag: false,        // Cannot drag out
+      foreignDrag: true,         // CAN drag to workspace for copying
       acceptDrops: false,        // Cannot accept drops
       externalFileDrop: false,   // No OS file drops
     },
@@ -45,7 +45,7 @@ export const generatedLinkTreeConfig: TreeConfiguration = createTreeConfig(
     },
     
     permissions: {
-      canDragItems: false,       // No dragging
+      canDragItems: true,        // Can drag items to copy to workspace
       canDropItems: false,       // No dropping
       canRename: false,          // No renaming
       canDelete: false,          // No deleting

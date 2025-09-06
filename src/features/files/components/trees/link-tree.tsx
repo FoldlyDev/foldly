@@ -11,10 +11,14 @@ import {
 } from '../../lib/tree-configs';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import { batchDeleteLinkItemsAction } from '../../lib/actions/link-file-actions';
+import { copyLinkItemsToWorkspaceAction, type CopyItem } from '../../lib/actions/copy-to-workspace-actions';
 import { useQueryClient } from '@tanstack/react-query';
 import { filesQueryKeys } from '../../lib/query-keys';
+import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 import type { LinkListItem } from '../../types/links';
 import type { LinkType } from '../../types';
+import { isFolder } from '@/components/file-tree/types';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -22,7 +26,6 @@ const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 export interface LinkTreeProps {
   linkData: LinkListItem;
   linkType: LinkType;
-  onFilesSelected?: (fileIds: string[]) => void;
   onRefresh?: () => void;
 }
 
@@ -34,7 +37,6 @@ export interface LinkTreeProps {
 export function LinkTree({
   linkData,
   linkType,
-  onFilesSelected,
   onRefresh,
 }: LinkTreeProps) {
   // Fetch both files and folders for this specific link
@@ -139,6 +141,163 @@ export function LinkTree({
     // TODO: Implement download action if needed
   }, []);
   
+  // Handle copy to workspace
+  const handleCopyToWorkspace = useCallback(async (itemIds: string[]) => {
+    // Get the actual items data to determine types (defined outside try for catch block access)
+    const itemsToCopy: CopyItem[] = itemIds.map(id => {
+      const item = treeData[id];
+      if (!item) {
+        console.warn(`Item ${id} not found in tree data`);
+        return null;
+      }
+      return {
+        id: item.id,
+        name: item.name,
+        type: isFolder(item) ? 'folder' : 'file',
+      };
+    }).filter(Boolean) as CopyItem[];
+
+    if (itemsToCopy.length === 0) {
+      // Use a workspace error event for consistency
+      eventBus.emitNotification(
+        NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR,
+        { 
+          fileId: '',
+          fileName: 'No items selected',
+          error: 'No valid items selected'
+        },
+        { priority: NotificationPriority.HIGH, uiType: NotificationUIType.TOAST_SIMPLE, duration: 3000 }
+      );
+      return;
+    }
+
+    try {
+
+      // Show loading notification using copy events
+      const copyBatchId = `copy-to-workspace-${Date.now()}`;
+      eventBus.emitNotification(
+        NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+        {
+          batchId: copyBatchId,
+          totalItems: itemsToCopy.length,
+          completedItems: 0,
+          items: itemsToCopy.map((item: CopyItem) => ({ 
+            id: item.id, 
+            name: item.name, 
+            type: item.type as 'file' | 'folder' 
+          })),
+        },
+        {
+          priority: NotificationPriority.MEDIUM,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 0, // Keep showing until complete
+        }
+      );
+
+      // Call the server action
+      const result = await copyLinkItemsToWorkspaceAction(
+        itemsToCopy,
+        linkData.id,
+        null // Copy to workspace root by default
+      );
+
+      if (result.success && result.data) {
+        const { copiedFiles, copiedFolders, failedItems } = result.data;
+        
+        // Use centralized invalidation service to update all workspace queries
+        await QueryInvalidationService.invalidateWorkspaceData(queryClient);
+
+        // Show success or partial success message using copy events
+        if (failedItems.length === 0) {
+          eventBus.emitNotification(
+            NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS,
+            {
+              batchId: copyBatchId,
+              totalItems: itemsToCopy.length,
+              completedItems: itemsToCopy.length,
+              items: itemsToCopy.map(item => ({ 
+                id: item.id, 
+                name: item.name, 
+                type: item.type as 'file' | 'folder' 
+              })),
+            },
+            {
+              priority: NotificationPriority.LOW,
+              uiType: NotificationUIType.TOAST_SIMPLE,
+              duration: 3000,
+            }
+          );
+        } else {
+          // Use partial success event for partial failures
+          eventBus.emitNotification(
+            NotificationEventType.WORKSPACE_ITEMS_COPY_PARTIAL,
+            {
+              batchId: copyBatchId,
+              totalItems: itemsToCopy.length,
+              completedItems: itemsToCopy.length - failedItems.length,
+              failedItems: failedItems.length,
+              items: itemsToCopy.map(item => ({ 
+                id: item.id, 
+                name: item.name, 
+                type: item.type as 'file' | 'folder' 
+              })),
+              error: `Copied ${copiedFiles} files and ${copiedFolders} folders. ${failedItems.length} items failed.`,
+            },
+            {
+              priority: NotificationPriority.MEDIUM,
+              uiType: NotificationUIType.TOAST_SIMPLE,
+              duration: 5000,
+            }
+          );
+        }
+      } else {
+        eventBus.emitNotification(
+          NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+          {
+            batchId: copyBatchId,
+            totalItems: itemsToCopy.length,
+            completedItems: 0,
+            failedItems: itemsToCopy.length,
+            items: itemsToCopy.map(item => ({ 
+              id: item.id, 
+              name: item.name, 
+              type: item.type as 'file' | 'folder' 
+            })),
+            error: result.error || 'Failed to copy items to workspace',
+          },
+          {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          }
+        );
+      }
+    } catch (error) {
+      console.error('Failed to copy items to workspace:', error);
+      // Use copy error for unexpected errors
+      eventBus.emitNotification(
+        NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+        { 
+          batchId: `copy-error-${Date.now()}`,
+          totalItems: itemsToCopy.length,
+          completedItems: 0,
+          failedItems: itemsToCopy.length,
+          items: itemsToCopy.map((item: CopyItem) => ({ 
+            id: item.id, 
+            name: item.name, 
+            type: item.type as 'file' | 'folder' 
+          })),
+          error: error instanceof Error ? error.message : 'An unexpected error occurred'
+        },
+        { 
+          priority: NotificationPriority.HIGH, 
+          uiType: NotificationUIType.TOAST_SIMPLE, 
+          duration: 5000 
+        }
+      );
+    }
+  }, [linkData.id, treeData, queryClient]);
+  
   // Use tree factory to create configured tree - pass only defined handlers
   const factoryProps: Parameters<typeof useTreeFactory>[0] = {
     treeId: `${linkType}-link-${linkData.id}`,
@@ -155,6 +314,9 @@ export function LinkTree({
   }
   if (handleDownload) {
     factoryProps.onDownload = handleDownload;
+  }
+  if (handleCopyToWorkspace) {
+    factoryProps.onCopyToWorkspace = handleCopyToWorkspace;
   }
   // Don't override onSelectionChange - let the factory handle it internally
   // This was causing the infinite loop by adding an external handler
