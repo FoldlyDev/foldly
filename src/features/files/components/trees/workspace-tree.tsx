@@ -5,6 +5,7 @@ import { transformToTreeStructure } from '@/components/file-tree/utils/transform
 import { useWorkspaceData } from '../../hooks/use-workspace-data';
 import { useTreeFactory } from '../../hooks/tree/use-tree-factory';
 import { workspaceReadOnlyTreeConfig } from '../../lib/tree-configs/readonly-tree';
+import { useRealtimeSync, RealtimeTable } from '@/lib/services/realtime/use-realtime-sync';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -17,6 +18,39 @@ export interface WorkspaceTreeProps {
 export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: WorkspaceTreeProps) {
   // Fetch workspace data with React Query
   const { data: workspaceData, isLoading, isError, error } = useWorkspaceData();
+  
+  // Get workspaceId from the fetched data
+  const workspaceId = workspaceData?.workspace?.id;
+  
+  // Memoize realtime configurations to prevent re-subscriptions
+  const workspaceRealtimeConfig = useMemo(() => ({
+    table: RealtimeTable.WORKSPACES,
+    ...(workspaceId && { 
+      filter: { column: 'id', operator: 'eq' as const, value: workspaceId } 
+    }),
+    enabled: !!workspaceId,
+  }), [workspaceId]);
+  
+  const foldersRealtimeConfig = useMemo(() => ({
+    table: RealtimeTable.FOLDERS,
+    ...(workspaceId && { 
+      filter: { column: 'workspace_id', operator: 'eq' as const, value: workspaceId } 
+    }),
+    enabled: !!workspaceId,
+  }), [workspaceId]);
+  
+  const filesRealtimeConfig = useMemo(() => ({
+    table: RealtimeTable.FILES,
+    ...(workspaceId && { 
+      filter: { column: 'workspace_id', operator: 'eq' as const, value: workspaceId } 
+    }),
+    enabled: !!workspaceId,
+  }), [workspaceId]);
+  
+  // Subscribe to realtime updates
+  useRealtimeSync(workspaceRealtimeConfig);
+  useRealtimeSync(foldersRealtimeConfig);
+  useRealtimeSync(filesRealtimeConfig);
 
   // Transform workspace data to tree format
   const treeData = useMemo(() => {
@@ -46,10 +80,8 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     data: treeData,
   };
   
-  // Only add onCopyToWorkspace if it's defined
-  if (onCopyToWorkspace) {
-    factoryProps.onCopyToWorkspace = onCopyToWorkspace;
-  }
+  // Note: onCopyToWorkspace is not passed to tree factory due to signature mismatch
+  // The workspace-panel handles cross-tree drops directly
   
   const { treeProps } = useTreeFactory(factoryProps);
 

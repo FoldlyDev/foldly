@@ -65,7 +65,7 @@ export function useCrossTreeDragHandler({
       const dragData: CrossTreeDragData = {
         sourceTreeId: treeId,
         sourceType: treeType,
-        sourceLinkId: linkId, // Include linkId for link sources
+        ...(linkId && { sourceLinkId: linkId }), // Only include if linkId exists
         items: items.map(item => ({
           id: item.id,
           name: item.name,

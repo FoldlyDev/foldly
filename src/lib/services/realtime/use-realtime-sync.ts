@@ -346,6 +346,7 @@ export function useRealtimeSync(config: SubscriptionConfig) {
         broadcastChannelRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     config.enabled,
     config.table,
@@ -353,9 +354,6 @@ export function useRealtimeSync(config: SubscriptionConfig) {
     config.filter?.operator,
     config.filter?.value,
     config.events?.join(','),
-    createSubscriptionKey,
-    handleRealtimeChange,
-    handleBroadcastMessage,
     supabase,
   ]);
 
