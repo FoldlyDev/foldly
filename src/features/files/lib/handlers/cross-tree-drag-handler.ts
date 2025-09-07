@@ -88,8 +88,8 @@ export function useCrossTreeDragHandler({
       if (!canAcceptDrops) return false;
       
       try {
-        // Check if it's our custom drag data
-        const dragDataStr = dataTransfer.getData('application/x-foldly-tree-items');
+        // Check if it's our custom cross-tree drag data
+        const dragDataStr = dataTransfer.getData('application/x-cross-tree-drag');
         if (!dragDataStr) return false;
         
         const dragData: CrossTreeDragData = JSON.parse(dragDataStr);
@@ -116,7 +116,7 @@ export function useCrossTreeDragHandler({
       if (!canAcceptDrops || !onCopyToWorkspace) return;
       
       try {
-        const dragDataStr = dataTransfer.getData('application/x-foldly-tree-items');
+        const dragDataStr = dataTransfer.getData('application/x-cross-tree-drag');
         if (!dragDataStr) return;
         
         const dragData: CrossTreeDragData = JSON.parse(dragDataStr);

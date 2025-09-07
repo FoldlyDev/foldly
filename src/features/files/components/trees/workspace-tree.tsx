@@ -78,10 +78,14 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     treeId: `files-workspace-${workspaceData?.workspace?.id || 'loading'}`,
     config: workspaceReadOnlyTreeConfig,
     data: treeData,
+    treeType: 'workspace', // Enable cross-tree drop acceptance
+    // Pass cross-tree drop handler if copy function is provided
+    ...(onCopyToWorkspace && {
+      onAcceptCrossTreeDrop: async (items: any[], targetFolderId: string) => {
+        await onCopyToWorkspace(items, targetFolderId);
+      }
+    }),
   };
-  
-  // Note: onCopyToWorkspace is not passed to tree factory due to signature mismatch
-  // The workspace-panel handles cross-tree drops directly
   
   const { treeProps } = useTreeFactory(factoryProps);
 

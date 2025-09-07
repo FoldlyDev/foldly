@@ -303,6 +303,8 @@ export function LinkTree({
     treeId: `${linkType}-link-${linkData.id}`,
     config: treeConfig,
     data: treeData,
+    treeType: 'link', // Enable cross-tree drag for link trees
+    linkId: linkData.id, // Pass link ID for cross-tree operations
     onTreeReady: (tree: any) => {
       setTreeInstance(tree);
     },

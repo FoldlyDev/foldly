@@ -132,7 +132,13 @@ export function useRealtimeSync(config: SubscriptionConfig) {
   // Handle realtime changes from database
   const handleRealtimeChange = useCallback(
     async (payload: RealtimePostgresChangesPayload<any>) => {
-      console.log(`[RealtimeSync] Change detected in ${config.table}:`, payload);
+      console.log(`[RealtimeSync] ${payload.eventType} detected in ${config.table}:`, {
+        eventType: payload.eventType,
+        table: config.table,
+        new: payload.new,
+        old: payload.old,
+        errors: payload.errors,
+      });
 
       // Create context from payload
       const context: any = {};
