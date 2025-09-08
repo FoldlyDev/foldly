@@ -11,7 +11,7 @@ import { useRealtimeSync, RealtimeTable } from '@/lib/services/realtime/use-real
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 
 export interface WorkspaceTreeProps {
-  onCopyToWorkspace?: (items: any[], targetFolderId: string) => Promise<void>;
+  onCopyToWorkspace?: (items: any[], targetFolderId: string, workspaceId?: string) => Promise<void>;
   onExternalFileDrop?: (files: File[], targetFolderId?: string) => void;
 }
 
@@ -79,10 +79,11 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     config: workspaceReadOnlyTreeConfig,
     data: treeData,
     treeType: 'workspace', // Enable cross-tree drop acceptance
+    workspaceId: workspaceData?.workspace?.id, // Pass workspace ID for proper root detection
     // Pass cross-tree drop handler if copy function is provided
     ...(onCopyToWorkspace && {
       onAcceptCrossTreeDrop: async (items: any[], targetFolderId: string) => {
-        await onCopyToWorkspace(items, targetFolderId);
+        await onCopyToWorkspace(items, targetFolderId, workspaceData?.workspace?.id);
       }
     }),
   };

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { WorkspaceTree } from '../trees/workspace-tree';
 import { copyLinkItemsToWorkspaceAction, type CopyItem } from '../../lib/actions/copy-to-workspace-actions';
 import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 import type { WorkspacePanelProps } from '../../types/workspace';
 import type { CrossTreeDragData } from '../../lib/handlers/cross-tree-drag-handler';
 
@@ -14,7 +15,7 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
   const [isCopying, setIsCopying] = useState(false);
   
   // Handle copying items from link trees to workspace
-  const handleCopyToWorkspace = useCallback(async (items: any[], targetFolderId: string) => {
+  const handleCopyToWorkspace = useCallback(async (items: any[], targetFolderId: string, workspaceId?: string) => {
     // Extract linkId from the first item or from drag data
     // Items should have linkId property from the drag operation
     const linkId = items[0]?.linkId;
@@ -33,9 +34,35 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
 
     setIsCopying(true);
     
+    // Show loading notification using copy events
+    const copyBatchId = `copy-to-workspace-${Date.now()}`;
+    eventBus.emitNotification(
+      NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+      {
+        batchId: copyBatchId,
+        totalItems: copyItems.length,
+        completedItems: 0,
+        items: copyItems.map((item: CopyItem) => ({ 
+          id: item.id, 
+          name: item.name, 
+          type: item.type as 'file' | 'folder' 
+        })),
+      },
+      {
+        priority: NotificationPriority.MEDIUM,
+        uiType: NotificationUIType.TOAST_SIMPLE,
+        duration: 0, // Keep showing until complete
+      }
+    );
+    
     try {
       // Handle special case for workspace root
-      const actualTargetFolderId = targetFolderId === 'workspace-root' ? null : targetFolderId;
+      // When dropping on the workspace root node, targetFolderId will be the workspace ID
+      // We need to pass null to copy to the root
+      // Check if targetFolderId is the workspace root ID (passed from tree)
+      const isWorkspaceRoot = workspaceId && targetFolderId === workspaceId;
+      
+      const actualTargetFolderId = isWorkspaceRoot ? null : targetFolderId;
       
       const result = await copyLinkItemsToWorkspaceAction(
         copyItems,
@@ -79,59 +106,8 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
     }
   }, [onFileDrop]);
 
-  // Handle drag over for visual feedback
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    
-    // Check if this is a cross-tree drag
-    const dragData = e.dataTransfer.getData('application/x-cross-tree-drag');
-    if (dragData) {
-      e.dataTransfer.dropEffect = 'copy';
-    } else {
-      // Check for link drag (legacy)
-      const linkId = e.dataTransfer.getData('linkId');
-      if (linkId) {
-        e.dataTransfer.dropEffect = 'copy';
-      }
-    }
-  }, []);
-
-  // Handle drops on the panel container (outside the tree)
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    
-    // Try to parse cross-tree drag data
-    try {
-      const dragDataStr = e.dataTransfer.getData('application/x-cross-tree-drag');
-      if (dragDataStr) {
-        const dragData: CrossTreeDragData = JSON.parse(dragDataStr);
-        console.log('Cross-tree drop received:', dragData);
-        
-        // Handle based on source type
-        if (dragData.sourceType === 'link') {
-          // Copy items from link to workspace root
-          handleCopyToWorkspace(dragData.items, 'workspace-root');
-        }
-        return;
-      }
-    } catch (error) {
-      console.error('Failed to parse drag data:', error);
-    }
-    
-    // Fallback: Check for legacy link drag
-    const linkId = e.dataTransfer.getData('linkId');
-    if (linkId) {
-      console.log('Link dropped:', linkId);
-      // Handle legacy link drop
-    }
-  }, [handleCopyToWorkspace]);
-
   return (
-    <div 
-      className="workspace-panel-container"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
+    <div className="workspace-panel-container">
       <div className="workspace-panel-header">
         <h2 className="workspace-panel-title">Personal Space</h2>
       </div>

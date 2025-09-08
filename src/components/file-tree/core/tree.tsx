@@ -188,6 +188,10 @@ interface FileTreeProps {
     targetFolderId: string | null,
     folderStructure?: { [folder: string]: File[] }
   ) => void;
+  // Cross-tree drag support (for link -> workspace copying)
+  customCreateForeignDragObject?: (items: any[]) => any;
+  customOnCompleteForeignDrop?: (items: any[]) => void;
+  customOnDropForeignDragObject?: (dataTransfer: DataTransfer, target: any) => Promise<void>;
   // Empty state customization
   showEmptyState?: boolean;
   emptyStateMessage?: React.ReactNode;
@@ -215,6 +219,9 @@ export default function FileTree({
   renameCallback,
   contextMenuProvider,
   onExternalFileDrop,
+  customCreateForeignDragObject,
+  customOnCompleteForeignDrop,
+  customOnDropForeignDragObject,
   showEmptyState = true,
   emptyStateMessage,
   emptyStateAction,
@@ -351,9 +358,40 @@ export default function FileTree({
     [] // Empty deps since data is a stable reference
   );
 
+  // Use custom handlers if provided, with proper merging for cross-tree operations
   const { onDropForeignDragObject, onCompleteForeignDrop } = React.useMemo(
-    () => createForeignDropHandlers(data, insertNewItem, onExternalFileDrop),
-    [insertNewItem, onExternalFileDrop] // Depend on both
+    () => {
+      const defaultHandlers = createForeignDropHandlers(data, insertNewItem, onExternalFileDrop);
+      
+      // If we have a custom drop handler, we need to merge it with the default
+      // to handle both cross-tree drops AND OS file drops
+      if (customOnDropForeignDragObject) {
+        return {
+          onDropForeignDragObject: async (dataTransfer: DataTransfer, target: any) => {
+            // First check if this is a cross-tree drag
+            if (dataTransfer.types.includes('application/x-cross-tree-drag')) {
+              await customOnDropForeignDragObject(dataTransfer, target);
+              return;
+            }
+            // Otherwise use default handler for OS file drops
+            await defaultHandlers.onDropForeignDragObject(dataTransfer, target);
+          },
+          onCompleteForeignDrop: customOnCompleteForeignDrop || defaultHandlers.onCompleteForeignDrop,
+        };
+      }
+      
+      // If custom complete handler but no custom drop handler
+      if (customOnCompleteForeignDrop) {
+        return {
+          onDropForeignDragObject: defaultHandlers.onDropForeignDragObject,
+          onCompleteForeignDrop: customOnCompleteForeignDrop,
+        };
+      }
+      
+      // Use all default handlers
+      return defaultHandlers;
+    },
+    [insertNewItem, onExternalFileDrop, customOnDropForeignDragObject, customOnCompleteForeignDrop, data]
   );
 
   const onRename = React.useMemo(
@@ -457,7 +495,7 @@ export default function FileTree({
       onRename,
       onDropForeignDragObject,
       onCompleteForeignDrop,
-      createForeignDragObject: (items: any[]) => {
+      createForeignDragObject: customCreateForeignDragObject || ((items: any[]) => {
         // Serialize the full item data, not just IDs
         const itemsData = items.map(item => {
           const itemId = item.getId();
@@ -468,7 +506,7 @@ export default function FileTree({
           format: 'application/json',
           data: JSON.stringify(itemsData),
         };
-      },
+      }),
       canDropForeignDragObject: (dataTransfer: any, target: any) => {
         // Allow file drops on folders
         if (dataTransfer.files && dataTransfer.files.length > 0) {
@@ -499,6 +537,7 @@ export default function FileTree({
       onRename,
       onDropForeignDragObject,
       onCompleteForeignDrop,
+      customCreateForeignDragObject,
       customClickBehavior,
       clearSelectionOnRootClick,
       initialExpandedItems,

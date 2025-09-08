@@ -37,7 +37,8 @@ export interface UseTreeFactoryProps {
   // Cross-tree operation support
   treeType?: 'link' | 'workspace';
   linkId?: string; // For link trees
-  onAcceptCrossTreeDrop?: (items: any[], targetFolderId: string) => Promise<void>;
+  workspaceId?: string; // For workspace trees
+  onAcceptCrossTreeDrop?: (items: any[], targetFolderId: string, workspaceId?: string) => Promise<void>;
   
   // Tree ready callback
   onTreeReady?: (tree: any) => void;
@@ -87,6 +88,7 @@ export function useTreeFactory({
   onReorder,
   treeType = 'link',
   linkId,
+  workspaceId,
   onAcceptCrossTreeDrop,
   onTreeReady,
 }: UseTreeFactoryProps): TreeFactoryResult {
@@ -139,7 +141,8 @@ export function useTreeFactory({
   const crossTreeHandlers = useCrossTreeDragHandler({
     treeId,
     treeType,
-    linkId,
+    ...(linkId && { linkId }), // Only include linkId if it exists
+    ...(workspaceId && { workspaceId }), // Only include workspaceId if it exists
     onCopyToWorkspace: treeType === 'workspace' && onAcceptCrossTreeDrop ? 
       onAcceptCrossTreeDrop : undefined,
     canAcceptDrops: treeType === 'workspace' && config.features.acceptDrops,
@@ -154,7 +157,7 @@ export function useTreeFactory({
         const itemId = item.getId();
         const itemData = data[itemId];
         return itemData;
-      });
+      }).filter((item): item is TreeItem => item !== undefined); // Type-safe filter
       
       const crossTreeData = crossTreeHandlers.createForeignDragData(treeItems);
       return {
@@ -191,13 +194,41 @@ export function useTreeFactory({
     if (treeType === 'workspace' && crossTreeHandlers.handleForeignDrop) {
       // Check if this is a cross-tree drag
       if (dataTransfer.types.includes('application/x-cross-tree-drag')) {
-        const targetFolderId = target.item?.getId() || rootId;
+        // Extract target folder ID from the drop target
+        // The target can be either a reorder target (between items) or direct drop on folder
+        const isReorderTarget = 'childIndex' in target;
+        let targetFolderId: string;
+        
+        if (!isReorderTarget) {
+          // Direct drop on an item - check if it's a folder
+          const targetItem = target.item;
+          const targetItemData = data[targetItem.getId()];
+          
+          if (targetItemData && targetItemData.type === 'folder') {
+            // Dropping on a folder - use the folder as target
+            targetFolderId = targetItem.getId();
+          } else {
+            // Dropping on a file - use its parent folder
+            targetFolderId = targetItem.getParent()?.getId() || rootId;
+          }
+        } else {
+          // Reorder target (between items) - use parent folder
+          targetFolderId = target.item.getParent()?.getId() || rootId;
+        }
+        
+        console.log('[CrossTree] Drop target:', { 
+          isReorderTarget, 
+          targetFolderId,
+          targetItem: target.item.getId(),
+          targetType: data[target.item.getId()]?.type
+        });
+        
         await crossTreeHandlers.handleForeignDrop(dataTransfer, targetFolderId);
         return;
       }
     }
     // Let default handler process OS file drops
-  }, [treeType, crossTreeHandlers, rootId]);
+  }, [treeType, crossTreeHandlers, rootId, data]);
   
   // Create drop callbacks for internal drag-drop
   const dropCallbacks: DropOperationCallbacks | undefined = useMemo(() => {
@@ -252,9 +283,14 @@ export function useTreeFactory({
     ...(config.features.rename && renameCallback && { renameCallback }),
     ...(config.features.contextMenu && { contextMenuProvider }),
     ...(config.features.externalFileDrop && { onExternalFileDrop: handleExternalFileDrop }),
-    // Cross-tree drag support
-    ...(treeType === 'link' && { createForeignDragObject, onCompleteForeignDrop }),
-    ...(treeType === 'workspace' && { onDropForeignDragObject }),
+    // Cross-tree drag support - use custom prefix for FileTree component
+    ...(treeType === 'link' && { 
+      customCreateForeignDragObject: createForeignDragObject, 
+      customOnCompleteForeignDrop: onCompleteForeignDrop 
+    }),
+    ...(treeType === 'workspace' && { 
+      customOnDropForeignDragObject: onDropForeignDragObject 
+    }),
   };
   
   return {

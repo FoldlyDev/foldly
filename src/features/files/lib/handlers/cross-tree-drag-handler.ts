@@ -30,10 +30,11 @@ export interface CrossTreeDragData {
 export interface CrossTreeDragHandlerProps {
   treeId: string;
   treeType: 'link' | 'workspace';
-  linkId?: string; // Add linkId for link trees
-  onCopyToWorkspace?: (items: TreeItem[], targetFolderId: string) => Promise<void>;
-  canAcceptDrops?: boolean;
-  canDragOut?: boolean;
+  linkId?: string | undefined; // Add linkId for link trees
+  workspaceId?: string | undefined; // Add workspaceId for workspace trees
+  onCopyToWorkspace?: ((items: TreeItem[], targetFolderId: string, workspaceId?: string) => Promise<void>) | undefined;
+  canAcceptDrops?: boolean | undefined;
+  canDragOut?: boolean | undefined;
 }
 
 interface CrossTreeDragHandler {
@@ -49,6 +50,7 @@ export function useCrossTreeDragHandler({
   treeId,
   treeType,
   linkId,
+  workspaceId,
   onCopyToWorkspace,
   canAcceptDrops = false,
   canDragOut = false,
@@ -65,7 +67,7 @@ export function useCrossTreeDragHandler({
       const dragData: CrossTreeDragData = {
         sourceTreeId: treeId,
         sourceType: treeType,
-        ...(linkId && { sourceLinkId: linkId }), // Only include if linkId exists
+        sourceLinkId: linkId || '', // Always include sourceLinkId
         items: items.map(item => ({
           id: item.id,
           name: item.name,
@@ -73,6 +75,13 @@ export function useCrossTreeDragHandler({
         })),
         operation: 'copy', // Always copy from links to workspace
       };
+      
+      console.log('[CrossTree] Creating drag data:', {
+        treeId,
+        linkId,
+        itemCount: items.length,
+        sourceLinkId: dragData.sourceLinkId
+      });
       
       return JSON.stringify(dragData);
     },
@@ -113,16 +122,35 @@ export function useCrossTreeDragHandler({
    */
   const handleForeignDrop = useCallback(
     async (dataTransfer: DataTransfer, targetFolderId: string): Promise<void> => {
-      if (!canAcceptDrops || !onCopyToWorkspace) return;
+      if (!canAcceptDrops || !onCopyToWorkspace) {
+        console.log('[CrossTree] Cannot handle drop:', { canAcceptDrops, hasHandler: !!onCopyToWorkspace });
+        return;
+      }
       
       try {
         const dragDataStr = dataTransfer.getData('application/x-cross-tree-drag');
-        if (!dragDataStr) return;
+        if (!dragDataStr) {
+          console.log('[CrossTree] No cross-tree drag data found');
+          return;
+        }
         
         const dragData: CrossTreeDragData = JSON.parse(dragDataStr);
         
+        console.log('[CrossTree] Processing drop:', {
+          sourceType: dragData.sourceType,
+          sourceLinkId: dragData.sourceLinkId,
+          targetFolderId,
+          itemCount: dragData.items.length,
+          treeType
+        });
+        
         // Validate this is a valid drop
         if (treeType === 'workspace' && dragData.sourceType === 'link') {
+          if (!dragData.sourceLinkId) {
+            console.error('[CrossTree] No source link ID in drag data');
+            return;
+          }
+          
           // Convert simple items back to TreeItems for the handler
           // Add linkId to each item for the copy operation
           const items: TreeItem[] = dragData.items.map(item => ({
@@ -133,13 +161,20 @@ export function useCrossTreeDragHandler({
             linkId: dragData.sourceLinkId, // Add linkId for the server action
           } as TreeItem & { linkId?: string }));
           
-          await onCopyToWorkspace(items, targetFolderId);
+          console.log('[CrossTree] Calling onCopyToWorkspace with:', {
+            itemCount: items.length,
+            linkId: dragData.sourceLinkId,
+            targetFolderId,
+            workspaceId
+          });
+          
+          await onCopyToWorkspace(items, targetFolderId, workspaceId);
         }
       } catch (error) {
-        console.error('Failed to handle foreign drop:', error);
+        console.error('[CrossTree] Failed to handle foreign drop:', error);
       }
     },
-    [treeType, canAcceptDrops, onCopyToWorkspace]
+    [treeType, canAcceptDrops, onCopyToWorkspace, workspaceId]
   );
   
   // Return handlers based on tree capabilities
