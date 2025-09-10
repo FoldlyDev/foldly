@@ -1,5 +1,5 @@
 import { db } from '@/lib/database/connection';
-import { folders, files } from '@/lib/database/schemas';
+import { folders, files, links } from '@/lib/database/schemas';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 
@@ -11,14 +11,25 @@ type DbFolderUpdate = Partial<DbFolderInsert>;
 export class FolderService {
   /**
    * Get all personal workspace folders (excludes link-uploaded folders)
+   * Includes information about whether each folder has a generated link
    */
   async getFoldersByWorkspace(
     workspaceId: string
-  ): Promise<DatabaseResult<DbFolder[]>> {
+  ): Promise<DatabaseResult<(DbFolder & { hasGeneratedLink?: boolean })[]>> {
     try {
       const workspaceFolders = await db
-        .select()
+        .select({
+          folder: folders,
+          generatedLink: links
+        })
         .from(folders)
+        .leftJoin(
+          links,
+          and(
+            eq(links.sourceFolderId, folders.id),
+            eq(links.linkType, 'generated')
+          )
+        )
         .where(
           and(
             eq(folders.workspaceId, workspaceId),
@@ -27,10 +38,16 @@ export class FolderService {
         )
         .orderBy(folders.path);
 
+      // Transform the result to include hasGeneratedLink flag
+      const foldersWithLinkInfo = workspaceFolders.map(row => ({
+        ...row.folder,
+        hasGeneratedLink: !!row.generatedLink
+      }));
+
       console.log(
-        `✅ FOLDERS_FETCHED: ${workspaceFolders.length} folders for workspace ${workspaceId}`
+        `✅ FOLDERS_FETCHED: ${foldersWithLinkInfo.length} folders for workspace ${workspaceId}`
       );
-      return { success: true, data: workspaceFolders };
+      return { success: true, data: foldersWithLinkInfo };
     } catch (error) {
       console.error(`❌ FOLDERS_FETCH_FAILED: Workspace ${workspaceId}`, error);
       return { success: false, error: (error as Error).message };
@@ -39,14 +56,25 @@ export class FolderService {
 
   /**
    * Get all personal workspace folders ordered by sortOrder (excludes link-uploaded folders)
+   * Includes information about whether each folder has a generated link
    */
   async getFoldersByWorkspaceOrdered(
     workspaceId: string
-  ): Promise<DatabaseResult<DbFolder[]>> {
+  ): Promise<DatabaseResult<(DbFolder & { hasGeneratedLink?: boolean })[]>> {
     try {
       const workspaceFolders = await db
-        .select()
+        .select({
+          folder: folders,
+          generatedLink: links
+        })
         .from(folders)
+        .leftJoin(
+          links,
+          and(
+            eq(links.sourceFolderId, folders.id),
+            eq(links.linkType, 'generated')
+          )
+        )
         .where(
           and(
             eq(folders.workspaceId, workspaceId),
@@ -55,10 +83,16 @@ export class FolderService {
         )
         .orderBy(folders.sortOrder, folders.path);
 
+      // Transform the result to include hasGeneratedLink flag
+      const foldersWithLinkInfo = workspaceFolders.map(row => ({
+        ...row.folder,
+        hasGeneratedLink: !!row.generatedLink
+      }));
+
       console.log(
-        `✅ FOLDERS_FETCHED_ORDERED: ${workspaceFolders.length} folders for workspace ${workspaceId}`
+        `✅ FOLDERS_FETCHED_ORDERED: ${foldersWithLinkInfo.length} folders for workspace ${workspaceId}`
       );
-      return { success: true, data: workspaceFolders };
+      return { success: true, data: foldersWithLinkInfo };
     } catch (error) {
       console.error(
         `❌ FOLDERS_FETCH_ORDERED_FAILED: Workspace ${workspaceId}`,
@@ -254,8 +288,30 @@ export class FolderService {
   async deleteFolderWithStorage(
     folderId: string,
     storageService: any
-  ): Promise<DatabaseResult<{ filesDeleted: number; storageDeleted: number }>> {
+  ): Promise<DatabaseResult<{ filesDeleted: number; storageDeleted: number; syncedLinkFiles?: number }>> {
     try {
+      // Check if this folder has a generated link pointing to it
+      // The generated link will be CASCADE deleted, but we need to clean up link files
+      const generatedLink = await db
+        .select()
+        .from(links)
+        .where(and(
+          eq(links.sourceFolderId, folderId),
+          eq(links.linkType, 'generated')
+        ))
+        .limit(1);
+
+      let linkFilesToCleanup: typeof files.$inferSelect[] = [];
+      if (generatedLink.length > 0 && generatedLink[0]) {
+        // Get all files uploaded through this generated link
+        linkFilesToCleanup = await db
+          .select()
+          .from(files)
+          .where(eq(files.linkId, generatedLink[0].id));
+        
+        console.log(`🔗 FOUND_GENERATED_LINK_FOR_FOLDER: ${generatedLink[0].id} with ${linkFilesToCleanup.length} files to cleanup`);
+      }
+
       // Get all nested files first
       const nestedFilesResult = await this.getNestedFiles(folderId);
       if (!nestedFilesResult.success) {
@@ -269,9 +325,29 @@ export class FolderService {
       }
 
       let storageDeleted = 0;
+      let syncedLinkFiles = 0;
       const allFiles = nestedFilesResult.data;
 
-      // Delete all files from storage first (in parallel for performance)
+      // Delete link files from storage first if any
+      if (linkFilesToCleanup.length > 0) {
+        const linkStoragePromises = linkFilesToCleanup
+          .filter(file => file.storagePath)
+          .map(async file => {
+            const result = await storageService.deleteFile(
+              file.storagePath,
+              'shared' // Link files are in shared bucket
+            );
+            if (result.success) {
+              syncedLinkFiles++;
+            }
+            return result;
+          });
+        
+        await Promise.all(linkStoragePromises);
+        console.log(`✅ DELETED_LINK_FILES_FROM_STORAGE: ${syncedLinkFiles} files`);
+      }
+
+      // Delete all workspace files from storage (in parallel for performance)
       const storagePromises = allFiles
         .filter(file => file.storagePath)
         .map(async file => {
@@ -293,17 +369,18 @@ export class FolderService {
       await Promise.all(storagePromises);
 
       // Now delete from database using the regular method
+      // This will CASCADE delete the generated link if it exists
       const dbResult = await this.deleteFolder(folderId);
       if (!dbResult.success) {
         return { success: false, error: dbResult.error };
       }
 
       console.log(
-        `✅ FOLDER_FULLY_DELETED: ${folderId} (${allFiles.length} files, storage: ${storageDeleted})`
+        `✅ FOLDER_FULLY_DELETED: ${folderId} (${allFiles.length} files, storage: ${storageDeleted}, syncedLinkFiles: ${syncedLinkFiles})`
       );
       return {
         success: true,
-        data: { filesDeleted: allFiles.length, storageDeleted },
+        data: { filesDeleted: allFiles.length, storageDeleted, syncedLinkFiles },
       };
     } catch (error) {
       console.error(`❌ FOLDER_DELETE_WITH_STORAGE_FAILED: ${folderId}`, error);

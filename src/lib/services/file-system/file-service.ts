@@ -1,5 +1,5 @@
 import { db } from '@/lib/database/connection';
-import { files, folders } from '@/lib/database/schemas';
+import { files, folders, links } from '@/lib/database/schemas';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 
@@ -237,11 +237,12 @@ export class FileService {
   /**
    * Delete file with storage cleanup
    * Handles both database and storage deletion atomically
+   * Also syncs deletion with generated links if applicable
    */
   async deleteFileWithStorage(
     fileId: string,
     storageService: any
-  ): Promise<DatabaseResult<{ deletedFromStorage: boolean }>> {
+  ): Promise<DatabaseResult<{ deletedFromStorage: boolean; syncedLinkFiles?: number }>> {
     try {
       // Get file details first
       const fileResult = await this.getFileById(fileId);
@@ -252,8 +253,52 @@ export class FileService {
 
       const file = fileResult.data;
       let deletedFromStorage = false;
+      let syncedLinkFiles = 0;
 
-      console.log(`🗑️ STARTING_FILE_DELETE: FileId="${fileId}" StoragePath="${file.storagePath}" LinkId="${file.linkId}"`);
+      console.log(`🗑️ STARTING_FILE_DELETE: FileId="${fileId}" StoragePath="${file.storagePath}" LinkId="${file.linkId}" FolderId="${file.folderId}"`);
+
+      // Check if this is a workspace file in a folder with a generated link
+      if (file.workspaceId && file.folderId) {
+        // Check if there's a generated link pointing to this folder
+        const generatedLink = await db
+          .select()
+          .from(links)
+          .where(and(
+            eq(links.sourceFolderId, file.folderId),
+            eq(links.linkType, 'generated')
+          ))
+          .limit(1);
+
+        if (generatedLink.length > 0 && generatedLink[0]) {
+          // Find and delete corresponding link files with the same name in the same folder
+          // These are files uploaded through the generated link that should be synced
+          const linkFilesToDelete = await db
+            .select()
+            .from(files)
+            .where(and(
+              eq(files.fileName, file.fileName),
+              eq(files.folderId, file.folderId!), // We know it's not null because of the check above
+              eq(files.linkId, generatedLink[0].id)
+            ));
+
+          console.log(`🔗 FOUND_GENERATED_LINK_FILES: ${linkFilesToDelete.length} files to sync delete`);
+
+          // Delete each link file
+          for (const linkFile of linkFilesToDelete) {
+            // Delete from storage if exists
+            if (linkFile.storagePath) {
+              await storageService.deleteFile(linkFile.storagePath, 'shared');
+            }
+            // Delete from database
+            await db.delete(files).where(eq(files.id, linkFile.id));
+            syncedLinkFiles++;
+          }
+
+          if (syncedLinkFiles > 0) {
+            console.log(`✅ SYNCED_LINK_FILES_DELETED: ${syncedLinkFiles} files deleted from generated link`);
+          }
+        }
+      }
 
       // Delete from storage first if path exists
       if (file.storagePath) {
@@ -287,9 +332,9 @@ export class FileService {
       }
 
       console.log(
-        `✅ FILE_FULLY_DELETED: FileId="${fileId}" StorageDeleted="${deletedFromStorage}" Path="${file.storagePath}"`
+        `✅ FILE_FULLY_DELETED: FileId="${fileId}" StorageDeleted="${deletedFromStorage}" Path="${file.storagePath}" SyncedLinkFiles="${syncedLinkFiles}"`
       );
-      return { success: true, data: { deletedFromStorage } };
+      return { success: true, data: { deletedFromStorage, syncedLinkFiles } };
     } catch (error) {
       console.error(`❌ FILE_DELETE_WITH_STORAGE_FAILED: FileId="${fileId}"`, error);
       return { success: false, error: (error as Error).message };
@@ -479,7 +524,7 @@ export class FileService {
   async batchDeleteFilesWithStorage(
     fileIds: string[],
     storageService: any
-  ): Promise<DatabaseResult<{ totalDeleted: number; storageDeleted: number }>> {
+  ): Promise<DatabaseResult<{ totalDeleted: number; storageDeleted: number; syncedLinkFiles?: number }>> {
     try {
       if (fileIds.length === 0) {
         return { success: true, data: { totalDeleted: 0, storageDeleted: 0 } };
@@ -500,6 +545,59 @@ export class FileService {
 
       let storageDeleted = 0;
       let storageFailed = 0;
+      let syncedLinkFiles = 0;
+
+      // Check for and delete corresponding generated link files
+      const workspaceFiles = validFiles.filter(f => f.workspaceId && f.folderId);
+      if (workspaceFiles.length > 0) {
+        // Group files by folder
+        const filesByFolder = new Map<string, typeof workspaceFiles>();
+        workspaceFiles.forEach(file => {
+          const folderId = file.folderId!;
+          if (!filesByFolder.has(folderId)) {
+            filesByFolder.set(folderId, []);
+          }
+          filesByFolder.get(folderId)!.push(file);
+        });
+
+        // Check each folder for generated links
+        for (const [folderId, folderFiles] of filesByFolder) {
+          const generatedLink = await db
+            .select()
+            .from(links)
+            .where(and(
+              eq(links.sourceFolderId, folderId),
+              eq(links.linkType, 'generated')
+            ))
+            .limit(1);
+
+          if (generatedLink.length > 0 && generatedLink[0]) {
+            // Delete corresponding link files
+            for (const file of folderFiles) {
+              const linkFilesToDelete = await db
+                .select()
+                .from(files)
+                .where(and(
+                  eq(files.fileName, file.fileName),
+                  eq(files.folderId, file.folderId!), // We know it's not null because of the filter above
+                  eq(files.linkId, generatedLink[0].id)
+                ));
+
+              for (const linkFile of linkFilesToDelete) {
+                if (linkFile.storagePath) {
+                  await storageService.deleteFile(linkFile.storagePath, 'shared');
+                }
+                await db.delete(files).where(eq(files.id, linkFile.id));
+                syncedLinkFiles++;
+              }
+            }
+          }
+        }
+
+        if (syncedLinkFiles > 0) {
+          console.log(`✅ BATCH_SYNCED_LINK_FILES_DELETED: ${syncedLinkFiles} files deleted from generated links`);
+        }
+      }
 
       // Delete from storage first (in parallel for performance)
       const storagePromises = validFiles
@@ -537,11 +635,11 @@ export class FileService {
       }
 
       console.log(
-        `✅ FILES_BATCH_FULLY_DELETED: Total=${fileIds.length} StorageDeleted=${storageDeleted} StorageFailed=${storageFailed}`
+        `✅ FILES_BATCH_FULLY_DELETED: Total=${fileIds.length} StorageDeleted=${storageDeleted} StorageFailed=${storageFailed} SyncedLinkFiles=${syncedLinkFiles}`
       );
       return {
         success: true,
-        data: { totalDeleted: fileIds.length, storageDeleted },
+        data: { totalDeleted: fileIds.length, storageDeleted, syncedLinkFiles },
       };
     } catch (error) {
       console.error(`❌ FILES_BATCH_DELETE_WITH_STORAGE_FAILED:`, error);

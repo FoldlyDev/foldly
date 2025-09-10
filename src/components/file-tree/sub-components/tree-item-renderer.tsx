@@ -34,9 +34,9 @@ function mapToFileDisplayItem(
     thumbnailPath: item.thumbnailPath,
     
     // Visual states from headless-tree
-    isSelected: itemInstance.isSelected(),
-    isFocused: itemInstance.isFocused(),
-    isRenaming: itemInstance.isRenaming(),
+    isSelected: itemInstance.isSelected?.() || false,
+    isFocused: itemInstance.isFocused?.() || false,
+    isRenaming: itemInstance.isRenaming?.() || false,
   };
 }
 
@@ -64,12 +64,15 @@ function mapToFolderDisplayItem(
     totalSize: item.totalSize,
     isArchived: item.isArchived,
     
+    // Generated link indicator
+    hasGeneratedLink: item.hasGeneratedLink,
+    
     // Visual states from headless-tree
-    isExpanded: itemInstance.isExpanded(),
-    isSelected: itemInstance.isSelected(),
-    isFocused: itemInstance.isFocused(),
-    isRenaming: itemInstance.isRenaming(),
-    hasChildren: itemInstance.isFolder(),  // All folders can potentially have children
+    isExpanded: itemInstance.isExpanded?.() || false,
+    isSelected: itemInstance.isSelected?.() || false,
+    isFocused: itemInstance.isFocused?.() || false,
+    isRenaming: itemInstance.isRenaming?.() || false,
+    hasChildren: itemInstance.isFolder?.() || false,  // All folders can potentially have children
   };
 }
 

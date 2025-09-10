@@ -1,6 +1,6 @@
 'use client';
 
-import React, { lazy, Suspense, useMemo } from 'react';
+import React, { lazy, Suspense, useMemo, useCallback } from 'react';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import { useWorkspaceData } from '../../hooks/use-workspace-data';
 import { useTreeFactory } from '../../hooks/tree/use-tree-factory';
@@ -12,7 +12,7 @@ const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
 
 export interface WorkspaceTreeProps {
   onCopyToWorkspace?: (items: any[], targetFolderId: string, workspaceId?: string) => Promise<void>;
-  onExternalFileDrop?: (files: File[], targetFolderId?: string) => void;
+  onExternalFileDrop?: (files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => void;
 }
 
 export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: WorkspaceTreeProps) {
@@ -80,7 +80,7 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
     data: treeData,
     treeType: 'workspace', // Enable cross-tree drop acceptance
     workspaceId: workspaceData?.workspace?.id, // Pass workspace ID for proper root detection
-    // Pass cross-tree drop handler if copy function is provided
+    // Only pass cross-tree drop handler - no move/reorder for read-only tree
     ...(onCopyToWorkspace && {
       onAcceptCrossTreeDrop: async (items: any[], targetFolderId: string) => {
         await onCopyToWorkspace(items, targetFolderId, workspaceData?.workspace?.id);
@@ -154,11 +154,23 @@ export function WorkspaceTree({ onCopyToWorkspace, onExternalFileDrop }: Workspa
           }
         >
           <FileTree
-            {...treeProps}
-            initialExpandedItems={initialExpandedItems}
+            rootId={treeProps.rootId}
+            treeId={treeProps.treeId}
+            initialData={treeProps.initialData}
+            initialState={{
+              selectedItems: treeProps.initialState?.selectedItems || [],
+              checkedItems: treeProps.initialState?.checkedItems || [],
+              expandedItems: initialExpandedItems,
+            }}
+            features={treeProps.features || {}}
+            display={treeProps.display || {}}
+            callbacks={{
+              ...treeProps.callbacks,
+              ...(onExternalFileDrop ? { onExternalFileDrop } : {}),
+            }}
+            operations={treeProps.operations || {}}
+            crossTree={treeProps.crossTree || {}}
             searchQuery=""
-            // Override external file drop if provided (for OS file drops to workspace)
-            {...(onExternalFileDrop && { onExternalFileDrop })}
           />
         </Suspense>
       </div>

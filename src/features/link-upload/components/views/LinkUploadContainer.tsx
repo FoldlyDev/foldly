@@ -314,37 +314,69 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                     {linkData.id && (
                       <FileTree
                         key={`file-tree-${linkData.id}`}  // Stable key to prevent unmounting
+                        // ============= CORE CONFIGURATION =============
                         rootId={linkData.id}
                         treeId={treeIdRef.current}
                         initialData={treeDataStructure}
-                        initialExpandedItems={[linkData.id]}
-                        initialSelectedItems={selectedItems}
-                        onTreeReady={handleTreeReady}
-                        onSelectionChange={setSelectedItems}
-                        showCheckboxes={selectionMode}
+                        
+                        // ============= INITIAL STATE =============
+                        initialState={{
+                          expandedItems: [linkData.id],
+                          selectedItems: selectedItems,
+                        }}
+                        
+                        // ============= FEATURES CONTROL =============
+                        features={{
+                          selection: true,
+                          multiSelect: true,
+                          checkboxes: selectionMode,
+                          search: true,
+                          dragDrop: true,  // Link upload needs drag-drop for organization
+                          keyboardDragDrop: true,
+                          rename: true,
+                          expandAll: true,
+                          hotkeys: true,
+                        }}
+                        
+                        // ============= DISPLAY OPTIONS =============
+                        display={{
+                          showFileSize: true,
+                          showFileDate: false,
+                          showFileStatus: true,
+                          showFolderCount: true,
+                          showFolderSize: true,
+                          showCheckboxes: selectionMode,
+                          showEmptyState: true,
+                          emptyStateMessage: (
+                            <div className='text-center'>
+                              <p className='text-sm font-medium text-muted-foreground'>
+                                Ready to receive your files
+                              </p>
+                              <p className='text-xs text-muted-foreground/70 mt-1'>
+                                Drop files here, create folders, or click to browse
+                              </p>
+                            </div>
+                          ),
+                        }}
+                        
+                        // ============= EVENT CALLBACKS =============
+                        callbacks={{
+                          onTreeReady: handleTreeReady,
+                          onSelectionChange: setSelectedItems,
+                          onSearchChange: (query: string) => setSearchQuery(query),
+                          onExternalFileDrop: handleExternalFileDrop,
+                        }}
+                        
+                        // ============= OPERATION HANDLERS =============
+                        operations={{
+                          dropCallbacks: dropCallbacks,
+                          renameCallback: renameCallback,
+                          contextMenuProvider: (item: any, itemInstance: any) =>
+                            getMenuItems(item, itemInstance),
+                        }}
+                        
+                        // ============= SEARCH =============
                         searchQuery={searchQuery}
-                        onSearchChange={query => setSearchQuery(query)}
-                        showFileSize={true}
-                        showFileDate={false}
-                        showFileStatus={true}
-                        showFolderCount={true}
-                        showFolderSize={true}
-                        dropCallbacks={dropCallbacks}
-                        renameCallback={renameCallback}
-                        contextMenuProvider={(item: any, itemInstance: any) =>
-                          getMenuItems(item, itemInstance)
-                        }
-                        onExternalFileDrop={handleExternalFileDrop}
-                        emptyStateMessage={
-                          <div className='text-center'>
-                            <p className='text-sm font-medium text-muted-foreground'>
-                              Ready to receive your files
-                            </p>
-                            <p className='text-xs text-muted-foreground/70 mt-1'>
-                              Drop files here, create folders, or click to browse
-                            </p>
-                          </div>
-                        }
                       />
                     )}
                   </Suspense>

@@ -12,11 +12,6 @@ export interface DropOperationCallbacks {
 
 // Removed unused function - we now track parent during drag operation
 
-// Track ongoing drag operations to handle the two-phase update
-let dragOperationInProgress = false;
-let dragOperationTimeout: NodeJS.Timeout | null = null;
-let draggedItemsOriginalParent: string | null = null;
-
 /**
  * Creates the onDrop handler for internal drag and drop operations
  * This handles reordering and moving items within the tree
@@ -25,6 +20,11 @@ export function createTreeDropHandler(
   data: Record<string, TreeItemType>,
   callbacks?: DropOperationCallbacks
 ) {
+  // Track ongoing drag operations to handle the two-phase update
+  // These are now instance-specific, not shared across trees
+  let dragOperationInProgress = false;
+  let dragOperationTimeout: NodeJS.Timeout | null = null;
+  let draggedItemsOriginalParent: string | null = null;
   return createOnDropHandler<TreeItemType>(async (item: ItemInstance<TreeItemType>, newChildren: string[]) => {
     const targetId = item.getId();
     const targetItem = data[targetId];

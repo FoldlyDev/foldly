@@ -378,9 +378,17 @@ export function LinkTree({
           }
         >
           <FileTree 
-            {...treeProps} 
-            initialExpandedItems={[linkData.id]}
-            showEmptyState={false} // Never show the upload highlight for link trees
+            {...treeProps}
+            // Override initial state with expanded items
+            initialState={{
+              ...treeProps.initialState,
+              expandedItems: [linkData.id],
+            }}
+            // Override display to hide empty state
+            display={{
+              ...treeProps.display,
+              showEmptyState: false, // Never show the upload highlight for link trees
+            }}
           />
         </Suspense>
       </div>

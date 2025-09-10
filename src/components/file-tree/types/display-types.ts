@@ -68,6 +68,9 @@ export interface TreeFolderItem {
   isRenaming?: boolean;
   isFocused?: boolean;
   hasChildren?: boolean;
+  
+  // Link indicator
+  hasGeneratedLink?: boolean;
 }
 
 /**

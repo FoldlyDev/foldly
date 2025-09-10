@@ -45,26 +45,71 @@ export interface UseTreeFactoryProps {
 }
 
 export interface TreeFactoryResult {
-  // Tree props to spread to FileTree component
+  // Tree props to spread to FileTree component (now organized)
   treeProps: {
+    // Core
     rootId: string;
     treeId: string;
     initialData: Record<string, TreeItem>;
-    showCheckboxes: boolean;
-    showFileSize: boolean;
-    showFileDate: boolean;
-    showFileStatus: boolean;
-    showFolderCount: boolean;
-    showFolderSize: boolean;
-    onTreeReady: (tree: any) => void;
-    onSelectionChange?: (items: string[]) => void;
-    dropCallbacks?: DropOperationCallbacks;
-    renameCallback?: RenameOperationCallback;
-    contextMenuProvider?: any;
-    onExternalFileDrop?: any;
-    createForeignDragObject?: (items: any[]) => any;
-    onCompleteForeignDrop?: (items: any[]) => void;
-    onDropForeignDragObject?: (dataTransfer: DataTransfer, target: any) => Promise<void>;
+    
+    // Initial state
+    initialState?: {
+      expandedItems?: string[];
+      selectedItems?: string[];
+      checkedItems?: string[];
+    };
+    
+    // Features
+    features?: {
+      selection?: boolean;
+      multiSelect?: boolean;
+      checkboxes?: boolean;
+      search?: boolean;
+      dragDrop?: boolean;
+      keyboardDragDrop?: boolean;
+      rename?: boolean;
+      expandAll?: boolean;
+      hotkeys?: boolean;
+    };
+    
+    // Display
+    display?: {
+      showFileSize?: boolean;
+      showFileDate?: boolean;
+      showFileStatus?: boolean;
+      showFolderCount?: boolean;
+      showFolderSize?: boolean;
+      showCheckboxes?: boolean;
+      showEmptyState?: boolean;
+      emptyStateMessage?: React.ReactNode;
+      emptyStateAction?: React.ReactNode;
+    };
+    
+    // Callbacks
+    callbacks?: {
+      onTreeReady?: (tree: any) => void;
+      onSelectionChange?: (selectedItems: string[]) => void;
+      onSearchChange?: (query: string) => void;
+      onExternalFileDrop?: (
+        files: File[],
+        targetFolderId: string | null,
+        folderStructure?: { [folder: string]: File[] }
+      ) => void;
+    };
+    
+    // Operations
+    operations?: {
+      dropCallbacks?: DropOperationCallbacks;
+      renameCallback?: RenameOperationCallback;
+      contextMenuProvider?: any;
+    };
+    
+    // Cross-tree
+    crossTree?: {
+      createForeignDragObject?: (items: any[]) => any;
+      onCompleteForeignDrop?: (items: any[]) => void;
+      onDropForeignDragObject?: (dataTransfer: DataTransfer, target: any) => Promise<void>;
+    };
   };
   
   // Managers for external use
@@ -264,32 +309,76 @@ export function useTreeFactory({
     [config.features.externalFileDrop]
   );
   
-  // Build tree props - not memoized to match workspace pattern
+  // Build tree props with new organized structure
   const treeProps = {
+    // ============= CORE CONFIGURATION =============
     rootId,
     treeId,
     initialData: data,
-    initialSelectedItems: selectionManager.selectedItems, // Add this like workspace
-    showCheckboxes: config.features.checkboxes,
-    showFileSize: config.display.showFileSize,
-    showFileDate: config.display.showFileDate,
-    showFileStatus: config.display.showFileStatus,
-    showFolderCount: config.display.showFolderCount,
-    showFolderSize: config.display.showFolderSize,
-    onTreeReady: setTreeInstance,
-    // Pass setSelectedItems directly, exactly like workspace does
-    onSelectionChange: selectionManager.setSelectedItems,
-    ...(config.features.dragDrop && dropCallbacks && { dropCallbacks }),
-    ...(config.features.rename && renameCallback && { renameCallback }),
-    ...(config.features.contextMenu && { contextMenuProvider }),
-    ...(config.features.externalFileDrop && { onExternalFileDrop: handleExternalFileDrop }),
-    // Cross-tree drag support - use custom prefix for FileTree component
-    ...(treeType === 'link' && { 
-      customCreateForeignDragObject: createForeignDragObject, 
-      customOnCompleteForeignDrop: onCompleteForeignDrop 
+    
+    // ============= INITIAL STATE =============
+    initialState: {
+      selectedItems: selectionManager.selectedItems,
+      // Add expanded/checked items if needed in future
+    },
+    
+    // ============= FEATURES CONTROL =============
+    features: {
+      selection: config.features.selection,
+      multiSelect: config.features.multiSelect,
+      checkboxes: config.features.checkboxes,
+      search: config.features.search,
+      dragDrop: config.features.dragDrop || config.features.foreignDrag, // Enable drag if foreignDrag is true
+      keyboardDragDrop: config.features.dragDrop || config.features.foreignDrag, // Enable keyboard drag if any drag is enabled
+      rename: config.features.rename,
+      expandAll: true, // Usually want this enabled
+      hotkeys: true, // Usually want this enabled
+    },
+    
+    // ============= DISPLAY OPTIONS =============
+    display: {
+      showFileSize: config.display.showFileSize,
+      showFileDate: config.display.showFileDate,
+      showFileStatus: config.display.showFileStatus,
+      showFolderCount: config.display.showFolderCount,
+      showFolderSize: config.display.showFolderSize,
+      showCheckboxes: config.features.checkboxes,
+      showEmptyState: true,
+    },
+    
+    // ============= EVENT CALLBACKS =============
+    callbacks: {
+      onTreeReady: setTreeInstance,
+      onSelectionChange: selectionManager.setSelectedItems,
+      ...(config.features.externalFileDrop && { 
+        onExternalFileDrop: handleExternalFileDrop 
+      }),
+    },
+    
+    // ============= OPERATION HANDLERS =============
+    operations: {
+      ...(config.features.dragDrop && dropCallbacks && { dropCallbacks }),
+      ...(config.features.rename && renameCallback && { renameCallback }),
+      ...(config.features.contextMenu && { contextMenuProvider }),
+    },
+    
+    // ============= CROSS-TREE SUPPORT =============
+    ...(treeType === 'link' && {
+      crossTree: {
+        createForeignDragObject: createForeignDragObject,
+        onCompleteForeignDrop: onCompleteForeignDrop,
+      }
     }),
-    ...(treeType === 'workspace' && { 
-      customOnDropForeignDragObject: onDropForeignDragObject 
+    ...(treeType === 'workspace' && {
+      crossTree: {
+        onDropForeignDragObject: onDropForeignDragObject,
+        // Prevent workspace items from being dragged to other trees
+        // Return an invalid drag object that won't be accepted by any tree
+        createForeignDragObject: () => ({
+          format: 'application/x-invalid-drag',
+          data: null,
+        }),
+      }
     }),
   };
   

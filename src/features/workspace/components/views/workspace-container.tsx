@@ -435,25 +435,58 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
+                    // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
                     initialData={treeData}
-                    initialExpandedItems={initialExpandedItems}
-                    initialSelectedItems={selectedItems}
-                    onTreeReady={handleTreeReady}
-                    onSelectionChange={setSelectedItems}
-                    showCheckboxes={selectionMode}
+                    
+                    // ============= INITIAL STATE =============
+                    initialState={{
+                      expandedItems: initialExpandedItems,
+                      selectedItems: selectedItems,
+                    }}
+                    
+                    // ============= FEATURES CONTROL =============
+                    features={{
+                      selection: true,
+                      multiSelect: true,
+                      checkboxes: selectionMode,
+                      search: true,
+                      dragDrop: true,  // Full drag-drop for main workspace
+                      keyboardDragDrop: true,
+                      rename: true,
+                      expandAll: true,
+                      hotkeys: true,
+                    }}
+                    
+                    // ============= DISPLAY OPTIONS =============
+                    display={{
+                      showFileSize: true,
+                      showFileDate: false,
+                      showFileStatus: false,
+                      showFolderCount: true,
+                      showFolderSize: false,
+                      showCheckboxes: selectionMode,
+                      showEmptyState: true,
+                    }}
+                    
+                    // ============= EVENT CALLBACKS =============
+                    callbacks={{
+                      onTreeReady: handleTreeReady,
+                      onSelectionChange: setSelectedItems,
+                      onSearchChange: (query: string) => setSearchQuery(query),
+                      onExternalFileDrop: handleExternalFileDrop,
+                    }}
+                    
+                    // ============= OPERATION HANDLERS =============
+                    operations={{
+                      dropCallbacks: dropCallbacks,
+                      renameCallback: renameCallback,
+                      contextMenuProvider: contextMenuProvider,
+                    }}
+                    
+                    // ============= SEARCH =============
                     searchQuery={searchQuery}
-                    onSearchChange={query => setSearchQuery(query)}
-                    showFileSize={true}
-                    showFileDate={false}
-                    showFileStatus={false}
-                    showFolderCount={true}
-                    showFolderSize={false}
-                    dropCallbacks={dropCallbacks}
-                    renameCallback={renameCallback}
-                    contextMenuProvider={contextMenuProvider}
-                    onExternalFileDrop={handleExternalFileDrop}
                   />
                 )}
               </Suspense>
