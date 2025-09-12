@@ -3,7 +3,7 @@
 // =============================================================================
 // 🎯 Centralized exports for all composite UI components
 
-export { BulkActionsBar } from './bulk-actions-bar';
+// Note: BulkActionsBar component doesn't exist yet - placeholder export removed
 export { ConfigurableModal } from './configurable-modal';
 export { FileUpload } from './file-upload';
 export { FilterSystem } from './filter-system';

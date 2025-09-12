@@ -18,10 +18,13 @@ import {
   Hash,
   HardDrive,
   Folder,
+  FolderOpen,
   Crown,
   AlertTriangle,
   Package,
   Pencil,
+  Upload,
+  ArrowRight,
 } from 'lucide-react';
 import {
   Dialog,
@@ -64,6 +67,18 @@ export function LinkDetailsModal() {
       throw new Error(result.error || 'Failed to fetch link details');
     },
     enabled: isOpen && !!link?.id,
+  });
+
+  // Fetch source folder details for generated links
+  const { data: sourceFolder } = useQuery({
+    queryKey: ['folder-details', link?.sourceFolderId],
+    queryFn: async () => {
+      if (!link?.sourceFolderId) return null;
+      // For now, we'll just return the folder ID - you can enhance this later
+      // to fetch full folder details including name and path
+      return { id: link.sourceFolderId, name: 'Source Folder' };
+    },
+    enabled: isOpen && link?.linkType === 'generated' && !!link?.sourceFolderId,
   });
 
   // Use the enhanced stats if available, otherwise fall back to the original link data
@@ -271,8 +286,8 @@ export function LinkDetailsModal() {
             </motion.div>
           </div>
 
-          {/* Account Storage Overview - New Section */}
-          {storageInfo && (
+          {/* Account Storage Overview - Only show for non-generated links */}
+          {storageInfo && link.linkType !== 'generated' && (
             <motion.div
               className='overview-card'
               initial={{ opacity: 0, y: 20 }}
@@ -387,7 +402,7 @@ export function LinkDetailsModal() {
                 </div>
               )}
 
-              {/* Link Contribution */}
+              {/* Link Contribution - For base/custom links */}
               <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
                 <div className='flex justify-between items-center'>
                   <span className='text-sm text-muted-foreground'>
@@ -400,6 +415,63 @@ export function LinkDetailsModal() {
               </div>
             </div>
           </motion.div>
+          )}
+
+          {/* Source Folder Section - Only for Generated Links */}
+          {link.linkType === 'generated' && link.sourceFolderId && (
+            <motion.div
+              className='overview-card'
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35 }}
+            >
+              <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
+                    <FolderOpen className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
+                  </div>
+                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                    Source Folder
+                  </h3>
+                </div>
+              </div>
+
+              <div className='space-y-3'>
+                <div className='flex items-center gap-3 p-3 bg-muted/30 rounded-lg'>
+                  <ArrowRight className='w-4 h-4 text-muted-foreground flex-shrink-0' />
+                  <div className='flex-1'>
+                    <p className='text-sm font-medium text-foreground'>
+                      Files uploaded via this link go directly to your workspace folder
+                    </p>
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      This is a generated link that routes uploads to a specific folder in your workspace.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Upload Statistics for Generated Links */}
+                <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
+                  <div className='space-y-2'>
+                    <div className='flex justify-between items-center'>
+                      <span className='text-sm text-muted-foreground'>
+                        Files uploaded via this link
+                      </span>
+                      <span className='text-sm font-semibold text-foreground'>
+                        {((linkWithStats as LinkWithStats)?.stats?.fileCount || 0).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className='flex justify-between items-center'>
+                      <span className='text-sm text-muted-foreground'>
+                        Upload sessions
+                      </span>
+                      <span className='text-sm font-semibold text-foreground'>
+                        {uploadSessions.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           )}
 
           {/* Information Grid - Mobile Responsive */}
@@ -422,10 +494,10 @@ export function LinkDetailsModal() {
                 </div>
                 <button
                   onClick={handleEditClick}
-                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  className='modal-icon-btn p-1 sm:p-2 rounded-md sm:rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group cursor-pointer flex items-center justify-center !min-h-[24px] !min-w-[24px] !h-auto !w-auto'
                   title='Edit link settings'
                 >
-                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                  <Pencil className='w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
                 </button>
               </div>
 
@@ -434,10 +506,14 @@ export function LinkDetailsModal() {
                   <span className='text-sm font-medium text-muted-foreground'>
                     Type
                   </span>
-                  <span className='text-sm font-semibold text-foreground px-3 py-1 bg-muted/50 rounded-lg'>
-                    {link.linkType === 'base'
-                      ? 'Personal Collection Link'
-                      : 'Custom Topic Link'}
+                  <span className='text-sm font-semibold text-foreground px-3 py-1 bg-muted/50 rounded-lg flex items-center gap-2'>
+                    {link.linkType === 'base' ? (
+                      <>Personal Collection Link</>
+                    ) : link.linkType === 'generated' ? (
+                      <><FolderOpen className='w-3.5 h-3.5' /> Generated Link</>
+                    ) : (
+                      <>Custom Topic Link</>
+                    )}
                   </span>
                 </div>
 
@@ -492,10 +568,10 @@ export function LinkDetailsModal() {
                 </div>
                 <button
                   onClick={handleEditClick}
-                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  className='modal-icon-btn p-1 sm:p-2 rounded-md sm:rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group cursor-pointer flex items-center justify-center !min-h-[24px] !min-w-[24px] !h-auto !w-auto'
                   title='Edit security settings'
                 >
-                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                  <Pencil className='w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
                 </button>
               </div>
 
@@ -558,10 +634,10 @@ export function LinkDetailsModal() {
                 </div>
                 <button
                   onClick={handleEditClick}
-                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  className='modal-icon-btn p-1 sm:p-2 rounded-md sm:rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200 group cursor-pointer flex items-center justify-center !min-h-[24px] !min-w-[24px] !h-auto !w-auto'
                   title='Edit description'
                 >
-                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                  <Pencil className='w-3 h-3 sm:w-3.5 sm:h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
                 </button>
               </div>
               <p className='text-sm sm:text-base text-muted-foreground leading-relaxed bg-muted/30 p-3 sm:p-4 rounded-lg sm:rounded-xl'>

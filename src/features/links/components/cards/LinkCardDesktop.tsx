@@ -24,7 +24,7 @@ interface LinkCardDesktopProps {
   onOpenDetails: () => void;
   onCopyLink: () => void;
   onShare: () => void;
-  onSelectionChange?: ((linkId: string, checked: boolean) => void) | undefined;
+  onSelectionChange?: ((linkId: string) => void) | undefined;
   actions: ActionItem[];
   quickActions: ActionItem[];
   searchQuery?: string;
@@ -75,9 +75,8 @@ export const LinkCardDesktop = memo(
             <div className='flex-shrink-0'>
               <Checkbox
                 checked={isMultiSelected || false}
-                onCheckedChange={checked =>
-                  onSelectionChange?.(link.id, checked as boolean)
-                }
+                onCheckedChange={() => onSelectionChange?.(link.id)}
+                onClick={(e) => e.stopPropagation()}
                 className='w-4 h-4'
               />
             </div>

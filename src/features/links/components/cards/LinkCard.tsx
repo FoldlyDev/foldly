@@ -205,7 +205,7 @@ const LinkCardComponent = ({
       onOpenDetails={onDetails}
       onCopyLink={handleCopyLink}
       onShare={onShare}
-      onSelectionChange={onMultiSelect || (() => {})}
+      onSelectionChange={(linkId) => onMultiSelect?.(linkId)}
       searchQuery={searchQuery}
       actions={dropdownActions}
       quickActions={quickActions}

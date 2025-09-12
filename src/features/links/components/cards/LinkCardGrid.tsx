@@ -92,13 +92,16 @@ export const LinkCardGrid = memo(
                 {/* Multi-select checkbox - Only show for custom links */}
                 {onMultiSelect && !isBaseLink && (
                   <div
-                    onClick={e => e.stopPropagation()}
-                    className='flex items-center'
+                    onClick={e => {
+                      e.stopPropagation();
+                      onMultiSelect(link.id);
+                    }}
+                    className='flex items-center cursor-pointer'
                   >
                     <Checkbox
                       checked={isMultiSelected || false}
-                      onCheckedChange={() => onMultiSelect(link.id)}
-                      className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
+                      onCheckedChange={() => {}}
+                      className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 pointer-events-none'
                     />
                   </div>
                 )}
