@@ -126,19 +126,45 @@ export class FolderService {
 
   /**
    * Get all folders for a specific link
+   * For generated links, gets workspace folders from the source folder
+   * For base/custom links, gets folders with linkId
    */
   async getFoldersByLink(
     linkId: string
   ): Promise<DatabaseResult<DbFolder[]>> {
     try {
-      const linkFolders = await db
+      // First, check if this is a generated link
+      const [link] = await db
         .select()
-        .from(folders)
-        .where(eq(folders.linkId, linkId))
-        .orderBy(folders.sortOrder, folders.path);
+        .from(links)
+        .where(eq(links.id, linkId))
+        .limit(1);
+
+      if (!link) {
+        return { success: false, error: 'Link not found' };
+      }
+
+      let linkFolders: DbFolder[] = [];
+
+      if (link.linkType === 'generated') {
+        // For generated links, we don't fetch content anymore
+        // Folders are managed in Personal Space, not in the link view
+        // Return empty array as content is not displayed
+        linkFolders = [];
+        console.log(
+          `✅ GENERATED_LINK: Skipping folder content fetch for link ${linkId} - folders are in Personal Space`
+        );
+      } else {
+        // For base/custom links, get folders with linkId
+        linkFolders = await db
+          .select()
+          .from(folders)
+          .where(eq(folders.linkId, linkId))
+          .orderBy(folders.sortOrder, folders.path);
+      }
 
       console.log(
-        `✅ LINK_FOLDERS_FETCHED: ${linkFolders.length} folders for link ${linkId}`
+        `✅ LINK_FOLDERS_FETCHED: ${linkFolders.length} folders for link ${linkId} (type: ${link.linkType})`
       );
       return { success: true, data: linkFolders };
     } catch (error) {

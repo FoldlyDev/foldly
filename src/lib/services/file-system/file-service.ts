@@ -1,6 +1,6 @@
 import { db } from '@/lib/database/connection';
 import { files, folders, links } from '@/lib/database/schemas';
-import { eq, and, sql, isNull } from 'drizzle-orm';
+import { eq, and, sql, isNull, inArray } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 
 // Use the drizzle-generated types
@@ -41,19 +41,45 @@ export class FileService {
 
   /**
    * Get all files for a specific link
+   * For generated links, gets files from the workspace folder
+   * For base/custom links, gets files with linkId
    */
   async getFilesByLink(
     linkId: string
   ): Promise<DatabaseResult<DbFile[]>> {
     try {
-      const linkFiles = await db
+      // First, check if this is a generated link
+      const [link] = await db
         .select()
-        .from(files)
-        .where(eq(files.linkId, linkId))
-        .orderBy(files.sortOrder, files.createdAt);
+        .from(links)
+        .where(eq(links.id, linkId))
+        .limit(1);
+
+      if (!link) {
+        return { success: false, error: 'Link not found' };
+      }
+
+      let linkFiles: DbFile[] = [];
+
+      if (link.linkType === 'generated') {
+        // For generated links, we don't fetch content anymore
+        // Files are managed in Personal Space, not in the link view
+        // Return empty array as content is not displayed
+        linkFiles = [];
+        console.log(
+          `✅ GENERATED_LINK: Skipping file content fetch for link ${linkId} - files are in Personal Space`
+        );
+      } else {
+        // For base/custom links, get files with linkId
+        linkFiles = await db
+          .select()
+          .from(files)
+          .where(eq(files.linkId, linkId))
+          .orderBy(files.sortOrder, files.createdAt);
+      }
 
       console.log(
-        `✅ LINK_FILES_FETCHED: ${linkFiles.length} files for link ${linkId}`
+        `✅ LINK_FILES_FETCHED: ${linkFiles.length} files for link ${linkId} (type: ${link.linkType})`
       );
       return { success: true, data: linkFiles };
     } catch (error) {

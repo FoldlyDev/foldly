@@ -58,11 +58,12 @@ export class LinkQueryService {
       username: dbLink.username,
       avatarUrl: dbLink.avatarUrl,
       stats: {
-        fileCount: dbLink.fileCount,
+        // Use totalFiles from links table which includes all files (not just linkId files)
+        fileCount: dbLink.totalFiles,
         batchCount: dbLink.batchCount,
         folderCount: dbLink.folderCount || 0,
-        totalViewCount: 0, // Will be populated by analytics service
-        uniqueViewCount: 0,
+        totalViewCount: 0, // View tracking not implemented - placeholder for future
+        uniqueViewCount: 0, // View tracking not implemented - placeholder for future
         averageFileSize:
           dbLink.totalFiles > 0 ? dbLink.totalSize / dbLink.totalFiles : 0,
         storageUsedPercentage:
@@ -438,11 +439,12 @@ export class LinkQueryService {
         // Ensure branding is always an object, never null
         branding: linkData.branding || { enabled: false },
         stats: {
-          fileCount: fileCount,
+          // Use totalFiles from links table which includes all files
+          fileCount: linkData.totalFiles,
           batchCount: batchCount,  // This is the actual number of upload sessions
           folderCount: folderCount,
-          totalViewCount: 0, // Will be populated by analytics service
-          uniqueViewCount: 0,
+          totalViewCount: 0, // View tracking not implemented - placeholder for future
+          uniqueViewCount: 0, // View tracking not implemented - placeholder for future
           averageFileSize:
             linkData.totalFiles > 0 ? linkData.totalSize / linkData.totalFiles : 0,
           storageUsedPercentage:

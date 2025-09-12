@@ -68,6 +68,21 @@ export function LinkTree({
 
   // Transform data to tree structure
   const treeData = useMemo(() => {
+    let adjustedFiles = files;
+    
+    if (linkType === 'generated') {
+      // For generated links, files might reference the workspace source folder
+      // which isn't included in the link folders list
+      // So we need to treat those files as root-level files
+      const folderIds = new Set(folders.map(f => f.id));
+      
+      adjustedFiles = files.map(file => ({
+        ...file,
+        // If file's folder isn't in our folders list, put it at root
+        folderId: file.folderId && folderIds.has(file.folderId) ? file.folderId : null
+      }));
+    }
+    
     // Create a virtual root for the link
     const linkRoot = {
       id: linkData.id,
@@ -78,8 +93,8 @@ export function LinkTree({
     };
     
     // Transform folders and files to tree structure
-    return transformToTreeStructure(folders, files, linkRoot);
-  }, [linkData, folders, files]);
+    return transformToTreeStructure(folders, adjustedFiles, linkRoot);
+  }, [linkData, folders, files, linkType]);
   
   // Check if we have actual content (files or folders)
   const hasContent = useMemo(() => {

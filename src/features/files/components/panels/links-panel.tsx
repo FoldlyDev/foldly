@@ -214,9 +214,8 @@ export function LinksPanel({ isMobile }: LinksPanelProps) {
                       </p>
                     </div>
                   )
-                ) : /* Topic and Generated links sections - nested accordions for each link */
-                section.type === ('topic' as LinkType) ||
-                  section.type === 'generated' ? (
+                ) : /* Topic links sections - nested accordions for each link */
+                section.type === ('topic' as LinkType) ? (
                   section.items && section.items.length > 0 ? (
                     <Accordion
                       type='single'
@@ -225,12 +224,7 @@ export function LinksPanel({ isMobile }: LinksPanelProps) {
                     >
                       {section.items.map(item => {
                         // Get the full link data for the tree
-                        const fullLinkData =
-                          section.type === ('topic' as LinkType)
-                            ? linksData?.topicLinks?.find(l => l.id === item.id)
-                            : linksData?.generatedLinks?.find(
-                                l => l.id === item.id
-                              );
+                        const fullLinkData = linksData?.topicLinks?.find(l => l.id === item.id);
 
                         if (!fullLinkData) return null;
 
@@ -275,21 +269,47 @@ export function LinksPanel({ isMobile }: LinksPanelProps) {
                     </Accordion>
                   ) : (
                     <div className='text-center py-4 opacity-60'>
-                      {section.type === ('topic' as LinkType) ? (
-                        <>
-                          <p className='text-sm'>No topic links available</p>
-                          <p className='text-xs mt-1'>
-                            Topic links allow categorized file collection
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className='text-sm'>No generated links</p>
-                          <p className='text-xs mt-1'>
-                            Generated links are created from workspace folders
-                          </p>
-                        </>
-                      )}
+                      <p className='text-sm'>No topic links available</p>
+                      <p className='text-xs mt-1'>
+                        Topic links allow categorized file collection
+                      </p>
+                    </div>
+                  )
+                ) : /* Generated links section - simple list without trees */
+                section.type === 'generated' ? (
+                  section.items && section.items.length > 0 ? (
+                    <div className='space-y-2'>
+                      {section.items.map(item => (
+                        <div
+                          key={item.id}
+                          className={cn(
+                            'px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md',
+                            'border border-transparent hover:border-black/10 dark:hover:border-white/10',
+                            'flex items-center gap-2'
+                          )}
+                        >
+                          <Share2 className='h-3 w-3 opacity-50' />
+                          <span className='text-xs font-medium flex-1 truncate'>
+                            {item.name}
+                          </span>
+                          <span className='text-[10px] opacity-50 bg-black/5 dark:bg-white/5 px-1.5 py-0.5 rounded'>
+                            {item.filesCount} files
+                          </span>
+                        </div>
+                      ))}
+                      <div className='px-3 py-3 mt-3 bg-blue-50 dark:bg-blue-950/20 rounded-md border border-blue-200 dark:border-blue-800'>
+                        <p className='text-xs text-blue-700 dark:text-blue-300'>
+                          <strong>Note:</strong> Files shared via generated links are stored directly in your Personal Space. 
+                          View and manage them in the Personal Space section within the source folder.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className='text-center py-4 opacity-60'>
+                      <p className='text-sm'>No generated links</p>
+                      <p className='text-xs mt-1'>
+                        Generated links are created from workspace folders
+                      </p>
                     </div>
                   )
                 ) : null}
