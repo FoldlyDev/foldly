@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Link2, Eye, FileText, TrendingUp, Files } from 'lucide-react';
+import { Link2, Eye, Upload, TrendingUp, Files } from 'lucide-react';
 import { METRICS_LABELS } from '../../lib/constants';
 
 interface LinksOverviewCardsProps {
@@ -39,7 +39,7 @@ export function LinksOverviewCards({ data }: LinksOverviewCardsProps) {
     {
       title: METRICS_LABELS.totalUploads,
       value: safeData.totalUploads,
-      icon: FileText,
+      icon: Upload,
       color: 'secondary' as ColorType,
     },
     {
