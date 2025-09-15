@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, lazy, Suspense, useMemo } from 'react';
+import React, { useState, lazy, Suspense, useMemo, useCallback } from 'react';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 
 import { LinkUploadHeader } from '../sections/link-upload-header';
@@ -21,6 +21,9 @@ import { useLinkUploadStagingStore } from '../../stores/staging-store';
 import { LinkUploadModal } from '../modals/upload-modal';
 import { VerificationModal } from '../modals/verification-modal';
 import { LinkUploadProgress } from '../ui/upload-progress';
+import { DeleteConfirmationModal, type DeleteItem } from '../modals/delete-confirmation-modal';
+import { Trash2, Edit2, FolderPlus } from 'lucide-react';
+import type { ContextMenuProvider, ContextMenuItem } from '@/components/file-tree/core/tree';
 import type { LinkWithStats } from '@/lib/database/types/links';
 import { FadeTransitionWrapper } from '@/components/feedback';
 import { useLinkFileUpload } from '../../hooks/use-link-file-upload';
@@ -47,9 +50,9 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [selectionMode, setSelectionMode] = useState(false);
 
-  // Delete modal state for context menu
-  const [, setShowDeleteModal] = useState(false);
-  const [, setItemsToDelete] = useState<any[]>([]);
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemsToDelete, setItemsToDelete] = useState<DeleteItem[]>([]);
   
   // Track uploader info for progress display
   const [currentUploaderName, setCurrentUploaderName] = useState<string>('');
@@ -63,6 +66,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
     closeVerificationModal,
     stagedFiles,
     stagedFolders,
+    removeStagedItems,
   } = useLinkUploadStagingStore();
 
   // Tree instance management
@@ -84,14 +88,92 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
       linkId: linkData.id,
     });
 
+
+  // Handle delete confirmation from modal
+  const handleDeleteConfirm = () => {
+    // Get item IDs
+    const itemIds = itemsToDelete.map(item => item.id);
+
+    // Remove from tree immediately for responsive UI (optimistic update)
+    if (treeInstance?.deleteItems) {
+      treeInstance.deleteItems(itemIds);
+    }
+
+    // Remove from staging store
+    removeStagedItems(itemIds);
+
+    // Clear selection
+    setSelectedItems([]);
+
+    // Close modal and reset
+    setShowDeleteModal(false);
+    setItemsToDelete([]);
+  };
+
   // Context menu handler
   const { getMenuItems } = useContextMenuHandler({
     linkId: linkData.id,
     treeInstance,
     setItemsToDelete,
     setShowDeleteModal,
-    createFolder, // Now provided by folder creation handler
+    createFolder,
   });
+
+  // Create context menu provider - matching workspace implementation
+  const contextMenuProvider: ContextMenuProvider = useCallback(
+    (item: any, itemInstance: any) => {
+      // Get menu configuration from the handler
+      const menuConfig = getMenuItems(item, itemInstance);
+
+      // If no menu items, return null
+      if (!menuConfig) {
+        return null;
+      }
+
+      // Map configuration to actual ContextMenuItem objects with JSX
+      const menuItems: ContextMenuItem[] = menuConfig.map(config => {
+        // Handle separator
+        if (config.type === 'separator') {
+          return { separator: true };
+        }
+
+        // Map menu item type to icon
+        let icon: React.ReactNode = null;
+        switch (config.type) {
+          case 'rename':
+            icon = <Edit2 className='h-4 w-4' />;
+            break;
+          case 'delete':
+            icon = <Trash2 className='h-4 w-4' />;
+            break;
+          case 'newFolder':
+            icon = <FolderPlus className='h-4 w-4' />;
+            break;
+        }
+
+        // Build menu item with optional properties
+        const menuItem: ContextMenuItem = {
+          label: config.label,
+          icon,
+        };
+
+        // Only add optional properties if they're defined
+        if (config.destructive !== undefined) {
+          menuItem.destructive = config.destructive;
+        }
+
+        // Map action to onClick (this is the key fix!)
+        if (config.action) {
+          menuItem.onClick = config.action;
+        }
+
+        return menuItem;
+      });
+
+      return menuItems;
+    },
+    [getMenuItems]
+  );
 
   // Drag-drop handler
   const { dropCallbacks } = useDragDropHandler({ treeInstance });
@@ -100,12 +182,14 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   const { renameCallback } = useRenameHandler({ treeInstance });
   
   // File upload hook
-  const { uploadStagedFiles, isUploading, overallProgress } = useLinkFileUpload({ 
+  const { uploadStagedFiles, isUploading, overallProgress } = useLinkFileUpload({
     linkId: linkData.id,
     sourceFolderId: linkData.sourceFolderId,
     onUploadComplete: () => {
-      // Tree will be cleared automatically after successful upload
-      // This is intended - external uploaders shouldn't see previous uploads
+      // Clear selection state
+      setSelectedItems([]);
+
+      // Close modal
       closeVerificationModal();
     }
   });
@@ -113,7 +197,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
   // Transform staged items to tree structure using the same utility as workspace
   const treeDataStructure = useMemo(() => {
     if (isOwner) return {};
-    
+
     // Convert Maps to arrays and map to expected format
     const foldersArray = Array.from(stagedFolders.values()).map((folder) => ({
       id: folder.id,
@@ -157,7 +241,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
       filesArray as any,
       { id: linkData.id, name: linkData.title || 'Upload Root' }
     );
-  }, [linkData.id, linkData.title, isOwner, stagedFiles, stagedFolders, stagedFiles.size, stagedFolders.size]);
+  }, [linkData.id, linkData.title, isOwner, stagedFiles, stagedFolders]);
 
   const handleClearSelection = () => {
     // Clear local state
@@ -289,21 +373,10 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
         {/* Main content area - File Tree or Upload Progress */}
         <div className='link-upload-tree-container mt-4 h-screen overflow-y-auto!'>
           <div className='flex gap-4 h-full'>
-            <div className='link-upload-tree-wrapper flex-1'>
-              <div className='link-upload-tree-content'>
-                {isUploading ? (
-                  // Show upload progress during upload
-                  <div className='flex items-center justify-center min-h-[400px]'>
-                    <LinkUploadProgress
-                      isUploading={isUploading}
-                      totalFiles={stagedFiles.size}
-                      completedFiles={Math.floor((overallProgress / 100) * stagedFiles.size)}
-                      failedFiles={0}
-                      uploaderName={currentUploaderName}
-                    />
-                  </div>
-                ) : (
-                  // Show file tree when not uploading
+            <div className='link-upload-tree-wrapper flex-1 h-full'>
+              <div className='link-upload-tree-content h-full'>
+                {/* Always render the tree to maintain its state */}
+                <div className='h-full' style={{ display: isUploading ? 'none' : 'block' }}>
                   <Suspense
                     fallback={
                       <div className='flex items-center justify-center h-64'>
@@ -313,7 +386,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                   >
                     {linkData.id && (
                       <FileTree
-                        key={`file-tree-${linkData.id}`}  // Stable key to prevent unmounting
+                        key={`file-tree-${linkData.id}`}
                         // ============= CORE CONFIGURATION =============
                         rootId={linkData.id}
                         treeId={treeIdRef.current}
@@ -371,8 +444,7 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                         operations={{
                           dropCallbacks: dropCallbacks,
                           renameCallback: renameCallback,
-                          contextMenuProvider: (item: any, itemInstance: any) =>
-                            getMenuItems(item, itemInstance),
+                          contextMenuProvider,
                         }}
                         
                         // ============= SEARCH =============
@@ -380,6 +452,19 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
                       />
                     )}
                   </Suspense>
+                </div>
+
+                {/* Show upload progress as overlay when uploading */}
+                {isUploading && (
+                  <div className='fixed inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10'>
+                    <LinkUploadProgress
+                      isUploading={isUploading}
+                      totalFiles={stagedFiles.size}
+                      completedFiles={Math.floor((overallProgress / 100) * stagedFiles.size)}
+                      failedFiles={0}
+                      uploaderName={currentUploaderName}
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -411,6 +496,17 @@ export function LinkUploadContainer({ linkData }: LinkUploadContainerProps) {
         onClose={closeVerificationModal}
         linkData={linkData}
         onVerificationComplete={handleVerificationComplete}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setItemsToDelete([]);
+        }}
+        items={itemsToDelete}
+        onConfirm={handleDeleteConfirm}
       />
     </div>
   );

@@ -295,6 +295,8 @@ export function useLinkFileUpload({ linkId, sourceFolderId, onUploadComplete }: 
       // This is the intended behavior for link uploads
       clearAllStaged();
 
+      // Call the callback after clearing store
+      // The tree will re-render with empty data and show the empty state
       onUploadComplete?.();
 
       return {

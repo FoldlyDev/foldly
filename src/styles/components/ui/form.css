@@ -246,7 +246,7 @@
    CHECKBOX STYLES
    ============================================================================= */
 
-/* Ensure all checkboxes have cursor pointer and are visible */
+To/* Ensure all checkboxes have cursor pointer and are visible */
 [role='checkbox'],
 input[type='checkbox'],
 [data-state='checked'],

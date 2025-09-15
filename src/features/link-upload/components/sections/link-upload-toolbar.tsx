@@ -16,6 +16,7 @@ import {
   Square,
   CloudUpload,
   Send,
+  AlertCircle,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -75,8 +76,10 @@ export function LinkUploadToolbar({
     getStagedFileCount,
     getTotalStagedSize,
     hasAnyStaged,
+    hasValidContent,
     removeStagedItems,
     addStagedFolder,
+    getAllStagedItems,
   } = useLinkUploadStagingStore();
 
   // Get mobile state from tree instance
@@ -176,10 +179,39 @@ export function LinkUploadToolbar({
   };
 
   // Get staging stats
+  const { folders, files } = getAllStagedItems();
+
+  // Count empty folders
+  const emptyFolders = folders.filter(folder => {
+    // Check if this folder has any files in it
+    const hasFiles = files.some(file => file.parentId === folder.id);
+    if (hasFiles) return false;
+
+    // Check if this folder has any subfolders with content
+    const hasSubfoldersWithContent = folders.some(subfolder =>
+      subfolder.parentId === folder.id &&
+      files.some(file => file.parentId === subfolder.id)
+    );
+    return !hasSubfoldersWithContent;
+  });
+
   const stagingStats = {
     fileCount: getStagedFileCount(),
+    folderCount: folders.length,
+    emptyFolderCount: emptyFolders.length,
     totalSize: getTotalStagedSize(),
-    hasFiles: hasAnyStaged(),
+    hasAnyStaged: hasAnyStaged(), // Has files OR folders
+    hasValidContent: hasValidContent(), // Only true if all folders have files
+  };
+
+  // Handle send files click with validation
+  const handleSendFilesClick = () => {
+    if (!stagingStats.hasValidContent) {
+      // Don't open modal - the inline message already explains why
+      return;
+    }
+    // Open verification modal if we have valid content
+    onOpenVerificationModal?.();
   };
 
   return (
@@ -189,25 +221,52 @@ export function LinkUploadToolbar({
       transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
       className={`workspace-toolbar ${className}`}
     >
-      {/* Staging info bar - shows when files are staged */}
-      {stagingStats.hasFiles && (
-        <div className='flex items-center justify-between px-6 py-2 bg-primary/5 border-b border-primary/20'>
-          <div className='flex items-center gap-4'>
-            <span className='text-sm font-medium'>
-              {stagingStats.fileCount} files staged
-            </span>
-            <span className='text-sm text-muted-foreground'>
-              {formatBytes(stagingStats.totalSize)}
-            </span>
+      {/* Staging info bar - shows when anything is staged */}
+      {stagingStats.hasAnyStaged && (
+        <div className='bg-primary/5 border-b border-primary/20'>
+          <div className='flex items-center justify-between px-6 py-2'>
+            <div className='flex items-center gap-4'>
+              <span className='text-sm font-medium'>
+                {stagingStats.fileCount > 0 ? (
+                  `${stagingStats.fileCount} file${stagingStats.fileCount !== 1 ? 's' : ''} staged`
+                ) : (
+                  `${stagingStats.folderCount} empty folder${stagingStats.folderCount !== 1 ? 's' : ''}`
+                )}
+              </span>
+              {stagingStats.fileCount > 0 && (
+                <span className='text-sm text-muted-foreground'>
+                  {formatBytes(stagingStats.totalSize)}
+                </span>
+              )}
+            </div>
+            <Button
+              size='sm'
+              onClick={handleSendFilesClick}
+              className='flex items-center'
+              disabled={!stagingStats.hasValidContent}
+              variant={stagingStats.hasValidContent ? 'default' : 'secondary'}
+            >
+              {!stagingStats.hasValidContent && (
+                <AlertCircle className='h-4 w-4 mr-2' />
+              )}
+              {stagingStats.hasValidContent && (
+                <Send className='h-4 w-4 mr-2' />
+              )}
+              Send Files
+            </Button>
           </div>
-          <Button
-            size='sm'
-            onClick={onOpenVerificationModal}
-            className='flex items-center'
-          >
-            <Send className='h-4 w-4 mr-2' />
-            Send Files
-          </Button>
+          {/* Show inline message when there are empty folders */}
+          {!stagingStats.hasValidContent && stagingStats.emptyFolderCount > 0 && (
+            <div className='px-6 pb-2'>
+              <div className='flex items-center gap-2 text-xs text-amber-600 dark:text-amber-500'>
+                <AlertCircle className='h-3 w-3' />
+                <span>
+                  {stagingStats.emptyFolderCount} empty folder{stagingStats.emptyFolderCount !== 1 ? 's' : ''} detected -
+                  all folders must contain files before uploading
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
