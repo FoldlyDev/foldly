@@ -547,12 +547,13 @@ export default function FileTree(props: FileTreeProps) {
       getItemName: (item: any) => item.getItemData().name,
       isItemFolder: (item: any) => {
         const itemData = item.getItemData();
-        // Check if item has children property OR is type folder
-        // This ensures compatibility with both patterns
-        return (
-          !!('children' in itemData && itemData.children) || isFolder(itemData)
-        );
+        // A folder is determined by its type, not by having children
+        // Empty folders are still folders!
+        return itemData?.type === 'folder';
       },
+      // Disable propagateCheckedState to prevent empty folders from showing as checked
+      // when they have no children (since [].every() returns true)
+      propagateCheckedState: false,
       canReorder: features?.dragDrop === true,
       // Only include onDrop if drag-drop is enabled and we have callbacks
       ...(features?.dragDrop && dropCallbacks ? { onDrop: createTreeDropHandler(data, dropCallbacks) } : {}),
@@ -651,6 +652,26 @@ export default function FileTree(props: FileTreeProps) {
       onSelectionChange(selectedItems);
     }
   }, [tree?.getState?.()?.selectedItems, onSelectionChange]); // Fixed: Don't execute getState in deps
+
+  // Bidirectional sync between selection and checkbox state
+  React.useEffect(() => {
+    if (tree && features?.checkboxes) {
+      const selectedItems = tree.getState?.()?.selectedItems || [];
+      const checkedItems = tree.getState?.()?.checkedItems || [];
+
+      // Sync selection → checkbox (when selection changes)
+      const selectedSet = new Set(selectedItems);
+      const checkedSet = new Set(checkedItems);
+
+      // Only update if they're different to avoid infinite loops
+      if (selectedSet.size !== checkedSet.size ||
+          [...selectedSet].some(item => !checkedSet.has(item))) {
+        if (tree.setCheckedItems) {
+          tree.setCheckedItems(selectedItems);
+        }
+      }
+    }
+  }, [tree?.getState?.()?.selectedItems, features?.checkboxes]); // Sync when selection changes
 
   // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
@@ -983,6 +1004,18 @@ export default function FileTree(props: FileTreeProps) {
                                 checkboxProps?.onChange?.({
                                   target: { checked },
                                 });
+
+                                // Also sync selection state with checkbox state
+                                const itemId = item.getId();
+                                const currentSelection = tree.getState?.()?.selectedItems || [];
+
+                                if (checked === true && !currentSelection.includes(itemId)) {
+                                  // Add to selection if checked
+                                  tree.setSelectedItems?.([...currentSelection, itemId]);
+                                } else if (checked === false && currentSelection.includes(itemId)) {
+                                  // Remove from selection if unchecked
+                                  tree.setSelectedItems?.(currentSelection.filter(id => id !== itemId));
+                                }
                               }}
                             />
                           )}

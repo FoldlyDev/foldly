@@ -99,8 +99,6 @@ export function WorkspaceContainer() {
     treeInstance: selectionTreeInstance, // Will be set when tree is ready
     onSelectionChange: items => {
       // This will be called when selection changes
-      // Can be used for any side effects if needed
-      console.log('[WorkspaceContainer] Selection changed:', items);
     },
   });
 
@@ -430,26 +428,25 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
-                    // Force remount when checkbox state changes to properly initialize the checkbox feature
+                    // Force remount only when transitioning between checkbox and non-checkbox modes
                     key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
                     // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
                     initialData={treeData}
-                    
+
                     // ============= INITIAL STATE =============
                     initialState={{
                       expandedItems: initialExpandedItems,
                       selectedItems: selectedItems,
-                      // When checkboxes appear, only selected items should be checked
-                      checkedItems: selectedItems,
+                      checkedItems: selectedItems,  // Sync checked with selected items
                     }}
                     
                     // ============= FEATURES CONTROL =============
                     features={{
                       selection: true,
                       multiSelect: true,
-                      checkboxes: selectedItems.length > 0,  // Show checkboxes when items are selected
+                      checkboxes: selectedItems.length > 0,  // Enable checkbox feature when items are selected
                       search: true,
                       dragDrop: true,  // Full drag-drop for main workspace
                       keyboardDragDrop: true,
