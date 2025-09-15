@@ -8,6 +8,7 @@ import {
   Clock,
   ExternalLink,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
@@ -145,6 +146,7 @@ export const LinkCardGrid = memo(
               <div className='text-xs text-slate-500'>Files</div>
             </div>
 
+            {/* Views - commented out for future use
             <div className='text-center p-3 bg-gray-50 rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <Eye className='w-4 h-4 text-slate-500' />
@@ -153,6 +155,16 @@ export const LinkCardGrid = memo(
                 </span>
               </div>
               <div className='text-xs text-slate-500'>Views</div>
+            </div> */}
+            {/* Upload Sessions (Batches) */}
+            <div className='text-center p-3 bg-gray-50 rounded-lg'>
+              <div className='flex items-center justify-center gap-1 mb-1'>
+                <Upload className='w-4 h-4 text-slate-500' />
+                <span className='text-2xl font-bold text-slate-900'>
+                  {link.stats?.batchCount ?? 0}
+                </span>
+              </div>
+              <div className='text-xs text-slate-500'>Upload Sessions</div>
             </div>
           </div>
 

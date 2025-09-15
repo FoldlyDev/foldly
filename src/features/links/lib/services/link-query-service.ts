@@ -1,4 +1,4 @@
-import { eq, and, desc, count, sql } from 'drizzle-orm';
+import { eq, and, desc, count, sql, getTableColumns } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
 import { links, files, batches, users, folders } from '@/lib/database/schemas';
 import type {
@@ -124,14 +124,12 @@ export class LinkQueryService {
           // User info
           username: users.username,
           avatarUrl: users.avatarUrl,
-          // Statistics
-          fileCount: count(files.id),
-          batchCount: count(batches.id),
+          // Use subqueries to avoid cartesian product in counts
+          fileCount: sql<number>`(SELECT COUNT(*) FROM ${files} WHERE ${files.linkId} = ${links.id})`,
+          batchCount: sql<number>`(SELECT COUNT(*) FROM ${batches} WHERE ${batches.linkId} = ${links.id})`,
         })
         .from(links)
         .leftJoin(users, eq(links.userId, users.id))
-        .leftJoin(files, eq(links.id, files.linkId))
-        .leftJoin(batches, eq(links.id, batches.linkId))
         .where(
           includeInactive
             ? eq(links.userId, userId)
@@ -210,14 +208,12 @@ export class LinkQueryService {
           // User info
           username: users.username,
           avatarUrl: users.avatarUrl,
-          // Statistics
-          fileCount: count(files.id),
-          batchCount: count(batches.id),
+          // Use subqueries to avoid cartesian product in counts
+          fileCount: sql<number>`(SELECT COUNT(*) FROM ${files} WHERE ${files.linkId} = ${links.id})`,
+          batchCount: sql<number>`(SELECT COUNT(*) FROM ${batches} WHERE ${batches.linkId} = ${links.id})`,
         })
         .from(links)
         .leftJoin(users, eq(links.userId, users.id))
-        .leftJoin(files, eq(links.id, files.linkId))
-        .leftJoin(batches, eq(links.id, batches.linkId))
         .where(eq(links.id, linkId))
         .groupBy(links.id, users.id);
 
@@ -300,14 +296,12 @@ export class LinkQueryService {
           // User info
           username: users.username,
           avatarUrl: users.avatarUrl,
-          // Statistics
-          fileCount: count(files.id),
-          batchCount: count(batches.id),
+          // Use subqueries to avoid cartesian product in counts
+          fileCount: sql<number>`(SELECT COUNT(*) FROM ${files} WHERE ${files.linkId} = ${links.id})`,
+          batchCount: sql<number>`(SELECT COUNT(*) FROM ${batches} WHERE ${batches.linkId} = ${links.id})`,
         })
         .from(links)
         .leftJoin(users, eq(links.userId, users.id))
-        .leftJoin(files, eq(links.id, files.linkId))
-        .leftJoin(batches, eq(links.id, batches.linkId))
         .where(whereCondition)
         .groupBy(links.id, users.id);
 

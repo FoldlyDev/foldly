@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, AlertTriangle } from 'lucide-react';
+import { Clock, AlertTriangle, FileText, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
 import { SearchHighlight, CardActionsMenu } from '@/components/core';
@@ -125,6 +125,24 @@ export const LinkCardMobile = memo(
               <LinkStatusIndicator
                 status={link.isActive ? 'active' : 'paused'}
               />
+            </div>
+          </div>
+
+          {/* Stats Row */}
+          <div className='flex items-center gap-4 text-sm text-gray-600'>
+            <div className='flex items-center gap-1'>
+              <FileText className='w-3.5 h-3.5' />
+              <span>{link.stats?.fileCount ?? 0}</span>
+            </div>
+            {/* Views - commented out for future use
+            <div className='flex items-center gap-1'>
+              <Eye className='w-3.5 h-3.5' />
+              <span>{link.stats?.totalViewCount ?? 0}</span>
+            </div> */}
+            {/* Upload Sessions (Batches) */}
+            <div className='flex items-center gap-1'>
+              <Upload className='w-3.5 h-3.5' />
+              <span>{link.stats?.batchCount ?? 0}</span>
             </div>
           </div>
 

@@ -247,19 +247,63 @@ export async function POST(req: NextRequest) {
       .where(eq(links.id, linkId));
 
     // Update batch processed files count
-    await db
+    const [updatedBatch] = await db
       .update(batches)
       .set({
         processedFiles: sql`${batches.processedFiles} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(batches.id, batchId));
+      .where(eq(batches.id, batchId))
+      .returning({ processedFiles: batches.processedFiles, totalFiles: batches.totalFiles });
+
+    // Check if batch is completed and send broadcast
+    if (updatedBatch && updatedBatch.processedFiles === updatedBatch.totalFiles) {
+      // Get the link owner's userId to send them a notification
+      const linkOwner = await db
+        .select({ userId: links.userId, title: links.title })
+        .from(links)
+        .where(eq(links.id, linkId))
+        .limit(1);
+
+      if (linkOwner[0]) {
+        // Send broadcast to the link owner's channel
+        const channelName = `files:user:${linkOwner[0].userId}`;
+        const channel = supabase.channel(channelName);
+
+        // Subscribe first to ensure the channel is ready
+        await new Promise<void>((resolve) => {
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              resolve();
+            }
+          });
+        });
+
+        // Now send the broadcast
+        await channel.send({
+          type: 'broadcast',
+          event: 'file_update',
+          payload: {
+            type: 'batch_completed',
+            linkId,
+            batchId,
+            userId: linkOwner[0].userId,
+            uploaderName: batch.uploaderName,
+            fileCount: updatedBatch.totalFiles,
+            linkTitle: linkOwner[0].title,
+          },
+        });
+
+        // Clean up the channel
+        await supabase.removeChannel(channel);
+      }
+    }
 
     logger.info('File uploaded successfully', {
       userId,
       linkId,
       fileId,
-      metadata: { 
+      metadata: {
         fileName: file.name,
         fileSize: file.size,
         storagePath: uploadData.path

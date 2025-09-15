@@ -64,8 +64,8 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             link.isActive &&
             (!link.expiresAt || new Date(link.expiresAt) >= new Date())
         ).length,
-        totalUploads: links.reduce((sum, link) => sum + link.totalUploads, 0),
-        totalFiles: links.reduce((sum, link) => sum + link.totalFiles, 0),
+        totalUploads: links.reduce((sum, link) => sum + (link.stats?.batchCount || 0), 0),
+        totalFiles: links.reduce((sum, link) => sum + (link.stats?.fileCount || 0), 0),
       };
 
       return {

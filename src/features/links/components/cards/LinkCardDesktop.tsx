@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Eye, Clock, AlertTriangle } from 'lucide-react';
+import { FileText, Eye, Clock, AlertTriangle, Upload } from 'lucide-react';
 import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
 import { SearchHighlight } from '@/components/core/search-highlight';
@@ -127,9 +127,15 @@ export const LinkCardDesktop = memo(
               <FileText className='link-card-metadata-icon' />
               {link.stats?.fileCount ?? 0}
             </span>
+            {/* Views - commented out for future use
             <span className='link-card-metadata-item'>
               <Eye className='link-card-metadata-icon' />
               {link.stats?.totalViewCount ?? 0}
+            </span> */}
+            {/* Upload Sessions (Batches) */}
+            <span className='link-card-metadata-item'>
+              <Upload className='link-card-metadata-icon' />
+              {link.stats?.batchCount ?? 0}
             </span>
           </div>
 
