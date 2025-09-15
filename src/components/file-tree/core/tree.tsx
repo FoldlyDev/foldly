@@ -17,7 +17,7 @@ import {
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
-import { Checkbox } from '@/components/ui/shadcn/checkbox';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
@@ -990,6 +990,7 @@ export default function FileTree(props: FileTreeProps) {
                         >
                           {showCheckboxes && item.getCheckedState && (
                             <Checkbox
+                              className='w-4 h-4'
                               checked={
                                 {
                                   checked: true,

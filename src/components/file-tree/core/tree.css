@@ -204,7 +204,8 @@
   background: var(--indent-guide-color);
 }
 
-.file-tree-component .outeritem button:not([role="treeitem"]) {
+/* Exclude checkboxes from button styling */
+.file-tree-component .outeritem button:not([role="treeitem"]):not([role="checkbox"]) {
   padding: 2px 4px;
   height: 80%;
 }
