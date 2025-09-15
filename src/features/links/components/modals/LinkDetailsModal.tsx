@@ -425,52 +425,91 @@ export function LinkDetailsModal() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
             >
-              <div className='flex items-center justify-between mb-4'>
-                <div className='flex items-center gap-2 sm:gap-3'>
-                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
-                    <FolderOpen className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
-                  </div>
-                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
-                    Source Folder
-                  </h3>
-                </div>
-              </div>
-
-              <div className='space-y-3'>
-                <div className='flex items-center gap-3 p-3 bg-muted/30 rounded-lg'>
-                  <ArrowRight className='w-4 h-4 text-muted-foreground flex-shrink-0' />
-                  <div className='flex-1'>
-                    <p className='text-sm font-medium text-foreground'>
-                      Files uploaded via this link go directly to your workspace folder
-                    </p>
-                    <p className='text-xs text-muted-foreground mt-1'>
-                      This is a generated link that routes uploads to a specific folder in your workspace.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Upload Statistics for Generated Links */}
-                <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
-                  <div className='space-y-2'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm text-muted-foreground'>
-                        Files uploaded via this link
-                      </span>
-                      <span className='text-sm font-semibold text-foreground'>
-                        {((linkWithStats as LinkWithStats)?.stats?.fileCount || 0).toLocaleString()}
-                      </span>
+              {isLoading ? (
+                // Full skeleton loader for the entire section
+                <div className='animate-pulse'>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='flex items-center gap-2 sm:gap-3'>
+                      <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-muted'>
+                        <div className='w-4 h-4 sm:w-5 sm:h-5 bg-muted-foreground/20 rounded' />
+                      </div>
+                      <div className='h-6 w-32 bg-muted rounded' />
                     </div>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm text-muted-foreground'>
-                        Upload sessions
-                      </span>
-                      <span className='text-sm font-semibold text-foreground'>
-                        {uploadSessions.toLocaleString()}
-                      </span>
+                  </div>
+
+                  <div className='space-y-3'>
+                    <div className='p-3 bg-muted/30 rounded-lg'>
+                      <div className='space-y-2'>
+                        <div className='h-4 bg-muted rounded w-3/4' />
+                        <div className='h-3 bg-muted rounded w-full' />
+                      </div>
+                    </div>
+
+                    <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
+                      <div className='space-y-2'>
+                        <div className='flex justify-between items-center'>
+                          <div className='h-4 w-36 bg-muted rounded' />
+                          <div className='h-4 w-12 bg-muted rounded' />
+                        </div>
+                        <div className='flex justify-between items-center'>
+                          <div className='h-4 w-24 bg-muted rounded' />
+                          <div className='h-4 w-12 bg-muted rounded' />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Actual content when loaded
+                <>
+                  <div className='flex items-center justify-between mb-4'>
+                    <div className='flex items-center gap-2 sm:gap-3'>
+                      <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
+                        <FolderOpen className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
+                      </div>
+                      <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                        Source Folder
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className='space-y-3'>
+                    <div className='flex items-center gap-3 p-3 bg-muted/30 rounded-lg'>
+                      <ArrowRight className='w-4 h-4 text-muted-foreground flex-shrink-0' />
+                      <div className='flex-1'>
+                        <p className='text-sm font-medium text-foreground'>
+                          Files uploaded via this link go directly to your workspace folder
+                        </p>
+                        <p className='text-xs text-muted-foreground mt-1'>
+                          This is a generated link that routes uploads to a specific folder in your workspace.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Upload Statistics for Generated Links */}
+                    <div className='pt-3 border-t border-gray-200 dark:border-gray-700'>
+                      <div className='space-y-2'>
+                        <div className='flex justify-between items-center'>
+                          <span className='text-sm text-muted-foreground'>
+                            Files uploaded via this link
+                          </span>
+                          <span className='text-sm font-semibold text-foreground'>
+                            {((linkWithStats as LinkWithStats)?.stats?.fileCount || 0).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className='flex justify-between items-center'>
+                          <span className='text-sm text-muted-foreground'>
+                            Upload sessions
+                          </span>
+                          <span className='text-sm font-semibold text-foreground'>
+                            {uploadSessions.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 

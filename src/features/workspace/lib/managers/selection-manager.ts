@@ -21,12 +21,10 @@ interface UseSelectionManagerProps {
 interface SelectionManager {
   // State
   selectedItems: string[];
-  selectionMode: boolean;
-  
+
   // Methods
   setSelectedItems: (items: string[]) => void;
   clearSelection: () => void;
-  setSelectionMode: (mode: boolean) => void;
   toggleSelection: (itemId: string) => void;
   selectAll: (itemIds: string[]) => void;
   isSelected: (itemId: string) => boolean;
@@ -38,14 +36,12 @@ export function useSelectionManager({
 }: UseSelectionManagerProps = {}): SelectionManager {
   // Selection state
   const [selectedItems, setSelectedItemsState] = useState<string[]>([]);
-  const [selectionMode, setSelectionModeState] = useState(false);
 
   /**
    * Clear all selections
-   * Matches exact logic from workspace-container: 
+   * Matches exact logic from workspace-container:
    * 1. Clear tree instance selection
-   * 2. Clear local state  
-   * 3. Exit selection mode
+   * 2. Clear local state
    */
   const clearSelection = useCallback(() => {
     // Clear tree instance selection first
@@ -54,8 +50,6 @@ export function useSelectionManager({
     }
     // Clear local state
     setSelectedItemsState([]);
-    // Exit selection mode when clearing
-    setSelectionModeState(false);
   }, [treeInstance]);
 
   /**
@@ -75,13 +69,6 @@ export function useSelectionManager({
     onSelectionChange?.(items);
   }, [treeInstance, onSelectionChange]);
 
-  /**
-   * Set selection mode
-   * Just sets the mode - clearing is handled separately to match original logic
-   */
-  const setSelectionMode = useCallback((mode: boolean) => {
-    setSelectionModeState(mode);
-  }, []);
 
   /**
    * Toggle selection of a single item
@@ -107,10 +94,6 @@ export function useSelectionManager({
    */
   const selectAll = useCallback((itemIds: string[]) => {
     setSelectedItems(itemIds);
-    // Automatically enter selection mode when selecting multiple items
-    if (itemIds.length > 1) {
-      setSelectionModeState(true);
-    }
   }, [setSelectedItems]);
 
   /**
@@ -133,12 +116,10 @@ export function useSelectionManager({
   return {
     // State
     selectedItems,
-    selectionMode,
-    
+
     // Methods
     setSelectedItems,
     clearSelection,
-    setSelectionMode,
     toggleSelection,
     selectAll,
     isSelected,

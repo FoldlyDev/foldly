@@ -295,6 +295,7 @@ class NotificationManager {
       [NotificationEventType.LINK_CREATE_SUCCESS]: 'Link created',
       [NotificationEventType.LINK_UPDATE_SUCCESS]: 'Link updated',
       [NotificationEventType.LINK_DELETE_SUCCESS]: 'Link deleted',
+      [NotificationEventType.LINK_DELETE_ERROR]: 'Failed to delete link',
       [NotificationEventType.LINK_GENERATE_SUCCESS]: 'Link generated',
       [NotificationEventType.LINK_COPY_SUCCESS]: 'Link copied to clipboard',
       [NotificationEventType.LINK_NEW_UPLOAD]: `New upload to: ${'linkTitle' in payload ? payload.linkTitle : 'link'}`,

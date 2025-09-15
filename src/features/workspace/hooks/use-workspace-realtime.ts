@@ -94,6 +94,49 @@ export function useWorkspaceRealtime(workspaceId?: string) {
           debouncedInvalidation();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'links',
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          // Listen for link changes (especially generated links) to update folder icons
+          // This ensures the hasGeneratedLink flag is updated in real-time
+          console.log('[Workspace Realtime] Link change detected:', payload.eventType, payload.new, payload.old);
+
+          // For INSERT/DELETE events on generated links, we need immediate invalidation
+          // to ensure the folder icon updates right away
+          if (payload.eventType === 'INSERT') {
+            // Check if it's a generated link being created
+            const newLink = payload.new as any;
+            if (newLink?.linkType === 'generated' && newLink?.sourceFolderId) {
+              console.log('[Workspace Realtime] Generated link creation detected, immediate invalidation for folder:', newLink.sourceFolderId);
+              // Immediate invalidation for generated link creation
+              queryClient.invalidateQueries({
+                queryKey: workspaceQueryKeys.data(),
+              });
+              return; // Skip debounced invalidation
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Check if it was a generated link (old payload contains the deleted record)
+            const deletedLink = payload.old as any;
+            if (deletedLink?.linkType === 'generated' && deletedLink?.sourceFolderId) {
+              console.log('[Workspace Realtime] Generated link deletion detected, immediate invalidation for folder:', deletedLink.sourceFolderId);
+              // Immediate invalidation for generated link deletion
+              queryClient.invalidateQueries({
+                queryKey: workspaceQueryKeys.data(),
+              });
+              return; // Skip debounced invalidation
+            }
+          }
+
+          // Use debounced invalidation for other changes
+          debouncedInvalidation();
+        }
+      )
       .subscribe(status => {
 
         // Update connection state based on subscription status

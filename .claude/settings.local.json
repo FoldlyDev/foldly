@@ -20,7 +20,10 @@
       "Bash(find:*)",
       "Bash(npx eslint:*)",
       "mcp__sequential-thinking__sequentialthinking",
-      "Read(**)"
+      "Read(**)",
+      "mcp__Ref__ref_search_documentation",
+      "mcp__Ref__ref_read_url",
+      "WebSearch"
     ],
     "additionalDirectories": [
       "C:/Users/djedd/Documents/Programming/Work_projects/Memecoin/foldly"

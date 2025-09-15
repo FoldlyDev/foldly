@@ -17,10 +17,8 @@ import type { TreeFolderItem, TreeFileItem } from '@/components/file-tree/types'
 
 interface UseTreeInstanceManagerProps {
   workspaceId?: string;
-  selectionMode: boolean;
   isTouchDevice: boolean;
   setSelectedItems: (items: string[]) => void;
-  setSelectionMode: (mode: boolean) => void;
   clearSelection: () => void;
 }
 
@@ -38,10 +36,8 @@ interface TreeInstanceManager {
 
 export function useTreeInstanceManager({
   workspaceId,
-  selectionMode,
   isTouchDevice,
   setSelectedItems,
-  setSelectionMode,
   clearSelection,
 }: UseTreeInstanceManagerProps): TreeInstanceManager {
   // Tree instance state
@@ -186,10 +182,6 @@ export function useTreeInstanceManager({
         if (tree.collapseAll) tree.collapseAll();
       },
       isTouchDevice: () => isTouchDevice,
-      isSelectionMode: () => selectionMode,
-      setSelectionMode: (mode: boolean) => {
-        setSelectionMode(mode);
-      },
       setSelectedItems: (items: string[]) => {
         // Use the selection manager to handle this
         setSelectedItems(items);
@@ -197,7 +189,7 @@ export function useTreeInstanceManager({
     };
 
     setTreeInstance(extendedTree);
-  }, [selectionMode, isTouchDevice, workspaceId]);
+  }, [isTouchDevice, workspaceId]);
 
   return {
     // State

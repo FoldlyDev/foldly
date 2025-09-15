@@ -1,6 +1,6 @@
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, inArray } from 'drizzle-orm';
 import { db } from '@/lib/database/connection';
-import { links } from '@/lib/database/schemas';
+import { links, files, batches } from '@/lib/database/schemas';
 import type {
   Link,
   LinkInsert,
@@ -250,11 +250,47 @@ export class LinkCrudService {
 
   /**
    * Hard delete a link and all associated data
-   * Note: Database cascades will automatically delete related files, batches, folders, and notifications
+   * For generated links: Preserves workspace files by unlinking batches before deletion
+   * For other links: Database cascades automatically delete related files, batches, folders, and notifications
    */
   async hardDelete(linkId: string): Promise<DatabaseResult<boolean>> {
     try {
-      // Simply delete the link - database cascades handle the rest
+      // First, check if this is a generated link
+      const linkToDelete = await db.query.links.findFirst({
+        where: eq(links.id, linkId),
+      });
+
+      if (!linkToDelete) {
+        return {
+          success: false,
+          error: 'Link not found',
+          code: 'NOT_FOUND',
+        };
+      }
+
+      // For generated links, we need to preserve workspace files
+      if (linkToDelete.linkType === 'generated') {
+        // First, unlink files from their batches to prevent cascade deletion
+        // Get all batches associated with this link
+        const batchesResult = await db.query.batches.findMany({
+          where: eq(batches.linkId, linkId),
+        });
+
+        if (batchesResult.length > 0) {
+          const batchIds = batchesResult.map(b => b.id);
+          
+          // Set batch_id to null for all files associated with these batches
+          // This preserves the files in the workspace when the batch is deleted
+          await db
+            .update(files)
+            .set({ batchId: null })
+            .where(inArray(files.batchId, batchIds));
+        }
+      }
+
+      // Now delete the link - database cascades will handle the rest
+      // For generated links: batches will be deleted but files are preserved (batch_id was set to null)
+      // For other links: cascades will delete batches and their associated files
       const deleteResult = await db
         .delete(links)
         .where(eq(links.id, linkId))
@@ -263,8 +299,8 @@ export class LinkCrudService {
       if (!deleteResult.length) {
         return {
           success: false,
-          error: 'Link not found',
-          code: 'NOT_FOUND',
+          error: 'Failed to delete link',
+          code: 'DATABASE_ERROR',
         };
       }
 

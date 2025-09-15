@@ -12,6 +12,7 @@ import { filesQueryKeys } from '@/features/files/lib/query-keys';
 import type { Link, DatabaseId } from '@/lib/database/types';
 import { NotificationEventType } from '@/features/notifications/core';
 import { useEventBus } from '@/features/notifications/hooks/use-event-bus';
+import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 
 interface UseDeleteLinkMutationOptions {
   onSuccess?: () => void;
@@ -97,7 +98,7 @@ export function useDeleteLinkMutation(
       onError?.(error);
     },
 
-    onSuccess: (data, linkId, context) => {
+    onSuccess: async (data, linkId, context) => {
       // Invalidate and refetch to get the real data
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: linksQueryKeys.stats() });
@@ -111,6 +112,14 @@ export function useDeleteLinkMutation(
       // Invalidate files feature queries to ensure deleted link is removed there
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.links() });
       queryClient.invalidateQueries({ queryKey: filesQueryKeys.all });
+
+      // Invalidate workspace queries to update the hasGeneratedLink flag on folders
+      // This is important for generated links to remove the icon from folders
+      console.log('[Delete Link] Invalidating workspace queries...');
+      await queryClient.invalidateQueries({
+        queryKey: ['workspace', 'data'],
+      });
+      console.log('[Delete Link] Workspace queries invalidated');
 
       // Emit success event for notification
       emit(NotificationEventType.LINK_DELETE_SUCCESS, {

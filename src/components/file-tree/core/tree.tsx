@@ -703,7 +703,7 @@ export default function FileTree(props: FileTreeProps) {
         clearTimeout(timer);
       };
     }
-  }, [tree, Object.keys(data).length, forceUpdate]); // Watch for data changes
+  }, [tree, data, forceUpdate]); // Watch for actual data changes, not just count
 
   // Handle search query changes
   React.useEffect(() => {
@@ -967,7 +967,7 @@ export default function FileTree(props: FileTreeProps) {
                             } as React.CSSProperties
                           }
                         >
-                          {showCheckboxes && (
+                          {showCheckboxes && item.getCheckedState && (
                             <Checkbox
                               checked={
                                 {
@@ -979,8 +979,8 @@ export default function FileTree(props: FileTreeProps) {
                               onCheckedChange={(
                                 checked: boolean | 'indeterminate'
                               ) => {
-                                const checkboxProps = item.getCheckboxProps();
-                                checkboxProps.onChange?.({
+                                const checkboxProps = item.getCheckboxProps?.();
+                                checkboxProps?.onChange?.({
                                   target: { checked },
                                 });
                               }}

@@ -93,15 +93,14 @@ export function WorkspaceContainer() {
   const [selectionTreeInstance, setSelectionTreeInstance] = useState<any | null>(null);
   const {
     selectedItems,
-    selectionMode,
     setSelectedItems,
     clearSelection,
-    setSelectionMode,
   } = useSelectionManager({
     treeInstance: selectionTreeInstance, // Will be set when tree is ready
     onSelectionChange: items => {
       // This will be called when selection changes
       // Can be used for any side effects if needed
+      console.log('[WorkspaceContainer] Selection changed:', items);
     },
   });
 
@@ -119,10 +118,8 @@ export function WorkspaceContainer() {
     deleteItemsFromTree,
   } = useTreeInstanceManager({
     workspaceId: workspaceData?.workspace?.id,
-    selectionMode,
     isTouchDevice,
     setSelectedItems,
-    setSelectionMode,
     clearSelection,
   });
 
@@ -415,8 +412,6 @@ export function WorkspaceContainer() {
           setSearchQuery={setSearchQuery}
           selectedItems={selectedItems}
           onClearSelection={clearSelection}
-          selectionMode={selectionMode}
-          onSelectionModeChange={setSelectionMode}
           onCreateFolder={createFolder}
           isCreatingFolder={createFolderMutation.isPending}
         />
@@ -435,6 +430,8 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
+                    // Force remount when checkbox state changes to properly initialize the checkbox feature
+                    key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
                     // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
@@ -444,13 +441,15 @@ export function WorkspaceContainer() {
                     initialState={{
                       expandedItems: initialExpandedItems,
                       selectedItems: selectedItems,
+                      // When checkboxes appear, only selected items should be checked
+                      checkedItems: selectedItems,
                     }}
                     
                     // ============= FEATURES CONTROL =============
                     features={{
                       selection: true,
                       multiSelect: true,
-                      checkboxes: selectionMode,
+                      checkboxes: selectedItems.length > 0,  // Show checkboxes when items are selected
                       search: true,
                       dragDrop: true,  // Full drag-drop for main workspace
                       keyboardDragDrop: true,
@@ -458,7 +457,7 @@ export function WorkspaceContainer() {
                       expandAll: true,
                       hotkeys: true,
                     }}
-                    
+
                     // ============= DISPLAY OPTIONS =============
                     display={{
                       showFileSize: true,
@@ -466,7 +465,7 @@ export function WorkspaceContainer() {
                       showFileStatus: false,
                       showFolderCount: true,
                       showFolderSize: false,
-                      showCheckboxes: selectionMode,
+                      showCheckboxes: selectedItems.length > 0,  // Show checkboxes when items are selected
                       showEmptyState: true,
                     }}
                     
