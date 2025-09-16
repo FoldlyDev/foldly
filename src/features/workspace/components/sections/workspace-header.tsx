@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { Plus, Bell, AlertTriangle } from 'lucide-react';
 import { useStorageWarnings } from '../../hooks';
 import { useWorkspaceUploadModal } from '../../stores/workspace-modal-store';
-import { NotificationCenter } from '../ui/NotificationCenter';
+import { NotificationCenter } from '@/features/notifications/components/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import {
   useEventBus,
@@ -32,6 +32,14 @@ export function WorkspaceHeader({
   const { emit } = useEventBus();
   const [showNotifications, setShowNotifications] = useState(false);
   const totalUnread = useNotificationStore(state => state.totalUnread);
+  const refreshUnreadCounts = useNotificationStore(state => state.refreshUnreadCounts);
+
+  // Refresh notification counts when component mounts and when user changes
+  useEffect(() => {
+    if (user?.id) {
+      refreshUnreadCounts();
+    }
+  }, [user?.id, refreshUnreadCounts]);
 
   // Get appropriate greeting based on time of day
   const getGreeting = () => {

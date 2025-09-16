@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useIsMobile } from '@/lib/hooks/use-mobile';
 import { LinkCardMobile } from './LinkCardMobile';
 import { LinkCardDesktop } from './LinkCardDesktop';
@@ -8,7 +8,7 @@ import { LinkCardGrid } from './LinkCardGrid';
 import { useLinkUrl } from '../../hooks/use-link-url';
 import type { LinkWithStats } from '@/lib/database/types';
 import { Eye, Copy, Share, ExternalLink, Settings, Trash2 } from 'lucide-react';
-import { NotificationBadge } from '@/features/notifications/components/NotificationBadge';
+import { NotificationCenter } from '@/features/notifications/components/NotificationCenter';
 import { useNotificationStore } from '@/features/notifications/store/notification-store';
 import { useEventBus, NotificationEventType } from '@/features/notifications/hooks/use-event-bus';
 
@@ -38,37 +38,14 @@ const LinkCardComponent = ({
   const isMobile = useIsMobile();
   const { emit } = useEventBus();
   const unreadCounts = useNotificationStore(state => state.unreadCounts);
-  const clearLinkNotificationsLocal = useNotificationStore(state => state.clearLinkNotifications);
-  
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
+
   // Get unread count for this link
   const unreadCount = unreadCounts.get(link.id) || 0;
-  
-  // Clear notifications both locally and in database
-  const clearLinkNotifications = async (linkId: string) => {
-    // Clear local state immediately for instant UI feedback
-    clearLinkNotificationsLocal(linkId);
-    
-    // Clear in database
-    try {
-      const response = await fetch('/api/notifications/mark-read', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ linkId }),
-      });
-      
-      if (!response.ok) {
-        // If failed, refetch counts to sync with database
-        const countsResponse = await fetch('/api/notifications/unread-counts');
-        if (countsResponse.ok) {
-          const counts = await countsResponse.json();
-          useNotificationStore.getState().setUnreadCounts(counts);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to clear notifications:', error);
-    }
+
+  // Open notification center for this link
+  const openNotificationCenter = () => {
+    setShowNotificationCenter(true);
   };
 
   // Computed values
@@ -157,61 +134,91 @@ const LinkCardComponent = ({
   // Grid view - same for mobile and desktop
   if (viewMode === 'grid') {
     return (
-      <LinkCardGrid
-        link={link}
-        index={0}
-        isBaseLink={isBaseLink}
-        formattedDate={formattedDate}
-        isMultiSelected={isMultiSelected}
-        onOpenDetails={onDetails}
-        onMultiSelect={onMultiSelect || (() => {})}
-        searchQuery={searchQuery}
-        actions={dropdownActions}
-        quickActions={quickActions}
-        unreadCount={unreadCount}
-        onClearNotifications={() => clearLinkNotifications(link.id)}
-      />
+      <>
+        <LinkCardGrid
+          link={link}
+          index={0}
+          isBaseLink={isBaseLink}
+          formattedDate={formattedDate}
+          isMultiSelected={isMultiSelected}
+          onOpenDetails={onDetails}
+          onMultiSelect={onMultiSelect || (() => {})}
+          searchQuery={searchQuery}
+          actions={dropdownActions}
+          quickActions={quickActions}
+          unreadCount={unreadCount}
+          onClearNotifications={openNotificationCenter}
+        />
+
+        {/* Notification Center Modal for this link */}
+        <NotificationCenter
+          isOpen={showNotificationCenter}
+          onClose={() => setShowNotificationCenter(false)}
+          linkId={link.id}
+          linkTitle={link.title}
+        />
+      </>
     );
   }
 
   // List view - different layouts for mobile vs desktop
   if (isMobile) {
     return (
-      <LinkCardMobile
-        link={link}
-        index={0}
-        isBaseLink={isBaseLink}
-        formattedDate={formattedDate}
-        isMultiSelected={isMultiSelected}
-        onOpenDetails={onDetails}
-        onMultiSelect={onMultiSelect || (() => {})}
-        actions={dropdownActions}
-        quickActions={quickActions}
-        searchQuery={searchQuery}
-        unreadCount={unreadCount}
-        onClearNotifications={() => clearLinkNotifications(link.id)}
-      />
+      <>
+        <LinkCardMobile
+          link={link}
+          index={0}
+          isBaseLink={isBaseLink}
+          formattedDate={formattedDate}
+          isMultiSelected={isMultiSelected}
+          onOpenDetails={onDetails}
+          onMultiSelect={onMultiSelect || (() => {})}
+          actions={dropdownActions}
+          quickActions={quickActions}
+          searchQuery={searchQuery}
+          unreadCount={unreadCount}
+          onClearNotifications={openNotificationCenter}
+        />
+
+        {/* Notification Center Modal for this link */}
+        <NotificationCenter
+          isOpen={showNotificationCenter}
+          onClose={() => setShowNotificationCenter(false)}
+          linkId={link.id}
+          linkTitle={link.title}
+        />
+      </>
     );
   }
 
   return (
-    <LinkCardDesktop
-      link={link}
-      index={0}
-      isBaseLink={isBaseLink}
-      formattedDate={formattedDate}
-      isMultiSelectMode={true}
-      isMultiSelected={isMultiSelected}
-      onOpenDetails={onDetails}
-      onCopyLink={handleCopyLink}
-      onShare={onShare}
-      onSelectionChange={(linkId) => onMultiSelect?.(linkId)}
-      searchQuery={searchQuery}
-      actions={dropdownActions}
-      quickActions={quickActions}
-      unreadCount={unreadCount}
-      onClearNotifications={() => clearLinkNotifications(link.id)}
-    />
+    <>
+      <LinkCardDesktop
+        link={link}
+        index={0}
+        isBaseLink={isBaseLink}
+        formattedDate={formattedDate}
+        isMultiSelectMode={true}
+        isMultiSelected={isMultiSelected}
+        onOpenDetails={onDetails}
+        onCopyLink={handleCopyLink}
+        onShare={onShare}
+        onSelectionChange={(linkId) => onMultiSelect?.(linkId)}
+        searchQuery={searchQuery}
+        actions={dropdownActions}
+        quickActions={quickActions}
+        unreadCount={unreadCount}
+        onClearNotifications={openNotificationCenter}
+      />
+
+      {/* Notification Center Modal for this link */}
+      <NotificationCenter
+        isOpen={showNotificationCenter}
+        onClose={() => setShowNotificationCenter(false)}
+        linkId={link.id}
+        linkTitle={link.title}
+      />
+    </>
   );
 };
 

@@ -49,7 +49,10 @@ export function NotificationBadge({
         
         {/* Badge */}
         <motion.button
-          onClick={onClick}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent event bubbling to parent elements
+            onClick?.();
+          }}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           className={cn(
@@ -59,7 +62,8 @@ export function NotificationBadge({
             'rounded-full text-xs font-bold',
             'shadow-sm',
             onClick && 'cursor-pointer hover:bg-blue-700',
-            'transition-colors'
+            'transition-colors',
+            'z-10' // Higher z-index to ensure it's clickable above the card
           )}
         >
           {count > 99 ? '99+' : count}

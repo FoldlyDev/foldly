@@ -122,13 +122,15 @@ export const LinkCardGrid = memo(
 
             <div className='flex items-start gap-2'>
               {unreadCount > 0 && (
-                <NotificationBadge
-                  count={unreadCount}
-                  className='mt-1'
-                  {...(onClearNotifications && {
-                    onClick: onClearNotifications,
-                  })}
-                />
+                <div onClick={e => e.stopPropagation()} className='relative z-10'>
+                  <NotificationBadge
+                    count={unreadCount}
+                    className='mt-1'
+                    {...(onClearNotifications && {
+                      onClick: onClearNotifications,
+                    })}
+                  />
+                </div>
               )}
               <CardActionsMenu actions={actions} />
             </div>

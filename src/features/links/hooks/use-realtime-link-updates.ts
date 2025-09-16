@@ -37,27 +37,12 @@ export function useRealtimeLinkUpdates() {
     // Handle different update types
     switch (data.type) {
       case 'batch_completed':
-        // Increment notification count for this link
+        // The database trigger will create the actual notification
+        // We just need to refresh the counts and show a toast
         if (data.linkId) {
-          useNotificationStore.getState().incrementUnreadCount(data.linkId);
-
-          // Create a notification in the store
-          const notification = {
-            id: `batch-${data.batchId}-${Date.now()}`,
-            linkId: data.linkId,
-            linkTitle: data.linkTitle || 'Your link',
-            title: 'New files uploaded',
-            description: `${data.uploaderName || 'Someone'} uploaded ${data.fileCount || 0} file(s)`,
-            metadata: {
-              uploaderName: data.uploaderName,
-              fileCount: data.fileCount,
-              batchId: data.batchId,
-            },
-            isRead: false,
-            createdAt: new Date(),
-          };
-
-          useNotificationStore.getState().addRecentNotification(notification);
+          // Refresh notification counts from the server
+          // This will pick up the notification created by the database trigger
+          useNotificationStore.getState().refreshUnreadCounts();
 
           // Emit a notification event for the UI to display a toast
           eventBus.emitNotification(NotificationEventType.LINK_BATCH_UPLOAD, {

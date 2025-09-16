@@ -62,15 +62,15 @@ const navigationData: NavSection[] = [
     items: [
       {
         id: 'links',
-        label: 'Upload Links',
+        label: 'My Links',
         href: '/dashboard/links',
         icon: Link2,
-        badge: 'New',
+        // badge: 'New',
         color: 'primary',
       },
       {
         id: 'files',
-        label: 'Files',
+        label: 'Shared Files',
         href: '/dashboard/files',
         icon: FileText,
         color: 'tertiary',
