@@ -58,6 +58,9 @@ import { useDragDropHandler } from '../../lib/handlers/drag-drop-handler';
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useRenameHandler } from '../../lib/handlers/rename-handler';
 import { useFolderCreationHandler } from '../../lib/handlers/folder-creation-handler';
+import { CloudStorageSection } from '../sections/cloud-storage-section';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/shadcn/button';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -88,6 +91,9 @@ export function WorkspaceContainer() {
 
   // Track if we have touch support
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Cloud storage sidebar state
+  const [showCloudStorage, setShowCloudStorage] = useState(false);
 
   // Selection management - will be updated with tree instance
   const [selectionTreeInstance, setSelectionTreeInstance] = useState<any | null>(null);
@@ -416,7 +422,17 @@ export function WorkspaceContainer() {
       </div>
 
       <div className='workspace-tree-container mt-4 h-screen overflow-y-auto!'>
-        <div className='flex gap-4 h-full'>
+        <div className='flex gap-4 h-full relative'>
+          {/* Cloud Storage Toggle Button */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute right-0 top-0 z-10"
+            onClick={() => setShowCloudStorage(!showCloudStorage)}
+          >
+            {showCloudStorage ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+
           <div className='workspace-tree-wrapper flex-1'>
             <div className='workspace-tree-content'>
               <Suspense
@@ -488,6 +504,13 @@ export function WorkspaceContainer() {
               </Suspense>
             </div>
           </div>
+
+          {/* Cloud Storage Sidebar */}
+          {showCloudStorage && (
+            <div className='w-96 overflow-y-auto'>
+              <CloudStorageSection />
+            </div>
+          )}
         </div>
       </div>
 

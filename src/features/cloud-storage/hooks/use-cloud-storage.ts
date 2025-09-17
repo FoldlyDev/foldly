@@ -124,33 +124,30 @@ export function useCloudStorage({
   const filesQuery = useQuery<CloudFile[], Error>({
     queryKey: ['cloud-storage', provider, 'files'],
     queryFn: async () => {
-      if (!api) {
+      let providerApi = api;
+
+      if (!providerApi) {
         // Try to get token and create API instance
-        const token = await getCloudProviderToken(provider);
-        if (!token) {
+        const tokenResult = await getCloudProviderToken(provider);
+        if (!tokenResult.success || !tokenResult.token) {
           throw new Error('Not connected');
         }
-        
+
         const providerInstance = provider === 'google-drive'
-          ? new GoogleDriveProvider(token)
-          : new OneDriveProvider(token);
-        
+          ? new GoogleDriveProvider(tokenResult.token)
+          : new OneDriveProvider(tokenResult.token);
+
         setApi(providerInstance);
-        
-        const result = await providerInstance.getFiles();
-        if (!result.success) {
-          throw new Error(result.error.message);
-        }
-        return result.data;
+        providerApi = providerInstance;
       }
-      
-      const result = await api.getFiles();
+
+      const result = await providerApi.getFiles();
       if (!result.success) {
         throw new Error(result.error.message);
       }
       return result.data;
     },
-    enabled: isConnected && !!api,
+    enabled: isConnected,
     retry: 1,
   });
 

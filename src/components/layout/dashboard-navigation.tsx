@@ -8,7 +8,7 @@ import Image from 'next/image';
 import ClientOnlyUserButton from '@/components/core/client-only-user-button';
 import { AnimatedLogoButton } from '@/components/core';
 import { useNavigationContext } from './dashboard-layout-wrapper';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -21,6 +21,7 @@ import {
   ChevronRight,
   ChevronLeft,
   CreditCard,
+  LogOut,
 } from 'lucide-react';
 
 interface NavItem {
@@ -242,6 +243,13 @@ export function DashboardNavigation() {
   const NavigationContent = ({ isMobile = false }: { isMobile?: boolean }) => {
     // Always expanded on mobile, toggle-based on desktop
     const shouldExpand = isMobile || isDesktopExpanded;
+    const { signOut } = useClerk();
+    const router = useRouter();
+
+    const handleLogout = async () => {
+      await signOut();
+      router.push('/');
+    };
 
     return (
       <>
@@ -375,6 +383,41 @@ export function DashboardNavigation() {
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* Logout Button at Bottom */}
+        <div className='nav-footer mt-auto p-3 border-t border-gray-200 dark:border-gray-700'>
+          <button
+            onClick={handleLogout}
+            className={`
+              flex items-center gap-3 p-3 rounded-lg w-full
+              hover:bg-red-50 dark:hover:bg-red-900/20
+              transition-colors cursor-pointer
+              ${shouldExpand ? '' : 'justify-center'}
+            `}
+          >
+            {/* Logout Icon */}
+            <div className='flex items-center justify-center text-red-600 dark:text-red-400'>
+              <LogOut className='w-5 h-5' />
+            </div>
+
+            {/* Logout Label */}
+            <AnimatePresence>
+              {shouldExpand && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className='flex-1 min-w-0'
+                >
+                  <p className='text-sm font-medium text-red-600 dark:text-red-400'>
+                    Logout
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
         </div>
       </>
     );

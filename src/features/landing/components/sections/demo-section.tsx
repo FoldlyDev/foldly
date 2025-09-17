@@ -164,7 +164,10 @@ export const DemoSection = forwardRef<DemoSectionRefs, DemoSectionProps>(
               src='/assets/landing/spotlight-images/spotlight-banner.jpg'
               alt=''
               fill
-              style={{ objectFit: 'cover' }}
+              style={{
+                objectFit: 'cover',
+                filter: 'brightness(0)',
+              }}
             />
           </div>
           <div className='container'>
