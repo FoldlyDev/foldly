@@ -156,15 +156,15 @@ export function OneDriveSection({ onCollapse }: OneDriveSectionProps = {}) {
           </div>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center p-8 min-h-[350px]">
+      <div className="flex flex-col items-center justify-center p-6 min-h-[350px]">
         <div className="relative">
-          <GrOnedrive className="h-20 w-20 text-gray-300 dark:text-gray-600 mb-6 animate-pulse" />
-          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-3 py-1.5 rounded-full font-bold shadow-lg">
+          <GrOnedrive className="h-16 w-16 text-gray-300 dark:text-gray-600 mb-4 animate-pulse" />
+          <div className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-2.5 py-1 rounded-full font-bold shadow-lg">
             SOON
           </div>
         </div>
-        <div className="text-center space-y-3 mb-6">
-          <h3 className="text-2xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="text-center space-y-2 mb-4">
+          <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             OneDrive Integration
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs">
@@ -172,17 +172,10 @@ export function OneDriveSection({ onCollapse }: OneDriveSectionProps = {}) {
             Get ready for powerful cloud storage features!
           </p>
         </div>
-        <div className="flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl">🚀</span>
-            <span className="text-3xl">☁️</span>
-            <span className="text-3xl">✨</span>
-          </div>
-          <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 px-4 py-2 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Expected Launch: Q1 2025
-            </p>
-          </div>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="text-2xl">🚀</span>
+          <span className="text-2xl">☁️</span>
+          <span className="text-2xl">✨</span>
         </div>
       </div>
     </div>
