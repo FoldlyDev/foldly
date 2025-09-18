@@ -32,16 +32,63 @@ export class OneDriveProvider extends BaseCloudProvider {
   }
 
   async getFiles(folderId?: string): Promise<Result<CloudFile[]>> {
-    const endpoint = folderId
-      ? `${this.GRAPH_API_BASE}/me/drive/items/${folderId}/children`
-      : `${this.GRAPH_API_BASE}/me/drive/root/children`;
+    // If a specific folder is requested, just get its contents
+    if (folderId) {
+      const endpoint = `${this.GRAPH_API_BASE}/me/drive/items/${folderId}/children?$top=1000`;
+      const result = await this.makeRequest<{ value: OneDriveFile[] }>(endpoint);
 
-    const result = await this.makeRequest<{ value: OneDriveFile[] }>(endpoint);
+      if (!result.success) return result;
 
-    if (!result.success) return result;
+      const files = result.data.value.map(this.mapOneDriveFileToCloudFile);
+      return { success: true, data: files };
+    }
 
-    const files = result.data.value.map(this.mapOneDriveFileToCloudFile);
-    return { success: true, data: files };
+    // For root, get all files recursively
+    return this.getAllFilesRecursively();
+  }
+
+  private async getAllFilesRecursively(): Promise<Result<CloudFile[]>> {
+    const allFiles: CloudFile[] = [];
+    const processedFolders = new Set<string>();
+
+    // First, get all files from root
+    const rootEndpoint = `${this.GRAPH_API_BASE}/me/drive/root/children?$top=1000`;
+    const rootResult = await this.makeRequest<{ value: OneDriveFile[] }>(rootEndpoint);
+
+    if (!rootResult.success) return rootResult;
+
+    const rootFiles = rootResult.data.value.map(this.mapOneDriveFileToCloudFile);
+    allFiles.push(...rootFiles);
+
+    // Find all folders in root
+    const rootFolders = rootFiles.filter(f => f.isFolder);
+
+    // Recursively get contents of each folder
+    const fetchFolderContents = async (folder: CloudFile): Promise<void> => {
+      if (processedFolders.has(folder.id)) return;
+      processedFolders.add(folder.id);
+
+      const endpoint = `${this.GRAPH_API_BASE}/me/drive/items/${folder.id}/children?$top=1000`;
+      const result = await this.makeRequest<{ value: OneDriveFile[] }>(endpoint);
+
+      if (!result.success) return;
+
+      const folderFiles = result.data.value.map(this.mapOneDriveFileToCloudFile);
+      allFiles.push(...folderFiles);
+
+      // Recursively process subfolders
+      const subFolders = folderFiles.filter(f => f.isFolder);
+      for (const subFolder of subFolders) {
+        await fetchFolderContents(subFolder);
+      }
+    };
+
+    // Fetch contents of all root folders
+    for (const folder of rootFolders) {
+      await fetchFolderContents(folder);
+    }
+
+    return { success: true, data: allFiles };
   }
 
   async getFile(fileId: string): Promise<Result<CloudFile>> {

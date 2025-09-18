@@ -22,18 +22,69 @@ export class GoogleDriveProvider extends BaseCloudProvider {
   }
 
   async getFiles(folderId?: string): Promise<Result<CloudFile[]>> {
-    const query = folderId 
-      ? `'${folderId}' in parents and trashed = false`
-      : "'root' in parents and trashed = false";
+    // If a specific folder is requested, just get its contents
+    if (folderId) {
+      const query = `'${folderId}' in parents and trashed = false`;
+      const result = await this.makeRequest<{ files: GoogleDriveFile[] }>(
+        `${this.DRIVE_API_BASE}/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,createdTime,parents,webViewLink,thumbnailLink)&pageSize=1000`
+      );
 
-    const result = await this.makeRequest<{ files: GoogleDriveFile[] }>(
-      `${this.DRIVE_API_BASE}/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,createdTime,parents,webViewLink,thumbnailLink)`
+      if (!result.success) return result;
+
+      const files = result.data.files.map(this.mapGoogleFileToCloudFile);
+      return { success: true, data: files };
+    }
+
+    // For root, get all files recursively
+    return this.getAllFilesRecursively();
+  }
+
+  private async getAllFilesRecursively(): Promise<Result<CloudFile[]>> {
+    const allFiles: CloudFile[] = [];
+    const processedFolders = new Set<string>();
+
+    // First, get all files from root
+    const rootQuery = "'root' in parents and trashed = false";
+    const rootResult = await this.makeRequest<{ files: GoogleDriveFile[] }>(
+      `${this.DRIVE_API_BASE}/files?q=${encodeURIComponent(rootQuery)}&fields=files(id,name,mimeType,size,modifiedTime,createdTime,parents,webViewLink,thumbnailLink)&pageSize=1000`
     );
 
-    if (!result.success) return result;
+    if (!rootResult.success) return rootResult;
 
-    const files = result.data.files.map(this.mapGoogleFileToCloudFile);
-    return { success: true, data: files };
+    const rootFiles = rootResult.data.files.map(this.mapGoogleFileToCloudFile);
+    allFiles.push(...rootFiles);
+
+    // Find all folders in root
+    const rootFolders = rootFiles.filter(f => f.isFolder);
+
+    // Recursively get contents of each folder
+    const fetchFolderContents = async (folder: CloudFile): Promise<void> => {
+      if (processedFolders.has(folder.id)) return;
+      processedFolders.add(folder.id);
+
+      const query = `'${folder.id}' in parents and trashed = false`;
+      const result = await this.makeRequest<{ files: GoogleDriveFile[] }>(
+        `${this.DRIVE_API_BASE}/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,createdTime,parents,webViewLink,thumbnailLink)&pageSize=1000`
+      );
+
+      if (!result.success) return;
+
+      const folderFiles = result.data.files.map(this.mapGoogleFileToCloudFile);
+      allFiles.push(...folderFiles);
+
+      // Recursively process subfolders
+      const subFolders = folderFiles.filter(f => f.isFolder);
+      for (const subFolder of subFolders) {
+        await fetchFolderContents(subFolder);
+      }
+    };
+
+    // Fetch contents of all root folders
+    for (const folder of rootFolders) {
+      await fetchFolderContents(folder);
+    }
+
+    return { success: true, data: allFiles };
   }
 
   async getFile(fileId: string): Promise<Result<CloudFile>> {

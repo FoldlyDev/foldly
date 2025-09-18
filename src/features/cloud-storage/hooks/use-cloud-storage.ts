@@ -171,18 +171,34 @@ export function useCloudStorage({
       setFilesError('Not connected');
       return;
     }
-    
+
     setFilesError(null);
+
+    // If no folderId, refresh the main files list
+    if (!folderId) {
+      queryClient.invalidateQueries({
+        queryKey: ['cloud-storage', provider, 'files']
+      });
+      return;
+    }
+
+    // For specific folder, fetch its contents
     const result = await api.getFiles(folderId);
-    
+
     if (!result.success) {
       setFilesError(result.error.message);
       return;
     }
-    
+
+    // Update the files list with the new folder contents
+    const currentFiles = queryClient.getQueryData<CloudFile[]>(['cloud-storage', provider, 'files']) || [];
+    const updatedFiles = [...currentFiles, ...result.data.filter(
+      newFile => !currentFiles.some(existing => existing.id === newFile.id)
+    )];
+
     queryClient.setQueryData(
-      ['cloud-storage', provider, 'files'], 
-      result.data
+      ['cloud-storage', provider, 'files'],
+      updatedFiles
     );
   }, [api, provider, queryClient]);
 
@@ -322,7 +338,7 @@ export function useCloudStorage({
     
     // File operations
     files: filesQuery.data || [],
-    isLoadingFiles: filesQuery.isLoading,
+    isLoadingFiles: filesQuery.isLoading || filesQuery.isFetching,
     filesError,
     
     listFiles,
