@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useCloudStorage } from '@/features/cloud-storage/hooks/use-cloud-storage';
 import { CloudStorageConnector } from '@/features/cloud-storage/components/cloud-storage-connector';
 import { FolderOpen, RefreshCw, PanelRightClose } from 'lucide-react';
@@ -17,7 +17,9 @@ import {
   FileItem,
   SubFiles,
 } from '@/features/cloud-storage/components/cloud-files';
-import { Download } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
+import { FolderSelectorModal } from '@/features/cloud-storage/components/folder-selector-modal';
+import { cn } from '@/lib/utils/utils';
 
 interface GoogleDriveSectionProps {
   onCollapse?: () => void;
@@ -151,15 +153,86 @@ function GoogleDriveTree({ files, onDownload, onFolderExpand }: {
 
 export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {}) {
   const storage = useCloudStorage({ provider: 'google-drive', autoConnect: true });
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<{ files: File[], workspaceItems?: any[] }>();
+  const dragCounterRef = useRef(0);
 
-  // Fetch files when provider is connected
-  useEffect(() => {
-    if (storage.isConnected && !storage.isLoadingFiles && storage.files.length === 0) {
-      storage.listFiles();
+  // Define all callbacks first (before any conditional returns)
+  const handleDragEnter = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Check if dragging from workspace (has specific data type)
+    if (e.dataTransfer.types.includes('application/x-workspace-items')) {
+      dragCounterRef.current++;
+      if (dragCounterRef.current === 1) {
+        setIsDragOver(true);
+      }
     }
-  }, [storage.isConnected, storage.isLoadingFiles, storage.files.length]);
+  }, []);
 
-  if (!storage.isConnected) {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+
+    // Get workspace items data
+    const itemsData = e.dataTransfer.getData('application/x-workspace-items');
+    if (itemsData) {
+      try {
+        const items = JSON.parse(itemsData);
+        // Store items and show folder selector
+        setPendingFiles({ files: [], workspaceItems: items });
+        setShowFolderSelector(true);
+      } catch (error) {
+        console.error('Failed to parse dropped items:', error);
+      }
+    }
+  }, []);
+
+  const handleFolderSelected = useCallback(async (folderId: string | null) => {
+    if (!pendingFiles?.workspaceItems || !storage.api) return;
+
+    // TODO: Implement actual file transfer from workspace to Google Drive
+    console.log('Copying items to folder:', folderId, pendingFiles.workspaceItems);
+
+    // Clear pending files
+    setPendingFiles(undefined);
+    setShowFolderSelector(false);
+  }, [pendingFiles, storage.api]);
+
+  // Handle global dragend to clean up drag state
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+    };
+
+    window.addEventListener('dragend', handleGlobalDragEnd);
+    return () => {
+      window.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, []);
+
+  // Conditional rendering AFTER all hooks
+  if (!storage.isConnected && !storage.isConnecting) {
     return (
       <div className="h-full foldly-glass-light dark:foldly-glass rounded-xl transition-all">
         <div className="p-4 border-b border-gray-200 dark:border-white/10">
@@ -212,8 +285,52 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
     );
   }
 
+  // Show loading state while connecting
+  if (storage.isConnecting || (!storage.isConnected && storage.isLoadingFiles)) {
+    return (
+      <div className="h-full foldly-glass-light dark:foldly-glass rounded-xl transition-all">
+        <div className="p-4 border-b border-gray-200 dark:border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FaGoogle className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Google Drive</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-blue-700 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded-full font-medium">
+                Connecting...
+              </span>
+              {onCollapse && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onCollapse}
+                  title="Collapse panel"
+                  className="hover:bg-gray-100 dark:hover:bg-white/10"
+                >
+                  <PanelRightClose className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center p-8 min-h-[350px]">
+          <ContentLoader className="h-48" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full foldly-glass-light dark:foldly-glass rounded-xl transition-all flex flex-col">
+    <div
+      className={cn(
+        "h-full foldly-glass-light dark:foldly-glass rounded-xl transition-all flex flex-col relative",
+        isDragOver && "ring-2 ring-blue-500 ring-opacity-50 bg-blue-50/10 dark:bg-blue-900/10"
+      )}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -288,6 +405,27 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
           </>
         )}
       </div>
+
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-blue-500/10 dark:bg-blue-400/10 rounded-xl z-10">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg">
+            <Upload className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+            <p className="text-sm font-medium">Drop files to upload to Google Drive</p>
+          </div>
+        </div>
+      )}
+
+      {/* Folder selector modal */}
+      <FolderSelectorModal
+        isOpen={showFolderSelector}
+        onClose={() => setShowFolderSelector(false)}
+        onSelect={handleFolderSelected}
+        provider="google-drive"
+        title="Select Google Drive Destination"
+        files={storage.files}
+        api={storage.api}
+      />
     </div>
   );
 }

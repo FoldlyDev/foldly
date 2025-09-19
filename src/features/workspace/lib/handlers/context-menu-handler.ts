@@ -28,7 +28,7 @@ export interface BatchOperationItem {
   type: 'file' | 'folder';
 }
 
-export type MenuItemType = 'rename' | 'delete' | 'newFolder' | 'generateLink' | 'separator';
+export type MenuItemType = 'rename' | 'delete' | 'newFolder' | 'generateLink' | 'separator' | 'copyToGoogleDrive' | 'copyToOneDrive';
 
 export interface MenuItemConfig {
   type: MenuItemType;
@@ -43,6 +43,9 @@ interface UseContextMenuHandlerProps {
   setItemsToDelete: (items: BatchOperationItem[]) => void;
   setShowDeleteModal: (show: boolean) => void;
   createFolder?: (name: string, parentId?: string) => Promise<void>;
+  onCopyToCloud?: (provider: 'google-drive' | 'onedrive', items: TreeItem[]) => void;
+  hasGoogleDriveConnected?: boolean;
+  hasOneDriveConnected?: boolean;
 }
 
 interface ContextMenuHandler {
@@ -58,6 +61,9 @@ export function useContextMenuHandler({
   setItemsToDelete,
   setShowDeleteModal,
   createFolder,
+  onCopyToCloud,
+  hasGoogleDriveConnected = false,
+  hasOneDriveConnected = false,
 }: UseContextMenuHandlerProps): ContextMenuHandler {
   const queryClient = useQueryClient();
   
@@ -254,6 +260,45 @@ export function useContextMenuHandler({
       destructive: true,
       action: () => handleDelete(item, itemInstance),
     });
+
+    // Cloud storage options - show if connected
+    if (hasGoogleDriveConnected || hasOneDriveConnected) {
+      menuItems.push({ type: 'separator', label: '' });
+
+      if (hasGoogleDriveConnected) {
+        menuItems.push({
+          type: 'copyToGoogleDrive',
+          label: 'Copy to Google Drive',
+          action: () => {
+            const itemsToProcess = isMultipleSelection
+              ? selectedTreeItems.map((si: any) => ({
+                  id: si.getId(),
+                  name: si.getItemName?.() || 'Unknown',
+                  isFolder: si.isFolder?.(),
+                }))
+              : [item];
+            onCopyToCloud?.('google-drive', itemsToProcess);
+          },
+        });
+      }
+
+      if (hasOneDriveConnected) {
+        menuItems.push({
+          type: 'copyToOneDrive',
+          label: 'Copy to OneDrive',
+          action: () => {
+            const itemsToProcess = isMultipleSelection
+              ? selectedTreeItems.map((si: any) => ({
+                  id: si.getId(),
+                  name: si.getItemName?.() || 'Unknown',
+                  isFolder: si.isFolder?.(),
+                }))
+              : [item];
+            onCopyToCloud?.('onedrive', itemsToProcess);
+          },
+        });
+      }
+    }
 
     // Folder-specific items - only show for single selection
     if (isFolder(item) && !isMultipleSelection) {

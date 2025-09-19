@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   connectCloudProvider, 
@@ -48,14 +48,15 @@ interface UseCloudStorageResult {
   api: CloudProviderApi | null;
 }
 
-export function useCloudStorage({ 
-  provider, 
-  autoConnect = false 
+export function useCloudStorage({
+  provider,
+  autoConnect = false
 }: UseCloudStorageOptions): UseCloudStorageResult {
   const queryClient = useQueryClient();
   const [api, setApi] = useState<CloudProviderApi | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [filesError, setFilesError] = useState<string | null>(null);
+  const isInitializedRef = useRef(false);
 
   // Query for connection status
   const { data: connectionStatus } = useQuery({
@@ -65,8 +66,11 @@ export function useCloudStorage({
   });
 
   const providerKey = provider === 'google-drive' ? 'google' : 'microsoft';
-  const isConnected = connectionStatus?.[providerKey]?.connected || false;
+  const hasOAuthToken = connectionStatus?.[providerKey]?.connected || false;
   const email = connectionStatus?.[providerKey]?.email;
+
+  // Real connection status: has OAuth AND API initialized
+  const isConnected = hasOAuthToken && !!api;
 
   // Connect mutation
   const connectMutation = useMutation({
@@ -120,34 +124,21 @@ export function useCloudStorage({
     },
   });
 
-  // Files query
+  // Files query - only runs when API is ready
   const filesQuery = useQuery<CloudFile[], Error>({
     queryKey: ['cloud-storage', provider, 'files'],
     queryFn: async () => {
-      let providerApi = api;
-
-      if (!providerApi) {
-        // Try to get token and create API instance
-        const tokenResult = await getCloudProviderToken(provider);
-        if (!tokenResult.success || !tokenResult.token) {
-          throw new Error('Not connected');
-        }
-
-        const providerInstance = provider === 'google-drive'
-          ? new GoogleDriveProvider(tokenResult.token)
-          : new OneDriveProvider(tokenResult.token);
-
-        setApi(providerInstance);
-        providerApi = providerInstance;
+      if (!api) {
+        throw new Error('Provider not initialized');
       }
 
-      const result = await providerApi.getFiles();
+      const result = await api.getFiles();
       if (!result.success) {
         throw new Error(result.error.message);
       }
       return result.data;
     },
-    enabled: isConnected,
+    enabled: !!api, // Only query when API is initialized
     retry: 1,
   });
 
@@ -158,12 +149,32 @@ export function useCloudStorage({
     }
   }, [filesQuery.error]);
 
-  // Auto-connect on mount if requested
+  // Initialize API on mount if OAuth is connected and autoConnect is enabled
   useEffect(() => {
-    if (autoConnect && isConnected && !api && !connectMutation.isPending) {
-      connectMutation.mutate();
-    }
-  }, [autoConnect, isConnected, api, connectMutation]);
+    const initializeApi = async () => {
+      if (!autoConnect || isInitializedRef.current || !hasOAuthToken || api || connectMutation.isPending) {
+        return;
+      }
+
+      isInitializedRef.current = true;
+
+      // Get token and create API instance
+      const tokenResult = await getCloudProviderToken(provider);
+      if (!tokenResult.success || !tokenResult.token) {
+        setConnectionError('Failed to get access token');
+        return;
+      }
+
+      // Create provider instance
+      const providerInstance = provider === 'google-drive'
+        ? new GoogleDriveProvider(tokenResult.token)
+        : new OneDriveProvider(tokenResult.token);
+
+      setApi(providerInstance);
+    };
+
+    initializeApi();
+  }, [autoConnect, hasOAuthToken, api, provider, connectMutation.isPending]);
 
   // File operations
   const listFiles = useCallback(async (folderId?: string) => {
