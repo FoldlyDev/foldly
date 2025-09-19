@@ -186,7 +186,10 @@ export function FolderSelectorModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        style={{ backdropFilter: 'blur(8px)' }}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

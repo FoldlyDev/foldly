@@ -26,6 +26,8 @@ import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 import { checkAndShowStorageThresholds } from '@/features/notifications/internal/workspace-notifications';
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
+import { FaGoogle } from 'react-icons/fa';
+import { GrOnedrive } from 'react-icons/gr';
 import { FadeTransitionWrapper } from '@/components/feedback';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import type {
@@ -330,14 +332,10 @@ export function WorkspaceContainer() {
             icon = <Link2 className='h-4 w-4' />;
             break;
           case 'copyToGoogleDrive':
-            icon = <svg className='h-4 w-4' viewBox='0 0 24 24' fill='currentColor'>
-              <path d='M7.71 3.5L1.15 15l4.58 7.5h12.54L23 15L16.29 3.5z'/>
-            </svg>;
+            icon = <FaGoogle className='h-4 w-4' />;
             break;
           case 'copyToOneDrive':
-            icon = <svg className='h-4 w-4' viewBox='0 0 24 24' fill='currentColor'>
-              <path d='M13.5 9q1.45 0 2.475 1.025T17 12.5q0 1.45-1.025 2.475T13.5 16z'/>
-            </svg>;
+            icon = <GrOnedrive className='h-4 w-4' />;
             break;
         }
 
@@ -480,8 +478,8 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
-                    // Force remount only when transitioning between checkbox and non-checkbox modes
-                    key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
+                    // Use stable key - don't change based on selection state
+                    key={treeIdRef.current}
                     // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
@@ -489,14 +487,14 @@ export function WorkspaceContainer() {
                     // ============= INITIAL STATE =============
                     initialState={{
                       expandedItems: initialExpandedItems,
-                      selectedItems: selectedItems,
-                      checkedItems: selectedItems, // Sync checked with selected items
+                      selectedItems: [], // Don't pass selectedItems as initial state - let the tree manage it
+                      checkedItems: [], // Don't sync with selectedItems - let the tree manage it internally
                     }}
                     // ============= FEATURES CONTROL =============
                     features={{
                       selection: true,
                       multiSelect: true,
-                      checkboxes: selectedItems.length > 0, // Enable checkbox feature when items are selected
+                      checkboxes: true, // Always enable checkbox feature - visibility is controlled by CSS
                       search: true,
                       dragDrop: true, // Full drag-drop for main workspace
                       keyboardDragDrop: true,
