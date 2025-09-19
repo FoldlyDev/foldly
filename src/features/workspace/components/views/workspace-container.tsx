@@ -511,7 +511,7 @@ export function WorkspaceContainer() {
                       showFileStatus: false,
                       showFolderCount: true,
                       showFolderSize: false,
-                      showCheckboxes: selectedItems.length > 0, // Show checkboxes when items are selected
+                      showCheckboxes: true, // Always true - visibility is controlled by CSS based on selectedItems.length
                       showEmptyState: true,
                     }}
                     // ============= EVENT CALLBACKS =============
