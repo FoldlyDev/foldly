@@ -20,6 +20,7 @@ import {
 import { Download, Upload } from 'lucide-react';
 import { FolderSelectorModal } from '@/features/cloud-storage/components/folder-selector-modal';
 import { cn } from '@/lib/utils/utils';
+import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 
 interface GoogleDriveSectionProps {
   onCollapse?: () => void;
@@ -210,13 +211,120 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
   const handleFolderSelected = useCallback(async (folderId: string | null) => {
     if (!pendingFiles?.workspaceItems || !storage.api) return;
 
-    // TODO: Implement actual file transfer from workspace to Google Drive
-    console.log('Copying items to folder:', folderId, pendingFiles.workspaceItems);
+    // Import the cloud copy action
+    const { copyWorkspaceItemsToCloudAction } = await import('../../lib/actions/cloud-copy-actions');
 
-    // Clear pending files
-    setPendingFiles(undefined);
-    setShowFolderSelector(false);
-  }, [pendingFiles, storage.api]);
+    // Emit start notification
+    const batchId = `cloud-copy-${Date.now()}`;
+    eventBus.emitNotification(
+      NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+      {
+        batchId,
+        totalItems: pendingFiles.workspaceItems.length,
+        completedItems: 0,
+        items: pendingFiles.workspaceItems.map(item => ({
+          id: item.id || '',
+          name: item.name || 'Unknown',
+          type: (item.type === 'folder' || item.isFolder) ? 'folder' as const : 'file' as const,
+        })),
+      },
+      {
+        priority: NotificationPriority.LOW,
+        uiType: NotificationUIType.TOAST_SIMPLE,
+        duration: 0, // Keep showing until complete
+      }
+    );
+
+    try {
+      // Perform the copy operation
+      const result = await copyWorkspaceItemsToCloudAction(
+        pendingFiles.workspaceItems.map(item => ({
+          id: item.id,
+          name: item.name,
+          isFolder: item.type === 'folder' || item.isFolder || false,
+        })),
+        'google-drive',
+        folderId
+      );
+
+      if (result.success) {
+        // Emit success notification
+        eventBus.emitNotification(
+          NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS,
+          {
+            batchId,
+            totalItems: result.copiedCount || 0,
+            completedItems: result.copiedCount || 0,
+            items: pendingFiles.workspaceItems.map(item => ({
+              id: item.id || '',
+              name: item.name || 'Unknown',
+              type: (item.type === 'folder' || item.isFolder) ? 'folder' as const : 'file' as const,
+            })),
+          },
+          {
+            priority: NotificationPriority.LOW,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 3000,
+          }
+        );
+
+        // Refresh files list to show new items
+        storage.listFiles(folderId || undefined);
+      } else {
+        // Emit error notification
+        const errorMessage = result.errors && result.errors.length > 0
+          ? result.errors.join(', ')
+          : result.error || 'Failed to copy files to Google Drive';
+
+        eventBus.emitNotification(
+          NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+          {
+            batchId,
+            totalItems: pendingFiles.workspaceItems.length,
+            completedItems: 0,
+            failedItems: pendingFiles.workspaceItems.length,
+            items: pendingFiles.workspaceItems.map(item => ({
+              id: item.id || '',
+              name: item.name || 'Unknown',
+              type: (item.type === 'folder' || item.isFolder) ? 'folder' as const : 'file' as const,
+            })),
+            error: errorMessage,
+          },
+          {
+            priority: NotificationPriority.HIGH,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          }
+        );
+      }
+    } catch (error) {
+      // Emit error notification for unexpected errors
+      eventBus.emitNotification(
+        NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+        {
+          batchId,
+          totalItems: pendingFiles.workspaceItems.length,
+          completedItems: 0,
+          failedItems: pendingFiles.workspaceItems.length,
+          items: pendingFiles.workspaceItems.map(item => ({
+            id: item.id || '',
+            name: item.name || 'Unknown',
+            type: (item.type === 'folder' || item.isFolder) ? 'folder' as const : 'file' as const,
+          })),
+          error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        },
+        {
+          priority: NotificationPriority.HIGH,
+          uiType: NotificationUIType.TOAST_SIMPLE,
+          duration: 5000,
+        }
+      );
+    } finally {
+      // Clear pending files and close modal
+      setPendingFiles(undefined);
+      setShowFolderSelector(false);
+    }
+  }, [pendingFiles, storage]);
 
   // Handle global dragend to clean up drag state
   useEffect(() => {
@@ -425,6 +533,10 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
         title="Select Google Drive Destination"
         files={storage.files}
         api={storage.api}
+        itemsBeingCopied={pendingFiles?.workspaceItems?.map(item => ({
+          name: item.name || 'Unknown',
+          type: item.type || (item.isFolder ? 'folder' : 'file'),
+        })) || []}
       />
     </div>
   );

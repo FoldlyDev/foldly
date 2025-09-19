@@ -58,6 +58,7 @@ import { useFolderCreationHandler } from '../../lib/handlers/folder-creation-han
 import { CloudStorageContainer } from './cloud-storage-container';
 import { FolderSelectorModal } from '@/features/cloud-storage/components/folder-selector-modal';
 import { getCloudStorageStatus } from '@/lib/services/cloud-storage/actions/oauth-actions';
+import { useCloudStorage } from '@/features/cloud-storage/hooks/use-cloud-storage';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -105,6 +106,16 @@ export function WorkspaceContainer() {
 
   const hasGoogleDriveConnected = cloudStatus?.google?.connected || false;
   const hasOneDriveConnected = cloudStatus?.microsoft?.connected || false;
+
+  // Get cloud storage instances for the modal
+  const googleDriveStorage = useCloudStorage({
+    provider: 'google-drive',
+    autoConnect: hasGoogleDriveConnected
+  });
+  const oneDriveStorage = useCloudStorage({
+    provider: 'onedrive',
+    autoConnect: hasOneDriveConnected
+  });
 
   // Selection management - will be updated with tree instance
   const [selectionTreeInstance, setSelectionTreeInstance] = useState<
@@ -468,20 +479,6 @@ export function WorkspaceContainer() {
                 }
               >
                 {workspaceData?.workspace?.id && (
-                  <div
-                    onDragStart={(e) => {
-                      // Add workspace items data for cloud storage drop zones
-                      const selection = treeInstance?.getSelectedItems() || [];
-                      if (selection.length > 0) {
-                        const items = selection.map((item: any) => ({
-                          id: item.getId(),
-                          name: item.getItemName() || 'Unknown',
-                          isFolder: item.isFolder(),
-                        }));
-                        e.dataTransfer.setData('application/x-workspace-items', JSON.stringify(items));
-                      }
-                    }}
-                  >
                   <FileTree
                     // Force remount only when transitioning between checkbox and non-checkbox modes
                     key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
@@ -530,10 +527,23 @@ export function WorkspaceContainer() {
                       renameCallback: renameCallback,
                       contextMenuProvider: contextMenuProvider,
                     }}
+                    // ============= CROSS-TREE SUPPORT =============
+                    crossTree={{
+                      createForeignDragObject: (items: any[]) => ({
+                        format: 'application/x-workspace-items',
+                        data: JSON.stringify(items.map((item: any) => ({
+                          id: item.getId(),
+                          name: item.getItemName() || 'Unknown',
+                          isFolder: item.isFolder(),
+                        }))),
+                      }),
+                      onCompleteForeignDrop: () => {
+                        // No-op - don't remove items from tree on foreign drop
+                      },
+                    }}
                     // ============= SEARCH =============
                     searchQuery={searchQuery}
                   />
-                  </div>
                 )}
               </Suspense>
             </div>
@@ -588,6 +598,27 @@ export function WorkspaceContainer() {
             // Import the cloud copy action
             const { copyWorkspaceItemsToCloudAction } = await import('../../lib/actions/cloud-copy-actions');
 
+            // Emit start notification
+            const batchId = `cloud-copy-${Date.now()}`;
+            eventBus.emitNotification(
+              NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+              {
+                batchId,
+                totalItems: cloudCopyModal.items.length,
+                completedItems: 0,
+                items: cloudCopyModal.items.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  type: isFolder(item) ? 'folder' as const : 'file' as const,
+                })),
+              },
+              {
+                priority: NotificationPriority.LOW,
+                uiType: NotificationUIType.TOAST_SIMPLE,
+                duration: 0, // Keep showing until complete
+              }
+            );
+
             // Perform the copy operation
             const result = await copyWorkspaceItemsToCloudAction(
               cloudCopyModal.items.map(item => ({
@@ -603,7 +634,7 @@ export function WorkspaceContainer() {
               eventBus.emitNotification(
                 NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS,
                 {
-                  batchId: `cloud-copy-${Date.now()}`,
+                  batchId,
                   totalItems: result.copiedCount || 0,
                   completedItems: result.copiedCount || 0,
                   items: cloudCopyModal.items.map(item => ({
@@ -626,7 +657,7 @@ export function WorkspaceContainer() {
               eventBus.emitNotification(
                 NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
                 {
-                  batchId: `cloud-copy-${Date.now()}`,
+                  batchId,
                   totalItems: cloudCopyModal.items.length,
                   completedItems: result.copiedCount || 0,
                   failedItems: cloudCopyModal.items.length - (result.copiedCount || 0),
@@ -653,6 +684,8 @@ export function WorkspaceContainer() {
             name: item.name,
             type: isFolder(item) ? 'folder' : 'file',
           }))}
+          files={cloudCopyModal.provider === 'google-drive' ? googleDriveStorage.files : oneDriveStorage.files}
+          api={cloudCopyModal.provider === 'google-drive' ? googleDriveStorage.api : oneDriveStorage.api}
         />
       )}
 

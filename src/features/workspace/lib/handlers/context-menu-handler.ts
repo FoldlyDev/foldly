@@ -9,7 +9,6 @@ import { generateLinkFromFolderAction } from '@/features/links/lib/actions';
 import { generateLinkUrl } from '@/lib/config/url-config';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 import { sanitizeInput } from '@/lib/utils/validation';
-import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 
 /**
  * Context Menu Handler Hook
@@ -276,7 +275,11 @@ export function useContextMenuHandler({
                   name: si.getItemName?.() || 'Unknown',
                   isFolder: si.isFolder?.(),
                 }))
-              : [item];
+              : [{
+                  id: item.id,
+                  name: item.name,
+                  isFolder: isFolder(item),
+                }];
             onCopyToCloud?.('google-drive', itemsToProcess);
           },
         });
@@ -293,7 +296,11 @@ export function useContextMenuHandler({
                   name: si.getItemName?.() || 'Unknown',
                   isFolder: si.isFolder?.(),
                 }))
-              : [item];
+              : [{
+                  id: item.id,
+                  name: item.name,
+                  isFolder: isFolder(item),
+                }];
             onCopyToCloud?.('onedrive', itemsToProcess);
           },
         });
