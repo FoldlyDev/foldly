@@ -5,9 +5,10 @@ import { createErrorResponse, createSuccessResponse, ERROR_CODES } from '@/lib/t
 // TODO: Uncomment when actions are re-implemented with new tree
 // import { validateLinkAccessAction } from '@/features/link-upload/lib/actions';
 import { db } from '@/lib/database/connection';
-import { files, batches, links, users } from '@/lib/database/schemas';
-import { eq, sql } from 'drizzle-orm';
+import { files, batches, links, users, folders } from '@/lib/database/schemas';
+import { eq, sql, and, isNull } from 'drizzle-orm';
 import { createClient } from '@supabase/supabase-js';
+import type { Folder } from '@/lib/database/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60; // 60 seconds timeout for uploads
@@ -133,18 +134,69 @@ export async function POST(req: NextRequest) {
     const userId = link.userId;
     const isGeneratedLink = link.linkType === 'generated';
 
-    // Generate unique file path
+    // Generate unique file path based on link type
     const timestamp = Date.now();
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const storagePath = `${userId}/${linkId}/${timestamp}_${sanitizedName}`;
+
+    // We need to determine the folder structure BEFORE setting the storage path
+    // For generated links, resolve the actual workspace folder first
+    let actualFolderId = folderId;
+
+    if (isGeneratedLink && folderId) {
+      // For generated links, folders created in the UI need to be mapped to workspace folders
+      const linkFolder = await db.query.folders.findFirst({
+        where: eq(folders.id, folderId)
+      });
+
+      if (linkFolder) {
+        // Create or find the equivalent workspace folder
+        const workspaceFolderResult = await ensureWorkspaceFolderStructure(
+          link.workspaceId!,
+          linkFolder,
+          batch.targetFolderId
+        );
+
+        if (workspaceFolderResult.success && workspaceFolderResult.folderId) {
+          actualFolderId = workspaceFolderResult.folderId;
+        } else {
+          // If we can't create the folder structure, fall back to target folder
+          actualFolderId = batch.targetFolderId || null;
+        }
+      } else {
+        // Folder not found, use the batch target folder
+        actualFolderId = batch.targetFolderId || null;
+      }
+    } else if (isGeneratedLink) {
+      // No folder specified, use the batch target folder directly
+      actualFolderId = batch.targetFolderId || null;
+    }
+
+    // Now set the storage path with the correct folder ID
+    let storagePath: string;
+    let storageBucket: string;
+
+    if (isGeneratedLink) {
+      // Generated links: Files go to workspace-files bucket
+      // Use the actual resolved workspace folder ID in the path
+      if (actualFolderId) {
+        storagePath = `${userId}/folders/${actualFolderId}/${timestamp}_${sanitizedName}`;
+      } else {
+        storagePath = `${userId}/workspace/${timestamp}_${sanitizedName}`;
+      }
+      storageBucket = 'workspace-files';
+    } else {
+      // Base/Custom links: Files go to shared-files bucket with link-based path
+      storagePath = `${userId}/${linkId}/${timestamp}_${sanitizedName}`;
+      storageBucket = 'shared-files';
+    }
 
     // Convert File to ArrayBuffer then to Uint8Array for Supabase
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    // Upload directly to Supabase Storage (using 'shared-files' public bucket for link uploads)
+    // Upload to the appropriate storage bucket
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('shared-files')
+      .from(storageBucket)
       .upload(storagePath, uint8Array, {
         contentType: file.type,
         upsert: false,
@@ -174,14 +226,15 @@ export async function POST(req: NextRequest) {
 
     // Create the file record with storage path and status
     const fileExtension = file.name.split('.').pop() || '';
-    
-    // For generated links, files go to the workspace with the target folder
+
+    // For generated links, files go to the workspace with the proper folder
     // For base/custom links, files stay associated with the link
+    // Note: actualFolderId was already resolved above before setting storage path
     const fileValues = {
       batchId,
       linkId: isGeneratedLink ? null : linkId, // Generated links: files belong to workspace
       workspaceId: isGeneratedLink ? link.workspaceId : null, // Generated links: set workspace
-      folderId: isGeneratedLink ? (batch.targetFolderId || null) : (folderId || null), // Generated links: use batch target folder
+      folderId: isGeneratedLink ? actualFolderId : (folderId || null), // Use the workspace folder for generated links
       fileName: file.name,
       originalName: file.name,
       fileSize: file.size,
@@ -218,8 +271,8 @@ export async function POST(req: NextRequest) {
     const [fileRecord] = await db.insert(files).values(fileValues).returning({ id: files.id });
 
     if (!fileRecord) {
-      // Cleanup storage if database insert fails
-      await supabase.storage.from('shared-files').remove([storagePath]);
+      // Cleanup storage if database insert fails (use the same bucket we uploaded to)
+      await supabase.storage.from(storageBucket).remove([storagePath]);
       return NextResponse.json(
         createErrorResponse('Failed to create file record', ERROR_CODES.DATABASE_ERROR),
         { status: 500 }
@@ -329,5 +382,85 @@ export async function POST(req: NextRequest) {
       ),
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Helper function to ensure folder structure exists in workspace for generated links
+ * This creates or finds the equivalent workspace folder for a link-created folder
+ */
+async function ensureWorkspaceFolderStructure(
+  workspaceId: string,
+  linkFolder: Folder,
+  targetFolderId: string | null
+): Promise<{ success: boolean; folderId?: string; error?: string }> {
+  try {
+    // Build the folder path from the link folder
+    const folderPath: Folder[] = [];
+    let currentFolder: Folder | undefined = linkFolder;
+
+    // Traverse up to get the full path
+    while (currentFolder) {
+      folderPath.unshift(currentFolder);
+      if (currentFolder.parentFolderId) {
+        currentFolder = await db.query.folders.findFirst({
+          where: eq(folders.id, currentFolder.parentFolderId)
+        });
+      } else {
+        currentFolder = undefined;
+      }
+    }
+
+    // Now create/find folders from root to leaf in the workspace
+    let parentId = targetFolderId;
+
+    for (const folder of folderPath) {
+      // Check if this folder already exists in the workspace
+      const existingFolder = await db.query.folders.findFirst({
+        where: and(
+          eq(folders.workspaceId, workspaceId),
+          eq(folders.name, folder.name),
+          parentId ? eq(folders.parentFolderId, parentId) : (targetFolderId ? eq(folders.parentFolderId, targetFolderId) : isNull(folders.parentFolderId))
+        )
+      });
+
+      if (existingFolder) {
+        parentId = existingFolder.id;
+      } else {
+        // Create the folder in the workspace
+        const [newFolder] = await db.insert(folders).values({
+          name: folder.name,
+          workspaceId: workspaceId,
+          linkId: null,
+          parentFolderId: parentId,
+          path: '/', // Will be calculated by the system
+          depth: 0,  // Will be calculated based on parent
+          sortOrder: 0,
+          isArchived: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }).returning();
+
+        if (!newFolder) {
+          return {
+            success: false,
+            error: `Failed to create folder: ${folder.name}`
+          };
+        }
+
+        parentId = newFolder.id;
+      }
+    }
+
+    return {
+      success: true,
+      ...(parentId && { folderId: parentId })
+    };
+  } catch (error) {
+    logger.error('Failed to ensure workspace folder structure', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create folder structure'
+    };
   }
 }

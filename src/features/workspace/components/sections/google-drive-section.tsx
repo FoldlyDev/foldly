@@ -217,9 +217,12 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
     // Emit start notification
     const batchId = `cloud-copy-${Date.now()}`;
     eventBus.emitNotification(
-      NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+      NotificationEventType.CLOUD_COPY_START,
       {
-        batchId,
+        provider: 'google-drive' as const,
+        providerName: 'Google Drive',
+        targetFolderId: folderId,
+        targetFolderName: folderId ? storage.files.find(f => f.id === folderId)?.name : 'Root',
         totalItems: pendingFiles.workspaceItems.length,
         completedItems: 0,
         items: pendingFiles.workspaceItems.map(item => ({
@@ -247,12 +250,43 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
         folderId
       );
 
-      if (result.success) {
-        // Emit success notification
+      if (result.success && result.errors && result.errors.length > 0) {
+        // Partial success - some items copied, some failed
         eventBus.emitNotification(
-          NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS,
+          NotificationEventType.CLOUD_COPY_PARTIAL,
           {
-            batchId,
+            provider: 'google-drive' as const,
+            providerName: 'Google Drive',
+            targetFolderId: folderId,
+            targetFolderName: folderId ? storage.files.find(f => f.id === folderId)?.name : 'Root',
+            totalItems: pendingFiles.workspaceItems.length,
+            completedItems: result.copiedCount || 0,
+            failedItems: (pendingFiles.workspaceItems.length - (result.copiedCount || 0)),
+            items: pendingFiles.workspaceItems.map(item => ({
+              id: item.id || '',
+              name: item.name || 'Unknown',
+              type: (item.type === 'folder' || item.isFolder) ? 'folder' as const : 'file' as const,
+            })),
+            errors: result.errors,
+          },
+          {
+            priority: NotificationPriority.MEDIUM,
+            uiType: NotificationUIType.TOAST_SIMPLE,
+            duration: 5000,
+          }
+        );
+
+        // Refresh files list to show new items
+        storage.listFiles(folderId || undefined);
+      } else if (result.success) {
+        // Complete success - all items copied
+        eventBus.emitNotification(
+          NotificationEventType.CLOUD_COPY_SUCCESS,
+          {
+            provider: 'google-drive' as const,
+            providerName: 'Google Drive',
+            targetFolderId: folderId,
+            targetFolderName: folderId ? storage.files.find(f => f.id === folderId)?.name : 'Root',
             totalItems: result.copiedCount || 0,
             completedItems: result.copiedCount || 0,
             items: pendingFiles.workspaceItems.map(item => ({
@@ -277,9 +311,12 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
           : result.error || 'Failed to copy files to Google Drive';
 
         eventBus.emitNotification(
-          NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+          NotificationEventType.CLOUD_COPY_ERROR,
           {
-            batchId,
+            provider: 'google-drive' as const,
+            providerName: 'Google Drive',
+            targetFolderId: folderId,
+            targetFolderName: folderId ? storage.files.find(f => f.id === folderId)?.name : 'Root',
             totalItems: pendingFiles.workspaceItems.length,
             completedItems: 0,
             failedItems: pendingFiles.workspaceItems.length,
@@ -300,9 +337,12 @@ export function GoogleDriveSection({ onCollapse }: GoogleDriveSectionProps = {})
     } catch (error) {
       // Emit error notification for unexpected errors
       eventBus.emitNotification(
-        NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+        NotificationEventType.CLOUD_COPY_ERROR,
         {
-          batchId,
+          provider: 'google-drive' as const,
+          providerName: 'Google Drive',
+          targetFolderId: folderId,
+          targetFolderName: folderId ? storage.files.find(f => f.id === folderId)?.name : 'Root',
           totalItems: pendingFiles.workspaceItems.length,
           completedItems: 0,
           failedItems: pendingFiles.workspaceItems.length,

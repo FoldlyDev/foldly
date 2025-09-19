@@ -172,10 +172,15 @@ async function copyFileToCloud(
   targetFolderId?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Determine storage context based on how the file was uploaded
+    // Files with linkId (but not generated link files) are in 'shared-files' bucket
+    // All other workspace files are in 'workspace-files' bucket
+    const storageContext = file.linkId ? 'shared' : 'workspace';
+
     // Download file from Supabase storage
     const downloadResult = await storageService.getDownloadUrl(
       file.storagePath,
-      'workspace',
+      storageContext,
       3600
     );
 
