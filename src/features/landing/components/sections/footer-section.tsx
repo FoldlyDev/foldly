@@ -75,7 +75,25 @@ export const FooterSection = forwardRef<FooterSectionRefs, FooterSectionProps>((
                   disabled={isSubmitting}
                   style={{ opacity: isSubmitting ? 0.6 : 1 }}
                 />
-                <button type="submit" disabled={isSubmitting}>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    opacity: isSubmitting ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSubmitting) {
+                      e.currentTarget.style.transform = 'scale(1.1)';
+                      e.currentTarget.style.opacity = '0.8';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.opacity = isSubmitting ? '0.6' : '1';
+                  }}
+                >
                   {isSubmitting ? (
                     <span style={{ fontSize: '12px' }}>...</span>
                   ) : (
