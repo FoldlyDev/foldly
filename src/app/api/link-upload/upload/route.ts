@@ -103,8 +103,8 @@ export async function POST(req: NextRequest) {
     // For link uploads, we create the file record here (unlike workspace uploads where it's pre-created)
     // The fileId from the client is just a temporary staged ID
 
-    // Get the batch to get the user ID (link owner)
-    const [batchWithLink] = await db
+    // Get the batch to get the user ID (link owner) and check if it's a generated link
+    const batchWithLink = await db
       .select({
         batch: batches,
         link: links,
@@ -114,15 +114,24 @@ export async function POST(req: NextRequest) {
       .where(eq(batches.id, batchId))
       .limit(1);
 
-    if (!batchWithLink) {
+    if (!batchWithLink || batchWithLink.length === 0) {
       return NextResponse.json(
         createErrorResponse('Batch not found', ERROR_CODES.NOT_FOUND),
         { status: 404 }
       );
     }
 
-    const { link } = batchWithLink;
+    const batchData = batchWithLink[0];
+    if (!batchData) {
+      return NextResponse.json(
+        createErrorResponse('Batch data not found', ERROR_CODES.NOT_FOUND),
+        { status: 404 }
+      );
+    }
+    
+    const { batch, link } = batchData;
     const userId = link.userId;
+    const isGeneratedLink = link.linkType === 'generated';
 
     // Generate unique file path
     const timestamp = Date.now();
@@ -166,11 +175,13 @@ export async function POST(req: NextRequest) {
     // Create the file record with storage path and status
     const fileExtension = file.name.split('.').pop() || '';
     
-    const [fileRecord] = await db.insert(files).values({
+    // For generated links, files go to the workspace with the target folder
+    // For base/custom links, files stay associated with the link
+    const fileValues = {
       batchId,
-      linkId,
-      workspaceId: null, // Link uploads don't have workspace ID
-      folderId: folderId || null,
+      linkId: isGeneratedLink ? null : linkId, // Generated links: files belong to workspace
+      workspaceId: isGeneratedLink ? link.workspaceId : null, // Generated links: set workspace
+      folderId: isGeneratedLink ? (batch.targetFolderId || null) : (folderId || null), // Generated links: use batch target folder
       fileName: file.name,
       originalName: file.name,
       fileSize: file.size,
@@ -181,7 +192,7 @@ export async function POST(req: NextRequest) {
       checksum: null,
       isSafe: true, // Mark as safe for now - real virus scan would be async
       virusScanResult: 'clean',
-      processingStatus: 'completed',
+      processingStatus: 'completed' as const,
       thumbnailPath: null,
       isOrganized: false,
       needsReview: false,
@@ -191,7 +202,20 @@ export async function POST(req: NextRequest) {
       uploadedAt: new Date(),
       createdAt: new Date(),
       updatedAt: new Date(),
-    }).returning({ id: files.id });
+    };
+
+    logger.debug('Creating file record', {
+      isGeneratedLink,
+      linkType: link.linkType,
+      targetFolder: batch.targetFolderId,
+      fileValues: {
+        linkId: fileValues.linkId,
+        workspaceId: fileValues.workspaceId,
+        folderId: fileValues.folderId,
+      }
+    });
+    
+    const [fileRecord] = await db.insert(files).values(fileValues).returning({ id: files.id });
 
     if (!fileRecord) {
       // Cleanup storage if database insert fails
@@ -223,19 +247,63 @@ export async function POST(req: NextRequest) {
       .where(eq(links.id, linkId));
 
     // Update batch processed files count
-    await db
+    const [updatedBatch] = await db
       .update(batches)
       .set({
         processedFiles: sql`${batches.processedFiles} + 1`,
         updatedAt: new Date(),
       })
-      .where(eq(batches.id, batchId));
+      .where(eq(batches.id, batchId))
+      .returning({ processedFiles: batches.processedFiles, totalFiles: batches.totalFiles });
+
+    // Check if batch is completed and send broadcast
+    if (updatedBatch && updatedBatch.processedFiles === updatedBatch.totalFiles) {
+      // Get the link owner's userId to send them a notification
+      const linkOwner = await db
+        .select({ userId: links.userId, title: links.title })
+        .from(links)
+        .where(eq(links.id, linkId))
+        .limit(1);
+
+      if (linkOwner[0]) {
+        // Send broadcast to the link owner's channel
+        const channelName = `files:user:${linkOwner[0].userId}`;
+        const channel = supabase.channel(channelName);
+
+        // Subscribe first to ensure the channel is ready
+        await new Promise<void>((resolve) => {
+          channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              resolve();
+            }
+          });
+        });
+
+        // Now send the broadcast
+        await channel.send({
+          type: 'broadcast',
+          event: 'file_update',
+          payload: {
+            type: 'batch_completed',
+            linkId,
+            batchId,
+            userId: linkOwner[0].userId,
+            uploaderName: batch.uploaderName,
+            fileCount: updatedBatch.totalFiles,
+            linkTitle: linkOwner[0].title,
+          },
+        });
+
+        // Clean up the channel
+        await supabase.removeChannel(channel);
+      }
+    }
 
     logger.info('File uploaded successfully', {
       userId,
       linkId,
       fileId,
-      metadata: { 
+      metadata: {
         fileName: file.name,
         fileSize: file.size,
         storagePath: uploadData.path

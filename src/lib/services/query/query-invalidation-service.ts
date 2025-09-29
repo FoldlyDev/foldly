@@ -34,17 +34,23 @@ export class QueryInvalidationService {
    * Use this when workspace data changes (create, update, delete operations)
    */
   static async invalidateWorkspaceData(queryClient: QueryClient): Promise<void> {
+    console.log('[QueryInvalidation] Invalidating workspace data with patterns:', WORKSPACE_DATA_PATTERNS);
     const promises = WORKSPACE_DATA_PATTERNS.map(pattern =>
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
           // Check if query key starts with the pattern
-          return pattern.every((part, index) => queryKey[index] === part);
+          const matches = pattern.every((part, index) => queryKey[index] === part);
+          if (matches) {
+            console.log('[QueryInvalidation] Invalidating query key:', queryKey);
+          }
+          return matches;
         },
       })
     );
     
     await Promise.all(promises);
+    console.log('[QueryInvalidation] Workspace data invalidation complete');
   }
 
   /**

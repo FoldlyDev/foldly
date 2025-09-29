@@ -138,8 +138,8 @@ export async function generateLinkFromFolderAction(
         slug: baseLink.slug,
         topic: finalSuffix,
         linkType: 'generated',
-        title: `Link for ${folder.name}`,
-        description: `Uploads to this link go directly to the "${folder.name}" folder`,
+        title: `Personal space folder link: ${folder.name}`,
+        description: `Uploads to this link go directly to your "${folder.name}" folder in your personal workspace`,
         sourceFolderId: folderId,
         // Copy settings from base link as defaults
         requireEmail: baseLink.requireEmail,

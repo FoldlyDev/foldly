@@ -62,7 +62,7 @@ export function VerificationModal({
   const [verificationError, setVerificationError] = useState<string | null>(null);
   
   // Get staging store stats
-  const { getStagedFileCount, getTotalStagedSize, hasAnyStaged } = useLinkUploadStagingStore();
+  const { getStagedFileCount, getTotalStagedSize, hasAnyStaged, hasValidContent } = useLinkUploadStagingStore();
 
   // Create schema based on link requirements
   const schema = createVerificationSchema(
@@ -90,6 +90,12 @@ export function VerificationModal({
   }, [isOpen, reset]);
 
   const onSubmit = async (data: FormData) => {
+    // Check if there are valid files (not just empty folders)
+    if (!stagingStats.hasValidContent) {
+      setVerificationError('Please add files to your folders before uploading.');
+      return;
+    }
+
     try {
       setIsVerifying(true);
       setVerificationError(null);
@@ -155,6 +161,7 @@ export function VerificationModal({
     fileCount: getStagedFileCount(),
     totalSize: getTotalStagedSize(),
     hasFiles: hasAnyStaged(),
+    hasValidContent: hasValidContent(), // Only true if there are actual files, not just empty folders
   };
 
   const formatBytes = (bytes: number) => {
@@ -253,6 +260,14 @@ export function VerificationModal({
             )}
 
             {/* No files warning */}
+            {stagingStats.hasFiles && !stagingStats.hasValidContent && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Folders need files - please add files to your folders before uploading.
+                </AlertDescription>
+              </Alert>
+            )}
             {!stagingStats.hasFiles && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
@@ -276,7 +291,7 @@ export function VerificationModal({
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               form="verification-form"
               disabled={isVerifying || !stagingStats.hasFiles}

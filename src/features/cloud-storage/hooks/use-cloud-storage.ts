@@ -124,33 +124,30 @@ export function useCloudStorage({
   const filesQuery = useQuery<CloudFile[], Error>({
     queryKey: ['cloud-storage', provider, 'files'],
     queryFn: async () => {
-      if (!api) {
+      let providerApi = api;
+
+      if (!providerApi) {
         // Try to get token and create API instance
-        const token = await getCloudProviderToken(provider);
-        if (!token) {
+        const tokenResult = await getCloudProviderToken(provider);
+        if (!tokenResult.success || !tokenResult.token) {
           throw new Error('Not connected');
         }
-        
+
         const providerInstance = provider === 'google-drive'
-          ? new GoogleDriveProvider(token)
-          : new OneDriveProvider(token);
-        
+          ? new GoogleDriveProvider(tokenResult.token)
+          : new OneDriveProvider(tokenResult.token);
+
         setApi(providerInstance);
-        
-        const result = await providerInstance.getFiles();
-        if (!result.success) {
-          throw new Error(result.error.message);
-        }
-        return result.data;
+        providerApi = providerInstance;
       }
-      
-      const result = await api.getFiles();
+
+      const result = await providerApi.getFiles();
       if (!result.success) {
         throw new Error(result.error.message);
       }
       return result.data;
     },
-    enabled: isConnected && !!api,
+    enabled: isConnected,
     retry: 1,
   });
 
@@ -174,18 +171,34 @@ export function useCloudStorage({
       setFilesError('Not connected');
       return;
     }
-    
+
     setFilesError(null);
+
+    // If no folderId, refresh the main files list
+    if (!folderId) {
+      queryClient.invalidateQueries({
+        queryKey: ['cloud-storage', provider, 'files']
+      });
+      return;
+    }
+
+    // For specific folder, fetch its contents
     const result = await api.getFiles(folderId);
-    
+
     if (!result.success) {
       setFilesError(result.error.message);
       return;
     }
-    
+
+    // Update the files list with the new folder contents
+    const currentFiles = queryClient.getQueryData<CloudFile[]>(['cloud-storage', provider, 'files']) || [];
+    const updatedFiles = [...currentFiles, ...result.data.filter(
+      newFile => !currentFiles.some(existing => existing.id === newFile.id)
+    )];
+
     queryClient.setQueryData(
-      ['cloud-storage', provider, 'files'], 
-      result.data
+      ['cloud-storage', provider, 'files'],
+      updatedFiles
     );
   }, [api, provider, queryClient]);
 
@@ -325,7 +338,7 @@ export function useCloudStorage({
     
     // File operations
     files: filesQuery.data || [],
-    isLoadingFiles: filesQuery.isLoading,
+    isLoadingFiles: filesQuery.isLoading || filesQuery.isFetching,
     filesError,
     
     listFiles,

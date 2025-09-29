@@ -11,3 +11,4 @@ export * from './StackedNotifications';
 
 // UI Components
 export * from './NotificationBadge';
+export { NotificationCenter } from './NotificationCenter';

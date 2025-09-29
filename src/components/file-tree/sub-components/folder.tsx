@@ -7,6 +7,7 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   Archive,
+  Link2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { Input } from '@/components/ui/shadcn/input';
@@ -206,8 +207,13 @@ export const Folder: React.FC<FolderProps> = ({
           </button>
         </div>
       ) : (
-        <span className="flex-1 truncate text-sm">
+        <span className="flex-1 truncate text-sm flex items-center gap-1">
           {folder.name}
+          {folder.hasGeneratedLink && (
+            <span title="This folder has a generated link">
+              <Link2 className="size-3 text-blue-500 dark:text-blue-400 flex-shrink-0" />
+            </span>
+          )}
         </span>
       )}
       

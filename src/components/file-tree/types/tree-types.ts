@@ -49,6 +49,8 @@ export interface TreeFolderItem extends BaseTreeItem {
   sortOrder: number;
   // Tree-specific field for headless-tree library
   children?: string[];
+  // Indicates if this folder has a generated link
+  hasGeneratedLink?: boolean;
   // Store full database record for additional fields
   record?: Folder;
 }

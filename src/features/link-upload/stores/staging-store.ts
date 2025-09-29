@@ -77,6 +77,7 @@ interface StagingActions {
   getStagedFileCount: () => number;
   getTotalStagedSize: () => number;
   hasAnyStaged: () => boolean;
+  hasValidContent: () => boolean; // Check if there are files to upload (not just empty folders)
   getAllStagedItems: () => { files: StagedFile[]; folders: StagedFolder[] };
   getNextSortOrder: () => number;
 }
@@ -275,12 +276,54 @@ export const useLinkUploadStagingStore = create<LinkUploadStagingStore>()(
 
       // Batch operations
       removeStagedItems: (itemIds) => {
+        const newFiles = new Map(get().stagedFiles);
+        const newFolders = new Map(get().stagedFolders);
+
         itemIds.forEach(id => {
-          if (id.startsWith('staged-file-')) {
-            get().removeStagedFile(id);
-          } else if (id.startsWith('staged-folder-')) {
-            get().removeStagedFolder(id);
+          // Check if it's a staged file or folder
+          if (newFiles.has(id)) {
+            const file = newFiles.get(id);
+            // Clean up thumbnail URL to prevent memory leak
+            if (file?.thumbnailPath) {
+              URL.revokeObjectURL(file.thumbnailPath);
+            }
+            newFiles.delete(id);
+          } else if (newFolders.has(id)) {
+            // For folders, we need to recursively remove all contents
+            const foldersToRemove = [id];
+            const processedFolders = new Set<string>();
+
+            while (foldersToRemove.length > 0) {
+              const currentFolderId = foldersToRemove.pop()!;
+              if (processedFolders.has(currentFolderId)) continue;
+              processedFolders.add(currentFolderId);
+
+              // Remove all files in this folder
+              newFiles.forEach((file, fileId) => {
+                if (file.parentId === currentFolderId) {
+                  if (file.thumbnailPath) {
+                    URL.revokeObjectURL(file.thumbnailPath);
+                  }
+                  newFiles.delete(fileId);
+                }
+              });
+
+              // Find and queue subfolders for removal
+              newFolders.forEach((folder, fId) => {
+                if (folder.parentId === currentFolderId) {
+                  foldersToRemove.push(fId);
+                }
+              });
+
+              // Remove the folder itself
+              newFolders.delete(currentFolderId);
+            }
           }
+        });
+
+        set({
+          stagedFiles: newFiles,
+          stagedFolders: newFolders
         });
       },
 
@@ -371,8 +414,65 @@ export const useLinkUploadStagingStore = create<LinkUploadStagingStore>()(
         return total;
       },
       
-      hasAnyStaged: () => get().stagedFiles.size > 0,
-      
+      hasAnyStaged: () => {
+        // Check if there are any staged items (files OR folders)
+        return get().stagedFiles.size > 0 || get().stagedFolders.size > 0;
+      },
+
+      hasValidContent: () => {
+        const files = get().stagedFiles;
+        const folders = get().stagedFolders;
+
+        // If there are no staged items at all, no valid content
+        if (files.size === 0 && folders.size === 0) {
+          return false;
+        }
+
+        // If there are files but no folders, it's valid
+        if (files.size > 0 && folders.size === 0) {
+          return true;
+        }
+
+        // If there are folders, check if ALL folders have files
+        if (folders.size > 0) {
+          // Check each folder to see if it has files (directly or in subfolders)
+          const foldersWithContent = new Set<string>();
+
+          // Mark folders that directly contain files
+          files.forEach(file => {
+            if (file.parentId) {
+              foldersWithContent.add(file.parentId);
+            }
+          });
+
+          // Bubble up to mark parent folders that have content in subfolders
+          let changed = true;
+          while (changed) {
+            changed = false;
+            folders.forEach(folder => {
+              if (foldersWithContent.has(folder.id) && folder.parentId && !foldersWithContent.has(folder.parentId)) {
+                foldersWithContent.add(folder.parentId);
+                changed = true;
+              }
+            });
+          }
+
+          // Check if any folder is empty (not in foldersWithContent set)
+          let hasEmptyFolders = false;
+          folders.forEach(folder => {
+            if (!foldersWithContent.has(folder.id)) {
+              hasEmptyFolders = true;
+            }
+          });
+
+          // Valid only if there are files AND no empty folders
+          return files.size > 0 && !hasEmptyFolders;
+        }
+
+        // Default case: require at least one file
+        return files.size > 0;
+      },
+
       getAllStagedItems: () => ({
         files: Array.from(get().stagedFiles.values()),
         folders: Array.from(get().stagedFolders.values()),

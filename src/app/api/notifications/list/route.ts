@@ -7,7 +7,7 @@ import { eq, desc } from 'drizzle-orm';
 export async function GET() {
   try {
     const session = await auth();
-    
+
     if (!session?.userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -33,9 +33,9 @@ export async function GET() {
       .orderBy(desc(notifications.createdAt))
       .limit(50); // Limit to recent 50 notifications
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      notifications: userNotifications 
+      notifications: userNotifications
     });
   } catch (error) {
     console.error('Error fetching notifications:', error);

@@ -41,3 +41,4 @@ export { default as DynamicDashboardSkeleton } from '../feedback/dynamic-dashboa
 export { SecondaryCTAButton } from './secondary-cta-button';
 export { AnimatedLogoButton } from './animated-logo-button';
 export { TertiaryCTAButton } from './tertiary-cta-button';
+export { SelectionMenu, type MenuAction } from './selection-menu';

@@ -27,6 +27,8 @@ import { cn } from '@/lib/utils';
 interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
+  linkId?: string; // Optional: filter notifications for a specific link
+  linkTitle?: string; // Optional: display link name in header
   className?: string;
 }
 
@@ -260,6 +262,8 @@ function NotificationItem({
 export function NotificationCenter({
   isOpen,
   onClose,
+  linkId,
+  linkTitle,
   className,
 }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -281,10 +285,19 @@ export function NotificationCenter({
   const fetchNotifications = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/notifications/list');
+      // Build URL with optional linkId filter
+      const url = linkId
+        ? `/api/notifications/list?linkId=${linkId}`
+        : '/api/notifications/list';
+
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
+        // Filter notifications client-side if needed (as backup)
+        const filteredNotifications = linkId
+          ? (data.notifications || []).filter((n: any) => n.linkId === linkId)
+          : (data.notifications || []);
+        setNotifications(filteredNotifications);
 
         // Mark all unread notifications as read
         const unreadNotifications =
@@ -395,7 +408,9 @@ export function NotificationCenter({
             <div className='flex items-center justify-between p-4 border-b dark:border-white/10'>
               <div className='flex items-center gap-2'>
                 <Bell className='w-5 h-5' />
-                <h3 className='font-semibold'>Notifications</h3>
+                <h3 className='font-semibold'>
+                  {linkTitle ? `${linkTitle} Notifications` : 'Notifications'}
+                </h3>
                 {unreadCount > 0 && (
                   <span className='px-2 py-0.5 text-xs font-medium bg-primary/10 dark:bg-primary/10 text-primary dark:text-primary rounded-full'>
                     {unreadCount} new

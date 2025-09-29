@@ -1,14 +1,15 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { TreeItem } from '@/components/file-tree/types';
 import { isFolder } from '@/components/file-tree/types';
 import { createFolderAction } from '../actions';
 import { generateLinkFromFolderAction } from '@/features/links/lib/actions';
 import { generateLinkUrl } from '@/lib/config/url-config';
-import { showGeneratedLinkNotification } from '@/features/notifications/utils/link-notifications';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 import { sanitizeInput } from '@/lib/utils/validation';
+import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 
 /**
  * Context Menu Handler Hook
@@ -58,6 +59,7 @@ export function useContextMenuHandler({
   setShowDeleteModal,
   createFolder,
 }: UseContextMenuHandlerProps): ContextMenuHandler {
+  const queryClient = useQueryClient();
   
   /**
    * Handle new folder creation
@@ -142,19 +144,23 @@ export function useContextMenuHandler({
           { absolute: true }
         );
         
+        // Invalidate both workspace and link queries to ensure UI updates everywhere
+        // This ensures the link icon appears immediately on the folder
+        await queryClient.invalidateQueries({
+          queryKey: ['workspace', 'data'],
+        });
+        // This ensures the new link card appears in the links feature
+        await queryClient.invalidateQueries({
+          queryKey: ['links'],
+        });
+        
         // Use event-driven notification system for success
+        // This is the centralized way to handle notifications
         eventBus.emitNotification(NotificationEventType.LINK_GENERATE_SUCCESS, {
           linkId: result.data.id,
           linkTitle: result.data.title || item.name,
           linkUrl: linkUrl,
           linkType: 'generated' as const,
-          folderName: item.name,
-        });
-        
-        // Show interactive notification with copy and view actions
-        showGeneratedLinkNotification({
-          linkId: result.data.id,
-          linkUrl,
           folderName: item.name,
         });
       } else {
@@ -174,7 +180,7 @@ export function useContextMenuHandler({
         error: error instanceof Error ? error.message : 'Failed to generate link',
       });
     }
-  }, []);
+  }, [queryClient]);
 
   /**
    * Handle delete action

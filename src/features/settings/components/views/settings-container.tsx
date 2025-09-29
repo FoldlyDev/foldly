@@ -72,7 +72,16 @@ export function SettingsContainer({}: SettingsContainerProps) {
 
               <ClerkLoaded>
                 <div className='w-full'>
-                  <UserProfile routing='hash' />
+                  <UserProfile
+                    routing='hash'
+                    additionalOAuthScopes={{
+                      google: [
+                        'https://www.googleapis.com/auth/drive.file',
+                        'https://www.googleapis.com/auth/drive.readonly',
+                      ],
+                      microsoft: ['Files.ReadWrite.All', 'offline_access'],
+                    }}
+                  />
                 </div>
               </ClerkLoaded>
             </MotionDiv>

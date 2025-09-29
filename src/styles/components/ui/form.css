@@ -246,16 +246,7 @@
    CHECKBOX STYLES
    ============================================================================= */
 
-/* Remove unwanted focus outlines on bulk selection checkboxes */
-[data-bulk-select] input[type='checkbox']:focus,
-[data-bulk-select] input[type='checkbox']:focus-visible,
-.bulk-select-mode input[type='checkbox']:focus,
-.bulk-select-mode input[type='checkbox']:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-/* Ensure all checkboxes have cursor pointer and are visible */
+To/* Ensure all checkboxes have cursor pointer and are visible */
 [role='checkbox'],
 input[type='checkbox'],
 [data-state='checked'],
@@ -263,38 +254,6 @@ input[type='checkbox'],
 button[data-state],
 [role='button'][data-state] {
   cursor: pointer !important;
-}
-
-/* Checkbox Base Styles */
-[role='checkbox'] {
-  border: 2px solid var(--neutral-400) !important;
-  background-color: white !important;
-  transition: all 200ms ease !important;
-}
-
-[role='checkbox']:hover {
-  border-color: var(--neutral-500) !important;
-}
-
-[role='checkbox'][data-state='checked'] {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
-}
-
-/* Dark mode checkbox styles */
-.dark [role='checkbox'] {
-  border-color: var(--neutral-600) !important;
-  background-color: var(--neutral-800) !important;
-}
-
-.dark [role='checkbox']:hover {
-  border-color: var(--neutral-500) !important;
-  background-color: var(--neutral-700) !important;
-}
-
-.dark [role='checkbox'][data-state='checked'] {
-  background-color: var(--primary) !important;
-  border-color: var(--primary) !important;
 }
 
 /* =============================================================================
@@ -420,7 +379,9 @@ button[data-state],
 
 /* Switch thumb enhanced visibility */
 [data-slot='switch-thumb'] {
-  transition: transform 200ms ease, background-color 200ms ease;
+  transition:
+    transform 200ms ease,
+    background-color 200ms ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 

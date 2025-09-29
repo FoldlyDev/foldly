@@ -295,10 +295,12 @@ class NotificationManager {
       [NotificationEventType.LINK_CREATE_SUCCESS]: 'Link created',
       [NotificationEventType.LINK_UPDATE_SUCCESS]: 'Link updated',
       [NotificationEventType.LINK_DELETE_SUCCESS]: 'Link deleted',
+      [NotificationEventType.LINK_DELETE_ERROR]: 'Failed to delete link',
       [NotificationEventType.LINK_GENERATE_SUCCESS]: 'Link generated',
       [NotificationEventType.LINK_COPY_SUCCESS]: 'Link copied to clipboard',
       [NotificationEventType.LINK_NEW_UPLOAD]: `New upload to: ${'linkTitle' in payload ? payload.linkTitle : 'link'}`,
-      
+      [NotificationEventType.LINK_BATCH_UPLOAD]: 'New files uploaded',
+
       // Storage events
       [NotificationEventType.STORAGE_THRESHOLD_WARNING]: 'Storage warning',
       [NotificationEventType.STORAGE_THRESHOLD_CRITICAL]: 'Storage critical',
@@ -384,7 +386,7 @@ class NotificationManager {
         const fileCount = getPayloadProperty<number>(payload, 'fileCount', 0);
         const folderCount = getPayloadProperty<number>(payload, 'folderCount', 0);
         const uploaderName = getPayloadProperty<string>(payload, 'uploaderName', 'Someone');
-        
+
         if (fileCount > 0) {
           items.push(`${fileCount} file${fileCount === 1 ? '' : 's'}`);
         }
@@ -392,6 +394,15 @@ class NotificationManager {
           items.push(`${folderCount} folder${folderCount === 1 ? '' : 's'}`);
         }
         return `${uploaderName} uploaded ${items.join(' and ')}`;
+      }
+
+      case NotificationEventType.LINK_BATCH_UPLOAD: {
+        const fileCount = getPayloadProperty<number>(payload, 'fileCount', 0);
+        const uploaderName = getPayloadProperty<string>(payload, 'uploaderName', 'Someone');
+        const linkTitle = getPayloadProperty<string>(payload, 'linkTitle', 'your link');
+
+        const fileText = fileCount === 1 ? '1 file' : `${fileCount} files`;
+        return `${uploaderName} uploaded ${fileText} to "${linkTitle}"`;
       }
       
       case NotificationEventType.STORAGE_THRESHOLD_WARNING:

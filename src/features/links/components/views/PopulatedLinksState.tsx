@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2, CheckSquare, Square } from 'lucide-react';
 import { memo, useMemo, useCallback, useState } from 'react';
 import { LinkCard } from '../cards/LinkCard';
 import { EmptyLinksState } from './EmptyLinksState';
@@ -11,6 +11,8 @@ import { ActionButton } from '@/components/core/action-button';
 import { SecondaryCTAButton } from '@/components/core';
 import { SearchInput } from '@/components/core/search-input';
 import { ViewToggle } from '@/components/core/view-toggle';
+import { SelectionMenu, type MenuAction } from '@/components/core';
+import { BulkDeleteConfirmationModal } from '../modals/BulkDeleteConfirmationModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +53,7 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
     const [selectedLinkIds, setSelectedLinkIds] = useState<Set<string>>(
       new Set()
     );
+    const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
     // Memoize stats calculation using the passed-in links (already filtered)
     const overviewData = useMemo(() => {
@@ -61,8 +64,8 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             link.isActive &&
             (!link.expiresAt || new Date(link.expiresAt) >= new Date())
         ).length,
-        totalUploads: links.reduce((sum, link) => sum + link.totalUploads, 0),
-        totalFiles: links.reduce((sum, link) => sum + link.totalFiles, 0),
+        totalUploads: links.reduce((sum, link) => sum + (link.stats?.batchCount || 0), 0),
+        totalFiles: links.reduce((sum, link) => sum + (link.stats?.fileCount || 0), 0),
       };
 
       return {
@@ -163,6 +166,92 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
       });
     }, []);
 
+    // Handle select all (only non-base links)
+    const handleSelectAll = useCallback(() => {
+      const selectableLinks = links.filter(link => link.linkType !== 'base');
+      setSelectedLinkIds(new Set(selectableLinks.map(link => link.id)));
+    }, [links]);
+
+    // Handle clear selection
+    const handleClearSelection = useCallback(() => {
+      setSelectedLinkIds(new Set());
+    }, []);
+
+    // Handle bulk delete - opens confirmation modal
+    const handleBulkDelete = useCallback(() => {
+      if (selectedLinkIds.size === 0) return;
+      setShowBulkDeleteModal(true);
+    }, [selectedLinkIds.size]);
+
+    // Handle successful bulk delete
+    const handleBulkDeleteSuccess = useCallback(() => {
+      setSelectedLinkIds(new Set());
+      setShowBulkDeleteModal(false);
+    }, []);
+
+    // Get selected links for bulk delete modal
+    const selectedLinksForDelete = useMemo(
+      () => links.filter(link => selectedLinkIds.has(link.id)),
+      [links, selectedLinkIds]
+    );
+
+    // Get selectable links count (non-base links)
+    const selectableLinksCount = useMemo(
+      () => links.filter(link => link.linkType !== 'base').length,
+      [links]
+    );
+
+    // Check if all selectable links are selected
+    const areAllSelected = useMemo(
+      () =>
+        selectableLinksCount > 0 &&
+        selectedLinkIds.size === selectableLinksCount,
+      [selectableLinksCount, selectedLinkIds.size]
+    );
+
+    // Selection menu actions (following Gmail/Google Photos patterns)
+    const selectionMenuActions: MenuAction[] = useMemo(() => {
+      const actions: MenuAction[] = [];
+
+      // Only show Select All if not all are selected
+      if (!areAllSelected && selectableLinksCount > 1) {
+        actions.push({
+          key: 'select-all',
+          label: 'Select all',
+          onClick: handleSelectAll,
+          icon: <CheckSquare className='w-3.5 h-3.5' />,
+        });
+      }
+
+      // Always show clear/deselect when items are selected
+      if (selectedLinkIds.size > 0) {
+        actions.push({
+          key: 'clear',
+          label: 'Clear',
+          onClick: handleClearSelection,
+        });
+      }
+
+      // Delete action
+      actions.push({
+        key: 'delete',
+        label: 'Delete',
+        onClick: handleBulkDelete,
+        variant: 'destructive',
+        icon: <Trash2 className='w-3.5 h-3.5' />,
+        disabled: selectedLinkIds.size === 0,
+      });
+
+      return actions;
+    }, [
+      areAllSelected,
+      selectableLinksCount,
+      selectedLinkIds.size,
+      handleClearSelection,
+      handleSelectAll,
+      handleBulkDelete,
+    ]);
+
     // Show no results message if there are no links and there's a search query
     if (links.length === 0 && searchQuery) {
       return (
@@ -208,6 +297,12 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
         <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4'>
           <div className='flex items-center gap-3'>
             <h2>Your Links ({links.length})</h2>
+            {/* Debug: Show selection count */}
+            {selectedLinkIds.size > 0 && (
+              <span className='px-2 py-1 bg-blue-500 text-white rounded-md text-sm'>
+                {selectedLinkIds.size} selected
+              </span>
+            )}
 
             {/* Filter Badges */}
             {(filterType !== 'all' || filterStatus !== 'all') && (
@@ -425,6 +520,23 @@ export const PopulatedLinksState = memo<PopulatedLinksStateProps>(
             </motion.div>
           ))}
         </motion.div>
+
+        {/* Bulk Delete Confirmation Modal */}
+        <BulkDeleteConfirmationModal
+          isOpen={showBulkDeleteModal}
+          onClose={() => setShowBulkDeleteModal(false)}
+          selectedLinks={selectedLinksForDelete}
+          onSuccess={handleBulkDeleteSuccess}
+        />
+
+        {/* Selection Menu - Shows when items are selected */}
+        <SelectionMenu
+          isVisible={selectedLinkIds.size > 0}
+          selectedCount={selectedLinkIds.size}
+          actions={selectionMenuActions}
+          message={`${selectedLinkIds.size} link${selectedLinkIds.size > 1 ? 's' : ''} selected`}
+          position='bottom-center'
+        />
       </div>
     );
   }

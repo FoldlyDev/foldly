@@ -17,7 +17,7 @@ import {
 import { AssistiveTreeDescription, useTree } from '@headless-tree/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
-import { Checkbox } from '@/components/ui/shadcn/checkbox';
+import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
@@ -155,77 +155,140 @@ export type ContextMenuProvider = (
   itemInstance: any
 ) => ContextMenuItem[] | null;
 
+// ============= FEATURE CONFIGURATION =============
+interface FileTreeFeatures {
+  selection?: boolean;
+  multiSelect?: boolean;
+  checkboxes?: boolean;
+  search?: boolean;
+  dragDrop?: boolean;
+  keyboardDragDrop?: boolean;
+  rename?: boolean;
+  expandAll?: boolean;
+  hotkeys?: boolean;
+}
+
+// ============= MAIN PROPS INTERFACE =============
 interface FileTreeProps {
+  // ============= CORE CONFIGURATION =============
   rootId: string;
   treeId: string; // Required treeId for instance isolation
   initialData: Record<string, TreeItemType>;
-  initialExpandedItems?: string[];
-  initialSelectedItems?: string[];
-  initialCheckedItems?: string[];
-  onTreeReady?: (tree: any) => void;
-  // Display options for sub-components
-  showFileSize?: boolean;
-  showFileDate?: boolean;
-  showFileStatus?: boolean;
-  showFolderCount?: boolean;
-  showFolderSize?: boolean;
-  // Checkbox control
-  showCheckboxes?: boolean;
-  // Search/filter control
-  searchQuery?: string;
-  onSearchChange?: (query: string) => void; // Reserved for future search implementation
-  // Selection callback
-  onSelectionChange?: (selectedItems: string[]) => void;
-  // Drop operation callbacks
-  dropCallbacks?: DropOperationCallbacks;
-  // Rename operation callback
-  renameCallback?: RenameOperationCallback;
-  // Context menu provider
-  contextMenuProvider?: ContextMenuProvider;
-  // External file drop handler
-  onExternalFileDrop?: (
-    files: File[],
-    targetFolderId: string | null,
-    folderStructure?: { [folder: string]: File[] }
-  ) => void;
-  // Cross-tree drag support (for link -> workspace copying)
-  customCreateForeignDragObject?: (items: any[]) => any;
-  customOnCompleteForeignDrop?: (items: any[]) => void;
-  customOnDropForeignDragObject?: (dataTransfer: DataTransfer, target: any) => Promise<void>;
-  // Empty state customization
-  showEmptyState?: boolean;
-  emptyStateMessage?: React.ReactNode;
-  emptyStateAction?: React.ReactNode;
+  
+  // ============= INITIAL STATE =============
+  initialState?: {
+    expandedItems?: string[];
+    selectedItems?: string[];
+    checkedItems?: string[];
+  };
+  
+  // ============= FEATURES CONTROL =============
+  features?: FileTreeFeatures;
+  
+  // ============= DISPLAY OPTIONS =============
+  display?: {
+    showFileSize?: boolean;
+    showFileDate?: boolean;
+    showFileStatus?: boolean;
+    showFolderCount?: boolean;
+    showFolderSize?: boolean;
+    showCheckboxes?: boolean;
+    showEmptyState?: boolean;
+    emptyStateMessage?: React.ReactNode;
+    emptyStateAction?: React.ReactNode;
+  };
+  
+  // ============= EVENT CALLBACKS =============
+  callbacks?: {
+    onTreeReady?: (tree: any) => void;
+    onSelectionChange?: (selectedItems: string[]) => void;
+    onSearchChange?: (query: string) => void;
+    onExternalFileDrop?: (
+      files: File[],
+      targetFolderId: string | null,
+      folderStructure?: { [folder: string]: File[] }
+    ) => void;
+  };
+  
+  // ============= OPERATION HANDLERS =============
+  operations?: {
+    dropCallbacks?: DropOperationCallbacks;
+    renameCallback?: RenameOperationCallback;
+    contextMenuProvider?: ContextMenuProvider;
+  };
+  
+  // ============= CROSS-TREE SUPPORT =============
+  crossTree?: {
+    createForeignDragObject?: (items: any[]) => any;
+    onCompleteForeignDrop?: (items: any[]) => void;
+    onDropForeignDragObject?: (dataTransfer: DataTransfer, target: any) => Promise<void>;
+  };
+  
+  // ============= SEARCH =============
+  searchQuery?: string; // Kept at root level for easy access
 }
 
-export default function FileTree({
-  rootId,
-  treeId,
-  initialData,
-  initialExpandedItems = [],
-  initialSelectedItems = [],
-  initialCheckedItems = [],
-  onTreeReady,
-  showFileSize = false,
-  showFileDate = false,
-  showFileStatus = false,
-  showFolderCount = false,
-  showFolderSize = false,
-  showCheckboxes = false,
-  searchQuery = '',
-  onSearchChange: _onSearchChange,
-  onSelectionChange,
-  dropCallbacks,
-  renameCallback,
-  contextMenuProvider,
-  onExternalFileDrop,
-  customCreateForeignDragObject,
-  customOnCompleteForeignDrop,
-  customOnDropForeignDragObject,
-  showEmptyState = true,
-  emptyStateMessage,
-  emptyStateAction,
-}: FileTreeProps) {
+export default function FileTree(props: FileTreeProps) {
+  // ============= DESTRUCTURE ORGANIZED PROPS =============
+  const {
+    // Core
+    rootId,
+    treeId,
+    initialData,
+    
+    // Initial state
+    initialState = {},
+    
+    // Features
+    features = {},
+    
+    // Display
+    display = {},
+    
+    // Callbacks
+    callbacks = {},
+    
+    // Operations
+    operations = {},
+    
+    // Cross-tree
+    crossTree = {},
+    
+    // Search
+    searchQuery = '',
+  } = props;
+  
+  // ============= EXTRACT NESTED VALUES WITH DEFAULTS =============
+  // Initial state values
+  const initialExpandedItems = initialState.expandedItems || [];
+  const initialSelectedItems = initialState.selectedItems || [];
+  const initialCheckedItems = initialState.checkedItems || [];
+  
+  // Display options
+  const showFileSize = display.showFileSize ?? false;
+  const showFileDate = display.showFileDate ?? false;
+  const showFileStatus = display.showFileStatus ?? false;
+  const showFolderCount = display.showFolderCount ?? false;
+  const showFolderSize = display.showFolderSize ?? false;
+  const showCheckboxes = display.showCheckboxes ?? false;
+  const showEmptyState = display.showEmptyState ?? true;
+  const emptyStateMessage = display.emptyStateMessage;
+  const emptyStateAction = display.emptyStateAction;
+  
+  // Callbacks
+  const onTreeReady = callbacks.onTreeReady;
+  const onSelectionChange = callbacks.onSelectionChange;
+  const onExternalFileDrop = callbacks.onExternalFileDrop;
+  
+  // Operations
+  const dropCallbacks = operations.dropCallbacks;
+  const renameCallback = operations.renameCallback;
+  const contextMenuProvider = operations.contextMenuProvider;
+  
+  // Cross-tree support
+  const customCreateForeignDragObject = crossTree.createForeignDragObject;
+  const customOnCompleteForeignDrop = crossTree.onCompleteForeignDrop;
+  const customOnDropForeignDragObject = crossTree.onDropForeignDragObject;
   // Update counter for re-syncing data
   const [updateCounter, forceUpdate] = React.useReducer(x => x + 1, 0);
 
@@ -273,27 +336,27 @@ export default function FileTree({
                 const isChevronClick = target.closest('[data-chevron]');
 
                 // If chevron was clicked, toggle expansion
-                if (isChevronClick && item.isFolder()) {
+                if (isChevronClick && item.isFolder?.()) {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (item.isExpanded()) {
-                    item.collapse();
+                  if (item.isExpanded?.()) {
+                    item.collapse?.();
                   } else {
-                    item.expand();
+                    item.expand?.();
                   }
                   return;
                 }
 
                 // Handle selection logic (without expanding folders)
                 if (e.shiftKey) {
-                  item.selectUpTo(e.ctrlKey || e.metaKey);
+                  item.selectUpTo?.(e.ctrlKey || e.metaKey);
                 } else if (e.ctrlKey || e.metaKey) {
-                  item.toggleSelect();
+                  item.toggleSelect?.();
                 } else {
-                  tree.setSelectedItems([item.getItemMeta().itemId]);
+                  tree.setSelectedItems?.([item.getItemMeta().itemId]);
                 }
 
-                item.setFocused();
+                item.setFocused?.();
               },
             };
           },
@@ -484,14 +547,16 @@ export default function FileTree({
       getItemName: (item: any) => item.getItemData().name,
       isItemFolder: (item: any) => {
         const itemData = item.getItemData();
-        // Check if item has children property OR is type folder
-        // This ensures compatibility with both patterns
-        return (
-          !!('children' in itemData && itemData.children) || isFolder(itemData)
-        );
+        // A folder is determined by its type, not by having children
+        // Empty folders are still folders!
+        return itemData?.type === 'folder';
       },
-      canReorder: true,
-      onDrop: createTreeDropHandler(data, dropCallbacks),
+      // Disable propagateCheckedState to prevent empty folders from showing as checked
+      // when they have no children (since [].every() returns true)
+      propagateCheckedState: false,
+      canReorder: features?.dragDrop === true,
+      // Only include onDrop if drag-drop is enabled and we have callbacks
+      ...(features?.dragDrop && dropCallbacks ? { onDrop: createTreeDropHandler(data, dropCallbacks) } : {}),
       onRename,
       onDropForeignDragObject,
       onCompleteForeignDrop,
@@ -508,25 +573,47 @@ export default function FileTree({
         };
       }),
       canDropForeignDragObject: (dataTransfer: any, target: any) => {
+        // Only accept drops if we have a handler for them
+        if (!crossTree?.onDropForeignDragObject) {
+          return false; // Reject all drops if no handler is provided
+        }
+        
         // Allow file drops on folders
         if (dataTransfer.files && dataTransfer.files.length > 0) {
-          return target.item.isFolder() || target.mode === 'inside';
+          return target.item.isFolder?.() || target.mode === 'inside';
         }
         // Original behavior for other drops
-        return target.item.isFolder();
+        return target.item.isFolder?.();
       },
       indent: 20,
       dataLoader: syncDataLoader,
       features: [
+        // Core features (always enabled)
         syncDataLoaderFeature,
-        selectionFeature,
-        checkboxesFeature,
-        hotkeysCoreFeature,
-        dragAndDropFeature,
-        keyboardDragAndDropFeature,
-        renamingFeature,
-        searchFeature,
-        expandAllFeature,
+        
+        // Selection features
+        ...(features.selection !== false ? [selectionFeature] : []),
+        
+        // Checkbox feature
+        ...(features.checkboxes ? [checkboxesFeature] : []),
+        
+        // Hotkeys feature (enabled by default)
+        ...(features.hotkeys !== false ? [hotkeysCoreFeature] : []),
+        
+        // Drag and drop features
+        ...(features.dragDrop ? [dragAndDropFeature] : []),
+        ...(features.keyboardDragDrop && features.dragDrop ? [keyboardDragAndDropFeature] : []),
+        
+        // Rename feature
+        ...(features.rename ? [renamingFeature] : []),
+        
+        // Search feature
+        ...(features.search !== false ? [searchFeature] : []),
+        
+        // Expand all feature
+        ...(features.expandAll !== false ? [expandAllFeature] : []),
+        
+        // Custom behaviors (always enabled)
         customClickBehavior,
         clearSelectionOnRootClick,
       ],
@@ -545,6 +632,7 @@ export default function FileTree({
       initialCheckedItems,
       data,
       dropCallbacks,
+      features, // Add features to dependencies
     ]
   );
 
@@ -565,6 +653,26 @@ export default function FileTree({
     }
   }, [tree?.getState?.()?.selectedItems, onSelectionChange]); // Fixed: Don't execute getState in deps
 
+  // Bidirectional sync between selection and checkbox state
+  React.useEffect(() => {
+    if (tree && features?.checkboxes) {
+      const selectedItems = tree.getState?.()?.selectedItems || [];
+      const checkedItems = tree.getState?.()?.checkedItems || [];
+
+      // Sync selection → checkbox (when selection changes)
+      const selectedSet = new Set(selectedItems);
+      const checkedSet = new Set(checkedItems);
+
+      // Only update if they're different to avoid infinite loops
+      if (selectedSet.size !== checkedSet.size ||
+          [...selectedSet].some(item => !checkedSet.has(item))) {
+        if (tree.setCheckedItems) {
+          tree.setCheckedItems(selectedItems);
+        }
+      }
+    }
+  }, [tree?.getState?.()?.selectedItems, features?.checkboxes]); // Sync when selection changes
+
   // Call onTreeReady when tree is created with treeId attached
   React.useEffect(() => {
     if (onTreeReady && tree) {
@@ -576,7 +684,7 @@ export default function FileTree({
       // Store the treeId association in the WeakMap
       treeIdMap.set(tree, treeId);
       // Extend tree with forceUpdate for optimistic updates with virtualization
-      tree.forceUpdate = forceUpdate;
+      (tree as any).forceUpdate = forceUpdate;
       onTreeReady(tree);
     }
   }, [tree, onTreeReady, treeId, forceUpdate]);
@@ -616,11 +724,11 @@ export default function FileTree({
         clearTimeout(timer);
       };
     }
-  }, [tree, Object.keys(data).length, forceUpdate]); // Watch for data changes
+  }, [tree, data, forceUpdate]); // Watch for actual data changes, not just count
 
   // Handle search query changes
   React.useEffect(() => {
-    if (tree && searchQuery !== undefined) {
+    if (tree && searchQuery !== undefined && tree.getSearchInputElementProps) {
       // Get the search input props from the tree
       const searchProps = tree.getSearchInputElementProps();
 
@@ -847,7 +955,7 @@ export default function FileTree({
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    {item.isRenaming() ? (
+                    {item.isRenaming?.() ? (
                       <div
                         className='renaming-item'
                         style={{
@@ -880,8 +988,9 @@ export default function FileTree({
                             } as React.CSSProperties
                           }
                         >
-                          {showCheckboxes && (
+                          {showCheckboxes && item.getCheckedState && (
                             <Checkbox
+                              className='w-4 h-4'
                               checked={
                                 {
                                   checked: true,
@@ -892,10 +1001,22 @@ export default function FileTree({
                               onCheckedChange={(
                                 checked: boolean | 'indeterminate'
                               ) => {
-                                const checkboxProps = item.getCheckboxProps();
-                                checkboxProps.onChange?.({
+                                const checkboxProps = item.getCheckboxProps?.();
+                                checkboxProps?.onChange?.({
                                   target: { checked },
                                 });
+
+                                // Also sync selection state with checkbox state
+                                const itemId = item.getId();
+                                const currentSelection = tree.getState?.()?.selectedItems || [];
+
+                                if (checked === true && !currentSelection.includes(itemId)) {
+                                  // Add to selection if checked
+                                  tree.setSelectedItems?.([...currentSelection, itemId]);
+                                } else if (checked === false && currentSelection.includes(itemId)) {
+                                  // Remove from selection if unchecked
+                                  tree.setSelectedItems?.(currentSelection.filter(id => id !== itemId));
+                                }
                               }}
                             />
                           )}
@@ -908,7 +1029,7 @@ export default function FileTree({
                             className='flex-1'
                           >
                             <div
-                              className={`treeitem ${item.isFolder() ? 'folder' : ''} ${item.isExpanded() ? 'expanded' : ''} ${item.isSelected() ? 'selected' : ''} ${item.isFocused() ? 'focused' : ''} ${item.isDragTarget?.() ? 'drop' : ''} ${item.isDragTargetAbove?.() ? 'drop-above' : ''} ${item.isDragTargetBelow?.() ? 'drop-below' : ''} ${item.isMatchingSearch?.() ? 'searchmatch' : ''}`}
+                              className={`treeitem ${item.isFolder?.() ? 'folder' : ''} ${item.isExpanded?.() ? 'expanded' : ''} ${item.isSelected?.() ? 'selected' : ''} ${item.isFocused?.() ? 'focused' : ''} ${item.isDragTarget?.() ? 'drop' : ''} ${item.isDragTargetAbove?.() ? 'drop-above' : ''} ${item.isDragTargetBelow?.() ? 'drop-below' : ''} ${item.isMatchingSearch?.() ? 'searchmatch' : ''}`}
                             >
                               <TreeItemRenderer
                                 item={itemData}

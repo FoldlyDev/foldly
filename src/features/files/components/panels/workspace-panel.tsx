@@ -8,11 +8,10 @@ import { copyLinkItemsToWorkspaceAction, type CopyItem } from '../../lib/actions
 import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 import { eventBus, NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core';
 import type { WorkspacePanelProps } from '../../types/workspace';
-import type { CrossTreeDragData } from '../../lib/handlers/cross-tree-drag-handler';
 
 export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) {
   const queryClient = useQueryClient();
-  const [isCopying, setIsCopying] = useState(false);
+  const [, setIsCopying] = useState(false);
   
   // Handle copying items from link trees to workspace
   const handleCopyToWorkspace = useCallback(async (items: any[], targetFolderId: string, workspaceId?: string) => {
@@ -70,6 +69,11 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
         actualTargetFolderId
       );
 
+      if (!result) {
+        toast.error('Server action failed to respond');
+        return;
+      }
+
       if (result.success && result.data) {
         const { copiedFiles, copiedFolders, failedItems } = result.data;
         
@@ -91,6 +95,7 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
       } else {
         toast.error(result.error || 'Failed to copy items to workspace');
       }
+      return; // Return after successful operation
     } catch (error) {
       console.error('Failed to copy items:', error);
       toast.error('An unexpected error occurred while copying items');
@@ -100,9 +105,10 @@ export function WorkspacePanel({ isReadOnly, onFileDrop }: WorkspacePanelProps) 
   }, [queryClient]);
 
   // Handle external file drops (OS files)
-  const handleExternalFileDrop = useCallback((files: File[], targetFolderId?: string) => {
+  const handleExternalFileDrop = useCallback((files: File[], targetFolderId: string | null, folderStructure?: { [folder: string]: File[] }) => {
     if (onFileDrop) {
-      onFileDrop(files, targetFolderId);
+      // Convert null to undefined for the parent handler
+      onFileDrop(files, targetFolderId ?? undefined);
     }
   }, [onFileDrop]);
 

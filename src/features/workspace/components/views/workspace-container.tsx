@@ -58,6 +58,8 @@ import { useDragDropHandler } from '../../lib/handlers/drag-drop-handler';
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useRenameHandler } from '../../lib/handlers/rename-handler';
 import { useFolderCreationHandler } from '../../lib/handlers/folder-creation-handler';
+import { Button } from '@/components/ui/shadcn/button';
+import { CloudStorageContainer } from './cloud-storage-container';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -90,20 +92,16 @@ export function WorkspaceContainer() {
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Selection management - will be updated with tree instance
-  const [selectionTreeInstance, setSelectionTreeInstance] = useState<any | null>(null);
-  const {
-    selectedItems,
-    selectionMode,
-    setSelectedItems,
-    clearSelection,
-    setSelectionMode,
-  } = useSelectionManager({
-    treeInstance: selectionTreeInstance, // Will be set when tree is ready
-    onSelectionChange: items => {
-      // This will be called when selection changes
-      // Can be used for any side effects if needed
-    },
-  });
+  const [selectionTreeInstance, setSelectionTreeInstance] = useState<
+    any | null
+  >(null);
+  const { selectedItems, setSelectedItems, clearSelection } =
+    useSelectionManager({
+      treeInstance: selectionTreeInstance, // Will be set when tree is ready
+      onSelectionChange: items => {
+        // This will be called when selection changes
+      },
+    });
 
   // Delete modal state (needs to be declared before handlers that use it)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -119,20 +117,21 @@ export function WorkspaceContainer() {
     deleteItemsFromTree,
   } = useTreeInstanceManager({
     workspaceId: workspaceData?.workspace?.id,
-    selectionMode,
     isTouchDevice,
     setSelectedItems,
-    setSelectionMode,
     clearSelection,
   });
 
   // Enhanced tree ready handler that also updates selection manager
-  const handleTreeReady = useCallback((tree: any) => {
-    // Call the original handler first
-    originalHandleTreeReady(tree);
-    // Update selection manager's tree instance
-    setSelectionTreeInstance(tree);
-  }, [originalHandleTreeReady]);
+  const handleTreeReady = useCallback(
+    (tree: any) => {
+      // Call the original handler first
+      originalHandleTreeReady(tree);
+      // Update selection manager's tree instance
+      setSelectionTreeInstance(tree);
+    },
+    [originalHandleTreeReady]
+  );
 
   // Folder creation handler - moved before context menu handler that uses it
   const { createFolder, createFolderMutation } = useFolderCreationHandler({
@@ -164,7 +163,7 @@ export function WorkspaceContainer() {
 
   // Rename handler
   const { renameCallback } = useRenameHandler();
-  
+
   const [batchProgress, setBatchProgress] = useState<
     BatchOperationProgress | undefined
   >();
@@ -415,16 +414,14 @@ export function WorkspaceContainer() {
           setSearchQuery={setSearchQuery}
           selectedItems={selectedItems}
           onClearSelection={clearSelection}
-          selectionMode={selectionMode}
-          onSelectionModeChange={setSelectionMode}
           onCreateFolder={createFolder}
           isCreatingFolder={createFolderMutation.isPending}
         />
       </div>
 
-      <div className='workspace-tree-container mt-4 h-screen overflow-y-auto!'>
-        <div className='flex gap-4 h-full'>
-          <div className='workspace-tree-wrapper flex-1'>
+      <div className='flex flex-row items-center gap-4'>
+        <div className='workspace-tree-container mt-4 h-[calc(100vh-12rem)]'>
+          <div className='workspace-tree-wrapper'>
             <div className='workspace-tree-content'>
               <Suspense
                 fallback={
@@ -435,30 +432,63 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
+                    // Force remount only when transitioning between checkbox and non-checkbox modes
+                    key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
+                    // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
                     initialData={treeData}
-                    initialExpandedItems={initialExpandedItems}
-                    initialSelectedItems={selectedItems}
-                    onTreeReady={handleTreeReady}
-                    onSelectionChange={setSelectedItems}
-                    showCheckboxes={selectionMode}
+                    // ============= INITIAL STATE =============
+                    initialState={{
+                      expandedItems: initialExpandedItems,
+                      selectedItems: selectedItems,
+                      checkedItems: selectedItems, // Sync checked with selected items
+                    }}
+                    // ============= FEATURES CONTROL =============
+                    features={{
+                      selection: true,
+                      multiSelect: true,
+                      checkboxes: selectedItems.length > 0, // Enable checkbox feature when items are selected
+                      search: true,
+                      dragDrop: true, // Full drag-drop for main workspace
+                      keyboardDragDrop: true,
+                      rename: true,
+                      expandAll: true,
+                      hotkeys: true,
+                    }}
+                    // ============= DISPLAY OPTIONS =============
+                    display={{
+                      showFileSize: true,
+                      showFileDate: false,
+                      showFileStatus: false,
+                      showFolderCount: true,
+                      showFolderSize: false,
+                      showCheckboxes: selectedItems.length > 0, // Show checkboxes when items are selected
+                      showEmptyState: true,
+                    }}
+                    // ============= EVENT CALLBACKS =============
+                    callbacks={{
+                      onTreeReady: handleTreeReady,
+                      onSelectionChange: setSelectedItems,
+                      onSearchChange: (query: string) => setSearchQuery(query),
+                      onExternalFileDrop: handleExternalFileDrop,
+                    }}
+                    // ============= OPERATION HANDLERS =============
+                    operations={{
+                      dropCallbacks: dropCallbacks,
+                      renameCallback: renameCallback,
+                      contextMenuProvider: contextMenuProvider,
+                    }}
+                    // ============= SEARCH =============
                     searchQuery={searchQuery}
-                    onSearchChange={query => setSearchQuery(query)}
-                    showFileSize={true}
-                    showFileDate={false}
-                    showFileStatus={false}
-                    showFolderCount={true}
-                    showFolderSize={false}
-                    dropCallbacks={dropCallbacks}
-                    renameCallback={renameCallback}
-                    contextMenuProvider={contextMenuProvider}
-                    onExternalFileDrop={handleExternalFileDrop}
                   />
                 )}
               </Suspense>
             </div>
           </div>
+        </div>
+        <div className='mt-4 h-[calc(100vh-12rem)]'>
+          <CloudStorageContainer className='h-full' />
         </div>
       </div>
 

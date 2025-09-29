@@ -65,11 +65,11 @@ export const FooterSection = forwardRef<FooterSectionRefs, FooterSectionProps>((
         <div className="footer-bottom">
           <div className="footer-col">
             <div className="footer-logo">
-              <Image 
-                src="/assets/landing/global/logo.png" 
-                alt="Foldly" 
-                width={60} 
-                height={60} 
+              <Image
+                src="/assets/img/logo/foldly_logo_sm.png"
+                alt="Foldly"
+                width={100}
+                height={100}
               />
             </div>
           </div>
@@ -99,14 +99,13 @@ export const FooterSection = forwardRef<FooterSectionRefs, FooterSectionProps>((
         </div>
         <div className="footer-copyright">
           <div className="footer-col">
-            <p className="mono">Foldly {new Date().getFullYear()}</p>
+            <p className="mono">© Foldly {new Date().getFullYear()}</p>
           </div>
           <div className="footer-col">
             <div className="footer-sub-col">
-              <p className="mono">Built with passion</p>
             </div>
             <div className="footer-sub-col">
-              <p className="mono">© {new Date().getFullYear()} All Rights Reserved</p>
+              <p className="mono">Built with passion</p>
             </div>
           </div>
         </div>

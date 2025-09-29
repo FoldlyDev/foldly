@@ -8,6 +8,7 @@ import {
   Clock,
   ExternalLink,
   AlertTriangle,
+  Upload,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { LinkStatusIndicator, LinkTypeIcon } from '../indicators';
@@ -92,13 +93,16 @@ export const LinkCardGrid = memo(
                 {/* Multi-select checkbox - Only show for custom links */}
                 {onMultiSelect && !isBaseLink && (
                   <div
-                    onClick={e => e.stopPropagation()}
-                    className='flex items-center'
+                    onClick={e => {
+                      e.stopPropagation();
+                      onMultiSelect(link.id);
+                    }}
+                    className='flex items-center cursor-pointer'
                   >
                     <Checkbox
                       checked={isMultiSelected || false}
-                      onCheckedChange={() => onMultiSelect(link.id)}
-                      className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600'
+                      onCheckedChange={() => {}}
+                      className='data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600 pointer-events-none'
                     />
                   </div>
                 )}
@@ -118,13 +122,15 @@ export const LinkCardGrid = memo(
 
             <div className='flex items-start gap-2'>
               {unreadCount > 0 && (
-                <NotificationBadge
-                  count={unreadCount}
-                  className='mt-1'
-                  {...(onClearNotifications && {
-                    onClick: onClearNotifications,
-                  })}
-                />
+                <div onClick={e => e.stopPropagation()} className='relative z-10'>
+                  <NotificationBadge
+                    count={unreadCount}
+                    className='mt-1'
+                    {...(onClearNotifications && {
+                      onClick: onClearNotifications,
+                    })}
+                  />
+                </div>
               )}
               <CardActionsMenu actions={actions} />
             </div>
@@ -142,6 +148,7 @@ export const LinkCardGrid = memo(
               <div className='text-xs text-slate-500'>Files</div>
             </div>
 
+            {/* Views - commented out for future use
             <div className='text-center p-3 bg-gray-50 rounded-lg'>
               <div className='flex items-center justify-center gap-1 mb-1'>
                 <Eye className='w-4 h-4 text-slate-500' />
@@ -150,6 +157,16 @@ export const LinkCardGrid = memo(
                 </span>
               </div>
               <div className='text-xs text-slate-500'>Views</div>
+            </div> */}
+            {/* Upload Sessions (Batches) */}
+            <div className='text-center p-3 bg-gray-50 rounded-lg'>
+              <div className='flex items-center justify-center gap-1 mb-1'>
+                <Upload className='w-4 h-4 text-slate-500' />
+                <span className='text-2xl font-bold text-slate-900'>
+                  {link.stats?.batchCount ?? 0}
+                </span>
+              </div>
+              <div className='text-xs text-slate-500'>Upload Sessions</div>
             </div>
           </div>
 

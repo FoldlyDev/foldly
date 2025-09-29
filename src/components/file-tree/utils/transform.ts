@@ -47,6 +47,8 @@ export function transformToTreeStructure(
       totalSize: folder.totalSize,
       isArchived: folder.isArchived,
       sortOrder: folder.sortOrder,
+      // Include hasGeneratedLink if it exists on the folder object
+      hasGeneratedLink: (folder as any).hasGeneratedLink,
       record: folder, // Store full database record
     };
     treeData[folder.id] = treeFolder;

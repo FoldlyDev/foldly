@@ -39,7 +39,7 @@ interface UseContextMenuHandlerProps {
   linkId: string;
   treeInstance: any;
   setItemsToDelete: (items: BatchOperationItem[]) => void;
-  setShowDeleteModal: (show: boolean) => void;
+  setShowDeleteModal?: (show: boolean) => void;
   createFolder?: (name: string, parentId?: string) => Promise<void>;
 }
 
@@ -53,7 +53,7 @@ export function useContextMenuHandler({
   linkId,
   treeInstance,
   setItemsToDelete,
-  setShowDeleteModal,
+  setShowDeleteModal, // Optional, not used in link-upload
   createFolder,
 }: UseContextMenuHandlerProps): ContextMenuHandler {
   
@@ -111,9 +111,9 @@ export function useContextMenuHandler({
     const selectedTreeItems = tree?.getSelectedItems?.() || [];
     const isItemSelected = selectedTreeItems.some((si: any) => si.getId() === item.id);
     const isMultipleSelection = isItemSelected && selectedTreeItems.length > 1;
-    
+
     let itemsToDeleteArray: BatchOperationItem[] = [];
-    
+
     if (isMultipleSelection) {
       // Multiple items selected and the right-clicked item is one of them
       itemsToDeleteArray = selectedTreeItems.map((selectedItem: any) => {
@@ -132,10 +132,10 @@ export function useContextMenuHandler({
         type: isFolder(item) ? 'folder' : 'file',
       }];
     }
-    
+
     setItemsToDelete(itemsToDeleteArray);
-    setShowDeleteModal(true);
-  }, [setItemsToDelete, setShowDeleteModal]);
+    setShowDeleteModal?.(true);
+  }, [setItemsToDelete]);
 
   /**
    * Get menu items configuration for a tree item
@@ -147,7 +147,7 @@ export function useContextMenuHandler({
     }
 
     const menuItems: MenuItemConfig[] = [];
-    
+
     // Get selected items to determine single vs multiple selection
     const tree = itemInstance?.getTree?.();
     const selectedTreeItems = tree?.getSelectedItems?.() || [];
@@ -176,6 +176,7 @@ export function useContextMenuHandler({
 
     // Folder-specific items - only show for single selection
     if (isFolder(item) && !isMultipleSelection) {
+      // Add separator
       menuItems.push({ type: 'separator', label: '' });
 
       menuItems.push({

@@ -13,11 +13,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            'group toast bg-popover text-popover-foreground border-border shadow-lg rounded-lg border pl-12 pr-4 py-3 font-medium relative dark:bg-[var(--foldly-glass-bg-solid)] dark:backdrop-blur-[12px] dark:border-white/10',
-          title:
-            'text-sm font-semibold text-foreground',
-          description:
-            'text-xs text-muted-foreground mt-1 pr-4',
+            'group flex items-center justify-center toast bg-popover text-popover-foreground border-border shadow-lg rounded-lg border font-medium relative dark:bg-[var(--foldly-glass-bg-solid)] dark:backdrop-blur-[12px] dark:border-white/10 rounded-xl',
+          title: 'text-sm font-semibold text-foreground',
+          description: 'text-xs text-muted-foreground',
           actionButton:
             'bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 text-xs font-medium rounded-md transition-colors',
           cancelButton:
