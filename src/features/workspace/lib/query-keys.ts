@@ -6,8 +6,8 @@ export const workspaceQueryKeys = {
   // Base key for all workspace queries
   all: ['workspace'] as const,
 
-  // Workspace tree data (files and folders)
-  tree: () => [...workspaceQueryKeys.all, 'tree'] as const,
+  // Workspace data (files, folders, and stats)
+  data: () => [...workspaceQueryKeys.all, 'data'] as const,
 
   // Workspace settings
   settings: () => [...workspaceQueryKeys.all, 'settings'] as const,

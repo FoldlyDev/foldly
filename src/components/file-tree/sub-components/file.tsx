@@ -160,7 +160,8 @@ export const File: React.FC<FileProps> = ({
     <div
       className={cn(
         'flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-black/5 dark:hover:bg-white/5 relative',
-        file.isSelected && 'bg-primary/20 dark:bg-primary/15 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-tertiary dark:before:bg-secondary before:rounded-full',
+        file.isSelected &&
+          'bg-primary/20 dark:bg-primary/15 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:bg-tertiary dark:before:bg-secondary before:rounded-full',
         className
       )}
       data-focused={file.isFocused}
@@ -175,13 +176,13 @@ export const File: React.FC<FileProps> = ({
       )}
 
       {file.isRenaming && itemInstance ? (
-        <div className="flex-1 flex items-center gap-1">
+        <div className='flex-1 flex items-center gap-1'>
           <Input
             {...itemInstance.getRenameInputProps()}
             autoFocus
-            className="flex-1 h-6 px-1 py-0 text-sm"
+            className='flex-1 h-6 px-1 py-0 text-sm'
             data-rename-input={file.id}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               // Handle Enter key to confirm rename
               if (e.key === 'Enter') {
                 e.preventDefault();
@@ -195,36 +196,63 @@ export const File: React.FC<FileProps> = ({
             }}
           />
           <button
-            type="button"
-            className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+            type='button'
+            className='p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors'
             onClick={() => {
               // Get the input element by data attribute and trigger blur to save
-              const input = document.querySelector(`input[data-rename-input="${file.id}"]`) as HTMLInputElement;
+              const input = document.querySelector(
+                `input[data-rename-input="${file.id}"]`
+              ) as HTMLInputElement;
               if (input) {
                 input.blur();
               }
             }}
-            title="Save (Enter)"
+            title='Save (Enter)'
           >
-            <svg className="w-3.5 h-3.5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className='w-3.5 h-3.5 text-green-600 dark:text-green-400'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M5 13l4 4L19 7'
+              />
             </svg>
           </button>
           <button
-            type="button"
-            className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+            type='button'
+            className='p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors'
             onClick={() => {
               // Trigger escape key event to cancel rename
-              const input = document.querySelector(`input[data-rename-input="${file.id}"]`) as HTMLInputElement;
+              const input = document.querySelector(
+                `input[data-rename-input="${file.id}"]`
+              ) as HTMLInputElement;
               if (input) {
-                const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+                const escapeEvent = new KeyboardEvent('keydown', {
+                  key: 'Escape',
+                  bubbles: true,
+                });
                 input.dispatchEvent(escapeEvent);
               }
             }}
-            title="Cancel (Esc)"
+            title='Cancel (Esc)'
           >
-            <svg className="w-3.5 h-3.5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className='w-3.5 h-3.5 text-red-600 dark:text-red-400'
+              fill='none'
+              stroke='currentColor'
+              viewBox='0 0 24 24'
+            >
+              <path
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                strokeWidth={2}
+                d='M6 18L18 6M6 6l12 12'
+              />
             </svg>
           </button>
         </div>
@@ -235,20 +263,20 @@ export const File: React.FC<FileProps> = ({
       )}
 
       {showSize && (
-        <span className='text-xs text-muted-foreground'>
+        <span className='text-xs text-muted-foreground translate-y-0.5'>
           {formatFileSize(file.fileSize)}
         </span>
       )}
 
       {showDate && file.uploadedAt && (
-        <span className='text-xs text-muted-foreground'>
+        <span className='text-xs text-muted-foreground translate-y-0.5'>
           {formatFileDate(file.uploadedAt)}
         </span>
       )}
 
       {showStatus && file.processingStatus && (
         <span
-          className={cn('text-xs', {
+          className={cn('text-xs translate-y-0.5', {
             'text-blue-500': file.processingStatus === 'processing',
             'text-green-500': file.processingStatus === 'completed',
             'text-red-500': file.processingStatus === 'failed',
@@ -262,7 +290,9 @@ export const File: React.FC<FileProps> = ({
       )}
 
       {showStatus && file.virusScanStatus === 'infected' && (
-        <span className='text-xs text-red-600 font-semibold'>⚠️ Infected</span>
+        <span className='text-xs text-red-600 font-semibold translate-y-0.5'>
+          ⚠️ Infected
+        </span>
       )}
     </div>
   );

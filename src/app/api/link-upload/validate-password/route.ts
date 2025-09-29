@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validatePasswordAction } from '@/features/link-upload/lib/actions/validate-access';
+// TODO: Uncomment when actions are re-implemented with new tree
+// import { validatePasswordAction } from '@/features/link-upload/lib/actions/validate-access';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await validatePasswordAction({ linkId, password });
+    // TODO: Re-implement password validation with new tree system
+    // const result = await validatePasswordAction({ linkId, password });
+    const result: { success: boolean; error?: string; data?: { isValid: boolean } } = { 
+      success: false, 
+      error: 'Password validation not yet implemented' 
+    };
 
     if (!result.success) {
       return NextResponse.json(

@@ -1,5 +1,5 @@
 import { db } from '@/lib/database/connection';
-import { files, folders, links } from '@/lib/database/schemas';
+import { files, folders } from '@/lib/database/schemas';
 import { eq, and, sql, isNull } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 
@@ -35,6 +35,29 @@ export class FileService {
         `❌ FILES_BY_WORKSPACE_FETCH_FAILED: ${workspaceId}`,
         error
       );
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get all files for a specific link
+   */
+  async getFilesByLink(
+    linkId: string
+  ): Promise<DatabaseResult<DbFile[]>> {
+    try {
+      const linkFiles = await db
+        .select()
+        .from(files)
+        .where(eq(files.linkId, linkId))
+        .orderBy(files.sortOrder, files.createdAt);
+
+      console.log(
+        `✅ LINK_FILES_FETCHED: ${linkFiles.length} files for link ${linkId}`
+      );
+      return { success: true, data: linkFiles };
+    } catch (error) {
+      console.error(`❌ LINK_FILES_FETCH_FAILED: Link ${linkId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }
@@ -582,6 +605,243 @@ export class FileService {
       };
     } catch (error) {
       console.error(`❌ FILE_DOWNLOAD_INFO_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Copy a file from link context to workspace context
+   * Creates a new file record and copies the storage file to workspace bucket
+   */
+  async copyFileToWorkspace(
+    fileId: string,
+    workspaceId: string,
+    targetFolderId: string | null,
+    storageService: any,
+    userId: string
+  ): Promise<DatabaseResult<DbFile>> {
+    try {
+      // Get the source file
+      const fileResult = await this.getFileById(fileId);
+      if (!fileResult.success || !fileResult.data) {
+        return { success: false, error: 'Source file not found' };
+      }
+
+      const sourceFile = fileResult.data;
+
+      // Verify this is a link file
+      if (!sourceFile.linkId) {
+        return { success: false, error: 'Can only copy files from links to workspace' };
+      }
+
+      // Generate new storage path for workspace context
+      // RLS policy requires userId as first folder in path
+      const timestamp = Date.now();
+      const folderPath = targetFolderId || 'root';
+      const workspacePath = `${userId}/${folderPath}/${timestamp}_${sourceFile.fileName}`;
+
+      // Copy the storage file from shared to workspace bucket
+      const copyResult = await storageService.copyFile(
+        sourceFile.storagePath,
+        workspacePath,
+        'shared', // from context
+        'workspace' // to context
+      );
+
+      if (!copyResult.success) {
+        console.error('Failed to copy storage file:', copyResult.error);
+        return { success: false, error: 'Failed to copy file to storage' };
+      }
+
+      // Create new file record for workspace with new storage path
+      const newFileData: DbFileInsert = {
+        workspaceId, // Set workspace context
+        linkId: null, // Remove link context
+        batchId: null, // No batch for workspace files
+        folderId: targetFolderId,
+        fileName: sourceFile.fileName,
+        originalName: sourceFile.originalName,
+        fileSize: sourceFile.fileSize,
+        mimeType: sourceFile.mimeType,
+        extension: sourceFile.extension,
+        storagePath: copyResult.data, // NEW storage path in workspace bucket
+        storageProvider: sourceFile.storageProvider,
+        checksum: sourceFile.checksum,
+        isSafe: sourceFile.isSafe,
+        virusScanResult: sourceFile.virusScanResult,
+        processingStatus: 'completed',
+        thumbnailPath: sourceFile.thumbnailPath,
+        isOrganized: false,
+        needsReview: false,
+        sortOrder: -1, // New files at top
+        downloadCount: 0, // Reset download count
+      };
+
+      const createResult = await this.createFile(newFileData);
+      
+      if (!createResult.success) {
+        // Try to clean up copied storage file
+        await storageService.deleteFile(workspacePath, 'workspace');
+        return { success: false, error: 'Failed to create workspace file record' };
+      }
+
+      console.log(`✅ FILE_COPIED_TO_WORKSPACE: ${fileId} -> ${createResult.data!.id}`);
+      return createResult;
+    } catch (error) {
+      console.error(`❌ FILE_COPY_TO_WORKSPACE_FAILED: ${fileId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Copy a folder and all its contents from link to workspace
+   * Recursively copies subfolders and files
+   */
+  async copyFolderToWorkspace(
+    folderId: string,
+    workspaceId: string,
+    targetParentFolderId: string | null,
+    storageService: any,
+    userId: string,
+    folderIdMapping: Map<string, string> = new Map()
+  ): Promise<DatabaseResult<{ copiedFiles: number; copiedFolders: number }>> {
+    try {
+      // Get the source folder
+      const sourceFolder = await db.query.folders.findFirst({
+        where: eq(folders.id, folderId),
+      });
+
+      if (!sourceFolder) {
+        return { success: false, error: 'Source folder not found' };
+      }
+
+      // Verify this is a link folder
+      if (!sourceFolder.linkId) {
+        return { success: false, error: 'Can only copy folders from links to workspace' };
+      }
+
+      // Calculate new path and depth for the folder in workspace context
+      let newPath: string;
+      let newDepth: number;
+      
+      if (targetParentFolderId) {
+        // Get parent folder to calculate proper path and depth
+        const parentFolder = await db.query.folders.findFirst({
+          where: eq(folders.id, targetParentFolderId),
+        });
+        
+        if (parentFolder) {
+          newPath = `${parentFolder.path}/${sourceFolder.name}`;
+          newDepth = parentFolder.depth + 1;
+        } else {
+          // Fallback if parent not found
+          newPath = sourceFolder.name;
+          newDepth = 1;
+        }
+      } else {
+        // Root level in workspace
+        newPath = sourceFolder.name;
+        newDepth = 0;
+      }
+
+      // Create new folder in workspace with proper relationships
+      const newFolderData = {
+        workspaceId,
+        linkId: null,
+        parentFolderId: targetParentFolderId,
+        name: sourceFolder.name,
+        path: newPath,
+        depth: newDepth,
+        isArchived: false,
+        sortOrder: -1, // New folders at top
+        fileCount: 0,
+        totalSize: 0,
+      };
+
+      const [newFolder] = await db
+        .insert(folders)
+        .values(newFolderData)
+        .returning();
+
+      if (!newFolder) {
+        return { success: false, error: 'Failed to create workspace folder' };
+      }
+
+      // Map old folder ID to new folder ID for file copying
+      folderIdMapping.set(folderId, newFolder.id);
+
+      let totalCopiedFiles = 0;
+      let totalCopiedFolders = 1; // Count this folder
+
+      // Copy all files in this folder
+      const folderFiles = await db.query.files.findMany({
+        where: and(
+          eq(files.folderId, folderId),
+          eq(files.linkId, sourceFolder.linkId!)
+        ),
+      });
+
+      for (const file of folderFiles) {
+        const copyResult = await this.copyFileToWorkspace(
+          file.id,
+          workspaceId,
+          newFolder.id,
+          storageService,
+          userId
+        );
+
+        if (copyResult.success) {
+          totalCopiedFiles++;
+        } else {
+          console.error(`Failed to copy file ${file.id}:`, copyResult.error);
+        }
+      }
+
+      // Recursively copy subfolders
+      const subfolders = await db.query.folders.findMany({
+        where: and(
+          eq(folders.parentFolderId, folderId),
+          eq(folders.linkId, sourceFolder.linkId!)
+        ),
+      });
+
+      for (const subfolder of subfolders) {
+        const subfolderResult = await this.copyFolderToWorkspace(
+          subfolder.id,
+          workspaceId,
+          newFolder.id,
+          storageService,
+          userId,
+          folderIdMapping
+        );
+
+        if (subfolderResult.success && subfolderResult.data) {
+          totalCopiedFiles += subfolderResult.data.copiedFiles;
+          totalCopiedFolders += subfolderResult.data.copiedFolders;
+        } else {
+          console.error(`Failed to copy subfolder ${subfolder.id}:`, 'error' in subfolderResult ? subfolderResult.error : 'Unknown error');
+        }
+      }
+
+      // Update folder statistics with counts for direct children only
+      await db
+        .update(folders)
+        .set({
+          fileCount: folderFiles.length, // Direct files in this folder
+          totalSize: folderFiles.reduce((sum, f) => sum + f.fileSize, 0), // Size of direct files
+        })
+        .where(eq(folders.id, newFolder.id));
+
+      console.log(`✅ FOLDER_COPIED_TO_WORKSPACE: ${folderId} -> ${newFolder.id}`);
+      return {
+        success: true,
+        data: {
+          copiedFiles: totalCopiedFiles,
+          copiedFolders: totalCopiedFolders,
+        },
+      };
+    } catch (error) {
+      console.error(`❌ FOLDER_COPY_TO_WORKSPACE_FAILED: ${folderId}`, error);
       return { success: false, error: (error as Error).message };
     }
   }

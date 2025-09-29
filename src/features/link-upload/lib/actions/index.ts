@@ -1,16 +1,16 @@
-export { validateLinkAccessAction } from './validate-link-access';
-export { checkStorageAvailableAction } from './check-storage';
-export { createBatchAction } from './create-batch';
-export { uploadFileAction } from './upload-file';
-export { completeBatchAction } from './complete-batch';
-export { fetchPublicFilesAction } from './fetch-public-files';
-export { downloadFileAction } from './download-file';
-export { validateLinkPasswordAction } from './validate-password';
+// =============================================================================
+// LINK UPLOAD ACTIONS - Centralized exports for link upload server actions
+// =============================================================================
 
-// New tree-based actions
-export { fetchLinkTreeAction } from './fetch-link-tree';
-export { 
-  createLinkFolderAction, 
-  batchDeleteLinkItemsAction, 
-  moveLinkItemsAction 
-} from './link-folder-actions';
+// Link data actions
+export {
+  fetchLinkBySlugAction,
+  fetchLinkTreeDataAction,
+  validateLinkPasswordAction,
+  validateLinkAccessAction,
+  type ActionResult,
+} from './link-data-actions';
+
+// TODO: Add file upload actions
+// TODO: Add folder creation actions
+// TODO: Add batch processing actions

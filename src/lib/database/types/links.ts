@@ -58,10 +58,6 @@ export interface Link extends TimestampFields {
   totalSize: number;
   lastUploadAt: Date | null;
 
-  // Storage Quota Management
-  storageUsed: number;
-  storageLimit: number;
-
   // Notification tracking
   unreadUploads: number;
   lastNotificationAt: Date | null;
@@ -92,8 +88,6 @@ export type LinkUpdate = PartialBy<
   | 'totalUploads'
   | 'totalFiles'
   | 'totalSize'
-  | 'storageUsed'
-  | 'storageLimit'
   | 'unreadUploads'
 >;
 
@@ -115,6 +109,9 @@ export interface LinkWithStats extends Link {
     storageUsedPercentage: number;
     isNearLimit: boolean;
   };
+  // Optional user info when joined
+  username?: string;
+  avatarUrl?: string;
 }
 
 /**

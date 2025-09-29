@@ -1,5 +1,6 @@
 import type { TreeItem, TreeFileItem, TreeFolderItem } from '../types/tree-types';
 import type { File, Folder } from '@/lib/database/types';
+import { sortChildren } from './sort-children';
 
 /**
  * Transform database folders and files into tree structure
@@ -97,26 +98,9 @@ export function transformToTreeStructure(
     if (parent && parent.type === 'folder') {
       const folderParent = parent as TreeFolderItem;
       
-      // Sort children: folders first, then by sortOrder, then by name
-      const sortedChildren = children.sort((a, b) => {
-        // Folders come before files
-        if (a.type !== b.type) {
-          return a.type === 'folder' ? -1 : 1;
-        }
-        
-        // Sort by sortOrder if both have it
-        const aSortOrder = (a as any).sortOrder ?? 999;
-        const bSortOrder = (b as any).sortOrder ?? 999;
-        if (aSortOrder !== bSortOrder) {
-          return aSortOrder - bSortOrder;
-        }
-        
-        // Fallback to name
-        return a.name.localeCompare(b.name);
-      });
-      
-      // Assign sorted child IDs to parent
-      folderParent.children = sortedChildren.map(child => child.id);
+      // Use centralized sorting logic
+      const childIds = children.map(child => child.id);
+      folderParent.children = sortChildren(childIds, treeData);
     }
   });
 

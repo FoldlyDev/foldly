@@ -21,6 +21,7 @@ import {
   Crown,
   AlertTriangle,
   Package,
+  Pencil,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,18 +34,21 @@ import { CopyButton } from '@/components/core/copy-button';
 import { useCurrentModal, useModalData, useModalStore } from '../../store';
 import type { Link, LinkWithStats } from '@/lib/database/types';
 import { useLinkUrl } from '../../hooks/use-link-url';
-import { useStorageTracking } from '@/features/workspace/hooks/use-storage-tracking';
-import { useUserPlan } from '@/features/workspace/hooks/use-user-plan';
+import { useStorageTracking } from '@/lib/hooks/use-storage-tracking';
 import { fetchLinkDetailsWithStatsAction } from '../../lib/actions';
+import { formatBytes } from '@/lib/services/storage/utils';
 
 export function LinkDetailsModal() {
   const currentModal = useCurrentModal();
   const { link } = useModalData();
-  const { closeModal } = useModalStore();
+  const { closeModal, openSettingsModal } = useModalStore();
 
-  // Get real-time storage and plan data
-  const { storageInfo, refetchStorage, formatSize } = useStorageTracking();
-  const { planKey } = useUserPlan();
+  // Get real-time storage and plan data using proper hook interface
+  const storageQuery = useStorageTracking();
+  const storageInfo = storageQuery.data;
+  const refetchStorage = storageQuery.refetch;
+  const isStorageLoading = storageQuery.isLoading;
+  const planKey = storageInfo?.plan || 'free';
 
   const isOpen = currentModal === 'link-details';
 
@@ -73,6 +77,15 @@ export function LinkDetailsModal() {
   }, [isOpen, refetchStorage]);
 
   if (!isOpen || !link) return null;
+
+  // Handle switching from details to settings modal
+  const handleEditClick = () => {
+    closeModal(); // Close the current modal
+    // Small delay to ensure smooth transition
+    setTimeout(() => {
+      openSettingsModal(link);
+    }, 150);
+  };
 
   const getStatusConfig = () => {
     if (!link.isActive) {
@@ -108,14 +121,8 @@ export function LinkDetailsModal() {
     ((linkWithStats as LinkWithStats)?.stats?.fileCount || 0) +
     ((linkWithStats as LinkWithStats)?.stats?.folderCount || 0);
 
-  // Calculate storage usage percentage for this link
-  const linkStoragePercentage =
-    storageInfo.storageLimitBytes > 0
-      ? Math.min((link.totalSize / storageInfo.storageLimitBytes) * 100, 100)
-      : 0;
-
   // Calculate overall storage usage percentage
-  const overallStoragePercentage = storageInfo.usagePercentage || 0;
+  const overallStoragePercentage = storageInfo?.usagePercentage || 0;
 
   // Determine if user is approaching storage limits
   const isStorageWarning = overallStoragePercentage >= 75;
@@ -201,7 +208,7 @@ export function LinkDetailsModal() {
           </div>
 
           {/* Key Metrics Grid - Mobile Responsive */}
-          <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4'>
+          <div className='grid grid-cols-2 gap-3 sm:gap-4'>
             {/* Total Items Card - Now shows files + folders */}
             <motion.div
               className='overview-card'
@@ -262,90 +269,29 @@ export function LinkDetailsModal() {
                 </div>
               </div>
             </motion.div>
+          </div>
 
-            {/* Storage Used Card - Now with real data */}
+          {/* Account Storage Overview - New Section */}
+          {storageInfo && (
             <motion.div
               className='overview-card'
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.45 }}
             >
-              <div className='relative z-10'>
-                <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-2 sm:mb-3'>
-                  <div
-                    className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${
-                      isStorageExceeded
-                        ? 'bg-red-500/10'
-                        : isStorageCritical
-                          ? 'bg-orange-500/10'
-                          : isStorageWarning
-                            ? 'bg-yellow-500/10'
-                            : 'bg-green-500/10'
-                    } self-start`}
-                  >
-                    <HardDrive
-                      className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                        isStorageExceeded
-                          ? 'text-red-600'
-                          : isStorageCritical
-                            ? 'text-orange-600'
-                            : isStorageWarning
-                              ? 'text-yellow-600'
-                              : 'text-green-600'
-                      }`}
-                    />
+              <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/10'>
+                    <Crown className='w-4 h-4 sm:w-5 sm:h-5 text-blue-600' />
                   </div>
-                  <div className='text-left sm:text-right'>
-                    <div className='text-xl sm:text-2xl lg:text-3xl font-bold stats-number'>
-                      {formatSize(link.totalSize)}
-                    </div>
-                    <div className='text-xs sm:text-sm text-muted-foreground'>
-                      Link Storage
-                    </div>
-                  </div>
+                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                    Account Storage
+                  </h3>
                 </div>
-                <div className='text-xs text-muted-foreground mb-2'>
-                  {linkStoragePercentage.toFixed(1)}% of{' '}
-                  {formatSize(storageInfo.storageLimitBytes)} limit
-                </div>
-                <div className='w-full bg-muted rounded-full h-1.5 sm:h-2'>
-                  <div
-                    className={`h-1.5 sm:h-2 rounded-full premium-progress bg-gradient-to-r ${
-                      isStorageExceeded
-                        ? 'from-red-500 to-red-600'
-                        : isStorageCritical
-                          ? 'from-orange-500 to-orange-600'
-                          : isStorageWarning
-                            ? 'from-yellow-500 to-yellow-600'
-                            : 'from-green-500 to-green-600'
-                    }`}
-                    style={{ width: `${linkStoragePercentage}%` }}
-                  />
-                </div>
+                <span className='text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 px-2 sm:px-3 py-1 bg-blue-100 dark:bg-blue-500/10 rounded-full'>
+                  {planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan
+                </span>
               </div>
-            </motion.div>
-          </div>
-
-          {/* Account Storage Overview - New Section */}
-          <motion.div
-            className='overview-card'
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.45 }}
-          >
-            <div className='flex items-center justify-between mb-4'>
-              <div className='flex items-center gap-2 sm:gap-3'>
-                <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-blue-500/10'>
-                  <Crown className='w-4 h-4 sm:w-5 sm:h-5 text-blue-600' />
-                </div>
-                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
-                  Account Storage
-                </h3>
-              </div>
-              <span className='text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-400 px-2 sm:px-3 py-1 bg-blue-100 dark:bg-blue-500/10 rounded-full'>
-                {planKey.charAt(0).toUpperCase() + planKey.slice(1)} Plan
-              </span>
-            </div>
 
             <div className='space-y-3'>
               {/* Overall Storage Usage */}
@@ -355,8 +301,8 @@ export function LinkDetailsModal() {
                     Total Usage
                   </span>
                   <span className='text-sm font-bold text-foreground'>
-                    {formatSize(storageInfo.storageUsedBytes)} /{' '}
-                    {formatSize(storageInfo.storageLimitBytes)}
+                    {storageInfo ? formatBytes(storageInfo.storageUsed) : '0 B'} /{' '}
+                    {storageInfo ? formatBytes(storageInfo.storageLimit) : 'loading...'}
                   </span>
                 </div>
                 <div className='w-full bg-muted rounded-full h-2'>
@@ -377,7 +323,8 @@ export function LinkDetailsModal() {
                 </div>
                 <div className='flex justify-between items-center mt-1'>
                   <span className='text-xs text-muted-foreground'>
-                    {storageInfo.filesCount} total files
+                    {/* Files count not available in current storage info */}
+                    Files stored
                   </span>
                   <span
                     className={`text-xs font-medium ${
@@ -390,7 +337,7 @@ export function LinkDetailsModal() {
                             : 'text-green-600'
                     }`}
                   >
-                    {formatSize(storageInfo.remainingBytes)} available
+                    {storageInfo ? formatBytes(storageInfo.availableSpace) : '0 B'} available
                   </span>
                 </div>
               </div>
@@ -434,7 +381,7 @@ export function LinkDetailsModal() {
                     <p className='text-xs text-muted-foreground mt-1'>
                       {isStorageExceeded
                         ? 'Delete some files or upgrade your plan to continue uploading.'
-                        : `Only ${formatSize(storageInfo.remainingBytes)} remaining on your ${planKey} plan.`}
+                        : `Only ${storageInfo ? formatBytes(storageInfo.availableSpace) : '0 B'} remaining on your ${planKey} plan.`}
                     </p>
                   </div>
                 </div>
@@ -447,13 +394,13 @@ export function LinkDetailsModal() {
                     This link uses
                   </span>
                   <span className='text-sm font-semibold text-foreground'>
-                    {formatSize(link.totalSize)} (
-                    {linkStoragePercentage.toFixed(1)}%)
+                    {formatBytes(link.totalSize)}
                   </span>
                 </div>
               </div>
             </div>
           </motion.div>
+          )}
 
           {/* Information Grid - Mobile Responsive */}
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6'>
@@ -464,13 +411,22 @@ export function LinkDetailsModal() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
-                <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
-                  <Calendar className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
+              <div className='flex items-center justify-between mb-4 sm:mb-6'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-indigo-500/10'>
+                    <Calendar className='w-4 h-4 sm:w-5 sm:h-5 text-indigo-600' />
+                  </div>
+                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                    Collection Link Details
+                  </h3>
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
-                  Collection Link Details
-                </h3>
+                <button
+                  onClick={handleEditClick}
+                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  title='Edit link settings'
+                >
+                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                </button>
               </div>
 
               <div className='space-y-4'>
@@ -525,13 +481,22 @@ export function LinkDetailsModal() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <div className='flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6'>
-                <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/10'>
-                  <Shield className='w-4 h-4 sm:w-5 sm:h-5 text-emerald-600' />
+              <div className='flex items-center justify-between mb-4 sm:mb-6'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-emerald-500/10'>
+                    <Shield className='w-4 h-4 sm:w-5 sm:h-5 text-emerald-600' />
+                  </div>
+                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                    Security & Access
+                  </h3>
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
-                  Security & Access
-                </h3>
+                <button
+                  onClick={handleEditClick}
+                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  title='Edit security settings'
+                >
+                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                </button>
               </div>
 
               <div className='space-y-4'>
@@ -582,13 +547,22 @@ export function LinkDetailsModal() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
             >
-              <div className='flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4'>
-                <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-pink-500/10'>
-                  <Hash className='w-4 h-4 sm:w-5 sm:h-5 text-pink-600' />
+              <div className='flex items-center justify-between mb-3 sm:mb-4'>
+                <div className='flex items-center gap-2 sm:gap-3'>
+                  <div className='p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-pink-500/10'>
+                    <Hash className='w-4 h-4 sm:w-5 sm:h-5 text-pink-600' />
+                  </div>
+                  <h3 className='text-lg sm:text-xl font-bold text-foreground'>
+                    Description
+                  </h3>
                 </div>
-                <h3 className='text-lg sm:text-xl font-bold text-foreground'>
-                  Description
-                </h3>
+                <button
+                  onClick={handleEditClick}
+                  className='p-1.5 sm:p-2 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200 group cursor-pointer'
+                  title='Edit description'
+                >
+                  <Pencil className='w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground transition-colors' />
+                </button>
               </div>
               <p className='text-sm sm:text-base text-muted-foreground leading-relaxed bg-muted/30 p-3 sm:p-4 rounded-lg sm:rounded-xl'>
                 {link.description}

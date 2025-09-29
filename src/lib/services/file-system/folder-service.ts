@@ -91,6 +91,29 @@ export class FolderService {
   }
 
   /**
+   * Get all folders for a specific link
+   */
+  async getFoldersByLink(
+    linkId: string
+  ): Promise<DatabaseResult<DbFolder[]>> {
+    try {
+      const linkFolders = await db
+        .select()
+        .from(folders)
+        .where(eq(folders.linkId, linkId))
+        .orderBy(folders.sortOrder, folders.path);
+
+      console.log(
+        `✅ LINK_FOLDERS_FETCHED: ${linkFolders.length} folders for link ${linkId}`
+      );
+      return { success: true, data: linkFolders };
+    } catch (error) {
+      console.error(`❌ LINK_FOLDERS_FETCH_FAILED: Link ${linkId}`, error);
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
    * Get folders by parent ID (for uniqueness checking)
    */
   async getFoldersByParent(

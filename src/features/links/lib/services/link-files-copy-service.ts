@@ -3,6 +3,7 @@ import { files, folders, links } from '@/lib/database/schemas';
 import { eq, inArray, sql } from 'drizzle-orm';
 import type { TreeNode, CopyResult, CopyOptions } from '@/features/files/types';
 import { linkFilesTreeService } from './link-files-tree-service';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 
 /**
  * Service for copying files and folders from links to workspaces
@@ -44,6 +45,26 @@ export class LinkFilesCopyService {
     const folderMapping = new Map<string, string>(); // sourceId -> newWorkspaceFolderId
 
     try {
+      // Calculate total size of files to be copied
+      const fileNodes = this.extractFileNodes(nodes);
+      const fileIds = fileNodes.map(node => node.id);
+      const { totalSize: estimatedSize } = await this.getFilesTotalSize(fileIds);
+
+      // Check user quota before copying
+      const quotaCheck = await storageQuotaService.checkUserQuota(userId, estimatedSize);
+      if (!quotaCheck.success || !quotaCheck.data || !quotaCheck.data.allowed) {
+        return {
+          success: false,
+          copiedFiles: 0,
+          copiedFolders: 0,
+          errors: [{
+            fileId: 'quota',
+            fileName: 'Storage Quota',
+            error: (quotaCheck.success && quotaCheck.data?.message) || quotaCheck.error || 'Storage quota exceeded'
+          }],
+          totalSize: 0,
+        };
+      }
       // Start a transaction
       await db.transaction(async (tx) => {
         // Process nodes in proper order: folders first, then files
@@ -85,14 +106,12 @@ export class LinkFilesCopyService {
         
         copiedFiles = copyResults.copiedFiles;
         totalSize = copyResults.totalSize;
-
-        // Update user's storage usage
-        await tx.execute(sql`
-          UPDATE users 
-          SET storage_used = storage_used + ${totalSize}
-          WHERE id = ${userId}
-        `);
       });
+
+      // Update user's storage usage through centralized service
+      if (totalSize > 0) {
+        await storageQuotaService.updateUserStorageUsage(userId, totalSize);
+      }
 
       return {
         success: errors.length === 0,
@@ -121,6 +140,24 @@ export class LinkFilesCopyService {
     let totalSize = 0;
 
     try {
+      // Calculate total size of files to be copied
+      const { totalSize: estimatedSize } = await this.getFilesTotalSize(fileIds);
+
+      // Check user quota before copying
+      const quotaCheck = await storageQuotaService.checkUserQuota(userId, estimatedSize);
+      if (!quotaCheck.success || !quotaCheck.data || !quotaCheck.data.allowed) {
+        return {
+          success: false,
+          copiedFiles: 0,
+          copiedFolders: 0,
+          errors: [{
+            fileId: 'quota',
+            fileName: 'Storage Quota',
+            error: (quotaCheck.success && quotaCheck.data?.message) || quotaCheck.error || 'Storage quota exceeded'
+          }],
+          totalSize: 0,
+        };
+      }
       // Start a transaction
       await db.transaction(async (tx) => {
         // Get source files
@@ -177,14 +214,12 @@ export class LinkFilesCopyService {
             });
           }
         }
-
-        // Update user's storage usage
-        await tx.execute(sql`
-          UPDATE users 
-          SET storage_used = storage_used + ${totalSize}
-          WHERE id = ${userId}
-        `);
       });
+
+      // Update user's storage usage through centralized service
+      if (totalSize > 0) {
+        await storageQuotaService.updateUserStorageUsage(userId, totalSize);
+      }
 
       return {
         success: errors.length === 0,
@@ -358,6 +393,27 @@ export class LinkFilesCopyService {
         );
       }
     }
+  }
+
+  /**
+   * Extract all file nodes from a tree structure
+   */
+  private extractFileNodes(nodes: TreeNode[]): TreeNode[] {
+    const fileNodes: TreeNode[] = [];
+    
+    const traverse = (nodeList: TreeNode[]) => {
+      for (const node of nodeList) {
+        if (node.type === 'file') {
+          fileNodes.push(node);
+        }
+        if (node.children) {
+          traverse(node.children);
+        }
+      }
+    };
+    
+    traverse(nodes);
+    return fileNodes;
   }
 }
 

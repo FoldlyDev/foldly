@@ -7,6 +7,7 @@ import { linksDbService } from '../db-service';
 import { requireAuth, logAudit } from './shared';
 import { type ActionResult, duplicateLinkActionSchema } from '../validations';
 import type { LinkInsert, Link } from '@/lib/database/types/links';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 
 /**
  * Duplicate a link
@@ -38,7 +39,16 @@ export async function duplicateLinkAction(
       };
     }
 
-    // 4. Prepare duplicate data
+    // 4. Get current user storage info for plan-based limits
+    const storageInfo = await storageQuotaService.getUserStorageInfo(user.id);
+    if (!storageInfo.success || !storageInfo.data) {
+      return {
+        success: false,
+        error: 'Failed to get storage information for link duplication',
+      };
+    }
+
+    // 5. Prepare duplicate data
     const duplicateData: LinkInsert = {
       userId: originalLink.data.userId,
       workspaceId: originalLink.data.workspaceId,
@@ -61,9 +71,9 @@ export async function duplicateLinkAction(
       totalFiles: 0,
       totalSize: 0,
       lastUploadAt: null,
-      // Initialize storage quota fields (copy from original)
-      storageUsed: 0, // Start with 0 for the duplicate
-      storageLimit: originalLink.data.storageLimit,
+      unreadUploads: 0,
+      lastNotificationAt: null,
+      sourceFolderId: null
     };
 
     // 5. Create duplicate link

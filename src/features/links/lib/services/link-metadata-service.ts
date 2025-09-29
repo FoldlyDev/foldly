@@ -3,6 +3,7 @@ import { db } from '@/lib/database/connection';
 import { links, files } from '@/lib/database/schemas';
 import type { Link } from '@/lib/database/types/links';
 import type { DatabaseResult } from '@/lib/database/types/common';
+import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
 
 /**
  * Service for managing link metadata and statistics
@@ -177,21 +178,38 @@ export class LinkMetadataService {
   }
 
   /**
-   * Update storage usage for a link
+   * Update storage usage for a link with quota validation
+   * This method should only be called after proper quota checking
    */
   async updateStorageUsage(
     linkId: string,
+    userId: string,
     bytesAdded: number
   ): Promise<DatabaseResult<void>> {
     try {
+      // Validate quota before updating (safety check)
+      const quotaCheck = await storageQuotaService.checkUserQuota(userId, bytesAdded);
+      if (!quotaCheck.success || !quotaCheck.data || !quotaCheck.data.allowed) {
+        return {
+          success: false,
+          error: (quotaCheck.success && quotaCheck.data?.message) || quotaCheck.error || 'Storage quota exceeded',
+          code: 'QUOTA_EXCEEDED',
+        };
+      }
+
+      // Update link metadata (only totalSize, not storageUsed)
       await db
         .update(links)
         .set({
-          storageUsed: sql`${links.storageUsed} + ${bytesAdded}`,
           totalSize: sql`${links.totalSize} + ${bytesAdded}`,
           updatedAt: new Date(),
         })
         .where(eq(links.id, linkId));
+
+      // Update user storage through centralized service
+      if (bytesAdded > 0) {
+        await storageQuotaService.updateUserStorageUsage(userId, bytesAdded);
+      }
 
       return {
         success: true,

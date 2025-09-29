@@ -314,6 +314,12 @@ class NotificationManager {
       [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: `Uploading ${'totalItems' in payload ? payload.totalItems : 0} files`,
       [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: 'Files uploaded successfully',
       [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: 'Failed to upload files',
+      
+      // Copy to workspace events
+      [NotificationEventType.WORKSPACE_ITEMS_COPY_START]: `Copying ${'totalItems' in payload ? payload.totalItems : 0} items to workspace`,
+      [NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS]: 'Items copied to workspace',
+      [NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR]: 'Failed to copy items',
+      [NotificationEventType.WORKSPACE_ITEMS_COPY_PARTIAL]: 'Some items failed to copy',
     };
 
     return titleMap[event.type] || 'Notification';

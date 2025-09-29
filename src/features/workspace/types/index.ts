@@ -2,5 +2,4 @@
 // WORKSPACE TYPES - CENTRALIZED EXPORTS
 // =============================================================================
 
-export * from './tree';
 export * from './workspace-ui';

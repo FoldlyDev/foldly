@@ -1,7 +1,7 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { workspaceService } from '@/features/workspace/services/workspace-service';
+import { workspaceService } from '@/features/workspace/lib/services/workspace-service';
 import { FolderService } from '@/lib/services/file-system/folder-service';
 import type { DatabaseId } from '@/lib/database/types';
 import { logger } from '@/lib/services/logging/logger';
@@ -97,12 +97,19 @@ export async function createFolderAction(
       depth = parentFolder.depth + 1;
     }
 
+    // Use negative sortOrder to ensure new items appear at the top
+    // More negative = appears first. Using timestamp ensures uniqueness
+    // and that newer items appear before older negative sortOrder items
+    // PostgreSQL integer range: -2,147,483,648 to 2,147,483,647
+    const sortOrder = -Math.floor(Date.now() / 1000); // Divide by 1000 for more granularity
+
     const result = await folderService.createFolder({
       name: trimmedName,
       parentFolderId: parentId,
       workspaceId: workspace.id,
       path: folderPath,
       depth,
+      sortOrder,
     });
 
     if (result.success) {
@@ -173,21 +180,33 @@ export async function deleteFolderAction(
     const { createServerSupabaseClient } = await import(
       '@/lib/config/supabase-server'
     );
-    
+
     const supabaseClient = await createServerSupabaseClient();
     const storageService = new StorageService(supabaseClient);
     const folderService = new FolderService();
-    
+
     // Use the optimized deletion method that handles both DB and storage
-    const result = await folderService.deleteFolderWithStorage(folderId, storageService);
+    const result = await folderService.deleteFolderWithStorage(
+      folderId,
+      storageService
+    );
 
     if (result.success) {
-      // Get updated storage info after deletion
-      const { getUserStorageDashboard } = await import('@/lib/services/storage/storage-tracking-service');
-      const updatedStorageInfo = await getUserStorageDashboard(userId, 'free'); // TODO: Get actual user plan
-      
-      return { 
-        success: true, 
+      // Get updated storage info after deletion using centralized action
+      const { getUserStorageInfoAction } = await import(
+        '@/lib/actions/storage-actions'
+      );
+      const storageResult = await getUserStorageInfoAction();
+      const updatedStorageInfo = storageResult.success && 'data' in storageResult && storageResult.data ? {
+        usagePercentage: storageResult.data.usagePercentage,
+        remainingBytes: storageResult.data.availableSpace,
+      } : {
+        usagePercentage: 0,
+        remainingBytes: 0,
+      };
+
+      return {
+        success: true,
         data: {
           ...result.data,
           storageInfo: {

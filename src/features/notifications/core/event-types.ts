@@ -98,6 +98,12 @@ export enum NotificationEventType {
   WORKSPACE_BATCH_UPLOAD_SUCCESS = 'workspace.batch.upload.success',
   WORKSPACE_BATCH_UPLOAD_ERROR = 'workspace.batch.upload.error',
   
+  // Copy to Workspace Events
+  WORKSPACE_ITEMS_COPY_START = 'workspace.items.copy.start',
+  WORKSPACE_ITEMS_COPY_SUCCESS = 'workspace.items.copy.success',
+  WORKSPACE_ITEMS_COPY_ERROR = 'workspace.items.copy.error',
+  WORKSPACE_ITEMS_COPY_PARTIAL = 'workspace.items.copy.partial',
+  
   // Link Events
   LINK_CREATE_SUCCESS = 'link.create.success',
   LINK_CREATE_ERROR = 'link.create.error',
@@ -372,6 +378,11 @@ export interface EventPayloadMap {
   [NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR]: BatchEventPayload;
+  
+  [NotificationEventType.WORKSPACE_ITEMS_COPY_START]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR]: BatchEventPayload;
+  [NotificationEventType.WORKSPACE_ITEMS_COPY_PARTIAL]: BatchEventPayload;
   
   // Link events
   [NotificationEventType.LINK_CREATE_SUCCESS]: LinkEventPayload;

@@ -110,6 +110,7 @@
 
 /* 📁 Workspace Feature Styles */
 @import '../features/workspace/styles/workspace.css';
+@import '../features/files/styles/files.css';
 
 /* 🔗 Link Upload Feature Styles */
 @import '../features/link-upload/styles/link-upload.css';

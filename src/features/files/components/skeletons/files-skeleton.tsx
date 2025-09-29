@@ -1,117 +1,86 @@
-'use client';
-
+import React from 'react';
 import { Skeleton } from '@/components/feedback/skeleton-loader';
+
+export function FilesHeaderSkeleton() {
+  return (
+    <div className='files-header-content'>
+      <div className='files-header-text'>
+        <Skeleton className='h-8 sm:h-10 w-32 sm:w-40 mb-2' />
+        <Skeleton className='h-5 sm:h-6 w-64 sm:w-80' />
+      </div>
+    </div>
+  );
+}
 
 export function FilesSkeleton() {
   return (
-    <div className='files-layout min-h-screen overflow-hidden'>
-      <div className='files-container'>
-        {/* Desktop: Two Panel Layout Skeleton */}
-        <div className='hidden md:flex h-full gap-4'>
-          {/* Left Panel - Links List */}
-          <div className='w-80 flex-shrink-0 rounded-lg border foldly-glass'>
-            {/* Header */}
-            <div className='p-4 border-b'>
-              <Skeleton className='h-6 w-32 mb-3 dark:bg-white/10' />
-              <Skeleton className='h-9 w-full rounded-md dark:bg-white/10' />
-            </div>
+    <div className="dashboard-container files-layout bg-background">
+      {/* Files Header Skeleton */}
+      <div className="files-header">
+        <FilesHeaderSkeleton />
+      </div>
 
-            {/* Links List */}
-            <div className='p-2 space-y-1'>
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className='p-3 rounded-md'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <div className='flex-1'>
-                      <Skeleton className='h-5 w-3/4 mb-1 dark:bg-white/10' />
-                      <Skeleton className='h-4 w-1/2 dark:bg-white/10' />
+      <div className="files-desktop-container">
+        {/* Left Panel Skeleton */}
+        <div className="files-left-panel">
+          <div className="links-panel-container">
+            <div className="links-panel-header">
+              <Skeleton className="h-6 w-24 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+            
+            <div className="links-panel-content">
+              {/* Accordion Sections Skeleton */}
+              {[1, 2, 3].map((section) => (
+                <div key={section} className="link-section mb-4">
+                  <div className="link-section-header">
+                    <Skeleton className="h-5 w-32" />
+                  </div>
+                  {section === 1 && (
+                    <div className="link-section-items">
+                      {[1, 2].map((item) => (
+                        <div key={item} className="link-item">
+                          <Skeleton className="h-4 w-full" />
+                        </div>
+                      ))}
                     </div>
-                    <Skeleton className='h-5 w-5 rounded-full' />
-                  </div>
-                  <div className='flex items-center gap-4 text-xs'>
-                    <Skeleton className='h-3 w-16 dark:bg-white/10' />
-                    <Skeleton className='h-3 w-20 dark:bg-white/10' />
-                    <Skeleton className='h-3 w-24 dark:bg-white/10' />
-                  </div>
+                  )}
                 </div>
               ))}
-            </div>
-          </div>
-
-          {/* Right Panel - Files Grid */}
-          <div className='flex-1 rounded-lg border foldly-glass'>
-            {/* Header */}
-            <div className='p-4 border-b'>
-              <div className='flex items-center justify-between mb-4'>
-                <Skeleton className='h-7 w-48 dark:bg-white/10' />
-                <div className='flex items-center gap-2'>
-                  <Skeleton className='h-8 w-8 rounded' />
-                  <Skeleton className='h-8 w-8 rounded' />
-                  <Skeleton className='h-8 w-8 rounded' />
-                </div>
-              </div>
-
-              {/* Toolbar */}
-              <div className='flex items-center gap-2'>
-                <Skeleton className='h-9 flex-1 max-w-md rounded-md dark:bg-white/10' />
-                <Skeleton className='h-9 w-24 rounded-md dark:bg-white/10' />
-                <Skeleton className='h-9 w-24 rounded-md dark:bg-white/10' />
-              </div>
-            </div>
-
-            {/* Files Grid */}
-            <div className='p-4'>
-              <div className='grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4'>
-                {[...Array(18)].map((_, i) => (
-                  <div key={i} className='group'>
-                    <div className='aspect-square rounded-lg overflow-hidden mb-2'>
-                      <Skeleton className='w-full h-full' />
-                    </div>
-                    <Skeleton className='h-4 w-full mb-1 dark:bg-white/10' />
-                    <Skeleton className='h-3 w-3/4 dark:bg-white/10' />
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile: Single Panel Skeleton */}
-        <div className='h-full md:hidden'>
-          {/* Mobile Header */}
-          <div className='foldly-glass border-b p-4'>
-            <Skeleton className='h-6 w-32 mb-2 dark:bg-white/10' />
-            <div className='flex gap-2'>
-              <Skeleton className='h-8 flex-1 rounded-md dark:bg-white/10' />
-              <Skeleton className='h-8 w-8 rounded-md' />
-            </div>
-          </div>
-
-          {/* Mobile Tabs */}
-          <div className='flex border-b foldly-glass'>
-            <Skeleton className='h-10 w-1/2' />
-            <Skeleton className='h-10 w-1/2' />
-          </div>
-
-          {/* Mobile Content */}
-          <div className='flex-1 foldly-glass overflow-hidden'>
-            <div className='p-4 space-y-3'>
-              {/* Link items skeleton */}
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className='p-3 border rounded-lg'>
-                  <div className='flex items-start justify-between mb-2'>
-                    <div className='flex-1'>
-                      <Skeleton className='h-5 w-3/4 mb-1 dark:bg-white/10' />
-                      <Skeleton className='h-4 w-1/2 dark:bg-white/10' />
-                    </div>
-                    <Skeleton className='h-5 w-5 rounded-full' />
-                  </div>
-                  <div className='flex items-center gap-3 text-xs'>
-                    <Skeleton className='h-3 w-16 dark:bg-white/10' />
-                    <Skeleton className='h-3 w-20 dark:bg-white/10' />
-                    <Skeleton className='h-3 w-24 dark:bg-white/10' />
-                  </div>
+        {/* Right Panel Skeleton */}
+        <div className="files-right-panel">
+          <div className="workspace-panel-container">
+            <div className="workspace-panel-header">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Skeleton className="h-6 w-24 mb-2" />
+                  <Skeleton className="h-4 w-36" />
                 </div>
-              ))}
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+            
+            <div className="workspace-panel-content">
+              {/* File Tree Skeleton */}
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((item) => (
+                  <div key={item} className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="workspace-drop-zone">
+              <div className="workspace-drop-area">
+                <Skeleton className="h-8 w-8 mx-auto mb-2" />
+                <Skeleton className="h-4 w-36 mx-auto" />
+              </div>
             </div>
           </div>
         </div>

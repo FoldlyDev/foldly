@@ -6,7 +6,7 @@
   --base-300: var(--neutral-900);
   --base-secondary-dark: var(--neutral-600);
   --menu-transition-duration: 0.4s;
-  --menu-transition-easing: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --menu-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .menu {
@@ -50,12 +50,6 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-}
-
-.menu-logo img {
-  width: 2rem;
-  height: 2rem;
-  transition: transform 0.5s ease;
 }
 
 .menu-logo img.rotated {
@@ -175,8 +169,20 @@
   font-weight: 900;
   line-height: 0.85;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 0%, black 100%, transparent 100%);
-  mask-image: linear-gradient(to bottom, transparent 0%, black 0%, black 100%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 0%,
+    black 100%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 0%,
+    black 100%,
+    transparent 100%
+  );
 }
 
 .menu-nav a div div {

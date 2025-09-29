@@ -1,10 +1,10 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useUserPlan } from '../../hooks/use-user-plan';
 
 export function LinkUploadFooter() {
-  const { requiresBranding } = useUserPlan();
+  // Temporarily always show branding until user plan hook is implemented
+  const requiresBranding = true;
 
   // Don't render footer for pro/business users
   if (!requiresBranding) {

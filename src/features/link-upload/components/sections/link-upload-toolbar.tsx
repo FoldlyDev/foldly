@@ -1,32 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useShallow } from 'zustand/shallow';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { batchDeleteLinkItemsAction } from '../../lib/actions';
-import { useStagingStore } from '../../stores/staging-store';
-import { useBatchUpload } from '../../hooks/use-batch-upload';
-import { linkQueryKeys } from '../../lib/query-keys';
-import { setDragOperationActive } from '../../lib/tree-data';
-import { eventBus, NotificationEventType } from '@/features/notifications/core';
+import { Button } from '@/components/ui/shadcn/button';
+import { Input } from '@/components/ui/shadcn/input';
 import {
-  BatchOperationModal,
-  type BatchOperationItem,
-  type BatchOperationProgress,
-} from '../modals/batch-operation-modal';
-import type { LinkWithOwner } from '../../types';
-
-// Import extracted components
-import { ToolbarSearch } from '../toolbar/ToolbarSearch';
-import { FolderCreation } from '../toolbar/FolderCreation';
-import { UploadActions } from '../toolbar/UploadActions';
-import { ViewControls } from '../toolbar/ViewControls';
-import { SelectionActions } from '../toolbar/SelectionActions';
+  FolderPlus,
+  Search,
+  MoreVertical,
+  Minimize2,
+  Maximize2,
+  X,
+  Trash2,
+  CheckSquare,
+  Square,
+  CloudUpload,
+  Send,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/shadcn/dropdown-menu';
+import { useLinkUploadStagingStore } from '../../stores/staging-store';
+import { formatBytes } from '@/lib/utils';
 
 interface LinkUploadToolbarProps {
   className?: string;
-  linkData: LinkWithOwner;
   treeInstance?: {
     getSelectedItems?: () => Array<{
       getId: () => string;
@@ -40,358 +41,356 @@ interface LinkUploadToolbarProps {
     deleteItems?: (itemIds: string[]) => void;
     expandAll?: () => void;
     collapseAll?: () => void;
-    rebuildTree?: () => void;
+    isTouchDevice?: () => boolean;
+    isSelectionMode?: () => boolean;
+    setSelectionMode?: (mode: boolean) => void;
+    addFolderToTree?: (folder: any) => void;
   };
   searchQuery?: string;
   setSearchQuery?: (query: string) => void;
   selectedItems?: string[];
   onClearSelection?: () => void;
-  selectedFolderId?: string;
-  selectedFolderName?: string;
-  hasProvidedInfo?: boolean;
-  onRequestUpload?: () => void;
-  shouldTriggerUpload?: boolean;
-  onUploadTriggered?: () => void;
+  selectionMode?: boolean;
+  onSelectionModeChange?: (mode: boolean) => void;
+  onOpenUploadModal?: () => void;
+  onOpenVerificationModal?: () => void;
 }
 
 export function LinkUploadToolbar({
   className = '',
-  linkData,
   treeInstance,
   searchQuery = '',
   setSearchQuery,
   selectedItems = [],
   onClearSelection,
-  selectedFolderId,
-  selectedFolderName = 'Link Root',
-  hasProvidedInfo = false,
-  onRequestUpload,
-  shouldTriggerUpload = false,
-  onUploadTriggered,
+  selectionMode = false,
+  onSelectionModeChange,
+  onOpenUploadModal,
+  onOpenVerificationModal,
 }: LinkUploadToolbarProps) {
-  const [showBatchModal, setShowBatchModal] = useState(false);
-  const [batchProgress, setBatchProgress] = useState<
-    BatchOperationProgress | undefined
-  >();
-  const queryClient = useQueryClient();
-
-  // Get staging state - with useShallow to prevent infinite loops
-  const {
-    hasStagedItems,
-    getStagedItemCount,
-    getAllStagedItems,
-    isUploading: stagingIsUploading,
-    uploadProgress,
-    setIsUploading,
-    updateUploadProgress,
-    clearStaged,
-    uploaderName,
-    uploaderEmail,
-    uploaderMessage,
-  } = useStagingStore(
-    useShallow((state) => ({
-      hasStagedItems: state.hasStagedItems,
-      getStagedItemCount: state.getStagedItemCount,
-      getAllStagedItems: state.getAllStagedItems,
-      isUploading: state.isUploading,
-      uploadProgress: state.uploadProgress,
-      setIsUploading: state.setIsUploading,
-      updateUploadProgress: state.updateUploadProgress,
-      clearStaged: state.clearStaged,
-      uploaderName: state.uploaderName,
-      uploaderEmail: state.uploaderEmail,
-      uploaderMessage: state.uploaderMessage,
-    }))
-  );
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   
-  const stagedItemCount = getStagedItemCount();
-  const hasStaged = hasStagedItems();
-
-  // Batch upload hook
   const {
-    uploadBatch,
-    isUploading: batchIsUploading,
-    progress: batchUploadProgress,
-  } = useBatchUpload({
-    linkId: linkData.id,
-    onComplete: async results => {
-      clearStaged();
-      
-      const successCount = results.filter(r => r.success).length;
-      const failCount = results.filter(r => !r.success).length;
+    getStagedFileCount,
+    getTotalStagedSize,
+    hasAnyStaged,
+    removeStagedItems,
+    addStagedFolder,
+  } = useLinkUploadStagingStore();
 
-      if (successCount > 0) {
-        eventBus.emitNotification(NotificationEventType.LINK_BATCH_UPLOAD, {
-          linkId: linkData.id,
-          linkSlug: linkData.slug,
-          linkTitle: linkData.title || linkData.slug,
-          uploadCount: successCount,
-        });
-        
-        // Invalidate tree data to refresh the UI
-        await queryClient.invalidateQueries({
-          queryKey: linkQueryKeys.tree(linkData.id),
-        });
-      }
-      
-      if (failCount > 0) {
-        eventBus.emitNotification(NotificationEventType.LINK_GENERATE_ERROR, {
-          linkId: linkData.id,
-          linkSlug: linkData.slug,
-          linkTitle: linkData.title || linkData.slug,
-          error: `Failed to upload ${failCount} item${failCount !== 1 ? 's' : ''}`,
-        });
-      }
+  // Get mobile state from tree instance
+  const isMobile = treeInstance?.isTouchDevice?.() || false;
 
-      setIsUploading(false);
-      updateUploadProgress({ completed: 0, total: 0 });
-      setBatchProgress(undefined);
-    },
-    onProgress: progress => {
-      updateUploadProgress({
-        completed: progress.completed,
-        total: progress.total,
-      });
-      setBatchProgress(progress);
-    },
-  });
+  // Use external selection mode state if provided, otherwise fallback to tree instance
+  const isSelectionMode =
+    selectionMode ?? (treeInstance?.isSelectionMode?.() || false);
 
-  // Execute the actual upload
-  const executeUpload = React.useCallback(async () => {
-    const allItems = getAllStagedItems();
-    if (allItems.length === 0) return;
-
-    setIsUploading(true);
-    updateUploadProgress({ completed: 0, total: allItems.length });
-
-    try {
-      await uploadBatch(allItems, {
-        uploaderName: uploaderName || 'Anonymous',
-        uploaderEmail: uploaderEmail || undefined,
-        uploaderMessage: uploaderMessage || undefined,
-      });
-    } catch (error) {
-      console.error('Upload failed:', error);
-      eventBus.emitNotification(NotificationEventType.LINK_GENERATE_ERROR, {
-        linkId: linkData.id,
-        linkSlug: linkData.slug,
-        linkTitle: linkData.title || linkData.slug,
-        error: 'Upload failed. Please try again.',
-      });
-      setIsUploading(false);
-      updateUploadProgress({ completed: 0, total: 0 });
+  // Handle selection mode toggle
+  const handleToggleSelectionMode = () => {
+    const newMode = !isSelectionMode;
+    // Update external state if handler provided
+    if (onSelectionModeChange) {
+      onSelectionModeChange(newMode);
     }
-  }, [getAllStagedItems, setIsUploading, updateUploadProgress, uploadBatch, uploaderName, uploaderEmail, uploaderMessage, queryClient, linkData.id, clearStaged]);
-
-  // Effect to handle upload after info is provided
-  React.useEffect(() => {
-    if (shouldTriggerUpload && hasProvidedInfo && hasStaged) {
-      executeUpload();
-      if (onUploadTriggered) {
-        onUploadTriggered();
-      }
-    }
-  }, [shouldTriggerUpload, hasProvidedInfo, hasStaged, executeUpload, onUploadTriggered]);
-
-  // Handle main upload button
-  const handleMainUpload = React.useCallback(async () => {
-    if (!hasStaged) return;
-
-    const allItems = getAllStagedItems();
-    if (allItems.length === 0) return;
-
-    // Check if user has provided their info
-    if (!hasProvidedInfo || !uploaderName) {
-      // Trigger the modal to collect user info
-      if (onRequestUpload) {
-        onRequestUpload();
-      }
-      return;
-    }
-
-    // If info is already provided, upload directly
-    await executeUpload();
-  }, [hasStaged, getAllStagedItems, hasProvidedInfo, uploaderName, onRequestUpload, executeUpload]);
-
-  // Delete mutation
-  const batchDeleteMutation = useMutation({
-    mutationFn: async () => {
-      if (selectedItems.length === 0) {
-        throw new Error('No items selected');
-      }
-
-      // Set drag operation as active to prevent tree updates during deletion
-      setDragOperationActive(true);
-
-      try {
-        return await batchDeleteLinkItemsAction({
-          linkId: linkData.id,
-          itemIds: selectedItems,
-        });
-      } finally {
-        // Reset drag operation state after deletion
-        setDragOperationActive(false);
-      }
-    },
-    onSuccess: result => {
-      if (result.success) {
-        const successCount = result.data?.deletedCount || 0;
-        eventBus.emitNotification(NotificationEventType.LINK_DELETE_SUCCESS, {
-          linkId: linkData.id,
-          linkSlug: linkData.slug,
-          linkTitle: `Deleted ${successCount} item${successCount !== 1 ? 's' : ''}`,
-        });
-
-        // Clear selection
-        if (onClearSelection) {
-          onClearSelection();
-        }
-
-        // Invalidate and refetch tree data
-        queryClient.invalidateQueries({
-          queryKey: linkQueryKeys.tree(linkData.id),
-        });
-      } else {
-        eventBus.emitNotification(NotificationEventType.LINK_DELETE_ERROR, {
-          linkId: linkData.id,
-          linkSlug: linkData.slug,
-          linkTitle: linkData.title || linkData.slug,
-          error: result.error || 'Failed to delete items',
-        });
-      }
-      setShowBatchModal(false);
-    },
-    onError: error => {
-      console.error('Delete error:', error);
-      eventBus.emitNotification(NotificationEventType.LINK_DELETE_ERROR, {
-        linkId: linkData.id,
-        linkSlug: linkData.slug,
-        linkTitle: linkData.title || linkData.slug,
-        error: 'Failed to delete items. Please try again.',
-      });
-      setShowBatchModal(false);
-    },
-  });
-
-  // Helper functions - use props instead of calculating from tree
-  const getSelectedFolderId = () => {
-    return selectedFolderId;
-  };
-
-  const getTargetFolderName = () => {
-    return selectedFolderName || 'Link Root';
-  };
-
-  const getBatchOperationItems = (): BatchOperationItem[] => {
-    try {
-      const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
-      return selectedItems
-        .map(id => {
-          const treeItem = selectedTreeItems.find(item => {
-            try {
-              return item?.getId?.() === id;
-            } catch {
-              return false;
-            }
-          });
-
-          let name = 'Unknown';
-          let type: 'file' | 'folder' = 'file';
-
-          try {
-            name = treeItem?.getItemName?.() || 'Unknown';
-          } catch {
-            name = 'Unknown';
-          }
-
-          try {
-            type = treeItem?.isFolder?.() === true ? 'folder' : 'file';
-          } catch {
-            type = 'file';
-          }
-
-          return { id, name, type };
-        })
-        .filter(item => item.name !== 'Unknown');
-    } catch (error) {
-      console.warn('Error in getBatchOperationItems:', error);
-      return [];
+    // Also update tree instance if available
+    if (treeInstance?.setSelectionMode) {
+      treeInstance.setSelectionMode(newMode);
     }
   };
 
+  // Collapse all functionality
+  const handleCollapseAll = () => {
+    if (treeInstance?.collapseAll) {
+      treeInstance.collapseAll();
+    }
+  };
+
+  // Expand all functionality
+  const handleExpandAll = () => {
+    if (treeInstance?.expandAll) {
+      treeInstance.expandAll();
+    }
+  };
+
+  // Handle folder creation for staging
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+    
+    // Get parent folder from selected items
+    const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
+    const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
+    const parentId = selectedFolders.length === 1 ? selectedFolders[0]?.getId() : null;
+    
+    // Add folder to staging store
+    const folderId = addStagedFolder(newFolderName, parentId || null);
+    
+    // Add folder to tree
+    if (treeInstance?.addFolderToTree) {
+      treeInstance.addFolderToTree({
+        id: folderId,
+        name: newFolderName,
+        parentId,
+        type: 'folder',
+        path: '/',
+        depth: 0,
+        fileCount: 0,
+        totalSize: 0,
+        isArchived: false,
+        sortOrder: 999,
+      });
+    }
+    
+    setNewFolderName('');
+    setIsCreatingFolder(false);
+  };
+
+  // Handle delete for staged items
   const handleDelete = () => {
     if (selectedItems.length === 0) return;
-    setShowBatchModal(true);
+    
+    // Remove from staging store
+    removeStagedItems(selectedItems);
+    
+    // Remove from tree
+    if (treeInstance?.deleteItems) {
+      treeInstance.deleteItems(selectedItems);
+    }
+    
+    // Clear selection
+    onClearSelection?.();
   };
 
-  const handleBatchDeleteConfirm = async () => {
-    batchDeleteMutation.mutate();
+  // Get the container folder name for new folder creation
+  const getTargetFolderName = () => {
+    const selectedTreeItems = treeInstance?.getSelectedItems?.() || [];
+    const selectedFolders = selectedTreeItems.filter(item => item.isFolder?.());
+
+    if (selectedFolders.length === 1) {
+      return selectedFolders[0]?.getItemName?.() || 'Selected Folder';
+    } else if (selectedFolders.length > 1) {
+      return 'Multiple Folders';
+    } else {
+      return 'Root';
+    }
   };
 
-  const isUploading = stagingIsUploading || batchIsUploading;
+  // Get staging stats
+  const stagingStats = {
+    fileCount: getStagedFileCount(),
+    totalSize: getTotalStagedSize(),
+    hasFiles: hasAnyStaged(),
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4, ease: 'easeOut' }}
-      className={`link-upload-toolbar ${className}`}
+      className={`workspace-toolbar ${className}`}
     >
+      {/* Staging info bar - shows when files are staged */}
+      {stagingStats.hasFiles && (
+        <div className='flex items-center justify-between px-6 py-2 bg-primary/5 border-b border-primary/20'>
+          <div className='flex items-center gap-4'>
+            <span className='text-sm font-medium'>
+              {stagingStats.fileCount} files staged
+            </span>
+            <span className='text-sm text-muted-foreground'>
+              {formatBytes(stagingStats.totalSize)}
+            </span>
+          </div>
+          <Button
+            size='sm'
+            onClick={onOpenVerificationModal}
+            className='flex items-center'
+          >
+            <Send className='h-4 w-4 mr-2' />
+            Send Files
+          </Button>
+        </div>
+      )}
+
       {/* Main toolbar */}
-      <div className='link-upload-toolbar-main'>
+      <div className='workspace-toolbar-main'>
         {/* Left side - Main actions */}
-        <div className='link-upload-toolbar-left'>
-            <UploadActions
-              linkData={linkData}
-              hasStaged={hasStaged}
-              stagedItemCount={stagedItemCount}
-              isUploading={isUploading}
-              uploadProgress={batchUploadProgress || uploadProgress}
-              onMainUpload={handleMainUpload}
-            />
+        <div className='workspace-toolbar-left'>
+          {/* Selection mode toggle */}
+          <div className='flex items-center mr-3'>
+            <label className='flex items-center cursor-pointer'>
+              <input
+                type='checkbox'
+                checked={isSelectionMode}
+                onChange={handleToggleSelectionMode}
+                className='sr-only'
+              />
+              <Button
+                size='sm'
+                variant={isSelectionMode ? 'default' : 'ghost'}
+                onClick={handleToggleSelectionMode}
+                className='flex items-center'
+                type='button'
+              >
+                {isSelectionMode ? (
+                  <CheckSquare className='h-4 w-4 mr-2' />
+                ) : (
+                  <Square className='h-4 w-4 mr-2' />
+                )}
+                <span>
+                  {isMobile ? (isSelectionMode ? 'Exit' : 'Select') : 'Select'}
+                </span>
+              </Button>
+            </label>
+          </div>
 
-            <FolderCreation
-              linkId={linkData.id}
-              getSelectedFolderId={getSelectedFolderId}
-              getTargetFolderName={getTargetFolderName}
-            />
+          {/* Add files button */}
+          <Button
+            size='sm'
+            variant='ghost'
+            onClick={onOpenUploadModal}
+            className='mr-2'
+          >
+            <CloudUpload className='h-4 w-4 mr-2' />
+            Add Files
+          </Button>
 
-            {/* View controls */}
-            <ViewControls
-              onExpandAll={treeInstance?.expandAll}
-              onCollapseAll={treeInstance?.collapseAll}
-            />
+          {/* Create folder */}
+          {isCreatingFolder ? (
+            <div className='workspace-folder-creation'>
+              <div className='workspace-folder-input-group'>
+                <Input
+                  type='text'
+                  placeholder='Folder name'
+                  value={newFolderName}
+                  onChange={e => setNewFolderName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      handleCreateFolder();
+                    } else if (e.key === 'Escape') {
+                      setIsCreatingFolder(false);
+                      setNewFolderName('');
+                    }
+                  }}
+                  className='workspace-folder-input h-8'
+                  autoFocus
+                />
+                <Button
+                  size='sm'
+                  onClick={handleCreateFolder}
+                  disabled={!newFolderName.trim()}
+                >
+                  Create
+                </Button>
+                <Button
+                  size='sm'
+                  variant='ghost'
+                  onClick={() => {
+                    setIsCreatingFolder(false);
+                    setNewFolderName('');
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+              <span className='text-xs text-muted-foreground'>
+                Creating in: {getTargetFolderName()}
+              </span>
+            </div>
+          ) : (
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={() => setIsCreatingFolder(true)}
+            >
+              <FolderPlus className='h-4 w-4 mr-2' />
+              New Folder
+            </Button>
+          )}
         </div>
 
-        {/* Right side - Search and selection */}
-        <div className='link-upload-toolbar-right'>
-            {/* Search */}
-            {setSearchQuery && (
-              <ToolbarSearch
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-            )}
-
-            {/* Selection actions */}
-            <SelectionActions
-              selectedCount={selectedItems.length}
-              onDelete={handleDelete}
-              onClearSelection={onClearSelection || (() => {})}
-              isDeleting={batchDeleteMutation.isPending}
+        {/* Right side - Search and menu */}
+        <div className='workspace-toolbar-right'>
+          {/* Search */}
+          <div className='workspace-search-container'>
+            <Input
+              type='text'
+              placeholder='Search files and folders...'
+              value={searchQuery}
+              onChange={e => setSearchQuery?.(e.target.value)}
+              className='h-8 w-full pl-8'
             />
+            <Search className='absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
+          </div>
+
+          {/* More options menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size='sm' variant='ghost'>
+                <MoreVertical className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={handleExpandAll}>
+                <Maximize2 className='h-4 w-4 mr-2' />
+                Expand All
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCollapseAll}>
+                <Minimize2 className='h-4 w-4 mr-2' />
+                Collapse All
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
-      {/* Batch operation modal */}
-      {showBatchModal && (
-        <BatchOperationModal
-          isOpen={showBatchModal}
-          onClose={() => setShowBatchModal(false)}
-          operation='delete'
-          selectedItems={getBatchOperationItems()}
-          onConfirm={handleBatchDeleteConfirm}
-        />
+      {/* Mini-actions toolbar - shows when items are selected */}
+      {(selectedItems.length > 0 || (isMobile && isSelectionMode)) && (
+        <div className='flex items-center justify-between px-6 py-2 bg-tertiary/10 dark:bg-primary/10 border-b border-neutral-200 dark:border-border'>
+          <div className='flex items-center gap-3'>
+            <span className='text-sm font-medium text-tertiary dark:text-primary'>
+              {selectedItems.length > 0 ? (
+                <>
+                  {selectedItems.length} item
+                  {selectedItems.length > 1 ? 's' : ''} selected
+                </>
+              ) : (
+                'Tap items to select'
+              )}
+            </span>
+          </div>
+
+          <div className='flex items-center gap-2'>
+            {selectedItems.length > 0 && (
+              <Button
+                size='sm'
+                variant='ghost'
+                className='h-8 px-3 text-destructive hover:text-destructive/90 hover:bg-destructive/10'
+                onClick={handleDelete}
+              >
+                <Trash2 className='h-4 w-4 mr-2' />
+                Delete
+              </Button>
+            )}
+
+            <Button
+              size='sm'
+              variant='ghost'
+              className='h-8 px-3'
+              onClick={() => {
+                onClearSelection?.();
+                // Exit selection mode on mobile when clearing
+                if (isMobile && isSelectionMode && selectedItems.length > 0) {
+                  handleToggleSelectionMode();
+                }
+              }}
+            >
+              <X className='h-4 w-4 mr-2' />
+              {isMobile && isSelectionMode && selectedItems.length === 0
+                ? 'Cancel'
+                : 'Clear'}
+            </Button>
+          </div>
+        </div>
       )}
     </motion.div>
   );

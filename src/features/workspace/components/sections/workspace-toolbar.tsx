@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/shadcn/button';
 import { Input } from '@/components/ui/shadcn/input';
 import {
   FolderPlus,
-  Upload,
   Search,
   MoreVertical,
   Minimize2,
@@ -22,9 +21,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/shadcn/dropdown-menu';
-import { useWorkspaceUI } from '../../hooks/use-workspace-ui';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createFolderAction, batchDeleteItemsAction } from '../../lib/actions';
+import { batchDeleteItemsAction } from '../../lib/actions';
 import { workspaceQueryKeys } from '../../lib/query-keys';
 // Removed: import { setDragOperationActive } from '../../lib/tree-data';
 import { eventBus, NotificationEventType } from '@/features/notifications/core';
@@ -60,6 +58,8 @@ interface WorkspaceToolbarProps {
   onClearSelection?: () => void;
   selectionMode?: boolean;
   onSelectionModeChange?: (mode: boolean) => void;
+  onCreateFolder?: (name: string, parentId?: string) => Promise<void>;
+  isCreatingFolder?: boolean;
 }
 
 export function WorkspaceToolbar({
@@ -71,6 +71,8 @@ export function WorkspaceToolbar({
   onClearSelection,
   selectionMode = false,
   onSelectionModeChange,
+  onCreateFolder,
+  isCreatingFolder: isCreatingFolderProp,
 }: WorkspaceToolbarProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -79,8 +81,6 @@ export function WorkspaceToolbar({
     BatchOperationProgress | undefined
   >();
   const queryClient = useQueryClient();
-
-  const { openUploadModal } = useWorkspaceUI();
 
   // Get mobile state from tree instance
   const isMobile = treeInstance?.isTouchDevice?.() || false;
@@ -192,14 +192,14 @@ export function WorkspaceToolbar({
     onSuccess: () => {
       // Mark cache as stale but don't refetch immediately
       queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
         refetchType: 'none',
       });
       onClearSelection?.();
     },
     onError: error => {
       // If database deletion fails, restore the tree state with immediate refetch
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
+      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.data() });
     },
     onSettled: () => {
       // Auto-close modal after a delay for successful operations
@@ -212,61 +212,19 @@ export function WorkspaceToolbar({
     },
   });
 
-  // Create folder mutation - simplified
-  const createFolderMutation = useMutation({
-    mutationFn: async (folderName: string) => {
-      const trimmedName = folderName.trim();
-      if (!trimmedName) {
-        throw new Error('Folder name cannot be empty');
-      }
-
-      // Get selected folder from tree if available
-      const selectedItems = treeInstance?.getSelectedItems?.() || [];
-      const parentFolderId =
-        selectedItems.length > 0 ? selectedItems[0]?.getId() : undefined;
-
-      // Don't add to tree immediately - addFolder returns null to indicate server action should handle it
-      const tempId = treeInstance?.addFolder?.(trimmedName, parentFolderId);
-      
-      const result = await createFolderAction(trimmedName, parentFolderId);
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to create folder');
-      }
-      
-      // If we didn't add a temp folder (tempId is null), add the real folder to tree now
-      if (!tempId && result.data && treeInstance?.addFolderToTree) {
-        treeInstance.addFolderToTree(result.data);
-      }
-      
-      return result.data;
-    },
-    onSuccess: (data) => {
-      // Don't invalidate queries immediately - the tree is already updated
-      // Only invalidate to sync any other data that might depend on this
-      queryClient.invalidateQueries({ 
-        queryKey: workspaceQueryKeys.tree(),
-        refetchType: 'none' // Don't refetch immediately
-      });
-      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_SUCCESS, {
-        folderId: data?.id || '',
-        folderName: data?.name || newFolderName,
-      });
+  // Use the folder creation handler passed from container
+  const handleCreateFolder = async () => {
+    if (!onCreateFolder || !newFolderName.trim()) return;
+    
+    try {
+      setIsCreatingFolder(true);
+      await onCreateFolder(newFolderName);
       setNewFolderName('');
+    } catch (error) {
+      // Error handling is done in the handler
+      console.error('Failed to create folder:', error);
+    } finally {
       setIsCreatingFolder(false);
-    },
-    onError: error => {
-      queryClient.invalidateQueries({ queryKey: workspaceQueryKeys.tree() });
-      eventBus.emitNotification(NotificationEventType.WORKSPACE_FOLDER_CREATE_ERROR, {
-        folderId: '',
-        folderName: newFolderName,
-        error: error instanceof Error ? error.message : 'Failed to create folder',
-      });
-    },
-  });
-
-  const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      createFolderMutation.mutate(newFolderName);
     }
   };
 
@@ -396,7 +354,7 @@ export function WorkspaceToolbar({
                   size='sm'
                   onClick={handleCreateFolder}
                   disabled={
-                    !newFolderName.trim() || createFolderMutation.isPending
+                    !newFolderName.trim() || isCreatingFolderProp
                   }
                 >
                   Create

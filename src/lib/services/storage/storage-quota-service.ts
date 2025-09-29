@@ -4,7 +4,7 @@ import { eq, sql } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
 import { ClerkBillingIntegrationService } from '@/features/billing/lib/services/clerk-billing-integration';
 import { storageBackgroundService } from './storage-background-service';
-import { UPLOAD_CONFIG, getFileSizeLimit } from '@/features/workspace/lib/config/upload-config';
+import { UPLOAD_CONFIG, getFileSizeLimit, getStorageLimit } from '@/features/workspace/lib/config/upload-config';
 import { formatBytes } from './utils';
 
 interface QuotaCheckResult {
@@ -250,6 +250,86 @@ export class StorageQuotaService {
       });
     } catch (error) {
       console.error('Failed to log quota audit:', error);
+    }
+  }
+
+  /**
+   * Get user's storage information for display/tracking purposes
+   * This is a simplified version of checkUserQuota without upload validation
+   */
+  async getUserStorageInfo(userId: string): Promise<DatabaseResult<{
+    plan: string;
+    storageUsed: number;
+    storageLimit: number;
+    availableSpace: number;
+    usagePercentage: number;
+    maxFileSize: number;
+  }>> {
+    try {
+      // Get user from database
+      const user = await db
+        .select({
+          id: users.id,
+          storageUsed: users.storageUsed,
+        })
+        .from(users)
+        .where(eq(users.id, userId));
+
+      if (!user.length) {
+        return { success: false, error: 'User not found' };
+      }
+
+      // Get user's plan from Clerk (source of truth for subscriptions)
+      const planDataResult = await ClerkBillingIntegrationService.getIntegratedPlanData();
+      
+      if (!planDataResult.success) {
+        console.error('Failed to get plan data from Clerk:', planDataResult.error);
+        // Return free plan defaults if we can't verify plan
+        const currentUsage = user[0]!.storageUsed || 0;
+        const freeStorageLimit = getStorageLimit('free');
+        const freeMaxFileSize = getFileSizeLimit('free');
+        
+        return { 
+          success: true,
+          data: {
+            plan: 'free',
+            storageUsed: currentUsage,
+            storageLimit: freeStorageLimit,
+            availableSpace: Math.max(0, freeStorageLimit - currentUsage),
+            usagePercentage: (currentUsage / freeStorageLimit) * 100,
+            maxFileSize: freeMaxFileSize,
+          }
+        };
+      }
+
+      const planData = planDataResult.data!;
+      const storageLimit = planData.storageLimit;
+      const plan = planData.clerkPlan.currentPlan;
+      
+      // Get max file size based on plan from config
+      const maxFileSize = getFileSizeLimit(plan);
+
+      const currentUsage = user[0]!.storageUsed || 0;
+      const availableSpace = Math.max(0, storageLimit - currentUsage);
+      const usagePercentage = storageLimit > 0 ? (currentUsage / storageLimit) * 100 : 0;
+
+      return {
+        success: true,
+        data: {
+          plan,
+          storageUsed: currentUsage,
+          storageLimit,
+          availableSpace,
+          usagePercentage: Math.min(100, usagePercentage), // Cap at 100%
+          maxFileSize,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to get user storage info:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to get storage information' 
+      };
     }
   }
 }

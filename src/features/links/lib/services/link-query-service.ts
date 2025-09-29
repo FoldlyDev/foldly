@@ -54,6 +54,9 @@ export class LinkQueryService {
       ...dbLink,
       // Ensure branding is always an object, never null
       branding: dbLink.branding || { enabled: false },
+      // Include user info if available
+      username: dbLink.username,
+      avatarUrl: dbLink.avatarUrl,
       stats: {
         fileCount: dbLink.fileCount,
         batchCount: dbLink.batchCount,
@@ -112,8 +115,6 @@ export class LinkQueryService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
-          storageUsed: links.storageUsed,
-          storageLimit: links.storageLimit,
           unreadUploads: links.unreadUploads,
           lastNotificationAt: links.lastNotificationAt,
           sourceFolderId: links.sourceFolderId,
@@ -200,8 +201,6 @@ export class LinkQueryService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
-          storageUsed: links.storageUsed,
-          storageLimit: links.storageLimit,
           unreadUploads: links.unreadUploads,
           lastNotificationAt: links.lastNotificationAt,
           sourceFolderId: links.sourceFolderId,
@@ -292,8 +291,6 @@ export class LinkQueryService {
           totalFiles: links.totalFiles,
           totalSize: links.totalSize,
           lastUploadAt: links.lastUploadAt,
-          storageUsed: links.storageUsed,
-          storageLimit: links.storageLimit,
           unreadUploads: links.unreadUploads,
           lastNotificationAt: links.lastNotificationAt,
           sourceFolderId: links.sourceFolderId,

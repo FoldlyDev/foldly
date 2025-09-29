@@ -5,6 +5,8 @@
 
 export { LinkIdentitySettings } from './LinkIdentitySettings';
 export { LinkAccessSettings } from './LinkAccessSettings';
+export { LinkVisibilitySettings } from './LinkVisibilitySettings';
+export { LinkSecuritySettings } from './LinkSecuritySettings';
 export { LinkWelcomeMessageSettings } from './LinkWelcomeMessageSettings';
 export { LinkExpirationSettings } from './LinkExpirationSettings';
 export { UploadRestrictionsSettings } from './UploadRestrictionsSettings';

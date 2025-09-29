@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { WorkspaceContainer } from '@/features/workspace/components/views/workspace-container';
+import { WorkspaceErrorBoundary } from '@/features/workspace/components/ui/workspace-error-boundary';
 
 export const metadata: Metadata = {
   title: 'Dashboard Workspace | Foldly',
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function WorkspacePage() {
-  return <WorkspaceContainer />;
+  return (
+    <WorkspaceErrorBoundary>
+      <WorkspaceContainer />
+    </WorkspaceErrorBoundary>
+  );
 }

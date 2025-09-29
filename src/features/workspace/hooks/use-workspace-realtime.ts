@@ -29,9 +29,8 @@ export function useWorkspaceRealtime(workspaceId?: string) {
     }
 
     invalidationTimeoutRef.current = setTimeout(() => {
-      console.log('🔄 Processing batched realtime update');
       queryClient.invalidateQueries({
-        queryKey: workspaceQueryKeys.tree(),
+        queryKey: workspaceQueryKeys.data(),
       });
       queryClient.invalidateQueries({
         queryKey: workspaceQueryKeys.stats(),
@@ -59,14 +58,13 @@ export function useWorkspaceRealtime(workspaceId?: string) {
           filter: `id=eq.${workspaceId}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Workspace change detected:', payload);
 
           // Invalidate workspace settings and tree
           queryClient.invalidateQueries({
             queryKey: workspaceQueryKeys.settings(),
           });
           queryClient.invalidateQueries({
-            queryKey: workspaceQueryKeys.tree(),
+            queryKey: workspaceQueryKeys.data(),
           });
         }
       )
@@ -79,7 +77,6 @@ export function useWorkspaceRealtime(workspaceId?: string) {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('Folder change detected:', payload);
           // Use debounced invalidation to batch multiple rapid changes
           debouncedInvalidation();
         }
@@ -93,13 +90,11 @@ export function useWorkspaceRealtime(workspaceId?: string) {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log('File change detected:', payload);
           // Use debounced invalidation to batch multiple rapid changes
           debouncedInvalidation();
         }
       )
       .subscribe(status => {
-        console.log('Realtime subscription status:', status);
 
         // Update connection state based on subscription status
         switch (status) {
@@ -129,7 +124,6 @@ export function useWorkspaceRealtime(workspaceId?: string) {
       }
 
       if (channelRef.current) {
-        console.log('Unsubscribing from workspace realtime');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
         setConnectionState('disconnected');

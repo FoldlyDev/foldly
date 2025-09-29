@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useNavigationAnimation } from '../../hooks/useNavigationAnimation';
 import { useOnboardingStatus } from '@/features/onboarding/hooks/use-onboarding-status';
+import { SecondaryCTAButton, TertiaryCTAButton } from '@/components/core';
+import { useRouter } from 'next/navigation';
 
 interface NavLink {
   href: string;
@@ -19,12 +21,14 @@ export function LandingNavigation() {
   const [isAnimating, setIsAnimating] = useState(false);
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
-  const { data: onboardingData, isLoading: isOnboardingLoading } = useOnboardingStatus();
-  
-  const hasCompletedOnboarding = onboardingData?.hasWorkspace ?? null;
+  const { data: onboardingData, isLoading: isOnboardingLoading } =
+    useOnboardingStatus();
+  const router = useRouter();
+
+  const hasCompletedOnboarding = onboardingData?.hasWorkspace ?? false;
   const isAuthReady = isLoaded && !isOnboardingLoading;
-  
-  // Refs for animation - matching template structure
+
+  // Refs for animation - keeping for GSAP
   const menuRef = useRef<HTMLElement>(null);
   const menuHeaderRef = useRef<HTMLDivElement>(null);
   const menuToggleRef = useRef<HTMLButtonElement>(null);
@@ -35,7 +39,8 @@ export function LandingNavigation() {
   const hamburgerMenuRef = useRef<HTMLDivElement>(null);
   const menuTimeRef = useRef<HTMLDivElement>(null);
 
-
+  /* === COMMENTED OUT MENU DRAWER NAVIGATION LINKS === */
+  /*
   // Compute dynamic link values
   const authLink = {
     href: isSignedIn ? (hasCompletedOnboarding ? '/dashboard/workspace' : '/onboarding') : '/sign-in',
@@ -49,6 +54,7 @@ export function LandingNavigation() {
     { href: '/pricing', label: 'The Deets' },
     { href: '/contact', label: 'Hit Us Up' },
   ];
+  */
 
   // Initialize animation hook
   useNavigationAnimation(
@@ -69,6 +75,8 @@ export function LandingNavigation() {
     }
   );
 
+  /* === COMMENTED OUT TIME DISPLAY AND TOGGLE === */
+  /*
   // Update time display
   useEffect(() => {
     const updateTime = () => {
@@ -91,44 +99,83 @@ export function LandingNavigation() {
       setIsOpen(!isOpen);
     }
   };
+  */
+
+  // Simple button click handlers
+  const handleButtonClick = () => {
+    if (!isSignedIn) {
+      router.push('/sign-in');
+    } else if (!hasCompletedOnboarding) {
+      router.push('/onboarding');
+    } else {
+      router.push('/dashboard/workspace');
+    }
+  };
 
   return (
-    <nav ref={menuRef} className="menu">
-      <div ref={menuHeaderRef} className="menu-header" onClick={handleToggle}>
-        <div className="menu-logo-wrapper">
-          <Link href="/" className="menu-logo">
+    <nav ref={menuRef} className='menu'>
+      <div ref={menuHeaderRef} className='menu-header'>
+        <div className='menu-logo-wrapper'>
+          <Link href='/' className='menu-logo'>
             <Image
               ref={menuLogoImgRef}
-              src="/assets/img/logo/foldly_logo_sm.png"
-              alt=""
-              width={32}
-              height={32}
+              src='/assets/img/logo/foldly_logo_sm.png'
+              alt=''
+              width={50}
+              height={50}
               priority
+              className='w-auto h-auto object-cover'
             />
           </Link>
           {isSignedIn && user?.imageUrl && (
-            <div className="menu-user-avatar">
+            <div className='menu-user-avatar'>
               <Image
                 src={user.imageUrl}
                 alt={user.firstName || 'User'}
-                width={32}
-                height={32}
-                className="menu-user-avatar-img"
+                width={30}
+                height={30}
+                className='menu-user-avatar-img'
               />
             </div>
           )}
         </div>
-        <button ref={menuToggleRef} className="menu-toggle" aria-label="Toggle menu">
-          {!isAuthReady ? (
-            <div className="menu-spinner" />
-          ) : (
-            <div ref={hamburgerMenuRef} className="menu menu-hamburger-icon">
-              <span className="menu-item"></span>
-              <span className="menu-item"></span>
-            </div>
-          )}
-        </button>
+
+        {/* Simple conditional button instead of hamburger menu */}
+        {!isAuthReady ? (
+          <div className='menu-spinner' />
+        ) : (
+          <div>
+            {!isSignedIn ? (
+              // Not logged in: Get Started button (Primary action - use Secondary)
+              <SecondaryCTAButton
+                onClick={handleButtonClick}
+                className='text-sm'
+              >
+                Get Started
+              </SecondaryCTAButton>
+            ) : !hasCompletedOnboarding ? (
+              // Logged in but not onboarded: Complete Onboarding (Important - use Secondary)
+              <SecondaryCTAButton
+                onClick={handleButtonClick}
+                className='text-sm'
+              >
+                Complete Onboarding
+              </SecondaryCTAButton>
+            ) : (
+              // Logged in and onboarded: Personal Space (Less prominent - use Tertiary)
+              <TertiaryCTAButton
+                onClick={handleButtonClick}
+                className='text-sm'
+              >
+                Personal Space
+              </TertiaryCTAButton>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* === COMMENTED OUT MENU OVERLAY - KEEPING FOR FUTURE USE === */}
+      {/*
       <div ref={menuOverlayRef} className="menu-overlay">
         <nav className="menu-nav">
           <ul key={isAuthReady ? 'ready' : 'loading'}>
@@ -160,6 +207,7 @@ export function LandingNavigation() {
           </div>
         </div>
       </div>
+      */}
     </nav>
   );
 }
