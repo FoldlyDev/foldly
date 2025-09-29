@@ -322,6 +322,12 @@ class NotificationManager {
       [NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS]: 'Items copied to workspace',
       [NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR]: 'Failed to copy items',
       [NotificationEventType.WORKSPACE_ITEMS_COPY_PARTIAL]: 'Some items failed to copy',
+
+      // Cloud storage copy events
+      [NotificationEventType.CLOUD_COPY_START]: `Copying ${'totalItems' in payload ? payload.totalItems : 0} items to ${'provider' in payload && payload.provider === 'google-drive' ? 'Google Drive' : 'OneDrive'}`,
+      [NotificationEventType.CLOUD_COPY_SUCCESS]: `Items copied to ${'provider' in payload && payload.provider === 'google-drive' ? 'Google Drive' : 'OneDrive'}`,
+      [NotificationEventType.CLOUD_COPY_ERROR]: `Failed to copy items to ${'provider' in payload && payload.provider === 'google-drive' ? 'Google Drive' : 'OneDrive'}`,
+      [NotificationEventType.CLOUD_COPY_PARTIAL]: `Some items failed to copy to ${'provider' in payload && payload.provider === 'google-drive' ? 'Google Drive' : 'OneDrive'}`,
     };
 
     return titleMap[event.type] || 'Notification';
@@ -452,7 +458,39 @@ class NotificationManager {
         const error = getPayloadProperty<string>(payload, 'error');
         return error || `Failed to upload ${failedItems} file${failedItems === 1 ? '' : 's'}`;
       }
-      
+
+      // Cloud copy descriptions
+      case NotificationEventType.CLOUD_COPY_START: {
+        const totalItems = getPayloadProperty<number>(payload, 'totalItems', 0);
+        const targetFolderName = getPayloadProperty<string>(payload, 'targetFolderName');
+        const destination = targetFolderName ? ` to "${targetFolderName}"` : '';
+        return `Preparing ${totalItems} item${totalItems === 1 ? '' : 's'}${destination}`;
+      }
+
+      case NotificationEventType.CLOUD_COPY_SUCCESS: {
+        const completedItems = getPayloadProperty<number>(payload, 'completedItems', 0);
+        const targetFolderName = getPayloadProperty<string>(payload, 'targetFolderName');
+        const destination = targetFolderName ? ` in "${targetFolderName}"` : '';
+        return `Successfully copied ${completedItems} item${completedItems === 1 ? '' : 's'}${destination}`;
+      }
+
+      case NotificationEventType.CLOUD_COPY_ERROR: {
+        const error = getPayloadProperty<string>(payload, 'error');
+        const failedItems = getPayloadProperty<number>(payload, 'failedItems', 0);
+        if (error) return error;
+        return `Failed to copy ${failedItems || 'some'} item${failedItems === 1 ? '' : 's'}`;
+      }
+
+      case NotificationEventType.CLOUD_COPY_PARTIAL: {
+        const completedItems = getPayloadProperty<number>(payload, 'completedItems', 0);
+        const failedItems = getPayloadProperty<number>(payload, 'failedItems', 0);
+        const errors = getPayloadProperty<string[]>(payload, 'errors', []);
+        if (errors && errors.length > 0) {
+          return `Copied ${completedItems} items, ${failedItems} failed. ${errors[0]}`;
+        }
+        return `Copied ${completedItems} item${completedItems === 1 ? '' : 's'}, ${failedItems} failed`;
+      }
+
       default:
         return getPayloadProperty<string>(payload, 'error') || getPayloadProperty<string>(payload, 'message') || undefined;
     }

@@ -14,6 +14,7 @@ export enum EventCategory {
   WORKSPACE = 'workspace',
   LINK = 'link',
   STORAGE = 'storage',
+  CLOUD = 'cloud',
   AUTH = 'auth',
   BILLING = 'billing',
   SYSTEM = 'system',
@@ -103,6 +104,12 @@ export enum NotificationEventType {
   WORKSPACE_ITEMS_COPY_SUCCESS = 'workspace.items.copy.success',
   WORKSPACE_ITEMS_COPY_ERROR = 'workspace.items.copy.error',
   WORKSPACE_ITEMS_COPY_PARTIAL = 'workspace.items.copy.partial',
+
+  // Cloud Storage Copy Events
+  CLOUD_COPY_START = 'cloud.items.copy.start',
+  CLOUD_COPY_SUCCESS = 'cloud.items.copy.success',
+  CLOUD_COPY_ERROR = 'cloud.items.copy.error',
+  CLOUD_COPY_PARTIAL = 'cloud.items.copy.partial',
   
   // Link Events
   LINK_CREATE_SUCCESS = 'link.create.success',
@@ -282,6 +289,22 @@ export interface LinkEventPayload {
 }
 
 /**
+ * Cloud storage copy event payload
+ */
+export interface CloudCopyEventPayload {
+  provider: 'google-drive' | 'onedrive';
+  providerName?: string;
+  targetFolderId?: string | null;
+  targetFolderName?: string | undefined;
+  totalItems: number;
+  completedItems: number;
+  failedItems?: number;
+  items?: Array<{ id: string; name: string; type: 'file' | 'folder' }>;
+  errors?: string[];
+  error?: string;
+}
+
+/**
  * Storage event payload
  */
 export interface StorageEventPayload {
@@ -383,7 +406,13 @@ export interface EventPayloadMap {
   [NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR]: BatchEventPayload;
   [NotificationEventType.WORKSPACE_ITEMS_COPY_PARTIAL]: BatchEventPayload;
-  
+
+  // Cloud storage copy events
+  [NotificationEventType.CLOUD_COPY_START]: CloudCopyEventPayload;
+  [NotificationEventType.CLOUD_COPY_SUCCESS]: CloudCopyEventPayload;
+  [NotificationEventType.CLOUD_COPY_ERROR]: CloudCopyEventPayload;
+  [NotificationEventType.CLOUD_COPY_PARTIAL]: CloudCopyEventPayload;
+
   // Link events
   [NotificationEventType.LINK_CREATE_SUCCESS]: LinkEventPayload;
   [NotificationEventType.LINK_CREATE_ERROR]: LinkEventPayload;

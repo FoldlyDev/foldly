@@ -26,12 +26,12 @@ import { WorkspaceSkeleton } from '../skeletons/workspace-skeleton';
 import { checkAndShowStorageThresholds } from '@/features/notifications/internal/workspace-notifications';
 import { type StorageNotificationData } from '@/features/notifications/internal/types';
 import { AlertTriangle } from 'lucide-react';
+import { FaGoogle } from 'react-icons/fa';
+import { GrOnedrive } from 'react-icons/gr';
 import { FadeTransitionWrapper } from '@/components/feedback';
 import { transformToTreeStructure } from '@/components/file-tree/utils/transform';
 import type {
-  TreeFolderItem,
   TreeItem,
-  TreeFileItem,
 } from '@/components/file-tree/types';
 import { isFolder } from '@/components/file-tree/types';
 import type {
@@ -42,8 +42,7 @@ import { Trash2, Edit2, Link2, FolderPlus } from 'lucide-react';
 
 // Import workspace actions for database operations
 import { batchDeleteItemsAction } from '@/features/workspace/lib/actions';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { workspaceQueryKeys } from '../../lib/query-keys';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { QueryInvalidationService } from '@/lib/services/query/query-invalidation-service';
 import {
   eventBus,
@@ -58,8 +57,10 @@ import { useDragDropHandler } from '../../lib/handlers/drag-drop-handler';
 import { useExternalFileDropHandler } from '../../lib/handlers/external-file-drop-handler';
 import { useRenameHandler } from '../../lib/handlers/rename-handler';
 import { useFolderCreationHandler } from '../../lib/handlers/folder-creation-handler';
-import { Button } from '@/components/ui/shadcn/button';
 import { CloudStorageContainer } from './cloud-storage-container';
+import { FolderSelectorModal } from '@/features/cloud-storage/components/folder-selector-modal';
+import { getCloudStorageStatus } from '@/lib/services/cloud-storage/actions/oauth-actions';
+import { useCloudStorage } from '@/features/cloud-storage/hooks/use-cloud-storage';
 
 // Lazy load the file-tree component
 const FileTree = lazy(() => import('@/components/file-tree/core/tree'));
@@ -90,6 +91,33 @@ export function WorkspaceContainer() {
 
   // Track if we have touch support
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Cloud storage state
+  const [cloudCopyModal, setCloudCopyModal] = useState<{
+    isOpen: boolean;
+    provider: 'google-drive' | 'onedrive';
+    items: TreeItem[];
+  }>({ isOpen: false, provider: 'google-drive', items: [] });
+
+  // Check cloud storage connections
+  const { data: cloudStatus } = useQuery({
+    queryKey: ['cloud-storage', 'status'],
+    queryFn: getCloudStorageStatus,
+    refetchInterval: 60000,
+  });
+
+  const hasGoogleDriveConnected = cloudStatus?.google?.connected || false;
+  const hasOneDriveConnected = cloudStatus?.microsoft?.connected || false;
+
+  // Get cloud storage instances for the modal
+  const googleDriveStorage = useCloudStorage({
+    provider: 'google-drive',
+    autoConnect: hasGoogleDriveConnected
+  });
+  const oneDriveStorage = useCloudStorage({
+    provider: 'onedrive',
+    autoConnect: hasOneDriveConnected
+  });
 
   // Selection management - will be updated with tree instance
   const [selectionTreeInstance, setSelectionTreeInstance] = useState<
@@ -138,6 +166,15 @@ export function WorkspaceContainer() {
     treeInstance,
   });
 
+  // Handle copy to cloud storage
+  const handleCopyToCloud = useCallback((provider: 'google-drive' | 'onedrive', items: TreeItem[]) => {
+    setCloudCopyModal({
+      isOpen: true,
+      provider,
+      items,
+    });
+  }, []);
+
   // Context menu handler
   const { getMenuItems, handleNewFolder, handleGenerateLink, handleDelete } =
     useContextMenuHandler({
@@ -146,6 +183,9 @@ export function WorkspaceContainer() {
       setItemsToDelete,
       setShowDeleteModal,
       createFolder, // Pass the folder creation handler
+      onCopyToCloud: handleCopyToCloud,
+      hasGoogleDriveConnected,
+      hasOneDriveConnected,
     });
 
   // Drag-drop handler
@@ -291,6 +331,12 @@ export function WorkspaceContainer() {
           case 'generateLink':
             icon = <Link2 className='h-4 w-4' />;
             break;
+          case 'copyToGoogleDrive':
+            icon = <FaGoogle className='h-4 w-4' />;
+            break;
+          case 'copyToOneDrive':
+            icon = <GrOnedrive className='h-4 w-4' />;
+            break;
         }
 
         // Build menu item with optional properties
@@ -432,8 +478,8 @@ export function WorkspaceContainer() {
               >
                 {workspaceData?.workspace?.id && (
                   <FileTree
-                    // Force remount only when transitioning between checkbox and non-checkbox modes
-                    key={`${treeIdRef.current}-${selectedItems.length > 0 ? 'checkbox' : 'normal'}`}
+                    // Use stable key - don't change based on selection state
+                    key={treeIdRef.current}
                     // ============= CORE CONFIGURATION =============
                     rootId={workspaceData.workspace.id}
                     treeId={treeIdRef.current}
@@ -441,14 +487,14 @@ export function WorkspaceContainer() {
                     // ============= INITIAL STATE =============
                     initialState={{
                       expandedItems: initialExpandedItems,
-                      selectedItems: selectedItems,
-                      checkedItems: selectedItems, // Sync checked with selected items
+                      selectedItems: [], // Don't pass selectedItems as initial state - let the tree manage it
+                      checkedItems: [], // Don't sync with selectedItems - let the tree manage it internally
                     }}
                     // ============= FEATURES CONTROL =============
                     features={{
                       selection: true,
                       multiSelect: true,
-                      checkboxes: selectedItems.length > 0, // Enable checkbox feature when items are selected
+                      checkboxes: true, // Always enable checkbox feature - visibility is controlled by CSS
                       search: true,
                       dragDrop: true, // Full drag-drop for main workspace
                       keyboardDragDrop: true,
@@ -463,7 +509,7 @@ export function WorkspaceContainer() {
                       showFileStatus: false,
                       showFolderCount: true,
                       showFolderSize: false,
-                      showCheckboxes: selectedItems.length > 0, // Show checkboxes when items are selected
+                      showCheckboxes: true, // Always true - visibility is controlled by CSS based on selectedItems.length
                       showEmptyState: true,
                     }}
                     // ============= EVENT CALLBACKS =============
@@ -478,6 +524,20 @@ export function WorkspaceContainer() {
                       dropCallbacks: dropCallbacks,
                       renameCallback: renameCallback,
                       contextMenuProvider: contextMenuProvider,
+                    }}
+                    // ============= CROSS-TREE SUPPORT =============
+                    crossTree={{
+                      createForeignDragObject: (items: any[]) => ({
+                        format: 'application/x-workspace-items',
+                        data: JSON.stringify(items.map((item: any) => ({
+                          id: item.getId(),
+                          name: item.getItemName() || 'Unknown',
+                          isFolder: item.isFolder(),
+                        }))),
+                      }),
+                      onCompleteForeignDrop: () => {
+                        // No-op - don't remove items from tree on foreign drop
+                      },
                     }}
                     // ============= SEARCH =============
                     searchQuery={searchQuery}
@@ -525,6 +585,106 @@ export function WorkspaceContainer() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Folder Selector for Cloud Copy */}
+      {cloudCopyModal.isOpen && (
+        <FolderSelectorModal
+          isOpen={cloudCopyModal.isOpen}
+          onClose={() => setCloudCopyModal(prev => ({ ...prev, isOpen: false }))}
+          onSelect={async (folderId) => {
+            // Import the cloud copy action
+            const { copyWorkspaceItemsToCloudAction } = await import('../../lib/actions/cloud-copy-actions');
+
+            // Emit start notification
+            const batchId = `cloud-copy-${Date.now()}`;
+            eventBus.emitNotification(
+              NotificationEventType.WORKSPACE_ITEMS_COPY_START,
+              {
+                batchId,
+                totalItems: cloudCopyModal.items.length,
+                completedItems: 0,
+                items: cloudCopyModal.items.map(item => ({
+                  id: item.id,
+                  name: item.name,
+                  type: isFolder(item) ? 'folder' as const : 'file' as const,
+                })),
+              },
+              {
+                priority: NotificationPriority.LOW,
+                uiType: NotificationUIType.TOAST_SIMPLE,
+                duration: 0, // Keep showing until complete
+              }
+            );
+
+            // Perform the copy operation
+            const result = await copyWorkspaceItemsToCloudAction(
+              cloudCopyModal.items.map(item => ({
+                id: item.id,
+                name: item.name,
+                isFolder: isFolder(item),
+              })),
+              cloudCopyModal.provider,
+              folderId
+            );
+
+            if (result.success) {
+              eventBus.emitNotification(
+                NotificationEventType.WORKSPACE_ITEMS_COPY_SUCCESS,
+                {
+                  batchId,
+                  totalItems: result.copiedCount || 0,
+                  completedItems: result.copiedCount || 0,
+                  items: cloudCopyModal.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    type: isFolder(item) ? 'folder' as const : 'file' as const,
+                  })),
+                },
+                {
+                  priority: NotificationPriority.LOW,
+                  uiType: NotificationUIType.TOAST_SIMPLE,
+                  duration: 3000,
+                }
+              );
+            } else {
+              const errorMessage = result.errors && result.errors.length > 0
+                ? result.errors.join(', ')
+                : result.error || 'An error occurred while copying files';
+
+              eventBus.emitNotification(
+                NotificationEventType.WORKSPACE_ITEMS_COPY_ERROR,
+                {
+                  batchId,
+                  totalItems: cloudCopyModal.items.length,
+                  completedItems: result.copiedCount || 0,
+                  failedItems: cloudCopyModal.items.length - (result.copiedCount || 0),
+                  error: errorMessage,
+                  items: cloudCopyModal.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    type: isFolder(item) ? 'folder' as const : 'file' as const,
+                  })),
+                },
+                {
+                  priority: NotificationPriority.HIGH,
+                  uiType: NotificationUIType.TOAST_SIMPLE,
+                  duration: 5000,
+                }
+              );
+            }
+
+            setCloudCopyModal(prev => ({ ...prev, isOpen: false }));
+          }}
+          provider={cloudCopyModal.provider}
+          title={`Copy to ${cloudCopyModal.provider === 'google-drive' ? 'Google Drive' : 'OneDrive'}`}
+          itemsBeingCopied={cloudCopyModal.items.map(item => ({
+            name: item.name,
+            type: isFolder(item) ? 'folder' : 'file',
+          }))}
+          files={cloudCopyModal.provider === 'google-drive' ? googleDriveStorage.files : oneDriveStorage.files}
+          api={cloudCopyModal.provider === 'google-drive' ? googleDriveStorage.api : oneDriveStorage.api}
+        />
       )}
 
       {/* Batch Delete Modal */}

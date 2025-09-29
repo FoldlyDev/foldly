@@ -19,6 +19,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { Checkbox } from '@/components/ui/animate-ui/radix/checkbox';
 import { Input } from '@/components/ui/shadcn/input';
+import { cn } from '@/lib/utils/utils';
 import { TreeItemRenderer } from '../sub-components/tree-item-renderer';
 import { ContextMenuWrapper } from '../sub-components/context-menu-wrapper';
 import { UploadHighlight } from '@/components/feedback/upload-highlight';
@@ -988,37 +989,46 @@ export default function FileTree(props: FileTreeProps) {
                             } as React.CSSProperties
                           }
                         >
-                          {showCheckboxes && item.getCheckedState && (
-                            <Checkbox
-                              className='w-4 h-4'
-                              checked={
-                                {
-                                  checked: true,
-                                  unchecked: false,
-                                  indeterminate: 'indeterminate' as const,
-                                }[item.getCheckedState()]
-                              }
-                              onCheckedChange={(
-                                checked: boolean | 'indeterminate'
-                              ) => {
-                                const checkboxProps = item.getCheckboxProps?.();
-                                checkboxProps?.onChange?.({
-                                  target: { checked },
-                                });
-
-                                // Also sync selection state with checkbox state
-                                const itemId = item.getId();
-                                const currentSelection = tree.getState?.()?.selectedItems || [];
-
-                                if (checked === true && !currentSelection.includes(itemId)) {
-                                  // Add to selection if checked
-                                  tree.setSelectedItems?.([...currentSelection, itemId]);
-                                } else if (checked === false && currentSelection.includes(itemId)) {
-                                  // Remove from selection if unchecked
-                                  tree.setSelectedItems?.(currentSelection.filter(id => id !== itemId));
+                          {features.checkboxes && item.getCheckedState && (
+                            <div
+                              className={cn(
+                                'transition-all duration-200',
+                                (tree?.getState?.()?.selectedItems?.length ?? 0) > 0
+                                  ? 'opacity-100 w-4 mr-1'
+                                  : 'opacity-0 w-0 pointer-events-none overflow-hidden'
+                              )}
+                            >
+                              <Checkbox
+                                className='w-4 h-4'
+                                checked={
+                                  {
+                                    checked: true,
+                                    unchecked: false,
+                                    indeterminate: 'indeterminate' as const,
+                                  }[item.getCheckedState()]
                                 }
-                              }}
-                            />
+                                onCheckedChange={(
+                                  checked: boolean | 'indeterminate'
+                                ) => {
+                                  const checkboxProps = item.getCheckboxProps?.();
+                                  checkboxProps?.onChange?.({
+                                    target: { checked },
+                                  });
+
+                                  // Also sync selection state with checkbox state
+                                  const itemId = item.getId();
+                                  const currentSelection = tree.getState?.()?.selectedItems || [];
+
+                                  if (checked === true && !currentSelection.includes(itemId)) {
+                                    // Add to selection if checked
+                                    tree.setSelectedItems?.([...currentSelection, itemId]);
+                                  } else if (checked === false && currentSelection.includes(itemId)) {
+                                    // Remove from selection if unchecked
+                                    tree.setSelectedItems?.(currentSelection.filter(id => id !== itemId));
+                                  }
+                                }}
+                              />
+                            </div>
                           )}
                           {/* Button MUST have item.getProps() for drag/drop! */}
                           <button
