@@ -13,10 +13,10 @@ export interface CloudFile {
   size?: number;
   modifiedTime?: string;
   createdTime?: string;
-  parents?: string[];
-  webViewLink?: string;
-  downloadUrl?: string;
-  thumbnailLink?: string;
+  parents?: string[] | undefined;
+  webViewLink?: string | undefined;
+  downloadUrl?: string | undefined;
+  thumbnailLink?: string | undefined;
   isFolder: boolean;
   provider: CloudProvider['id'];
 }

@@ -23,9 +23,6 @@ export {
   useFilesWorkspaceStore,
 } from './store';
 
-// Files services
-export * from './services';
-
 // Files constants
 export * from './constants';
 

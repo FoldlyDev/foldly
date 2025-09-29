@@ -7,7 +7,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 }));
 
 // Mock the file service
-vi.mock('@/lib/services/files/file-service', () => ({
+vi.mock('@/lib/services/file-system/file-service', () => ({
   FileService: vi.fn().mockImplementation(() => ({
     deleteFileWithStorage: vi.fn().mockResolvedValue({
       success: true,
@@ -17,7 +17,7 @@ vi.mock('@/lib/services/files/file-service', () => ({
 }));
 
 // Mock storage service
-vi.mock('@/lib/services/files/storage-service', () => ({
+vi.mock('@/lib/services/storage/storage-operations-service', () => ({
   StorageService: vi.fn().mockImplementation(() => ({
     deleteFile: vi.fn().mockResolvedValue({ success: true }),
   })),
@@ -65,7 +65,7 @@ describe('File Actions', () => {
     });
 
     it('should handle file service errors gracefully', async () => {
-      const { FileService } = await import('@/features/files/lib/services/file-service');
+      const { FileService } = await import('@/lib/services/file-system/file-service');
       vi.mocked(FileService).mockImplementationOnce(() => ({
         deleteFileWithStorage: vi.fn().mockResolvedValue({
           success: false,
@@ -80,7 +80,7 @@ describe('File Actions', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      const { FileService } = await import('@/features/files/lib/services/file-service');
+      const { FileService } = await import('@/lib/services/file-system/file-service');
       vi.mocked(FileService).mockImplementationOnce(() => ({
         deleteFileWithStorage: vi.fn().mockRejectedValue(new Error('Network error')),
       } as any));

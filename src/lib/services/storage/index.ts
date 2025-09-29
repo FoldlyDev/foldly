@@ -10,6 +10,7 @@ export * from './storage-actions';
 export { storageQuotaService } from './storage-quota-service';
 export { storageBackgroundService } from './storage-background-service';
 export { storageCleanupService } from './storage-cleanup-service';
+export { StorageService } from './storage-operations-service';
 
 // Helper functions
 export * from './helpers/ownership-helpers';

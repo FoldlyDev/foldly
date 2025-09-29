@@ -21,78 +21,7 @@ import type { StorageNotificationData } from '@/features/notifications/internal/
 import { logger } from '@/lib/services/logging/logger';
 import { emitNotification } from '@/features/notifications/core/event-bus';
 import { NotificationEventType, NotificationPriority, NotificationUIType } from '@/features/notifications/core/event-types';
-
-/**
- * Upload function using XMLHttpRequest for real progress tracking
- * XMLHttpRequest is still the best way to track upload progress natively
- */
-async function uploadWithProgress(
-  url: string,
-  formData: FormData,
-  onProgress?: (loaded: number, total: number) => void,
-  abortSignal?: AbortSignal
-): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    
-    // Set up progress tracking
-    if (onProgress) {
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          onProgress(event.loaded, event.total);
-        }
-      });
-    }
-    
-    // Handle completion
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          if (!data.success) {
-            reject(new Error(data.error || 'Upload failed'));
-          } else {
-            resolve(data);
-          }
-        } catch (error) {
-          reject(new Error('Invalid response from server'));
-        }
-      } else {
-        try {
-          const errorData = JSON.parse(xhr.responseText);
-          reject(new Error(errorData.error || `Upload failed with status ${xhr.status}`));
-        } catch {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
-        }
-      }
-    });
-    
-    // Handle errors
-    xhr.addEventListener('error', () => {
-      reject(new Error('Network error during upload'));
-    });
-    
-    xhr.addEventListener('abort', () => {
-      reject(new Error('Upload cancelled'));
-    });
-    
-    xhr.addEventListener('timeout', () => {
-      reject(new Error('Upload timeout'));
-    });
-    
-    // Set up abort signal if provided
-    if (abortSignal) {
-      abortSignal.addEventListener('abort', () => {
-        xhr.abort();
-      });
-    }
-    
-    // Configure and send request
-    xhr.open('POST', url);
-    xhr.timeout = 300000; // 5 minute timeout for large files
-    xhr.send(formData);
-  });
-}
+import { clientUploadService } from '@/lib/services/upload/client-upload-service';
 
 interface UseFileUploadProps {
   workspaceId?: string | undefined;
@@ -126,6 +55,8 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
   
   // Store abort controllers for each upload
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+  // Store upload service IDs for cancellation
+  const uploadServiceIdsRef = useRef<Map<string, string>>(new Map());
 
   // File selection handler
   const handleFileSelect = useCallback(async (selectedFiles: FileList | File[] | null) => {
@@ -282,7 +213,6 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
 
   // Clear all files
   const clearFiles = useCallback(() => {
-    console.log('🗑️ [USE-FILE-UPLOAD] Clearing all files');
     setFiles([]);
     setUploadValidation(null);
   }, []);
@@ -352,33 +282,9 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         )
       );
       
-      // Emit upload start event (only for single uploads)
-      if (!skipNotifications) {
-        emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_START, {
-          fileId: uploadFile.id,
-          fileName: uploadFile.file.name,
-          fileSize: uploadFile.file.size,
-          workspaceId: workspaceId,
-          ...(folderId && { parentId: folderId }),
-          uploadProgress: 0
-        }, {
-          priority: NotificationPriority.MEDIUM,
-          uiType: NotificationUIType.PROGRESS,
-          duration: 0, // Don't auto-dismiss progress notifications
-          persistent: true,
-          deduplicationKey: `upload-${uploadFile.id}`
-        });
-      }
+      // Note: Upload notifications are now handled by the upload service
 
       try {
-        // Create FormData for upload
-        const formData = new FormData();
-        formData.append('file', uploadFile.file);
-        formData.append('workspaceId', workspaceId);
-        if (folderId) {
-          formData.append('folderId', folderId);
-        }
-        
         logger.debug('Uploading file', {
           metadata: {
             fileName: uploadFile.file.name,
@@ -388,40 +294,29 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
           }
         });
 
-        // Upload with real progress tracking using XMLHttpRequest
-        const result = await uploadWithProgress(
-          '/api/workspace/upload',
-          formData,
-          (loaded, total) => {
-            const progress = (loaded / total) * 100;
-            
-            // Update file progress
-            setFiles(prev =>
-              prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
-            );
-            
-            // Update live storage tracking
-            liveStorage.updateFileProgress(uploadFile.id, loaded);
-            
-            // Emit progress event (only for single uploads)
-            if (!skipNotifications) {
-              emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_PROGRESS, {
-                fileId: uploadFile.id,
-                fileName: uploadFile.file.name,
-                fileSize: uploadFile.file.size,
-                workspaceId: workspaceId,
-                ...(folderId && { parentId: folderId }),
-                uploadProgress: progress
-              }, {
-                priority: NotificationPriority.LOW,
-                uiType: NotificationUIType.PROGRESS,
-                duration: 0,
-                persistent: true,
-                deduplicationKey: `upload-${uploadFile.id}`
-              });
-            }
-          },
-          abortController.signal
+        // Upload with real progress tracking using the simplified client service
+        const result = await clientUploadService.uploadFile(
+          uploadFile.file,
+          workspaceId,
+          folderId || undefined,
+          {
+            onStart: (uploadServiceId) => {
+              // Track the upload service ID for cancellation
+              uploadServiceIdsRef.current.set(uploadFile.id, uploadServiceId);
+            },
+            onProgress: (progress) => {
+              // Update file progress
+              setFiles(prev =>
+                prev.map(f => (f.id === uploadFile.id ? { ...f, progress } : f))
+              );
+              
+              // Update live storage tracking with estimated bytes
+              const estimatedLoaded = (progress / 100) * uploadFile.file.size;
+              liveStorage.updateFileProgress(uploadFile.id, estimatedLoaded);
+            },
+            skipNotifications, // Pass through the skip flag
+            signal: abortController.signal
+          }
         );
 
         if (!result.success) {
@@ -454,21 +349,7 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         // Mark file as completed in live storage
         liveStorage.completeFileUpload(uploadFile.id);
         
-        // Emit success event (only for single uploads)
-        if (!skipNotifications) {
-          emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_SUCCESS, {
-            fileId: uploadFile.id, // Use consistent ID, not the server's ID
-            fileName: uploadFile.file.name,
-            fileSize: uploadFile.file.size,
-            workspaceId: workspaceId,
-            ...(folderId && { parentId: folderId })
-          }, {
-            priority: NotificationPriority.LOW,
-            uiType: NotificationUIType.PROGRESS,
-            duration: 3000,
-            deduplicationKey: `upload-${uploadFile.id}`
-          });
-        }
+        // Note: Success notification is now handled by the upload service
         
         // Clean up abort controller
         abortControllersRef.current.delete(uploadFile.id);
@@ -529,24 +410,10 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
           )
         );
         
-        // Emit error event (only for single uploads)
-        if (!skipNotifications) {
-          emitNotification(NotificationEventType.WORKSPACE_FILE_UPLOAD_ERROR, {
-            fileId: uploadFile.id,
-            fileName: uploadFile.file.name,
-            fileSize: uploadFile.file.size,
-            workspaceId: workspaceId,
-            ...(folderId && { parentId: folderId }),
-            error: errorMessage
-          }, {
-            priority: NotificationPriority.HIGH,
-            uiType: NotificationUIType.PROGRESS,
-            duration: 5000,
-            deduplicationKey: `upload-${uploadFile.id}`
-          });
-        }
+        // Note: Error notifications are now handled by the upload service
         
-        // Clean up abort controller
+        // Clean up refs
+        uploadServiceIdsRef.current.delete(uploadFile.id);
         abortControllersRef.current.delete(uploadFile.id);
         
         throw error;
@@ -586,6 +453,9 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
     const batchId = isBatchUpload ? `batch-${Date.now()}` : null;
 
     try {
+      // Initialize results array
+      const results: any[] = [];
+      
       // Filter out files that are too large based on validation
       const validFiles = uploadValidation?.invalidFiles 
         ? files.filter(file => !uploadValidation.invalidFiles?.some((invalid: { file: File; reason: string }) => invalid.file.name === file.file.name))
@@ -611,62 +481,74 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
         return;
       }
       
-      // For batch uploads, show a single aggregated notification
-      if (isBatchUpload && batchId) {
-        // Show a loading notification for batch upload
-        emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_START, {
-          batchId: batchId,
-          totalItems: validFiles.length,
-          completedItems: 0,
-        }, {
-          priority: NotificationPriority.MEDIUM,
-          uiType: NotificationUIType.PROGRESS,
-          duration: 0,
-          persistent: true,
-          deduplicationKey: batchId,
-        });
-      }
-
-      // Upload files in parallel batches to improve performance
-      const PARALLEL_UPLOADS = UPLOAD_CONFIG.batch.parallelUploads || 3;
-      const results: any[] = [];
-      let completedCount = 0;
-      let uploadFailedCount = 0;
-      
-      for (let i = 0; i < validFiles.length; i += PARALLEL_UPLOADS) {
-        const batch = validFiles.slice(i, i + PARALLEL_UPLOADS)
-          .filter(file => file.status === 'pending' || file.status === 'error');
+      // Use the centralized batch upload if this is a batch
+      if (isBatchUpload) {
+        const filesToUpload = validFiles.map(f => f.file);
         
-        if (batch.length > 0) {
-          const batchResults = await Promise.allSettled(
-            batch.map(file => uploadSingleFile(file, isBatchUpload))
-          );
+        // Use the centralized batch upload service
+        const batchResults = await clientUploadService.uploadBatch(
+          filesToUpload,
+          workspaceId,
+          folderId || undefined,
+          {
+            maxConcurrent: UPLOAD_CONFIG.batch.parallelUploads || 3,
+            onFileComplete: (fileName, result) => {
+              // Update the file status in state
+              setFiles(prev =>
+                prev.map(f =>
+                  f.file.name === fileName
+                    ? {
+                        ...f,
+                        status: result.success ? 'success' as const : 'error' as const,
+                        progress: 100,
+                        ...(result.data && { uploadedFile: result.data }),
+                        ...(!result.success && { error: result.error })
+                      }
+                    : f
+                )
+              );
+              
+              // Call onFileUploaded callback if successful
+              if (result.success && result.data && onFileUploaded) {
+                onFileUploaded(result.data);
+              }
+            },
+            onBatchProgress: (completed, total) => {
+              // Optional: Update UI with batch progress
+            }
+          }
+        );
+        
+        // Add successful results to the results array
+        batchResults.forEach(r => {
+          if (r.success && r.data) {
+            results.push(r.data);
+          }
+        });
+      } else {
+        // Single file upload - use existing logic
+        const PARALLEL_UPLOADS = UPLOAD_CONFIG.batch.parallelUploads || 3;
+        let completedCount = 0;
+        let uploadFailedCount = 0;
+        
+        for (let i = 0; i < validFiles.length; i += PARALLEL_UPLOADS) {
+          const batch = validFiles.slice(i, i + PARALLEL_UPLOADS)
+            .filter(file => file.status === 'pending' || file.status === 'error');
           
-          batchResults.forEach((result) => {
-            if (result.status === 'fulfilled') {
-              results.push(result.value);
-              completedCount++;
-            } else {
-              uploadFailedCount++;
-            }
+          if (batch.length > 0) {
+            const batchResults = await Promise.allSettled(
+              batch.map(file => uploadSingleFile(file, false))
+            );
             
-            // Update batch progress notification
-            if (isBatchUpload && batchId) {
-              // Update the progress notification
-              emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_PROGRESS, {
-                batchId: batchId,
-                totalItems: validFiles.length,
-                completedItems: completedCount,
-                failedItems: uploadFailedCount,
-              }, {
-                priority: NotificationPriority.LOW,
-                uiType: NotificationUIType.PROGRESS,
-                duration: 0,
-                persistent: true,
-                deduplicationKey: batchId,
-              });
-            }
-          });
+            batchResults.forEach((result) => {
+              if (result.status === 'fulfilled') {
+                results.push(result.value);
+                completedCount++;
+              } else {
+                uploadFailedCount++;
+              }
+            });
+          }
         }
       }
 
@@ -681,46 +563,7 @@ export function useFileUpload({ workspaceId, folderId, onClose, onFileUploaded }
       const successCount = results.length;
       const finalFailedCount = files.filter(f => f.status === 'error').length;
       
-      // Show final batch notification
-      if (isBatchUpload && batchId) {
-        if (successCount > 0 && finalFailedCount === 0) {
-          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
-            batchId: batchId,
-            totalItems: validFiles.length,
-            completedItems: successCount,
-          }, {
-            priority: NotificationPriority.LOW,
-            uiType: NotificationUIType.TOAST_SIMPLE,
-            duration: 3000,
-            deduplicationKey: batchId,
-          });
-        } else if (successCount > 0 && finalFailedCount > 0) {
-          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_SUCCESS, {
-            batchId: batchId,
-            totalItems: validFiles.length,
-            completedItems: successCount,
-            failedItems: finalFailedCount,
-          }, {
-            priority: NotificationPriority.MEDIUM,
-            uiType: NotificationUIType.TOAST_SIMPLE,
-            duration: 5000,
-            deduplicationKey: batchId,
-          });
-        } else if (finalFailedCount > 0) {
-          emitNotification(NotificationEventType.WORKSPACE_BATCH_UPLOAD_ERROR, {
-            batchId: batchId,
-            totalItems: validFiles.length,
-            completedItems: 0,
-            failedItems: finalFailedCount,
-            error: `Failed to upload ${finalFailedCount} file${finalFailedCount === 1 ? '' : 's'}`,
-          }, {
-            priority: NotificationPriority.HIGH,
-            uiType: NotificationUIType.TOAST_SIMPLE,
-            duration: 5000,
-            deduplicationKey: batchId,
-          });
-        }
-      }
+      // Note: Batch notifications are now handled by the centralized upload service
       
       // Show final storage status if approaching limits
       const finalResult = results[results.length - 1];

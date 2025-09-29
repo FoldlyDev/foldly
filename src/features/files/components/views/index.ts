@@ -1,7 +1,6 @@
 // Files Views Barrel Export
 // Export all files view components
 
-export { FilesContainer as OldFilesContainer } from './files-container';
 export { FilesContainer } from './FilesContainer';
 export { default as PopulatedFilesState } from './PopulatedFilesState';
 export { default as EmptyFilesState } from './EmptyFilesState';

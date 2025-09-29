@@ -210,6 +210,7 @@ export interface FileEventPayload {
   parentId?: string;
   workspaceId?: string;
   uploadProgress?: number;
+  batchId?: string; // Optional batch context for correlation
   error?: string;
 }
 
@@ -236,6 +237,8 @@ export interface BatchEventPayload {
   currentItem?: string;
   items?: Array<{ id: string; name: string; type: 'file' | 'folder' }>;
   error?: string;
+  totalSize?: number; // Total size of all files in batch (for upload operations)
+  uploadProgress?: number; // Overall progress percentage for batch uploads
 }
 
 /**

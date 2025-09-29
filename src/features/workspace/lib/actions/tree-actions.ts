@@ -3,8 +3,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { workspaceService } from '@/features/workspace/services/workspace-service';
-import { FileService } from '@/features/files/lib/services/file-service';
-import { FolderService } from '@/features/files/lib/services/folder-service';
+import { FileService } from '@/lib/services/file-system/file-service';
+import { FolderService } from '@/lib/services/file-system/folder-service';
 import { logger } from '@/lib/services/logging/logger';
 
 const fileService = new FileService();

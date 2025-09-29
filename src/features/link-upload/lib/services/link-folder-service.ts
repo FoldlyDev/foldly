@@ -6,8 +6,8 @@ import { db } from '@/lib/database/connection';
 import { folders, links, files } from '@/lib/database/schemas';
 import { eq, and, sql, inArray } from 'drizzle-orm';
 import type { DatabaseResult } from '@/lib/database/types/common';
-import { FolderService } from '@/features/files/lib/services/folder-service';
-import { StorageService } from '@/features/files/lib/services/storage-service';
+import { FolderService } from '@/lib/services/file-system/folder-service';
+import { StorageService } from '@/lib/services/storage/storage-operations-service';
 import { createClient } from '@supabase/supabase-js';
 
 interface PreviousFolder {

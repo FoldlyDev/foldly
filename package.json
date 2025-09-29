@@ -26,6 +26,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@base-ui-components/react": "^1.0.0-beta.2",
     "@clerk/nextjs": "^6.23.1",
     "@clerk/themes": "^2.4.6",
     "@gsap/react": "^2.1.2",

@@ -39,12 +39,28 @@ export const users = pgTable(
         theme: 'system',
         doNotDisturb: false,
         silentNotifications: false,
+        cloudStorage: {
+          google: { connected: false, lastSyncedAt: null },
+          microsoft: { connected: false, lastSyncedAt: null },
+        },
       })
       .notNull()
       .$type<{
         theme: 'light' | 'dark' | 'system';
         doNotDisturb: boolean;
         silentNotifications: boolean;
+        cloudStorage?: {
+          google?: {
+            connected: boolean;
+            lastSyncedAt: string | null;
+            email?: string;
+          };
+          microsoft?: {
+            connected: boolean;
+            lastSyncedAt: string | null;
+            email?: string;
+          };
+        };
         [key: string]: any; // Allow future settings
       }>(),
 
