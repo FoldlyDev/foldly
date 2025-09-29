@@ -1,6 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { linksDbService } from '../db-service';
@@ -15,6 +14,8 @@ import { getWorkspaceByUserId } from '@/features/workspace/lib/actions/workspace
 import { getSupabaseClient } from '@/lib/config/supabase-client';
 import { brandingStorageService } from '../services/branding-storage-service';
 import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
+import { validateSlugLength } from '../utils/slug-normalization';
+import { hasFeature } from '@/features/billing/lib/services/clerk-billing-integration';
 
 /**
  * Create a new link
@@ -56,7 +57,25 @@ export async function createLinkAction(
     const existingLinksResult = await linksDbService.getByUserId(user.id);
     let baseSlug = validatedData.slug || user.username || user.id;
 
+    // 5a. Check plan-based slug length restriction for base links
     if (linkType === 'base') {
+      const hasPremiumShortLinks = await hasFeature('premium_short_links');
+      console.log('🔍 Create Link Validation:', {
+        baseSlug,
+        slugLength: baseSlug.length,
+        hasPremiumShortLinks,
+        linkType
+      });
+
+      const lengthValidation = validateSlugLength(baseSlug, hasPremiumShortLinks);
+      console.log('🔍 Length Validation Result:', lengthValidation);
+
+      if (!lengthValidation.isValid) {
+        return {
+          success: false,
+          error: lengthValidation.error!,
+        };
+      }
       // Check if user already has a base link (only one allowed per user)
       if (existingLinksResult.success && existingLinksResult.data) {
         const hasBaseLink = existingLinksResult.data.some(
@@ -120,7 +139,12 @@ export async function createLinkAction(
       expiresAt: validatedData.expiresAt
         ? new Date(validatedData.expiresAt)
         : null,
-      branding: validatedData.branding || { enabled: false },
+      branding: validatedData.branding ? {
+        enabled: validatedData.branding.enabled,
+        ...(validatedData.branding.color && { color: validatedData.branding.color }),
+        ...(validatedData.branding.imagePath && { imagePath: validatedData.branding.imagePath }),
+        ...(validatedData.branding.imageUrl && { imageUrl: validatedData.branding.imageUrl }),
+      } : { enabled: false },
       // Initialize stats fields
       totalUploads: 0,
       totalFiles: 0,

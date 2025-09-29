@@ -29,9 +29,13 @@ export const generateFullUrl = (
 };
 
 /**
- * Validates topic name format
+ * Validates topic name format (client-side validation)
+ * For plan-based validation, pass hasPremiumShortLinks parameter
  */
-export function validateTopicName(topic: string): {
+export function validateTopicName(
+  topic: string,
+  hasPremiumShortLinks?: boolean
+): {
   isValid: boolean;
   error?: string;
 } {
@@ -54,6 +58,18 @@ export function validateTopicName(topic: string): {
       isValid: false,
       error: 'Topic must contain at least one letter or number',
     };
+  }
+
+  // Check plan-based length restriction if hasPremiumShortLinks is provided
+  if (hasPremiumShortLinks !== undefined) {
+    const topicSlug = generateUrlSlug(topic);
+    if (!hasPremiumShortLinks && topicSlug.length < 5) {
+      return {
+        isValid: false,
+        error:
+          'Topic names that create URLs with less than 5 characters are reserved for Pro users. Upgrade to access premium short links!',
+      };
+    }
   }
 
   return { isValid: true };

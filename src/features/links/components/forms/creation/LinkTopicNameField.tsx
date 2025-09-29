@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Hash, CheckCircle, AlertCircle } from 'lucide-react';
 import { useSlugNormalization } from '../../../lib/utils/slug-normalization';
+import { generateUrlSlug } from '../../../lib/utils';
 
 interface LinkTopicNameFieldProps {
   topicValue: string;
@@ -36,6 +37,10 @@ export function LinkTopicNameField({
   isLoading = false,
 }: LinkTopicNameFieldProps) {
   const { normalizeTopic } = useSlugNormalization();
+
+  const topicSlug = generateUrlSlug(topicValue);
+  const slugLength = topicSlug.length;
+  const isShortSlug = slugLength > 0 && slugLength < 5;
 
   return (
     <motion.div
@@ -126,13 +131,27 @@ export function LinkTopicNameField({
             </div>
           )}
 
-          {/* Help text */}
+          {/* Character counter and help text */}
           <div className='space-y-2'>
-            <p className='form-helper text-xs'>
-              <strong>Allowed characters:</strong> Letters, numbers, spaces,
-              hyphens, and underscores
-            </p>
+            <div className='flex items-center justify-between'>
+              <p className='form-helper text-xs'>
+                <strong>Allowed characters:</strong> Letters, numbers, spaces,
+                hyphens, and underscores
+                {isShortSlug && ' • Minimum 5 characters in URL'}
+              </p>
+              {topicValue && isShortSlug && (
+                <span className={`text-xs font-medium ${isShortSlug ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                  {slugLength}/5 characters in URL
+                </span>
+              )}
+            </div>
+            {topicValue && topicSlug && (
+              <p className='form-helper text-xs'>
+                <strong>URL preview:</strong> .../{topicSlug}
+              </p>
+            )}
           </div>
+
         </div>
       </div>
     </motion.div>

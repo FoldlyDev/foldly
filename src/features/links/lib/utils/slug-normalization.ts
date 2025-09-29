@@ -95,3 +95,31 @@ export function isValidNormalizedTopic(normalizedTopic: string): boolean {
   // Allow lowercase letters, numbers, spaces, hyphens, underscores
   return /^[a-z0-9\s_-]+$/.test(normalizedTopic);
 }
+
+/**
+ * Validates slug length based on user's plan
+ * Free users require at least 5 characters for slugs
+ * @param slug - The slug to validate
+ * @param hasPremiumShortLinks - Whether user has premium short links feature
+ * @returns Validation result with error message if invalid
+ */
+export function validateSlugLength(
+  slug: string,
+  hasPremiumShortLinks: boolean
+): { isValid: boolean; error?: string } {
+  if (!slug) {
+    // Empty slug is allowed (will use username)
+    return { isValid: true };
+  }
+
+  // Free users require at least 5 characters
+  if (!hasPremiumShortLinks && slug.length < 5) {
+    return {
+      isValid: false,
+      error:
+        'Links with less than 5 characters are reserved for Pro users. Upgrade to access premium short links!',
+    };
+  }
+
+  return { isValid: true };
+}

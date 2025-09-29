@@ -12,6 +12,8 @@ import type { Link } from '@/lib/database/types/links';
 import { getSupabaseClient } from '@/lib/config/supabase-client';
 import { linkFolderService } from '../services/link-folder-service';
 import { storageQuotaService } from '@/lib/services/storage/storage-quota-service';
+import { validateSlugLength } from '../utils/slug-normalization';
+import { hasFeature } from '@/features/billing/lib/services/clerk-billing-integration';
 
 /**
  * Schema for generating a link from a folder
@@ -125,11 +127,22 @@ export async function generateLinkFromFolderAction(
       .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric chars with hyphens
       .replace(/^-+|-+$/g, '') // Remove leading/trailing hyphens
       .substring(0, 50); // Limit length
-    
+
     // If the cleaned name is empty, fall back to a random ID
     const finalSuffix = generatedSuffix || nanoid(8).toLowerCase();
 
-    // 7. Create the generated link
+    // 7a. Check plan-based length restriction for generated links
+    const hasPremiumShortLinks = await hasFeature('premium_short_links');
+    const lengthValidation = validateSlugLength(finalSuffix, hasPremiumShortLinks);
+
+    if (!lengthValidation.isValid) {
+      return {
+        success: false,
+        error: lengthValidation.error!,
+      };
+    }
+
+    // 8. Create the generated link
     const [newLink] = await db
       .insert(links)
       .values({
@@ -150,8 +163,7 @@ export async function generateLinkFromFolderAction(
         maxFileSize: baseLink.maxFileSize,
         allowedFileTypes: baseLink.allowedFileTypes,
         expiresAt: null,
-        brandEnabled: baseLink.brandEnabled,
-        brandColor: baseLink.brandColor,
+        branding: baseLink.branding || { enabled: false },
         // Initialize stats
         totalUploads: 0,
         totalFiles: 0,
@@ -169,7 +181,7 @@ export async function generateLinkFromFolderAction(
       };
     }
 
-    // 8. Audit log
+    // 9. Audit log
     await logAudit({
       userId: user.id,
       action: 'created',
@@ -205,7 +217,10 @@ export async function generateLinkFromFolderAction(
 
     return {
       success: true,
-      data: newLink,
+      data: {
+        ...newLink,
+        branding: newLink.branding || { enabled: false },
+      },
     };
   } catch (error) {
     console.error('Generate link from folder error:', error);

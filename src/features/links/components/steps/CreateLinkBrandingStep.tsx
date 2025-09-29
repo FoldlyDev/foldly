@@ -87,7 +87,7 @@ export const CreateLinkBrandingStep = () => {
           linkType === 'base'
             ? formData.title || DEFAULT_BASE_LINK_TITLE // Use form title, fallback to centralized default
             : formData.title || formData.topic || 'Untitled Link',
-        slug: linkType === 'base' ? formData.topic || '' : undefined, // For base links, topic field is actually the slug
+        slug: linkType === 'base' ? (formData.slug || '') : undefined, // For base links, use the slug field from the form
         topic: linkType === 'base' ? null : formData.topic || undefined, // Base links have no topic
         description: formData.description || undefined,
         requireEmail: formData.requireEmail,
@@ -108,7 +108,7 @@ export const CreateLinkBrandingStep = () => {
             }
           : undefined,
         // Include the file separately for upload
-        brandingImageFile: formData.logoFile || undefined,
+        ...(formData.logoFile && { brandingImageFile: formData.logoFile }),
       };
 
       // Create link using React Query mutation (handles file upload)

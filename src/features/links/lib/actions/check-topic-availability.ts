@@ -3,6 +3,7 @@
 import { validateTopicName } from '../utils';
 import { linksDbService } from '../db-service';
 import type { ActionResult } from '../validations';
+import { hasFeature } from '@/features/billing/lib/services/clerk-billing-integration';
 
 export interface TopicAvailabilityResult {
   available: boolean;
@@ -39,8 +40,9 @@ export async function checkTopicAvailabilityAction({
       };
     }
 
-    // Basic format validation
-    const topicValidation = validateTopicName(topic);
+    // Basic format validation with plan checking
+    const hasPremiumShortLinks = await hasFeature('premium_short_links');
+    const topicValidation = validateTopicName(topic, hasPremiumShortLinks);
     if (!topicValidation.isValid) {
       return {
         success: true,
