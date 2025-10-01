@@ -47,7 +47,7 @@ export function useTopicValidation(
         return;
       }
 
-      // Basic format validation
+      // Basic format validation (server-side will check plan)
       const topicValidation = validateTopicName(topicToValidate);
       if (!topicValidation.isValid) {
         setState({

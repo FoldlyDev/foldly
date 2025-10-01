@@ -66,6 +66,8 @@ export function useSlugValidation(
         return;
       }
 
+      // Note: Server-side will check plan-based length restrictions
+
       setState(prev => ({
         ...prev,
         isChecking: true,

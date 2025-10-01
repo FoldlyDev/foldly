@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { linksDbService } from '../db-service';
 import { requireAuth } from './shared';
 import { slugSchema, type ActionResult } from '../validations';
-import { normalizeSlug } from '../utils/slug-normalization';
+import { normalizeSlug, validateSlugLength } from '../utils/slug-normalization';
+import { hasFeature } from '@/features/billing/lib/services/clerk-billing-integration';
 
 /**
  * Schema for checking slug availability
@@ -51,7 +52,22 @@ export async function checkSlugAvailabilityAction(
 
     const slug = normalizeSlug(validatedData.slug); // Normalize to lowercase
 
-    // 3. Check if slug is globally available (base links must be globally unique)
+    // 3. Check plan-based length restriction
+    const hasPremiumShortLinks = await hasFeature('premium_short_links');
+    const lengthValidation = validateSlugLength(slug, hasPremiumShortLinks);
+
+    if (!lengthValidation.isValid) {
+      return {
+        success: true,
+        data: {
+          available: false,
+          slug,
+          message: lengthValidation.error!,
+        },
+      };
+    }
+
+    // 4. Check if slug is globally available (base links must be globally unique)
     // Use getBySlugAndTopic to search globally across all users for base links
     const existingLinkResult = await linksDbService.getBySlugAndTopic(
       slug,
@@ -84,7 +100,7 @@ export async function checkSlugAvailabilityAction(
       };
     }
 
-    // 4. Check against reserved slugs
+    // 5. Check against reserved slugs
     const reservedSlugs = [
       'api',
       'app',
@@ -137,7 +153,7 @@ export async function checkSlugAvailabilityAction(
       };
     }
 
-    // 5. Slug is available
+    // 6. Slug is available
     return {
       success: true,
       data: {

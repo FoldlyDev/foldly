@@ -30,6 +30,9 @@ export function LinkSlugField({
   const { normalizeSlug } = useSlugNormalization();
   const displayDomain = getDisplayDomain();
 
+  const slugLength = formData.slug?.length || 0;
+  const isShortSlug = slugLength > 0 && slugLength < 5;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -109,10 +112,19 @@ export function LinkSlugField({
             </div>
           )}
 
-          {/* Help text */}
-          <p className='form-helper text-xs'>
-            Use letters, numbers, hyphens, and underscores only
-          </p>
+          {/* Character counter and help text */}
+          <div className='flex items-center justify-between'>
+            <p className='form-helper text-xs'>
+              Use letters, numbers, hyphens, and underscores only
+              {isShortSlug && ' • Minimum 5 characters'}
+            </p>
+            {formData.slug && isShortSlug && (
+              <span className={`text-xs font-medium ${isShortSlug ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                {slugLength}/5 characters
+              </span>
+            )}
+          </div>
+
         </div>
       </div>
     </motion.div>
