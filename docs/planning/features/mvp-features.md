@@ -26,13 +26,15 @@ These features are non-negotiable for MVP launch.
 - ✅ Magic link login (optional for MVP)
 - ✅ Password reset flow
 - ✅ User profile creation
-- ✅ Auto-generate first link on signup (e.g., `foldly.com/{username}`)
+- ✅ Onboarding flow to capture username
+- ✅ Auto-generate first link after onboarding (e.g., `foldly.com/{username}`)
 
 **Acceptance Criteria:**
 - [ ] User can sign up in < 30 seconds
 - [ ] User receives confirmation email
+- [ ] User completes onboarding (enters username)
 - [ ] User can log in and see dashboard
-- [ ] First link auto-created with username
+- [ ] First link auto-created with username after onboarding
 
 ---
 
@@ -322,10 +324,11 @@ These features can wait until after MVP validation.
 ## MVP Feature Checklist
 
 ### Week 1-2: Foundation
-- [ ] Set up Next.js project
-- [ ] Configure Supabase (database)
+- [x] Set up Next.js project (Next.js 15 + React 19)
+- [x] Configure Supabase (database schema pushed)
 - [ ] Configure Google Cloud Storage
-- [ ] Set up Clerk authentication
+- [x] Set up Clerk authentication (configured)
+- [ ] Build onboarding flow (username capture + auto-generation)
 - [ ] Create base UI components (buttons, forms, modals)
 
 ### Week 3: User & Folder Management

@@ -125,7 +125,7 @@ Relationships:
 - **Public**: Anyone can upload, emails auto-appended to permissions
 - **Dedicated**: Only whitelisted emails can upload
 
-**Auto-generation**: First link created on signup with `slug = username`
+**Auto-generation**: First link created after onboarding with `slug = username`
 
 **Deletion Behavior**: When link deleted, `link_id` set to NULL in folders/files (preserves content)
 
@@ -269,29 +269,36 @@ gs://foldly-files/
 
 ---
 
-## Auto-Generation Flow (On Signup)
+## Auto-Generation Flow (After Onboarding)
 
 ```
 1. User signs up via Clerk
    ↓
-2. Webhook creates user in database
+2. User redirected to onboarding page
    ↓
-3. Create workspace
+3. User enters username during onboarding
+   ↓
+4. On onboarding completion, create user in database
+   - id: Clerk user ID
+   - email: from Clerk
+   - username: from onboarding form
+   ↓
+5. Create workspace
    - name: "{firstName}'s Workspace" or "{username}'s Workspace"
    ↓
-4. Create first link
+6. Create first link
    - slug: username (from onboarding)
    - name: username
    - is_public: false
    - is_active: true
    ↓
-5. Create root folder for link
+7. Create root folder for link
    - name: "{username}-files"
    - link_id: first link ID
    - parent_folder_id: NULL
    - uploader_email: NULL (owner-created)
    ↓
-6. Create owner permission
+8. Create owner permission
    - link_id: first link ID
    - email: user's email
    - role: 'owner'
@@ -299,6 +306,8 @@ gs://foldly-files/
 ```
 
 **Result**: User can immediately share `foldly.com/{username}` and start collecting files
+
+**Note**: This flow is triggered programmatically during the onboarding process, NOT via Clerk webhook
 
 ---
 
@@ -377,10 +386,11 @@ drizzle/
 ## Next Steps
 
 1. ✅ Schema files created
-2. ⏳ Generate migrations: `pnpm drizzle-kit generate`
-3. ⏳ Push to database: `pnpm drizzle-kit push` (dev) or `pnpm drizzle-kit migrate` (prod)
-4. ⏳ Implement auto-generation flow (Clerk webhook)
-5. ⏳ Build API endpoints for CRUD operations
+2. ✅ Migrations generated: `npm run generate`
+3. ✅ Pushed to database: `npm run push`
+4. ⏳ Build onboarding flow to capture username and trigger auto-generation
+5. ⏳ Build API endpoints/server actions for CRUD operations
+6. ⏳ Set up Google Cloud Storage bucket
 
 ---
 

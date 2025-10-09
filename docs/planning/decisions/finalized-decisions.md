@@ -217,7 +217,7 @@ If confirmed →
    - Can switch to Public later (opens access)
 
 **Auto-First-Link:**
-- On account creation, auto-generate first link (like Calendly)
+- After onboarding completion, auto-generate first link (like Calendly)
 - Named with username: `foldly.com/{username}`
 - User can edit, delete, or create more links
 
@@ -229,7 +229,7 @@ If confirmed →
 
 **Structure:**
 ```
-Primary link (auto-generated on signup):
+Primary link (auto-generated after onboarding):
   foldly.com/sarahtax
 
 Additional folder links:
@@ -239,7 +239,7 @@ Additional folder links:
 ```
 
 **Implementation:**
-- Username must be unique (validated on signup)
+- Username must be unique (validated during onboarding)
 - Folder slugs must be unique per user (not globally)
 - Auto-generate slug from folder name: "2024 Taxes" → "2024-taxes"
 - Allow custom slug editing
