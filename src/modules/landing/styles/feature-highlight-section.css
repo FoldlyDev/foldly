@@ -1,0 +1,171 @@
+/* Feature Highlight Section */
+.feature-highlight {
+  position: relative;
+  width: 100vw;
+  height: 100svh;
+  overflow: hidden;
+  z-index: 1;
+  background: var(--light-bg);
+}
+
+.feature-highlight .container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 2.75rem;
+  max-width: 2000px;
+  margin: 0 auto;
+}
+
+.feature-highlight h3 {
+  width: 50%;
+  text-align: center;
+  font-size: 6rem;
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: -0.02rem;
+  text-transform: uppercase;
+  /* Dark gradient text - opposite of intro section light gradient */
+  background: linear-gradient(135deg, #020618 0%, #2d4f6b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* For SplitText word animation */
+}
+
+.feature-highlight .highlight-word {
+  display: inline-block;
+  margin: 0 0.15em;
+  /* Ensure words don't break layout */
+  white-space: nowrap;
+  /* Apply gradient to each word */
+  background: linear-gradient(180deg, #020618 0%, #2d4f6b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.feature-highlight .feature-highlight-strips {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150vw;
+  height: 100svh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+
+.feature-highlight .feature-highlight-strip {
+  position: relative;
+  transform: translateX(0%);
+  display: flex;
+  justify-content: space-around;
+  will-change: transform;
+  gap: 1rem;
+}
+
+.feature-highlight .feature {
+  width: max-content;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05); /* Very subtle dark background */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(195, 225, 247, 0.2); /* Using primary color with 20% opacity */
+  box-shadow:
+    0 12px 20px #ffffff08 inset,
+    0 0 40px #ffffff14 inset,
+    0 0 8px #ffffff08 inset,
+    0 0 12px #ffffff0d inset,
+    0 1px 1px #ffffff1f inset;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-highlight .feature p {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.025em;
+  color: #000000; /* Black text */
+}
+
+/* Strip positioning for visual variation */
+.feature-highlight .fhs-1 {
+  margin-top: 10rem;
+}
+
+.feature-highlight .fhs-2 {
+  margin-top: -2rem;
+}
+
+.feature-highlight .fhs-3 {
+  margin-top: 16rem;
+}
+
+.feature-highlight .fhs-4 {
+  margin-top: -2rem;
+}
+
+.feature-highlight .fhs-5 {
+  margin-top: 1rem;
+}
+
+.feature-highlight .fhs-6 {
+  margin-top: 2rem;
+}
+
+/* Feature variants - all using the same glass background */
+.feature-highlight .feature.feature-var-1,
+.feature-highlight .feature.feature-var-2,
+.feature-highlight .feature.feature-var-3 {
+  /* Inherit glass styles from parent .feature class - no need to override */
+}
+
+/* No hover effects - features remain static */
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .feature-highlight h3 {
+    width: 90%;
+  }
+
+  .feature-highlight .feature-highlight-strips {
+    width: 300vw;
+  }
+
+  .feature-highlight .fhs-1 {
+    margin-top: 2.5rem;
+  }
+
+  .feature-highlight .fhs-3 {
+    margin-top: 10rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .feature-highlight h3 {
+    font-size: 3rem;
+    line-height: 0.85;
+  }
+
+  .feature-highlight .feature p {
+    font-size: 0.8rem;
+  }
+
+  .feature-highlight .feature {
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .feature-highlight .feature-highlight-strips {
+    width: 400vw;
+  }
+}

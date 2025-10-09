@@ -1,0 +1,25 @@
+/* =============================================================================
+   LANDING PAGE CONTAINER STYLES
+   ============================================================================= */
+
+.landing-page {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #020618; /* Match intro section background */
+}
+
+/* Ensure sections have proper dimensions */
+.landing-page > section {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Section-specific styles moved to individual CSS files */
+
+/* Animation utilities for text animations */
+.char {
+  @apply inline-block opacity-0 translate-y-full;
+}

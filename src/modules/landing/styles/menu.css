@@ -1,0 +1,279 @@
+/* Copied exactly from Juno Watts template */
+
+/* CSS Variables - Updated to use global color system */
+:root {
+  --base-100: var(--neutral-100);
+  --base-300: var(--neutral-900);
+  --base-secondary-dark: var(--neutral-600);
+  --menu-transition-duration: 0.4s;
+  --menu-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  max-width: 600px;
+  z-index: 1000;
+  /* Remove CSS transitions - GSAP handles animations */
+  will-change: transform, opacity;
+}
+
+/* Remove .menu.hidden class - GSAP handles visibility */
+
+.menu-header {
+  position: relative;
+  padding: 1rem 1.5rem 1rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(2, 6, 24, 0.85); /* Bluish dark with transparency */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  z-index: 2;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+
+.menu-logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.menu-logo {
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.menu-logo img.rotated {
+  transform: rotate(180deg);
+}
+
+.menu-user-avatar {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: border-color 0.3s ease;
+}
+
+.menu-user-avatar:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.menu-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menu-toggle {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.menu-hamburger-icon {
+  width: 20px;
+  height: 25px;
+  position: absolute;
+  top: 10px;
+  right: 0;
+  cursor: pointer;
+}
+
+.menu-item {
+  transition: all 0.2s ease;
+  display: block;
+  width: 20px;
+  height: 2px;
+  margin: 0 0 4px;
+  background: var(--base-100);
+  border-radius: 1px;
+}
+
+.menu-hamburger-icon.open .menu-item {
+  background: var(--base-100);
+}
+
+.menu-hamburger-icon.open .menu-item:first-child {
+  transform: rotate(45deg);
+  transform-origin: 5px;
+}
+
+.menu-hamburger-icon.open .menu-item:nth-child(2) {
+  transform: rotate(-45deg);
+  transform-origin: 6px;
+}
+
+.menu-overlay {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: rgba(2, 6, 24, 0.85); /* Matching bluish dark with transparency */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  margin-top: -8px;
+  padding-top: 8px;
+  transform-origin: top;
+  overflow: hidden;
+  will-change: transform;
+  /* Hide initially to prevent flash */
+  transform: scaleY(0);
+}
+
+.menu-nav {
+  padding: 2rem 0 3rem 0;
+}
+
+.menu-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu-nav li {
+  margin: -4px 0;
+}
+
+.menu-nav a {
+  display: block;
+  padding: 0.5rem 1.75rem;
+  position: relative;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--base-100);
+  font-family: 'Barlow Condensed';
+  font-size: 5rem;
+  letter-spacing: -0.02rem;
+  font-weight: 900;
+  line-height: 0.85;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 0%,
+    black 100%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 0%,
+    black 100%,
+    transparent 100%
+  );
+}
+
+.menu-nav a div div {
+  position: relative;
+  will-change: transform;
+}
+
+/* Split text word styling */
+.split-word {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-footer {
+  padding: 1rem 1.75rem 1.5rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-social {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.menu-social a,
+.menu-time {
+  color: var(--base-100);
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  font-family: 'DM Mono';
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.menu-time {
+  width: max-content;
+  color: var(--base-secondary-dark);
+}
+
+/* Loading Spinner - matches landing page loading animation */
+.menu-spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-bottom-color: var(--base-100);
+  animation: menu-spin 1s linear infinite;
+}
+
+@keyframes menu-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1000px) {
+  .menu {
+    width: 90%;
+    max-width: none;
+  }
+
+  .menu-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .menu-nav a {
+    font-size: 3rem;
+    letter-spacing: 0;
+    padding: 0.75rem 1.5rem;
+  }
+
+  .menu-footer {
+    padding: 2rem 1.75rem 2rem 1.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .menu-social {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .menu-time {
+    right: 1.5rem;
+  }
+}

@@ -1,0 +1,61 @@
+/* =============================================================================
+   CARDS COMPONENT STYLES - MINIMAL SHARED STYLES
+   Most card styles have been moved to section-specific CSS files:
+   - Hero cards: hero-section.css
+   - Feature cards: features-section.css
+   ============================================================================= */
+
+/* =============================================================================
+   SHARED MOBILE STYLES
+   ============================================================================= */
+
+/* Mobile cards container - used by both sections */
+@media (max-width: 1000px) {
+  .mobile-cards .cards-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    width: 100%;
+    z-index: 100;
+  }
+
+  /* Ensure mobile cards show back face by default */
+  .mobile-cards .card .flip-card-front {
+    transform: rotateY(180deg);
+  }
+
+  .mobile-cards .flip-card-back {
+    transform: rotateY(0deg);
+  }
+
+  /* Mobile card dimensions */
+  .mobile-cards .card {
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .mobile-cards .card-copy p {
+    font-size: 0.8rem;
+    min-height: 2rem;
+    padding: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-cards {
+    padding: 1rem 0;
+  }
+
+  .mobile-cards .card-copy p {
+    font-size: 0.75rem;
+    min-height: 1.8rem;
+    padding: 0.3rem;
+  }
+
+  .mobile-cards .card-title span {
+    font-size: 0.6rem;
+  }
+}

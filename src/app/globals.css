@@ -1,0 +1,578 @@
+@import url("https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=Barlow:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=DM+Mono:wght@500&display=swap");
+
+@import "tailwindcss";
+
+/* Shared CSS Values - Must be imported first for variable availability */
+@import "../styles/utilities/shared-values.css";
+@import "../styles/utilities/base-elements.css";
+
+/* =============================================================================
+   TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
+   ============================================================================= */
+
+@theme {
+  /* Custom Breakpoints - Mobile-First Responsive Design */
+  --breakpoint-xs: 30rem; /* 480px - Extra small devices */
+  --breakpoint-sm: 40rem; /* 640px - Small devices */
+  --breakpoint-md: 48rem; /* 768px - Medium devices */
+  --breakpoint-lg: 64rem; /* 1024px - Large devices */
+  --breakpoint-xl: 80rem; /* 1280px - Extra large devices */
+  --breakpoint-2xl: 96rem; /* 1536px - 2X Extra large devices */
+  --breakpoint-3xl: 120rem; /* 1920px - Ultra wide screens */
+
+  /* Font Families with Apple Device Compatibility */
+  --font-sans:
+    "Host Grotesk", "Barlow", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "SF Pro Display", "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-display:
+    "Host Grotesk", -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    system-ui, sans-serif;
+  --font-body:
+    "Barlow", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+
+  /* FOLDLY BRAND COLORS - Core Palette */
+  --color-primary: #c3e1f7;
+  --color-secondary: #9abede;
+  --color-tertiary: #2d4f6b;
+  --color-quaternary: #0f1922;
+  --color-quinary: #0a0d0f;
+
+  /* Status Colors */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #c3e1f7;
+
+  /* Notification Glass Colors - For dark mode overlays */
+  --notification-success-glass: rgba(16, 185, 129, 0.1);
+  --notification-warning-glass: rgba(245, 158, 11, 0.1);
+  --notification-error-glass: rgba(239, 68, 68, 0.1);
+  --notification-info-glass: rgba(195, 225, 247, 0.1);
+
+  /* Custom Spacing */
+  --spacing-18: 4.5rem;
+  --spacing-112: 28rem;
+  --spacing-128: 32rem;
+
+  /* Custom Border Radius */
+  --radius: 0.5rem;
+  --radius-4xl: 2rem;
+  --radius-5xl: 2.5rem;
+
+  /* Custom Shadows */
+  --shadow-brand: 0 25px 50px -12px rgb(195 225 247 / 0.25);
+  --shadow-brand-lg: 0 35px 60px -12px rgb(195 225 247 / 0.4);
+}
+
+/* =============================================================================
+   COMPONENT STYLES IMPORTS
+   ============================================================================= */
+
+/* =============================================================================
+   FEATURE-BASED STYLES IMPORTS (2025 Architecture)
+   ============================================================================= */
+
+/* 🚀 Landing Feature Styles */
+@import "../modules/landing/styles/menu.css";
+@import "../modules/landing/styles/landing-page.css";
+@import "../modules/landing/styles/intro-section.css";
+@import "../modules/landing/styles/feature-highlight-section.css";
+@import "../modules/landing/styles/about-section.css";
+@import "../modules/landing/styles/demo-section.css";
+@import "../modules/landing/styles/outro-section.css";
+@import "../modules/landing/styles/footer-section.css";
+@import "../modules/landing/styles/cards.css";
+
+/* 🔐 Auth Feature Styles */
+@import "../features/auth/styles/auth-pages.css";
+
+/* 🌐 Global UI Component Styles */
+@import "../styles/components/ui/content-loader.css";
+@import "../styles/components/ui/modal.css";
+@import "../styles/components/ui/context-menu.css";
+@import "../styles/components/ui/button.css";
+@import "../styles/components/ui/secondary-cta-button.css";
+@import "../styles/components/ui/form.css";
+@import "../styles/components/ui/card.css";
+@import "../styles/components/ui/indicators.css";
+@import "../styles/components/core/primary-cta.css";
+@import "../styles/features/animated-logo-button.css";
+@import "../styles/components/page-transition.css";
+
+/* 🏗️ Dashboard Feature Styles */
+@import "../styles/components/layout/dashboard-navigation.css";
+@import "../styles/components/layout/dashboard-layout.css";
+@import "../styles/features/dashboard-container.css";
+@import "../features/links/styles/links-page.css";
+@import "../features/links/styles/link-cards.css";
+
+/* 📁 Workspace Feature Styles */
+@import "../features/workspace/styles/workspace.css";
+@import "../features/files/styles/files.css";
+
+/* 🔗 Link Upload Feature Styles */
+@import "../features/link-upload/styles/link-upload.css";
+
+/* 🔔 Notifications Feature Styles */
+@import "../features/notifications/styles/toast.css";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* =============================================================================
+   CSS VARIABLES
+   ============================================================================= */
+
+:root {
+  /* Font System Variables for Cross-Device Compatibility */
+  --system-font-stack:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-primary: "Host Grotesk", var(--system-font-stack);
+  --font-secondary: "Barlow", var(--system-font-stack);
+  --font-mono:
+    "DM Mono", "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
+  --font-condensed: "Barlow Condensed", var(--system-font-stack);
+
+  /* FOLDLY BRAND COLORS - CSS Variables for theme-independent usage */
+  --primary: oklch(0.205 0 0);
+  --secondary: oklch(0.97 0 0);
+  --tertiary: var(--color-tertiary);
+  --quaternary: var(--color-quaternary);
+  --quinary: var(--color-quinary);
+
+  /* Neutral Palette */
+  --neutral-50: #fafafa;
+  --neutral-100: #f4f4f5;
+  --neutral-200: #e4e4e7;
+  --neutral-300: #d4d4d8;
+  --neutral-400: #a1a1aa;
+  --neutral-500: #71717a;
+  --neutral-600: #52525b;
+  --neutral-700: #3f3f46;
+  --neutral-800: #27272a;
+  --neutral-900: #18181b;
+
+  /* Base Light Background color */
+  --light-bg: #e3e4d8;
+
+  /* Foldly Brand Gradients */
+  --foldly-gradient-start: #cbd5e1; /* slate-300 */
+  --foldly-gradient-end: #64748b; /* slate-500 */
+  --foldly-gradient: linear-gradient(
+    to bottom right,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-reverse: linear-gradient(
+    to top left,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-horizontal: linear-gradient(
+    to right,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+  --foldly-gradient-vertical: linear-gradient(
+    to bottom,
+    var(--foldly-gradient-start),
+    var(--foldly-gradient-end)
+  );
+
+  /* Dark Mode Gradient - Deep Ocean with Cyan Glow */
+  --foldly-dark-gradient: linear-gradient(
+    135deg,
+    #020618 0%,
+    #0a1628 25%,
+    #0f2847 50%,
+    #22d3ee20 75%,
+    #22d3ee10 100%
+  );
+
+  /* Light Mode Gradient - Warm with Cyan Glow */
+  --foldly-light-gradient-radial: radial-gradient(
+    ellipse at bottom,
+    oklch(71.5% 0.143 215.221) 0%,
+    #f5f5f0 50%,
+    #e3e4d8 100%
+  );
+
+  --foldly-dark-gradient-radial: radial-gradient(
+    ellipse at top,
+    oklch(71.5% 0.143 215.221) 0%,
+    #0a1628 50%,
+    #020618 100%
+  );
+  --foldly-dark-gradient-spotlight: conic-gradient(
+    from 180deg at 50% 50%,
+    #020618 0deg,
+    #22d3ee20 45deg,
+    #0f2847 90deg,
+    #020618 180deg,
+    #22d3ee10 270deg,
+    #020618 360deg
+  );
+
+  /* Foldly Glass Morphism Background - Light version */
+  --foldly-glass-bg-light: rgba(12, 13, 13, 0.4);
+  --foldly-glass-bg-light-solid: rgba(12, 13, 13, 0.6);
+  --foldly-glass-gradient-light: radial-gradient(
+    circle 280px at 0% 0%,
+    rgba(68, 68, 68, 0.4),
+    rgba(12, 13, 13, 0.4)
+  );
+
+  /* Foldly Glass Morphism Background - Dark version */
+  --foldly-glass-bg: rgba(2, 6, 24, 0.85);
+  --foldly-glass-bg-solid: rgba(2, 6, 24, 0.95);
+  --foldly-glass-border: rgba(255, 255, 255, 0.1);
+  --foldly-glass-blur: 12px;
+
+  /* Legacy Color Aliases */
+  --light: var(--neutral-50);
+  --dark: var(--quaternary);
+  --accent-1: var(--primary);
+  --accent-2: var(--secondary);
+  --accent-3: var(--tertiary);
+
+  /* Chart colors for data visualization */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  /* Dark Mode Color Overrides */
+  --primary: oklch(0.922 0 0);
+  --secondary: oklch(0.269 0 0);
+  --tertiary: #4a6b85;
+  --quaternary: #c3e1f7;
+  --quinary: #e1f0fc;
+
+  /* Dark Neutrals - Inverted */
+  --neutral-50: #09090b;
+  --neutral-100: #18181b;
+  --neutral-200: #27272a;
+  --neutral-300: #3f3f46;
+  --neutral-400: #52525b;
+  --neutral-500: #71717a;
+  --neutral-600: #a1a1aa;
+  --neutral-700: #d4d4d8;
+  --neutral-800: #e4e4e7;
+  --neutral-900: #fafafa;
+
+  /* Legacy Aliases */
+  --light: var(--neutral-100);
+  --dark: var(--neutral-800);
+
+  /* Override glass morphism for dark mode */
+  --foldly-glass-bg-light: var(--foldly-glass-bg);
+  --foldly-glass-bg-light-solid: var(--foldly-glass-bg-solid);
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* =============================================================================
+   BASE STYLES LAYER - Prevents conflicts with Tailwind utilities
+   ============================================================================= */
+
+@layer base {
+  html {
+    /* Fallback background color to prevent flash of unstyled content */
+    background-color: #020618;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #020618; /* Match intro section initial color */
+    color: #ffffff;
+    @apply antialiased;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    /* Smooth theme transitions for all children */
+    transition: var(--transition-colors);
+  }
+
+  /* Apply transitions to all elements for smooth theme changes */
+  body * {
+    transition:
+      var(--transition-colors),
+      fill var(--duration-normal) var(--ease-default),
+      stroke var(--duration-normal) var(--ease-default);
+  }
+
+  /* Headings use display font */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+  }
+
+  /* Body text uses body font */
+  p,
+  li,
+  span {
+    font-family: var(--font-body);
+  }
+
+  /* Monospace elements */
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+}
+
+/* iOS-specific font optimizations */
+@supports (-webkit-touch-callout: none) {
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Optimize font rendering on Retina displays */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    body {
+      -webkit-font-smoothing: subpixel-antialiased;
+    }
+  }
+}
+
+/* macOS-specific font optimizations */
+@media (hover: hover) and (pointer: fine) {
+  body {
+    font-weight: 400;
+    letter-spacing: -0.011em;
+  }
+}
+
+/* ===================================================================== */
+/* FOLDLY BRAND UTILITIES - Gradient Text and Backgrounds */
+/* ===================================================================== */
+
+@utility foldly-gradient-text {
+  background: var(--foldly-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility foldly-gradient-bg {
+  background: var(--foldly-gradient);
+}
+
+/* Glass Morphism Utilities */
+@utility foldly-glass {
+  background: var(--foldly-glass-bg);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+}
+
+@utility foldly-glass-solid {
+  background: var(--foldly-glass-bg-solid);
+  backdrop-filter: blur(var(--foldly-glass-blur));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
+  border: 1px solid var(--foldly-glass-border);
+}
+
+@utility foldly-glass-light {
+  background: var(--foldly-glass-gradient-light);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(32, 34, 34, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+@utility foldly-glass-light-solid {
+  background: radial-gradient(
+    circle 280px at 0% 0%,
+    rgba(68, 68, 68, 0.6),
+    rgba(12, 13, 13, 0.6)
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(32, 34, 34, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Custom Foldly Background Style */
+@utility foldly-glass-shadow-bg {
+  border-top-width: 1px;
+  border-right-width: 1px;
+  border-left-width: 1px;
+  border-style: solid;
+  border-color: oklab(100% 0 5.96046e-8 / 0.2);
+  --tw-shadow:
+    0 12px 20px var(--tw-shadow-color, #ffffff08) inset,
+    0 0 40px var(--tw-shadow-color, #ffffff14) inset,
+    0 0 8px var(--tw-shadow-color, #ffffff08) inset,
+    0 0 12px var(--tw-shadow-color, #ffffff0d) inset,
+    0 1px 1px var(--tw-shadow-color, #ffffff1f) inset;
+  box-shadow:
+    var(--tw-inset-shadow), var(--tw-inset-ring-shadow),
+    var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+}
+
+/* Glass highlight effect class - apply alongside glass utilities */
+.glass-highlight::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(136, 136, 136, 0.5) 30%,
+    rgba(29, 31, 31, 0.5) 70%
+  );
+  pointer-events: none;
+}
+
+/* Font utility classes */
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
+
+@utility font-mono {
+  font-family: var(--font-mono);
+}
+
+@utility font-condensed {
+  font-family: var(--font-condensed);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* Animated gradient effect for landing page */
+@keyframes gradient {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
