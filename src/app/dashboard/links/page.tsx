@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { UserLinks, LinksSkeleton } from '@/modules/links';
 import { ModuleErrorBoundary } from '@/components/core/ModuleErrorBoundary';
-import { FadeTransitionWrapper } from '@/components/layout/PageFadeRevealEffect';
+import { PageFadeRevealEffect } from '@/components/layout/PageFadeRevealEffect';
 
 export const metadata: Metadata = {
   title: 'Links - Foldly',
@@ -11,12 +11,12 @@ export const metadata: Metadata = {
 export default function LinksPage() {
   return (
     <ModuleErrorBoundary moduleName="links">
-      <FadeTransitionWrapper
+      <PageFadeRevealEffect
         isLoading={false}
         loadingComponent={<LinksSkeleton />}
       >
         <UserLinks />
-      </FadeTransitionWrapper>
+      </PageFadeRevealEffect>
     </ModuleErrorBoundary>
   );
 }

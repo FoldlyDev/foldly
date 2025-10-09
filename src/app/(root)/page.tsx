@@ -1,4 +1,4 @@
-import { LandingPageContainer } from '@/features/landing';
+import { LandingPageContainer } from '@/modules/landing';
 
 /**
  * Home page - Server Component

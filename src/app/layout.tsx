@@ -4,7 +4,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/shadcn/sonner";
 import { PerformanceMonitor } from "@/components/core/PerformanceMonitor";
-import PageTransition from "@/components/layout/PageTransitionEffect";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -81,7 +80,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <PageTransition>{children}</PageTransition>
+          {children}
           <Toaster />
           <SpeedInsights />
           <Analytics />

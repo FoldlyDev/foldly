@@ -9,7 +9,7 @@ import {
   IoSparklesOutline,
 } from 'react-icons/io5';
 import { Spotlight } from '../ui/spotlight';
-import { ShimmeringText } from '@/components/ui/animate-ui/components/shimmering';
+import { Shimmering } from '@/components/ui/animateui';
 
 interface IntroSectionProps {}
 

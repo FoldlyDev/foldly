@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { PrimaryCta } from '@/components/core/primary-cta';
+import { PrimaryCtaButton } from '@/components/buttons/PrimaryCtaButton';
 
 export function OutroSection() {
   return (
@@ -12,7 +12,7 @@ export function OutroSection() {
         </h1>
         <div className='cta-buttons flex justify-center items-center mb-20'>
           <Link href='/sign-up' className='no-underline'>
-            <PrimaryCta />
+            <PrimaryCtaButton>Get Started Free</PrimaryCtaButton>
           </Link>
         </div>
         <div className='trust-signals text-sm text-black'>

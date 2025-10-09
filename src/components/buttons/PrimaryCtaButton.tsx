@@ -7,7 +7,7 @@ interface PrimaryCtaProps
   className?: string;
 }
 
-export const PrimaryCta = React.forwardRef<HTMLButtonElement, PrimaryCtaProps>(
+export const PrimaryCtaButton = React.forwardRef<HTMLButtonElement, PrimaryCtaProps>(
   ({ children, className, ...props }, ref) => {
     return (
       <button
@@ -226,4 +226,4 @@ export const PrimaryCta = React.forwardRef<HTMLButtonElement, PrimaryCtaProps>(
   }
 );
 
-PrimaryCta.displayName = "PrimaryCta";
+PrimaryCtaButton.displayName = "PrimaryCtaButton";

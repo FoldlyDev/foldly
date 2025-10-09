@@ -6,7 +6,7 @@
 import { type Metadata } from 'next';
 import { Billing, BillingSkeleton } from '@/modules/billing';
 import { ModuleErrorBoundary } from '@/components/core/ModuleErrorBoundary';
-import { FadeTransitionWrapper } from '@/components/layout/PageFadeRevealEffect';
+import { PageFadeRevealEffect } from '@/components/layout/PageFadeRevealEffect';
 
 export const metadata: Metadata = {
   title: 'Billing & Subscription | Foldly',
@@ -19,12 +19,12 @@ export default function BillingPage() {
 
   return (
     <ModuleErrorBoundary moduleName="billing">
-      <FadeTransitionWrapper
+      <PageFadeRevealEffect
         isLoading={false}
         loadingComponent={<BillingSkeleton />}
       >
         <Billing />
-      </FadeTransitionWrapper>
+      </PageFadeRevealEffect>
     </ModuleErrorBoundary>
   );
 }

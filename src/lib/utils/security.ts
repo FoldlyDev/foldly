@@ -5,7 +5,7 @@
 // For path traversal prevention, IP validation, and input sanitization
 
 import path from 'path';
-import { logger } from '@/lib/services/logging/logger';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Sanitizes file paths to prevent directory traversal attacks
@@ -25,9 +25,8 @@ export function sanitizePath(filePath: string, basePath: string): string | null 
     
     // Check if the resolved path is within the base path
     if (!absolutePath.startsWith(absoluteBase)) {
-      logger.logSecurityEvent(
-        'Path traversal attempt detected',
-        'high',
+      logger.error(
+        '[SECURITY] Path traversal attempt detected',
         { attemptedPath: filePath, basePath }
       );
       return null;
@@ -170,18 +169,16 @@ export function sanitizeUserId(userId: string | null | undefined): string | null
   
   // Check if sanitization changed the ID
   if (sanitized !== userId) {
-    logger.logSecurityEvent(
-      'User ID sanitization required',
-      'medium',
+    logger.warn(
+      '[SECURITY] User ID sanitization required',
       { original: userId, sanitized }
     );
   }
   
   // Ensure reasonable length
   if (sanitized.length > 128) {
-    logger.logSecurityEvent(
-      'User ID too long',
-      'medium',
+    logger.warn(
+      '[SECURITY] User ID too long',
       { userId: sanitized.substring(0, 50) + '...' }
     );
     return null;
@@ -200,9 +197,8 @@ export function isValidFolderId(folderId: string | null | undefined): boolean {
   
   // Check for path traversal attempts
   if (folderId.includes('..') || folderId.includes('/') || folderId.includes('\\')) {
-    logger.logSecurityEvent(
-      'Invalid folder ID detected',
-      'high',
+    logger.error(
+      '[SECURITY] Invalid folder ID detected',
       { folderId }
     );
     return false;

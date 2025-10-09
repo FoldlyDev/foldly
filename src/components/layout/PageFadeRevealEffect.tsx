@@ -15,7 +15,7 @@ interface FadeTransitionWrapperProps {
  * FadeTransitionWrapper handles smooth fade-out transitions when content loads.
  * It ensures skeleton loaders fade out gracefully instead of disappearing abruptly.
  */
-export function FadeTransitionWrapper({
+export function PageFadeRevealEffect({
   isLoading,
   loadingComponent,
   children,

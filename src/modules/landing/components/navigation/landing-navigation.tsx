@@ -5,8 +5,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useNavigationAnimation } from '../../hooks/useNavigationAnimation';
-import { useOnboardingStatus } from '@/features/onboarding/hooks/use-onboarding-status';
-import { SecondaryCTAButton, TertiaryCTAButton } from '@/components/core';
+import { useOnboardingStatus } from '@/hooks';
+import { SecondaryCtaButton } from '@/components/buttons/SecondaryCtaButton';
+import { TertiaryCtaButton } from '@/components/buttons/TertiaryCtaButton';
 import { useRouter } from 'next/navigation';
 
 interface NavLink {
@@ -147,28 +148,28 @@ export function LandingNavigation() {
           <div>
             {!isSignedIn ? (
               // Not logged in: Get Started button (Primary action - use Secondary)
-              <SecondaryCTAButton
+              <SecondaryCtaButton
                 onClick={handleButtonClick}
                 className='text-sm'
               >
                 Get Started
-              </SecondaryCTAButton>
+              </SecondaryCtaButton>
             ) : !hasCompletedOnboarding ? (
               // Logged in but not onboarded: Complete Onboarding (Important - use Secondary)
-              <SecondaryCTAButton
+              <SecondaryCtaButton
                 onClick={handleButtonClick}
                 className='text-sm'
               >
                 Complete Onboarding
-              </SecondaryCTAButton>
+              </SecondaryCtaButton>
             ) : (
               // Logged in and onboarded: Personal Space (Less prominent - use Tertiary)
-              <TertiaryCTAButton
+              <TertiaryCtaButton
                 onClick={handleButtonClick}
                 className='text-sm'
               >
                 Personal Space
-              </TertiaryCTAButton>
+              </TertiaryCtaButton>
             )}
           </div>
         )}

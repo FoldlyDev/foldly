@@ -22,7 +22,7 @@ export const useNavigationContext = () => {
   return context;
 };
 
-export function DashboardLayoutWrapper({
+export function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;

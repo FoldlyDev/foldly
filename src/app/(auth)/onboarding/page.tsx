@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { OnboardingContainer } from '@/features/onboarding';
-import { checkOnboardingStatusAction } from '@/features/onboarding/lib/actions';
+import { Onboarding } from '@/modules/onboarding';
+import { checkOnboardingStatus } from '@/lib/actions';
 
 export default async function OnboardingPage() {
   // Auth check handled by middleware
 
-  const status = await checkOnboardingStatusAction();
+  const status = await checkOnboardingStatus();
 
   // If user has a workspace, redirect to dashboard
   if (status.hasWorkspace) {
@@ -13,5 +13,5 @@ export default async function OnboardingPage() {
   }
 
   // User is authenticated but has no workspace, show onboarding
-  return <OnboardingContainer />;
+  return <Onboarding />;
 }

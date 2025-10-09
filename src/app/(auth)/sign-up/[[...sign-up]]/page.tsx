@@ -1,13 +1,9 @@
 'use client';
 
 import { ClerkLoaded, ClerkLoading, SignUp } from '@clerk/nextjs';
-import { ArrowLeft } from '@/components/ui/animate-ui/icons/arrow-left';
-import { AnimateIcon } from '@/components/ui/animate-ui/icons/icon';
-import { ContentLoader } from '@/components/feedback/content-loader';
-import { BubbleBackground } from '@/components/core/bubble';
+import { ArrowLeft } from 'lucide-react';
+import { BubbleBackground } from '@/components/ui/animateui/bubble';
 import { useEffect, useState } from 'react';
-
-import '@/features/auth/styles/auth-pages.css';
 
 export default function SignUpPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -23,15 +19,13 @@ export default function SignUpPage() {
 
         {/* Back button */}
         <a href='/' className='auth-back-button' aria-label='Back to home'>
-          <AnimateIcon>
-            <ArrowLeft />
-          </AnimateIcon>
+          <ArrowLeft className="w-5 h-5" />
           Back
         </a>
 
         {/* Loading state for SSR */}
         <div className='flex flex-col items-center justify-center gap-6 p-8 bg-neutral-50 border border-neutral-200 rounded-2xl shadow-xl max-w-md w-full relative z-10'>
-          <ContentLoader size='lg' />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
           <p className='text-neutral-600 text-sm font-medium text-center m-0'>
             Loading authentication...
           </p>
@@ -46,16 +40,14 @@ export default function SignUpPage() {
 
       {/* Back button */}
       <a href='/' className='auth-back-button' aria-label='Back to home'>
-        <AnimateIcon>
-          <ArrowLeft />
-        </AnimateIcon>
+        <ArrowLeft className="w-5 h-5" />
         Back
       </a>
 
       {/* Loading state */}
       <ClerkLoading>
         <div className='flex flex-col items-center justify-center gap-6 p-8 bg-neutral-50 border border-neutral-200 rounded-2xl shadow-xl max-w-md w-full relative z-10'>
-          <ContentLoader size='lg' />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-900"></div>
           <p className='text-neutral-600 text-sm font-medium text-center m-0'>
             Loading authentication...
           </p>

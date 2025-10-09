@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Analytics, AnalyticsSkeleton } from '@/modules/analytics';
 import { ModuleErrorBoundary } from '@/components/core/ModuleErrorBoundary';
-import { FadeTransitionWrapper } from '@/components/layout/PageFadeRevealEffect';
+import { PageFadeRevealEffect } from '@/components/layout/PageFadeRevealEffect';
 
 export const metadata: Metadata = {
   title: 'Analytics & Insights | Foldly',
@@ -14,7 +14,7 @@ export default function AnalyticsPage() {
 
   return (
     <ModuleErrorBoundary moduleName="analytics">
-      <FadeTransitionWrapper
+      <PageFadeRevealEffect
         isLoading={false}
         loadingComponent={<AnalyticsSkeleton />}
       >
@@ -23,7 +23,7 @@ export default function AnalyticsPage() {
         // isLoading={false}
         // error={null}
         />
-      </FadeTransitionWrapper>
+      </PageFadeRevealEffect>
     </ModuleErrorBoundary>
   );
 }

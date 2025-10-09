@@ -79,10 +79,21 @@ src/
 │   ├── uploads/          # File upload handling
 │   └── workspace/        # Main workspace/file management
 │
+├── hooks/                # Global hooks (organized by purpose)
+│   ├── data/            # Data fetching hooks (wrap server actions)
+│   │   ├── use-onboarding-status.ts
+│   │   └── use-user-workspace.ts
+│   └── ui/              # UI utility hooks
+│       └── use-scroll-position.ts
+│
 ├── lib/                  # Core utilities and configurations
+│   ├── actions/         # Global server actions (cross-module)
+│   │   ├── onboarding.actions.ts
+│   │   └── workspace.actions.ts
 │   ├── config/          # Configuration files (query-client, supabase, performance)
 │   ├── database/        # Database layer
 │   │   ├── schemas/     # Drizzle ORM schemas (users, workspaces, links, folders, files, permissions)
+│   │   ├── queries/     # Reusable database queries (called by actions)
 │   │   ├── migrations/  # Database migration utilities
 │   │   └── connection.ts # Database connection setup
 │   └── utils/           # Utility functions (security, logger, browser-detection)
@@ -97,9 +108,13 @@ Each feature module (`src/modules/*`) is self-contained with:
 - `components/views/` - Top-level view components
 - `components/sections/` - Section components (if applicable)
 - `components/ui/` - Module-specific UI components
-- `hooks/` - Custom React hooks (if applicable)
-- `lib/actions/` - Server actions (if applicable)
+- `hooks/` - Module-specific React hooks
+- `lib/actions/` - Module-specific server actions
 - `index.ts` - Module exports
+
+**Global vs Module-Specific**:
+- **Global** (`src/lib/actions`, `src/hooks`): Cross-module functionality used in 3+ places
+- **Module-Specific** (`src/modules/{name}/lib/actions`, `src/modules/{name}/hooks`): Feature-specific logic
 
 #### Database Schema (V2)
 Six core tables using Drizzle ORM:
@@ -139,11 +154,52 @@ import { UserWorkspace } from '@/modules/workspace';
 - Use shadcn/ui components from `@/components/ui/shadcn/*`
 - Custom CTA buttons available in `@/components/buttons/*`
 
+### Data Flow Pattern
+
+**Three-Layer Architecture**:
+```
+CLIENT          →  REACT QUERY HOOK   →  SERVER ACTION     →  DATABASE QUERY
+(Component)        (src/hooks/data/)      (src/lib/actions/)   (src/lib/database/queries/)
+                        ↓                        ↓                      ↓
+                   useOnboardingStatus()  checkOnboardingStatus()  getUserWorkspace()
+```
+
+**Rules**:
+1. **Client components** call hooks from `@/hooks`
+2. **Hooks** wrap server actions with React Query
+3. **Server actions** handle auth + business logic, call database queries
+4. **Database queries** are pure Drizzle operations (reusable)
+
+### Server Actions & Hooks
+
+**Global Actions** (`src/lib/actions/`):
+```typescript
+// Use for cross-module operations (3+ modules)
+import { checkOnboardingStatus, getUserWorkspaceAction } from '@/lib/actions';
+```
+
+**Global Hooks** (`src/hooks/`):
+```typescript
+// Use in any client component
+import { useOnboardingStatus, useUserWorkspace } from '@/hooks';
+
+function MyComponent() {
+  const { data: status, isLoading } = useOnboardingStatus();
+  const { data: workspace } = useUserWorkspace();
+}
+```
+
+**Module Actions** (`src/modules/{name}/lib/actions/`):
+```typescript
+// Use for feature-specific logic (1-2 modules)
+// Example: src/modules/links/lib/actions/link.actions.ts
+```
+
 ### Database Operations
-- Import database connection: `import { db } from '@/lib/database/connection'`
+- **In server actions**: Import from `@/lib/database/queries`
+- **Never in client components**: Actions enforce server boundary
 - Import schemas: `import { users, workspaces } from '@/lib/database/schemas'`
 - Use Drizzle ORM query builder (never raw SQL)
-- Use `postgres` package for direct queries if absolutely necessary
 
 ### Animation Architecture (Landing Page)
 The landing page uses a sophisticated animation orchestrator:
@@ -197,17 +253,18 @@ Key environment variables (see `.env.local`):
 
 **Branch**: `v2/major-refactor`
 
-**Phase**: Foundation (Week 1-2) - 83% Complete (5/6 tasks)
+**Phase**: Foundation (Week 1-2) - 86% Complete (6/7 tasks)
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
 - ✅ Migrations generated and pushed to Supabase
+- ✅ Global actions & hooks layer (cross-module data operations)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
 
 **Next Steps** (per `docs/execution/README.md`):
-1. Build onboarding flow to capture username and trigger user auto-generation (no webhook needed)
+1. Build onboarding UI (username input + workspace creation)
 2. Set up Google Cloud Storage bucket
 3. Implement base UI components (shadcn/ui)
 
@@ -215,13 +272,23 @@ Key environment variables (see `.env.local`):
 
 ## Key Files to Know
 
+**Core Setup**:
 - `src/middleware.ts` - Authentication routing logic
 - `src/app/providers.tsx` - Global provider setup
-- `src/lib/database/connection.ts` - Database connection singleton
-- `src/lib/database/schemas/index.ts` - All database schemas
-- `drizzle.config.ts` - Drizzle Kit configuration
 - `next.config.ts` - Next.js build configuration
 - `vitest.config.mts` - Test configuration
+
+**Database Layer**:
+- `src/lib/database/connection.ts` - Database connection singleton
+- `src/lib/database/schemas/index.ts` - All database schemas
+- `src/lib/database/queries/index.ts` - Reusable database queries
+- `drizzle.config.ts` - Drizzle Kit configuration
+
+**Global Actions & Hooks**:
+- `src/lib/actions/index.ts` - Global server actions
+- `src/hooks/index.ts` - All global hooks (data + UI)
+
+**Documentation**:
 - `docs/execution/README.md` - Implementation tracking
 - `docs/planning/features/mvp-features.md` - MVP feature checklist
 

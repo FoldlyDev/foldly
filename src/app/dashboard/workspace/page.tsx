@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { UserWorkspace, WorkspaceSkeleton } from '@/modules/workspace';
 import { ModuleErrorBoundary } from '@/components/core/ModuleErrorBoundary';
-import { FadeTransitionWrapper } from '@/components/layout/PageFadeRevealEffect';
+import { PageFadeRevealEffect } from '@/components/layout/PageFadeRevealEffect';
 
 export const metadata: Metadata = {
   title: 'Dashboard Workspace | Foldly',
@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 export default function WorkspacePage() {
   return (
     <ModuleErrorBoundary moduleName="workspace">
-      <FadeTransitionWrapper
+      <PageFadeRevealEffect
         isLoading={false}
         loadingComponent={<WorkspaceSkeleton />}
       >
         <UserWorkspace />
-      </FadeTransitionWrapper>
+      </PageFadeRevealEffect>
     </ModuleErrorBoundary>
   );
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { gsap } from "gsap";
 
-const PageTransition = ({ children }: { children: React.ReactNode }) => {
+export const PageTransitionEffect = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -156,4 +156,3 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default PageTransition;

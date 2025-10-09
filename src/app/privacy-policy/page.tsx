@@ -1,9 +1,7 @@
 'use client';
 
-import { BubbleBackground } from '@/components/core/bubble';
-import { ArrowLeft } from '@/components/ui/animate-ui/icons/arrow-left';
-import { AnimateIcon } from '@/components/ui/animate-ui/icons/icon';
-import '@/features/auth/styles/auth-pages.css';
+import { BubbleBackground } from '@/components/ui/animateui/bubble';
+import { ArrowLeft } from 'lucide-react';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -17,9 +15,7 @@ export default function PrivacyPolicyPage() {
       <div className='relative z-10 flex flex-col items-center justify-start min-h-screen'>
         {/* Back button */}
         <a href='/' className='auth-back-button' aria-label='Back to home'>
-          <AnimateIcon>
-            <ArrowLeft />
-          </AnimateIcon>
+          <ArrowLeft className="w-5 h-5" />
           Back
         </a>
 

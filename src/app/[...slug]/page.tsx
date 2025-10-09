@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { LinkUploadContainer } from '@/features/link-upload/components/views/LinkUploadContainer';
-import { validateLinkAccessAction } from '@/features/link-upload/lib/actions/link-data-actions';
+import { Uploads } from '@/modules/uploads';
+import { validateLinkAccessAction } from '@/modules/uploads/lib/actions/link-data-actions';
 
 interface LinkUploadPageProps {
   params: Promise<{
@@ -10,7 +10,7 @@ interface LinkUploadPageProps {
 
 export default async function LinkUploadPage({ params }: LinkUploadPageProps) {
   const { slug } = await params;
-  
+
   const linkValidation = await validateLinkAccessAction({
     slugParts: slug,
   });
@@ -19,5 +19,5 @@ export default async function LinkUploadPage({ params }: LinkUploadPageProps) {
     notFound();
   }
 
-  return <LinkUploadContainer linkData={linkValidation.data} />;
+  return <Uploads linkData={linkValidation.data} />;
 }

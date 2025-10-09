@@ -1,6 +1,8 @@
-import { DashboardLayoutWrapper } from "@/components/layout/DashboardLayout";
+import { redirect } from 'next/navigation';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { checkOnboardingStatus } from '@/lib/actions';
 
-export default function DashboardLayout({
+export default async function DashboardLayoutPage({
   children,
 }: {
   children: React.ReactNode;
@@ -8,12 +10,12 @@ export default function DashboardLayout({
   // Auth check handled by middleware
 
   // Check if user has completed onboarding
-  // const onboardingStatus = await checkOnboardingStatusAction();
+  const onboardingStatus = await checkOnboardingStatus();
 
   // If user hasn't completed onboarding (no workspace), redirect to onboarding
-  // if (!onboardingStatus.hasWorkspace) {
-  //   redirect('/onboarding');
-  // }
+  if (!onboardingStatus.hasWorkspace) {
+    redirect('/onboarding');
+  }
 
-  return <DashboardLayoutWrapper>{children}</DashboardLayoutWrapper>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 }

@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { type LucideIcon } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { type LucideIcon } from "lucide-react";
 
-interface SecondaryCTAButtonProps {
+interface SecondaryCtaButtonProps {
   children: React.ReactNode;
   icon?: LucideIcon;
   href?: string;
   onClick?: () => void;
   className?: string;
   disabled?: boolean;
-  type?: 'button' | 'submit' | 'reset';
-  target?: '_blank' | '_self' | '_parent' | '_top';
+  type?: "button" | "submit" | "reset";
+  target?: "_blank" | "_self" | "_parent" | "_top";
   rel?: string;
 }
 
-export const SecondaryCTAButton = React.forwardRef<
+export const SecondaryCtaButton = React.forwardRef<
   HTMLButtonElement | HTMLAnchorElement,
-  SecondaryCTAButtonProps
+  SecondaryCtaButtonProps
 >(
   (
     {
@@ -29,69 +29,69 @@ export const SecondaryCTAButton = React.forwardRef<
       onClick,
       className,
       disabled = false,
-      type = 'button',
+      type = "button",
       target,
       rel,
       ...props
     },
     ref
   ) => {
-    const baseClasses = 'secondary-cta-btn cta foldly-glass';
+    const baseClasses = "secondary-cta-btn cta foldly-glass";
     const combinedClasses = cn(baseClasses, className);
 
     const content = (
       <>
         {/* Content */}
-        <span className='relative z-20 flex items-center gap-2'>
-          {Icon && <Icon className='w-5 h-5' />}
+        <span className="relative z-20 flex items-center gap-2">
+          {Icon && <Icon className="w-5 h-5" />}
           {children}
         </span>
 
         {/* Particles */}
         <div
-          className='secondary-cta-particle'
+          className="secondary-cta-particle"
           style={
             {
-              '--tx': '-20px',
-              '--ty': '-15px',
-              left: '25%',
-              top: '25%',
+              "--tx": "-20px",
+              "--ty": "-15px",
+              left: "25%",
+              top: "25%",
             } as React.CSSProperties
           }
         />
         <div
-          className='secondary-cta-particle'
+          className="secondary-cta-particle"
           style={
             {
-              '--tx': '15px',
-              '--ty': '-20px',
-              left: '75%',
-              top: '25%',
-              animationDelay: '0.2s',
+              "--tx": "15px",
+              "--ty": "-20px",
+              left: "75%",
+              top: "25%",
+              animationDelay: "0.2s",
             } as React.CSSProperties
           }
         />
         <div
-          className='secondary-cta-particle'
+          className="secondary-cta-particle"
           style={
             {
-              '--tx': '-15px',
-              '--ty': '15px',
-              left: '25%',
-              top: '75%',
-              animationDelay: '0.4s',
+              "--tx": "-15px",
+              "--ty": "15px",
+              left: "25%",
+              top: "75%",
+              animationDelay: "0.4s",
             } as React.CSSProperties
           }
         />
         <div
-          className='secondary-cta-particle'
+          className="secondary-cta-particle"
           style={
             {
-              '--tx': '20px',
-              '--ty': '15px',
-              left: '75%',
-              top: '75%',
-              animationDelay: '0.6s',
+              "--tx": "20px",
+              "--ty": "15px",
+              left: "75%",
+              top: "75%",
+              animationDelay: "0.6s",
             } as React.CSSProperties
           }
         />
@@ -128,4 +128,4 @@ export const SecondaryCTAButton = React.forwardRef<
   }
 );
 
-SecondaryCTAButton.displayName = 'SecondaryCTAButton';
+SecondaryCtaButton.displayName = "SecondaryCtaButton";

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 
-const Logo = forwardRef<SVGSVGElement>((props, ref) => {
+export const FoldlyLogo = forwardRef<SVGSVGElement>((props, ref) => {
   return (
     <svg
       ref={ref}
@@ -23,6 +23,4 @@ const Logo = forwardRef<SVGSVGElement>((props, ref) => {
   );
 });
 
-Logo.displayName = 'Logo';
-
-export default Logo;
+FoldlyLogo.displayName = 'FoldlyLogo';

@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { LayoutDashboard } from "lucide-react";
-import { ActionButton } from "../../core/action-button";
-import { useScrollPosition } from "@/lib/hooks/use-scroll-position";
+import { TertiaryCtaButton } from "@/components/buttons/TertiaryCtaButton";
+import { useScrollPosition } from "@/hooks";
 import { cn } from "@/lib/utils";
 
 export function Navigation() {
@@ -48,10 +48,7 @@ export function Navigation() {
           // Signed in: Show dashboard button + user button
           <>
             <Link href="/dashboard/workspace" className="no-underline">
-              <ActionButton
-                variant="default"
-                size="sm"
-                motionType="lift"
+              <TertiaryCtaButton
                 className={cn(
                   // Responsive button styling
                   "px-3 py-2 text-xs",
@@ -62,7 +59,7 @@ export function Navigation() {
                 <LayoutDashboard className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
                 <span className="sm:hidden">Dash</span>
-              </ActionButton>
+              </TertiaryCtaButton>
             </Link>
             <div className="flex items-center">
               <UserButton
@@ -80,10 +77,7 @@ export function Navigation() {
         ) : (
           // Signed out: Show sign in button
           <Link href="/sign-in" className="no-underline">
-            <ActionButton
-              variant="default"
-              size="sm"
-              motionType="lift"
+            <TertiaryCtaButton
               className={cn(
                 // Responsive button styling
                 "px-3 py-2 text-xs",
@@ -92,7 +86,7 @@ export function Navigation() {
               )}
             >
               Sign In
-            </ActionButton>
+            </TertiaryCtaButton>
           </Link>
         )}
       </div>

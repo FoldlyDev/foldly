@@ -1,6 +1,6 @@
 # Foldly V2 Execution Documentation
 
-Last Updated: October 8, 2025
+Last Updated: October 9, 2025
 
 This directory tracks **what has been implemented** in Foldly V2. For planning and design decisions, see [`/docs/planning`](../planning).
 
@@ -37,6 +37,7 @@ execution/
 |-----------|--------|----------|-------|
 | **Database Schema** | ✅ Completed | `database/schema.md` | 6 tables implemented with Drizzle ORM |
 | **Database Migration** | ✅ Completed | `drizzle/0000_superb_sway.sql` | Schema pushed to Supabase |
+| **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
 | GCS Setup | ⏳ Pending | - | Storage bucket configuration |
@@ -79,6 +80,42 @@ execution/
 3. Implement base UI components (shadcn/ui)
 
 **Documentation**: [Database Schema Spec](./database/schema.md)
+
+### ✅ Global Actions & Hooks Layer (October 9, 2025)
+
+**Implementation Files**:
+- `src/lib/database/queries/workspace.queries.ts`
+- `src/lib/database/queries/index.ts`
+- `src/lib/actions/onboarding.actions.ts`
+- `src/lib/actions/workspace.actions.ts`
+- `src/lib/actions/index.ts`
+- `src/hooks/data/use-onboarding-status.ts`
+- `src/hooks/data/use-user-workspace.ts`
+- `src/hooks/data/index.ts`
+- `src/hooks/ui/use-scroll-position.ts`
+- `src/hooks/ui/index.ts`
+- `src/hooks/index.ts`
+
+**Implemented Patterns**:
+- Database queries layer for reusable operations
+- Global server actions for cross-module functionality
+- React Query hooks wrapping server actions
+- Organized hooks structure (`data/` and `ui/` subdirectories)
+
+**Cross-Module Functionality**:
+- `checkOnboardingStatus()` - Used by landing nav, dashboard layout, onboarding page
+- `getUserWorkspaceAction()` - Get authenticated user's workspace
+- `createUserWorkspaceAction()` - Create workspace during onboarding
+- `useOnboardingStatus()` - Client hook for onboarding status
+- `useUserWorkspace()` - Client hook for workspace data
+- `useCreateWorkspace()` - Mutation hook for workspace creation
+
+**Status**:
+- ✅ Database queries layer implemented
+- ✅ Global server actions created
+- ✅ Global hooks layer established
+- ✅ Broken imports fixed across codebase
+- ✅ Type-checked and verified
 
 ---
 
@@ -185,12 +222,13 @@ When implementing a new feature:
 ## Summary
 
 **Current Phase**: Foundation (Week 1-2)
-**Progress**: 5/6 foundation tasks completed (83%)
-**Next Up**: Build onboarding flow and set up Google Cloud Storage
+**Progress**: 6/7 foundation tasks completed (86%)
+**Next Up**: Build onboarding UI and set up Google Cloud Storage
 
 **Completed**:
 - ✅ Database schema design and implementation
 - ✅ Database migration generated and pushed to Supabase
+- ✅ Global actions & hooks layer (cross-module data operations)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
 - ✅ Clerk authentication configured
@@ -202,6 +240,6 @@ When implementing a new feature:
 - None
 
 **Remaining Tasks**:
-- Onboarding flow (username capture + user auto-generation)
+- Onboarding UI implementation (username input + workspace creation)
 - Google Cloud Storage bucket setup
 - Base UI components (shadcn/ui)
