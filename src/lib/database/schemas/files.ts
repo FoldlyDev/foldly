@@ -69,24 +69,6 @@ export const files = pgTable(
   })
 );
 
-// Additional indexes
-export const filesWorkspaceIdIdx = index("files_workspace_id_idx").on(
-  files.workspaceId
-);
-export const filesParentFolderIdIdx = index("files_parent_folder_id_idx").on(
-  files.parentFolderId
-);
-export const filesLinkIdIdx = index("files_link_id_idx").on(files.linkId);
-
-// Core V2 feature: Email-based filtering
-export const filesUploaderEmailIdx = index("files_uploader_email_idx").on(
-  files.uploaderEmail
-);
-// Composite index for fast "all files from X email in workspace Y" queries
-export const filesWorkspaceUploaderIdx = index(
-  "files_workspace_uploader_idx"
-).on(files.workspaceId, files.uploaderEmail);
-
 // Relations
 export const filesRelations = relations(files, ({ one }) => ({
   workspace: one(workspaces, {

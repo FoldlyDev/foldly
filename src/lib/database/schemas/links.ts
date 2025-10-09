@@ -25,7 +25,7 @@ export const links = pgTable("links", {
   workspaceId: text("workspace_id")
     .notNull()
     .references(() => workspaces.id, { onDelete: "cascade" }), // FK to workspaces
-  slug: varchar("slug", { length: 100 }).notNull(), // Globally unique slug for URL
+  slug: varchar("slug", { length: 100 }).notNull().unique(), // Globally unique slug for URL
   name: varchar("name", { length: 255 }).notNull(), // Display name
 
   // Link configuration
@@ -45,13 +45,6 @@ export const links = pgTable("links", {
     .defaultNow()
     .notNull(),
 });
-
-// Indexes
-export const linksSlugIdx = uniqueIndex("links_slug_idx").on(links.slug); // Globally unique slugs
-export const linksWorkspaceIdIdx = index("links_workspace_id_idx").on(
-  links.workspaceId
-);
-export const linksIsActiveIdx = index("links_is_active_idx").on(links.isActive);
 
 // Relations
 export const linksRelations = relations(links, ({ one, many }) => ({

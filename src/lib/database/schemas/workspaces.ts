@@ -22,6 +22,7 @@ export const workspaces = pgTable("workspaces", {
   id: text("id").primaryKey().notNull(), // UUID
   userId: text("user_id")
     .notNull()
+    .unique() // Enforce 1:1 relationship (MVP)
     .references(() => users.id, { onDelete: "cascade" }), // FK to users (cascade delete)
   name: varchar("name", { length: 255 }).notNull(), // Display name (e.g., "Eddy's Workspace")
 
@@ -33,11 +34,6 @@ export const workspaces = pgTable("workspaces", {
     .defaultNow()
     .notNull(),
 });
-
-// Indexes
-export const workspacesUserIdIdx = uniqueIndex("workspaces_user_id_idx").on(
-  workspaces.userId
-); // Enforce 1:1 relationship (MVP)
 
 // Relations
 export const workspacesRelations = relations(workspaces, ({ one, many }) => ({

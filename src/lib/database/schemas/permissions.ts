@@ -69,17 +69,6 @@ export const permissions = pgTable(
   })
 );
 
-// Additional indexes
-export const permissionsLinkIdIdx = index("permissions_link_id_idx").on(
-  permissions.linkId
-);
-export const permissionsEmailIdx = index("permissions_email_idx").on(
-  permissions.email
-);
-export const permissionsRoleIdx = index("permissions_role_idx").on(
-  permissions.role
-);
-
 // Relations
 export const permissionsRelations = relations(permissions, ({ one }) => ({
   link: one(links, {

@@ -60,20 +60,6 @@ export const folders = pgTable(
   })
 );
 
-// Additional indexes
-export const foldersWorkspaceIdIdx = index("folders_workspace_id_idx").on(
-  folders.workspaceId
-);
-export const foldersLinkIdIdx = index("folders_link_id_idx").on(
-  folders.linkId
-);
-export const foldersParentFolderIdIdx = index(
-  "folders_parent_folder_id_idx"
-).on(folders.parentFolderId);
-export const foldersUploaderEmailIdx = index("folders_uploader_email_idx").on(
-  folders.uploaderEmail
-); // Core V2 feature: filter by uploader email
-
 // Relations
 export const foldersRelations = relations(folders, ({ one, many }) => ({
   workspace: one(workspaces, {

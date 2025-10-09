@@ -83,15 +83,3 @@ export const users = pgTable("users", {
     .defaultNow()
     .notNull(),
 });
-
-// Indexes - defined separately (new Drizzle ORM pattern)
-export const usersUsernameIdx = uniqueIndex("users_username_idx").on(
-  users.username
-);
-export const usersEmailIdx = uniqueIndex("users_email_idx").on(users.email);
-export const usersSubscriptionStatusIdx = index(
-  "users_subscription_status_idx"
-).on(users.subscriptionStatus);
-export const usersDeletedAtIdx = index("users_deleted_at_idx").on(
-  users.deletedAt
-);
