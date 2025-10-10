@@ -1,1 +1,1 @@
-export { LandingNavigation } from './landing-navigation';
+export { LandingNavigation } from './LandingNavigation';

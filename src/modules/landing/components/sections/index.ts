@@ -1,6 +1,6 @@
-export { AboutSection } from './about-section';
-export { DemoSection } from './demo-section';
-export { FeatureHighlightSection } from './feature-highlight-section';
-export { FooterSection } from './footer-section';
-export { IntroSection } from './intro-section';
-export { OutroSection } from './outro-section';
+export { AboutSection } from './AboutSection';
+export { DemoSection } from './DemoSection';
+export { FeatureHighlightSection } from './FeatureHighlightSection';
+export { FooterSection } from './FooterSection';
+export { IntroSection } from './IntroSection';
+export { OutroSection } from './OutroSection';

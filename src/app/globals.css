@@ -4,8 +4,8 @@
 @import "tailwindcss";
 
 /* Shared CSS Values - Must be imported first for variable availability */
-@import "../styles/utilities/shared-values.css";
-@import "../styles/utilities/base-elements.css";
+/* @import "../styles/utilities/shared-values.css";
+@import "../styles/utilities/base-elements.css"; */
 
 /* =============================================================================
    TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
@@ -67,57 +67,21 @@
 }
 
 /* =============================================================================
-   COMPONENT STYLES IMPORTS
+   GLOBAL COMPONENT STYLES IMPORTS - Centralized Organization
    ============================================================================= */
+/* Note: Module-specific styles (landing, dashboard modules, etc.) are imported
+   in their respective page files for better code splitting and performance.
+   Example: landing styles in app/(root)/page.tsx */
 
-/* =============================================================================
-   FEATURE-BASED STYLES IMPORTS (2025 Architecture)
-   ============================================================================= */
+/* 🎨 Button Styles */
+@import "../components/styles/buttons/primary-cta-button.css";
+@import "../components/styles/buttons/secondary-cta-button.css";
+@import "../components/styles/buttons/animated-logo-button.css";
 
-/* 🚀 Landing Feature Styles */
-@import "../modules/landing/styles/menu.css";
-@import "../modules/landing/styles/landing-page.css";
-@import "../modules/landing/styles/intro-section.css";
-@import "../modules/landing/styles/feature-highlight-section.css";
-@import "../modules/landing/styles/about-section.css";
-@import "../modules/landing/styles/demo-section.css";
-@import "../modules/landing/styles/outro-section.css";
-@import "../modules/landing/styles/footer-section.css";
-@import "../modules/landing/styles/cards.css";
-
-/* 🔐 Auth Feature Styles */
-@import "../features/auth/styles/auth-pages.css";
-
-/* 🌐 Global UI Component Styles */
-@import "../styles/components/ui/content-loader.css";
-@import "../styles/components/ui/modal.css";
-@import "../styles/components/ui/context-menu.css";
-@import "../styles/components/ui/button.css";
-@import "../styles/components/ui/secondary-cta-button.css";
-@import "../styles/components/ui/form.css";
-@import "../styles/components/ui/card.css";
-@import "../styles/components/ui/indicators.css";
-@import "../styles/components/core/primary-cta.css";
-@import "../styles/features/animated-logo-button.css";
-@import "../styles/components/page-transition.css";
-
-/* 🏗️ Dashboard Feature Styles */
-@import "../styles/components/layout/dashboard-navigation.css";
-@import "../styles/components/layout/dashboard-layout.css";
-@import "../styles/features/dashboard-container.css";
-@import "../features/links/styles/links-page.css";
-@import "../features/links/styles/link-cards.css";
-
-/* 📁 Workspace Feature Styles */
-@import "../features/workspace/styles/workspace.css";
-@import "../features/files/styles/files.css";
-
-/* 🔗 Link Upload Feature Styles */
-@import "../features/link-upload/styles/link-upload.css";
-
-/* 🔔 Notifications Feature Styles */
-@import "../features/notifications/styles/toast.css";
-@import "tw-animate-css";
+/* 🏗️ Layout Styles */
+@import "../components/styles/layout/dashboard-layout.css";
+@import "../components/styles/layout/dashboard-navigation.css";
+@import "../components/styles/layout/page-transition-effect.css";
 
 @custom-variant dark (&:is(.dark *));
 

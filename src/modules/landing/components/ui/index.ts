@@ -1,3 +1,3 @@
-export { AnimationErrorBoundary } from './animation-error-boundary';
-export { HeroHighlight } from './hero-highlight';
-export { Spotlight } from './spotlight';
+export { AnimationErrorBoundary } from "./AnimationErrorBoundary";
+export { HeroHighlight } from "./HeroHighlight";
+export { Spotlight } from "./Spotlight";

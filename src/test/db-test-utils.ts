@@ -30,7 +30,6 @@ export async function createTestUser(userId?: string) {
     .insert(users)
     .values({
       id: testUserId,
-      clerkUserId: testUserId,
       username: uniqueUsername,
       email: `test_${testUserId}@example.com`,
     })
@@ -116,7 +115,7 @@ export async function cleanupTestLink(slug: string) {
 export async function verifyTestDatabaseConnection() {
   try {
     const result = await db.execute('SELECT 1 as test');
-    return result.rows.length > 0;
+    return result.length > 0;
   } catch (error) {
     console.error('Test database connection failed:', error);
     return false;

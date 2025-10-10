@@ -8,7 +8,7 @@ import {
   IoPeopleOutline,
   IoSparklesOutline,
 } from 'react-icons/io5';
-import { Spotlight } from '../ui/spotlight';
+import { Spotlight } from '../ui/Spotlight';
 import { Shimmering } from '@/components/ui/animateui';
 
 interface IntroSectionProps {}

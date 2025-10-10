@@ -1,0 +1,70 @@
+/* =============================================================================
+   SECONDARY CTA BUTTON - Dark Matter Animation Style
+   ============================================================================= */
+
+.secondary-cta-btn {
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  z-index: 1;
+}
+
+.secondary-cta-btn:hover {
+  box-shadow: 0 0 15px rgba(20, 156, 234, 0.4);
+  color: #fff;
+}
+
+.secondary-cta-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at center,
+    rgba(20, 156, 234, 0.1) 0%,
+    transparent 70%
+  );
+  transform: scale(0);
+  transition: transform 0.6s ease;
+  z-index: -1;
+}
+
+.secondary-cta-btn:hover::before {
+  transform: scale(1.5);
+}
+
+.secondary-cta-particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #149cea;
+  opacity: 0;
+  z-index: -1;
+}
+
+.secondary-cta-btn:hover .secondary-cta-particle {
+  animation: secondary-cta-float 2s forwards;
+}
+
+@keyframes secondary-cta-float {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(1);
+    opacity: 0;
+  }
+}

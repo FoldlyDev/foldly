@@ -1,21 +1,21 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
-import { IntroSection } from '../sections/intro-section';
+import { IntroSection } from '../sections/IntroSection';
 import { useIntroSectionAnimation } from '../../hooks/useIntroSectionAnimation';
-import { AnimationErrorBoundary } from '../ui/animation-error-boundary';
+import { AnimationErrorBoundary } from '../ui/AnimationErrorBoundary';
 import {
   FeatureHighlightSection,
   type FeatureHighlightSectionRefs,
-} from '../sections/feature-highlight-section';
-import { AboutSection, type AboutSectionRefs } from '../sections/about-section';
-import { DemoSection, type DemoSectionRefs } from '../sections/demo-section';
-import { OutroSection } from '../sections/outro-section';
+} from '../sections/FeatureHighlightSection';
+import { AboutSection, type AboutSectionRefs } from '../sections/AboutSection';
+import { DemoSection, type DemoSectionRefs } from '../sections/DemoSection';
+import { OutroSection } from '../sections/OutroSection';
 import {
   FooterSection,
   type FooterSectionRefs,
-} from '../sections/footer-section';
-import { LandingNavigation } from '../navigation/landing-navigation';
+} from '../sections/FooterSection';
+import { LandingNavigation } from '../navigation/LandingNavigation';
 import { useLenisScroll } from '../../hooks/useLenisScroll';
 import { useFeatureHighlightSectionAnimation } from '../../hooks/useFeatureHighlightSectionAnimation';
 import { useDemoSectionAnimation } from '../../hooks/useDemoSectionAnimation';
@@ -23,10 +23,10 @@ import { useAboutSectionAnimation } from '../../hooks/useAboutSectionAnimation';
 import { useLandingAnimationOrchestrator } from '../../hooks/useLandingAnimationOrchestrator';
 
 /**
- * Client-side container component for the landing page
+ * Landing page view component
  * Handles all hooks and client-side logic while keeping the page component as Server Component
  */
-export function LandingPageContainer() {
+export function Landing() {
   // State
   const [isReady, setIsReady] = useState(false);
 
