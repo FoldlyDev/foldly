@@ -21,6 +21,8 @@ execution/
 ├── README.md (this file)
 ├── database/
 │   └── schema.md               - ✅ Database schema implementation
+├── testing/
+│   └── testing-guide.md        - ✅ Testing strategy & patterns
 ├── api/
 │   └── (API endpoint specs)     - ⏳ Coming soon
 └── components/
@@ -164,11 +166,15 @@ Nothing currently in progress.
 
 ## Testing Status
 
-| Category | Status | Coverage | Notes |
-|----------|--------|----------|-------|
-| Database Schema | ⏳ Pending | 0% | Need to write schema validation tests |
-| API Endpoints | ⏳ Pending | 0% | No endpoints implemented yet |
-| UI Components | ⏳ Pending | 0% | No components implemented yet |
+| Category | Status | Tests | Notes |
+|----------|--------|-------|-------|
+| Database Queries | ✅ Completed | 6 tests | Workspace CRUD operations |
+| Server Actions (Global) | ✅ Completed | 11 tests | Onboarding & workspace actions |
+| Security Utilities | ✅ Completed | 22 tests | Slug generation, sanitization |
+| Module Actions (Uploads) | ✅ Completed | 8 tests | Link validation & access |
+| **Total** | **✅ Active** | **47 tests** | 5 test suites, all passing |
+
+**Documentation**: [Testing Guide](./testing/testing-guide.md)
 
 ---
 

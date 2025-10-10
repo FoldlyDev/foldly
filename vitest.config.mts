@@ -9,5 +9,26 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/**',
+        '**/*.test.ts',
+        '**/*.test.tsx',
+        '**/*.config.{ts,js,mts}',
+        '**/types.ts',
+        'drizzle/**',
+        '.next/**',
+        'scripts/**',
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 75,
+        statements: 80,
+      },
+    },
   },
 });
