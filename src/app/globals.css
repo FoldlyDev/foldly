@@ -11,7 +11,7 @@
    TAILWIND V4 THEME CONFIGURATION - CSS-First Approach
    ============================================================================= */
 
-@theme {
+@theme inline {
   /* Custom Breakpoints - Mobile-First Responsive Design */
   --breakpoint-xs: 30rem; /* 480px - Extra small devices */
   --breakpoint-sm: 40rem; /* 640px - Small devices */
@@ -64,6 +64,9 @@
   /* Custom Shadows */
   --shadow-brand: 0 25px 50px -12px rgb(195 225 247 / 0.25);
   --shadow-brand-lg: 0 35px 60px -12px rgb(195 225 247 / 0.4);
+  --shadow-input:
+    0px 2px 3px -1px rgba(0, 0, 0, 0.1), 0px 1px 0px 0px rgba(25, 28, 33, 0.02),
+    0px 0px 0px 1px rgba(25, 28, 33, 0.08);
 }
 
 /* =============================================================================
@@ -481,6 +484,11 @@
   font-family: var(--font-condensed);
   font-weight: 900;
   letter-spacing: -0.02em;
+}
+
+/* Shadow utilities */
+@utility shadow-input {
+  box-shadow: var(--shadow-input);
 }
 
 /* Animated gradient effect for landing page */

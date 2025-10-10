@@ -1,170 +1,52 @@
 "use client";
 
-import * as React from "react";
-import {
-  motion,
-  type SpringOptions,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-
+import { memo } from "react";
+import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-type BubbleBackgroundProps = React.ComponentProps<"div"> & {
-  interactive?: boolean;
-  transition?: SpringOptions;
-  colors?: {
-    first: string;
-    second: string;
-    third: string;
-    fourth: string;
-    fifth: string;
-    sixth: string;
-  };
+type BubbleBackgroundProps = React.ComponentProps<"div">;
+
+const backgroundBlobVariants: Variants = {
+  animate: {
+    x: [0, 30, -20, 0],
+    y: [0, -50, 20, 0],
+    scale: [1, 1.1, 0.9, 1],
+    transition: {
+      duration: 7,
+      repeat: Infinity,
+      repeatType: "reverse" as const,
+    },
+  },
 };
 
-function BubbleBackground({
-  ref,
-  className,
-  children,
-  interactive = false,
-  transition = { stiffness: 100, damping: 20 },
-  colors = {
-    first: "195,225,247", // Primary: #C3E1F7 (light blue)
-    second: "154,190,222", // Secondary: #9ABEDE (medium blue)
-    third: "220,235,250", // Lighter variation of primary (very light blue)
-    fourth: "180,210,240", // Light blue variation
-    fifth: "200,220,245", // Another light blue variation
-    sixth: "160,200,230", // Light blue for visual interest
-  },
-  ...props
-}: BubbleBackgroundProps) {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  React.useImperativeHandle(ref, () => containerRef.current as HTMLDivElement);
+const BackgroundBlobs = memo(() => (
+  <div className="absolute inset-0 overflow-hidden">
+    <motion.div
+      className="absolute top-1/4 -left-4 w-48 sm:w-72 h-48 sm:h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-xl opacity-20 dark:opacity-30"
+      variants={backgroundBlobVariants}
+      animate="animate"
+    />
+    <motion.div
+      className="absolute top-1/3 -right-4 w-48 sm:w-72 h-48 sm:h-72 bg-yellow-300 dark:bg-yellow-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-xl opacity-20 dark:opacity-30"
+      variants={backgroundBlobVariants}
+      animate="animate"
+      transition={{ delay: 2 }}
+    />
+    <motion.div
+      className="absolute -bottom-8 left-20 w-48 sm:w-72 h-48 sm:h-72 bg-pink-300 dark:bg-pink-900 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-xl opacity-20 dark:opacity-30"
+      variants={backgroundBlobVariants}
+      animate="animate"
+      transition={{ delay: 4 }}
+    />
+  </div>
+));
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, transition);
-  const springY = useSpring(mouseY, transition);
+BackgroundBlobs.displayName = "BackgroundBlobs";
 
-  React.useEffect(() => {
-    if (!interactive) return;
-
-    const currentContainer = containerRef.current;
-    if (!currentContainer) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = currentContainer.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      mouseX.set(e.clientX - centerX);
-      mouseY.set(e.clientY - centerY);
-    };
-
-    currentContainer?.addEventListener("mousemove", handleMouseMove);
-    return () =>
-      currentContainer?.removeEventListener("mousemove", handleMouseMove);
-  }, [interactive, mouseX, mouseY]);
-
+function BubbleBackground({}: BubbleBackgroundProps) {
   return (
-    <div
-      ref={containerRef}
-      data-slot="bubble-background"
-      className={cn("relative size-full overflow-hidden z-0", className)}
-      {...props}
-    >
-      <style>
-        {`
-            :root {
-              --first-color: ${colors.first};
-              --second-color: ${colors.second};
-              --third-color: ${colors.third};
-              --fourth-color: ${colors.fourth};
-              --fifth-color: ${colors.fifth};
-              --sixth-color: ${colors.sixth};
-            }
-          `}
-      </style>
-
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="absolute top-0 left-0 w-0 h-0"
-      >
-        <defs>
-          <filter id="goo">
-            <feGaussianBlur
-              in="SourceGraphic"
-              stdDeviation="10"
-              result="blur"
-            />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8"
-              result="goo"
-            />
-            <feBlend in="SourceGraphic" in2="goo" />
-          </filter>
-        </defs>
-      </svg>
-
-      <div
-        className="absolute inset-0"
-        style={{ filter: "url(#goo) blur(40px)" }}
-      >
-        <motion.div
-          className="absolute rounded-full size-[80%] top-[10%] left-[10%] mix-blend-hard-light bg-[radial-gradient(circle_at_center,rgba(var(--first-color),0.8)_0%,rgba(var(--first-color),0)_50%)]"
-          animate={{ y: [-50, 50, -50] }}
-          transition={{ duration: 30, ease: "easeInOut", repeat: Infinity }}
-        />
-
-        <motion.div
-          className="absolute inset-0 flex justify-center items-center origin-[calc(50%-400px)]"
-          animate={{ rotate: 360 }}
-          transition={{
-            duration: 20,
-            ease: "linear",
-            repeat: Infinity,
-            repeatType: "loop",
-          }}
-        >
-          <div className="rounded-full size-[80%] top-[10%] left-[10%] mix-blend-hard-light bg-[radial-gradient(circle_at_center,rgba(var(--second-color),0.8)_0%,rgba(var(--second-color),0)_50%)]" />
-        </motion.div>
-
-        <motion.div
-          className="absolute inset-0 flex justify-center items-center origin-[calc(50%+400px)]"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 40, ease: "linear", repeat: Infinity }}
-        >
-          <div className="absolute rounded-full size-[80%] bg-[radial-gradient(circle_at_center,rgba(var(--third-color),0.8)_0%,rgba(var(--third-color),0)_50%)] mix-blend-hard-light top-[calc(50%+200px)] left-[calc(50%-500px)]" />
-        </motion.div>
-
-        <motion.div
-          className="absolute rounded-full size-[80%] top-[10%] left-[10%] mix-blend-hard-light bg-[radial-gradient(circle_at_center,rgba(var(--fourth-color),0.8)_0%,rgba(var(--fourth-color),0)_50%)] opacity-70"
-          animate={{ x: [-50, 50, -50] }}
-          transition={{ duration: 40, ease: "easeInOut", repeat: Infinity }}
-        />
-
-        <motion.div
-          className="absolute inset-0 flex justify-center items-center origin-[calc(50%_-_800px)_calc(50%_+_200px)]"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 20, ease: "linear", repeat: Infinity }}
-        >
-          <div className="absolute rounded-full size-[160%] mix-blend-hard-light bg-[radial-gradient(circle_at_center,rgba(var(--fifth-color),0.8)_0%,rgba(var(--fifth-color),0)_50%)] top-[calc(50%-80%)] left-[calc(50%-80%)]" />
-        </motion.div>
-
-        {interactive && (
-          <motion.div
-            className="absolute rounded-full size-full mix-blend-hard-light bg-[radial-gradient(circle_at_center,rgba(var(--sixth-color),0.8)_0%,rgba(var(--sixth-color),0)_50%)] opacity-70"
-            style={{
-              x: springX,
-              y: springY,
-            }}
-          />
-        )}
-      </div>
-
-      {children}
+    <div>
+      <BackgroundBlobs />
     </div>
   );
 }

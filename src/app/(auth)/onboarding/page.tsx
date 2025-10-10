@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { Onboarding } from '@/modules/onboarding';
+import { OnboardingView } from '@/modules/auth';
 import { checkOnboardingStatus } from '@/lib/actions';
 
 export default async function OnboardingPage() {
@@ -13,5 +13,5 @@ export default async function OnboardingPage() {
   }
 
   // User is authenticated but has no workspace, show onboarding
-  return <Onboarding />;
+  return <OnboardingView />;
 }
