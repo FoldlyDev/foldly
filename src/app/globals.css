@@ -486,11 +486,6 @@
   letter-spacing: -0.02em;
 }
 
-/* Shadow utilities */
-@utility shadow-input {
-  box-shadow: var(--shadow-input);
-}
-
 /* Animated gradient effect for landing page */
 @keyframes gradient {
   0%,

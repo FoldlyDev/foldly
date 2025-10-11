@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
         hostname: "images.clerk.dev",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "em-content.zobj.net",
+        pathname: "/**",
+      },
     ],
   },
 

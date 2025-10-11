@@ -5,7 +5,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/shadcn/sonner";
 import { PerformanceMonitor } from "@/components/core/PerformanceMonitor";
 import { Providers } from "./providers";
+
 import "./globals.css";
+import "ldrs/react/DotStream.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

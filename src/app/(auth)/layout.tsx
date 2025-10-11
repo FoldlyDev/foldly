@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import "@/modules/auth/styles/shared/auth.css";
 import { BubbleBackground } from "@/components/ui/animateui/bubble";
+
+import "@/modules/auth/styles/shared/auth.css";
 
 export const metadata: Metadata = {
   title: {
