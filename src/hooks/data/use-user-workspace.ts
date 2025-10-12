@@ -8,7 +8,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getUserWorkspaceAction,
-  createUserWorkspaceAction,
   updateWorkspaceNameAction,
 } from '@/lib/actions';
 
@@ -31,28 +30,14 @@ export function useUserWorkspace() {
 }
 
 /**
- * Create workspace for user (onboarding flow)
+ * NOTE: Workspace creation is handled by the onboarding flow via completeOnboardingAction(),
+ * which creates user, workspace, link, and permission atomically in a single transaction.
  *
- * Used by:
- * - Onboarding module (create workspace after username selection)
+ * MVP Constraint: 1:1 user-workspace relationship (one workspace per user)
  *
- * @returns Mutation to create workspace
+ * Individual workspace creation will be added in future when multiple workspaces
+ * per user are supported (post-MVP feature).
  */
-export function useCreateWorkspace() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ username }: { username: string }) =>
-      createUserWorkspaceAction(username),
-    onSuccess: (result) => {
-      if (result.success) {
-        // Invalidate both workspace and onboarding status queries
-        queryClient.invalidateQueries({ queryKey: ['user-workspace'] });
-        queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
-      }
-    },
-  });
-}
 
 /**
  * Update workspace name

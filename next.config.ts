@@ -17,6 +17,77 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
   },
 
+  // Security headers
+  async headers() {
+    return [
+      {
+        // Apply security headers to all routes
+        source: "/:path*",
+        headers: [
+          {
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              // Default: only allow from same origin
+              "default-src 'self'",
+              // Scripts: allow self, Clerk, and inline scripts (for Next.js)
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com",
+              // Styles: allow self, inline styles (for Tailwind/Framer Motion), and external stylesheets
+              "style-src 'self' 'unsafe-inline'",
+              // Images: allow self, data URIs, Clerk CDN, and whitelisted domains
+              "img-src 'self' data: https: blob: https://img.clerk.com https://images.clerk.dev https://em-content.zobj.net",
+              // Fonts: allow self and data URIs
+              "font-src 'self' data:",
+              // Connect: allow self, Clerk API, Supabase, and Vercel
+              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.supabase.co wss://*.supabase.co https://vercel.live",
+              // Frames: allow Clerk for embedded components
+              "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
+              // Workers: allow self and blob for service workers
+              "worker-src 'self' blob:",
+              // Media: allow self
+              "media-src 'self'",
+              // Object: disallow plugins
+              "object-src 'none'",
+              // Base URI: restrict to same origin
+              "base-uri 'self'",
+              // Form actions: restrict to same origin and Clerk
+              "form-action 'self' https://*.clerk.accounts.dev https://*.clerk.com",
+              // Upgrade insecure requests
+              "upgrade-insecure-requests"
+            ].join("; ")
+          },
+        ],
+      },
+    ];
+  },
+
   // Server configuration
   serverExternalPackages: ["postgres"],
 

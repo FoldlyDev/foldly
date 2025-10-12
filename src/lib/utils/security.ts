@@ -216,12 +216,136 @@ export function isValidFolderId(folderId: string | null | undefined): boolean {
  */
 export function hashForLogging(data: string): string {
   if (!data) return '[empty]';
-  
+
   // For logging purposes, we'll use a simple obfuscation
   // In production, consider using a proper hashing algorithm
   const length = data.length;
   const prefix = data.substring(0, 3);
   const suffix = data.substring(Math.max(0, length - 3));
-  
+
   return `${prefix}***${suffix} (${length} chars)`;
+}
+
+// =============================================================================
+// INPUT SANITIZATION
+// =============================================================================
+// Sanitization functions for user inputs to prevent injection and XSS attacks
+
+/**
+ * Sanitizes username to prevent injection attacks
+ * @param username - Username to sanitize
+ * @returns Sanitized username safe for storage and display
+ */
+export function sanitizeUsername(username: string | null | undefined): string {
+  if (!username) return '';
+
+  // Trim and convert to lowercase for consistency
+  const trimmed = username.trim().toLowerCase();
+
+  // Remove all characters except alphanumeric, hyphens, and underscores
+  const sanitized = trimmed.replace(/[^a-z0-9_-]/g, '');
+
+  // Enforce maximum length of 50 characters
+  const limited = sanitized.slice(0, 50);
+
+  // Log warning if sanitization changed the input significantly
+  if (limited !== trimmed) {
+    logger.warn(
+      '[SECURITY] Username sanitization applied',
+      { original: hashForLogging(trimmed), sanitized: hashForLogging(limited) }
+    );
+  }
+
+  return limited;
+}
+
+/**
+ * Sanitizes email address to prevent injection attacks
+ * @param email - Email address to sanitize
+ * @returns Sanitized email or empty string if invalid
+ */
+export function sanitizeEmail(email: string | null | undefined): string {
+  if (!email) return '';
+
+  // Trim whitespace
+  const trimmed = email.trim().toLowerCase();
+
+  // Basic email format validation (RFC 5322 simplified)
+  const emailRegex = /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i;
+
+  if (!emailRegex.test(trimmed)) {
+    logger.warn(
+      '[SECURITY] Invalid email format detected',
+      { email: hashForLogging(trimmed) }
+    );
+    return '';
+  }
+
+  // Enforce maximum length (RFC 5321: 320 characters)
+  if (trimmed.length > 320) {
+    logger.warn(
+      '[SECURITY] Email exceeds maximum length',
+      { length: trimmed.length }
+    );
+    return '';
+  }
+
+  return trimmed;
+}
+
+/**
+ * Escapes HTML special characters to prevent XSS attacks
+ * @param text - Text to escape
+ * @returns HTML-escaped text safe for rendering
+ */
+export function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+
+  const htmlEscapeMap: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#x27;',
+    '/': '&#x2F;',
+  };
+
+  return text.replace(/[&<>"'/]/g, (char) => htmlEscapeMap[char] || char);
+}
+
+/**
+ * Sanitizes folder/file name to prevent path traversal and injection
+ * @param name - Folder or file name to sanitize
+ * @returns Sanitized name safe for filesystem operations
+ */
+export function sanitizeFileName(name: string | null | undefined): string {
+  if (!name) return '';
+
+  // Trim whitespace
+  const trimmed = name.trim();
+
+  // Remove path separators and special characters
+  let sanitized = trimmed
+    .replace(/[\/\\]/g, '') // Remove path separators
+    .replace(/\.\./g, '')   // Remove parent directory references
+    .replace(/[<>:"|?*]/g, ''); // Remove Windows-invalid characters
+
+  // Ensure filename doesn't start with a dot (hidden file)
+  if (sanitized.startsWith('.')) {
+    sanitized = sanitized.substring(1);
+  }
+
+  // Enforce maximum length (255 for most filesystems)
+  sanitized = sanitized.slice(0, 255);
+
+  // Log if significant changes were made
+  if (sanitized !== trimmed) {
+    logger.warn(
+      '[SECURITY] Filename sanitization applied',
+      { original: hashForLogging(trimmed), sanitized: hashForLogging(sanitized) }
+    );
+  }
+
+  // Return sanitized name or fallback to 'untitled'
+  return sanitized || 'untitled';
 }

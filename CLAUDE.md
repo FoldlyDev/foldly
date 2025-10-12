@@ -199,7 +199,14 @@ function MyComponent() {
 - **In server actions**: Import from `@/lib/database/queries`
 - **Never in client components**: Actions enforce server boundary
 - Import schemas: `import { users, workspaces } from '@/lib/database/schemas'`
+- Import types: `import type { User, Workspace } from '@/lib/database/schemas'`
 - Use Drizzle ORM query builder (never raw SQL)
+
+### User Management
+User operations follow the three-layer architecture:
+- **Database Queries**: `getUserById()`, `createUser()`, `updateUser()`, `getUserByEmail()`, etc.
+- **Server Actions**: `createUserAction()`, `getUserAction()`, `updateUserProfileAction()`
+- **Important**: User must be created in database BEFORE workspace (foreign key dependency)
 
 ### Animation Architecture (Landing Page)
 The landing page uses a sophisticated animation orchestrator:
@@ -253,20 +260,21 @@ Key environment variables (see `.env.local`):
 
 **Branch**: `v2/major-refactor`
 
-**Phase**: Foundation (Week 1-2) - 86% Complete (6/7 tasks)
+**Phase**: Foundation (Week 1-2) - 78% Complete (7/9 tasks)
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
 - ✅ Migrations generated and pushed to Supabase
-- ✅ Global actions & hooks layer (cross-module data operations)
+- ✅ Global actions & hooks layer (user management, workspace, onboarding)
+- ✅ Onboarding flow with username capture and workspace creation
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
 
 **Next Steps** (per `docs/execution/README.md`):
-1. Build onboarding UI (username input + workspace creation)
-2. Set up Google Cloud Storage bucket
-3. Implement base UI components (shadcn/ui)
+1. Set up Google Cloud Storage bucket
+2. Implement base UI components (shadcn/ui)
+3. Build file upload functionality
 
 **Planning Documentation**: See `/docs/planning/` for design decisions, MVP features, and tech stack details.
 
@@ -280,12 +288,18 @@ Key environment variables (see `.env.local`):
 
 **Database Layer**:
 - `src/lib/database/connection.ts` - Database connection singleton
-- `src/lib/database/schemas/index.ts` - All database schemas
+- `src/lib/database/schemas/index.ts` - All database schemas and types
 - `src/lib/database/queries/index.ts` - Reusable database queries
+- `src/lib/database/queries/user.queries.ts` - User CRUD operations (7 functions)
+- `src/lib/database/queries/workspace.queries.ts` - Workspace operations
+- `src/lib/database/queries/permission.queries.ts` - Permission operations
 - `drizzle.config.ts` - Drizzle Kit configuration
 
 **Global Actions & Hooks**:
 - `src/lib/actions/index.ts` - Global server actions
+- `src/lib/actions/user.actions.ts` - User management actions (3 actions)
+- `src/lib/actions/workspace.actions.ts` - Workspace actions
+- `src/lib/actions/onboarding.actions.ts` - Onboarding flow actions
 - `src/hooks/index.ts` - All global hooks (data + UI)
 
 **Documentation**:

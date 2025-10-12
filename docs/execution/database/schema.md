@@ -278,36 +278,37 @@ gs://foldly-files/
    ↓
 3. User enters username during onboarding
    ↓
-4. On onboarding completion, create user in database
+4. Check username availability in Clerk (with reverification)
+   ↓
+5. Create user in database FIRST (required for foreign key)
    - id: Clerk user ID
    - email: from Clerk
    - username: from onboarding form
    ↓
-5. Create workspace
+6. Create workspace
    - name: "{firstName}'s Workspace" or "{username}'s Workspace"
+   - user_id: Clerk user ID (foreign key)
    ↓
-6. Create first link
-   - slug: username (from onboarding)
-   - name: username
+7. Create first link
+   - slug: "{username}-first-link"
+   - name: "{username}-first-link"
    - is_public: false
    - is_active: true
    ↓
-7. Create root folder for link
-   - name: "{username}-files"
-   - link_id: first link ID
-   - parent_folder_id: NULL
-   - uploader_email: NULL (owner-created)
-   ↓
-8. Create owner permission
+8. Create owner permission (automatically in createDefaultLinkAction)
    - link_id: first link ID
    - email: user's email
    - role: 'owner'
    - is_verified: 'true'
+   ↓
+9. Sync username to Clerk (last step for rollback safety)
 ```
 
-**Result**: User can immediately share `foldly.com/{username}` and start collecting files
+**Result**: User can immediately share `foldly.com/{username}/{slug}` and start collecting files
 
-**Note**: This flow is triggered programmatically during the onboarding process, NOT via Clerk webhook
+**Implementation**: Fully implemented in `OnboardingForm.tsx` with 4-step progress indicator
+
+**Key Design Decision**: Database operations complete BEFORE Clerk username sync to ensure rollback safety
 
 ---
 
@@ -383,14 +384,15 @@ drizzle/
 
 ---
 
-## Next Steps
+## Implementation Status
 
 1. ✅ Schema files created
 2. ✅ Migrations generated: `npm run generate`
 3. ✅ Pushed to database: `npm run push`
-4. ⏳ Build onboarding flow to capture username and trigger auto-generation
-5. ⏳ Build API endpoints/server actions for CRUD operations
-6. ⏳ Set up Google Cloud Storage bucket
+4. ✅ Onboarding flow implemented (username capture + auto-generation)
+5. ✅ User management layer (queries + actions + tests)
+6. ⏳ Build additional API endpoints/server actions for file operations
+7. ⏳ Set up Google Cloud Storage bucket
 
 ---
 

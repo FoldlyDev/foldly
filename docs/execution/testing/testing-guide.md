@@ -1,6 +1,6 @@
 # Testing Guide
 
-Last Updated: October 9, 2025
+Last Updated: October 12, 2025
 
 This document covers testing strategy and implementation patterns for Foldly V2.
 
@@ -37,11 +37,15 @@ npm run test:run      # Single run (CI mode)
 
 | Test Suite | Tests | Location |
 |------------|-------|----------|
-| Database Queries | 6 tests | `src/lib/database/queries/__tests__/` |
-| Server Actions (Global) | 11 tests | `src/lib/actions/__tests__/` |
-| Security Utilities | 22 tests | `src/lib/utils/__tests__/` |
-| Module Actions (Uploads) | 8 tests | `src/modules/uploads/lib/actions/__tests__/` |
-| **Total** | **47 tests** | 5 test suites |
+| Database Queries (User) | 28 tests | `src/lib/database/queries/__tests__/user.queries.test.ts` |
+| Database Queries (Workspace) | 6 tests | `src/lib/database/queries/__tests__/workspace.queries.test.ts` |
+| Database Queries (Permission) | 18 tests | `src/lib/database/queries/__tests__/permission.queries.test.ts` |
+| Server Actions (User) | 21 tests | `src/lib/actions/__tests__/user.actions.test.ts` |
+| Server Actions (Onboarding) | 27 tests | `src/lib/actions/__tests__/onboarding.actions.test.ts` |
+| Server Actions (Workspace) | 15 tests | `src/lib/actions/__tests__/workspace.actions.test.ts` |
+| Security Utilities | 22 tests | `src/lib/utils/__tests__/security.test.ts` |
+| Module Actions (Uploads) | 8 tests | `src/modules/uploads/lib/actions/__tests__/link-data-actions.test.ts` |
+| **Total** | **139 tests** | 8 test suites |
 
 ---
 
@@ -55,12 +59,18 @@ src/
 │   ├── database/
 │   │   └── queries/
 │   │       ├── __tests__/              # Database query tests
-│   │       │   └── workspace.queries.test.ts
-│   │       └── workspace.queries.ts
+│   │       │   ├── user.queries.test.ts
+│   │       │   ├── workspace.queries.test.ts
+│   │       │   └── permission.queries.test.ts
+│   │       ├── user.queries.ts
+│   │       ├── workspace.queries.ts
+│   │       └── permission.queries.ts
 │   ├── actions/
 │   │   ├── __tests__/                  # Global server action tests
+│   │   │   ├── user.actions.test.ts
 │   │   │   ├── onboarding.actions.test.ts
 │   │   │   └── workspace.actions.test.ts
+│   │   ├── user.actions.ts
 │   │   ├── onboarding.actions.ts
 │   │   └── workspace.actions.ts
 │   └── utils/
@@ -260,9 +270,30 @@ const { auth } = setupClerkMocks({ authenticated: false });
 ## Testing Best Practices
 
 ### 1. Isolation
-- Each test should be independent
-- Clean up data in `afterEach`
-- Don't rely on test execution order
+Use the `createdUserIds` Set pattern to track and clean up all test data:
+```typescript
+describe('My Tests', () => {
+  const createdUserIds = new Set<string>();
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createdUserIds.clear();
+  });
+
+  afterEach(async () => {
+    const cleanupPromises = Array.from(createdUserIds).map(id => cleanupTestUser(id));
+    await Promise.all(cleanupPromises);
+    createdUserIds.clear();
+  });
+
+  it('should do something', async () => {
+    const user = await createTestUser();
+    createdUserIds.add(user.id);  // Track for cleanup
+    // Test logic...
+  });
+});
+```
+This pattern prevents test pollution and ensures all test data is properly cleaned up.
 
 ### 2. Real Database Operations
 - Use Supabase test database (not mocks)
@@ -309,9 +340,11 @@ export default defineConfig({
     globals: true,                  // Global test APIs
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.{test,spec}.{ts,tsx}'],
+    fileParallelism: false,         // Prevents cross-file test pollution
   },
 });
 ```
+**Note**: `fileParallelism: false` runs test files sequentially to prevent database operations from interfering across files while still allowing parallel execution within each file.
 
 ### Setup File (`vitest.setup.ts`)
 - Imports `@testing-library/jest-dom` matchers
@@ -425,10 +458,16 @@ it('should throw error when violating unique constraint', async () => {
 - Check environment variables are set
 - Verify cleanup runs properly (no data pollution)
 
+### Tests Pass Individually But Fail Together
+- **Symptom**: Tests fail with foreign key violations or "already exists" errors when run together
+- **Cause**: Cross-file test pollution when files run in parallel
+- **Solution**: Already configured with `fileParallelism: false` in vitest config
+- **Prevention**: Always use `createdUserIds` Set pattern for test cleanup
+
 ### Slow Test Execution
 - Database operations are slower than unit tests (expected)
-- Current 47 tests run in ~18 seconds
-- Consider parallelization if suite grows (Vitest supports it)
+- Current 139 tests run in ~60 seconds
+- File parallelism is disabled to prevent test pollution
 
 ---
 
@@ -451,4 +490,4 @@ As the project grows:
 
 ---
 
-**Summary**: 47 tests across 5 suites covering database queries, server actions, and utilities. Use shared test utilities from `@/test/` and follow established patterns for consistency.
+**Summary**: 139 tests across 8 suites covering user management, database queries, server actions, and utilities. Use shared test utilities from `@/test/` and follow the `createdUserIds` Set pattern for test isolation.

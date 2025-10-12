@@ -11,6 +11,8 @@ import {
   getWorkspaceById,
   createWorkspace,
   updateWorkspaceName,
+  createLink,
+  createPermission,
 } from '@/lib/database/queries';
 import type { Workspace } from '@/lib/database/schemas';
 
@@ -128,6 +130,80 @@ export async function updateWorkspaceNameAction(
     return {
       success: false as const,
       error: 'Failed to update workspace',
+    };
+  }
+}
+
+/**
+ * Create the first default link during onboarding
+ *
+ * Used by:
+ * - Onboarding flow (create first link after workspace setup)
+ *
+ * Creates link + owner permission (email-based access control)
+ *
+ * @param workspaceId - ID of the workspace
+ * @param slug - Unique slug for the link
+ * @returns Success status with link data
+ */
+export async function createDefaultLinkAction(workspaceId: string, slug: string) {
+  const { userId } = await auth();
+  const user = await currentUser();
+
+  if (!userId || !user) {
+    return {
+      success: false as const,
+      error: 'Unauthorized',
+    };
+  }
+
+  // Verify user owns this workspace
+  const workspace = await getWorkspaceById(workspaceId);
+  if (!workspace || workspace.userId !== userId) {
+    return {
+      success: false as const,
+      error: 'Workspace not found or unauthorized',
+    };
+  }
+
+  // Get owner email with defensive fallback handling
+  const ownerEmail =
+    user.primaryEmailAddress?.emailAddress ||
+    user.emailAddresses[0]?.emailAddress;
+
+  if (!ownerEmail) {
+    return {
+      success: false as const,
+      error: 'User account must have a valid email address to create workspace',
+    };
+  }
+
+  try {
+    // Step 1: Create the link (using reusable query function)
+    const link = await createLink({
+      workspaceId,
+      slug,
+      name: 'My First Link',
+      isPublic: true,
+    });
+
+    // Step 2: Create owner permission (auto-created per schema comment)
+    // Owner uses their primary email from Clerk
+    await createPermission({
+      linkId: link.id,
+      email: ownerEmail,
+      role: 'owner',
+    });
+
+    return {
+      success: true as const,
+      link,
+    };
+  } catch (error) {
+    console.error('Failed to create default link:', error);
+    return {
+      success: false as const,
+      error: 'Failed to create link',
     };
   }
 }

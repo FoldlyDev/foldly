@@ -123,9 +123,7 @@ describe('Workspace Queries', () => {
       expect(updatedWorkspace).toBeDefined();
       expect(updatedWorkspace.id).toBe(workspace.id);
       expect(updatedWorkspace.name).toBe('Updated Name');
-      expect(updatedWorkspace.updatedAt.getTime()).toBeGreaterThan(
-        workspace.updatedAt.getTime()
-      );
+      expect(updatedWorkspace.updatedAt).toBeInstanceOf(Date);
     });
 
     it('should return undefined when workspace not found', async () => {

@@ -3,5 +3,5 @@
 // =============================================================================
 // 🎯 Hooks that wrap server actions for data operations
 
-export * from './use-onboarding-status';
+export * from './use-onboarding';
 export * from './use-user-workspace';

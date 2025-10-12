@@ -3,5 +3,6 @@
 // =============================================================================
 // 🎯 Cross-module server actions used throughout the application
 
+export * from './user.actions';
 export * from './onboarding.actions';
 export * from './workspace.actions';

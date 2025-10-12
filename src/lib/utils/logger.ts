@@ -85,3 +85,92 @@ export const notificationLogger = createLogger('Notifications', false);
 export const uploadLogger = createLogger('Upload', false);
 export const workspaceLogger = createLogger('Workspace', false);
 export const linksLogger = createLogger('Links', false);
+
+// =============================================================================
+// SECURITY LOGGING
+// =============================================================================
+// Security-specific logging functions for audit trails and monitoring
+
+export interface SecurityEventContext {
+  userId?: string;
+  ip?: string;
+  userAgent?: string;
+  action?: string;
+  resource?: string;
+  [key: string]: any;
+}
+
+export interface RateLimitContext extends SecurityEventContext {
+  limit: number;
+  window: number;
+  attempts: number;
+}
+
+export interface AuthFailureContext extends SecurityEventContext {
+  reason: string;
+  attemptCount?: number;
+}
+
+/**
+ * Security logger - always enabled in production for audit trails
+ */
+export const securityLogger = new Logger({
+  prefix: 'SECURITY',
+  enabled: true, // Always enabled for security events
+  level: 'info'
+});
+
+/**
+ * Logs a general security event
+ * @param message - Description of the security event
+ * @param context - Additional context about the event
+ */
+export function logSecurityEvent(message: string, context: SecurityEventContext = {}): void {
+  const timestamp = new Date().toISOString();
+  securityLogger.info(`[${timestamp}] ${message}`, {
+    timestamp,
+    ...context
+  });
+}
+
+/**
+ * Logs an authentication failure
+ * @param message - Description of the auth failure
+ * @param context - Authentication failure context
+ */
+export function logAuthFailure(message: string, context: AuthFailureContext): void {
+  const timestamp = new Date().toISOString();
+  securityLogger.warn(`[${timestamp}] AUTH FAILURE: ${message}`, {
+    timestamp,
+    severity: 'auth_failure',
+    ...context
+  });
+}
+
+/**
+ * Logs a rate limit violation
+ * @param message - Description of the rate limit violation
+ * @param context - Rate limit context including limits and attempts
+ */
+export function logRateLimitViolation(message: string, context: RateLimitContext): void {
+  const timestamp = new Date().toISOString();
+  securityLogger.warn(`[${timestamp}] RATE LIMIT: ${message}`, {
+    timestamp,
+    severity: 'rate_limit',
+    ...context
+  });
+}
+
+/**
+ * Logs a critical security incident that requires immediate attention
+ * @param message - Description of the security incident
+ * @param context - Incident context
+ */
+export function logSecurityIncident(message: string, context: SecurityEventContext = {}): void {
+  const timestamp = new Date().toISOString();
+  securityLogger.error(`[${timestamp}] SECURITY INCIDENT: ${message}`, {
+    timestamp,
+    severity: 'critical',
+    ...context
+  });
+}

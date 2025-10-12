@@ -39,7 +39,8 @@ execution/
 |-----------|--------|----------|-------|
 | **Database Schema** | ✅ Completed | `database/schema.md` | 6 tables implemented with Drizzle ORM |
 | **Database Migration** | ✅ Completed | `drizzle/0000_superb_sway.sql` | Schema pushed to Supabase |
-| **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer |
+| **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer with user management |
+| **Onboarding Flow** | ✅ Completed | `src/modules/auth` | Username capture, workspace & link creation |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
 | GCS Setup | ⏳ Pending | - | Storage bucket configuration |
@@ -76,20 +77,18 @@ execution/
 - ✅ Migration generated
 - ✅ Schema pushed to Supabase (all 6 tables active)
 
-**Next Steps**:
-1. Build onboarding flow to capture username and trigger user auto-generation
-2. Set up Google Cloud Storage bucket
-3. Implement base UI components (shadcn/ui)
-
 **Documentation**: [Database Schema Spec](./database/schema.md)
 
 ### ✅ Global Actions & Hooks Layer (October 9, 2025)
 
 **Implementation Files**:
 - `src/lib/database/queries/workspace.queries.ts`
+- `src/lib/database/queries/user.queries.ts`
+- `src/lib/database/queries/permission.queries.ts`
 - `src/lib/database/queries/index.ts`
 - `src/lib/actions/onboarding.actions.ts`
 - `src/lib/actions/workspace.actions.ts`
+- `src/lib/actions/user.actions.ts`
 - `src/lib/actions/index.ts`
 - `src/hooks/data/use-onboarding-status.ts`
 - `src/hooks/data/use-user-workspace.ts`
@@ -99,18 +98,18 @@ execution/
 - `src/hooks/index.ts`
 
 **Implemented Patterns**:
+- Three-layer architecture: Client → Hooks → Actions → Queries
 - Database queries layer for reusable operations
 - Global server actions for cross-module functionality
 - React Query hooks wrapping server actions
 - Organized hooks structure (`data/` and `ui/` subdirectories)
 
 **Cross-Module Functionality**:
-- `checkOnboardingStatus()` - Used by landing nav, dashboard layout, onboarding page
-- `getUserWorkspaceAction()` - Get authenticated user's workspace
-- `createUserWorkspaceAction()` - Create workspace during onboarding
-- `useOnboardingStatus()` - Client hook for onboarding status
-- `useUserWorkspace()` - Client hook for workspace data
-- `useCreateWorkspace()` - Mutation hook for workspace creation
+- User Management: `createUserAction()`, `getUserAction()`, `updateUserProfileAction()`
+- Workspace Operations: `getUserWorkspaceAction()`, `createUserWorkspaceAction()`
+- Onboarding: `checkOnboardingStatus()`, `checkUsernameAvailability()`
+- Permission Queries: `getPermissionsByLink()`, `createPermission()`, etc.
+- Client Hooks: `useOnboardingStatus()`, `useUserWorkspace()`, `useCreateWorkspace()`
 
 **Status**:
 - ✅ Database queries layer implemented
@@ -118,6 +117,36 @@ execution/
 - ✅ Global hooks layer established
 - ✅ Broken imports fixed across codebase
 - ✅ Type-checked and verified
+
+---
+
+### ✅ Onboarding Flow (October 11, 2025)
+
+**Implementation Files**:
+- `src/modules/auth/components/forms/OnboardingForm.tsx`
+- `src/app/(auth)/onboarding/page.tsx`
+
+**Key Features**:
+- 4-step onboarding process with visual feedback
+- Username availability checking with Clerk reverification
+- Database user creation before workspace (foreign key dependency)
+- Automatic workspace and first link creation
+- Server-side completion check (redirects if already onboarded)
+- Form validation with disabled state management
+
+**Onboarding Flow**:
+1. Check username availability in Clerk (with reverification)
+2. Create user in database (required for foreign key)
+3. Create workspace with auto-generated name
+4. Create first link with owner permission
+5. Sync username to Clerk (last step for rollback safety)
+
+**Status**:
+- ✅ Multi-step loader with 4 progress stages
+- ✅ Username pre-fill from Clerk if provided during signup
+- ✅ Submit button disabled when field empty or validation fails
+- ✅ Server-side onboarding check implemented
+- ✅ Proper error handling and validation
 
 ---
 
@@ -168,11 +197,15 @@ Nothing currently in progress.
 
 | Category | Status | Tests | Notes |
 |----------|--------|-------|-------|
-| Database Queries | ✅ Completed | 6 tests | Workspace CRUD operations |
-| Server Actions (Global) | ✅ Completed | 11 tests | Onboarding & workspace actions |
+| Database Queries (User) | ✅ Completed | 28 tests | User CRUD operations |
+| Database Queries (Workspace) | ✅ Completed | 6 tests | Workspace CRUD operations |
+| Database Queries (Permission) | ✅ Completed | 12 tests | Permission management operations |
+| Server Actions (User) | ✅ Completed | 21 tests | User creation & profile updates |
+| Server Actions (Onboarding) | ✅ Completed | 10 tests | Onboarding status & username checks |
+| Server Actions (Workspace) | ✅ Completed | 15 tests | Workspace actions, link creation, email fallback |
 | Security Utilities | ✅ Completed | 22 tests | Slug generation, sanitization |
 | Module Actions (Uploads) | ✅ Completed | 8 tests | Link validation & access |
-| **Total** | **✅ Active** | **47 tests** | 5 test suites, all passing |
+| **Total** | **✅ Active** | **122 tests** | 8 test suites, all passing |
 
 **Documentation**: [Testing Guide](./testing/testing-guide.md)
 
@@ -228,13 +261,14 @@ When implementing a new feature:
 ## Summary
 
 **Current Phase**: Foundation (Week 1-2)
-**Progress**: 6/7 foundation tasks completed (86%)
-**Next Up**: Build onboarding UI and set up Google Cloud Storage
+**Progress**: 7/9 foundation tasks completed (78%)
+**Next Up**: Set up Google Cloud Storage and base UI components
 
 **Completed**:
 - ✅ Database schema design and implementation
 - ✅ Database migration generated and pushed to Supabase
-- ✅ Global actions & hooks layer (cross-module data operations)
+- ✅ Global actions & hooks layer (user management, workspace, onboarding)
+- ✅ Onboarding flow with username capture and workspace creation
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
 - ✅ Clerk authentication configured
@@ -246,6 +280,5 @@ When implementing a new feature:
 - None
 
 **Remaining Tasks**:
-- Onboarding UI implementation (username input + workspace creation)
 - Google Cloud Storage bucket setup
 - Base UI components (shadcn/ui)
