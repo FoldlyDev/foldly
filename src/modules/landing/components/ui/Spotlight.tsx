@@ -21,42 +21,42 @@ export const Spotlight = ({
         className='absolute inset-0 flex justify-center overflow-visible'
       >
         {/* Central light beam with radial gradient */}
-        <div 
+        <div
           className='absolute -top-20 left-1/2 -translate-x-1/2 w-[200vw] h-[150%]'
           style={{
-            background: `radial-gradient(ellipse 50% 60% at 50% 0%, 
-              rgba(34, 211, 238, 0.4) 0%, 
-              rgba(34, 211, 238, 0.2) 20%, 
-              rgba(34, 211, 238, 0.1) 40%, 
-              rgba(34, 211, 238, 0.05) 60%, 
+            background: `radial-gradient(ellipse 50% 60% at 50% 0%,
+              rgba(34, 211, 238, 0.4) 0%,
+              rgba(34, 211, 238, 0.2) 20%,
+              rgba(34, 211, 238, 0.1) 40%,
+              rgba(34, 211, 238, 0.05) 60%,
               transparent 100%)`,
           }}
         />
-        
+
         {/* Secondary softer glow */}
-        <div 
+        <div
           className='absolute -top-10 left-1/2 -translate-x-1/2 w-[180vw] h-[130%]'
           style={{
-            background: `radial-gradient(ellipse 60% 70% at 50% 0%, 
-              rgba(34, 211, 238, 0.2) 0%, 
-              rgba(34, 211, 238, 0.1) 30%, 
-              rgba(34, 211, 238, 0.05) 50%, 
+            background: `radial-gradient(ellipse 60% 70% at 50% 0%,
+              rgba(34, 211, 238, 0.2) 0%,
+              rgba(34, 211, 238, 0.1) 30%,
+              rgba(34, 211, 238, 0.05) 50%,
               transparent 80%)`,
           }}
         />
-        
+
         {/* Subtle ambient light */}
-        <div 
+        <div
           className='absolute top-0 left-1/2 -translate-x-1/2 w-[150vw] h-[110%]'
           style={{
-            background: `radial-gradient(ellipse 70% 80% at 50% 0%, 
-              rgba(34, 211, 238, 0.15) 0%, 
-              rgba(34, 211, 238, 0.08) 25%, 
-              rgba(34, 211, 238, 0.03) 50%, 
+            background: `radial-gradient(ellipse 70% 80% at 50% 0%,
+              rgba(34, 211, 238, 0.15) 0%,
+              rgba(34, 211, 238, 0.08) 25%,
+              rgba(34, 211, 238, 0.03) 50%,
               transparent 90%)`,
           }}
         />
-        
+
         {/* Top bright spot */}
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
@@ -67,14 +67,14 @@ export const Spotlight = ({
           }}
           className='absolute -top-10 w-96 h-96'
           style={{
-            background: `radial-gradient(circle at 50% 50%, 
-              rgba(34, 211, 238, 0.6) 0%, 
-              rgba(34, 211, 238, 0.3) 30%, 
+            background: `radial-gradient(circle at 50% 50%,
+              rgba(34, 211, 238, 0.6) 0%,
+              rgba(34, 211, 238, 0.3) 30%,
               transparent 70%)`,
             filter: 'blur(40px)',
           }}
         />
-        
+
         {/* Animated light rays */}
         <motion.div
           animate={{
@@ -87,13 +87,13 @@ export const Spotlight = ({
           }}
           className='absolute -top-5 left-1/2 -translate-x-1/2 w-[100vw] h-[100%]'
           style={{
-            background: `conic-gradient(from 180deg at 50% 0%, 
-              transparent 45deg, 
-              rgba(34, 211, 238, 0.1) 90deg, 
-              transparent 135deg, 
-              rgba(34, 211, 238, 0.1) 180deg, 
-              transparent 225deg, 
-              rgba(34, 211, 238, 0.1) 270deg, 
+            background: `conic-gradient(from 180deg at 50% 0%,
+              transparent 45deg,
+              rgba(34, 211, 238, 0.1) 90deg,
+              transparent 135deg,
+              rgba(34, 211, 238, 0.1) 180deg,
+              transparent 225deg,
+              rgba(34, 211, 238, 0.1) 270deg,
               transparent 315deg)`,
             maskImage: 'radial-gradient(ellipse 80% 100% at 50% 0%, black 0%, transparent 80%)',
             WebkitMaskImage: 'radial-gradient(ellipse 80% 100% at 50% 0%, black 0%, transparent 80%)',
