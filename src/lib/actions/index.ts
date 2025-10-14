@@ -6,3 +6,4 @@
 export * from './user.actions';
 export * from './onboarding.actions';
 export * from './workspace.actions';
+export * from './email.actions';

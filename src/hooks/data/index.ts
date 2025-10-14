@@ -5,3 +5,4 @@
 
 export * from './use-onboarding';
 export * from './use-user-workspace';
+export * from './use-email';

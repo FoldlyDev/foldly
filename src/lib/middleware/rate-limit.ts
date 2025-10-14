@@ -1,9 +1,11 @@
 // =============================================================================
 // RATE LIMITING UTILITY
 // =============================================================================
-// In-memory rate limiting for API endpoints and server actions
+// Distributed rate limiting using Upstash Redis
 // Uses sliding window algorithm for accurate rate limiting
+// Serverless-safe: Works across multiple Vercel instances
 
+import { redis } from '@/lib/redis/client';
 import { logRateLimitViolation, logSecurityEvent } from '@/lib/utils/logger';
 
 interface RateLimitEntry {
@@ -25,103 +27,15 @@ interface RateLimitResult {
 }
 
 /**
- * In-memory rate limit store
- * Note: This is reset on server restart. For production with multiple instances,
- * consider using Redis or Upstash for distributed rate limiting.
+ * Redis key prefix for rate limiting
+ * Keeps rate limit data organized in Redis
  */
-class RateLimitStore {
-  private store: Map<string, RateLimitEntry> = new Map();
-  private cleanupInterval: NodeJS.Timeout | null = null;
-
-  constructor() {
-    // Clean up expired entries every 60 seconds
-    this.startCleanup();
-  }
-
-  /**
-   * Start periodic cleanup of expired entries
-   */
-  private startCleanup(): void {
-    // Only run in server environment
-    if (typeof window === 'undefined') {
-      this.cleanupInterval = setInterval(() => {
-        this.cleanup();
-      }, 60000); // Every 60 seconds
-    }
-  }
-
-  /**
-   * Clean up expired entries from the store
-   */
-  private cleanup(): void {
-    const now = Date.now();
-    const keysToDelete: string[] = [];
-
-    for (const [key, entry] of this.store.entries()) {
-      // Remove if no recent attempts and not blocked
-      const hasRecentAttempts = entry.attempts.some(timestamp => now - timestamp < 3600000); // Keep for 1 hour
-      const isBlocked = entry.blockedUntil && entry.blockedUntil > now;
-
-      if (!hasRecentAttempts && !isBlocked) {
-        keysToDelete.push(key);
-      }
-    }
-
-    keysToDelete.forEach(key => this.store.delete(key));
-
-    if (keysToDelete.length > 0) {
-      logSecurityEvent('Rate limit store cleanup', {
-        action: 'cleanup',
-        entriesRemoved: keysToDelete.length,
-        remainingEntries: this.store.size
-      });
-    }
-  }
-
-  /**
-   * Get entry for a key
-   */
-  get(key: string): RateLimitEntry | undefined {
-    return this.store.get(key);
-  }
-
-  /**
-   * Set entry for a key
-   */
-  set(key: string, entry: RateLimitEntry): void {
-    this.store.set(key, entry);
-  }
-
-  /**
-   * Delete entry for a key
-   */
-  delete(key: string): void {
-    this.store.delete(key);
-  }
-
-  /**
-   * Get store size
-   */
-  size(): number {
-    return this.store.size;
-  }
-
-  /**
-   * Stop cleanup interval (for testing)
-   */
-  stopCleanup(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-      this.cleanupInterval = null;
-    }
-  }
-}
-
-// Global rate limit store instance
-const rateLimitStore = new RateLimitStore();
+const RATE_LIMIT_PREFIX = 'ratelimit:';
 
 /**
  * Check if a request is within rate limits using sliding window algorithm
+ * Uses Redis for distributed rate limiting across serverless instances
+ *
  * @param key - Unique identifier for rate limiting (e.g., 'username-check:user_123' or 'ip:192.168.1.1')
  * @param config - Rate limit configuration
  * @returns Rate limit result with allowed status and remaining attempts
@@ -132,12 +46,11 @@ export async function checkRateLimit(
 ): Promise<RateLimitResult> {
   const now = Date.now();
   const { limit, windowMs, blockDurationMs = 60000 } = config;
+  const redisKey = `${RATE_LIMIT_PREFIX}${key}`;
 
-  // Get or initialize entry
-  let entry = rateLimitStore.get(key);
-  if (!entry) {
-    entry = { attempts: [] };
-  }
+  // Get entry from Redis
+  const entryData = await redis.get<RateLimitEntry>(redisKey);
+  let entry: RateLimitEntry = entryData || { attempts: [] };
 
   // Check if currently blocked
   if (entry.blockedUntil && entry.blockedUntil > now) {
@@ -166,7 +79,10 @@ export async function checkRateLimit(
   if (entry.attempts.length >= limit) {
     // Block for the specified duration
     entry.blockedUntil = now + blockDurationMs;
-    rateLimitStore.set(key, entry);
+
+    // Store in Redis with TTL (auto-cleanup after window + block duration)
+    const ttlSeconds = Math.ceil((blockDurationMs + windowMs) / 1000);
+    await redis.setex(redisKey, ttlSeconds, entry);
 
     logRateLimitViolation('Rate limit exceeded', {
       action: 'rate_limit_exceeded',
@@ -186,7 +102,10 @@ export async function checkRateLimit(
 
   // Add current attempt
   entry.attempts.push(now);
-  rateLimitStore.set(key, entry);
+
+  // Store in Redis with TTL (auto-expires after window + block duration)
+  const ttlSeconds = Math.ceil((windowMs + blockDurationMs) / 1000);
+  await redis.setex(redisKey, ttlSeconds, entry);
 
   const remaining = limit - entry.attempts.length;
   const oldestAttempt = entry.attempts[0] || now;
@@ -204,8 +123,9 @@ export async function checkRateLimit(
  * Reset rate limit for a specific key
  * @param key - Unique identifier to reset
  */
-export function resetRateLimit(key: string): void {
-  rateLimitStore.delete(key);
+export async function resetRateLimit(key: string): Promise<void> {
+  const redisKey = `${RATE_LIMIT_PREFIX}${key}`;
+  await redis.del(redisKey);
   logSecurityEvent('Rate limit reset', {
     action: 'rate_limit_reset',
     key
@@ -218,13 +138,14 @@ export function resetRateLimit(key: string): void {
  * @param config - Rate limit configuration
  * @returns Current rate limit status
  */
-export function getRateLimitStatus(
+export async function getRateLimitStatus(
   key: string,
   config: RateLimitConfig
-): RateLimitResult {
+): Promise<RateLimitResult> {
   const now = Date.now();
   const { limit, windowMs } = config;
-  const entry = rateLimitStore.get(key);
+  const redisKey = `${RATE_LIMIT_PREFIX}${key}`;
+  const entry = await redis.get<RateLimitEntry>(redisKey);
 
   if (!entry) {
     return {
@@ -298,12 +219,38 @@ export const RateLimitPresets = {
  * Helper to generate rate limit keys
  */
 export const RateLimitKeys = {
+  // User actions
   usernameCheck: (userId: string) => `username-check:${userId}`,
   userAction: (userId: string, action: string) => `user:${userId}:${action}`,
   ipAction: (ip: string, action: string) => `ip:${ip}:${action}`,
+
+  // File operations
   fileUpload: (userId: string) => `upload:${userId}`,
-  linkCreation: (userId: string) => `link-create:${userId}`
+  linkCreation: (userId: string) => `link-create:${userId}`,
+
+  // Email operations
+  otpEmail: (email: string) => `otp-email:${email}`,
+  emailNotification: (userId: string) => `email-notify:${userId}`,
+  invitation: (userId: string) => `invitation:${userId}`,
+  bulkInvitation: (userId: string) => `bulk-invite:${userId}`
 } as const;
 
-// Export store for testing purposes
-export const __getRateLimitStore = () => rateLimitStore;
+/**
+ * Test Redis connection (for health checks)
+ * @returns Promise resolving to true if Redis is accessible
+ */
+export async function testRateLimitConnection(): Promise<boolean> {
+  try {
+    const testKey = `${RATE_LIMIT_PREFIX}health-check`;
+    await redis.setex(testKey, 10, { attempts: [] });
+    const result = await redis.get(testKey);
+    await redis.del(testKey);
+    return result !== null;
+  } catch (error) {
+    logSecurityEvent('Rate limit Redis connection test failed', {
+      action: 'health_check_failed',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return false;
+  }
+}

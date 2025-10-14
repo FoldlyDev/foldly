@@ -23,6 +23,8 @@ execution/
 │   └── schema.md               - ✅ Database schema implementation
 ├── testing/
 │   └── testing-guide.md        - ✅ Testing strategy & patterns
+├── infrastructure/
+│   └── email-and-redis.md      - ✅ Email service & Redis rate limiting
 ├── api/
 │   └── (API endpoint specs)     - ⏳ Coming soon
 └── components/
@@ -150,6 +152,35 @@ execution/
 
 ---
 
+### ✅ Email Service Infrastructure (October 13, 2025)
+
+**Implementation Files**:
+- `src/lib/email/client.ts` - Resend client with error handling
+- `src/lib/email/types.ts` - TypeScript type definitions (10 types)
+- `src/lib/email/constants.ts` - Email configuration and constants
+- `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
+- `src/lib/middleware/rate-limit.ts` - Migrated to Redis-backed rate limiting
+- `src/lib/utils/security.ts` - OTP generation and validation utilities
+
+**Key Features**:
+- Resend email client singleton with error handling wrapper
+- Complete TypeScript type system for email operations (10 types)
+- Email configuration constants (addresses, subjects, limits, OTP config)
+- OTP utilities: `generateSecureOTP()`, `isValidOTPFormat()`, expiration helpers
+- Distributed Redis rate limiting (replacing in-memory Map)
+- Email-specific rate limit keys and presets
+
+**Status**:
+- ✅ Phase 1 infrastructure complete (client, types, constants, OTP utilities)
+- ✅ Redis integration complete (Upstash client, distributed rate limiting)
+- ⏳ Phase 2-4 pending (templates, actions, hooks)
+
+**Documentation**: [Email & Redis Infrastructure](./infrastructure/email-and-redis.md)
+
+**Planning Reference**: [Email Service Plan](../planning/email-service-plan.md)
+
+---
+
 ## In Progress
 
 Nothing currently in progress.
@@ -261,7 +292,7 @@ When implementing a new feature:
 ## Summary
 
 **Current Phase**: Foundation (Week 1-2)
-**Progress**: 7/9 foundation tasks completed (78%)
+**Progress**: 8/9 foundation tasks completed (89%)
 **Next Up**: Set up Google Cloud Storage and base UI components
 
 **Completed**:
@@ -269,6 +300,8 @@ When implementing a new feature:
 - ✅ Database migration generated and pushed to Supabase
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
+- ✅ Email service infrastructure (Phase 1: client, types, constants, OTP utilities)
+- ✅ Redis rate limiting integration (distributed, serverless-safe)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
 - ✅ Clerk authentication configured

@@ -224,6 +224,9 @@ Key environment variables (see `.env.local`):
 - `CLERK_SECRET_KEY` - Clerk secret key
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `RESEND_API_KEY` - Resend email service API key
+- `UPSTASH_REDIS_REST_URL` - Upstash Redis REST URL (distributed rate limiting)
+- `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST token
 
 ## Database Workflow
 
@@ -260,13 +263,15 @@ Key environment variables (see `.env.local`):
 
 **Branch**: `v2/major-refactor`
 
-**Phase**: Foundation (Week 1-2) - 78% Complete (7/9 tasks)
+**Phase**: Foundation (Week 1-2) - 89% Complete (8/9 tasks)
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
 - ✅ Migrations generated and pushed to Supabase
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
+- ✅ Email service infrastructure (Phase 1: client, types, constants, OTP utilities)
+- ✅ Redis rate limiting integration (distributed, serverless-safe)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
@@ -302,8 +307,18 @@ Key environment variables (see `.env.local`):
 - `src/lib/actions/onboarding.actions.ts` - Onboarding flow actions
 - `src/hooks/index.ts` - All global hooks (data + UI)
 
+**Email & Rate Limiting Infrastructure**:
+- `src/lib/email/client.ts` - Resend client singleton with error handling
+- `src/lib/email/types.ts` - Email type definitions (10 types)
+- `src/lib/email/constants.ts` - Email configuration and constants
+- `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
+- `src/lib/middleware/rate-limit.ts` - Redis-backed rate limiting with presets
+- `src/lib/utils/security.ts` - OTP generation and validation utilities
+
 **Documentation**:
 - `docs/execution/README.md` - Implementation tracking
+- `docs/execution/infrastructure/email-and-redis.md` - Email service & Redis implementation
+- `docs/planning/email-service-plan.md` - Email service implementation plan
 - `docs/planning/features/mvp-features.md` - MVP feature checklist
 
 ## Common Patterns

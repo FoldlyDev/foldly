@@ -5,6 +5,7 @@
 // For path traversal prevention, IP validation, and input sanitization
 
 import path from 'path';
+import { randomInt } from 'crypto';
 import { logger } from '@/lib/utils/logger';
 
 /**
@@ -348,4 +349,89 @@ export function sanitizeFileName(name: string | null | undefined): string {
 
   // Return sanitized name or fallback to 'untitled'
   return sanitized || 'untitled';
+}
+
+// =============================================================================
+// OTP (ONE-TIME PASSWORD) UTILITIES
+// =============================================================================
+// Cryptographically secure OTP generation and validation
+
+/**
+ * Generates a cryptographically secure 6-digit OTP code
+ * Uses Node.js built-in crypto.randomInt() for secure random number generation
+ *
+ * @returns 6-digit OTP code as string (e.g., "123456", "007823")
+ *
+ * @example
+ * ```typescript
+ * const otp = generateSecureOTP();
+ * console.log(otp); // "456789"
+ *
+ * // Store with expiration
+ * const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+ * await storeOTP(userId, otp, expiresAt);
+ * ```
+ */
+export function generateSecureOTP(): string {
+  // Generate random integer between 100000 and 999999 (inclusive)
+  const otp = randomInt(100_000, 1_000_000);
+
+  // Pad with leading zeros if needed (though randomInt guarantees 6 digits in this range)
+  return otp.toString().padStart(6, '0');
+}
+
+/**
+ * Validates OTP format
+ * Checks if OTP is exactly 6 digits
+ *
+ * @param otp - OTP code to validate
+ * @returns True if valid format, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidOTPFormat("123456"); // true
+ * isValidOTPFormat("12345");  // false (too short)
+ * isValidOTPFormat("abc123"); // false (contains non-digits)
+ * ```
+ */
+export function isValidOTPFormat(otp: string | null | undefined): boolean {
+  if (!otp) return false;
+
+  // Must be exactly 6 digits
+  const otpRegex = /^\d{6}$/;
+  return otpRegex.test(otp);
+}
+
+/**
+ * Calculates OTP expiration timestamp
+ *
+ * @param expiryMinutes - Number of minutes until expiration (default: 10)
+ * @returns Date object representing expiration time
+ *
+ * @example
+ * ```typescript
+ * const expiresAt = getOTPExpiration(10); // Expires in 10 minutes
+ * const expiresAt = getOTPExpiration(5);  // Expires in 5 minutes
+ * ```
+ */
+export function getOTPExpiration(expiryMinutes: number = 10): Date {
+  return new Date(Date.now() + expiryMinutes * 60 * 1000);
+}
+
+/**
+ * Checks if OTP has expired
+ *
+ * @param expiresAt - Expiration timestamp
+ * @returns True if expired, false if still valid
+ *
+ * @example
+ * ```typescript
+ * const expiresAt = new Date('2025-10-13T12:00:00Z');
+ * if (isOTPExpired(expiresAt)) {
+ *   console.log('OTP has expired');
+ * }
+ * ```
+ */
+export function isOTPExpired(expiresAt: Date): boolean {
+  return Date.now() > expiresAt.getTime();
 }

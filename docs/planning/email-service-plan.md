@@ -1,7 +1,7 @@
 # Email Service Implementation Plan
 
 **Created:** October 13, 2025
-**Status:** 🚧 Planning Phase
+**Status:** ✅ Phases 1-4 Complete - Ready for Integration
 **Priority:** High (Required for OTP verification, upload notifications, invitations)
 
 ---
@@ -80,277 +80,205 @@ src/
 
 ## Implementation Checklist
 
-### Phase 1: Infrastructure Setup
+### Phase 1: Infrastructure Setup ✅ COMPLETE
 
 **1. Email Client Configuration** (`src/lib/email/client.ts`)
-- [ ] Import and configure Resend client
-- [ ] Add error handling wrapper
-- [ ] Export singleton instance
-- [ ] Add TypeScript types
+- ✅ Import and configure Resend client
+- ✅ Add error handling wrapper (`sendEmailWithErrorHandling()`)
+- ✅ Export singleton instance (`resend`)
+- ✅ Add TypeScript types (`EmailSendResult`)
 
 **2. Email Types** (`src/lib/email/types.ts`)
-- [ ] Define email template types
-- [ ] Define email payload interfaces
-- [ ] Define email response types
-- [ ] Export all types
+- ✅ Define email template types (4 template prop types)
+- ✅ Define email payload interfaces (5 action input types)
+- ✅ Define email response types (`EmailActionResponse`, `BulkEmailActionResponse`)
+- ✅ Export all types (10 total types)
 
 **3. Email Constants** (`src/lib/email/constants.ts`)
-- [ ] Define sender addresses (from/reply-to)
-- [ ] Define email subjects
-- [ ] Define email rate limit keys (use `RateLimitKeys` helper from `@/lib/middleware/rate-limit`)
-- [ ] Define email categories
+- ✅ Define sender addresses (`EMAIL_ADDRESSES`, `EMAIL_SENDER`)
+- ✅ Define email subjects (`EMAIL_SUBJECTS`)
+- ✅ Define email rate limit keys (added to `RateLimitKeys` in `@/lib/middleware/rate-limit`)
+- ✅ Define email categories and limits (`EMAIL_LIMITS`, `OTP_CONFIG`)
 
 **4. OTP Generation Utility** (`src/lib/utils/security.ts`)
-- [ ] Add `generateSecureOTP()` function using Node.js built-in `crypto.randomInt(100000, 999999)`
-- [ ] Generate cryptographically secure 6-digit OTP (NOT using bcrypt - bcrypt is for password hashing)
-- [ ] Add OTP expiration time constant: `OTP_EXPIRY_MINUTES = 10`
-- [ ] Export OTP utility functions
-- [ ] Optional: Add `hashOTP()` function if storing OTPs in database (for extra security)
+- ✅ Add `generateSecureOTP()` function using Node.js built-in `crypto.randomInt(100000, 999999)`
+- ✅ Generate cryptographically secure 6-digit OTP
+- ✅ Add OTP expiration utilities: `getOTPExpiration()`, `isOTPExpired()`
+- ✅ Add OTP validation: `isValidOTPFormat()`
+- ✅ Export all OTP utility functions
+
+**5. Redis Rate Limiting Integration** ✅ BONUS (Not in original plan)
+- ✅ Migrated rate limiting from in-memory to distributed Redis (`src/lib/redis/client.ts`)
+- ✅ Upstash Redis client configured for serverless environments
+- ✅ Added email-specific rate limit keys to `RateLimitKeys` helper
+- ✅ Health check function: `testRedisConnection()`
 
 **Note:** Email validation and sanitization already exist in `src/lib/utils/security.ts` (`sanitizeEmail()`, email regex)
 
----
-
-### Phase 2: React Email Templates
-
-**Location:** `src/components/email/templates/`
-
-**Templates Needed (sent via email):**
-
-1. **OTP Verification Email** (`otp-verification-template.tsx`)
-   - [ ] Layout with branding
-   - [ ] OTP code display (large, centered)
-   - [ ] Expiration warning (e.g., "Valid for 10 minutes")
-   - [ ] Security disclaimer ("Never share this code")
-   - [ ] Props: `{ otp: string, expiresInMinutes: number }`
-
-2. **Upload Notification Email** (`upload-notification-template.tsx`)
-   - [ ] File upload summary
-   - [ ] Uploader details (name, email)
-   - [ ] Link to view files
-   - [ ] Folder/link name
-   - [ ] Props: `{ uploaderName?: string, uploaderEmail: string, fileName: string, linkName: string, linkUrl: string }`
-
-3. **Invitation Email** (`invitation-template.tsx`)
-   - [ ] Personalized greeting
-   - [ ] Custom message from sender (if provided)
-   - [ ] Upload link button (CTA)
-   - [ ] Instructions
-   - [ ] Props: `{ recipientName?: string, senderName: string, customMessage?: string, linkUrl: string, linkName: string }`
-
-4. **Editor Promotion Email** (`editor-promotion-template.tsx`)
-   - [ ] Promotion announcement
-   - [ ] OTP verification prompt
-   - [ ] New permissions explanation
-   - [ ] Link to verify (placeholder until modal components ready)
-   - [ ] Props: `{ email: string, otp: string, linkName: string, ownerName: string }`
-
-**Template Shared Components:**
-- [ ] Email layout wrapper (header, footer, branding)
-- [ ] Button component
-- [ ] Section divider
-- [ ] Text styles (heading, paragraph, muted)
-
-**UI Components** (`src/components/email/ui/`):
-- [ ] **OTPVerificationModal.tsx** - Placeholder for OTP input modal (to be implemented after reusable modal components are ready)
-  - Props: `{ isOpen: boolean, onClose: () => void, onVerify: (otp: string) => void, email: string }`
-  - Note: Leave as placeholder component that returns `null` until modal system is ready
+**Implementation Documentation:** See [`docs/execution/infrastructure/email-and-redis.md`](../../execution/infrastructure/email-and-redis.md) for completed infrastructure details.
 
 ---
 
-### Phase 3: Server Actions
+### Phase 2: React Email Templates ✅ COMPLETE
+
+**Location:** `src/components/email/` (flat structure)
+
+**Templates Created (sent via email):**
+
+1. **Email Body Layout** (`email-body-layout.tsx`)
+   - ✅ Shared layout wrapper with Foldly branding
+   - ✅ Header with "Foldly" logo text
+   - ✅ Footer with copyright and navigation links
+   - ✅ Responsive container (max-width: 600px)
+
+2. **Welcome Email** (`welcome-email-template.tsx`) ✅ BONUS
+   - ✅ Warm greeting with personalized name
+   - ✅ Feature highlights (4 bullet points)
+   - ✅ Dashboard CTA button
+   - ✅ Friendly team signature
+   - ✅ Props: `{ firstName?: string, username: string }`
+
+3. **OTP Verification Email** (`otp-verification-email-template.tsx`)
+   - ✅ Large, centered OTP code display (48px, monospace)
+   - ✅ Dashed border styling for visual emphasis
+   - ✅ Expiration warning ("Valid for X minutes")
+   - ✅ Security reminders (3 bullet points)
+   - ✅ Props: `{ otp: string, expiresInMinutes: number }`
+
+4. **Upload Notification Email** (`upload-notification-email-template.tsx`)
+   - ✅ File upload summary with uploader details
+   - ✅ Details box with file name, uploader info, link name
+   - ✅ Dashboard CTA button
+   - ✅ Notification settings footer note
+   - ✅ Props: `{ uploaderName?: string, uploaderEmail: string, fileName: string, linkName: string, linkUrl: string }`
+
+5. **Invitation Email** (`invitation-email-template.tsx`)
+   - ✅ Personalized greeting
+   - ✅ Optional custom message box
+   - ✅ Upload link CTA button
+   - ✅ 3-step instructions
+   - ✅ Props: `{ inviterName: string, inviterEmail: string, linkName: string, linkUrl: string, message?: string }`
+
+6. **Editor Promotion Email** (`editor-promotion-email-template.tsx`)
+   - ✅ Promotion announcement
+   - ✅ Green-highlighted permissions box (5 permissions listed)
+   - ✅ Email verification note (no account required)
+   - ✅ Supports both link and folder resources
+   - ✅ Props: `{ ownerName: string, ownerEmail: string, resourceType: 'link' | 'folder', resourceName: string, resourceUrl: string }`
+
+**Component Exports** (`src/components/email/index.ts`):
+- ✅ All templates and props exported centrally
+
+---
+
+### Phase 3: Server Actions ✅ COMPLETE
 
 **Location:** `src/lib/actions/email.actions.ts`
 
-**Actions to Implement:**
+**Actions Implemented:**
 
-1. **sendOTPEmailAction**
-   ```typescript
-   export async function sendOTPEmailAction(data: {
-     email: string;
-     otp: string;
-     expiresInMinutes: number;
-   }): Promise<{ success: boolean; error?: string }>
-   ```
-   - [ ] Validate email format (use `sanitizeEmail()` from `@/lib/utils/security`)
-   - [ ] Validate OTP format (6 digits)
-   - [ ] Apply rate limiting (use `checkRateLimit()` with `RateLimitKeys.otpEmail(email)`)
-   - [ ] Render OTPVerificationEmail template
-   - [ ] Send via Resend
-   - [ ] Handle errors
-   - [ ] Return success/error response
+1. **sendOTPEmailAction** ✅
+   - ✅ Email validation with `sanitizeEmail()`
+   - ✅ OTP format validation (6 digits)
+   - ✅ Rate limiting (5 per minute - STRICT preset)
+   - ✅ Template rendering with `@react-email/render`
+   - ✅ Resend integration with error handling
+   - ✅ Returns `{ success, error?, blocked?, resetAt? }`
 
-2. **sendUploadNotificationEmailAction**
-   ```typescript
-   export async function sendUploadNotificationEmailAction(data: {
-     ownerEmail: string;
-     uploaderEmail: string;
-     uploaderName?: string;
-     fileName: string;
-     linkName: string;
-     linkUrl: string;
-   }): Promise<{ success: boolean; error?: string }>
-   ```
-   - [ ] Validate emails (use `sanitizeEmail()`)
-   - [ ] Apply rate limiting (use `RateLimitKeys.emailNotification(ownerEmail)`)
-   - [ ] Render UploadNotificationEmail template
-   - [ ] Send via Resend
-   - [ ] Handle errors
-   - [ ] Return success/error response
+2. **sendUploadNotificationEmailAction** ✅
+   - ✅ Owner and uploader email validation
+   - ✅ Rate limiting (20 per minute - MODERATE preset)
+   - ✅ Silent failure mode (doesn't block uploads)
+   - ✅ Optional uploader name support
+   - ✅ Complete error handling
 
-3. **sendInvitationEmailAction**
-   ```typescript
-   export async function sendInvitationEmailAction(data: {
-     recipientEmail: string;
-     recipientName?: string;
-     senderName: string;
-     customMessage?: string;
-     linkUrl: string;
-     linkName: string;
-   }): Promise<{ success: boolean; error?: string }>
-   ```
-   - [ ] Validate emails (use `sanitizeEmail()`)
-   - [ ] Apply rate limiting (use `RateLimitKeys.invitation(senderUserId)`)
-   - [ ] Render InvitationEmail template
-   - [ ] Send via Resend
-   - [ ] Handle errors
-   - [ ] Return success/error response
+3. **sendInvitationEmailAction** ✅
+   - ✅ Recipient email validation
+   - ✅ Custom message length validation (max 500 chars)
+   - ✅ Rate limiting per sender (20 per minute)
+   - ✅ Optional fields (recipientName, customMessage)
+   - ✅ Reply-to support
 
-4. **sendBulkInvitationEmailsAction** (for bulk invites)
-   ```typescript
-   export async function sendBulkInvitationEmailsAction(data: {
-     recipients: Array<{ email: string; name?: string }>;
-     senderUserId: string;
-     senderName: string;
-     customMessage?: string;
-     linkUrl: string;
-     linkName: string;
-   }): Promise<{ success: boolean; sent: number; failed: number; errors?: string[] }>
-   ```
-   - [ ] Validate all emails (use `sanitizeEmail()`)
-   - [ ] Limit recipients (max 100 per bulk send)
-   - [ ] Apply rate limiting (use `checkRateLimit()` with `RateLimitKeys.bulkInvitation(senderUserId)`)
-   - [ ] Batch send with delay between emails (respect Resend limits)
-   - [ ] Track successes/failures
-   - [ ] Return aggregated results
+4. **sendBulkInvitationEmailsAction** ✅
+   - ✅ Max 100 recipients enforcement
+   - ✅ Individual email validation
+   - ✅ Rate limiting (5 bulk sends per minute - STRICT)
+   - ✅ 100ms delay between sends
+   - ✅ Detailed results: `{ success, sent, failed, errors[] }`
+   - ✅ Continues on individual failures
 
-5. **sendEditorPromotionEmailAction**
-   ```typescript
-   export async function sendEditorPromotionEmailAction(data: {
-     email: string;
-     otp: string;
-     linkName: string;
-     ownerName: string;
-   }): Promise<{ success: boolean; error?: string }>
-   ```
-   - [ ] Validate email (use `sanitizeEmail()`)
-   - [ ] Validate OTP format (6 digits)
-   - [ ] Apply rate limiting (use `checkRateLimit()` with `RateLimitKeys.otpEmail(email)`)
-   - [ ] Render EditorPromotionEmail template
-   - [ ] Send via Resend
-   - [ ] Handle errors
-   - [ ] Return success/error response
+5. **sendEditorPromotionEmailAction** ✅
+   - ✅ Email and OTP format validation
+   - ✅ Rate limiting (5 per minute - STRICT)
+   - ✅ Supports link/folder resource types
+   - ✅ Owner email in reply-to
+   - ✅ Complete error handling
 
-**Note on Rate Limiting:**
-- Use existing `checkRateLimit()` from `@/lib/middleware/rate-limit`
-- Use `RateLimitPresets.STRICT` for OTP emails (5 per minute)
-- Use `RateLimitPresets.MODERATE` for invitations (20 per minute)
-- Add new keys to `RateLimitKeys` helper:
-  ```typescript
-  otpEmail: (email: string) => `otp-email:${email}`,
-  emailNotification: (userId: string) => `email-notify:${userId}`,
-  invitation: (userId: string) => `invitation:${userId}`,
-  bulkInvitation: (userId: string) => `bulk-invite:${userId}`
-  ```
+**Rate Limiting Implementation:**
+- ✅ `RateLimitKeys.otpEmail(email)` - OTP emails
+- ✅ `RateLimitKeys.emailNotification(userId)` - Upload notifications
+- ✅ `RateLimitKeys.invitation(userId)` - Single invitations
+- ✅ `RateLimitKeys.bulkInvitation(userId)` - Bulk invitations
+- ✅ STRICT preset: 5/min, 5min block
+- ✅ MODERATE preset: 20/min, 1min block
+
+**Testing:**
+- ✅ 32 comprehensive unit tests
+- ✅ All actions tested (validation, rate limiting, errors)
+- ✅ Mock Resend client and Redis
+- ✅ 100% test coverage for happy/sad paths
 
 ---
 
-### Phase 4: React Query Hooks
+### Phase 4: React Query Hooks ✅ COMPLETE
 
 **Location:** `src/hooks/data/use-email.ts`
 
-**Hooks to Implement:**
+**Hooks Implemented:**
 
-1. **useSendOTPEmail**
-   ```typescript
-   export function useSendOTPEmail() {
-     return useMutation({
-       mutationFn: (data: SendOTPEmailInput) => sendOTPEmailAction(data),
-       onSuccess: () => { /* toast notification */ },
-       onError: () => { /* error toast */ }
-     });
-   }
-   ```
-   - [ ] Wrap sendOTPEmailAction with useMutation
-   - [ ] Add success toast notification
-   - [ ] Add error toast notification
-   - [ ] Export hook
+1. **useSendOTPEmail** ✅
+   - ✅ Wraps `sendOTPEmailAction` with `useMutation`
+   - ✅ Success toast: "Verification code sent! Check your email."
+   - ✅ Error toast: "Failed to send verification code."
+   - ✅ Rate limit toast: "Too many attempts. Please try again later."
+   - ✅ No retry on failure
 
-2. **useSendUploadNotification**
-   ```typescript
-   export function useSendUploadNotification() {
-     return useMutation({
-       mutationFn: sendUploadNotificationEmailAction,
-       // No toast - this is automatic/background
-     });
-   }
-   ```
-   - [ ] Wrap action with useMutation
-   - [ ] Silent operation (no user-facing notifications)
-   - [ ] Export hook
+2. **useSendUploadNotification** ✅
+   - ✅ Wraps `sendUploadNotificationEmailAction`
+   - ✅ Silent operation (no toasts)
+   - ✅ Background execution for non-blocking uploads
+   - ✅ No retry on failure
 
-3. **useSendInvitation**
-   ```typescript
-   export function useSendInvitation() {
-     return useMutation({
-       mutationFn: sendInvitationEmailAction,
-       onSuccess: () => { /* toast: "Invitation sent!" */ },
-       onError: () => { /* error toast */ }
-     });
-   }
-   ```
-   - [ ] Wrap action with useMutation
-   - [ ] Add success/error toasts
-   - [ ] Export hook
+3. **useSendInvitation** ✅
+   - ✅ Wraps `sendInvitationEmailAction`
+   - ✅ Success toast: "Invitation sent successfully!"
+   - ✅ Error toast: "Failed to send invitation."
+   - ✅ Rate limit handling
+   - ✅ No retry on failure
 
-4. **useSendBulkInvitations**
-   ```typescript
-   export function useSendBulkInvitations() {
-     return useMutation({
-       mutationFn: sendBulkInvitationEmailsAction,
-       onSuccess: (data) => { /* toast: "${data.sent} invitations sent" */ },
-       onError: () => { /* error toast */ }
-     });
-   }
-   ```
-   - [ ] Wrap action with useMutation
-   - [ ] Show detailed results in toast
-   - [ ] Export hook
+4. **useSendBulkInvitations** ✅
+   - ✅ Wraps `sendBulkInvitationEmailsAction`
+   - ✅ Detailed success toast with sent/failed counts
+   - ✅ Shows first 3 errors in error toast
+   - ✅ Partial success handling
+   - ✅ No retry on failure
 
-5. **useSendEditorPromotion**
-   ```typescript
-   export function useSendEditorPromotion() {
-     return useMutation({
-       mutationFn: sendEditorPromotionEmailAction,
-       onSuccess: () => { /* toast: "Promotion email sent" */ },
-       onError: () => { /* error toast */ }
-     });
-   }
-   ```
-   - [ ] Wrap action with useMutation
-   - [ ] Add success/error toasts
-   - [ ] Export hook
+5. **useSendEditorPromotion** ✅
+   - ✅ Wraps `sendEditorPromotionEmailAction`
+   - ✅ Success toast: "Editor promotion email sent!"
+   - ✅ Error toast: "Failed to send promotion email."
+   - ✅ Rate limit handling
+   - ✅ No retry on failure
 
-**Hook Exports** (`src/hooks/data/use-email.ts`):
-```typescript
-export {
-  useSendOTPEmail,
-  useSendUploadNotification,
-  useSendInvitation,
-  useSendBulkInvitations,
-  useSendEditorPromotion
-};
-```
+**Exports & Integration:**
+- ✅ All hooks exported from `src/hooks/data/use-email.ts`
+- ✅ Re-exported from `src/hooks/data/index.ts`
+- ✅ Available globally via `import { useSendOTPEmail } from '@/hooks'`
+
+**Important Note:**
+- ⚠️ Toast notifications are **temporary** until internal notifications module is complete
+- ⚠️ Toasts will be replaced with proper notification system
+- ⚠️ Comment added in file documenting temporary nature
 
 ---
 
