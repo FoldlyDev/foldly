@@ -7,3 +7,5 @@ export * from './user.actions';
 export * from './onboarding.actions';
 export * from './workspace.actions';
 export * from './email.actions';
+export * from './link.actions';
+export * from './permission.actions';
