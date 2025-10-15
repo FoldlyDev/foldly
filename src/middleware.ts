@@ -21,8 +21,11 @@ export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
 
     if (!userId) {
-      // Redirect to unauthorized page instead of sign-in
-      return NextResponse.redirect(new URL('/unauthorized', req.url));
+      // Redirect to sign-in with return URL for better UX
+      // User will be redirected back to their intended destination after signing in
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
     }
   }
   // All other routes are public by default

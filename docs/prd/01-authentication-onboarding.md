@@ -255,7 +255,7 @@ Ready to create folders and collect files
 **Status:** ✅ Implemented
 
 - **FR-2.1:** Username field required (minimum 4 characters)
-- **FR-2.2:** Sanitize username (alphanumeric, underscores, hyphens only)
+- **FR-2.2:** Sanitize username (alphanumeric with preserved case, underscores, hyphens only)
 - **FR-2.3:** Check availability in Clerk with reverification
 - **FR-2.4:** Show real-time validation errors
 - **FR-2.5:** Disable submit button when form invalid
@@ -289,10 +289,12 @@ checkUsernameAvailability() → Clerk API → reverification required
 
 - **FR-4.1:** Create database user entry (required for foreign keys)
 - **FR-4.2:** Create workspace with auto-generated name
-- **FR-4.3:** Create first link with slug pattern: `{username}-first-link`
+- **FR-4.3:** Create first link with slug pattern: `{username.toLowerCase()}-first-link`
 - **FR-4.4:** Create owner permission for user's email
 - **FR-4.5:** All operations in single database transaction
 - **FR-4.6:** Rollback ALL changes if any step fails
+
+**Note:** Username is stored with case preserved (e.g., "TestUser"), but link slugs are always lowercase for URL consistency (e.g., "testuser-first-link").
 
 **Transaction Safety:**
 ```typescript
@@ -764,9 +766,10 @@ try {
 export function sanitizeUsername(input: string): string {
   return input
     .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, ''); // Only alphanumeric, underscores, hyphens
+    .replace(/[^a-zA-Z0-9_-]/g, '') // Alphanumeric (both cases), underscores, hyphens
+    .slice(0, 50); // Max 50 characters
 }
+// Note: Case is preserved for display. Link slugs are lowercased separately at creation time.
 ```
 
 #### SEC-005: Authentication Logging
@@ -830,7 +833,7 @@ logger.security("Onboarding transaction failed", {
 
 **Success Cases (4 tests)**
 - ✅ Should create all resources atomically in single transaction
-- ✅ Should use sanitized username for all resources
+- ✅ Should preserve username case for user/workspace, lowercase for link slug
 - ✅ Should capture firstName and lastName from Clerk
 - ✅ Should update Clerk username after transaction succeeds
 

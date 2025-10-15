@@ -20,11 +20,7 @@ export function WelcomeEmailTemplate({
 
   return (
     <EmailBodyLayout preview={`Welcome to Foldly, ${displayName}!`}>
-      <Heading style={heading}>Welcome to Foldly! 👋</Heading>
-
-      <Text style={paragraph}>
-        Hey {displayName},
-      </Text>
+      <Heading style={heading}>Welcome, {displayName}! 👋</Heading>
 
       <Text style={paragraph}>
         We're stoked to have you here! Your account is all set and ready to roll.
@@ -63,7 +59,7 @@ export function WelcomeEmailTemplate({
       </Text>
 
       <Button
-        href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard`}
+        href={`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/workspace`}
         style={button}
       >
         Go to Dashboard
