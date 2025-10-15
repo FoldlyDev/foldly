@@ -235,16 +235,16 @@ export function hashForLogging(data: string): string {
 /**
  * Sanitizes username to prevent injection attacks
  * @param username - Username to sanitize
- * @returns Sanitized username safe for storage and display
+ * @returns Sanitized username safe for storage and display (preserves case)
  */
 export function sanitizeUsername(username: string | null | undefined): string {
   if (!username) return '';
 
-  // Trim and convert to lowercase for consistency
-  const trimmed = username.trim().toLowerCase();
+  // Trim whitespace but preserve case for display
+  const trimmed = username.trim();
 
-  // Remove all characters except alphanumeric, hyphens, and underscores
-  const sanitized = trimmed.replace(/[^a-z0-9_-]/g, '');
+  // Remove all characters except alphanumeric (both cases), hyphens, and underscores
+  const sanitized = trimmed.replace(/[^a-zA-Z0-9_-]/g, '');
 
   // Enforce maximum length of 50 characters
   const limited = sanitized.slice(0, 50);

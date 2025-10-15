@@ -1,11 +1,15 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(dir \"C:\\Users\\djedd\\Documents\\Programming\\Work_projects\\Memecoin\\Foldly\\foldly\\src\\modules\")",
+      "Bash(cat:*)",
+      "mcp__Ref__ref_search_documentation",
+      "mcp__Ref__ref_read_url"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "shadcn"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__sequential-thinking__sequentialthinking"
-    ]
-  }
+  ]
 }

@@ -40,14 +40,15 @@ execution/
 | Component | Status | Location | Notes |
 |-----------|--------|----------|-------|
 | **Database Schema** | ✅ Completed | `database/schema.md` | 6 tables implemented with Drizzle ORM |
-| **Database Migration** | ✅ Completed | `drizzle/0000_superb_sway.sql` | Schema pushed to Supabase |
+| **Database Migration** | ✅ Completed | `drizzle/0000_*.sql`, `drizzle/0001_*.sql` | Schema pushed to Supabase |
 | **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer with user management |
 | **Onboarding Flow** | ✅ Completed | `src/modules/auth` | Username capture, workspace & link creation |
+| **Email Service System** | ✅ Completed | `infrastructure/email-and-redis.md` | Phases 1-4 complete (infrastructure, templates, actions, hooks) |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
 | GCS Setup | ⏳ Pending | - | Storage bucket configuration |
 | Clerk Auth | ✅ Completed | `.env.local` | Authentication configured |
-| Base UI Components | ⏳ Pending | - | shadcn/ui setup |
+| Base UI Components | ✅ Completed | `src/components/ui/shadcn/` | shadcn/ui + custom CTA buttons |
 
 ---
 
@@ -92,7 +93,7 @@ execution/
 - `src/lib/actions/workspace.actions.ts`
 - `src/lib/actions/user.actions.ts`
 - `src/lib/actions/index.ts`
-- `src/hooks/data/use-onboarding-status.ts`
+- `src/hooks/data/use-onboarding.ts`
 - `src/hooks/data/use-user-workspace.ts`
 - `src/hooks/data/index.ts`
 - `src/hooks/ui/use-scroll-position.ts`
@@ -171,9 +172,11 @@ execution/
 - Email-specific rate limit keys and presets
 
 **Status**:
-- ✅ Phase 1 infrastructure complete (client, types, constants, OTP utilities)
+- ✅ Phase 1: Infrastructure complete (client, types, constants, OTP utilities)
+- ✅ Phase 2: Email templates complete (6 templates including welcome email)
+- ✅ Phase 3: Server actions complete (5 actions with 32 tests)
+- ✅ Phase 4: React Query hooks complete (5 hooks with toast notifications)
 - ✅ Redis integration complete (Upstash client, distributed rate limiting)
-- ⏳ Phase 2-4 pending (templates, actions, hooks)
 
 **Documentation**: [Email & Redis Infrastructure](./infrastructure/email-and-redis.md)
 
@@ -221,6 +224,7 @@ Nothing currently in progress.
 | Date | Migration | Description |
 |------|-----------|-------------|
 | October 9, 2025 | `0000_superb_sway.sql` | ✅ Created all 6 tables with indexes and constraints |
+| October 14, 2025 | `0001_cloudy_ozymandias.sql` | ✅ Schema updates (email notification settings) |
 
 ---
 
@@ -236,7 +240,8 @@ Nothing currently in progress.
 | Server Actions (Workspace) | ✅ Completed | 15 tests | Workspace actions, link creation, email fallback |
 | Security Utilities | ✅ Completed | 22 tests | Slug generation, sanitization |
 | Module Actions (Uploads) | ✅ Completed | 8 tests | Link validation & access |
-| **Total** | **✅ Active** | **122 tests** | 8 test suites, all passing |
+| Server Actions (Email) | ✅ Completed | 32 tests | Email service actions |
+| **Total** | **✅ Active** | **154+ tests** | 9 test suites, all passing |
 
 **Documentation**: [Testing Guide](./testing/testing-guide.md)
 
@@ -291,17 +296,20 @@ When implementing a new feature:
 
 ## Summary
 
-**Current Phase**: Foundation (Week 1-2)
-**Progress**: 8/9 foundation tasks completed (89%)
-**Next Up**: Set up Google Cloud Storage and base UI components
+**Current Phase**: Foundation + Email Infrastructure - COMPLETE
+**Progress**: All foundation tasks completed
+**Next Up**: Set up Google Cloud Storage bucket and file upload functionality
 
 **Completed**:
-- ✅ Database schema design and implementation
-- ✅ Database migration generated and pushed to Supabase
-- ✅ Global actions & hooks layer (user management, workspace, onboarding)
+- ✅ Database schema design and implementation (6 tables)
+- ✅ Database migrations (2 migrations pushed to Supabase)
+- ✅ Global actions & hooks layer (user management, workspace, onboarding, email)
 - ✅ Onboarding flow with username capture and workspace creation
-- ✅ Email service infrastructure (Phase 1: client, types, constants, OTP utilities)
+- ✅ Email service system (Phases 1-4: infrastructure, templates, actions, hooks)
+- ✅ Email templates (6 total including welcome email)
+- ✅ Email notification settings in user schema
 - ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
 - ✅ Clerk authentication configured
@@ -314,4 +322,3 @@ When implementing a new feature:
 
 **Remaining Tasks**:
 - Google Cloud Storage bucket setup
-- Base UI components (shadcn/ui)

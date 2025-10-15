@@ -105,7 +105,7 @@ export function LandingNavigation() {
   // Simple button click handlers
   const handleButtonClick = () => {
     if (!isSignedIn) {
-      router.push('/sign-in');
+      router.push('/sign-up');
     } else if (!hasCompletedOnboarding) {
       router.push('/onboarding');
     } else {

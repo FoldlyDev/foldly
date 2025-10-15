@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 major refactor** phase on branch `v2/major-refactor`.
+**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 development** phase on branch `v2/feat-mailing-system`.
 
 ## Common Commands
 
@@ -71,6 +71,7 @@ src/
 │
 ├── modules/              # Feature modules (self-contained)
 │   ├── analytics/        # Analytics dashboard
+│   ├── auth/             # Authentication forms, components, and onboarding
 │   ├── billing/          # Billing and subscriptions
 │   ├── landing/          # Landing page (complex GSAP animations)
 │   ├── links/            # Shareable link management
@@ -81,8 +82,9 @@ src/
 │
 ├── hooks/                # Global hooks (organized by purpose)
 │   ├── data/            # Data fetching hooks (wrap server actions)
-│   │   ├── use-onboarding-status.ts
-│   │   └── use-user-workspace.ts
+│   │   ├── use-onboarding.ts
+│   │   ├── use-user-workspace.ts
+│   │   └── use-email.ts
 │   └── ui/              # UI utility hooks
 │       └── use-scroll-position.ts
 │
@@ -261,25 +263,27 @@ Key environment variables (see `.env.local`):
 
 ## Current Development Status
 
-**Branch**: `v2/major-refactor`
+**Branch**: `v2/feat-mailing-system`
 
-**Phase**: Foundation (Week 1-2) - 89% Complete (8/9 tasks)
+**Phase**: Foundation + Email Infrastructure - COMPLETE
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
 - ✅ Migrations generated and pushed to Supabase
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
-- ✅ Email service infrastructure (Phase 1: client, types, constants, OTP utilities)
+- ✅ Email service system complete (Phases 1-4: infrastructure, templates, actions, hooks)
+- ✅ Email templates (6 total: OTP, upload notification, invitation, editor promotion, password reset, welcome)
+- ✅ Email notification settings in user schema
 - ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
 
 **Next Steps** (per `docs/execution/README.md`):
 1. Set up Google Cloud Storage bucket
-2. Implement base UI components (shadcn/ui)
-3. Build file upload functionality
+2. Build file upload functionality
 
 **Planning Documentation**: See `/docs/planning/` for design decisions, MVP features, and tech stack details.
 
@@ -302,10 +306,12 @@ Key environment variables (see `.env.local`):
 
 **Global Actions & Hooks**:
 - `src/lib/actions/index.ts` - Global server actions
-- `src/lib/actions/user.actions.ts` - User management actions (3 actions)
+- `src/lib/actions/user.actions.ts` - User management actions
 - `src/lib/actions/workspace.actions.ts` - Workspace actions
 - `src/lib/actions/onboarding.actions.ts` - Onboarding flow actions
+- `src/lib/actions/email.actions.ts` - Email service actions (5 actions with 32 tests)
 - `src/hooks/index.ts` - All global hooks (data + UI)
+- `src/hooks/data/use-email.ts` - Email service hooks (5 hooks with toast notifications)
 
 **Email & Rate Limiting Infrastructure**:
 - `src/lib/email/client.ts` - Resend client singleton with error handling
@@ -330,7 +336,7 @@ Use `ModuleErrorBoundary` from `@/components/core/ModuleErrorBoundary` to wrap f
 Each module has a skeleton component (e.g., `AnalyticsSkeleton`, `WorkspaceSkeleton`).
 
 ### Notifications
-Use `NotificationProvider` from `@/features/notifications/providers/NotificationProvider` (wrapped in root providers).
+Use `NotificationProvider` from `@/modules/notifications/providers/NotificationProvider` (wrapped in root providers).
 
 ### Page Transitions
 Use `PageTransitionEffect` or `PageFadeRevealEffect` from `@/components/layout/` for page animations.
