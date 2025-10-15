@@ -31,6 +31,10 @@ export async function createPermission(data: {
     })
     .returning();
 
+  if (!permission) {
+    throw new Error('Failed to create permission: Database insert returned no rows');
+  }
+
   return permission;
 }
 
@@ -54,6 +58,26 @@ export async function getPermissionByLinkAndEmail(
   return await db.query.permissions.findFirst({
     where: and(eq(permissions.linkId, linkId), eq(permissions.email, email)),
   });
+}
+
+/**
+ * Update permission role
+ */
+export async function updatePermission(
+  permissionId: string,
+  role: PermissionRole
+): Promise<Permission> {
+  const [updatedPermission] = await db
+    .update(permissions)
+    .set({ role })
+    .where(eq(permissions.id, permissionId))
+    .returning();
+
+  if (!updatedPermission) {
+    throw new Error(`Failed to update permission: Permission with ID ${permissionId} not found or update failed`);
+  }
+
+  return updatedPermission;
 }
 
 /**

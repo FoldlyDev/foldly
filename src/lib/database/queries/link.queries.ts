@@ -69,23 +69,127 @@ export async function createLink(data: {
     })
     .returning();
 
+  if (!link) {
+    throw new Error('Failed to create link: Database insert returned no rows');
+  }
+
   return link;
 }
 
 /**
- * Update link active status (pause/resume)
+ * Update link details (name, slug, isPublic, isActive, linkConfig)
+ * Generic update function for all link fields
  */
-export async function updateLinkActiveStatus(
+export async function updateLink(
   linkId: string,
-  isActive: boolean
+  data: {
+    name?: string;
+    slug?: string;
+    isPublic?: boolean;
+    isActive?: boolean;
+    linkConfig?: Link['linkConfig'];
+  }
 ): Promise<Link> {
   const [link] = await db
     .update(links)
-    .set({ isActive, updatedAt: new Date() })
+    .set({ ...data, updatedAt: new Date() })
     .where(eq(links.id, linkId))
     .returning();
 
+  if (!link) {
+    throw new Error(`Failed to update link: Link with ID ${linkId} not found or update failed`);
+  }
+
   return link;
+}
+
+/**
+ * Update link configuration (settings)
+ */
+export async function updateLinkConfig(
+  linkId: string,
+  config: Partial<Link['linkConfig']>
+): Promise<Link> {
+  // Get current config
+  const currentLink = await getLinkById(linkId);
+  if (!currentLink) {
+    throw new Error('Link not found');
+  }
+
+  // Merge with existing config
+  const updatedConfig = {
+    ...currentLink.linkConfig,
+    ...config,
+  };
+
+  const [link] = await db
+    .update(links)
+    .set({ linkConfig: updatedConfig, updatedAt: new Date() })
+    .where(eq(links.id, linkId))
+    .returning();
+
+  if (!link) {
+    throw new Error(`Failed to update link config: Link with ID ${linkId} not found or update failed`);
+  }
+
+  return link;
+}
+
+/**
+ * Check if slug is available (not taken by another link)
+ * Used for slug validation during link creation/update
+ */
+export async function isSlugAvailable(
+  slug: string,
+  excludeLinkId?: string
+): Promise<boolean> {
+  const existingLink = await db.query.links.findFirst({
+    where: eq(links.slug, slug),
+    columns: {
+      id: true,
+    },
+  });
+
+  if (!existingLink) return true;
+  if (excludeLinkId && existingLink.id === excludeLinkId) return true;
+  return false;
+}
+
+/**
+ * Get link with permissions (for management UI)
+ * Includes permission entries for the link
+ */
+export async function getLinkWithPermissions(linkId: string) {
+  return await db.query.links.findFirst({
+    where: eq(links.id, linkId),
+    with: {
+      permissions: {
+        orderBy: (permissions, { desc }) => [desc(permissions.createdAt)],
+      },
+    },
+  });
+}
+
+/**
+ * Get link by slug with permissions (for external access validation)
+ */
+export async function getLinkBySlugWithPermissions(slug: string) {
+  return await db.query.links.findFirst({
+    where: eq(links.slug, slug),
+    with: {
+      workspace: {
+        with: {
+          user: {
+            columns: {
+              username: true,
+              email: true,
+            },
+          },
+        },
+      },
+      permissions: true,
+    },
+  });
 }
 
 /**

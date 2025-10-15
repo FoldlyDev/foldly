@@ -13,6 +13,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { workspaces } from "./workspaces";
+import { permissions } from "./permissions";
+import { folders } from "./folders";
+import { files } from "./files";
 
 /**
  * Links table - Shareable upload links
@@ -61,10 +64,9 @@ export const linksRelations = relations(links, ({ one, many }) => ({
     fields: [links.workspaceId],
     references: [workspaces.id],
   }),
-  // Will be defined in other schema files:
-  // folders: many(folders), // Folders with this link_id
-  // files: many(files), // Files with this link_id
-  // permissions: many(permissions), // Access control entries
+  folders: many(folders), // Folders with this link_id
+  files: many(files), // Files with this link_id
+  permissions: many(permissions), // Access control entries
 }));
 
 // TypeScript types

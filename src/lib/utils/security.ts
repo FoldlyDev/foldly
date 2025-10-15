@@ -351,6 +351,34 @@ export function sanitizeFileName(name: string | null | undefined): string {
   return sanitized || 'untitled';
 }
 
+/**
+ * Sanitizes link slug to prevent injection and ensure URL compatibility
+ * @param slug - Slug to sanitize
+ * @returns Sanitized slug safe for URLs (lowercase, alphanumeric, hyphens only)
+ */
+export function sanitizeSlug(slug: string | null | undefined): string {
+  if (!slug) return '';
+
+  // Trim whitespace and convert to lowercase
+  const trimmed = slug.trim().toLowerCase();
+
+  // Allow only lowercase alphanumeric characters and hyphens
+  const sanitized = trimmed.replace(/[^a-z0-9-]/g, '');
+
+  // Enforce maximum length (100 chars to match schema)
+  const limited = sanitized.slice(0, 100);
+
+  // Log warning if sanitization changed the input significantly
+  if (limited !== trimmed) {
+    logger.warn(
+      '[SECURITY] Slug sanitization applied',
+      { original: hashForLogging(trimmed), sanitized: hashForLogging(limited) }
+    );
+  }
+
+  return limited;
+}
+
 // =============================================================================
 // OTP (ONE-TIME PASSWORD) UTILITIES
 // =============================================================================
