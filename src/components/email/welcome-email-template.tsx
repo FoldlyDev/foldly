@@ -23,48 +23,43 @@ export function WelcomeEmailTemplate({
       <Heading style={heading}>Welcome to Foldly! 👋</Heading>
 
       <Text style={paragraph}>
-        Hi {displayName},
+        Hey {displayName},
       </Text>
 
       <Text style={paragraph}>
-        We're thrilled to have you join Foldly! Your account is now set up and
-        ready to go.
+        We're stoked to have you here! Your account is all set and ready to roll.
       </Text>
 
       <Text style={paragraph}>
-        Foldly makes it easy to collect files from anyone via shareable links -
-        no account needed for them. Perfect for collecting documents, images,
-        videos, and more.
+        Foldly makes collecting files from anyone super easy - just share a link
+        and they can upload straight away. No sign-ups, no hassle. Perfect for
+        gathering documents, images, videos, you name it.
       </Text>
 
       <Hr style={divider} />
 
-      <Heading style={subheading}>What you can do now:</Heading>
+      <Heading style={subheading}>Here's what you can do:</Heading>
 
       <Text style={featureItem}>
-        ✓ <strong>Create shareable links</strong> - Generate unique upload
-        links in seconds
+        ✓ <strong>Share links</strong> - Create upload links in seconds
       </Text>
 
       <Text style={featureItem}>
-        ✓ <strong>Organize with folders</strong> - Keep your files structured
-        and tidy
+        ✓ <strong>Stay organized</strong> - Keep everything tidy with folders
       </Text>
 
       <Text style={featureItem}>
-        ✓ <strong>Track uploads by email</strong> - Know exactly who uploaded
-        what
+        ✓ <strong>Track uploads</strong> - See exactly who sent what
       </Text>
 
       <Text style={featureItem}>
-        ✓ <strong>Manage permissions</strong> - Control who can view and edit
+        ✓ <strong>Control access</strong> - Decide who views and edits
       </Text>
 
       <Hr style={divider} />
 
       <Text style={paragraph}>
-        Ready to get started? Head to your dashboard and create your first
-        shareable link!
+        Ready to dive in? Head to your dashboard and create your first link!
       </Text>
 
       <Button
@@ -75,12 +70,11 @@ export function WelcomeEmailTemplate({
       </Button>
 
       <Text style={footerNote}>
-        If you have any questions, just reply to this email. We're here to
-        help!
+        Questions? Just reply to this email - we're here to help!
       </Text>
 
       <Text style={signature}>
-        Best,
+        Cheers,
         <br />
         The Foldly Team
       </Text>

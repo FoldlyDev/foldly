@@ -12,6 +12,7 @@ import { sanitizeUsername } from '@/lib/utils/security';
 import { logAuthFailure, logSecurityEvent, logSecurityIncident } from '@/lib/utils/logger';
 import { onboardingTransaction } from '@/lib/database/transactions';
 import { randomUUID } from 'crypto';
+import { sendWelcomeEmailAction } from './email.actions';
 
 /**
  * Check if authenticated user has completed onboarding
@@ -317,6 +318,13 @@ export async function completeOnboardingAction(username: string) {
         username: sanitized,
         workspaceId,
         linkId
+      });
+
+      // Send welcome email (don't block on failure)
+      await sendWelcomeEmailAction({
+        email: primaryEmail,
+        firstName: clerkUser.firstName,
+        username: sanitized,
       });
 
       return {

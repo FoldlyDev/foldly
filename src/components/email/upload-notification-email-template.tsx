@@ -26,10 +26,10 @@ export function UploadNotificationEmailTemplate({
 
   return (
     <EmailBodyLayout preview={`New file uploaded: ${fileName}`}>
-      <Heading style={heading}>New File Uploaded 📁</Heading>
+      <Heading style={heading}>New File Just Landed 📁</Heading>
 
       <Text style={paragraph}>
-        <strong>{displayName}</strong> just uploaded a file to your{' '}
+        <strong>{displayName}</strong> just dropped a file in your{' '}
         <strong>{linkName}</strong> link.
       </Text>
 
@@ -53,7 +53,7 @@ export function UploadNotificationEmailTemplate({
       <Hr style={divider} />
 
       <Text style={paragraph}>
-        View and manage this file in your workspace dashboard.
+        Check it out in your workspace whenever you're ready.
       </Text>
 
       <Button
@@ -64,11 +64,11 @@ export function UploadNotificationEmailTemplate({
       </Button>
 
       <Text style={footerNote}>
-        You're receiving this because you own the link{' '}
+        Getting this because you own the{' '}
         <a href={linkUrl} style={link}>
           {linkName}
-        </a>
-        . You can manage notification settings in your dashboard.
+        </a>{' '}
+        link. You can adjust your notification settings anytime from your dashboard.
       </Text>
     </EmailBodyLayout>
   );

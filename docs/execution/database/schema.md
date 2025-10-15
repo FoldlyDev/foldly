@@ -63,7 +63,7 @@ Relationships:
 - `username` (unique): Used for first link slug
 - `subscription_status`: Subscription tier tracking
 - `storage_used`: Cached storage usage (bytes)
-- `settings` (JSONB): User preferences
+- `user_settings` (JSONB): User preferences including email notification settings
 
 **Cascade**: User deletion → workspace deletion → all content deleted
 
@@ -108,13 +108,16 @@ Relationships:
   name: varchar(255)
   is_public: boolean (default: false)
   is_active: boolean (default: true)
-  custom_message: text (nullable)
-  requires_name: boolean (default: false)
-  requires_message: boolean (default: false)
+  link_config: jsonb (default: { notifyOnUpload: true, customMessage: null, requiresName: false })
   created_at: timestamp
   updated_at: timestamp
 }
 ```
+
+**Link Configuration (JSONB)**:
+- `notifyOnUpload` (boolean): Send email notifications when files are uploaded
+- `customMessage` (string | null): Custom welcome message for upload page
+- `requiresName` (boolean): Require uploaders to provide their name
 
 **Constraints**:
 - `slug` is globally UNIQUE across all users

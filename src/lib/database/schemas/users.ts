@@ -40,11 +40,12 @@ export const users = pgTable("users", {
     .notNull(),
 
   // User Settings - Flexible JSON for easy extension
-  settings: jsonb("settings")
+  userSettings: jsonb("user_settings")
     .default({
       theme: "system",
       doNotDisturb: false,
       silentNotifications: false,
+      emailNotificationsEnabled: true,
       cloudStorage: {
         google: { connected: false, lastSyncedAt: null },
         microsoft: { connected: false, lastSyncedAt: null },
@@ -55,6 +56,7 @@ export const users = pgTable("users", {
       theme: "light" | "dark" | "system";
       doNotDisturb: boolean;
       silentNotifications: boolean;
+      emailNotificationsEnabled: boolean;
       cloudStorage?: {
         google?: {
           connected: boolean;

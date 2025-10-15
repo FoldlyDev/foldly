@@ -30,49 +30,47 @@ export function EditorPromotionEmailTemplate({
     <EmailBodyLayout
       preview={`You now have editor access to ${resourceName}`}
     >
-      <Heading style={heading}>You've Been Promoted to Editor 🎉</Heading>
+      <Heading style={heading}>You're Now an Editor 🎉</Heading>
 
       <Text style={paragraph}>
-        Great news! <strong>{ownerName}</strong> has granted you editor
-        permissions for the <strong>{resourceName}</strong> {resourceLabel}.
+        Nice! <strong>{ownerName}</strong> just gave you editor access to the{' '}
+        <strong>{resourceName}</strong> {resourceLabel}.
       </Text>
 
       <Hr style={divider} />
 
       {/* Permissions Box */}
       <div style={permissionsBox}>
-        <Text style={permissionsHeading}>What you can do now:</Text>
+        <Text style={permissionsHeading}>Here's what you can do:</Text>
 
         <Text style={permissionItem}>
-          ✓ <strong>Upload files</strong> - Add your own files to the{' '}
+          ✓ <strong>Upload files</strong> - Add your stuff to the{' '}
           {resourceLabel}
         </Text>
 
         <Text style={permissionItem}>
-          ✓ <strong>View all uploads</strong> - See files uploaded by others
+          ✓ <strong>See everything</strong> - View all files
         </Text>
 
         <Text style={permissionItem}>
-          ✓ <strong>Manage files</strong> - Organize, rename, and delete files
+          ✓ <strong>Stay organized</strong> - Rename, move, and delete files
         </Text>
 
         {resourceType === 'folder' && (
           <Text style={permissionItem}>
-            ✓ <strong>Manage subfolders</strong> - Create and organize
-            subfolders
+            ✓ <strong>Create subfolders</strong> - Keep things tidy
           </Text>
         )}
 
         <Text style={permissionItem}>
-          ✓ <strong>Download files</strong> - Access and download any file
+          ✓ <strong>Download</strong> - Grab any file you need
         </Text>
       </div>
 
       <Hr style={divider} />
 
       <Text style={paragraph}>
-        To get started, you'll need to verify your email address. Here's your
-        verification code:
+        First, verify your email with this code:
       </Text>
 
       {/* OTP Display */}
@@ -81,8 +79,8 @@ export function EditorPromotionEmailTemplate({
       </div>
 
       <Text style={paragraph}>
-        This code will expire in <strong>10 minutes</strong>. Click the button
-        below to access the {resourceLabel} and enter your code.
+        This code expires in <strong>10 minutes</strong>. Click below to access
+        the {resourceLabel} and enter your code.
       </Text>
 
       <Button href={resourceUrl} style={button}>
@@ -90,15 +88,15 @@ export function EditorPromotionEmailTemplate({
       </Button>
 
       <Text style={infoNote}>
-        <strong>Note:</strong> No account creation required! Once you verify
-        your email, you'll have full editor access to this {resourceLabel}.
+        <strong>Quick note:</strong> No account needed! Just verify your email
+        and you're all set with full editor access.
       </Text>
 
       <Hr style={divider} />
 
       <Text style={footerNote}>
-        You were promoted to editor by {ownerName}. If you have questions about
-        your permissions, contact them at{' '}
+        {ownerName} gave you editor access. Questions about your permissions? Hit
+        them up at{' '}
         <a href={`mailto:${ownerEmail}`} style={link}>
           {ownerEmail}
         </a>

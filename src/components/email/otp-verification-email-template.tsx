@@ -18,11 +18,11 @@ export function OTPVerificationEmailTemplate({
 }: OTPVerificationEmailTemplateProps) {
   return (
     <EmailBodyLayout preview={`Your verification code is ${otp}`}>
-      <Heading style={heading}>Verification Code</Heading>
+      <Heading style={heading}>Your Verification Code</Heading>
 
       <Text style={paragraph}>
-        You've requested a verification code. Use the code below to verify your
-        email address:
+        Here's the code you requested. Pop this into the verification field and
+        you're good to go:
       </Text>
 
       {/* OTP Code Box */}
@@ -31,27 +31,27 @@ export function OTPVerificationEmailTemplate({
       </div>
 
       <Text style={expiryText}>
-        This code will expire in <strong>{expiresInMinutes} minutes</strong>.
+        Quick heads up - this code expires in <strong>{expiresInMinutes} minutes</strong>.
       </Text>
 
       <Hr style={divider} />
 
       <Text style={securityNote}>
-        <strong>Security reminder:</strong>
+        <strong>Quick security tip:</strong>
       </Text>
 
-      <Text style={securityItem}>• Never share this code with anyone</Text>
+      <Text style={securityItem}>• Keep this code to yourself</Text>
       <Text style={securityItem}>
-        • Foldly staff will never ask for this code
+        • We'll never ask you for this code
       </Text>
       <Text style={securityItem}>
-        • If you didn't request this code, please ignore this email
+        • Didn't request this? Just ignore this email
       </Text>
 
       <Hr style={divider} />
 
       <Text style={footerNote}>
-        Having trouble? Contact our support team at{' '}
+        Need help? Drop us a line at{' '}
         <a href="mailto:dev@foldly.com" style={link}>
           dev@foldly.com
         </a>

@@ -9,7 +9,6 @@ interface LinkData {
   isPublic: boolean;
   customMessage: string | null;
   requiresName: boolean;
-  requiresMessage: boolean;
   workspaceId: string;
   ownerUsername: string;
 }

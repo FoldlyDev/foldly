@@ -23,6 +23,7 @@ import {
   UploadNotificationEmailTemplate,
   InvitationEmailTemplate,
   EditorPromotionEmailTemplate,
+  WelcomeEmailTemplate,
 } from '@/components/email';
 import { sanitizeEmail, isValidOTPFormat } from '@/lib/utils/security';
 import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
@@ -624,6 +625,87 @@ export async function sendEditorPromotionEmailAction(
     return {
       success: false,
       error: 'An unexpected error occurred while sending promotion email.',
+    };
+  }
+}
+
+// =============================================================================
+// 6. SEND WELCOME EMAIL
+// =============================================================================
+
+/**
+ * Send welcome email to newly onboarded user
+ *
+ * @param data - Welcome email data (email, firstName, username)
+ * @returns EmailActionResponse with success status
+ *
+ * @example
+ * ```typescript
+ * const result = await sendWelcomeEmailAction({
+ *   email: 'user@example.com',
+ *   firstName: 'John',
+ *   username: 'johndoe'
+ * });
+ * ```
+ */
+export async function sendWelcomeEmailAction(data: {
+  email: string;
+  firstName?: string | null;
+  username: string;
+}): Promise<EmailActionResponse> {
+  try {
+    // Validate email format
+    const cleanEmail = sanitizeEmail(data.email);
+    if (!cleanEmail) {
+      return {
+        success: false,
+        error: 'Invalid email address format.',
+      };
+    }
+
+    // No rate limiting for welcome emails (sent once per user onboarding)
+
+    // Render email template
+    const emailHtml = await render(
+      WelcomeEmailTemplate({
+        firstName: data.firstName || undefined,
+        username: data.username,
+      })
+    );
+
+    // Send email via Resend
+    const result = await sendEmailWithErrorHandling(async () => {
+      return await resend.emails.send({
+        from: EMAIL_SENDER.DEFAULT,
+        to: cleanEmail,
+        subject: EMAIL_SUBJECTS.WELCOME,
+        html: emailHtml,
+      });
+    });
+
+    if (!result.success) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    logger.info('Welcome email sent successfully', {
+      email: cleanEmail,
+      emailId: result.data?.id,
+    });
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    logger.error('Failed to send welcome email', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    return {
+      success: false,
+      error: 'An unexpected error occurred while sending welcome email.',
     };
   }
 }

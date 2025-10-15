@@ -24,11 +24,11 @@ export function InvitationEmailTemplate({
 }: InvitationEmailTemplateProps) {
   return (
     <EmailBodyLayout preview={`${inviterName} invited you to upload files`}>
-      <Heading style={heading}>You've Been Invited 📨</Heading>
+      <Heading style={heading}>You've Got an Invite 📨</Heading>
 
       <Text style={paragraph}>
-        <strong>{inviterName}</strong> ({inviterEmail}) has invited you to
-        upload files to their <strong>{linkName}</strong> link on Foldly.
+        <strong>{inviterName}</strong> ({inviterEmail}) wants you to share some
+        files through their <strong>{linkName}</strong> link on Foldly.
       </Text>
 
       {message && (
@@ -46,8 +46,8 @@ export function InvitationEmailTemplate({
       )}
 
       <Text style={paragraph}>
-        Foldly makes it easy to share files securely. Simply click the button
-        below, and you'll be able to upload your files - no account required!
+        Sharing files is super simple with Foldly. Click the button below and
+        upload away - no account needed!
       </Text>
 
       <Button href={linkUrl} style={button}>
@@ -55,22 +55,21 @@ export function InvitationEmailTemplate({
       </Button>
 
       <Text style={infoText}>
-        <strong>What happens next:</strong>
+        <strong>Here's how it works:</strong>
       </Text>
 
       <Text style={infoItem}>
-        1. Click the button above to open the upload link
+        1. Hit the button above to open the link
       </Text>
-      <Text style={infoItem}>2. Select the files you want to share</Text>
+      <Text style={infoItem}>2. Pick the files you want to share</Text>
       <Text style={infoItem}>
-        3. Your files will be securely uploaded and tracked by your email
+        3. Upload - your files are tracked securely by your email
       </Text>
 
       <Hr style={divider} />
 
       <Text style={footerNote}>
-        This invitation was sent by {inviterName}. If you have any questions,
-        please contact them directly at{' '}
+        {inviterName} sent you this invite. Got questions? Reach out to them at{' '}
         <a href={`mailto:${inviterEmail}`} style={link}>
           {inviterEmail}
         </a>
