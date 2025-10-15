@@ -22,13 +22,15 @@ import {
   removePermissionAction,
   updatePermissionAction,
   getLinkPermissionsAction,
-  type CreateLinkInput,
-  type UpdateLinkInput,
-  type UpdateLinkConfigInput,
-  type AddPermissionInput,
-  type RemovePermissionInput,
-  type UpdatePermissionInput,
-} from '../lib/actions';
+} from '@/lib/actions';
+import type {
+  CreateLinkInput,
+  UpdateLinkInput,
+  UpdateLinkConfigInput,
+  AddPermissionInput,
+  RemovePermissionInput,
+  UpdatePermissionInput,
+} from '../lib/validation/link-schemas';
 
 // =============================================================================
 // QUERY KEYS

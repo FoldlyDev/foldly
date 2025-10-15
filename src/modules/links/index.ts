@@ -10,7 +10,7 @@
 export * from './components';
 
 // =============================================================================
-// ACTIONS
+// ACTIONS - Re-exported from Global Scope
 // =============================================================================
 
 export {
@@ -29,9 +29,9 @@ export {
   removePermissionAction,
   updatePermissionAction,
   getLinkPermissionsAction,
-  // Types
-  type LinkActionResponse,
-} from './lib/actions';
+} from '@/lib/actions';
+
+export type { ActionResponse as LinkActionResponse } from '@/lib/utils/action-helpers';
 
 // =============================================================================
 // HOOKS

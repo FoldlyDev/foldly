@@ -1,66 +1,48 @@
 // =============================================================================
-// LINK VALIDATION SCHEMAS
+// LINK VALIDATION SCHEMAS - Link-Specific Validations
 // =============================================================================
-// Zod schemas for validating link action inputs
-// Replaces ad-hoc validation with consistent, reusable schemas
+// Extends base schemas from @/lib/validation with link-specific logic
+// Imports global validation constants for consistent limits
 
 import { z } from 'zod';
-import { sanitizeSlug } from '@/lib/utils/security';
+
+// Import base schemas from global
 import {
-  LINK_NAME_MIN_LENGTH,
-  LINK_NAME_MAX_LENGTH,
-  SLUG_MIN_LENGTH,
-  SLUG_MAX_LENGTH,
-  CUSTOM_MESSAGE_MAX_LENGTH,
-  RESERVED_SLUGS,
-} from './constants';
+  uuidSchema,
+  emailSchema,
+  permissionRoleSchema,
+  createSlugSchema,
+  createNameSchema,
+  validateInput,
+} from '@/lib/validation/base-schemas';
+
+// Import constants from global
+import { VALIDATION_LIMITS, RESERVED_SLUGS } from '@/lib/constants/validation';
+
+// Re-export base schemas for backward compatibility in links module
+export { uuidSchema, emailSchema, permissionRoleSchema, validateInput };
 
 // =============================================================================
-// BASE SCHEMAS
+// LINK-SPECIFIC SCHEMAS
 // =============================================================================
 
 /**
- * UUID validation schema
- * Used for validating link IDs, workspace IDs, etc.
+ * Link name schema using global builder
  */
-export const uuidSchema = z.string().uuid({
-  message: 'Invalid ID format. Must be a valid UUID.',
+export const linkNameSchema = createNameSchema({
+  minLength: VALIDATION_LIMITS.LINK.NAME_MIN_LENGTH,
+  maxLength: VALIDATION_LIMITS.LINK.NAME_MAX_LENGTH,
+  resourceType: 'Link name',
 });
 
 /**
- * Link name validation schema
- * Ensures name is between 3-255 characters
+ * Link slug schema using global builder with reserved slugs
  */
-export const linkNameSchema = z
-  .string()
-  .min(LINK_NAME_MIN_LENGTH, {
-    message: `Link name must be at least ${LINK_NAME_MIN_LENGTH} characters.`,
-  })
-  .max(LINK_NAME_MAX_LENGTH, {
-    message: `Link name must be less than ${LINK_NAME_MAX_LENGTH} characters.`,
-  })
-  .trim();
-
-/**
- * Slug validation schema
- * Sanitizes slug and validates it meets requirements
- * - Uses global sanitizeSlug() for consistency
- * - Checks for reserved slugs
- * - Validates length requirements
- */
-export const slugSchema = z
-  .string()
-  .min(1, { message: 'Slug is required.' })
-  .transform((val) => sanitizeSlug(val))
-  .refine((val) => val && val.length >= SLUG_MIN_LENGTH, {
-    message: `Slug must be at least ${SLUG_MIN_LENGTH} characters after sanitization.`,
-  })
-  .refine((val) => val && val.length <= SLUG_MAX_LENGTH, {
-    message: `Slug must be less than ${SLUG_MAX_LENGTH} characters.`,
-  })
-  .refine((val) => !RESERVED_SLUGS.includes(val as any), {
-    message: 'This slug is reserved and cannot be used.',
-  });
+export const slugSchema = createSlugSchema({
+  minLength: VALIDATION_LIMITS.LINK.SLUG_MIN_LENGTH,
+  maxLength: VALIDATION_LIMITS.LINK.SLUG_MAX_LENGTH,
+  reservedSlugs: RESERVED_SLUGS,
+});
 
 /**
  * Link configuration schema
@@ -70,8 +52,8 @@ export const linkConfigSchema = z.object({
   notifyOnUpload: z.boolean().optional(),
   customMessage: z
     .string()
-    .max(CUSTOM_MESSAGE_MAX_LENGTH, {
-      message: `Custom message must be less than ${CUSTOM_MESSAGE_MAX_LENGTH} characters.`,
+    .max(VALIDATION_LIMITS.LINK.CUSTOM_MESSAGE_MAX_LENGTH, {
+      message: `Custom message must be less than ${VALIDATION_LIMITS.LINK.CUSTOM_MESSAGE_MAX_LENGTH} characters.`,
     })
     .nullable()
     .optional(),
@@ -140,26 +122,8 @@ export const checkSlugSchema = z.object({
 export type CheckSlugInput = z.infer<typeof checkSlugSchema>;
 
 // =============================================================================
-// PERMISSION SCHEMAS (for Phase 3)
+// PERMISSION SCHEMAS
 // =============================================================================
-
-/**
- * Email validation schema
- * Validates email format
- */
-export const emailSchema = z
-  .string()
-  .email({ message: 'Invalid email format.' })
-  .toLowerCase()
-  .trim();
-
-/**
- * Permission role schema
- * Validates that role is one of the allowed values
- */
-export const permissionRoleSchema = z.enum(['owner', 'editor', 'uploader'], {
-  message: 'Role must be owner, editor, or uploader.',
-});
 
 /**
  * Schema for adding a permission to a link
@@ -206,37 +170,3 @@ export const verifyLinkAccessSchema = z.object({
 });
 
 export type VerifyLinkAccessInput = z.infer<typeof verifyLinkAccessSchema>;
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-/**
- * Validates data against a schema and returns typed result
- * Throws LinkActionResponse if validation fails (to be caught by HOF)
- *
- * @param schema - Zod schema to validate against
- * @param data - Data to validate
- * @returns Validated and typed data
- * @throws LinkActionResponse with validation message if invalid
- */
-export function validateInput<T extends z.ZodType>(
-  schema: T,
-  data: unknown
-): z.infer<T> {
-  const result = schema.safeParse(data);
-
-  if (!result.success) {
-    // Extract first error message for user-friendly feedback
-    const firstError = result.error.issues[0];
-    const errorMessage = firstError?.message || 'Validation failed';
-
-    // Throw as LinkActionResponse so HOF preserves the validation error message
-    throw {
-      success: false,
-      error: errorMessage,
-    } as const;
-  }
-
-  return result.data;
-}
