@@ -310,8 +310,17 @@ Key environment variables (see `.env.local`):
 - `src/lib/actions/workspace.actions.ts` - Workspace actions
 - `src/lib/actions/onboarding.actions.ts` - Onboarding flow actions
 - `src/lib/actions/email.actions.ts` - Email service actions (5 actions with 32 tests)
+- `src/lib/actions/link.actions.ts` - Link CRUD operations (7 actions: read, write, validation)
+- `src/lib/actions/permission.actions.ts` - Permission management (4 actions: add, remove, update, get)
 - `src/hooks/index.ts` - All global hooks (data + UI)
 - `src/hooks/data/use-email.ts` - Email service hooks (5 hooks with toast notifications)
+
+**Global Utilities & Infrastructure**:
+- `src/lib/utils/action-helpers.ts` - Generic action HOFs (withAuth, withAuthInput, formatActionError)
+- `src/lib/utils/authorization.ts` - Resource ownership verification (verifyLinkOwnership, verifyResourceOwnership)
+- `src/lib/validation/base-schemas.ts` - Reusable Zod schemas (UUID, email, slug, name builders)
+- `src/lib/constants/error-messages.ts` - Centralized error messages
+- `src/lib/constants/validation.ts` - Validation limits and reserved values
 
 **Email & Rate Limiting Infrastructure**:
 - `src/lib/email/client.ts` - Resend client singleton with error handling
