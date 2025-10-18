@@ -80,11 +80,6 @@ export {
   ACTION_NAMES,
   // Error messages
   ERROR_MESSAGES,
-  // Validation constants
-  LINK_NAME_MIN_LENGTH,
-  LINK_NAME_MAX_LENGTH,
-  SLUG_MIN_LENGTH,
-  SLUG_MAX_LENGTH,
-  CUSTOM_MESSAGE_MAX_LENGTH,
+  // Validation constants (use VALIDATION_LIMITS from @/lib/constants instead)
   RESERVED_SLUGS,
 } from './lib/validation/constants';

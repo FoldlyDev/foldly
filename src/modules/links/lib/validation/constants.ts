@@ -10,20 +10,35 @@ export { ERROR_MESSAGES, SUCCESS_MESSAGES } from '@/lib/constants/error-messages
 // Re-export validation limits and reserved slugs from global
 export { VALIDATION_LIMITS, RESERVED_SLUGS, type ReservedSlug } from '@/lib/constants/validation';
 
-// Deprecated: Individual constant exports (use VALIDATION_LIMITS.LINK instead)
-// Kept for backward compatibility with existing components
-export const LINK_NAME_MIN_LENGTH = 3;
-export const LINK_NAME_MAX_LENGTH = 255;
-export const SLUG_MIN_LENGTH = 3;
-export const SLUG_MAX_LENGTH = 100;
-export const CUSTOM_MESSAGE_MAX_LENGTH = 500;
-
 // =============================================================================
 // ACTION NAMES (for logging)
 // =============================================================================
 // Note: Global actions now use inline string names instead of constants
 // These are kept for any module-specific uses (e.g., UI components)
 
+/**
+ * Action name constants for link and permission operations
+ *
+ * Used for:
+ * - Error logging and debugging (consistent action identifiers)
+ * - UI component references (toast notifications, loading states)
+ * - Test assertions and mocks
+ *
+ * Categories:
+ * - Read actions: Retrieve link data by various criteria
+ * - Write actions: Create, update, and delete link operations
+ * - Validation actions: Check slug availability before creation
+ * - Permission actions: Manage email-based access control
+ *
+ * @example
+ * ```typescript
+ * // In UI components
+ * toast.error(`${ACTION_NAMES.CREATE_LINK} failed`);
+ *
+ * // In logging
+ * logger.info(`Executing ${ACTION_NAMES.GET_USER_LINKS}`);
+ * ```
+ */
 export const ACTION_NAMES = {
   // Read actions
   GET_USER_LINKS: 'getUserLinksAction',
