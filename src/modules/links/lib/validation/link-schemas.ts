@@ -1,0 +1,213 @@
+// =============================================================================
+// LINK VALIDATION SCHEMAS - Link-Specific Validations
+// =============================================================================
+// Extends base schemas from @/lib/validation with link-specific logic
+// Imports global validation constants for consistent limits
+
+import { z } from 'zod';
+
+// Import base schemas from global
+import {
+  uuidSchema,
+  emailSchema,
+  permissionRoleSchema,
+  createSlugSchema,
+  createNameSchema,
+  validateInput,
+} from '@/lib/validation/base-schemas';
+
+// Import constants from global
+import { VALIDATION_LIMITS, RESERVED_SLUGS } from '@/lib/constants/validation';
+
+// Re-export base schemas for backward compatibility in links module
+export { uuidSchema, emailSchema, permissionRoleSchema, validateInput };
+
+// =============================================================================
+// LINK-SPECIFIC SCHEMAS
+// =============================================================================
+
+/**
+ * Link name schema using global builder
+ */
+export const linkNameSchema = createNameSchema({
+  minLength: VALIDATION_LIMITS.LINK.NAME_MIN_LENGTH,
+  maxLength: VALIDATION_LIMITS.LINK.NAME_MAX_LENGTH,
+  resourceType: 'Link name',
+});
+
+/**
+ * Link slug schema using global builder with reserved slugs
+ */
+export const slugSchema = createSlugSchema({
+  minLength: VALIDATION_LIMITS.LINK.SLUG_MIN_LENGTH,
+  maxLength: VALIDATION_LIMITS.LINK.SLUG_MAX_LENGTH,
+  reservedSlugs: RESERVED_SLUGS,
+});
+
+/**
+ * Link configuration schema
+ * Validates the JSON configuration object for links
+ */
+export const linkConfigSchema = z.object({
+  notifyOnUpload: z.boolean().optional(),
+  customMessage: z
+    .string()
+    .max(VALIDATION_LIMITS.LINK.CUSTOM_MESSAGE_MAX_LENGTH, {
+      message: `Custom message must be less than ${VALIDATION_LIMITS.LINK.CUSTOM_MESSAGE_MAX_LENGTH} characters.`,
+    })
+    .nullable()
+    .optional(),
+  requiresName: z.boolean().optional(),
+});
+
+/**
+ * Link branding schema
+ * Validates the branding configuration for visual identity
+ */
+export const brandingSchema = z.object({
+  enabled: z.boolean().optional(),
+  logo: z
+    .object({
+      url: z.string().url({ message: 'Logo URL must be a valid URL.' }),
+      altText: z.string().max(100, { message: 'Alt text must be less than 100 characters.' }).optional(),
+    })
+    .nullable()
+    .optional(),
+  colors: z
+    .object({
+      accentColor: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
+          message: 'Accent color must be a valid hex color (e.g., #6c47ff).',
+        }),
+      backgroundColor: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
+          message: 'Background color must be a valid hex color (e.g., #ffffff).',
+        }),
+    })
+    .nullable()
+    .optional(),
+});
+
+// =============================================================================
+// ACTION INPUT SCHEMAS
+// =============================================================================
+
+/**
+ * Schema for creating a new link
+ * Validates: name, slug, isPublic
+ */
+export const createLinkSchema = z.object({
+  name: linkNameSchema,
+  slug: slugSchema,
+  isPublic: z.boolean().optional().default(false),
+});
+
+export type CreateLinkInput = z.infer<typeof createLinkSchema>;
+
+/**
+ * Schema for updating an existing link
+ * Validates: linkId, optional name, slug, isPublic, isActive
+ */
+export const updateLinkSchema = z.object({
+  linkId: uuidSchema,
+  name: linkNameSchema.optional(),
+  slug: slugSchema.optional(),
+  isPublic: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;
+
+/**
+ * Schema for updating link configuration
+ * Validates: linkId, config object
+ */
+export const updateLinkConfigSchema = z.object({
+  linkId: uuidSchema,
+  config: linkConfigSchema,
+});
+
+export type UpdateLinkConfigInput = z.infer<typeof updateLinkConfigSchema>;
+
+/**
+ * Schema for updating link branding
+ * Validates: linkId, branding object
+ */
+export const updateLinkBrandingSchema = z.object({
+  linkId: uuidSchema,
+  branding: brandingSchema,
+});
+
+export type UpdateLinkBrandingInput = z.infer<typeof updateLinkBrandingSchema>;
+
+/**
+ * Schema for deleting a link
+ * Validates: linkId
+ */
+export const deleteLinkSchema = z.object({
+  linkId: uuidSchema,
+});
+
+export type DeleteLinkInput = z.infer<typeof deleteLinkSchema>;
+
+/**
+ * Schema for checking slug availability
+ * Validates: slug format
+ */
+export const checkSlugSchema = z.object({
+  slug: slugSchema,
+});
+
+export type CheckSlugInput = z.infer<typeof checkSlugSchema>;
+
+// =============================================================================
+// PERMISSION SCHEMAS
+// =============================================================================
+
+/**
+ * Schema for adding a permission to a link
+ * Validates: linkId, email, role
+ */
+export const addPermissionSchema = z.object({
+  linkId: uuidSchema,
+  email: emailSchema,
+  role: permissionRoleSchema,
+});
+
+export type AddPermissionInput = z.infer<typeof addPermissionSchema>;
+
+/**
+ * Schema for removing a permission from a link
+ * Validates: linkId, email
+ */
+export const removePermissionSchema = z.object({
+  linkId: uuidSchema,
+  email: emailSchema,
+});
+
+export type RemovePermissionInput = z.infer<typeof removePermissionSchema>;
+
+/**
+ * Schema for updating a permission role
+ * Validates: linkId, email, newRole
+ */
+export const updatePermissionSchema = z.object({
+  linkId: uuidSchema,
+  email: emailSchema,
+  role: permissionRoleSchema,
+});
+
+export type UpdatePermissionInput = z.infer<typeof updatePermissionSchema>;
+
+/**
+ * Schema for verifying link access
+ * Validates: linkId, email
+ */
+export const verifyLinkAccessSchema = z.object({
+  linkId: uuidSchema,
+  email: emailSchema,
+});
+
+export type VerifyLinkAccessInput = z.infer<typeof verifyLinkAccessSchema>;

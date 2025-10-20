@@ -11,20 +11,20 @@ Foldly is built as a modern full-stack web application using Next.js, Supabase, 
 ## Frontend
 
 ### Framework
-- **Next.js 14+** (App Router)
+- **Next.js 15+** (App Router)
   - Server Components for performance
   - Server Actions for mutations
   - API Routes for webhooks
   - Static generation where possible
 
 ### UI Framework
-- **React 18+**
+- **React 19+**
   - Hooks-based architecture
   - Context API for global state
-  - React Query for server state (optional)
+  - TanStack Query (React Query) for server state
 
 ### Styling
-- **Tailwind CSS**
+- **Tailwind CSS 4**
   - Utility-first CSS
   - Custom design system
   - Responsive by default
@@ -176,11 +176,12 @@ Team ($30/mo):
 ## External Services
 
 ### Email
-- **Resend** or **SendGrid**
+- **Resend**
   - Transactional emails
   - Upload notifications
   - Invitation emails
-  - Password reset emails
+  - OTP verification
+  - Welcome emails
 
 ### Monitoring
 - **Vercel Analytics**
@@ -235,17 +236,11 @@ Team ($30/mo):
 ## Database Access
 
 ### ORM
-- **Supabase JS Client**
+- **Drizzle ORM**
   - Type-safe queries
-  - Real-time subscriptions
-  - RLS policy enforcement
-
-- **Prisma** (alternative)
-  - Type-safe ORM
+  - SQL-like syntax
   - Migration management
-  - Schema as code
-
-**Decision:** Start with Supabase JS Client, evaluate Prisma if needed.
+  - Lightweight and performant
 
 ---
 
@@ -332,6 +327,13 @@ STRIPE_WEBHOOK_SECRET=
 
 # Email (Resend)
 RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+RESEND_FROM_NAME=
+RESEND_REPLY_TO=
+
+# Redis (Upstash - Rate Limiting)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 
 # App
 NEXT_PUBLIC_APP_URL=https://foldly.com
@@ -413,9 +415,10 @@ NEXT_PUBLIC_APP_URL=https://foldly.com
 ## Summary
 
 **Core Stack:**
-- Next.js + React + TypeScript
-- Supabase (DB + Auth integration)
+- Next.js 15 + React 19 + TypeScript
+- Supabase (PostgreSQL) + Drizzle ORM
 - Clerk (Auth + Payments)
+- Resend (Email) + Upstash Redis (Rate Limiting)
 - Google Cloud Storage
 - Vercel (Hosting)
 

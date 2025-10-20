@@ -1,6 +1,6 @@
 # Foldly V2 Execution Documentation
 
-Last Updated: October 9, 2025
+Last Updated: October 20, 2025
 
 This directory tracks **what has been implemented** in Foldly V2. For planning and design decisions, see [`/docs/planning`](../planning).
 
@@ -23,6 +23,8 @@ execution/
 │   └── schema.md               - ✅ Database schema implementation
 ├── testing/
 │   └── testing-guide.md        - ✅ Testing strategy & patterns
+├── infrastructure/
+│   └── email-and-redis.md      - ✅ Email service & Redis rate limiting
 ├── api/
 │   └── (API endpoint specs)     - ⏳ Coming soon
 └── components/
@@ -38,14 +40,17 @@ execution/
 | Component | Status | Location | Notes |
 |-----------|--------|----------|-------|
 | **Database Schema** | ✅ Completed | `database/schema.md` | 6 tables implemented with Drizzle ORM |
-| **Database Migration** | ✅ Completed | `drizzle/0000_superb_sway.sql` | Schema pushed to Supabase |
+| **Database Migration** | ✅ Completed | 3 migrations | Schema pushed to Supabase |
 | **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer with user management |
 | **Onboarding Flow** | ✅ Completed | `src/modules/auth` | Username capture, workspace & link creation |
+| **Email Service System** | ✅ Completed | `infrastructure/email-and-redis.md` | Phases 1-4 complete (infrastructure, templates, actions, hooks) |
+| **Permission Management** | ✅ Completed | `src/lib/actions/permission.actions.ts` | 4 actions with 23 tests |
+| **Branding Module** | ✅ Completed | `src/modules/links/lib/actions/branding.actions.ts` | Logo uploads & color customization |
+| GCS Setup | ✅ Completed | `src/lib/gcs/client.ts` | Client singleton with 4 operations |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
-| GCS Setup | ⏳ Pending | - | Storage bucket configuration |
 | Clerk Auth | ✅ Completed | `.env.local` | Authentication configured |
-| Base UI Components | ⏳ Pending | - | shadcn/ui setup |
+| Base UI Components | ✅ Completed | `src/components/ui/shadcn/` | shadcn/ui + custom CTA buttons |
 
 ---
 
@@ -90,7 +95,7 @@ execution/
 - `src/lib/actions/workspace.actions.ts`
 - `src/lib/actions/user.actions.ts`
 - `src/lib/actions/index.ts`
-- `src/hooks/data/use-onboarding-status.ts`
+- `src/hooks/data/use-onboarding.ts`
 - `src/hooks/data/use-user-workspace.ts`
 - `src/hooks/data/index.ts`
 - `src/hooks/ui/use-scroll-position.ts`
@@ -150,6 +155,60 @@ execution/
 
 ---
 
+### ✅ Email Service Infrastructure (October 13, 2025)
+
+**Implementation Files**:
+- `src/lib/email/client.ts` - Resend client with error handling
+- `src/lib/email/types.ts` - TypeScript type definitions (10 types)
+- `src/lib/email/constants.ts` - Email configuration and constants
+- `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
+- `src/lib/middleware/rate-limit.ts` - Migrated to Redis-backed rate limiting
+- `src/lib/utils/security.ts` - OTP generation and validation utilities
+
+**Key Features**:
+- Resend email client singleton with error handling wrapper
+- Complete TypeScript type system for email operations (10 types)
+- Email configuration constants (addresses, subjects, limits, OTP config)
+- OTP utilities: `generateSecureOTP()`, `isValidOTPFormat()`, expiration helpers
+- Distributed Redis rate limiting (replacing in-memory Map)
+- Email-specific rate limit keys and presets
+
+**Status**:
+- ✅ Phase 1: Infrastructure complete (client, types, constants, OTP utilities)
+- ✅ Phase 2: Email templates complete (6 templates including welcome email)
+- ✅ Phase 3: Server actions complete (5 actions with 32 tests)
+- ✅ Phase 4: React Query hooks complete (5 hooks with toast notifications)
+- ✅ Redis integration complete (Upstash client, distributed rate limiting)
+
+**Documentation**: [Email & Redis Infrastructure](./infrastructure/email-and-redis.md)
+
+**Planning Reference**: [Email Service Plan](../planning/email-service-plan.md)
+
+---
+
+### ✅ Permission Management & Branding (October 20, 2025)
+
+**Implementation Files**:
+- `src/lib/actions/permission.actions.ts` (4 actions: add, remove, update, get)
+- `src/lib/gcs/client.ts` (GCS client with upload, delete, signed URLs)
+- `src/modules/links/lib/actions/branding.actions.ts` (3 actions: update, upload, delete)
+- `src/modules/links/lib/validation/branding-schemas.ts`
+
+**Key Features**:
+- Email-based permission management (add, remove, update role, get permissions)
+- GCS client singleton (upload, delete, fileExists, getSignedUrl)
+- Branding logo uploads (5MB limit, PNG/JPEG/WebP support)
+- Color customization (accent, background)
+- Rate limiting on all branding operations
+
+**Status**:
+- ✅ 4 permission actions (23 tests, optimized: 55.33s)
+- ✅ 3 branding actions (17 tests, 38.57s)
+- ✅ GCS client integration
+- ✅ Comprehensive validation schemas
+
+---
+
 ## In Progress
 
 Nothing currently in progress.
@@ -190,6 +249,8 @@ Nothing currently in progress.
 | Date | Migration | Description |
 |------|-----------|-------------|
 | October 9, 2025 | `0000_superb_sway.sql` | ✅ Created all 6 tables with indexes and constraints |
+| October 14, 2025 | `0001_cloudy_ozymandias.sql` | ✅ Schema updates (email notification settings) |
+| October 20, 2025 | `0002_cloudy_ezekiel_stane.sql` | ✅ Schema updates (branding support) |
 
 ---
 
@@ -203,9 +264,13 @@ Nothing currently in progress.
 | Server Actions (User) | ✅ Completed | 21 tests | User creation & profile updates |
 | Server Actions (Onboarding) | ✅ Completed | 10 tests | Onboarding status & username checks |
 | Server Actions (Workspace) | ✅ Completed | 15 tests | Workspace actions, link creation, email fallback |
+| Server Actions (Link) | ✅ Completed | 18 tests | Link CRUD operations |
+| Server Actions (Permission) | ✅ Completed | 23 tests | Permission management (optimized: 55.33s) |
+| Module Actions (Branding) | ✅ Completed | 17 tests | Logo uploads & branding config (38.57s) |
 | Security Utilities | ✅ Completed | 22 tests | Slug generation, sanitization |
 | Module Actions (Uploads) | ✅ Completed | 8 tests | Link validation & access |
-| **Total** | **✅ Active** | **122 tests** | 8 test suites, all passing |
+| Server Actions (Email) | ✅ Completed | 32 tests | Email service actions |
+| **Total** | **✅ Active** | **195+ tests** | 12 test suites, all passing |
 
 **Documentation**: [Testing Guide](./testing/testing-guide.md)
 
@@ -260,15 +325,23 @@ When implementing a new feature:
 
 ## Summary
 
-**Current Phase**: Foundation (Week 1-2)
-**Progress**: 7/9 foundation tasks completed (78%)
-**Next Up**: Set up Google Cloud Storage and base UI components
+**Current Phase**: Foundation + Links Module - COMPLETE
+**Progress**: All foundation tasks completed
+**Next Up**: Build file upload functionality
 
 **Completed**:
-- ✅ Database schema design and implementation
-- ✅ Database migration generated and pushed to Supabase
-- ✅ Global actions & hooks layer (user management, workspace, onboarding)
+- ✅ Database schema design and implementation (6 tables)
+- ✅ Database migrations (3 migrations pushed to Supabase)
+- ✅ Global actions & hooks layer (user management, workspace, onboarding, email)
 - ✅ Onboarding flow with username capture and workspace creation
+- ✅ Email service system (Phases 1-4: infrastructure, templates, actions, hooks)
+- ✅ Email templates (6 total including welcome email)
+- ✅ Email notification settings in user schema
+- ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Permission management (4 global actions with 23 tests)
+- ✅ GCS client integration (upload, delete, signed URLs)
+- ✅ Branding module (logo uploads, color customization, 17 tests)
+- ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
 - ✅ Clerk authentication configured
@@ -280,5 +353,4 @@ When implementing a new feature:
 - None
 
 **Remaining Tasks**:
-- Google Cloud Storage bucket setup
-- Base UI components (shadcn/ui)
+- File upload functionality implementation

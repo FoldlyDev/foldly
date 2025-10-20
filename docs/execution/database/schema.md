@@ -60,10 +60,12 @@ Relationships:
 **Key Fields**:
 - `id` (PK, text): Clerk user ID
 - `email` (unique): User email
-- `username` (unique): Used for first link slug
+- `username` (unique): Display username with case preserved (e.g., "TestUser")
 - `subscription_status`: Subscription tier tracking
 - `storage_used`: Cached storage usage (bytes)
-- `settings` (JSONB): User preferences
+- `user_settings` (JSONB): User preferences including email notification settings
+
+**Note:** Username case is preserved for display purposes. Link slugs derived from usernames are lowercased separately.
 
 **Cascade**: User deletion → workspace deletion → all content deleted
 
@@ -108,13 +110,16 @@ Relationships:
   name: varchar(255)
   is_public: boolean (default: false)
   is_active: boolean (default: true)
-  custom_message: text (nullable)
-  requires_name: boolean (default: false)
-  requires_message: boolean (default: false)
+  link_config: jsonb (default: { notifyOnUpload: true, customMessage: null, requiresName: false })
   created_at: timestamp
   updated_at: timestamp
 }
 ```
+
+**Link Configuration (JSONB)**:
+- `notifyOnUpload` (boolean): Send email notifications when files are uploaded
+- `customMessage` (string | null): Custom welcome message for upload page
+- `requiresName` (boolean): Require uploaders to provide their name
 
 **Constraints**:
 - `slug` is globally UNIQUE across all users
@@ -125,7 +130,9 @@ Relationships:
 - **Public**: Anyone can upload, emails auto-appended to permissions
 - **Dedicated**: Only whitelisted emails can upload
 
-**Auto-generation**: First link created after onboarding with `slug = username`
+**Auto-generation**: First link created after onboarding with `slug = username.toLowerCase()` (e.g., "testuser-first-link")
+
+**Note:** Slugs are always lowercase for URL consistency, regardless of username case.
 
 **Deletion Behavior**: When link deleted, `link_id` set to NULL in folders/files (preserves content)
 
@@ -276,22 +283,22 @@ gs://foldly-files/
    ↓
 2. User redirected to onboarding page
    ↓
-3. User enters username during onboarding
+3. User enters username during onboarding (case-preserved, e.g., "TestUser")
    ↓
 4. Check username availability in Clerk (with reverification)
    ↓
 5. Create user in database FIRST (required for foreign key)
    - id: Clerk user ID
    - email: from Clerk
-   - username: from onboarding form
+   - username: from onboarding form (case-preserved, e.g., "TestUser")
    ↓
 6. Create workspace
    - name: "{firstName}'s Workspace" or "{username}'s Workspace"
    - user_id: Clerk user ID (foreign key)
    ↓
 7. Create first link
-   - slug: "{username}-first-link"
-   - name: "{username}-first-link"
+   - slug: "{username.toLowerCase()}-first-link" (lowercase for URLs, e.g., "testuser-first-link")
+   - name: "{username}'s First Link" (case-preserved for display, e.g., "TestUser's First Link")
    - is_public: false
    - is_active: true
    ↓

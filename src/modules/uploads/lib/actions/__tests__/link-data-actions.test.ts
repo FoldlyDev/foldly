@@ -211,12 +211,14 @@ describe('Link Data Actions', () => {
       // Act: Validate link access
       const result = await validateLinkAccessAction({ slugParts });
 
-      // Assert: Should return all link data fields
+      // Assert: Should return link config fields (requiresMessage was dropped in migration 0001)
       expect(result.success).toBe(true);
       if (result.success) {
         expect(result.data).toHaveProperty('customMessage');
         expect(result.data).toHaveProperty('requiresName');
-        expect(result.data).toHaveProperty('requiresMessage');
+        // requiresMessage was removed in migration 0001_cloudy_ozymandias
+        expect(result.data.linkId).toBe(link.id);
+        expect(result.data.workspaceId).toBe(workspace.id);
       }
     });
   });

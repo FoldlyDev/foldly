@@ -12,6 +12,7 @@ import { sanitizeUsername } from '@/lib/utils/security';
 import { logAuthFailure, logSecurityEvent, logSecurityIncident } from '@/lib/utils/logger';
 import { onboardingTransaction } from '@/lib/database/transactions';
 import { randomUUID } from 'crypto';
+import { sendWelcomeEmailAction } from './email.actions';
 
 /**
  * Check if authenticated user has completed onboarding
@@ -120,26 +121,34 @@ export async function checkUsernameAvailability(username: string) {
 
     const client = await clerkClient();
 
+    // Get current user to check if username belongs to them
+    const currentClerkUser = await currentUser();
+
     // Query Clerk for users with this username (using sanitized version)
     const users = await client.users.getUserList({
       username: [sanitized],
     });
 
-    // If any users found with this username, it's taken
-    const isAvailable = users.data.length === 0;
+    // Check if username is available
+    // Username is available if:
+    // 1. No users have this username, OR
+    // 2. The only user with this username is the current user (they can keep their own username)
+    const isOwnUsername = currentClerkUser?.username?.toLowerCase() === sanitized.toLowerCase();
+    const isAvailable = users.data.length === 0 || (users.data.length === 1 && isOwnUsername);
 
     // Log successful check
     logSecurityEvent('Username availability checked', {
       action: 'username_check_success',
       userId,
-      isAvailable
+      isAvailable,
+      isOwnUsername
     });
 
     return {
       success: true as const,
       isAvailable,
       message: isAvailable
-        ? 'Username is available'
+        ? (isOwnUsername ? 'You can keep your current username' : 'Username is available')
         : 'Username is already taken',
     };
   } catch (error) {
@@ -261,8 +270,8 @@ export async function completeOnboardingAction(username: string) {
     const linkData = {
       id: linkId,
       workspaceId: workspaceId,
-      slug: `${sanitized}-first-link`,
-      name: `${sanitized}-first-link`,
+      slug: `${sanitized.toLowerCase()}-first-link`, // Convert to lowercase for URL-safe slug
+      name: `${sanitized}'s First Link`, // Keep original case for display name
       isPublic: false,
       isActive: true,
     };
@@ -317,6 +326,13 @@ export async function completeOnboardingAction(username: string) {
         username: sanitized,
         workspaceId,
         linkId
+      });
+
+      // Send welcome email (don't block on failure)
+      await sendWelcomeEmailAction({
+        email: primaryEmail,
+        firstName: clerkUser.firstName,
+        username: sanitized,
       });
 
       return {

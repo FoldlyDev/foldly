@@ -8,6 +8,7 @@ import postgres from 'postgres';
 
 // Import all schemas for relation setup
 import * as schema from './schemas';
+import { logger } from '@/lib/utils/logger';
 
 // Create connection string from environment variables
 const connectionString = process.env.DATABASE_URL;
@@ -37,7 +38,7 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
     await client`SELECT 1`;
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    logger.error('Database connection failed', { error });
     return false;
   }
 };
@@ -46,8 +47,8 @@ export const checkDatabaseConnection = async (): Promise<boolean> => {
 export const closeDatabaseConnection = async (): Promise<void> => {
   try {
     await client.end();
-    console.log('Database connection closed successfully');
+    logger.info('Database connection closed successfully');
   } catch (error) {
-    console.error('Error closing database connection:', error);
+    logger.error('Error closing database connection', { error });
   }
 };

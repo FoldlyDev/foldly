@@ -97,7 +97,7 @@ export interface SecurityEventContext {
   userAgent?: string;
   action?: string;
   resource?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface RateLimitContext extends SecurityEventContext {

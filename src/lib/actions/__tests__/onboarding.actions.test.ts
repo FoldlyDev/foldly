@@ -276,7 +276,7 @@ describe('Onboarding Actions', () => {
       }
     });
 
-    it('should check for exact username match (case-sensitive)', async () => {
+    it('should check for exact username match (case-preserved)', async () => {
       // Arrange: Mock auth.protect() and clerkClient
       const mockUserId = 'test_user_case';
       const hasMock = vi.fn().mockReturnValue(true); // User has reverified
@@ -287,7 +287,7 @@ describe('Onboarding Actions', () => {
       const mockClerkClient = {
         users: {
           getUserList: vi.fn().mockResolvedValue({
-            data: [], // No users with exact case
+            data: [], // No users with this username
           }),
         },
       };
@@ -296,16 +296,16 @@ describe('Onboarding Actions', () => {
       // Reset rate limit for clean test
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
-      // Act: Check username availability with specific case
+      // Act: Check username availability with mixed case
       const result = await checkUsernameAvailability('TestUser');
 
-      // Assert: Should query Clerk with sanitized username (lowercase)
+      // Assert: Should query Clerk with case preserved
       if ('success' in result) {
         expect(result.success).toBe(true);
       }
-      // Note: Username gets sanitized to lowercase, so Clerk is queried with 'testuser'
+      // Note: Username case is now preserved, so Clerk is queried with 'TestUser'
       expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
-        username: ['testuser'],
+        username: ['TestUser'],
       });
     });
 
@@ -338,7 +338,7 @@ describe('Onboarding Actions', () => {
           expect(result.success).toBe(true);
         }
         expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
-          username: ['test-user_123'], // Sanitized: lowercase, special chars removed
+          username: ['Test-User_123'], // Sanitized: case preserved, special chars removed
         });
       });
 
@@ -516,14 +516,14 @@ describe('Onboarding Actions', () => {
         // Act: Complete with unsanitized username
         const result = await completeOnboardingAction('Test-USER_123!');
 
-        // Assert: Action returns sanitized username
+        // Assert: Action returns sanitized username (case preserved)
         expect(result.success).toBe(true);
-        expect(result.data?.user.username).toBe('test-user_123'); // Sanitized
-        expect(result.data?.link.slug).toBe('test-user_123-first-link');
+        expect(result.data?.user.username).toBe('Test-USER_123'); // Sanitized with case preserved
+        expect(result.data?.link.slug).toBe('test-user_123-first-link'); // Slug is lowercase
 
         // Verify data persisted in database
         const user = await getUserById(mockUserId);
-        expect(user?.username).toBe('test-user_123');
+        expect(user?.username).toBe('Test-USER_123'); // Case preserved in database
       });
 
       it('should capture firstName and lastName from Clerk', async () => {

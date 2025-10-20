@@ -328,8 +328,8 @@ These features can wait until after MVP validation.
 - [x] Configure Supabase (database schema pushed)
 - [ ] Configure Google Cloud Storage
 - [x] Set up Clerk authentication (configured)
-- [ ] Build onboarding flow (username capture + auto-generation)
-- [ ] Create base UI components (buttons, forms, modals)
+- [x] Build onboarding flow (username capture + auto-generation)
+- [x] Create base UI components (shadcn/ui + custom CTA buttons)
 
 ### Week 3: User & Folder Management
 - [ ] User signup/login flow

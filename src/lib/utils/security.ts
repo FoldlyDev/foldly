@@ -5,6 +5,7 @@
 // For path traversal prevention, IP validation, and input sanitization
 
 import path from 'path';
+import { randomInt } from 'crypto';
 import { logger } from '@/lib/utils/logger';
 
 /**
@@ -234,16 +235,16 @@ export function hashForLogging(data: string): string {
 /**
  * Sanitizes username to prevent injection attacks
  * @param username - Username to sanitize
- * @returns Sanitized username safe for storage and display
+ * @returns Sanitized username safe for storage and display (preserves case)
  */
 export function sanitizeUsername(username: string | null | undefined): string {
   if (!username) return '';
 
-  // Trim and convert to lowercase for consistency
-  const trimmed = username.trim().toLowerCase();
+  // Trim whitespace but preserve case for display
+  const trimmed = username.trim();
 
-  // Remove all characters except alphanumeric, hyphens, and underscores
-  const sanitized = trimmed.replace(/[^a-z0-9_-]/g, '');
+  // Remove all characters except alphanumeric (both cases), hyphens, and underscores
+  const sanitized = trimmed.replace(/[^a-zA-Z0-9_-]/g, '');
 
   // Enforce maximum length of 50 characters
   const limited = sanitized.slice(0, 50);
@@ -348,4 +349,117 @@ export function sanitizeFileName(name: string | null | undefined): string {
 
   // Return sanitized name or fallback to 'untitled'
   return sanitized || 'untitled';
+}
+
+/**
+ * Sanitizes link slug to prevent injection and ensure URL compatibility
+ * @param slug - Slug to sanitize
+ * @returns Sanitized slug safe for URLs (lowercase, alphanumeric, hyphens only)
+ */
+export function sanitizeSlug(slug: string | null | undefined): string {
+  if (!slug) return '';
+
+  // Trim whitespace and convert to lowercase
+  const trimmed = slug.trim().toLowerCase();
+
+  // Allow only lowercase alphanumeric characters and hyphens
+  const sanitized = trimmed.replace(/[^a-z0-9-]/g, '');
+
+  // Enforce maximum length (100 chars to match schema)
+  const limited = sanitized.slice(0, 100);
+
+  // Log warning if sanitization changed the input significantly
+  if (limited !== trimmed) {
+    logger.warn(
+      '[SECURITY] Slug sanitization applied',
+      { original: hashForLogging(trimmed), sanitized: hashForLogging(limited) }
+    );
+  }
+
+  return limited;
+}
+
+// =============================================================================
+// OTP (ONE-TIME PASSWORD) UTILITIES
+// =============================================================================
+// Cryptographically secure OTP generation and validation
+
+/**
+ * Generates a cryptographically secure 6-digit OTP code
+ * Uses Node.js built-in crypto.randomInt() for secure random number generation
+ *
+ * @returns 6-digit OTP code as string (e.g., "123456", "007823")
+ *
+ * @example
+ * ```typescript
+ * const otp = generateSecureOTP();
+ * console.log(otp); // "456789"
+ *
+ * // Store with expiration
+ * const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+ * await storeOTP(userId, otp, expiresAt);
+ * ```
+ */
+export function generateSecureOTP(): string {
+  // Generate random integer between 100000 and 999999 (inclusive)
+  const otp = randomInt(100_000, 1_000_000);
+
+  // Pad with leading zeros if needed (though randomInt guarantees 6 digits in this range)
+  return otp.toString().padStart(6, '0');
+}
+
+/**
+ * Validates OTP format
+ * Checks if OTP is exactly 6 digits
+ *
+ * @param otp - OTP code to validate
+ * @returns True if valid format, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidOTPFormat("123456"); // true
+ * isValidOTPFormat("12345");  // false (too short)
+ * isValidOTPFormat("abc123"); // false (contains non-digits)
+ * ```
+ */
+export function isValidOTPFormat(otp: string | null | undefined): boolean {
+  if (!otp) return false;
+
+  // Must be exactly 6 digits
+  const otpRegex = /^\d{6}$/;
+  return otpRegex.test(otp);
+}
+
+/**
+ * Calculates OTP expiration timestamp
+ *
+ * @param expiryMinutes - Number of minutes until expiration (default: 10)
+ * @returns Date object representing expiration time
+ *
+ * @example
+ * ```typescript
+ * const expiresAt = getOTPExpiration(10); // Expires in 10 minutes
+ * const expiresAt = getOTPExpiration(5);  // Expires in 5 minutes
+ * ```
+ */
+export function getOTPExpiration(expiryMinutes: number = 10): Date {
+  return new Date(Date.now() + expiryMinutes * 60 * 1000);
+}
+
+/**
+ * Checks if OTP has expired
+ *
+ * @param expiresAt - Expiration timestamp
+ * @returns True if expired, false if still valid
+ *
+ * @example
+ * ```typescript
+ * const expiresAt = new Date('2025-10-13T12:00:00Z');
+ * if (isOTPExpired(expiresAt)) {
+ *   console.log('OTP has expired');
+ * }
+ * ```
+ */
+export function isOTPExpired(expiresAt: Date): boolean {
+  return Date.now() > expiresAt.getTime();
 }

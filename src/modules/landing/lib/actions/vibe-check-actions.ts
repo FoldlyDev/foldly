@@ -2,7 +2,7 @@
 
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_b5FCiMF4_EWVHn9qcDZev6cdMXsCoSMDF');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function dropEmail(email: string) {
   try {

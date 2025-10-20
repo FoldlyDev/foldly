@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { TextPlugin } from "gsap/TextPlugin";
 import { useGSAP } from "@gsap/react";
+import { logger } from "@/lib/utils/logger";
 
 // Extend Navigator interface for Network Information API
 declare global {
@@ -128,10 +129,9 @@ export function useLandingAnimationOrchestrator(
             gsap.ticker.fps(120); // Allow up to 120 FPS for devices that support it
             // Note: lagSmoothing is set to 0 in useLenisScroll hook to prevent scrollbar jumping
           } catch (pluginError) {
-            console.error(
-              "[Orchestrator] Failed to register GSAP plugins:",
-              pluginError
-            );
+            logger.error("[Orchestrator] Failed to register GSAP plugins", {
+              error: pluginError
+            });
             // Continue without animations if plugin registration fails
           }
         }
@@ -139,7 +139,7 @@ export function useLandingAnimationOrchestrator(
 
       gsapInitialized.current = true;
     } catch (error) {
-      console.error("[Orchestrator] Failed to initialize GSAP:", error);
+      logger.error("[Orchestrator] Failed to initialize GSAP", { error });
       setAnimationState((prev) => ({ ...prev, hasError: true }));
       propsRef.current?.onAnimationError?.(error as Error);
     }

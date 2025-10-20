@@ -15,6 +15,7 @@ import {
 } from "@/hooks";
 import { sanitizeUsername } from "@/lib/utils/security";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/utils/logger";
 import { SecondaryCtaButton } from "@/components/buttons";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/shadcn";
@@ -145,7 +146,7 @@ export default function OnboardingForm() {
 
       // Show warning if Clerk sync failed but onboarding succeeded
       if (onboardingResult.warning) {
-        console.warn(onboardingResult.warning);
+        logger.warn('Clerk sync warning during onboarding', { warning: onboardingResult.warning });
       }
 
       // All done! Redirect to dashboard
@@ -155,11 +156,11 @@ export default function OnboardingForm() {
       // Handle if user cancels the reverification process
       if (isClerkRuntimeError(e) && isReverificationCancelledError(e)) {
         setError("Verification was cancelled. Please try again.");
-        console.error("User cancelled reverification", e.code);
+        logger.error('User cancelled reverification', { code: e.code });
       } else {
         // Handle other errors
         setError("An unexpected error occurred. Please try again.");
-        console.error("Onboarding error:", JSON.stringify(e, null, 2));
+        logger.error('Onboarding error', { error: e });
       }
       setLoading(false);
     }

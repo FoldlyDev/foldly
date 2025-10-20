@@ -31,7 +31,7 @@ interface TransactionOptions {
   /**
    * Context for logging (userId, action, etc.)
    */
-  context?: Record<string, any>;
+  context?: Record<string, unknown>;
 }
 
 /**

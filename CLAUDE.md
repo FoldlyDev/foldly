@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 major refactor** phase on branch `v2/major-refactor`.
+**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 development** phase on branch `v2/feat-mailing-system`.
 
 ## Common Commands
 
@@ -45,7 +45,7 @@ npm run format:check # Check if code is formatted
 - **Framework**: Next.js 15 (App Router) + React 19 + TypeScript
 - **Authentication**: Clerk (with email/password, magic links)
 - **Database**: Supabase (PostgreSQL) via Drizzle ORM
-- **File Storage**: Google Cloud Storage (planned)
+- **File Storage**: Google Cloud Storage
 - **Styling**: Tailwind CSS 4 + shadcn/ui components
 - **State Management**: TanStack Query (React Query) + Zustand
 - **Animations**: Framer Motion + GSAP + Lenis (smooth scroll)
@@ -71,6 +71,7 @@ src/
 │
 ├── modules/              # Feature modules (self-contained)
 │   ├── analytics/        # Analytics dashboard
+│   ├── auth/             # Authentication forms, components, and onboarding
 │   ├── billing/          # Billing and subscriptions
 │   ├── landing/          # Landing page (complex GSAP animations)
 │   ├── links/            # Shareable link management
@@ -81,8 +82,9 @@ src/
 │
 ├── hooks/                # Global hooks (organized by purpose)
 │   ├── data/            # Data fetching hooks (wrap server actions)
-│   │   ├── use-onboarding-status.ts
-│   │   └── use-user-workspace.ts
+│   │   ├── use-onboarding.ts
+│   │   ├── use-user-workspace.ts
+│   │   └── use-email.ts
 │   └── ui/              # UI utility hooks
 │       └── use-scroll-position.ts
 │
@@ -96,6 +98,7 @@ src/
 │   │   ├── queries/     # Reusable database queries (called by actions)
 │   │   ├── migrations/  # Database migration utilities
 │   │   └── connection.ts # Database connection setup
+│   ├── gcs/             # Google Cloud Storage client
 │   └── utils/           # Utility functions (security, logger, browser-detection)
 │
 └── middleware.ts         # Clerk authentication middleware
@@ -224,6 +227,13 @@ Key environment variables (see `.env.local`):
 - `CLERK_SECRET_KEY` - Clerk secret key
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `RESEND_API_KEY` - Resend email service API key
+- `UPSTASH_REDIS_REST_URL` - Upstash Redis REST URL (distributed rate limiting)
+- `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST token
+- `GCS_PROJECT_ID` - Google Cloud Storage project ID
+- `GCS_CLIENT_EMAIL` - GCS service account email
+- `GCS_PRIVATE_KEY` - GCS service account private key (base64 encoded)
+- `GCS_BRANDING_BUCKET_NAME` - Branding assets bucket name
 
 ## Database Workflow
 
@@ -258,23 +268,31 @@ Key environment variables (see `.env.local`):
 
 ## Current Development Status
 
-**Branch**: `v2/major-refactor`
+**Branch**: `v2/feat-mailing-system`
 
-**Phase**: Foundation (Week 1-2) - 78% Complete (7/9 tasks)
+**Phase**: Foundation + Email Infrastructure - COMPLETE
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
 - ✅ Migrations generated and pushed to Supabase
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
+- ✅ Email service system complete (Phases 1-4: infrastructure, templates, actions, hooks)
+- ✅ Email templates (6 total: OTP, upload notification, invitation, editor promotion, password reset, welcome)
+- ✅ Email notification settings in user schema
+- ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Permission management actions (4 actions: add, remove, update, get)
+- ✅ GCS integration (client, upload, delete, signed URLs)
+- ✅ Branding module (logo uploads, color customization)
+- ✅ Comprehensive test coverage (195+ tests total)
+- ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
 
 **Next Steps** (per `docs/execution/README.md`):
-1. Set up Google Cloud Storage bucket
-2. Implement base UI components (shadcn/ui)
-3. Build file upload functionality
+1. ~~Set up Google Cloud Storage bucket~~ ✅ Complete
+2. Build file upload functionality
 
 **Planning Documentation**: See `/docs/planning/` for design decisions, MVP features, and tech stack details.
 
@@ -297,13 +315,41 @@ Key environment variables (see `.env.local`):
 
 **Global Actions & Hooks**:
 - `src/lib/actions/index.ts` - Global server actions
-- `src/lib/actions/user.actions.ts` - User management actions (3 actions)
+- `src/lib/actions/user.actions.ts` - User management actions
 - `src/lib/actions/workspace.actions.ts` - Workspace actions
 - `src/lib/actions/onboarding.actions.ts` - Onboarding flow actions
+- `src/lib/actions/email.actions.ts` - Email service actions (5 actions with 32 tests)
+- `src/lib/actions/link.actions.ts` - Link CRUD operations (7 actions: read, write, validation)
+- `src/lib/actions/permission.actions.ts` - Permission management (4 actions: add, remove, update, get)
 - `src/hooks/index.ts` - All global hooks (data + UI)
+- `src/hooks/data/use-email.ts` - Email service hooks (5 hooks with toast notifications)
+
+**Global Utilities & Infrastructure**:
+- `src/lib/utils/action-helpers.ts` - Generic action HOFs (withAuth, withAuthInput, formatActionError)
+- `src/lib/utils/authorization.ts` - Resource ownership verification (verifyLinkOwnership, verifyResourceOwnership)
+- `src/lib/validation/base-schemas.ts` - Reusable Zod schemas (UUID, email, slug, name builders)
+- `src/lib/constants/error-messages.ts` - Centralized error messages
+- `src/lib/constants/validation.ts` - Validation limits and reserved values
+
+**Email & Rate Limiting Infrastructure**:
+- `src/lib/email/client.ts` - Resend client singleton with error handling
+- `src/lib/email/types.ts` - Email type definitions (10 types)
+- `src/lib/email/constants.ts` - Email configuration and constants
+- `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
+- `src/lib/middleware/rate-limit.ts` - Redis-backed rate limiting with presets
+- `src/lib/utils/security.ts` - OTP generation and validation utilities
+
+**GCS & File Storage**:
+- `src/lib/gcs/client.ts` - GCS client singleton (upload, delete, signed URLs, file exists)
+
+**Links Module**:
+- `src/modules/links/lib/actions/branding.actions.ts` - Branding operations (3 actions: update, upload logo, delete logo)
+- `src/modules/links/lib/validation/branding-schemas.ts` - Branding validation (5MB limit, PNG/JPEG/WebP)
 
 **Documentation**:
 - `docs/execution/README.md` - Implementation tracking
+- `docs/execution/infrastructure/email-and-redis.md` - Email service & Redis implementation
+- `docs/planning/email-service-plan.md` - Email service implementation plan
 - `docs/planning/features/mvp-features.md` - MVP feature checklist
 
 ## Common Patterns
@@ -315,7 +361,7 @@ Use `ModuleErrorBoundary` from `@/components/core/ModuleErrorBoundary` to wrap f
 Each module has a skeleton component (e.g., `AnalyticsSkeleton`, `WorkspaceSkeleton`).
 
 ### Notifications
-Use `NotificationProvider` from `@/features/notifications/providers/NotificationProvider` (wrapped in root providers).
+Use `NotificationProvider` from `@/modules/notifications/providers/NotificationProvider` (wrapped in root providers).
 
 ### Page Transitions
 Use `PageTransitionEffect` or `PageFadeRevealEffect` from `@/components/layout/` for page animations.

@@ -1,6 +1,7 @@
 'use client';
 
 import { Component, type ReactNode } from 'react';
+import { logger } from '@/lib/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -25,8 +26,12 @@ export class ModuleErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log to console in development
-    console.error(`Error in ${this.props.moduleName || 'module'}:`, error, errorInfo);
+    // Log error with module context
+    logger.error('Error in module', {
+      moduleName: this.props.moduleName || 'module',
+      error,
+      errorInfo
+    });
 
     // Call custom error handler if provided
     if (this.props.onError) {

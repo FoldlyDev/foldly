@@ -322,7 +322,7 @@ users {
   storageUsed: bigint              // Bytes
 
   // User preferences (flexible JSONB)
-  settings: jsonb                  // { theme, notifications, cloudStorage }
+  userSettings: jsonb              // { theme, emailNotificationsEnabled, cloudStorage }
 
   // Audit fields
   lastLoginAt: timestamp
@@ -406,10 +406,8 @@ links {
   isPublic: boolean                // Public (anyone) vs Dedicated (allowed emails)
   isActive: boolean                // Can be paused by owner
 
-  // Upload page customization (Priority 2 feature)
-  customMessage: text              // Welcome message
-  requiresName: boolean            // Enforce name field
-  requiresMessage: boolean         // Enforce message field
+  // Link configuration (flexible JSONB)
+  linkConfig: jsonb                // { notifyOnUpload, customMessage, requiresName }
 
   createdAt: timestamp
   updatedAt: timestamp
