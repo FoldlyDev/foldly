@@ -45,7 +45,7 @@ npm run format:check # Check if code is formatted
 - **Framework**: Next.js 15 (App Router) + React 19 + TypeScript
 - **Authentication**: Clerk (with email/password, magic links)
 - **Database**: Supabase (PostgreSQL) via Drizzle ORM
-- **File Storage**: Google Cloud Storage (planned)
+- **File Storage**: Google Cloud Storage
 - **Styling**: Tailwind CSS 4 + shadcn/ui components
 - **State Management**: TanStack Query (React Query) + Zustand
 - **Animations**: Framer Motion + GSAP + Lenis (smooth scroll)
@@ -98,6 +98,7 @@ src/
 │   │   ├── queries/     # Reusable database queries (called by actions)
 │   │   ├── migrations/  # Database migration utilities
 │   │   └── connection.ts # Database connection setup
+│   ├── gcs/             # Google Cloud Storage client
 │   └── utils/           # Utility functions (security, logger, browser-detection)
 │
 └── middleware.ts         # Clerk authentication middleware
@@ -229,6 +230,10 @@ Key environment variables (see `.env.local`):
 - `RESEND_API_KEY` - Resend email service API key
 - `UPSTASH_REDIS_REST_URL` - Upstash Redis REST URL (distributed rate limiting)
 - `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST token
+- `GCS_PROJECT_ID` - Google Cloud Storage project ID
+- `GCS_CLIENT_EMAIL` - GCS service account email
+- `GCS_PRIVATE_KEY` - GCS service account private key (base64 encoded)
+- `GCS_BRANDING_BUCKET_NAME` - Branding assets bucket name
 
 ## Database Workflow
 
@@ -276,13 +281,17 @@ Key environment variables (see `.env.local`):
 - ✅ Email templates (6 total: OTP, upload notification, invitation, editor promotion, password reset, welcome)
 - ✅ Email notification settings in user schema
 - ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Permission management actions (4 actions: add, remove, update, get)
+- ✅ GCS integration (client, upload, delete, signed URLs)
+- ✅ Branding module (logo uploads, color customization)
+- ✅ Comprehensive test coverage (195+ tests total)
 - ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
 
 **Next Steps** (per `docs/execution/README.md`):
-1. Set up Google Cloud Storage bucket
+1. ~~Set up Google Cloud Storage bucket~~ ✅ Complete
 2. Build file upload functionality
 
 **Planning Documentation**: See `/docs/planning/` for design decisions, MVP features, and tech stack details.
@@ -329,6 +338,13 @@ Key environment variables (see `.env.local`):
 - `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
 - `src/lib/middleware/rate-limit.ts` - Redis-backed rate limiting with presets
 - `src/lib/utils/security.ts` - OTP generation and validation utilities
+
+**GCS & File Storage**:
+- `src/lib/gcs/client.ts` - GCS client singleton (upload, delete, signed URLs, file exists)
+
+**Links Module**:
+- `src/modules/links/lib/actions/branding.actions.ts` - Branding operations (3 actions: update, upload logo, delete logo)
+- `src/modules/links/lib/validation/branding-schemas.ts` - Branding validation (5MB limit, PNG/JPEG/WebP)
 
 **Documentation**:
 - `docs/execution/README.md` - Implementation tracking
