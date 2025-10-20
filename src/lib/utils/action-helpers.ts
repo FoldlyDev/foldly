@@ -3,8 +3,8 @@
 // =============================================================================
 // Reusable HOFs for wrapping server actions with auth, error handling, and logging
 // Used by all global actions (link, permission, folder, file, etc.)
-
-'use server';
+// Note: This file does NOT have 'use server' because it exports utility functions.
+// The actual server actions that use these helpers have their own 'use server' directives.
 
 import { auth } from '@clerk/nextjs/server';
 import { logger, logAuthFailure } from '@/lib/utils/logger';

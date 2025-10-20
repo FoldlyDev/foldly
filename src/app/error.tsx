@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/shadcn/card';
+import { logger } from '@/lib/utils/logger';
 
 export default function Error({
   error,
@@ -18,8 +19,8 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to your error reporting service
-    console.error('Global error:', error);
+    // Log the error to error reporting service
+    logger.error('Global error', { error, digest: error.digest });
   }, [error]);
 
   return (

@@ -34,6 +34,18 @@ export {
 export type { ActionResponse as LinkActionResponse } from '@/lib/utils/action-helpers';
 
 // =============================================================================
+// MODULE-SPECIFIC ACTIONS - Branding
+// =============================================================================
+
+export {
+  // Branding configuration
+  updateLinkBrandingAction,
+  // Logo upload/deletion
+  uploadBrandingLogoAction,
+  deleteBrandingLogoAction,
+} from './lib/actions/branding.actions';
+
+// =============================================================================
 // HOOKS
 // =============================================================================
 
@@ -64,6 +76,7 @@ export type {
   CreateLinkInput,
   UpdateLinkInput,
   UpdateLinkConfigInput,
+  UpdateLinkBrandingInput,
   DeleteLinkInput,
   CheckSlugInput,
   AddPermissionInput,
@@ -71,15 +84,22 @@ export type {
   UpdatePermissionInput,
 } from './lib/validation/link-schemas';
 
+export type {
+  // Branding upload types
+  UploadBrandingLogoInput,
+  DeleteBrandingLogoInput,
+} from './lib/validation/branding-schemas';
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
 export {
-  // Action names
-  ACTION_NAMES,
   // Error messages
   ERROR_MESSAGES,
-  // Validation constants (use VALIDATION_LIMITS from @/lib/constants instead)
+  SUCCESS_MESSAGES,
+  // Validation constants
+  VALIDATION_LIMITS,
   RESERVED_SLUGS,
+  type ReservedSlug,
 } from './lib/validation/constants';

@@ -49,6 +49,26 @@ export const links = pgTable("links", {
       [key: string]: any; // Allow future settings
     }>(),
 
+  // Branding configuration - Visual identity and theming
+  branding: jsonb("branding")
+    .default({
+      enabled: false,
+      logo: null,
+      colors: null,
+    })
+    .notNull()
+    .$type<{
+      enabled: boolean;
+      logo: {
+        url: string;
+        altText?: string;
+      } | null;
+      colors: {
+        accentColor: string;
+        backgroundColor: string;
+      } | null;
+    }>(),
+
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

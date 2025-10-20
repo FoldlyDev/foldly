@@ -76,7 +76,7 @@ export interface VerifyResourceOwnershipParams<T> {
  * });
  * ```
  */
-export async function verifyResourceOwnership<T extends Record<string, any>>(
+export async function verifyResourceOwnership<T extends Record<string, unknown>>(
   params: VerifyResourceOwnershipParams<T>
 ): Promise<T> {
   const {

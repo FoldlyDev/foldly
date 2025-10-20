@@ -60,6 +60,36 @@ export const linkConfigSchema = z.object({
   requiresName: z.boolean().optional(),
 });
 
+/**
+ * Link branding schema
+ * Validates the branding configuration for visual identity
+ */
+export const brandingSchema = z.object({
+  enabled: z.boolean().optional(),
+  logo: z
+    .object({
+      url: z.string().url({ message: 'Logo URL must be a valid URL.' }),
+      altText: z.string().max(100, { message: 'Alt text must be less than 100 characters.' }).optional(),
+    })
+    .nullable()
+    .optional(),
+  colors: z
+    .object({
+      accentColor: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
+          message: 'Accent color must be a valid hex color (e.g., #6c47ff).',
+        }),
+      backgroundColor: z
+        .string()
+        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
+          message: 'Background color must be a valid hex color (e.g., #ffffff).',
+        }),
+    })
+    .nullable()
+    .optional(),
+});
+
 // =============================================================================
 // ACTION INPUT SCHEMAS
 // =============================================================================
@@ -100,6 +130,17 @@ export const updateLinkConfigSchema = z.object({
 });
 
 export type UpdateLinkConfigInput = z.infer<typeof updateLinkConfigSchema>;
+
+/**
+ * Schema for updating link branding
+ * Validates: linkId, branding object
+ */
+export const updateLinkBrandingSchema = z.object({
+  linkId: uuidSchema,
+  branding: brandingSchema,
+});
+
+export type UpdateLinkBrandingInput = z.infer<typeof updateLinkBrandingSchema>;
 
 /**
  * Schema for deleting a link

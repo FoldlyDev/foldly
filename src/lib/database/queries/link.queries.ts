@@ -88,6 +88,7 @@ export async function updateLink(
     isPublic?: boolean;
     isActive?: boolean;
     linkConfig?: Link['linkConfig'];
+    branding?: Link['branding'];
   }
 ): Promise<Link> {
   const [link] = await db
@@ -130,6 +131,38 @@ export async function updateLinkConfig(
 
   if (!link) {
     throw new Error(`Failed to update link config: Link with ID ${linkId} not found or update failed`);
+  }
+
+  return link;
+}
+
+/**
+ * Update link branding (visual identity settings)
+ */
+export async function updateLinkBranding(
+  linkId: string,
+  branding: Partial<Link['branding']>
+): Promise<Link> {
+  // Get current branding
+  const currentLink = await getLinkById(linkId);
+  if (!currentLink) {
+    throw new Error('Link not found');
+  }
+
+  // Merge with existing branding
+  const updatedBranding = {
+    ...currentLink.branding,
+    ...branding,
+  };
+
+  const [link] = await db
+    .update(links)
+    .set({ branding: updatedBranding, updatedAt: new Date() })
+    .where(eq(links.id, linkId))
+    .returning();
+
+  if (!link) {
+    throw new Error(`Failed to update link branding: Link with ID ${linkId} not found or update failed`);
   }
 
   return link;

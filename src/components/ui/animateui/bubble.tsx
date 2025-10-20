@@ -2,7 +2,6 @@
 
 import { memo } from "react";
 import { motion, type Variants } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 type BubbleBackgroundProps = React.ComponentProps<"div">;
 
@@ -43,7 +42,7 @@ const BackgroundBlobs = memo(() => (
 
 BackgroundBlobs.displayName = "BackgroundBlobs";
 
-function BubbleBackground({}: BubbleBackgroundProps) {
+function BubbleBackground(_props: BubbleBackgroundProps) {
   return (
     <div>
       <BackgroundBlobs />
