@@ -45,6 +45,14 @@ export default tseslint.config(
       // Allow empty functions (common in React)
       '@typescript-eslint/no-empty-function': 'off',
 
+      // Allow empty interfaces for React forwardRef components
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        {
+          allowInterfaces: 'always', // Common pattern for forwardRef with no props
+        },
+      ],
+
       // React Server Components & Next.js specific
       '@typescript-eslint/require-await': 'off', // Server components can be async without await
     },

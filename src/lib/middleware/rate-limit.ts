@@ -50,7 +50,7 @@ export async function checkRateLimit(
 
   // Get entry from Redis
   const entryData = await redis.get<RateLimitEntry>(redisKey);
-  let entry: RateLimitEntry = entryData || { attempts: [] };
+  const entry: RateLimitEntry = entryData || { attempts: [] };
 
   // Check if currently blocked
   if (entry.blockedUntil && entry.blockedUntil > now) {

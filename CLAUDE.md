@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 development** phase on branch `v2/feat-mailing-system`.
+**Foldly** is an email-centric file collection platform built for scenarios like "tax accountant with 30 clients" - enabling users to create shareable links where external users can upload files, tracked by their email addresses. Currently in **V2 development** phase on branch `v2/link-module`.
 
 ## Common Commands
 
@@ -268,31 +268,35 @@ Key environment variables (see `.env.local`):
 
 ## Current Development Status
 
-**Branch**: `v2/feat-mailing-system`
+**Branch**: `v2/link-module`
 
-**Phase**: Foundation + Email Infrastructure - COMPLETE
+**Phase**: Foundation + Links Module - COMPLETE
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
-- ✅ Migrations generated and pushed to Supabase
+- ✅ Migrations generated and pushed to Supabase (3 migrations total)
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
 - ✅ Email service system complete (Phases 1-4: infrastructure, templates, actions, hooks)
 - ✅ Email templates (6 total: OTP, upload notification, invitation, editor promotion, password reset, welcome)
 - ✅ Email notification settings in user schema
 - ✅ Redis rate limiting integration (distributed, serverless-safe)
-- ✅ Permission management actions (4 actions: add, remove, update, get)
-- ✅ GCS integration (client, upload, delete, signed URLs)
-- ✅ Branding module (logo uploads, color customization)
-- ✅ Comprehensive test coverage (195+ tests total)
+- ✅ **Links Module COMPLETE** (7 actions, 18 tests, production-ready)
+- ✅ **Permission management** (4 actions with 23 tests)
+- ✅ **Branding module** (3 actions, 17 tests, GCS integration)
+- ✅ GCS integration (client, upload, delete, signed URLs, branding bucket)
+- ✅ Comprehensive test coverage (262 tests total, 13 suites)
 - ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 configured
 - ✅ Clerk authentication configured
 - ✅ Supabase connection configured
+- ✅ TypeScript compilation: 0 errors
+- ✅ Tech lead approval: Production-ready
 
 **Next Steps** (per `docs/execution/README.md`):
 1. ~~Set up Google Cloud Storage bucket~~ ✅ Complete
-2. Build file upload functionality
+2. ~~Build link management system~~ ✅ Complete
+3. **Build file upload functionality** ⏳ Next priority
 
 **Planning Documentation**: See `/docs/planning/` for design decisions, MVP features, and tech stack details.
 
@@ -345,6 +349,7 @@ Key environment variables (see `.env.local`):
 **Links Module**:
 - `src/modules/links/lib/actions/branding.actions.ts` - Branding operations (3 actions: update, upload logo, delete logo)
 - `src/modules/links/lib/validation/branding-schemas.ts` - Branding validation (5MB limit, PNG/JPEG/WebP)
+- `src/modules/links/lib/actions/__tests__/branding.actions.test.ts` - Branding tests (17 tests)
 
 **Documentation**:
 - `docs/execution/README.md` - Implementation tracking

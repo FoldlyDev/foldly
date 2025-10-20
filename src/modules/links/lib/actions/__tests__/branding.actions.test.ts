@@ -259,6 +259,7 @@ describe('Branding Actions', () => {
       // Setup default GCS mocks
       vi.mocked(uploadFile).mockResolvedValue({
         url: 'https://storage.googleapis.com/test-branding-bucket/branding/workspace-id/link-id/logo-123.png',
+        gcsPath: 'branding/workspace-id/link-id/logo-123.png',
       });
       vi.mocked(fileExists).mockResolvedValue(false);
       vi.mocked(deleteFile).mockResolvedValue(undefined);
@@ -339,7 +340,7 @@ describe('Branding Actions', () => {
             enabled: true,
             logo: {
               url: 'https://storage.googleapis.com/test-branding-bucket/old-logo.png',
-              altText: null,
+              altText: undefined,
             },
             colors: null,
           },
@@ -614,7 +615,7 @@ describe('Branding Actions', () => {
             enabled: true,
             logo: {
               url: 'https://storage.googleapis.com/test-branding-bucket/missing-logo.png',
-              altText: null,
+              altText: undefined,
             },
             colors: null,
           },
@@ -659,7 +660,7 @@ describe('Branding Actions', () => {
             enabled: true,
             logo: {
               url: 'https://storage.googleapis.com/test-branding-bucket/logo.png',
-              altText: null,
+              altText: undefined,
             },
             colors: null,
           },
@@ -761,7 +762,7 @@ describe('Branding Actions', () => {
               enabled: true,
               logo: {
                 url: `https://storage.googleapis.com/test-branding-bucket/logo-${i}.png`,
-                altText: null,
+                altText: undefined,
               },
               colors: null,
             },
@@ -781,7 +782,7 @@ describe('Branding Actions', () => {
             enabled: true,
             logo: {
               url: 'https://storage.googleapis.com/test-branding-bucket/logo-6.png',
-              altText: null,
+              altText: undefined,
             },
             colors: null,
           },

@@ -327,7 +327,7 @@ export function sanitizeFileName(name: string | null | undefined): string {
 
   // Remove path separators and special characters
   let sanitized = trimmed
-    .replace(/[\/\\]/g, '') // Remove path separators
+    .replace(/[/\\]/g, '') // Remove path separators
     .replace(/\.\./g, '')   // Remove parent directory references
     .replace(/[<>:"|?*]/g, ''); // Remove Windows-invalid characters
 
