@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/shadcn/card";
+import { logger } from "@/lib/utils/logger";
 
 export default function DashboardError({
   error,
@@ -18,7 +19,7 @@ export default function DashboardError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Dashboard error:", error);
+    logger.error("Dashboard error", { error, digest: error.digest });
   }, [error]);
 
   return (

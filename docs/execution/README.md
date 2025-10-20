@@ -1,6 +1,6 @@
 # Foldly V2 Execution Documentation
 
-Last Updated: October 9, 2025
+Last Updated: October 20, 2025
 
 This directory tracks **what has been implemented** in Foldly V2. For planning and design decisions, see [`/docs/planning`](../planning).
 
@@ -40,13 +40,15 @@ execution/
 | Component | Status | Location | Notes |
 |-----------|--------|----------|-------|
 | **Database Schema** | ✅ Completed | `database/schema.md` | 6 tables implemented with Drizzle ORM |
-| **Database Migration** | ✅ Completed | `drizzle/0000_*.sql`, `drizzle/0001_*.sql` | Schema pushed to Supabase |
+| **Database Migration** | ✅ Completed | 3 migrations | Schema pushed to Supabase |
 | **Global Actions & Hooks** | ✅ Completed | `src/lib/actions`, `src/hooks` | Cross-module data layer with user management |
 | **Onboarding Flow** | ✅ Completed | `src/modules/auth` | Username capture, workspace & link creation |
 | **Email Service System** | ✅ Completed | `infrastructure/email-and-redis.md` | Phases 1-4 complete (infrastructure, templates, actions, hooks) |
+| **Permission Management** | ✅ Completed | `src/lib/actions/permission.actions.ts` | 4 actions with 23 tests |
+| **Branding Module** | ✅ Completed | `src/modules/links/lib/actions/branding.actions.ts` | Logo uploads & color customization |
+| GCS Setup | ✅ Completed | `src/lib/gcs/client.ts` | Client singleton with 4 operations |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
-| GCS Setup | ⏳ Pending | - | Storage bucket configuration |
 | Clerk Auth | ✅ Completed | `.env.local` | Authentication configured |
 | Base UI Components | ✅ Completed | `src/components/ui/shadcn/` | shadcn/ui + custom CTA buttons |
 
@@ -184,6 +186,29 @@ execution/
 
 ---
 
+### ✅ Permission Management & Branding (October 20, 2025)
+
+**Implementation Files**:
+- `src/lib/actions/permission.actions.ts` (4 actions: add, remove, update, get)
+- `src/lib/gcs/client.ts` (GCS client with upload, delete, signed URLs)
+- `src/modules/links/lib/actions/branding.actions.ts` (3 actions: update, upload, delete)
+- `src/modules/links/lib/validation/branding-schemas.ts`
+
+**Key Features**:
+- Email-based permission management (add, remove, update role, get permissions)
+- GCS client singleton (upload, delete, fileExists, getSignedUrl)
+- Branding logo uploads (5MB limit, PNG/JPEG/WebP support)
+- Color customization (accent, background)
+- Rate limiting on all branding operations
+
+**Status**:
+- ✅ 4 permission actions (23 tests, optimized: 55.33s)
+- ✅ 3 branding actions (17 tests, 38.57s)
+- ✅ GCS client integration
+- ✅ Comprehensive validation schemas
+
+---
+
 ## In Progress
 
 Nothing currently in progress.
@@ -225,6 +250,7 @@ Nothing currently in progress.
 |------|-----------|-------------|
 | October 9, 2025 | `0000_superb_sway.sql` | ✅ Created all 6 tables with indexes and constraints |
 | October 14, 2025 | `0001_cloudy_ozymandias.sql` | ✅ Schema updates (email notification settings) |
+| October 20, 2025 | `0002_cloudy_ezekiel_stane.sql` | ✅ Schema updates (branding support) |
 
 ---
 
@@ -238,10 +264,13 @@ Nothing currently in progress.
 | Server Actions (User) | ✅ Completed | 21 tests | User creation & profile updates |
 | Server Actions (Onboarding) | ✅ Completed | 10 tests | Onboarding status & username checks |
 | Server Actions (Workspace) | ✅ Completed | 15 tests | Workspace actions, link creation, email fallback |
+| Server Actions (Link) | ✅ Completed | 18 tests | Link CRUD operations |
+| Server Actions (Permission) | ✅ Completed | 23 tests | Permission management (optimized: 55.33s) |
+| Module Actions (Branding) | ✅ Completed | 17 tests | Logo uploads & branding config (38.57s) |
 | Security Utilities | ✅ Completed | 22 tests | Slug generation, sanitization |
 | Module Actions (Uploads) | ✅ Completed | 8 tests | Link validation & access |
 | Server Actions (Email) | ✅ Completed | 32 tests | Email service actions |
-| **Total** | **✅ Active** | **154+ tests** | 9 test suites, all passing |
+| **Total** | **✅ Active** | **195+ tests** | 12 test suites, all passing |
 
 **Documentation**: [Testing Guide](./testing/testing-guide.md)
 
@@ -296,19 +325,22 @@ When implementing a new feature:
 
 ## Summary
 
-**Current Phase**: Foundation + Email Infrastructure - COMPLETE
+**Current Phase**: Foundation + Links Module - COMPLETE
 **Progress**: All foundation tasks completed
-**Next Up**: Set up Google Cloud Storage bucket and file upload functionality
+**Next Up**: Build file upload functionality
 
 **Completed**:
 - ✅ Database schema design and implementation (6 tables)
-- ✅ Database migrations (2 migrations pushed to Supabase)
+- ✅ Database migrations (3 migrations pushed to Supabase)
 - ✅ Global actions & hooks layer (user management, workspace, onboarding, email)
 - ✅ Onboarding flow with username capture and workspace creation
 - ✅ Email service system (Phases 1-4: infrastructure, templates, actions, hooks)
 - ✅ Email templates (6 total including welcome email)
 - ✅ Email notification settings in user schema
 - ✅ Redis rate limiting integration (distributed, serverless-safe)
+- ✅ Permission management (4 global actions with 23 tests)
+- ✅ GCS client integration (upload, delete, signed URLs)
+- ✅ Branding module (logo uploads, color customization, 17 tests)
 - ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
@@ -321,4 +353,4 @@ When implementing a new feature:
 - None
 
 **Remaining Tasks**:
-- Google Cloud Storage bucket setup
+- File upload functionality implementation

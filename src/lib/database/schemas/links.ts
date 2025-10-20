@@ -13,6 +13,9 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { workspaces } from "./workspaces";
+import { permissions } from "./permissions";
+import { folders } from "./folders";
+import { files } from "./files";
 
 /**
  * Links table - Shareable upload links
@@ -46,6 +49,26 @@ export const links = pgTable("links", {
       [key: string]: any; // Allow future settings
     }>(),
 
+  // Branding configuration - Visual identity and theming
+  branding: jsonb("branding")
+    .default({
+      enabled: false,
+      logo: null,
+      colors: null,
+    })
+    .notNull()
+    .$type<{
+      enabled: boolean;
+      logo: {
+        url: string;
+        altText?: string;
+      } | null;
+      colors: {
+        accentColor: string;
+        backgroundColor: string;
+      } | null;
+    }>(),
+
   // Timestamps
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -61,10 +84,9 @@ export const linksRelations = relations(links, ({ one, many }) => ({
     fields: [links.workspaceId],
     references: [workspaces.id],
   }),
-  // Will be defined in other schema files:
-  // folders: many(folders), // Folders with this link_id
-  // files: many(files), // Files with this link_id
-  // permissions: many(permissions), // Access control entries
+  folders: many(folders), // Folders with this link_id
+  files: many(files), // Files with this link_id
+  permissions: many(permissions), // Access control entries
 }));
 
 // TypeScript types

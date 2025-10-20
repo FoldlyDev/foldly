@@ -1,0 +1,1 @@
+ALTER TABLE "links" ADD COLUMN "branding" jsonb DEFAULT '{"enabled":false,"logo":null,"colors":null}'::jsonb NOT NULL;

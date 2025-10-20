@@ -27,7 +27,7 @@ interface NavItem {
   id: string;
   label: string;
   href: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   badge?: string;
   color: "primary" | "secondary" | "tertiary" | "success";
 }
@@ -168,7 +168,7 @@ function UserProfileButton({ shouldExpand }: { shouldExpand: boolean }) {
 
 export function DashboardNavigation() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isExpanded, setIsExpanded } = useNavigationContext();
+  const { isExpanded: _isExpanded, setIsExpanded } = useNavigationContext();
   const [isDesktopExpanded, setIsDesktopExpanded] = useState(false);
   const pathname = usePathname();
 
@@ -293,7 +293,7 @@ export function DashboardNavigation() {
               <div className="nav-items-container">
                 {section.items.map((item) => {
                   const isActive = isActiveRoute(item.href);
-                  const colors = colorClasses[item.color];
+                  const _colors = colorClasses[item.color];
                   const IconComponent = item.icon;
 
                   return (

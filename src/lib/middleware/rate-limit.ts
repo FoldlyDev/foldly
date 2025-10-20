@@ -212,6 +212,20 @@ export const RateLimitPresets = {
     limit: 10,
     windowMs: 300000, // 5 minutes
     blockDurationMs: 600000 // Block for 10 minutes
+  },
+
+  // Permission management: 10 requests per minute (add/remove/update permissions)
+  PERMISSION_MANAGEMENT: {
+    limit: 10,
+    windowMs: 60000, // 1 minute
+    blockDurationMs: 300000 // Block for 5 minutes
+  },
+
+  // Slug validation: 30 requests per minute (real-time slug availability checks)
+  SLUG_VALIDATION: {
+    limit: 30,
+    windowMs: 60000, // 1 minute
+    blockDurationMs: 60000 // Block for 1 minute
   }
 } as const;
 
