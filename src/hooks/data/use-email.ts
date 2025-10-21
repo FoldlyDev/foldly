@@ -20,7 +20,7 @@ import type {
   SendBulkInvitationInput,
   SendEditorPromotionInput,
 } from '@/lib/email/types';
-import { transformActionError, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
+import { transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
 
 /**
  * Send OTP verification email

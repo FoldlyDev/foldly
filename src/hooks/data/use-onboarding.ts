@@ -11,7 +11,8 @@ import {
   checkUsernameAvailability,
   completeOnboardingAction,
 } from '@/lib/actions';
-import { transformQueryResult, transformActionError, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
+import { transformQueryResult, transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import { legacyKeys } from '@/lib/config/query-keys';
 
 /**
  * Check if authenticated user has completed onboarding
@@ -25,7 +26,7 @@ import { transformQueryResult, transformActionError, createMutationErrorHandler 
  */
 export function useOnboardingStatus() {
   return useQuery({
-    queryKey: ['onboarding-status'],
+    queryKey: legacyKeys.onboardingStatus,
     queryFn: async () => {
       const result = await checkOnboardingStatus();
       return transformQueryResult(result, 'Failed to check onboarding status');
@@ -86,8 +87,8 @@ export function useCompleteOnboarding() {
     onSuccess: () => {
       // TODO: Add success notification when notification system is implemented
       // Invalidate queries to refetch updated data
-      queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
-      queryClient.invalidateQueries({ queryKey: ['user-workspace'] });
+      queryClient.invalidateQueries({ queryKey: legacyKeys.onboardingStatus });
+      queryClient.invalidateQueries({ queryKey: legacyKeys.userWorkspace });
     },
     onError: createMutationErrorHandler('Onboarding completion'),
     retry: false, // Don't retry onboarding (could create duplicates)

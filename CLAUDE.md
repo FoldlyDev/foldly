@@ -173,6 +173,69 @@ CLIENT          →  REACT QUERY HOOK   →  SERVER ACTION     →  DATABASE QUE
 3. **Server actions** handle auth + business logic, call database queries
 4. **Database queries** are pure Drizzle operations (reusable)
 
+### Architectural Rules (MANDATORY)
+
+#### Hook Organization
+- **Single Domain Principle**: One hook file per entity domain
+  - ✅ `use-user.ts` - User operations only
+  - ✅ `use-workspace.ts` - Workspace operations only
+  - ✅ `use-links.ts` - Link operations only
+  - ❌ `use-user-workspace.ts` - Combines two domains (violates principle)
+
+#### React Query Keys
+- **Centralized Keys**: ALL query keys defined in `src/lib/config/query-keys.ts`
+- **NO cross-hook imports**: Hooks must import keys from centralized file, never from other hooks
+  - ✅ `import { linkKeys } from '@/lib/config/query-keys'`
+  - ❌ `import { linkKeys } from './use-links'` (creates tight coupling)
+- **Key Structure Pattern**:
+  ```typescript
+  export const entityKeys = {
+    all: ['entity'] as const,
+    lists: () => [...entityKeys.all, 'list'] as const,
+    detail: (id: string) => [...entityKeys.all, 'detail', id] as const,
+  } as const;
+  ```
+
+#### Utility Organization
+- **Single Source of Truth**: ALL utilities go in `lib/utils/` (NEVER create parallel structures)
+  - ✅ `lib/utils/react-query-helpers.ts` - React Query utilities
+  - ✅ `lib/utils/action-helpers.ts` - Server action utilities
+  - ❌ `hooks/utils/` - FORBIDDEN (creates fragmentation)
+  - ❌ `components/utils/` - FORBIDDEN
+  - ❌ `modules/*/utils/` - FORBIDDEN
+- **Naming Convention**: `{technology}-helpers.ts` for tech-specific utilities
+  - Examples: `action-helpers.ts`, `react-query-helpers.ts`, `security.ts`
+
+#### React Query Helpers Usage
+ALL data hooks must use centralized React Query helpers from `@/lib/utils/react-query-helpers`:
+
+```typescript
+import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+
+// For queries
+export function useEntityList() {
+  return useQuery({
+    queryKey: entityKeys.lists(),
+    queryFn: async () => {
+      const result = await getEntitiesAction();
+      return transformQueryResult(result, 'Failed to fetch entities', []);
+    },
+  });
+}
+
+// For mutations
+export function useCreateEntity() {
+  return useMutation({
+    mutationFn: async (input: CreateEntityInput) => {
+      const result = await createEntityAction(input);
+      return transformActionError(result, 'Failed to create entity');
+    },
+    onError: createMutationErrorHandler('Entity creation'),
+    retry: false, // Never retry mutations
+  });
+}
+```
+
 ### Server Actions & Hooks
 
 **Global Actions** (`src/lib/actions/`):

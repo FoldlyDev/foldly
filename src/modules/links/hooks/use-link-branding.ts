@@ -20,8 +20,8 @@ import type {
   UploadBrandingLogoInput,
   DeleteBrandingLogoInput,
 } from '../lib/validation/branding-schemas';
-import { transformActionError, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
-import { linkKeys } from '@/hooks/data/use-links';
+import { transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import { linkKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // MUTATION HOOKS (Data Modifications)

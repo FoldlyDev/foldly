@@ -25,20 +25,8 @@ import type {
   UpdateLinkConfigInput,
   DeleteLinkInput,
 } from '@/modules/links/lib/validation/link-schemas';
-import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
-
-// =============================================================================
-// QUERY KEYS
-// =============================================================================
-
-export const linkKeys = {
-  all: ['links'] as const,
-  lists: () => [...linkKeys.all, 'list'] as const,
-  list: (filters?: string) => [...linkKeys.lists(), { filters }] as const,
-  details: () => [...linkKeys.all, 'detail'] as const,
-  detail: (id: string) => [...linkKeys.details(), id] as const,
-  slugCheck: (slug: string) => [...linkKeys.all, 'slug-check', slug] as const,
-};
+import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import { linkKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)

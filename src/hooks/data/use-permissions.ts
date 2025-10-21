@@ -21,17 +21,8 @@ import type {
   RemovePermissionInput,
   UpdatePermissionInput,
 } from '@/modules/links/lib/validation/link-schemas';
-import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
-import { linkKeys } from './use-links';
-
-// =============================================================================
-// QUERY KEYS
-// =============================================================================
-
-export const permissionKeys = {
-  all: ['permissions'] as const,
-  byLink: (linkId: string) => [...permissionKeys.all, 'link', linkId] as const,
-};
+import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import { linkKeys, permissionKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)

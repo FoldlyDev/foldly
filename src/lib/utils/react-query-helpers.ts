@@ -1,7 +1,8 @@
 // =============================================================================
-// MUTATION HELPERS - Shared Utilities for React Query Mutations
+// REACT QUERY HELPERS - Shared Utilities for React Query Operations
 // =============================================================================
-// 🎯 Reusable helpers for mutation hooks to reduce code duplication
+// 🎯 Reusable helpers for React Query hooks to reduce code duplication
+// Following three-layer architecture: Component → Hook → Action → Query
 
 import type { ActionResponse } from '@/lib/utils/action-helpers';
 
