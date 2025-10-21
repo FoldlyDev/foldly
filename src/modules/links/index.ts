@@ -46,26 +46,42 @@ export {
 } from './lib/actions/branding.actions';
 
 // =============================================================================
-// HOOKS
+// HOOKS - Re-exported from Global Scope
 // =============================================================================
+// Note: Basic link/permission hooks are now global (cross-module usage)
+// Only module-specific branding hooks remain in this module
 
 export {
-  // Query hooks
+  // Link query hooks
   useUserLinks,
   useLinkById,
   useCheckSlugAvailability,
-  useGetLinkPermissions,
-  // Mutation hooks
+  // Link mutation hooks
   useCreateLink,
   useUpdateLink,
   useUpdateLinkConfig,
   useDeleteLink,
+} from '@/hooks';
+
+export {
+  // Permission query hooks
+  useLinkPermissions,
+  // Permission mutation hooks
   useAddPermission,
   useRemovePermission,
   useUpdatePermission,
-  // Query keys
-  linkKeys,
-} from './hooks/use-links';
+} from '@/hooks';
+
+// =============================================================================
+// MODULE-SPECIFIC HOOKS - Branding
+// =============================================================================
+
+export {
+  // Branding mutation hooks (module-specific)
+  useUpdateLinkBranding,
+  useUploadBrandingLogo,
+  useDeleteBrandingLogo,
+} from './hooks';
 
 // =============================================================================
 // TYPES

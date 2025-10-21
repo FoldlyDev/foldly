@@ -11,6 +11,7 @@ import {
   checkUsernameAvailability,
   completeOnboardingAction,
 } from '@/lib/actions';
+import { transformQueryResult, transformActionError, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
 
 /**
  * Check if authenticated user has completed onboarding
@@ -25,7 +26,10 @@ import {
 export function useOnboardingStatus() {
   return useQuery({
     queryKey: ['onboarding-status'],
-    queryFn: checkOnboardingStatus,
+    queryFn: async () => {
+      const result = await checkOnboardingStatus();
+      return transformQueryResult(result, 'Failed to check onboarding status');
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: false, // Don't retry auth checks
   });
@@ -46,7 +50,11 @@ export function useOnboardingStatus() {
  */
 export function useCheckUsernameAvailability() {
   return useMutation({
-    mutationFn: checkUsernameAvailability,
+    mutationFn: async (username: string) => {
+      const result = await checkUsernameAvailability({ username });
+      return transformActionError(result, 'Failed to check username availability');
+    },
+    onError: createMutationErrorHandler('Username availability check'),
     retry: false, // Don't retry rate-limited requests
   });
 }
@@ -71,14 +79,17 @@ export function useCompleteOnboarding() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: completeOnboardingAction,
-    onSuccess: (result) => {
-      if (result.success) {
-        // Invalidate queries to refetch updated data
-        queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
-        queryClient.invalidateQueries({ queryKey: ['user-workspace'] });
-      }
+    mutationFn: async (username: string) => {
+      const result = await completeOnboardingAction({ username });
+      return transformActionError(result, 'Failed to complete onboarding');
     },
+    onSuccess: () => {
+      // TODO: Add success notification when notification system is implemented
+      // Invalidate queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['onboarding-status'] });
+      queryClient.invalidateQueries({ queryKey: ['user-workspace'] });
+    },
+    onError: createMutationErrorHandler('Onboarding completion'),
     retry: false, // Don't retry onboarding (could create duplicates)
   });
 }

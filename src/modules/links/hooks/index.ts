@@ -1,9 +1,9 @@
 // =============================================================================
-// LINKS HOOKS INDEX - Module Hooks Export
+// LINKS HOOKS INDEX - Module-Specific Hooks Export
 // =============================================================================
-// 🎯 React Query hooks for link management
+// 🎯 React Query hooks for link branding (module-specific features)
+//
+// Note: Basic link/permission hooks are in src/hooks/data/ (global, cross-module)
+// Only advanced branding features remain here (used only in Links module)
 
-export * from './use-links';
-
-// Explicitly export query keys for external use
-export { linkKeys } from './use-links';
+export * from './use-link-branding';

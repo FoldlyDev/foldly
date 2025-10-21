@@ -109,14 +109,10 @@ export default function OnboardingForm() {
         return;
       }
 
-      if (!availabilityCheck.success) {
-        setError(availabilityCheck.message);
-        setShowLoader(false);
-        return;
-      }
-
+      // availabilityCheck is now the unwrapped UsernameAvailabilityResult
+      // {  isAvailable: boolean, message: string }
       if (!availabilityCheck.isAvailable) {
-        setError("Username is already taken. Please choose another one.");
+        setError(availabilityCheck.message || "Username is already taken. Please choose another one.");
         setShowLoader(false);
         return;
       }
@@ -128,11 +124,9 @@ export default function OnboardingForm() {
       // If ANY step fails, ALL steps are rolled back automatically
       setCurrentStep(1);
 
-      const onboardingResult = await completeOnboarding.mutateAsync(sanitized);
-
-      if (!onboardingResult.success) {
-        throw new Error(onboardingResult.error || "Failed to complete onboarding");
-      }
+      // onboardingResult is now the unwrapped CompleteOnboardingResult
+      // { user, workspace, link, permission }
+      await completeOnboarding.mutateAsync(sanitized);
 
       await delay(1500); // Show transaction completion
 
@@ -143,11 +137,6 @@ export default function OnboardingForm() {
       // Step 3: Final touches (Clerk username already synced in transaction)
       setCurrentStep(3);
       await delay(1000);
-
-      // Show warning if Clerk sync failed but onboarding succeeded
-      if (onboardingResult.warning) {
-        logger.warn('Clerk sync warning during onboarding', { warning: onboardingResult.warning });
-      }
 
       // All done! Redirect to dashboard
       router.push("/dashboard/workspace");

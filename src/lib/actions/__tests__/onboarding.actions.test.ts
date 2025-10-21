@@ -60,8 +60,8 @@ describe('Onboarding Actions', () => {
       const result = await checkOnboardingStatus();
 
       // Assert: Should return no workspace
-      expect(result.hasWorkspace).toBe(false);
-      expect(result.workspaceId).toBeNull();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Unauthorized. Please sign in.');
     });
 
     it('should return false when authenticated user has no workspace', async () => {
@@ -75,8 +75,9 @@ describe('Onboarding Actions', () => {
       const result = await checkOnboardingStatus();
 
       // Assert: Should return no workspace
-      expect(result.hasWorkspace).toBe(false);
-      expect(result.workspaceId).toBeNull();
+      expect(result.success).toBe(true);
+      expect(result.data?.hasWorkspace).toBe(false);
+      expect(result.data?.workspaceId).toBeNull();
     });
 
     it('should return true when authenticated user has workspace', async () => {
@@ -95,8 +96,9 @@ describe('Onboarding Actions', () => {
       const result = await checkOnboardingStatus();
 
       // Assert: Should return workspace exists
-      expect(result.hasWorkspace).toBe(true);
-      expect(result.workspaceId).toBe(workspace.id);
+      expect(result.success).toBe(true);
+      expect(result.data?.hasWorkspace).toBe(true);
+      expect(result.data?.workspaceId).toBe(workspace.id);
     });
 
     it('should return correct workspace ID for onboarded user', async () => {
@@ -116,42 +118,23 @@ describe('Onboarding Actions', () => {
       const result2 = await checkOnboardingStatus();
 
       // Assert: Should consistently return same workspace ID
-      expect(result1.hasWorkspace).toBe(true);
-      expect(result1.workspaceId).toBe(workspace.id);
-      expect(result2.hasWorkspace).toBe(true);
-      expect(result2.workspaceId).toBe(workspace.id);
+      expect(result1.success).toBe(true);
+      expect(result1.data?.hasWorkspace).toBe(true);
+      expect(result1.data?.workspaceId).toBe(workspace.id);
+      expect(result2.success).toBe(true);
+      expect(result2.data?.hasWorkspace).toBe(true);
+      expect(result2.data?.workspaceId).toBe(workspace.id);
     });
   });
 
   describe('checkUsernameAvailability', () => {
-    it('should return reverification required when user has not reverified', async () => {
-      // Arrange: Mock auth.protect() to return reverification not met
-      const hasMock = vi.fn().mockReturnValue(false); // User hasn't reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: 'test_user_reauth', has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
-
-      // Reset rate limit for clean test
-      resetRateLimit(RateLimitKeys.usernameCheck('test_user_reauth'));
-
-      // Act: Check username availability
-      const result = await checkUsernameAvailability('testuser');
-
-      // Assert: Should return reverification error
-      if ('success' in result) {
-        expect(result.success).toBe(false);
-        expect(result.isAvailable).toBe(false);
-        expect(result.message).toBe('Reverification required');
-      }
-    });
+    // Note: Reverification is now handled on the CLIENT side by useReverification hook.
+    // The server action only requires authentication.
 
     it('should return available when username does not exist in Clerk', async () => {
-      // Arrange: Mock auth.protect() and clerkClient
+      // Arrange: Mock auth and clerkClient
       const mockUserId = 'test_user_available';
-      const hasMock = vi.fn().mockReturnValue(true); // User has reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
+      vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
       const mockClerkClient = {
         users: {
@@ -166,26 +149,21 @@ describe('Onboarding Actions', () => {
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
       // Act: Check username availability
-      const result = await checkUsernameAvailability('available-username');
+      const result = await checkUsernameAvailability({ username: 'available-username' });
 
       // Assert: Should return available
-      if ('success' in result) {
-        expect(result.success).toBe(true);
-        expect(result.isAvailable).toBe(true);
-        expect(result.message).toBe('Username is available');
-      }
+      expect(result.success).toBe(true);
+      expect(result.data?.isAvailable).toBe(true);
+      expect(result.data?.message).toBe('Username is available');
       expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
         username: ['available-username'],
       });
     });
 
     it('should return taken when username exists in Clerk', async () => {
-      // Arrange: Mock auth.protect() and clerkClient
+      // Arrange: Mock auth and clerkClient
       const mockUserId = 'test_user_taken';
-      const hasMock = vi.fn().mockReturnValue(true); // User has reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
+      vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
       const mockClerkClient = {
         users: {
@@ -200,26 +178,21 @@ describe('Onboarding Actions', () => {
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
       // Act: Check username availability
-      const result = await checkUsernameAvailability('taken-username');
+      const result = await checkUsernameAvailability({ username: 'taken-username' });
 
       // Assert: Should return taken
-      if ('success' in result) {
-        expect(result.success).toBe(true);
-        expect(result.isAvailable).toBe(false);
-        expect(result.message).toBe('Username is already taken');
-      }
+      expect(result.success).toBe(true);
+      expect(result.data?.isAvailable).toBe(false);
+      expect(result.data?.message).toBe('Username is already taken');
       expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
         username: ['taken-username'],
       });
     });
 
     it('should handle Clerk API errors gracefully', async () => {
-      // Arrange: Mock auth.protect() and clerkClient to throw error
+      // Arrange: Mock auth and clerkClient to throw error
       const mockUserId = 'test_user_error';
-      const hasMock = vi.fn().mockReturnValue(true); // User has reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
+      vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
       const mockClerkClient = {
         users: {
@@ -232,23 +205,17 @@ describe('Onboarding Actions', () => {
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
       // Act: Check username availability
-      const result = await checkUsernameAvailability('error-username');
+      const result = await checkUsernameAvailability({ username: 'error-username' });
 
       // Assert: Should return error
-      if ('success' in result) {
-        expect(result.success).toBe(false);
-        expect(result.isAvailable).toBe(false);
-        expect(result.message).toBe('Failed to check username availability. Please try again.');
-      }
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Failed to execute checkUsernameAvailability');
     });
 
     it('should return taken when multiple users have the same username', async () => {
-      // Arrange: Mock auth.protect() and clerkClient
+      // Arrange: Mock auth and clerkClient
       const mockUserId = 'test_user_duplicate';
-      const hasMock = vi.fn().mockReturnValue(true); // User has reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
+      vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
       const mockClerkClient = {
         users: {
@@ -266,23 +233,18 @@ describe('Onboarding Actions', () => {
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
       // Act: Check username availability
-      const result = await checkUsernameAvailability('duplicate-username');
+      const result = await checkUsernameAvailability({ username: 'duplicate-username' });
 
       // Assert: Should return taken
-      if ('success' in result) {
-        expect(result.success).toBe(true);
-        expect(result.isAvailable).toBe(false);
-        expect(result.message).toBe('Username is already taken');
-      }
+      expect(result.success).toBe(true);
+      expect(result.data?.isAvailable).toBe(false);
+      expect(result.data?.message).toBe('Username is already taken');
     });
 
     it('should check for exact username match (case-preserved)', async () => {
-      // Arrange: Mock auth.protect() and clerkClient
+      // Arrange: Mock auth and clerkClient
       const mockUserId = 'test_user_case';
-      const hasMock = vi.fn().mockReturnValue(true); // User has reverified
-      const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-      vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-      vi.mocked(auth).protect = protectMock;
+      vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
       const mockClerkClient = {
         users: {
@@ -297,12 +259,10 @@ describe('Onboarding Actions', () => {
       resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
       // Act: Check username availability with mixed case
-      const result = await checkUsernameAvailability('TestUser');
+      const result = await checkUsernameAvailability({ username: 'TestUser' });
 
       // Assert: Should query Clerk with case preserved
-      if ('success' in result) {
-        expect(result.success).toBe(true);
-      }
+      expect(result.success).toBe(true);
       // Note: Username case is now preserved, so Clerk is queried with 'TestUser'
       expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
         username: ['TestUser'],
@@ -313,10 +273,7 @@ describe('Onboarding Actions', () => {
       it('should sanitize username before checking availability', async () => {
         // Arrange: Mock auth and rate limit
         const mockUserId = 'test_user_123';
-        const hasMock = vi.fn().mockReturnValue(true);
-        const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-        vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-        vi.mocked(auth).protect = protectMock;
+        vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
         const mockClerkClient = {
           users: {
@@ -331,12 +288,10 @@ describe('Onboarding Actions', () => {
         resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
         // Act: Check with unsanitized username
-        const result = await checkUsernameAvailability('Test-User_123!');
+        const result = await checkUsernameAvailability({ username: 'Test-User_123!' });
 
         // Assert: Should query Clerk with sanitized username
-        if ('success' in result) {
-          expect(result.success).toBe(true);
-        }
+        expect(result.success).toBe(true);
         expect(mockClerkClient.users.getUserList).toHaveBeenCalledWith({
           username: ['Test-User_123'], // Sanitized: case preserved, special chars removed
         });
@@ -345,23 +300,17 @@ describe('Onboarding Actions', () => {
       it('should reject invalid username format after sanitization', async () => {
         // Arrange: Mock auth
         const mockUserId = 'test_user_456';
-        const hasMock = vi.fn().mockReturnValue(true);
-        const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-        vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-        vi.mocked(auth).protect = protectMock;
+        vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
         // Reset rate limit for this test
         resetRateLimit(RateLimitKeys.usernameCheck(mockUserId));
 
         // Act: Check with username that's too short after sanitization
-        const result = await checkUsernameAvailability('ab');
+        const result = await checkUsernameAvailability({ username: 'ab' });
 
         // Assert: Should return error without calling Clerk API
-        if ('success' in result) {
-          expect(result.success).toBe(false);
-          expect(result.isAvailable).toBe(false);
-          expect(result.message).toContain('at least 4 characters');
-        }
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('at least 3 characters');
       });
     });
 
@@ -369,10 +318,7 @@ describe('Onboarding Actions', () => {
       it('should enforce rate limit of 5 requests per minute', async () => {
         // Arrange: Mock auth
         const mockUserId = 'test_user_789';
-        const hasMock = vi.fn().mockReturnValue(true);
-        const protectMock = vi.fn().mockResolvedValue({ userId: mockUserId, has: hasMock });
-        vi.mocked(auth).mockImplementation((() => ({ protect: protectMock })) as any);
-        vi.mocked(auth).protect = protectMock;
+        vi.mocked(auth).mockResolvedValue({ userId: mockUserId } as any);
 
         const mockClerkClient = {
           users: {
@@ -389,23 +335,19 @@ describe('Onboarding Actions', () => {
         // Act: Make 5 successful requests
         const results = [];
         for (let i = 0; i < 5; i++) {
-          const result = await checkUsernameAvailability(`testuser${i}`);
+          const result = await checkUsernameAvailability({ username: `testuser${i}` });
           results.push(result);
         }
 
         // All 5 should succeed
         results.forEach(result => {
-          if ('success' in result) {
-            expect(result.success).toBe(true);
-          }
+          expect(result.success).toBe(true);
         });
 
         // 6th request should be rate limited
-        const rateLimitedResult = await checkUsernameAvailability('testuser6');
-        if ('success' in rateLimitedResult) {
-          expect(rateLimitedResult.success).toBe(false);
-          expect(rateLimitedResult.message).toContain('Rate limit exceeded');
-        }
+        const rateLimitedResult = await checkUsernameAvailability({ username: 'testuser6' });
+        expect(rateLimitedResult.success).toBe(false);
+        expect(rateLimitedResult.error).toContain('Too many requests');
       });
 
       it('should check authentication before applying rate limit', async () => {
@@ -415,14 +357,11 @@ describe('Onboarding Actions', () => {
         vi.mocked(auth).protect = protectMock;
 
         // Act: Try to check username without authentication
-        const result = await checkUsernameAvailability('testuser');
+        const result = await checkUsernameAvailability({ username: 'testuser' });
 
         // Assert: Should fail with auth error, not rate limit
-        if ('success' in result) {
-          expect(result.success).toBe(false);
-          expect(result.message).toContain('Authentication required');
-          expect(result.message).not.toContain('Rate limit');
-        }
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('Unauthorized. Please sign in.');
       });
     });
   });
@@ -460,7 +399,7 @@ describe('Onboarding Actions', () => {
         vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
         // Act: Complete onboarding
-        const result = await completeOnboardingAction('testuser');
+        const result = await completeOnboardingAction({ username: 'testuser' });
 
         // Assert: Verify ALL 4 resources created
         expect(result.success).toBe(true);
@@ -514,7 +453,7 @@ describe('Onboarding Actions', () => {
         vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
         // Act: Complete with unsanitized username
-        const result = await completeOnboardingAction('Test-USER_123!');
+        const result = await completeOnboardingAction({ username: 'Test-USER_123!' });
 
         // Assert: Action returns sanitized username (case preserved)
         expect(result.success).toBe(true);
@@ -551,7 +490,7 @@ describe('Onboarding Actions', () => {
         vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
         // Act: Complete onboarding
-        const result = await completeOnboardingAction('johndoe');
+        const result = await completeOnboardingAction({ username: 'johndoe' });
 
         // Assert: Action returns firstName and lastName from Clerk
         expect(result.success).toBe(true);
@@ -590,7 +529,7 @@ describe('Onboarding Actions', () => {
         vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
         // Act: Complete onboarding
-        const result = await completeOnboardingAction('testuser4');
+        const result = await completeOnboardingAction({ username: 'testuser4' });
 
         // Assert: Clerk updateUser was called
         expect(result.success).toBe(true);
@@ -631,7 +570,7 @@ describe('Onboarding Actions', () => {
         });
 
         // Act: Try to complete onboarding (should fail because user already exists)
-        const result = await completeOnboardingAction('testuser_rollback');
+        const result = await completeOnboardingAction({ username: 'testuser_rollback' });
 
         // Assert: Should fail with already onboarded error
         expect(result.success).toBe(false);
@@ -677,7 +616,7 @@ describe('Onboarding Actions', () => {
         } as any);
 
         // Act: Try to complete onboarding (should fail due to slug conflict)
-        const result = await completeOnboardingAction('testrollback');
+        const result = await completeOnboardingAction({ username: 'testrollback' });
 
         // Assert: Should fail
         expect(result.success).toBe(false);
@@ -712,7 +651,7 @@ describe('Onboarding Actions', () => {
         // this test serves as documentation of expected behavior
 
         // Act: Complete onboarding (should succeed)
-        const result = await completeOnboardingAction('testuser_rollback3');
+        const result = await completeOnboardingAction({ username: 'testuser_rollback3' });
 
         // Assert: If permission creation had failed, everything would be rolled back
         // Since we can't easily trigger that, we verify that when it succeeds,
@@ -736,7 +675,7 @@ describe('Onboarding Actions', () => {
     // CLERK FAILURE CASES (DB Succeeds)
     // ========================================
     describe('Clerk Failure Cases', () => {
-      it('should return success with warning if Clerk update fails', async () => {
+      it('should return success if Clerk update fails (DB transaction succeeded)', async () => {
         // Arrange: Mock successful transaction but failed Clerk update
         const mockUserId = 'test_user_clerk_1';
         createdUserIds.add(mockUserId);
@@ -761,12 +700,10 @@ describe('Onboarding Actions', () => {
         vi.mocked(clerkClient).mockResolvedValue(mockClerkClient as any);
 
         // Act: Complete onboarding
-        const result = await completeOnboardingAction('testuser_clerk');
+        const result = await completeOnboardingAction({ username: 'testuser_clerk' });
 
-        // Assert: Should succeed with warning
+        // Assert: Should succeed (DB transaction succeeded, Clerk sync is non-critical)
         expect(result.success).toBe(true);
-        expect(result.warning).toBeDefined();
-        expect(result.warning).toContain('username sync failed');
         expect(result.data).toBeDefined();
 
         // Verify data exists in database despite Clerk failure
@@ -807,12 +744,11 @@ describe('Onboarding Actions', () => {
         } as any);
 
         // Act: Attempt to onboard again
-        const result = await completeOnboardingAction('testuser_resume');
+        const result = await completeOnboardingAction({ username: 'testuser_resume' });
 
         // Assert: Should detect existing user
         expect(result.success).toBe(false);
         expect(result.error).toContain('already onboarded');
-        expect(result.isAlreadyOnboarded).toBe(true);
 
         // Verify no duplicate resources created
         const workspaces = await db.select().from(workspacesTable).where(eq(workspacesTable.userId, mockUserId));
@@ -839,11 +775,11 @@ describe('Onboarding Actions', () => {
         } as any);
 
         // Act: Attempt to onboard
-        const result = await completeOnboardingAction('testuser_partial');
+        const result = await completeOnboardingAction({ username: 'testuser_partial' });
 
         // Assert: Should detect existing user
         expect(result.success).toBe(false);
-        expect(result.isAlreadyOnboarded).toBe(true);
+        expect(result.error).toBeDefined();
       });
     });
 
@@ -857,11 +793,11 @@ describe('Onboarding Actions', () => {
         vi.mocked(currentUser).mockResolvedValue(null);
 
         // Act: Try to complete onboarding
-        const result = await completeOnboardingAction('testuser');
+        const result = await completeOnboardingAction({ username: 'testuser' });
 
         // Assert: Should error without calling database
         expect(result.success).toBe(false);
-        expect(result.error).toContain('Authentication required');
+        expect(result.error).toContain('Unauthorized');
       });
 
       it('should reject invalid username format', async () => {
@@ -882,11 +818,11 @@ describe('Onboarding Actions', () => {
         } as any);
 
         // Act: Try with invalid username (too short after sanitization)
-        const result = await completeOnboardingAction('ab');
+        const result = await completeOnboardingAction({ username: 'ab' });
 
         // Assert: Should error
         expect(result.success).toBe(false);
-        expect(result.error).toContain('Invalid username');
+        expect(result.error).toContain('at least 3 characters');
 
         // Verify no user created
         const user = await getUserById(mockUserId);
@@ -909,7 +845,7 @@ describe('Onboarding Actions', () => {
         } as any);
 
         // Act: Try to complete onboarding
-        const result = await completeOnboardingAction('testuser');
+        const result = await completeOnboardingAction({ username: 'testuser' });
 
         // Assert: Should error
         expect(result.success).toBe(false);

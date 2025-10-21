@@ -2,15 +2,10 @@
 // USE EMAIL HOOKS - Global Data Hooks
 // =============================================================================
 // 🎯 Email operations (send OTP, notifications, invitations, promotions)
-//
-// NOTE: Toast notifications are temporary until we finish implementing the
-// internal notifications module. These will be replaced with the proper
-// notification system once it's ready.
 
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import {
   sendOTPEmailAction,
   sendUploadNotificationEmailAction,
@@ -25,6 +20,7 @@ import type {
   SendBulkInvitationInput,
   SendEditorPromotionInput,
 } from '@/lib/email/types';
+import { transformActionError, createMutationErrorHandler } from '@/hooks/utils/mutation-helpers';
 
 /**
  * Send OTP verification email
@@ -53,19 +49,14 @@ import type {
  */
 export function useSendOTPEmail() {
   return useMutation({
-    mutationFn: (data: SendOTPEmailInput) => sendOTPEmailAction(data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success('Verification code sent! Check your email.');
-      } else if (result.blocked) {
-        toast.error('Too many attempts. Please try again later.');
-      } else {
-        toast.error(result.error || 'Failed to send verification code.');
-      }
+    mutationFn: async (data: SendOTPEmailInput) => {
+      const result = await sendOTPEmailAction(data);
+      return transformActionError(result, 'Failed to send verification code');
     },
-    onError: () => {
-      toast.error('An unexpected error occurred while sending code.');
+    onSuccess: () => {
+      // TODO: Add success notification when notification system is implemented
     },
+    onError: createMutationErrorHandler('OTP email sending'),
     retry: false,
   });
 }
@@ -102,10 +93,12 @@ export function useSendOTPEmail() {
  */
 export function useSendUploadNotification() {
   return useMutation({
-    mutationFn: (data: SendUploadNotificationInput) =>
-      sendUploadNotificationEmailAction(data),
-    // Silent operation - no toast notifications
-    // Upload should succeed even if notification fails
+    mutationFn: async (data: SendUploadNotificationInput) => {
+      const result = await sendUploadNotificationEmailAction(data);
+      return transformActionError(result, 'Failed to send upload notification');
+    },
+    // Silent operation - no user-facing notifications
+    // Upload should succeed even if notification email fails
     retry: false,
   });
 }
@@ -142,19 +135,14 @@ export function useSendUploadNotification() {
  */
 export function useSendInvitation() {
   return useMutation({
-    mutationFn: (data: SendInvitationInput) => sendInvitationEmailAction(data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success('Invitation sent successfully!');
-      } else if (result.blocked) {
-        toast.error('Too many invitations sent. Please try again later.');
-      } else {
-        toast.error(result.error || 'Failed to send invitation.');
-      }
+    mutationFn: async (data: SendInvitationInput) => {
+      const result = await sendInvitationEmailAction(data);
+      return transformActionError(result, 'Failed to send invitation');
     },
-    onError: () => {
-      toast.error('An unexpected error occurred while sending invitation.');
+    onSuccess: () => {
+      // TODO: Add success notification when notification system is implemented
     },
+    onError: createMutationErrorHandler('Invitation sending'),
     retry: false,
   });
 }
@@ -195,32 +183,15 @@ export function useSendInvitation() {
  */
 export function useSendBulkInvitations() {
   return useMutation({
-    mutationFn: (data: SendBulkInvitationInput) =>
-      sendBulkInvitationEmailsAction(data),
-    onSuccess: (result) => {
-      if (result.success) {
-        const message =
-          result.failed > 0
-            ? `${result.sent} invitations sent, ${result.failed} failed.`
-            : `${result.sent} invitations sent successfully!`;
-        toast.success(message);
-
-        // Show errors if any (first 3 only to avoid overwhelming UI)
-        if (result.errors && result.errors.length > 0) {
-          const errorPreview = result.errors.slice(0, 3).join('\n');
-          toast.error(`Some invitations failed:\n${errorPreview}`);
-        }
-      } else {
-        const errorMessage =
-          result.errors && result.errors.length > 0
-            ? result.errors[0]
-            : 'Failed to send invitations.';
-        toast.error(errorMessage);
-      }
+    mutationFn: async (data: SendBulkInvitationInput) => {
+      const result = await sendBulkInvitationEmailsAction(data);
+      return transformActionError(result, 'Failed to send bulk invitations');
     },
-    onError: () => {
-      toast.error('An unexpected error occurred while sending invitations.');
+    onSuccess: (data) => {
+      // TODO: Add success notification when notification system is implemented
+      // Display bulk results: data.sent, data.failed, data.errors
     },
+    onError: createMutationErrorHandler('Bulk invitation sending'),
     retry: false,
   });
 }
@@ -257,20 +228,14 @@ export function useSendBulkInvitations() {
  */
 export function useSendEditorPromotion() {
   return useMutation({
-    mutationFn: (data: SendEditorPromotionInput) =>
-      sendEditorPromotionEmailAction(data),
-    onSuccess: (result) => {
-      if (result.success) {
-        toast.success('Editor promotion email sent!');
-      } else if (result.blocked) {
-        toast.error('Too many promotion emails sent. Please try again later.');
-      } else {
-        toast.error(result.error || 'Failed to send promotion email.');
-      }
+    mutationFn: async (data: SendEditorPromotionInput) => {
+      const result = await sendEditorPromotionEmailAction(data);
+      return transformActionError(result, 'Failed to send editor promotion email');
     },
-    onError: () => {
-      toast.error('An unexpected error occurred while sending promotion email.');
+    onSuccess: () => {
+      // TODO: Add success notification when notification system is implemented
     },
+    onError: createMutationErrorHandler('Editor promotion email sending'),
     retry: false,
   });
 }

@@ -73,6 +73,13 @@ export const ERROR_MESSAGES = {
     UPDATE_FAILED: 'Failed to update permission. Please try again.',
   },
 
+  // User errors
+  USER: {
+    NOT_FOUND: 'User not found.',
+    CREATION_FAILED: 'Failed to create user. Please try again.',
+    UPDATE_FAILED: 'Failed to update user. Please try again.',
+  },
+
   // Validation errors
   VALIDATION: {
     INVALID_INPUT: 'Invalid input provided.',

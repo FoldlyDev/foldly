@@ -5,10 +5,10 @@ import { checkOnboardingStatus } from '@/lib/actions';
 export default async function OnboardingPage() {
   // Auth check handled by middleware
 
-  const status = await checkOnboardingStatus();
+  const result = await checkOnboardingStatus();
 
   // If user has a workspace, redirect to dashboard
-  if (status.hasWorkspace) {
+  if (result.success && result.data?.hasWorkspace) {
     redirect('/dashboard/workspace');
   }
 

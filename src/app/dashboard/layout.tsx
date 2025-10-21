@@ -10,10 +10,10 @@ export default async function DashboardLayoutPage({
   // Auth check handled by middleware
 
   // Check if user has completed onboarding
-  const onboardingStatus = await checkOnboardingStatus();
+  const result = await checkOnboardingStatus();
 
   // If user hasn't completed onboarding (no workspace), redirect to onboarding
-  if (!onboardingStatus.hasWorkspace) {
+  if (!result.success || !result.data?.hasWorkspace) {
     redirect('/onboarding');
   }
 
