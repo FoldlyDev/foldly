@@ -47,28 +47,84 @@ export const BRANDING_BUCKET_NAME = process.env.GCS_BRANDING_BUCKET_NAME || '';
 // =============================================================================
 
 /**
- * Validate branding file type
+ * Type guard to check if a MIME type is allowed for branding logos
+ *
+ * Validates that the provided MIME type is one of the supported image formats
+ * for branding logo uploads (PNG, JPEG, WebP).
+ *
+ * @param mimeType - The MIME type to validate
+ * @returns True if the MIME type is allowed, with type narrowed to AllowedBrandingType
+ *
+ * @example
+ * ```typescript
+ * if (isAllowedBrandingType('image/png')) {
+ *   // mimeType is narrowed to AllowedBrandingType
+ *   const ext = getFileExtension(mimeType); // TypeScript knows this is valid
+ * }
+ * ```
  */
 export function isAllowedBrandingType(mimeType: string): mimeType is AllowedBrandingType {
   return ALLOWED_BRANDING_TYPES.includes(mimeType as AllowedBrandingType);
 }
 
 /**
- * Validate branding file size
+ * Validate that a file size is within acceptable limits for branding logos
+ *
+ * Checks that the file size is positive and does not exceed the maximum
+ * allowed size (5MB) for branding logo uploads.
+ *
+ * @param size - The file size in bytes to validate
+ * @returns True if the size is valid (0 < size <= 5MB)
+ *
+ * @example
+ * ```typescript
+ * const fileSize = 2 * 1024 * 1024; // 2MB
+ * if (isValidBrandingSize(fileSize)) {
+ *   console.log('File size is valid for upload');
+ * }
+ * ```
  */
 export function isValidBrandingSize(size: number): boolean {
   return size > 0 && size <= MAX_BRANDING_FILE_SIZE;
 }
 
 /**
- * Get file extension from MIME type
+ * Get the file extension for a given MIME type
+ *
+ * Maps supported branding image MIME types to their corresponding file extensions.
+ *
+ * @param mimeType - The MIME type (must be AllowedBrandingType)
+ * @returns The file extension without the leading dot (e.g., 'png', 'jpg', 'webp')
+ *
+ * @example
+ * ```typescript
+ * const extension = getFileExtension('image/png'); // Returns: 'png'
+ * const extension = getFileExtension('image/jpeg'); // Returns: 'jpg'
+ * ```
  */
 export function getFileExtension(mimeType: AllowedBrandingType): string {
   return BRANDING_FILE_EXTENSIONS[mimeType];
 }
 
 /**
- * Generate GCS path for branding logo
+ * Generate the GCS storage path for a branding logo
+ *
+ * Creates a hierarchical path for storing branding logos in Google Cloud Storage,
+ * organized by workspace and link ID for easy organization and retrieval.
+ *
+ * @param workspaceId - The workspace UUID
+ * @param linkId - The link UUID
+ * @returns GCS path in format: `branding/{workspaceId}/{linkId}`
+ *
+ * @example
+ * ```typescript
+ * const path = generateBrandingPath(
+ *   'workspace_123',
+ *   'link_456'
+ * );
+ * // Returns: 'branding/workspace_123/link_456'
+ * // Full file path: 'branding/workspace_123/link_456/logo-1234567890.png'
+ * ```
  */
 export function generateBrandingPath(workspaceId: string, linkId: string): string {
   return `branding/${workspaceId}/${linkId}`;

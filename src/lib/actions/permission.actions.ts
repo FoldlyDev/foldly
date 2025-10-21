@@ -29,9 +29,12 @@ import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/log
 // Import types
 import type { Permission } from '@/lib/database/schemas';
 
-// Import module-specific validation schemas (Phase 3 will refactor these)
+// Import module-specific validation schemas
 import {
   validateInput,
+  addPermissionSchema,
+  removePermissionSchema,
+  updatePermissionSchema,
   type AddPermissionInput,
   type RemovePermissionInput,
   type UpdatePermissionInput,
@@ -62,10 +65,7 @@ export const addPermissionAction = withAuthInput<AddPermissionInput, Permission>
   'addPermissionAction',
   async (userId, input) => {
     // Validate input
-    const validated = validateInput(
-      await import('@/modules/links/lib/validation/link-schemas').then(m => m.addPermissionSchema),
-      input
-    );
+    const validated = validateInput(addPermissionSchema, input);
 
     // Rate limiting: 10 requests/minute (strict to prevent abuse)
     const rateLimitKey = RateLimitKeys.userAction(userId, 'add-permission');
@@ -160,10 +160,7 @@ export const removePermissionAction = withAuthInput<
   void
 >('removePermissionAction', async (userId, input) => {
   // Validate input
-  const validated = validateInput(
-    await import('@/modules/links/lib/validation/link-schemas').then(m => m.removePermissionSchema),
-    input
-  );
+  const validated = validateInput(removePermissionSchema, input);
 
   // Rate limiting: 10 requests/minute
   const rateLimitKey = RateLimitKeys.userAction(userId, 'remove-permission');
@@ -265,10 +262,7 @@ export const updatePermissionAction = withAuthInput<
   Permission
 >('updatePermissionAction', async (userId, input) => {
   // Validate input
-  const validated = validateInput(
-    await import('@/modules/links/lib/validation/link-schemas').then(m => m.updatePermissionSchema),
-    input
-  );
+  const validated = validateInput(updatePermissionSchema, input);
 
   // Rate limiting: 10 requests/minute
   const rateLimitKey = RateLimitKeys.userAction(userId, 'update-permission');

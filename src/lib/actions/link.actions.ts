@@ -38,9 +38,14 @@ import { db } from '@/lib/database/connection';
 import { links, permissions } from '@/lib/database/schemas';
 import { z } from 'zod';
 
-// Import module-specific validation schemas (Phase 3 will refactor these)
+// Import module-specific validation schemas
 import {
   validateInput,
+  createLinkSchema,
+  updateLinkSchema,
+  updateLinkConfigSchema,
+  deleteLinkSchema,
+  checkSlugSchema,
   type CreateLinkInput,
   type UpdateLinkInput,
   type UpdateLinkConfigInput,
@@ -215,10 +220,7 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
   'createLinkAction',
   async (userId, input) => {
     // Validate input
-    const validated = validateInput(
-      await import('@/modules/links/lib/validation/link-schemas').then(m => m.createLinkSchema),
-      input
-    );
+    const validated = validateInput(createLinkSchema, input);
 
     // Rate limiting: 20 requests/minute (using global preset)
     const rateLimitKey = RateLimitKeys.linkCreation(userId);
@@ -396,10 +398,7 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
   'updateLinkAction',
   async (userId, input) => {
     // Validate input
-    const validated = validateInput(
-      await import('@/modules/links/lib/validation/link-schemas').then(m => m.updateLinkSchema),
-      input
-    );
+    const validated = validateInput(updateLinkSchema, input);
 
     // Rate limiting: 20 requests/minute (using global preset)
     const rateLimitKey = RateLimitKeys.userAction(userId, 'update-link');
@@ -532,10 +531,7 @@ export const updateLinkConfigAction = withAuthInput<
   Link
 >('updateLinkConfigAction', async (userId, input) => {
   // Validate input
-  const validated = validateInput(
-    await import('@/modules/links/lib/validation/link-schemas').then(m => m.updateLinkConfigSchema),
-    input
-  );
+  const validated = validateInput(updateLinkConfigSchema, input);
 
   // Rate limiting: 20 requests/minute (using global preset)
   const rateLimitKey = RateLimitKeys.userAction(userId, 'update-link-config');
@@ -601,10 +597,7 @@ export const deleteLinkAction = withAuthInput<DeleteLinkInput, void>(
   'deleteLinkAction',
   async (userId, input) => {
     // Validate input
-    const validated = validateInput(
-      await import('@/modules/links/lib/validation/link-schemas').then(m => m.deleteLinkSchema),
-      input
-    );
+    const validated = validateInput(deleteLinkSchema, input);
 
     // Rate limiting: 20 requests/minute (using global preset)
     const rateLimitKey = RateLimitKeys.userAction(userId, 'delete-link');
@@ -677,10 +670,7 @@ export const checkSlugAvailabilityAction = withAuthInput<
   boolean
 >('checkSlugAvailabilityAction', async (userId, input) => {
   // Validate input (includes slug sanitization)
-  const validated = validateInput(
-    await import('@/modules/links/lib/validation/link-schemas').then(m => m.checkSlugSchema),
-    input
-  );
+  const validated = validateInput(checkSlugSchema, input);
 
   // Rate limiting: 30 requests/minute (strict to prevent slug enumeration)
   const rateLimitKey = RateLimitKeys.userAction(userId, 'check-slug');

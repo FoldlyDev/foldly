@@ -55,6 +55,13 @@ export const ERROR_MESSAGES = {
     DOWNLOAD_FAILED: 'Failed to download file. Please try again.',
   },
 
+  // Storage errors
+  STORAGE: {
+    NOT_CONFIGURED: 'File storage service is not configured.',
+    UPLOAD_FAILED: 'Failed to upload file to storage. Please try again.',
+    DELETE_FAILED: 'Failed to delete file from storage. Please try again.',
+  },
+
   // Permission errors
   PERMISSION: {
     NOT_FOUND: 'Permission not found.',

@@ -18,7 +18,7 @@ import { uploadFile, deleteFile, fileExists } from '@/lib/gcs/client';
 import { updateLink } from '@/lib/database/queries';
 
 // Import rate limiting
-import { checkRateLimit, RateLimitPresets } from '@/lib/middleware/rate-limit';
+import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
 
 // Import logging
 import { logger, logRateLimitViolation } from '@/lib/utils/logger';
@@ -76,16 +76,12 @@ export const updateLinkBrandingAction = withAuthInput<
   'updateLinkBrandingAction',
   async (userId: string, input: UpdateLinkBrandingInput): Promise<ActionResponse<Link>> => {
     // Validate input
-    try {
-      validateInput(updateLinkBrandingSchema, input);
-    } catch (error) {
-      return error as ActionResponse<Link>;
-    }
+    const validated = validateInput(updateLinkBrandingSchema, input);
 
-    const { linkId, branding } = input;
+    const { linkId, branding } = validated;
 
     // Rate limit
-    const rateLimitKey = `user:${userId}:update-branding`;
+    const rateLimitKey = RateLimitKeys.userAction(userId, 'update-branding');
     const rateLimit = await checkRateLimit(rateLimitKey, RateLimitPresets.PERMISSION_MANAGEMENT);
 
     if (!rateLimit.allowed) {
@@ -182,7 +178,7 @@ export const uploadBrandingLogoAction = withAuthInput<
     const { linkId, file } = validation.data;
 
     // Rate limit
-    const rateLimitKey = `user:${userId}:upload-logo`;
+    const rateLimitKey = RateLimitKeys.userAction(userId, 'upload-logo');
     const rateLimit = await checkRateLimit(rateLimitKey, RateLimitPresets.PERMISSION_MANAGEMENT);
 
     if (!rateLimit.allowed) {
@@ -207,7 +203,7 @@ export const uploadBrandingLogoAction = withAuthInput<
       logger.error('GCS branding bucket not configured');
       return {
         success: false,
-        error: 'File upload service is not configured.',
+        error: ERROR_MESSAGES.STORAGE.NOT_CONFIGURED,
       };
     }
 
@@ -331,7 +327,7 @@ export const deleteBrandingLogoAction = withAuthInput<
     const { linkId } = validation.data;
 
     // Rate limit
-    const rateLimitKey = `user:${userId}:delete-logo`;
+    const rateLimitKey = RateLimitKeys.userAction(userId, 'delete-logo');
     const rateLimit = await checkRateLimit(rateLimitKey, RateLimitPresets.PERMISSION_MANAGEMENT);
 
     if (!rateLimit.allowed) {
@@ -356,7 +352,7 @@ export const deleteBrandingLogoAction = withAuthInput<
       logger.error('GCS branding bucket not configured');
       return {
         success: false,
-        error: 'File deletion service is not configured.',
+        error: ERROR_MESSAGES.STORAGE.NOT_CONFIGURED,
       };
     }
 
