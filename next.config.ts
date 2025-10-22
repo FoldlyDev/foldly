@@ -57,16 +57,16 @@ const nextConfig: NextConfig = {
             value: [
               // Default: only allow from same origin
               "default-src 'self'",
-              // Scripts: allow self, Clerk, and inline scripts (for Next.js)
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com",
+              // Scripts: allow self, Clerk, Vercel Analytics, and inline scripts (for Next.js)
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com https://va.vercel-scripts.com",
               // Styles: allow self, inline styles (for Tailwind/Framer Motion), and external stylesheets
-              "style-src 'self' 'unsafe-inline'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Images: allow self, data URIs, Clerk CDN, and whitelisted domains
               "img-src 'self' data: https: blob: https://img.clerk.com https://images.clerk.dev https://em-content.zobj.net",
-              // Fonts: allow self and data URIs
-              "font-src 'self' data:",
+              // Fonts: allow self, data URIs, and Google Fonts
+              "font-src 'self' data: https://fonts.gstatic.com",
               // Connect: allow self, Clerk API, Supabase, and Vercel
-              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.supabase.co wss://*.supabase.co https://vercel.live",
+              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.supabase.co wss://*.supabase.co https://vercel.live https://vitals.vercel-insights.com",
               // Frames: allow Clerk for embedded components
               "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
               // Workers: allow self and blob for service workers
