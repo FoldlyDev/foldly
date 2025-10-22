@@ -2,12 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { DottedGlowBackground } from "@/components/ui/aceternityui";
 import { TertiaryCtaButton } from "@/components/buttons/TertiaryCtaButton";
-import {
-  Eye,
-  Share2,
-  Settings,
-  Trash2,
-} from "lucide-react";
+import { Eye, Share2, Settings, Trash2 } from "lucide-react";
 import type { Link } from "@/lib/database/schemas";
 
 interface LinkCardProps {
@@ -25,7 +20,7 @@ export function LinkCard({ link, onOpenDetails }: LinkCardProps) {
 
   return (
     <article
-      className="relative flex size-60 items-end justify-end overflow-hidden rounded-md rounded-tl-3xl rounded-br-3xl rounded-bl-3xl border border-transparent px-4 shadow ring-1 shadow-black/10 ring-black/5 md:size-100 dark:shadow-white/10 dark:ring-white/5 foldly-glass-light dark:foldly-glass"
+      className="relative flex size-60 items-end justify-end overflow-hidden rounded-md rounded-tl-3xl rounded-br-3xl rounded-bl-3xl border border-transparent px-4 shadow ring-1 shadow-black/10 ring-black/5 md:size-80 dark:shadow-white/10 dark:ring-white/5 foldly-glass-light dark:foldly-glass"
       aria-labelledby={`link-title-${link.id}`}
     >
       <LinkCardHeader
@@ -79,7 +74,10 @@ function LinkCardHeader({
           className="size-10 md:size-20 dark:invert dark:filter"
         />
       )}
-      <h1 id={`link-title-${linkId}`} className="text-center font-semibold text-lg">
+      <h1
+        id={`link-title-${linkId}`}
+        className="text-center font-semibold text-lg"
+      >
         <span
           className="p-4 rounded-3xl backdrop-blur-sm"
           style={{ backgroundColor: accentColorWithOpacity }}
@@ -94,7 +92,13 @@ function LinkCardHeader({
 /**
  * LinkCardActions - Displays optional description and action buttons
  */
-function LinkCardActions({ link, onOpenDetails }: { link: Link; onOpenDetails?: () => void }) {
+function LinkCardActions({
+  link,
+  onOpenDetails,
+}: {
+  link: Link;
+  onOpenDetails?: () => void;
+}) {
   const buttonStyles = "p-1";
   const iconSize = "size-5 lg:size-4.5";
   const destructiveStyles =
@@ -107,7 +111,11 @@ function LinkCardActions({ link, onOpenDetails }: { link: Link; onOpenDetails?: 
           {link.linkConfig.customMessage}
         </p>
       )}
-      <div className="flex items-center justify-between" role="group" aria-label="Link actions">
+      <div
+        className="flex items-center justify-between"
+        role="group"
+        aria-label="Link actions"
+      >
         <div className="flex items-center gap-2">
           <TertiaryCtaButton
             className={buttonStyles}
