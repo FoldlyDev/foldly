@@ -86,7 +86,10 @@ src/
 │   │   ├── use-user-workspace.ts
 │   │   └── use-email.ts
 │   └── ui/              # UI utility hooks
-│       └── use-scroll-position.ts
+│       ├── use-dialog-control-state.tsx
+│       ├── use-modal-state.ts
+│       ├── use-scroll-position.ts
+│       └── use-toast.ts
 │
 ├── lib/                  # Core utilities and configurations
 │   ├── actions/         # Global server actions (cross-module)
@@ -273,6 +276,57 @@ User operations follow the three-layer architecture:
 - **Database Queries**: `getUserById()`, `createUser()`, `updateUser()`, `getUserByEmail()`, etc.
 - **Server Actions**: `createUserAction()`, `getUserAction()`, `updateUserProfileAction()`
 - **Important**: User must be created in database BEFORE workspace (foreign key dependency)
+
+### Modal Management Pattern
+The application uses a lightweight modal state management pattern with AnimateUI Modal components:
+
+**Hook**: `useModalState<TData>()` from `@/hooks/ui/use-modal-state`
+- Manages open/closed state and data for a single modal
+- Returns: `{ isOpen, data, open, close }`
+- Type-safe: Generic type parameter for modal data
+
+**Pattern**: One hook instance per modal type
+```typescript
+// In a component
+import { useModalState } from '@/hooks';
+import { Modal, ModalContent, ModalHeader, ModalTitle } from '@/components/ui/animateui/dialog';
+
+const linkDetailsModal = useModalState<Link>();
+const editLinkModal = useModalState<Link>();
+const deleteModal = useModalState<{ id: string; name: string }>();
+
+// Open modals
+linkDetailsModal.open(linkData);
+editLinkModal.open(linkData);
+deleteModal.open({ id: link.id, name: link.name });
+
+// In JSX - each modal component rendered separately
+<LinkDetailsModal
+  link={linkDetailsModal.data}
+  isOpen={linkDetailsModal.isOpen}
+  onOpenChange={(open) => !open && linkDetailsModal.close()}
+/>
+<EditLinkModal
+  link={editLinkModal.data}
+  isOpen={editLinkModal.isOpen}
+  onOpenChange={(open) => !open && editLinkModal.close()}
+/>
+```
+
+**Key Benefits**:
+- ✅ Reduces boilerplate (1 hook call vs 2 useState calls)
+- ✅ Type-safe modal data
+- ✅ Works with AnimateUI Modal components
+- ✅ Preserves all modal behaviors (click outside, ESC key, animations)
+- ✅ No modal nesting (portals to document.body)
+- ✅ No prop drilling
+
+**Modal Components**: Use AnimateUI Modal primitives (`@/components/ui/animateui/dialog`)
+- Built on Radix UI Dialog primitives
+- Framer Motion animations
+- Controlled pattern with `open` and `onOpenChange` props
+- Available components: `Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`, `ModalClose`, `ModalTrigger`
+- **Note**: Exported as Modal aliases for application code; Dialog primitives remain for internal implementation
 
 ### Animation Architecture (Landing Page)
 The landing page uses a sophisticated animation orchestrator:

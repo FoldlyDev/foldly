@@ -1,11 +1,19 @@
 'use client';
 
 import { useUserLinks } from '@/hooks';
+import { useModalState } from '@/hooks/ui/use-modal-state';
 import { LinksSkeleton } from '../ui/LinksSkeleton';
 import { LinkCard } from '../ui/LinkCard';
+import { LinkDetailsModal } from '../modals/LinkDetailsModal';
+import type { Link } from '@/lib/database/schemas';
 
 export function UserLinks() {
   const { data: links, isLoading, error } = useUserLinks();
+  const linkDetailsModal = useModalState<Link>();
+
+  const handleOpenLinkDetails = (link: Link) => {
+    linkDetailsModal.open(link);
+  };
 
   if (isLoading) {
     return <LinksSkeleton />;
@@ -29,13 +37,25 @@ export function UserLinks() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Your Links</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {links.map((link) => (
-          <LinkCard key={link.id} link={link} />
-        ))}
+    <>
+      <div className="p-6 space-y-6">
+        <h1 className="text-2xl font-semibold">Your Links</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {links.map((link) => (
+            <LinkCard
+              key={link.id}
+              link={link}
+              onOpenDetails={() => handleOpenLinkDetails(link)}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+
+      <LinkDetailsModal
+        link={linkDetailsModal.data}
+        isOpen={linkDetailsModal.isOpen}
+        onOpenChange={(open) => !open && linkDetailsModal.close()}
+      />
+    </>
   );
 }

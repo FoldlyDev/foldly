@@ -183,7 +183,7 @@
     #020618 360deg
   );
 
-  /* Foldly Glass Morphism Background - Light version */
+  /* Foldly Glass Morphism - Light Mode */
   --foldly-glass-bg-light: rgba(12, 13, 13, 0.4);
   --foldly-glass-bg-light-solid: rgba(12, 13, 13, 0.6);
   --foldly-glass-gradient-light: radial-gradient(
@@ -191,12 +191,14 @@
     rgba(68, 68, 68, 0.4),
     rgba(12, 13, 13, 0.4)
   );
+  --foldly-glass-border-light: rgba(32, 34, 34, 0.8);
+  --foldly-glass-blur-light: 8px;
 
-  /* Foldly Glass Morphism Background - Dark version */
-  --foldly-glass-bg: rgba(2, 6, 24, 0.85);
-  --foldly-glass-bg-solid: rgba(2, 6, 24, 0.95);
-  --foldly-glass-border: rgba(255, 255, 255, 0.1);
-  --foldly-glass-blur: 12px;
+  /* Foldly Glass Morphism - Dark Mode */
+  --foldly-glass-bg-dark: rgba(2, 6, 24, 0.85);
+  --foldly-glass-bg-dark-solid: rgba(2, 6, 24, 0.95);
+  --foldly-glass-border-dark: rgba(255, 255, 255, 0.1);
+  --foldly-glass-blur-dark: 12px;
 
   /* Legacy Color Aliases */
   --light: var(--neutral-50);
@@ -262,9 +264,6 @@
   --light: var(--neutral-100);
   --dark: var(--neutral-800);
 
-  /* Override glass morphism for dark mode */
-  --foldly-glass-bg-light: var(--foldly-glass-bg);
-  --foldly-glass-bg-light-solid: var(--foldly-glass-bg-solid);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -396,41 +395,40 @@
   background: var(--foldly-gradient);
 }
 
-/* Glass Morphism Utilities */
-@utility foldly-glass {
-  background: var(--foldly-glass-bg);
-  backdrop-filter: blur(var(--foldly-glass-blur));
-  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
-  border: 1px solid var(--foldly-glass-border);
-}
+/* Glass Morphism Utilities - Theme Aware */
 
-@utility foldly-glass-solid {
-  background: var(--foldly-glass-bg-solid);
-  backdrop-filter: blur(var(--foldly-glass-blur));
-  -webkit-backdrop-filter: blur(var(--foldly-glass-blur));
-  border: 1px solid var(--foldly-glass-border);
-}
-
+/* Light mode glass (for use in light theme) */
 @utility foldly-glass-light {
   background: var(--foldly-glass-gradient-light);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(32, 34, 34, 0.8);
+  backdrop-filter: blur(var(--foldly-glass-blur-light));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur-light));
+  border: 1px solid var(--foldly-glass-border-light);
   position: relative;
   overflow: hidden;
 }
 
 @utility foldly-glass-light-solid {
-  background: radial-gradient(
-    circle 280px at 0% 0%,
-    rgba(68, 68, 68, 0.6),
-    rgba(12, 13, 13, 0.6)
-  );
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(32, 34, 34, 0.8);
+  background: var(--foldly-glass-bg-light-solid);
+  backdrop-filter: blur(var(--foldly-glass-blur-light));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur-light));
+  border: 1px solid var(--foldly-glass-border-light);
   position: relative;
   overflow: hidden;
+}
+
+/* Dark mode glass (for use in dark theme) */
+@utility foldly-glass {
+  background: var(--foldly-glass-bg-dark);
+  backdrop-filter: blur(var(--foldly-glass-blur-dark));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur-dark));
+  border: 1px solid var(--foldly-glass-border-dark);
+}
+
+@utility foldly-glass-solid {
+  background: var(--foldly-glass-bg-dark-solid);
+  backdrop-filter: blur(var(--foldly-glass-blur-dark));
+  -webkit-backdrop-filter: blur(var(--foldly-glass-blur-dark));
+  border: 1px solid var(--foldly-glass-border-dark);
 }
 
 /* Custom Foldly Background Style */

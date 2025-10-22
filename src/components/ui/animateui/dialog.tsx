@@ -132,6 +132,7 @@ function DialogDescription({ className, ...props }: DialogDescriptionProps) {
   );
 }
 
+// Export Dialog primitives (for internal use)
 export {
   Dialog,
   DialogTrigger,
@@ -149,4 +150,24 @@ export {
   type DialogFooterProps,
   type DialogTitleProps,
   type DialogDescriptionProps,
+};
+
+// Export Modal aliases (for application code - preferred naming)
+export {
+  Dialog as Modal,
+  DialogTrigger as ModalTrigger,
+  DialogClose as ModalClose,
+  DialogContent as ModalContent,
+  DialogHeader as ModalHeader,
+  DialogFooter as ModalFooter,
+  DialogTitle as ModalTitle,
+  DialogDescription as ModalDescription,
+  type DialogProps as ModalProps,
+  type DialogTriggerProps as ModalTriggerProps,
+  type DialogCloseProps as ModalCloseProps,
+  type DialogContentProps as ModalContentProps,
+  type DialogHeaderProps as ModalHeaderProps,
+  type DialogFooterProps as ModalFooterProps,
+  type DialogTitleProps as ModalTitleProps,
+  type DialogDescriptionProps as ModalDescriptionProps,
 };
