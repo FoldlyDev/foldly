@@ -1,19 +1,24 @@
-'use client';
+"use client";
 
-import { useUserLinks } from '@/hooks';
-import { useModalState } from '@/hooks';
-import { LinksSkeleton } from '../ui/LinksSkeleton';
-import { LinkCard } from '../ui/LinkCard';
-import { LinkDetailsModal } from '../modals/LinkDetailsModal';
-import { LinksManagementBar } from '../sections/LinksManagementBar';
-import type { Link } from '@/lib/database/schemas';
+import { useUserLinks } from "@/hooks";
+import { useModalState } from "@/hooks";
+import { LinksSkeleton } from "../ui/LinksSkeleton";
+import { LinkCard } from "../ui/LinkCard";
+import { LinkDetailsModal, CreateLinkModal } from "../modals";
+import { LinksManagementBar } from "../sections/LinksManagementBar";
+import type { Link } from "@/lib/database/schemas";
 
 export function UserLinks() {
   const { data: links, isLoading, error } = useUserLinks();
   const linkDetailsModal = useModalState<Link>();
+  const createLinkModal = useModalState<void>();
 
   const handleOpenLinkDetails = (link: Link) => {
     linkDetailsModal.open(link);
+  };
+
+  const handleCreateLink = () => {
+    createLinkModal.open(undefined);
   };
 
   if (isLoading) {
@@ -23,7 +28,9 @@ export function UserLinks() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="text-destructive">Error loading links: {error.message}</div>
+        <div className="text-destructive">
+          Error loading links: {error.message}
+        </div>
       </div>
     );
   }
@@ -32,7 +39,9 @@ export function UserLinks() {
     return (
       <div className="p-6">
         <h1 className="text-2xl font-semibold mb-4">Your Links</h1>
-        <p className="text-muted-foreground">No links yet. Create your first link to get started.</p>
+        <p className="text-muted-foreground">
+          No links yet. Create your first link to get started.
+        </p>
       </div>
     );
   }
@@ -54,13 +63,17 @@ export function UserLinks() {
       </div>
 
       {/* Management Bar */}
-      <LinksManagementBar />
+      <LinksManagementBar onCreateLink={handleCreateLink} />
 
       {/* Modals */}
       <LinkDetailsModal
         link={linkDetailsModal.data}
         isOpen={linkDetailsModal.isOpen}
         onOpenChange={(open) => !open && linkDetailsModal.close()}
+      />
+      <CreateLinkModal
+        isOpen={createLinkModal.isOpen}
+        onOpenChange={(open) => !open && createLinkModal.close()}
       />
     </>
   );

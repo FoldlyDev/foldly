@@ -22,3 +22,13 @@ export {
   type TabsContentProps,
 } from './tabs';
 export { Switch, type SwitchProps } from './switch';
+export {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+  type AccordionProps,
+  type AccordionItemProps,
+  type AccordionTriggerProps,
+  type AccordionContentProps,
+} from './accordion';

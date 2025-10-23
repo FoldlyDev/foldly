@@ -24,7 +24,7 @@ export function LinkDetailsModal({
 
   return (
     <Modal open={isOpen} onOpenChange={onOpenChange}>
-      <ModalContent>
+      <ModalContent className="gap-4">
         <ModalHeader>
           <ModalTitle>{link.name}</ModalTitle>
           <ModalDescription>
@@ -32,7 +32,7 @@ export function LinkDetailsModal({
           </ModalDescription>
         </ModalHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Link URL */}
           <div>
             <p className="text-sm font-medium mb-1">Link URL</p>
