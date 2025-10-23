@@ -38,7 +38,7 @@ import { db } from '@/lib/database/connection';
 import { links, permissions } from '@/lib/database/schemas';
 import { z } from 'zod';
 
-// Import module-specific validation schemas
+// Import global validation schemas
 import {
   validateInput,
   createLinkSchema,
@@ -50,7 +50,7 @@ import {
   type UpdateLinkInput,
   type UpdateLinkConfigInput,
   type DeleteLinkInput,
-} from '@/modules/links/lib/validation/link-core-schemas';
+} from '@/lib/validation';
 
 // =============================================================================
 // INPUT VALIDATION SCHEMAS

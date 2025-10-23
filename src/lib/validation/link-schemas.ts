@@ -1,8 +1,8 @@
 // =============================================================================
-// LINK VALIDATION SCHEMAS - Link-Specific Validations
+// LINK VALIDATION SCHEMAS - Core Link Validation
 // =============================================================================
-// Extends base schemas from @/lib/validation with link-specific logic
-// Imports global validation constants for consistent limits
+// Used by: Global link actions (cross-module), workspace module, uploads module
+// Extends base schemas with link-specific logic and validation limits
 
 import { z } from 'zod';
 
@@ -10,24 +10,20 @@ import { z } from 'zod';
 import {
   uuidSchema,
   emailSchema,
-  permissionRoleSchema,
   createSlugSchema,
   createNameSchema,
-  validateInput,
-} from '@/lib/validation/base-schemas';
+} from './base-schemas';
 
 // Import constants from global
 import { VALIDATION_LIMITS, RESERVED_SLUGS } from '@/lib/constants/validation';
 
-// Re-export base schemas for backward compatibility in links module
-export { uuidSchema, emailSchema, permissionRoleSchema, validateInput };
-
 // =============================================================================
-// LINK-SPECIFIC SCHEMAS
+// FIELD SCHEMAS (7 schemas)
 // =============================================================================
 
 /**
  * Link name schema using global builder
+ * Used in: Create link, update link, forms
  */
 export const linkNameSchema = createNameSchema({
   minLength: VALIDATION_LIMITS.LINK.NAME_MIN_LENGTH,
@@ -37,6 +33,7 @@ export const linkNameSchema = createNameSchema({
 
 /**
  * Link slug schema using global builder with reserved slugs
+ * Used in: Create link, update link, slug availability check
  */
 export const slugSchema = createSlugSchema({
   minLength: VALIDATION_LIMITS.LINK.SLUG_MIN_LENGTH,
@@ -46,6 +43,7 @@ export const slugSchema = createSlugSchema({
 
 /**
  * Boolean schema for public/private link toggle
+ * Used in: Create link, update link
  */
 export const isPublicFieldSchema = z.boolean();
 
@@ -57,6 +55,7 @@ export const allowedEmailsFieldSchema = z.array(emailSchema);
 
 /**
  * Boolean schema for password protection toggle
+ * Used in: Create link, update link, forms
  */
 export const passwordProtectedFieldSchema = z.boolean();
 
@@ -90,12 +89,13 @@ export const linkConfigSchema = z.object({
 });
 
 // =============================================================================
-// ACTION INPUT SCHEMAS
+// ACTION INPUT SCHEMAS (5 schemas)
 // =============================================================================
 
 /**
  * Schema for creating a new link
  * Validates: name, slug, isPublic
+ * Used by: createLinkAction (global)
  */
 export const createLinkSchema = z.object({
   name: linkNameSchema,
@@ -108,6 +108,7 @@ export type CreateLinkInput = z.infer<typeof createLinkSchema>;
 /**
  * Schema for updating an existing link
  * Validates: linkId, optional name, slug, isPublic, isActive
+ * Used by: updateLinkAction (global)
  */
 export const updateLinkSchema = z.object({
   linkId: uuidSchema,
@@ -122,6 +123,7 @@ export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;
 /**
  * Schema for updating link configuration
  * Validates: linkId, config object
+ * Used by: updateLinkConfigAction (global)
  */
 export const updateLinkConfigSchema = z.object({
   linkId: uuidSchema,
@@ -133,6 +135,7 @@ export type UpdateLinkConfigInput = z.infer<typeof updateLinkConfigSchema>;
 /**
  * Schema for deleting a link
  * Validates: linkId
+ * Used by: deleteLinkAction (global)
  */
 export const deleteLinkSchema = z.object({
   linkId: uuidSchema,
@@ -143,59 +146,10 @@ export type DeleteLinkInput = z.infer<typeof deleteLinkSchema>;
 /**
  * Schema for checking slug availability
  * Validates: slug format
+ * Used by: checkSlugAvailabilityAction (global)
  */
 export const checkSlugSchema = z.object({
   slug: slugSchema,
 });
 
 export type CheckSlugInput = z.infer<typeof checkSlugSchema>;
-
-// =============================================================================
-// PERMISSION SCHEMAS
-// =============================================================================
-
-/**
- * Schema for adding a permission to a link
- * Validates: linkId, email, role
- */
-export const addPermissionSchema = z.object({
-  linkId: uuidSchema,
-  email: emailSchema,
-  role: permissionRoleSchema,
-});
-
-export type AddPermissionInput = z.infer<typeof addPermissionSchema>;
-
-/**
- * Schema for removing a permission from a link
- * Validates: linkId, email
- */
-export const removePermissionSchema = z.object({
-  linkId: uuidSchema,
-  email: emailSchema,
-});
-
-export type RemovePermissionInput = z.infer<typeof removePermissionSchema>;
-
-/**
- * Schema for updating a permission role
- * Validates: linkId, email, newRole
- */
-export const updatePermissionSchema = z.object({
-  linkId: uuidSchema,
-  email: emailSchema,
-  role: permissionRoleSchema,
-});
-
-export type UpdatePermissionInput = z.infer<typeof updatePermissionSchema>;
-
-/**
- * Schema for verifying link access
- * Validates: linkId, email
- */
-export const verifyLinkAccessSchema = z.object({
-  linkId: uuidSchema,
-  email: emailSchema,
-});
-
-export type VerifyLinkAccessInput = z.infer<typeof verifyLinkAccessSchema>;

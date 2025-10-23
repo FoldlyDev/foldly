@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import type { FileWithPreview } from '@/hooks/utility/use-file-upload';
 
-// Import base field schemas - single source of truth
+// Import base field schemas from global - single source of truth
 import {
   linkNameSchema,
   slugSchema,
@@ -16,7 +16,7 @@ import {
   allowedEmailsFieldSchema,
   passwordProtectedFieldSchema,
   passwordFieldSchema,
-} from './link-core-schemas';
+} from '@/lib/validation/link-schemas';
 
 // Import branding field schemas from branding module
 import {

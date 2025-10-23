@@ -88,16 +88,20 @@ export {
 // =============================================================================
 
 export type {
-  // Action input types
+  // Action input types (from global validation)
   CreateLinkInput,
   UpdateLinkInput,
   UpdateLinkConfigInput,
   DeleteLinkInput,
   CheckSlugInput,
+} from '@/lib/validation';
+
+export type {
+  // Permission types (from global validation)
   AddPermissionInput,
   RemovePermissionInput,
   UpdatePermissionInput,
-} from './lib/validation/link-core-schemas';
+} from '@/lib/validation';
 
 export type {
   // Branding action types

@@ -26,8 +26,8 @@ import { logger, logRateLimitViolation } from '@/lib/utils/logger';
 // Import types
 import type { Link } from '@/lib/database/schemas';
 
-// Import module-specific validation
-import { validateInput } from '../validation/link-core-schemas';
+// Import global validation helper
+import { validateInput } from '@/lib/validation';
 
 import {
   type UploadBrandingLogoInput,

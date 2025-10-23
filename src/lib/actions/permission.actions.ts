@@ -29,7 +29,7 @@ import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/log
 // Import types
 import type { Permission } from '@/lib/database/schemas';
 
-// Import module-specific validation schemas
+// Import global validation schemas
 import {
   validateInput,
   addPermissionSchema,
@@ -38,7 +38,7 @@ import {
   type AddPermissionInput,
   type RemovePermissionInput,
   type UpdatePermissionInput,
-} from '@/modules/links/lib/validation/link-core-schemas';
+} from '@/lib/validation';
 
 // =============================================================================
 // PERMISSION ACTIONS

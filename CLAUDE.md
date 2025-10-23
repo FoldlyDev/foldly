@@ -239,6 +239,28 @@ export function useCreateEntity() {
 }
 ```
 
+#### Validation Schema Organization
+- **Global Validation** (`src/lib/validation/`): Schemas consumed by global actions/hooks
+  - ✅ Core domain entities used by 3+ modules (users, workspaces, links, permissions)
+  - ✅ Cross-cutting concerns (authentication, authorization, rate limiting)
+  - ✅ Reusable field schemas (base-schemas.ts: UUID, email, slug builders)
+  - ❌ Feature-specific UI validation (forms, wizards)
+  - ❌ Module-specific domain logic (branding, custom settings)
+
+- **Module Validation** (`src/modules/{name}/lib/validation/`): Feature-specific schemas
+  - ✅ UI form validation (React Hook Form, Zod integration)
+  - ✅ Feature-specific fields (branding colors, logo uploads)
+  - ✅ Module-specific server actions (not used by other modules)
+  - ✅ Conditional validation logic unique to module
+
+**Rule**: Validation co-locates with its primary consumer (action location determines schema location)
+
+**Examples**:
+- ✅ `src/lib/validation/link-schemas.ts` - Used by global link actions
+- ✅ `src/lib/validation/permission-schemas.ts` - Used by global permission actions
+- ✅ `src/modules/links/lib/validation/link-branding-schemas.ts` - Used by module branding actions
+- ✅ `src/modules/links/lib/validation/link-form-schemas.ts` - Used by module UI forms
+
 ### Server Actions & Hooks
 
 **Global Actions** (`src/lib/actions/`):

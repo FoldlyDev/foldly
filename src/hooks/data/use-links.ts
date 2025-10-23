@@ -24,7 +24,7 @@ import type {
   UpdateLinkInput,
   UpdateLinkConfigInput,
   DeleteLinkInput,
-} from '@/modules/links/lib/validation/link-core-schemas';
+} from '@/lib/validation';
 import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
 import { linkKeys } from '@/lib/config/query-keys';
 
