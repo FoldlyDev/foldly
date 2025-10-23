@@ -328,6 +328,47 @@ deleteModal.open({ id: link.id, name: link.name });
 - Available components: `Modal`, `ModalContent`, `ModalHeader`, `ModalTitle`, `ModalDescription`, `ModalFooter`, `ModalClose`, `ModalTrigger`
 - **Note**: Exported as Modal aliases for application code; Dialog primitives remain for internal implementation
 
+### Management Bar Pattern
+The application uses a configurable management bar component for bulk actions and navigation:
+
+**Component**: `ManagementBar` from `@/components/ui/animateui`
+- Supports optional pagination, expandable action buttons, and primary action
+- Type-safe with proper TypeScript interfaces
+- Fully responsive with container queries
+
+**Pattern**: Configure via props
+```typescript
+import { ManagementBar } from '@/components/ui/animateui';
+import { Plus, Trash2, Edit } from 'lucide-react';
+
+<ManagementBar
+  pagination={{
+    currentPage: 1,
+    totalPages: 10,
+    onPageChange: (page) => setPage(page),
+  }}
+  actions={[
+    { id: 'edit', icon: Edit, label: 'Edit', onClick: handleEdit, variant: 'info' },
+    { id: 'delete', icon: Trash2, label: 'Delete', onClick: handleDelete, variant: 'danger' },
+  ]}
+  primaryAction={{
+    label: 'Create Link',
+    sublabel: 'New',
+    onClick: handleCreate,
+    shortcut: '⌘K',
+  }}
+/>
+```
+
+**Key Features**:
+- ✅ Optional sections (pagination, actions, primaryAction)
+- ✅ Expandable action buttons with hover animations
+- ✅ 5 action variants: neutral, danger, success, warning, info
+- ✅ Accessibility: ARIA labels, keyboard navigation
+- ✅ Returns null if no content provided
+
+**Types**: `ManagementBarProps`, `ManagementBarAction`, `ManagementBarPrimaryAction`, `ActionVariant`
+
 ### Animation Architecture (Landing Page)
 The landing page uses a sophisticated animation orchestrator:
 - **useLandingAnimationOrchestrator**: Coordinates all section animations

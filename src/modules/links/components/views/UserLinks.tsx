@@ -5,6 +5,7 @@ import { useModalState } from '@/hooks/ui/use-modal-state';
 import { LinksSkeleton } from '../ui/LinksSkeleton';
 import { LinkCard } from '../ui/LinkCard';
 import { LinkDetailsModal } from '../modals/LinkDetailsModal';
+import { LinksManagementBar } from '../sections/LinksManagementBar';
 import type { Link } from '@/lib/database/schemas';
 
 export function UserLinks() {
@@ -38,7 +39,8 @@ export function UserLinks() {
 
   return (
     <>
-      <div className="p-6 space-y-6">
+      {/* Main content with bottom padding for fixed bar */}
+      <div className="p-6 space-y-6 pb-32">
         <h1 className="text-2xl font-semibold">Your Links</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {links.map((link) => (
@@ -51,6 +53,10 @@ export function UserLinks() {
         </div>
       </div>
 
+      {/* Management Bar */}
+      <LinksManagementBar />
+
+      {/* Modals */}
       <LinkDetailsModal
         link={linkDetailsModal.data}
         isOpen={linkDetailsModal.isOpen}
