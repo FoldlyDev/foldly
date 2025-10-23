@@ -9,3 +9,16 @@ export {
   type ActionVariant
 } from './management-bar';
 export { SlidingNumber, type SlidingNumberProps } from './sliding-number';
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContents,
+  TabsContent,
+  type TabsProps,
+  type TabsListProps,
+  type TabsTriggerProps,
+  type TabsContentsProps,
+  type TabsContentProps,
+} from './tabs';
+export { Switch, type SwitchProps } from './switch';

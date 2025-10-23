@@ -29,6 +29,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@base-ui-components/react": "^1.0.0-beta.4",
     "@clerk/nextjs": "^6.33.3",
     "@clerk/themes": "^2.4.25",
     "@google-cloud/storage": "^7.17.2",
@@ -62,6 +63,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.64.0",
     "react-icons": "^5.5.0",
     "react-use-measure": "^2.1.7",

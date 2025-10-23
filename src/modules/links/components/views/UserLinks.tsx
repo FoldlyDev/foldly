@@ -1,7 +1,7 @@
 'use client';
 
 import { useUserLinks } from '@/hooks';
-import { useModalState } from '@/hooks/ui/use-modal-state';
+import { useModalState } from '@/hooks';
 import { LinksSkeleton } from '../ui/LinksSkeleton';
 import { LinkCard } from '../ui/LinkCard';
 import { LinkDetailsModal } from '../modals/LinkDetailsModal';

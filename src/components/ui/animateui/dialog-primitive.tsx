@@ -4,7 +4,7 @@ import * as React from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { AnimatePresence, motion, type HTMLMotionProps } from "motion/react";
 
-import { useControlledState } from "@/hooks/ui/use-dialog-control-state";
+import { useControlledState } from "@/hooks";
 import { createStrictContext } from "@/lib/utils/context";
 
 type DialogContextType = {

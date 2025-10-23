@@ -1,9 +1,7 @@
 // =============================================================================
-// UI HOOKS INDEX - Central Export for UI Utility Hooks
+// UI HOOKS INDEX - Central Export for UI Component Hooks
 // =============================================================================
-// 🎯 Hooks for UI state management and utilities
+// 🎯 Hooks for specific UI component state management
 
-export * from './use-is-in-view';
 export * from './use-modal-state';
-export * from './use-scroll-position';
 export * from './use-toast';
