@@ -27,22 +27,20 @@ import { logger, logRateLimitViolation } from '@/lib/utils/logger';
 import type { Link } from '@/lib/database/schemas';
 
 // Import module-specific validation
-import {
-  validateInput,
-  updateLinkBrandingSchema,
-  type UpdateLinkBrandingInput,
-} from '../validation/link-schemas';
+import { validateInput } from '../validation/link-core-schemas';
 
 import {
   type UploadBrandingLogoInput,
   type DeleteBrandingLogoInput,
+  type UpdateLinkBrandingInput,
   uploadBrandingLogoSchema,
   deleteBrandingLogoSchema,
+  updateLinkBrandingSchema,
   BRANDING_BUCKET_NAME,
   generateBrandingPath,
   getFileExtension,
   type AllowedBrandingType,
-} from '../validation/branding-schemas';
+} from '../validation/link-branding-schemas';
 
 // =============================================================================
 // BRANDING CONFIGURATION ACTIONS

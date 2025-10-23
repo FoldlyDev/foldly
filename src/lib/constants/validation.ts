@@ -42,6 +42,16 @@ export const VALIDATION_LIMITS = {
   EMAIL: {
     MAX_LENGTH: 320, // RFC 5321 standard
   },
+
+  PASSWORD: {
+    MIN_LENGTH: 8,
+    MAX_LENGTH: 100,
+  },
+
+  BRANDING: {
+    LOGO_ALT_TEXT_MAX_LENGTH: 100,
+    MAX_FILE_SIZE_BYTES: 5 * 1024 * 1024, // 5MB
+  },
 } as const;
 
 /**

@@ -92,30 +92,16 @@ export type {
   CreateLinkInput,
   UpdateLinkInput,
   UpdateLinkConfigInput,
-  UpdateLinkBrandingInput,
   DeleteLinkInput,
   CheckSlugInput,
   AddPermissionInput,
   RemovePermissionInput,
   UpdatePermissionInput,
-} from './lib/validation/link-schemas';
+} from './lib/validation/link-core-schemas';
 
 export type {
-  // Branding upload types
+  // Branding action types
+  UpdateLinkBrandingInput,
   UploadBrandingLogoInput,
   DeleteBrandingLogoInput,
-} from './lib/validation/branding-schemas';
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-export {
-  // Error messages
-  ERROR_MESSAGES,
-  SUCCESS_MESSAGES,
-  // Validation constants
-  VALIDATION_LIMITS,
-  RESERVED_SLUGS,
-  type ReservedSlug,
-} from './lib/validation/constants';
+} from './lib/validation/link-branding-schemas';

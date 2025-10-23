@@ -20,7 +20,7 @@ import type {
   AddPermissionInput,
   RemovePermissionInput,
   UpdatePermissionInput,
-} from '@/modules/links/lib/validation/link-schemas';
+} from '@/modules/links/lib/validation/link-core-schemas';
 import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
 import { linkKeys, permissionKeys } from '@/lib/config/query-keys';
 

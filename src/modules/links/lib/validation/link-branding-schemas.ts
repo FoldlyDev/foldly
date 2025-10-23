@@ -1,10 +1,20 @@
 // =============================================================================
 // BRANDING VALIDATION SCHEMAS - Module-Specific
 // =============================================================================
-// Validation schemas and constants for link branding uploads
-// Used by branding actions to validate logo uploads and branding configuration
+// Validation schemas and constants for link branding
+// Includes color validation, logo uploads, and branding configuration
+// Single source of truth for all branding-related validation
 
 import { z } from 'zod';
+
+// Import base schemas from global
+import { uuidSchema } from '@/lib/validation/base-schemas';
+
+// Import validation helpers from global
+import { createHexColorSchema } from '@/lib/utils/validation-helpers';
+
+// Import validation constants from global
+import { VALIDATION_LIMITS } from '@/lib/constants/validation';
 
 // =============================================================================
 // CONSTANTS
@@ -33,9 +43,10 @@ export const BRANDING_FILE_EXTENSIONS: Record<AllowedBrandingType, string> = {
 } as const;
 
 /**
- * Maximum file size for branding logos (5MB)
+ * Maximum file size for branding logos
+ * Uses global validation limit for consistency
  */
-export const MAX_BRANDING_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+export const MAX_BRANDING_FILE_SIZE = VALIDATION_LIMITS.BRANDING.MAX_FILE_SIZE_BYTES;
 
 /**
  * GCS bucket name for branding assets
@@ -131,7 +142,58 @@ export function generateBrandingPath(workspaceId: string, linkId: string): strin
 }
 
 // =============================================================================
-// ZOD SCHEMAS
+// FIELD SCHEMAS
+// =============================================================================
+
+/**
+ * Accent color schema for link branding
+ * Uses global color validation helper for consistency
+ */
+export const accentColorFieldSchema = createHexColorSchema({
+  fieldName: 'Accent color',
+  allowShorthand: false,
+});
+
+/**
+ * Background color schema for link branding
+ * Uses global color validation helper for consistency
+ */
+export const backgroundColorFieldSchema = createHexColorSchema({
+  fieldName: 'Background color',
+  allowShorthand: false,
+});
+
+/**
+ * Link branding configuration schema
+ * Validates the complete branding configuration including logo and colors
+ */
+export const brandingSchema = z.object({
+  enabled: z.boolean().optional(),
+  logo: z
+    .object({
+      url: z.string().url({ message: 'Logo URL must be a valid URL.' }),
+      altText: z
+        .string()
+        .max(VALIDATION_LIMITS.BRANDING.LOGO_ALT_TEXT_MAX_LENGTH, {
+          message: `Alt text must be less than ${VALIDATION_LIMITS.BRANDING.LOGO_ALT_TEXT_MAX_LENGTH} characters.`,
+        })
+        .optional(),
+    })
+    .nullable()
+    .optional(),
+  colors: z
+    .object({
+      accentColor: accentColorFieldSchema,
+      backgroundColor: backgroundColorFieldSchema,
+    })
+    .nullable()
+    .optional(),
+});
+
+export type BrandingConfig = z.infer<typeof brandingSchema>;
+
+// =============================================================================
+// ACTION INPUT SCHEMAS
 // =============================================================================
 
 /**
@@ -161,3 +223,14 @@ export const deleteBrandingLogoSchema = z.object({
 });
 
 export type DeleteBrandingLogoInput = z.infer<typeof deleteBrandingLogoSchema>;
+
+/**
+ * Update link branding input schema
+ * Validates linkId and complete branding configuration
+ */
+export const updateLinkBrandingSchema = z.object({
+  linkId: uuidSchema,
+  branding: brandingSchema,
+});
+
+export type UpdateLinkBrandingInput = z.infer<typeof updateLinkBrandingSchema>;

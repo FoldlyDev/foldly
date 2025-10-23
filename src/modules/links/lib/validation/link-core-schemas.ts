@@ -45,6 +45,35 @@ export const slugSchema = createSlugSchema({
 });
 
 /**
+ * Boolean schema for public/private link toggle
+ */
+export const isPublicFieldSchema = z.boolean();
+
+/**
+ * Array of emails for link access control
+ * Used for private links to specify allowed email addresses
+ */
+export const allowedEmailsFieldSchema = z.array(emailSchema);
+
+/**
+ * Boolean schema for password protection toggle
+ */
+export const passwordProtectedFieldSchema = z.boolean();
+
+/**
+ * Password schema for link access control
+ * Uses global password validation limits
+ */
+export const passwordFieldSchema = z
+  .string()
+  .min(VALIDATION_LIMITS.PASSWORD.MIN_LENGTH, {
+    message: `Password must be at least ${VALIDATION_LIMITS.PASSWORD.MIN_LENGTH} characters.`,
+  })
+  .max(VALIDATION_LIMITS.PASSWORD.MAX_LENGTH, {
+    message: `Password must be less than ${VALIDATION_LIMITS.PASSWORD.MAX_LENGTH} characters.`,
+  });
+
+/**
  * Link configuration schema
  * Validates the JSON configuration object for links
  */
@@ -58,36 +87,6 @@ export const linkConfigSchema = z.object({
     .nullable()
     .optional(),
   requiresName: z.boolean().optional(),
-});
-
-/**
- * Link branding schema
- * Validates the branding configuration for visual identity
- */
-export const brandingSchema = z.object({
-  enabled: z.boolean().optional(),
-  logo: z
-    .object({
-      url: z.string().url({ message: 'Logo URL must be a valid URL.' }),
-      altText: z.string().max(100, { message: 'Alt text must be less than 100 characters.' }).optional(),
-    })
-    .nullable()
-    .optional(),
-  colors: z
-    .object({
-      accentColor: z
-        .string()
-        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
-          message: 'Accent color must be a valid hex color (e.g., #6c47ff).',
-        }),
-      backgroundColor: z
-        .string()
-        .regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, {
-          message: 'Background color must be a valid hex color (e.g., #ffffff).',
-        }),
-    })
-    .nullable()
-    .optional(),
 });
 
 // =============================================================================
@@ -130,17 +129,6 @@ export const updateLinkConfigSchema = z.object({
 });
 
 export type UpdateLinkConfigInput = z.infer<typeof updateLinkConfigSchema>;
-
-/**
- * Schema for updating link branding
- * Validates: linkId, branding object
- */
-export const updateLinkBrandingSchema = z.object({
-  linkId: uuidSchema,
-  branding: brandingSchema,
-});
-
-export type UpdateLinkBrandingInput = z.infer<typeof updateLinkBrandingSchema>;
 
 /**
  * Schema for deleting a link

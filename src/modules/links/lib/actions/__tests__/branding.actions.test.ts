@@ -32,8 +32,8 @@ vi.mock('@/lib/gcs/client', () => ({
 }));
 
 // Mock branding schemas to provide bucket name
-vi.mock('../../validation/branding-schemas', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../validation/branding-schemas')>();
+vi.mock('../../validation/link-branding-schemas', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../validation/link-branding-schemas')>();
   return {
     ...actual,
     BRANDING_BUCKET_NAME: 'test-branding-bucket',

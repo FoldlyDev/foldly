@@ -50,7 +50,7 @@ import {
   type UpdateLinkInput,
   type UpdateLinkConfigInput,
   type DeleteLinkInput,
-} from '@/modules/links/lib/validation/link-schemas';
+} from '@/modules/links/lib/validation/link-core-schemas';
 
 // =============================================================================
 // INPUT VALIDATION SCHEMAS

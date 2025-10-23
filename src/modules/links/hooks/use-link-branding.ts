@@ -15,11 +15,11 @@ import {
   uploadBrandingLogoAction,
   deleteBrandingLogoAction,
 } from '../lib/actions/branding.actions';
-import type { UpdateLinkBrandingInput } from '../lib/validation/link-schemas';
 import type {
+  UpdateLinkBrandingInput,
   UploadBrandingLogoInput,
   DeleteBrandingLogoInput,
-} from '../lib/validation/branding-schemas';
+} from '../lib/validation/link-branding-schemas';
 import { transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
 import { linkKeys } from '@/lib/config/query-keys';
 

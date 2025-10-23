@@ -38,7 +38,7 @@ import {
   type AddPermissionInput,
   type RemovePermissionInput,
   type UpdatePermissionInput,
-} from '@/modules/links/lib/validation/link-schemas';
+} from '@/modules/links/lib/validation/link-core-schemas';
 
 // =============================================================================
 // PERMISSION ACTIONS
