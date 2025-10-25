@@ -2,6 +2,7 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useEffect } from "react";
+import { DynamicContentLoader } from "@/components/layout";
 
 const CheckIcon = ({ className }: { className?: string }) => {
   return (
@@ -95,12 +96,16 @@ export const MultiStepLoader = ({
   duration = 2000,
   loop = true,
   value,
+  variant = "steps",
+  message,
 }: {
   loadingStates: LoadingState[];
   loading?: boolean;
   duration?: number;
   loop?: boolean;
   value?: number;
+  variant?: "steps" | "simple";
+  message?: string;
 }) => {
   const [currentState, setCurrentState] = useState(0);
 
@@ -142,11 +147,23 @@ export const MultiStepLoader = ({
           }}
           className="w-full h-full fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-2xl"
         >
-          <div className="h-96  relative">
-            <LoaderCore value={activeState} loadingStates={loadingStates} />
-          </div>
-
-          <div className="bg-gradient-to-t inset-x-0 z-20 bottom-0 bg-white dark:bg-black h-full absolute [mask-image:radial-gradient(900px_at_center,transparent_30%,white)]" />
+          {variant === "steps" ? (
+            <>
+              <div className="h-96  relative">
+                <LoaderCore value={activeState} loadingStates={loadingStates} />
+              </div>
+              <div className="bg-gradient-to-t inset-x-0 z-20 bottom-0 bg-white dark:bg-black h-full absolute [mask-image:radial-gradient(900px_at_center,transparent_30%,white)]" />
+            </>
+          ) : (
+            <div className="relative z-30">
+              <DynamicContentLoader
+                text={message}
+                size="60"
+                speed="2.5"
+                color="currentColor"
+              />
+            </div>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

@@ -35,12 +35,22 @@ import {
 export const logoFieldSchema = z.array(z.custom<FileWithPreview>());
 
 /**
+ * Advanced Options field schemas
+ * Form-specific: UI fields for link configuration
+ */
+export const customMessageFieldSchema = z.string().max(500).optional();
+export const notifyOnUploadFieldSchema = z.boolean();
+export const requireNameFieldSchema = z.boolean();
+export const expiresAtFieldSchema = z.date().optional().nullable();
+
+/**
  * Create Link Form Schema
  * Used for the link creation form with all fields and conditional validation
  *
  * Conditional Rules:
  * - Password required when passwordProtected is true
  * - At least one email required when isPublic is false
+ * - Logo and colors only relevant when brandingEnabled is true
  */
 export const createLinkFormSchema = z
   .object({
@@ -50,9 +60,15 @@ export const createLinkFormSchema = z
     allowedEmails: allowedEmailsFieldSchema,
     passwordProtected: passwordProtectedFieldSchema,
     password: passwordFieldSchema,
+    brandingEnabled: z.boolean(),
     logo: logoFieldSchema,
     accentColor: accentColorFieldSchema,
     backgroundColor: backgroundColorFieldSchema,
+    // Advanced Options
+    customMessage: customMessageFieldSchema,
+    notifyOnUpload: notifyOnUploadFieldSchema,
+    requireName: requireNameFieldSchema,
+    expiresAt: expiresAtFieldSchema,
   })
   .superRefine((data, ctx) => {
     // Conditional validation: password required when password protection is enabled

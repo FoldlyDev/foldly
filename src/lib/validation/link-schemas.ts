@@ -86,6 +86,9 @@ export const linkConfigSchema = z.object({
     .nullable()
     .optional(),
   requiresName: z.boolean().optional(),
+  expiresAt: z.string().nullable().optional(),
+  passwordProtected: z.boolean().optional(),
+  password: z.string().nullable().optional(),
 });
 
 // =============================================================================

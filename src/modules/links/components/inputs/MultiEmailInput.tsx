@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/aceternityui/input';
 import { Button } from '@/components/ui/shadcn/button';
 import { X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { isValidEmail, isDuplicateEmail, normalizeEmail } from '@/lib/utils/validation-helpers';
 
 // =============================================================================
 // TYPES
@@ -31,17 +32,46 @@ export function MultiEmailInput({
   disabled = false,
 }: MultiEmailInputProps) {
   const [inputValue, setInputValue] = React.useState('');
+  const [error, setError] = React.useState<string>('');
 
   const handleAddEmail = () => {
-    // TODO: Add validation logic
-    if (inputValue.trim()) {
-      onChange?.([...value, inputValue.trim()]);
-      setInputValue('');
+    const email = inputValue.trim();
+
+    // Clear previous error
+    setError('');
+
+    // Check if email is empty
+    if (!email) {
+      return;
     }
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address (e.g., user@example.com)');
+      return;
+    }
+
+    // Check for duplicates (case-insensitive)
+    if (isDuplicateEmail(email, value)) {
+      setError('This email has already been added');
+      return;
+    }
+
+    // Add normalized email to list
+    onChange?.([...value, normalizeEmail(email)]);
+    setInputValue('');
   };
 
   const handleRemoveEmail = (emailToRemove: string) => {
     onChange?.(value.filter((email) => email !== emailToRemove));
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    // Clear error when user starts typing
+    if (error) {
+      setError('');
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -78,25 +108,37 @@ export function MultiEmailInput({
       )}
 
       {/* Input Section - Add new email */}
-      <div className="flex gap-2">
-        <Input
-          type="email"
-          value={inputValue}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          onClick={handleAddEmail}
-          disabled={disabled || !inputValue.trim()}
-          size="icon"
-          variant="secondary"
-        >
-          <Plus className="size-4" />
-        </Button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          <Input
+            type="email"
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={cn('flex-1', error && 'border-destructive focus-visible:ring-destructive')}
+            aria-invalid={error ? 'true' : 'false'}
+            aria-describedby={error ? 'email-error' : undefined}
+          />
+          <Button
+            type="button"
+            onClick={handleAddEmail}
+            disabled={disabled || !inputValue.trim()}
+            size="icon"
+            variant="secondary"
+            aria-label="Add email"
+          >
+            <Plus className="size-4" />
+          </Button>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <p id="email-error" className="text-xs text-destructive" role="alert">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Email count indicator */}

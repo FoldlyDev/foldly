@@ -24,10 +24,23 @@ import {
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
 import { Button } from "@/components/ui/shadcn/button";
+import { Textarea } from "@/components/ui/shadcn/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/shadcn/card";
 import { FileUpload } from "@/components/ui/originui";
 import { MultiEmailInput } from "../inputs/MultiEmailInput";
 import { ColorPickerInput } from "../inputs/ColorPickerInput";
-import { Loader2, ImageIcon } from "lucide-react";
+import { Loader2, ImageIcon, CalendarIcon } from "lucide-react";
 import type { FileWithPreview } from "@/hooks/utility/use-file-upload";
 import { sanitizeSlug } from "@/lib/utils/security";
 import {
@@ -333,6 +346,207 @@ const BackgroundColorField: React.FC = React.memo(() => {
 });
 BackgroundColorField.displayName = "BackgroundColorField";
 
+const BrandingToggle: React.FC = React.memo(() => {
+  const { control, watch } = useFormContext<CreateLinkFormData>();
+  const brandingEnabled = watch("brandingEnabled");
+
+  return (
+    <Card className="dark:foldly-glass foldly-glass-light ">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-base">Custom Branding</CardTitle>
+            <CardDescription>
+              {brandingEnabled
+                ? "Customize your link's appearance with logo and colors"
+                : "Enable to customize your link's appearance with logo and colors"}
+            </CardDescription>
+          </div>
+          <Controller
+            name="brandingEnabled"
+            control={control}
+            render={({ field }) => (
+              <Switch checked={field.value} onCheckedChange={field.onChange} />
+            )}
+          />
+        </div>
+      </CardHeader>
+    </Card>
+  );
+});
+BrandingToggle.displayName = "BrandingToggle";
+
+// =============================================================================
+// ADVANCED OPTIONS FIELD COMPONENTS
+// =============================================================================
+
+const CustomMessageField: React.FC = React.memo(() => {
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext<CreateLinkFormData>();
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="customMessage">Custom Message</Label>
+      <Textarea
+        id="customMessage"
+        placeholder="Add instructions or a message for uploaders (optional)"
+        {...register("customMessage")}
+        aria-invalid={errors.customMessage ? "true" : "false"}
+        className="min-h-[100px] resize-none"
+      />
+      {errors.customMessage && (
+        <p className="text-xs text-destructive">
+          {errors.customMessage.message}
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        This message will appear on the upload page
+      </p>
+    </div>
+  );
+});
+CustomMessageField.displayName = "CustomMessageField";
+
+const NotifyOnUploadToggle: React.FC = React.memo(() => {
+  const { control, watch } = useFormContext<CreateLinkFormData>();
+  const notifyOnUpload = watch("notifyOnUpload");
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="notifyOnUpload">Email Notifications</Label>
+          <p className="text-sm text-muted-foreground">
+            {notifyOnUpload
+              ? "You'll receive an email when someone uploads a file"
+              : "You won't receive upload notifications"}
+          </p>
+        </div>
+        <Controller
+          name="notifyOnUpload"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="notifyOnUpload"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
+      </div>
+    </div>
+  );
+});
+NotifyOnUploadToggle.displayName = "NotifyOnUploadToggle";
+
+const RequireNameToggle: React.FC = React.memo(() => {
+  const { control, watch } = useFormContext<CreateLinkFormData>();
+  const requireName = watch("requireName");
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="requireName">Require Uploader Name</Label>
+          <p className="text-sm text-muted-foreground">
+            {requireName
+              ? "Uploaders must provide their name before uploading"
+              : "Name is optional for uploaders"}
+          </p>
+        </div>
+        <Controller
+          name="requireName"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="requireName"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
+      </div>
+    </div>
+  );
+});
+RequireNameToggle.displayName = "RequireNameToggle";
+
+const ExpirationDateField: React.FC = React.memo(() => {
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext<CreateLinkFormData>();
+  const [open, setOpen] = React.useState(false);
+
+  const formatDate = (date: Date | undefined | null) => {
+    if (!date) return "";
+    return date.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="expiresAt">Link Expiration (Optional)</Label>
+      <Controller
+        name="expiresAt"
+        control={control}
+        render={({ field }) => (
+          <div className="relative flex gap-2">
+            <Input
+              id="expiresAt"
+              value={formatDate(field.value)}
+              placeholder="Select expiration date"
+              className="pr-10"
+              readOnly
+            />
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                  type="button"
+                >
+                  <CalendarIcon className="size-3.5" />
+                  <span className="sr-only">Select date</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-auto overflow-hidden p-0"
+                align="end"
+                alignOffset={-8}
+                sideOffset={10}
+              >
+                <Calendar
+                  mode="single"
+                  selected={field.value || undefined}
+                  onSelect={(date) => {
+                    field.onChange(date || null);
+                    setOpen(false);
+                  }}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        )}
+      />
+      {errors.expiresAt && (
+        <p className="text-xs text-destructive">{errors.expiresAt.message}</p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        The link will stop accepting uploads after this date
+      </p>
+    </div>
+  );
+});
+ExpirationDateField.displayName = "ExpirationDateField";
+
 // =============================================================================
 // SECTION COMPONENTS (Accordion Sections)
 // =============================================================================
@@ -369,10 +583,11 @@ const AdvancedOptionsSection: React.FC = React.memo(() => {
   return (
     <AccordionItem value="advanced-options">
       <AccordionTrigger>Advanced Options</AccordionTrigger>
-      <AccordionContent className="pt-4">
-        <p className="text-sm text-muted-foreground italic">
-          Coming soon: Link expiration, file limits, and more
-        </p>
+      <AccordionContent className="space-y-6 pt-4">
+        <CustomMessageField />
+        <NotifyOnUploadToggle />
+        <RequireNameToggle />
+        <ExpirationDateField />
       </AccordionContent>
     </AccordionItem>
   );
@@ -410,14 +625,20 @@ const BasicInfoTabContent: React.FC = React.memo(() => {
 BasicInfoTabContent.displayName = "BasicInfoTabContent";
 
 const BrandingTabContent: React.FC = React.memo(() => {
+  const { watch } = useFormContext<CreateLinkFormData>();
+  const brandingEnabled = watch("brandingEnabled");
+
   return (
-    <>
-      <LogoUploadSection />
-      <ColorPickersSection />
-      <p className="text-sm text-muted-foreground">
-        Customize the appearance of your link page
-      </p>
-    </>
+    <div className="space-y-6">
+      <BrandingToggle />
+
+      {brandingEnabled && (
+        <>
+          <LogoUploadSection />
+          <ColorPickersSection />
+        </>
+      )}
+    </div>
   );
 });
 BrandingTabContent.displayName = "BrandingTabContent";
@@ -475,9 +696,15 @@ export function CreateLinkForm({
       allowedEmails: [],
       passwordProtected: false,
       password: "",
+      brandingEnabled: false,
       logo: [],
       accentColor: "#6c47ff",
       backgroundColor: "#ffffff",
+      // Advanced Options
+      customMessage: "",
+      notifyOnUpload: true,
+      requireName: false,
+      expiresAt: null,
     },
     mode: "onBlur",
   });

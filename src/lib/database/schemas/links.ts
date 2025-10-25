@@ -40,12 +40,18 @@ export const links = pgTable("links", {
       notifyOnUpload: true,
       customMessage: null,
       requiresName: false,
+      expiresAt: null,
+      passwordProtected: false,
+      password: null,
     })
     .notNull()
     .$type<{
       notifyOnUpload: boolean;
       customMessage: string | null;
       requiresName: boolean;
+      expiresAt: string | null; // ISO 8601 timestamp for link expiration
+      passwordProtected: boolean;
+      password: string | null; // Hashed password for link access
       [key: string]: any; // Allow future settings
     }>(),
 
