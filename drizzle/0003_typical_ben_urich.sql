@@ -1,0 +1,1 @@
+ALTER TABLE "links" ALTER COLUMN "link_config" SET DEFAULT '{"notifyOnUpload":true,"customMessage":null,"requiresName":false,"expiresAt":null}'::jsonb;
