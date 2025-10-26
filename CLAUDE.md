@@ -50,6 +50,7 @@ npm run format:check # Check if code is formatted
 - **State Management**: TanStack Query (React Query) + Zustand
 - **Animations**: Framer Motion + GSAP + Lenis (smooth scroll)
 - **Email**: Resend (transactional emails)
+- **Forms**: React Hook Form + date-fns + react-day-picker
 
 ### Project Structure
 
@@ -85,11 +86,15 @@ src/
 │   │   ├── use-onboarding.ts
 │   │   ├── use-user-workspace.ts
 │   │   └── use-email.ts
-│   └── ui/              # UI utility hooks
-│       ├── use-dialog-control-state.tsx
-│       ├── use-modal-state.ts
-│       ├── use-scroll-position.ts
-│       └── use-toast.ts
+│   ├── ui/              # UI component-specific hooks
+│   │   ├── use-modal-state.ts
+│   │   └── use-toast.ts
+│   └── utility/         # Generic reusable patterns
+│       ├── use-controlled-state.ts
+│       ├── use-data-state.ts
+│       ├── use-file-upload.ts
+│       ├── use-is-in-view.ts
+│       └── use-scroll-position.ts
 │
 ├── lib/                  # Core utilities and configurations
 │   ├── actions/         # Global server actions (cross-module)
@@ -126,10 +131,12 @@ Each feature module (`src/modules/*`) is self-contained with:
 Six core tables using Drizzle ORM:
 1. **users** - Synced with Clerk authentication
 2. **workspaces** - 1:1 relationship with users (MVP constraint)
-3. **links** - Shareable links with globally unique slugs
+3. **links** - Shareable links with globally unique slugs, password protection, expiration
 4. **folders** - Hierarchical folder structure (`parent_folder_id`)
 5. **files** - File metadata with `uploader_email` tracking
 6. **permissions** - Email-based access control for links
+
+**Link Configuration** (JSONB): `notifyOnUpload`, `customMessage`, `requiresName`, `expiresAt`, `passwordProtected`, `password` (hashed)
 
 All schemas are exported from `src/lib/database/schemas/index.ts`.
 
@@ -185,6 +192,24 @@ CLIENT          →  REACT QUERY HOOK   →  SERVER ACTION     →  DATABASE QUE
   - ✅ `use-links.ts` - Link operations only
   - ❌ `use-user-workspace.ts` - Combines two domains (violates principle)
 
+#### Hook Subdirectory Organization
+- **data/** (`src/hooks/data/`): React Query hooks wrapping server actions
+  - ✅ `use-onboarding.ts`, `use-user.ts`, `use-links.ts`
+  - One hook file per entity domain
+
+- **ui/** (`src/hooks/ui/`): UI component-specific hooks
+  - ✅ `use-modal-state.ts` - Modal state management
+  - ✅ `use-toast.ts` - Toast notifications
+  - Tightly coupled to specific UI components
+
+- **utility/** (`src/hooks/utility/`): Generic reusable patterns
+  - ✅ `use-controlled-state.ts` - Controlled component pattern
+  - ✅ `use-data-state.ts` - Generic data state machine
+  - ✅ `use-file-upload.ts` - File upload state machine
+  - ✅ `use-is-in-view.ts` - Intersection observer
+  - ✅ `use-scroll-position.ts` - Scroll position tracking
+  - Framework-agnostic patterns, not tied to specific UI
+
 #### React Query Keys
 - **Centralized Keys**: ALL query keys defined in `src/lib/config/query-keys.ts`
 - **NO cross-hook imports**: Hooks must import keys from centralized file, never from other hooks
@@ -207,7 +232,23 @@ CLIENT          →  REACT QUERY HOOK   →  SERVER ACTION     →  DATABASE QUE
   - ❌ `components/utils/` - FORBIDDEN
   - ❌ `modules/*/utils/` - FORBIDDEN
 - **Naming Convention**: `{technology}-helpers.ts` for tech-specific utilities
-  - Examples: `action-helpers.ts`, `react-query-helpers.ts`, `security.ts`
+  - Examples: `action-helpers.ts`, `react-query-helpers.ts`, `security.ts`, `validation-helpers.ts`
+
+#### Validation Helpers
+Global validation builders for consistent patterns (`@/lib/utils/validation-helpers`):
+- `createHexColorSchema()` - Hex color validation (6-digit or shorthand)
+- `createEmailSchema()` - Email validation with normalization
+- `normalizeHexColor()`, `normalizeEmail()` - Normalization utilities
+- `isValidHexColor()`, `isValidEmail()` - Runtime validation
+- `isDuplicateEmail()` - Duplicate detection
+
+**Usage:**
+```typescript
+import { createHexColorSchema, createEmailSchema } from '@/lib/utils/validation-helpers';
+
+const accentColor = createHexColorSchema({ fieldName: 'Accent color' });
+const inviteEmail = createEmailSchema({ fieldName: 'Invitee email' });
+```
 
 #### React Query Helpers Usage
 ALL data hooks must use centralized React Query helpers from `@/lib/utils/react-query-helpers`:
@@ -454,7 +495,7 @@ Key environment variables (see `.env.local`):
 
 **Recent Work**:
 - ✅ Database schemas implemented in Drizzle ORM
-- ✅ Migrations generated and pushed to Supabase (3 migrations total)
+- ✅ Migrations generated and pushed to Supabase (4 migrations total)
 - ✅ Global actions & hooks layer (user management, workspace, onboarding)
 - ✅ Onboarding flow with username capture and workspace creation
 - ✅ Email service system complete (Phases 1-4: infrastructure, templates, actions, hooks)

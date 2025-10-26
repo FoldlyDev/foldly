@@ -257,6 +257,8 @@ Nothing currently in progress.
 | October 9, 2025 | `0000_superb_sway.sql` | ✅ Created all 6 tables with indexes and constraints |
 | October 14, 2025 | `0001_cloudy_ozymandias.sql` | ✅ Schema updates (email notification settings) |
 | October 20, 2025 | `0002_cloudy_ezekiel_stane.sql` | ✅ Schema updates (branding support) |
+| October 23, 2025 | `0003_typical_ben_urich.sql` | ✅ Link password protection support |
+| October 25, 2025 | `0004_tidy_klaw.sql` | ✅ Link expiration and additional config |
 
 ---
 
@@ -337,7 +339,7 @@ When implementing a new feature:
 
 **Completed**:
 - ✅ Database schema design and implementation (6 tables)
-- ✅ Database migrations (3 migrations pushed to Supabase)
+- ✅ Database migrations (4 migrations pushed to Supabase)
 - ✅ Global actions & hooks layer (user management, workspace, onboarding, email)
 - ✅ Onboarding flow with username capture and workspace creation
 - ✅ Email service system (Phases 1-4: infrastructure, templates, actions, hooks)
