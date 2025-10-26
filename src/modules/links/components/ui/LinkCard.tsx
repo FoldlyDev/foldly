@@ -1,9 +1,17 @@
 import React from "react";
 import Image from "next/image";
 import { DottedGlowBackground } from "@/components/ui/aceternityui";
-import { TertiaryCtaButton } from "@/components/buttons/TertiaryCtaButton";
-import { Eye, Share2, Settings, Trash2 } from "lucide-react";
+import { Eye, Share2, Settings, Trash2, MoreVertical, BadgeCheckIcon, AlertCircleIcon } from "lucide-react";
 import type { Link } from "@/lib/database/schemas";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/shadcn/dropdown-menu";
+import { Button } from "@/components/ui/shadcn/button";
+import { Badge } from "@/components/ui/shadcn/badge";
 
 interface LinkCardProps {
   link: Link;
@@ -11,12 +19,10 @@ interface LinkCardProps {
 }
 
 export function LinkCard({ link, onOpenDetails }: LinkCardProps) {
-  const accentColor =
-    link.branding?.colors?.accentColor || "--color-neutral-500";
-  const backgroundColor =
-    link.branding?.colors?.backgroundColor || "--color-neutral-500";
+  const accentColor = link.branding?.colors?.accentColor || "#6366f1";
+  const backgroundColor = link.branding?.colors?.backgroundColor || "#ffffff";
 
-  const accentColorWithOpacity = addOpacityToColor(accentColor, 50);
+  const accentColorWithOpacity = addOpacityToColor(accentColor, 20);
 
   return (
     <article
@@ -34,10 +40,10 @@ export function LinkCard({ link, onOpenDetails }: LinkCardProps) {
         opacity={1}
         gap={10}
         radius={1.6}
-        colorLightVar={backgroundColor}
-        glowColorLightVar={backgroundColor}
-        colorDarkVar={backgroundColor}
-        glowColorDarkVar={backgroundColor}
+        color={backgroundColor}
+        darkColor={backgroundColor}
+        glowColor={backgroundColor}
+        darkGlowColor={backgroundColor}
         backgroundOpacity={0}
         speedMin={0.3}
         speedMax={1.6}
@@ -79,7 +85,7 @@ function LinkCardHeader({
         className="text-center font-semibold text-lg"
       >
         <span
-          className="p-4 rounded-3xl backdrop-blur-sm"
+          className="p-4 rounded-md rounded-tr-3xl backdrop-blur-xl shadow-lg ring-1 ring-white/20 border border-white/10"
           style={{ backgroundColor: accentColorWithOpacity }}
         >
           {link.name}
@@ -90,7 +96,7 @@ function LinkCardHeader({
 }
 
 /**
- * LinkCardActions - Displays optional description and action buttons
+ * LinkCardActions - Displays optional description and dropdown menu
  */
 function LinkCardActions({
   link,
@@ -99,51 +105,67 @@ function LinkCardActions({
   link: Link;
   onOpenDetails?: () => void;
 }) {
-  const buttonStyles = "p-1";
-  const iconSize = "size-5 lg:size-4.5";
-  const destructiveStyles =
-    "text-red-600 hover:text-red-700 dark:text-red-500 dark:hover:text-red-600";
+  const accentColor = link.branding?.colors?.accentColor || "#6366f1";
+  const accentColorWithOpacity = addOpacityToColor(accentColor, 20);
 
   return (
-    <div className="relative z-20 flex w-full flex-col gap-2 px-2 py-3 backdrop-blur-[2px] md:px-4">
-      {link.linkConfig.customMessage && (
-        <p className="text-xs font-normal text-neutral-600 md:text-sm dark:text-neutral-400">
-          {link.linkConfig.customMessage}
-        </p>
-      )}
-      <div
-        className="flex items-center justify-between"
-        role="group"
-        aria-label="Link actions"
-      >
-        <div className="flex items-center gap-2">
-          <TertiaryCtaButton
-            className={buttonStyles}
-            aria-label={`Preview ${link.name}`}
-            onClick={onOpenDetails}
+    <div className="relative z-20 flex w-full justify-between items-center gap-2 px-2 py-3 backdrop-blur-[2px] md:px-4">
+      <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+        {/* {link.linkConfig.customMessage && (
+          <p className="text-xs font-normal text-neutral-600 md:text-sm dark:text-neutral-400 line-clamp-2">
+            {link.linkConfig.customMessage}
+          </p>
+        )} */}
+        {link.isActive ? (
+          <Badge
+            variant="secondary"
+            className="w-fit text-white backdrop-blur-xl shadow-lg ring-1 ring-white/20 border border-white/10"
+            style={{ backgroundColor: accentColorWithOpacity }}
           >
-            <Eye className={iconSize} />
-          </TertiaryCtaButton>
-          <TertiaryCtaButton
-            className={buttonStyles}
-            aria-label={`Share ${link.name}`}
+            <BadgeCheckIcon />
+            Active
+          </Badge>
+        ) : (
+          <Badge
+            variant="destructive"
+            className="w-fit"
           >
-            <Share2 className={iconSize} />
-          </TertiaryCtaButton>
-          <TertiaryCtaButton
-            className={buttonStyles}
-            aria-label={`Configure ${link.name}`}
-          >
-            <Settings className={iconSize} />
-          </TertiaryCtaButton>
-        </div>
-        <TertiaryCtaButton
-          className={`${buttonStyles} ${destructiveStyles}`}
-          aria-label={`Delete ${link.name}`}
-        >
-          <Trash2 className={iconSize} />
-        </TertiaryCtaButton>
+            <AlertCircleIcon />
+            Inactive
+          </Badge>
+        )}
       </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`More actions for ${link.name}`}
+            className="shrink-0"
+          >
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onOpenDetails}>
+            <Eye className="size-4" />
+            Preview
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Share2 className="size-4" />
+            Share
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Settings className="size-4" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive">
+            <Trash2 className="size-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

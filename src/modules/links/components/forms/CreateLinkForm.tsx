@@ -9,6 +9,7 @@ import {
 } from "react-hook-form";
 import type { FieldError } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useUser } from "@clerk/nextjs";
 import {
   Tabs,
   TabsList,
@@ -21,6 +22,7 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/animateui";
+import { MultiStepLoader } from "@/components/ui/aceternityui";
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
 import { Button } from "@/components/ui/shadcn/button";
@@ -47,15 +49,16 @@ import {
   createLinkFormSchema,
   type CreateLinkFormData,
 } from "../../lib/validation";
+import { useCreateLink } from "@/hooks";
+import type { Link } from "@/lib/database/schemas";
 
 // =============================================================================
 // TYPES
 // =============================================================================
 
 export interface CreateLinkFormProps {
-  onSubmit: (data: CreateLinkFormData) => void;
   onCancel: () => void;
-  isLoading?: boolean;
+  onSuccess?: (link: Link) => void;
 }
 
 interface FormFieldProps {
@@ -91,7 +94,9 @@ LinkNameField.displayName = "LinkNameField";
 
 const LinkUrlPreview: React.FC = React.memo(() => {
   const { watch } = useFormContext<CreateLinkFormData>();
+  const { user } = useUser();
   const slug = watch("slug");
+  const username = user?.username || "username";
 
   return (
     <div className="space-y-2">
@@ -101,7 +106,7 @@ const LinkUrlPreview: React.FC = React.memo(() => {
           {slug ? (
             <>
               <span className="text-muted-foreground">
-                foldly.com/username/
+                foldly.com/{username}/
               </span>
               <span className="text-foreground">{slug}</span>
             </>
@@ -654,6 +659,8 @@ interface FormActionsProps {
 
 const FormActions: React.FC<FormActionsProps> = React.memo(
   ({ onCancel, isLoading }) => {
+    const { formState } = useFormContext<CreateLinkFormData>();
+
     return (
       <div className="flex items-center justify-end gap-3 pt-4 border-t">
         <Button
@@ -664,7 +671,16 @@ const FormActions: React.FC<FormActionsProps> = React.memo(
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button
+          type="submit"
+          disabled={isLoading}
+          onClick={() => {
+            console.log("🔘 Submit button clicked");
+            console.log("❌ Form errors:", formState.errors);
+            console.log("✅ Form is valid:", formState.isValid);
+            console.log("📋 Dirty fields:", formState.dirtyFields);
+          }}
+        >
           {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
           Create Link
         </Button>
@@ -679,12 +695,18 @@ FormActions.displayName = "FormActions";
 // =============================================================================
 
 export function CreateLinkForm({
-  onSubmit,
   onCancel,
-  isLoading = false,
+  onSuccess,
 }: CreateLinkFormProps) {
   // Tab state (controlled)
   const [activeTab, setActiveTab] = React.useState("basic");
+
+  // Loading state for MultiStepLoader
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [loadingMessage, setLoadingMessage] = React.useState("");
+
+  // React Query hook for link creation
+  const createLink = useCreateLink();
 
   // React Hook Form setup with Zod validation
   const methods = useForm<CreateLinkFormData>({
@@ -719,39 +741,106 @@ export function CreateLinkForm({
   }, [watchName, methods]);
 
   // Form submission handler
-  const handleFormSubmit = (data: CreateLinkFormData) => {
-    onSubmit(data);
+  const handleFormSubmit = async (data: CreateLinkFormData) => {
+    console.log("🚀 Form submission triggered with data:", data);
+
+    setIsSubmitting(true);
+    setLoadingMessage("Creating your link...");
+
+    try {
+      // Transform form data to action input
+      const input = {
+        name: data.name,
+        slug: data.slug,
+        isPublic: data.isPublic,
+        linkConfig: {
+          customMessage: data.customMessage || null,
+          notifyOnUpload: data.notifyOnUpload,
+          requiresName: data.requireName,
+          expiresAt: data.expiresAt ? data.expiresAt.toISOString() : null,
+          passwordProtected: data.passwordProtected,
+          password: data.passwordProtected ? data.password : null,
+        },
+        branding: data.brandingEnabled ? {
+          enabled: true,
+          colors: {
+            accentColor: data.accentColor,
+            backgroundColor: data.backgroundColor,
+          },
+        } : undefined,
+        allowedEmails: !data.isPublic && data.allowedEmails.length > 0 ? data.allowedEmails : undefined,
+      };
+
+      console.log("📤 Transformed input for action:", input);
+
+      // Create link
+      const link = await createLink.mutateAsync(input);
+
+      console.log("✅ Link created successfully:", link);
+
+      // TODO: Upload branding logo when GCS is configured
+      // if (data.brandingEnabled && data.logo.length > 0) {
+      //   setLoadingMessage("Uploading branding logo...");
+      //   const logoFile = data.logo[0].file as File;
+      //   const buffer = Buffer.from(await logoFile.arrayBuffer());
+      //   await uploadBrandingLogoAction({
+      //     linkId: link.id,
+      //     file: { buffer, originalName: logoFile.name, mimeType: logoFile.type, size: logoFile.size }
+      //   });
+      // }
+
+      setIsSubmitting(false);
+      setLoadingMessage("");
+
+      // Call success callback
+      onSuccess?.(link);
+    } catch (error) {
+      setIsSubmitting(false);
+      setLoadingMessage("");
+      // Error is already handled by React Query (onError in useCreateLink)
+    }
   };
 
   return (
-    <FormProvider {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(handleFormSubmit)}
-        className="space-y-6"
-        noValidate
-      >
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic" type="button">
-              General
-            </TabsTrigger>
-            <TabsTrigger value="branding" type="button">
-              Branding
-            </TabsTrigger>
-          </TabsList>
+    <>
+      {/* Multi-step loader overlay */}
+      <MultiStepLoader
+        loading={isSubmitting}
+        loadingStates={[]}
+        variant="simple"
+        message={loadingMessage}
+      />
 
-          <TabsContents>
-            <TabsContent value="basic" className="space-y-4 mt-4">
-              <BasicInfoTabContent />
-            </TabsContent>
-            <TabsContent value="branding" className="space-y-6 mt-4">
-              <BrandingTabContent />
-            </TabsContent>
-          </TabsContents>
-        </Tabs>
+      {/* Form */}
+      <FormProvider {...methods}>
+        <form
+          onSubmit={methods.handleSubmit(handleFormSubmit)}
+          className="space-y-6"
+          noValidate
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic" type="button" disabled={isSubmitting}>
+                General
+              </TabsTrigger>
+              <TabsTrigger value="branding" type="button" disabled={isSubmitting}>
+                Branding
+              </TabsTrigger>
+            </TabsList>
 
-        <FormActions onCancel={onCancel} isLoading={isLoading} />
-      </form>
-    </FormProvider>
+            <TabsContents>
+              <TabsContent value="basic" className="space-y-4 mt-4">
+                <BasicInfoTabContent />
+              </TabsContent>
+              <TabsContent value="branding" className="space-y-6 mt-4">
+                <BrandingTabContent />
+              </TabsContent>
+            </TabsContents>
+          </Tabs>
+
+          <FormActions onCancel={onCancel} isLoading={isSubmitting} />
+        </form>
+      </FormProvider>
+    </>
   );
 }

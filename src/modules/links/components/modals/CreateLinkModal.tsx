@@ -31,9 +31,8 @@ export function CreateLinkModal({
     onOpenChange(false);
   };
 
-  const handleSubmit = (data: any) => {
-    // TODO: Handle form submission
-    console.log("Form data:", data);
+  const handleSuccess = () => {
+    // Close modal on successful link creation
     onOpenChange(false);
   };
 
@@ -49,9 +48,8 @@ export function CreateLinkModal({
         </ModalHeader>
 
         <CreateLinkForm
-          onSubmit={handleSubmit}
           onCancel={handleCancel}
-          isLoading={false}
+          onSuccess={handleSuccess}
         />
       </ModalContent>
     </Modal>

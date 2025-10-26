@@ -97,13 +97,27 @@ export const linkConfigSchema = z.object({
 
 /**
  * Schema for creating a new link
- * Validates: name, slug, isPublic
+ * Validates: name, slug, isPublic, optional config, branding, and permissions
  * Used by: createLinkAction (global)
  */
 export const createLinkSchema = z.object({
   name: linkNameSchema,
   slug: slugSchema,
   isPublic: z.boolean().optional().default(false),
+  linkConfig: linkConfigSchema.optional(),
+  branding: z
+    .object({
+      enabled: z.boolean(),
+      colors: z
+        .object({
+          accentColor: z.string(),
+          backgroundColor: z.string(),
+        })
+        .nullable()
+        .optional(),
+    })
+    .optional(),
+  allowedEmails: allowedEmailsFieldSchema.optional(),
 });
 
 export type CreateLinkInput = z.infer<typeof createLinkSchema>;

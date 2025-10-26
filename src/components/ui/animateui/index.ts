@@ -1,6 +1,14 @@
 export { BubbleBackground as Bubble, type BubbleBackgroundProps } from './bubble';
 export { ShimmeringText as Shimmering, type ShimmeringTextProps } from './shimmering';
 export * from './dialog';
+export * from './dropdown-menu';
+export {
+  Highlight,
+  HighlightItem,
+  useHighlight,
+  type HighlightProps,
+  type HighlightItemProps,
+} from './highlight';
 export {
   ManagementBar,
   type ManagementBarProps,

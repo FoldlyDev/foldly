@@ -269,8 +269,25 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
       } as const;
     }
 
-    // Create link and owner permission atomically in a transaction
-    // This ensures both are created or neither is created (prevents orphaned links)
+    // Prepare link configuration with defaults
+    const linkConfig = {
+      notifyOnUpload: validated.linkConfig?.notifyOnUpload ?? true,
+      customMessage: validated.linkConfig?.customMessage ?? null,
+      requiresName: validated.linkConfig?.requiresName ?? false,
+      expiresAt: validated.linkConfig?.expiresAt ?? null,
+      passwordProtected: validated.linkConfig?.passwordProtected ?? false,
+      password: validated.linkConfig?.password ?? null,
+    };
+
+    // Prepare branding configuration
+    const branding = {
+      enabled: validated.branding?.enabled ?? false,
+      logo: null, // Logo will be added via separate upload action when GCS is configured
+      colors: validated.branding?.colors ?? null,
+    };
+
+    // Create link, owner permission, and additional permissions atomically in a transaction
+    // This ensures all are created or none are created (prevents orphaned links/permissions)
     try {
       const transactionResult = await withTransaction(
         async (tx) => {
@@ -284,6 +301,8 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
               name: validated.name,
               isPublic: validated.isPublic ?? false,
               isActive: true,
+              linkConfig,
+              branding,
             })
             .returning();
 
@@ -308,7 +327,24 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
             throw new Error('Failed to create permission: Database insert returned no rows');
           }
 
-          return { link, permission };
+          // Step 3: Create permissions for allowed emails (if private link with emails)
+          const additionalPermissions: typeof permissions.$inferInsert[] = [];
+          if (!validated.isPublic && validated.allowedEmails && validated.allowedEmails.length > 0) {
+            for (const email of validated.allowedEmails) {
+              additionalPermissions.push({
+                id: crypto.randomUUID(),
+                linkId: link.id,
+                email,
+                role: 'editor',
+                isVerified: 'false', // Will be verified via email
+                verifiedAt: null,
+              });
+            }
+
+            await tx.insert(permissions).values(additionalPermissions);
+          }
+
+          return { link, permission, additionalPermissions };
         },
         {
           name: 'create-link-with-owner',

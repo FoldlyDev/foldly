@@ -59,7 +59,7 @@ export const createLinkFormSchema = z
     isPublic: isPublicFieldSchema,
     allowedEmails: allowedEmailsFieldSchema,
     passwordProtected: passwordProtectedFieldSchema,
-    password: passwordFieldSchema,
+    password: z.string().optional(),
     brandingEnabled: z.boolean(),
     logo: logoFieldSchema,
     accentColor: accentColorFieldSchema,
@@ -72,19 +72,10 @@ export const createLinkFormSchema = z
   })
   .superRefine((data, ctx) => {
     // Conditional validation: password required when password protection is enabled
-    if (data.passwordProtected && !data.password) {
+    if (data.passwordProtected && (!data.password || data.password.length < 8)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Password is required when password protection is enabled',
-        path: ['password'],
-      });
-    }
-
-    // Conditional validation: password must be empty when password protection is disabled
-    if (!data.passwordProtected && data.password) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Password must be empty when password protection is disabled',
+        message: 'Password must be at least 8 characters when password protection is enabled',
         path: ['password'],
       });
     }
