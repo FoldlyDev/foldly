@@ -146,21 +146,21 @@ function LinkCardActions({
             <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onOpenDetails}>
+        <DropdownMenuContent align="end" className="foldly-glass-light-solid dark:foldly-glass-solid">
+          <DropdownMenuItem onClick={onOpenDetails} className="cursor-pointer">
             <Eye className="size-4" />
             Preview
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer">
             <Share2 className="size-4" />
             Share
           </DropdownMenuItem>
-          <DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer">
             <Settings className="size-4" />
             Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem variant="destructive">
+          <DropdownMenuItem variant="destructive" className="cursor-pointer">
             <Trash2 className="size-4" />
             Delete
           </DropdownMenuItem>
