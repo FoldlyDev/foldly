@@ -272,9 +272,10 @@ export const uploadBrandingLogoAction = withAuthInput<
     const timestamp = Date.now();
     const fileName = `logo-${timestamp}.${extension}`;
 
-    // Upload to GCS
+    // Upload to storage (GCS or Supabase based on STORAGE_PROVIDER)
+    // Storage layer handles Buffer/Uint8Array conversion internally
     const { url: logoUrl } = await uploadFile({
-      file: file.buffer,
+      file: file.buffer, // Can be Buffer (tests) or Uint8Array (client)
       fileName,
       path,
       bucket: BRANDING_BUCKET_NAME,

@@ -206,7 +206,12 @@ export type BrandingConfig = z.infer<typeof brandingSchema>;
 export const uploadBrandingLogoSchema = z.object({
   linkId: z.string().uuid({ message: 'Invalid link ID format.' }),
   file: z.object({
-    buffer: z.instanceof(Buffer),
+    // Accept both Uint8Array (from client via serializeFileForUpload) and Buffer (from tests)
+    // Use custom validation instead of instanceof to avoid ArrayBuffer type strictness
+    buffer: z.custom<Uint8Array | Buffer>(
+      (val) => val instanceof Uint8Array || Buffer.isBuffer(val),
+      { message: 'Buffer must be a Uint8Array or Buffer' }
+    ),
     originalName: z.string(),
     mimeType: z.string().refine(isAllowedBrandingType, {
       message: 'Invalid file type. Only PNG, JPEG, and WebP images are allowed.',

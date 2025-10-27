@@ -33,11 +33,15 @@ function getStorageProvider(): 'supabase' | 'gcs' {
 /**
  * Upload file to configured storage provider
  *
+ * Accepts both Buffer (Node.js) and Uint8Array (browser) for maximum flexibility.
+ * The storage provider implementation will handle the necessary conversions internally.
+ *
  * @param params - Upload parameters
  * @returns Public URL and storage path
  *
  * @example
  * ```typescript
+ * // From server action with Buffer
  * const { url, gcsPath } = await uploadFile({
  *   file: fileBuffer,
  *   fileName: 'logo.png',
@@ -45,10 +49,14 @@ function getStorageProvider(): 'supabase' | 'gcs' {
  *   bucket: 'foldly-link-branding',
  *   contentType: 'image/png',
  * });
+ *
+ * // From client via server action with Uint8Array
+ * const fileData = await serializeFileForUpload(file);
+ * await uploadAction({ file: fileData.buffer, ... });
  * ```
  */
 export async function uploadFile(params: {
-  file: Buffer;
+  file: Buffer | Uint8Array;
   fileName: string;
   path: string;
   bucket: string;
@@ -57,11 +65,17 @@ export async function uploadFile(params: {
 }): Promise<{ url: string; gcsPath: string }> {
   const provider = getStorageProvider();
 
+  // Convert Uint8Array to Buffer for providers that need it
+  const normalizedParams = {
+    ...params,
+    file: Buffer.isBuffer(params.file) ? params.file : Buffer.from(params.file),
+  };
+
   if (provider === 'gcs') {
-    return gcsClient.uploadFile(params);
+    return gcsClient.uploadFile(normalizedParams);
   }
 
-  return supabaseClient.uploadFile(params);
+  return supabaseClient.uploadFile(normalizedParams);
 }
 
 /**

@@ -24,6 +24,8 @@ import {
   type CreateLinkFormData,
 } from "../../lib/validation";
 import { useCreateLink } from "@/hooks";
+import { useUploadBrandingLogo } from "../../hooks";
+import { serializeFileForUpload } from "@/lib/utils/file-helpers";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -137,8 +139,9 @@ export function CreateLinkForm({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [loadingMessage, setLoadingMessage] = React.useState("");
 
-  // React Query hook for link creation
+  // React Query hooks for link creation and logo upload
   const createLink = useCreateLink();
+  const uploadLogo = useUploadBrandingLogo();
 
   // React Hook Form setup with Zod validation
   const methods = useForm<CreateLinkFormData>({
@@ -210,16 +213,33 @@ export function CreateLinkForm({
 
       console.log("✅ Link created successfully:", link);
 
-      // TODO: Upload branding logo when GCS is configured
-      // if (data.brandingEnabled && data.logo.length > 0) {
-      //   setLoadingMessage("Uploading branding logo...");
-      //   const logoFile = data.logo[0].file as File;
-      //   const buffer = Buffer.from(await logoFile.arrayBuffer());
-      //   await uploadBrandingLogoAction({
-      //     linkId: link.id,
-      //     file: { buffer, originalName: logoFile.name, mimeType: logoFile.type, size: logoFile.size }
-      //   });
-      // }
+      // Upload branding logo if provided
+      if (data.brandingEnabled && data.logo.length > 0) {
+        try {
+          setLoadingMessage("Uploading branding logo...");
+          const logoFile = data.logo[0].file as File;
+
+          console.log("📤 Uploading logo:", {
+            fileName: logoFile.name,
+            size: logoFile.size,
+            type: logoFile.type,
+          });
+
+          // Serialize file for server action using centralized utility
+          const fileData = await serializeFileForUpload(logoFile);
+
+          await uploadLogo.mutateAsync({
+            linkId: link.id,
+            file: fileData,
+          });
+
+          console.log("✅ Logo uploaded successfully");
+        } catch (logoError) {
+          console.error("❌ Logo upload failed:", logoError);
+          // Don't fail the entire form if logo upload fails
+          // User can retry logo upload from the edit form
+        }
+      }
 
       setIsSubmitting(false);
       setLoadingMessage("");
