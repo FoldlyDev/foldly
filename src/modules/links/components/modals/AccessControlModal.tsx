@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Modal,
   ModalContent,
@@ -8,6 +9,7 @@ import {
   ModalTitle,
   ModalDescription,
 } from "@/components/ui/animateui";
+import { AccessControlForm } from "../forms/AccessControlForm";
 import type { Link } from "@/lib/database/schemas";
 
 // =============================================================================
@@ -29,7 +31,11 @@ export function AccessControlModal({
   isOpen,
   onOpenChange,
 }: AccessControlModalProps) {
+  const { user } = useUser();
+
   if (!link) return null;
+
+  const ownerEmail = user?.primaryEmailAddress?.emailAddress || "";
 
   return (
     <Modal open={isOpen} onOpenChange={onOpenChange}>
@@ -41,10 +47,7 @@ export function AccessControlModal({
           </ModalDescription>
         </ModalHeader>
 
-        {/* Placeholder content - will be replaced with access control form */}
-        <div className="p-8 text-center text-muted-foreground">
-          <p>Access control form coming soon...</p>
-        </div>
+        <AccessControlForm link={link} ownerEmail={ownerEmail} />
       </ModalContent>
     </Modal>
   );

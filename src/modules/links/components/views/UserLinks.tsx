@@ -4,7 +4,11 @@ import { useUserLinks } from "@/hooks";
 import { useModalState } from "@/hooks";
 import { LinksSkeleton } from "../ui/LinksSkeleton";
 import { LinkCard } from "../ui/LinkCard";
-import { LinkManagementModal, CreateLinkModal, AccessControlModal } from "../modals";
+import {
+  LinkManagementModal,
+  CreateLinkModal,
+  AccessControlModal,
+} from "../modals";
 import { LinksManagementBar } from "../sections/LinksManagementBar";
 import type { Link } from "@/lib/database/schemas";
 
@@ -29,34 +33,34 @@ export function UserLinks() {
     createLinkModal.open(undefined);
   };
 
-  if (isLoading) {
-    return <LinksSkeleton />;
-  }
+  // Render main content based on state
+  const renderContent = () => {
+    if (isLoading) {
+      return <LinksSkeleton />;
+    }
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="text-destructive">
-          Error loading links: {error.message}
+    if (error) {
+      return (
+        <div className="p-6">
+          <div className="text-destructive">
+            Error loading links: {error.message}
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (!links || links.length === 0) {
+    if (!links || links.length === 0) {
+      return (
+        <div className="p-6 pb-32">
+          <h1 className="text-2xl font-semibold mb-4">Your Links</h1>
+          <p className="text-muted-foreground">
+            No links yet. Create your first link to get started.
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold mb-4">Your Links</h1>
-        <p className="text-muted-foreground">
-          No links yet. Create your first link to get started.
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {/* Main content with bottom padding for fixed bar */}
       <div className="p-6 space-y-6 pb-32">
         <h1 className="text-2xl font-semibold">Your Links</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -70,11 +74,17 @@ export function UserLinks() {
           ))}
         </div>
       </div>
+    );
+  };
 
-      {/* Management Bar */}
+  return (
+    <>
+      {/* Main content with bottom padding for fixed bar */}
+      {renderContent()}
+      {/* Management Bar - Always render */}
       <LinksManagementBar onCreateLink={handleCreateLink} />
-
-      {/* Modals */}
+      {/* Modals - Always render */}
+      A{" "}
       <LinkManagementModal
         link={linkSettingsModal.data}
         isOpen={linkSettingsModal.isOpen}
