@@ -19,13 +19,14 @@ import {
   AccordionContent,
 } from "@/components/ui/animateui";
 import { Button } from "@/components/ui/shadcn/button";
-import { Loader2 } from "lucide-react";
+import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
 import { sanitizeSlug } from "@/lib/utils/security";
 import {
   editLinkFormSchema,
   type EditLinkFormData,
 } from "../../lib/validation";
 import { useUpdateLink } from "@/hooks";
+import { useUpdateLinkBranding } from "../../hooks";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -150,8 +151,11 @@ const FormActions: React.FC<FormActionsProps> = React.memo(
           Cancel
         </Button>
         <Button type="submit" disabled={isLoading || !isDirty}>
-          {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-          Save Changes
+          {isLoading ? (
+            <DynamicContentLoader text="" size="20" speed="2.5" />
+          ) : (
+            "Save Changes"
+          )}
         </Button>
       </div>
     );
@@ -173,8 +177,9 @@ export function LinkManagementForm({
   const [activeTab, setActiveTab] = React.useState("general");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // React Query hook for link updates
+  // React Query hooks for link and branding updates
   const updateLink = useUpdateLink();
+  const updateBranding = useUpdateLinkBranding();
 
   // React Hook Form setup with Zod validation
   const methods = useForm<EditLinkFormData>({
@@ -242,7 +247,34 @@ export function LinkManagementForm({
 
       console.log("✅ Link updated successfully:", updatedLink);
 
-      // TODO: Handle branding updates separately if logo changed
+      // Handle branding updates if branding fields changed
+      const brandingFieldsChanged =
+        methods.formState.dirtyFields.brandingEnabled ||
+        methods.formState.dirtyFields.accentColor ||
+        methods.formState.dirtyFields.backgroundColor;
+
+      if (brandingFieldsChanged) {
+        console.log("🎨 Branding fields changed, updating branding...");
+
+        const brandingInput = {
+          linkId: link.id,
+          branding: {
+            enabled: data.brandingEnabled,
+            colors: data.brandingEnabled
+              ? {
+                  accentColor: data.accentColor,
+                  backgroundColor: data.backgroundColor,
+                }
+              : null,
+            // Skip logo for now (GCS not set up yet)
+            logo: null,
+          },
+        };
+
+        await updateBranding.mutateAsync(brandingInput);
+        console.log("✅ Branding updated successfully");
+      }
+
       // TODO: Handle permission updates separately if allowedEmails changed
 
       setIsSubmitting(false);

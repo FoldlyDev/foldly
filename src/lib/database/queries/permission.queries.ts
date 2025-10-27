@@ -81,6 +81,27 @@ export async function updatePermission(
 }
 
 /**
+ * Update permission lastInvitationSentAt timestamp
+ * Used to track when invitation emails were sent for idempotency
+ */
+export async function updatePermissionInvitationTimestamp(
+  permissionId: string,
+  lastInvitationSentAt: Date
+): Promise<Permission> {
+  const [updatedPermission] = await db
+    .update(permissions)
+    .set({ lastInvitationSentAt })
+    .where(eq(permissions.id, permissionId))
+    .returning();
+
+  if (!updatedPermission) {
+    throw new Error(`Failed to update permission timestamp: Permission with ID ${permissionId} not found or update failed`);
+  }
+
+  return updatedPermission;
+}
+
+/**
  * Delete a permission entry
  */
 export async function deletePermission(permissionId: string) {

@@ -17,6 +17,7 @@ import {
   getLinkPermissions,
   getPermissionByLinkAndEmail,
   updatePermission,
+  updatePermissionInvitationTimestamp,
   deletePermission,
 } from '@/lib/database/queries';
 
@@ -25,6 +26,9 @@ import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middlewar
 
 // Import logging
 import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/logger';
+
+// Import email actions
+import { sendInvitationEmailAction } from './email.actions';
 
 // Import types
 import type { Permission } from '@/lib/database/schemas';
@@ -131,6 +135,65 @@ export const addPermissionAction = withAuthInput<AddPermissionInput, Permission>
       role: validated.role,
       permissionId: permission.id,
     });
+
+    // Send invitation email if data provided (don't block on failure)
+    if (validated.invitationData) {
+      // Idempotency check: don't send if invitation was sent recently (within 1 hour)
+      const ONE_HOUR_MS = 3600000;
+      const now = Date.now();
+      const shouldSendEmail =
+        !permission.lastInvitationSentAt ||
+        (now - new Date(permission.lastInvitationSentAt).getTime()) > ONE_HOUR_MS;
+
+      if (shouldSendEmail) {
+        // Fire-and-forget: send email without blocking
+        sendInvitationEmailAction({
+          recipientEmail: validated.email,
+          senderUserId: userId,
+          senderName: validated.invitationData.senderName,
+          senderEmail: validated.invitationData.senderEmail,
+          linkName: validated.invitationData.linkName,
+          linkUrl: validated.invitationData.linkUrl,
+          customMessage: validated.invitationData.customMessage,
+        })
+          .then((result) => {
+            if (result.success) {
+              // Update lastInvitationSentAt timestamp
+              updatePermissionInvitationTimestamp(
+                permission.id,
+                new Date()
+              ).catch((err) => {
+                logger.warn('Failed to update lastInvitationSentAt', {
+                  permissionId: permission.id,
+                  error: err,
+                });
+              });
+
+              logger.info('Invitation email sent successfully', {
+                permissionId: permission.id,
+                recipientEmail: validated.email,
+              });
+            } else {
+              logger.warn('Failed to send invitation email', {
+                permissionId: permission.id,
+                recipientEmail: validated.email,
+                error: result.error,
+              });
+            }
+          })
+          .catch((error) => {
+            logger.error('Unexpected error sending invitation email', {
+              permissionId: permission.id,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+          });
+      } else {
+        logger.info('Skipped invitation email (sent recently)', {
+          permissionId: permission.id,
+          lastSentAt: permission.lastInvitationSentAt,
+        });
+      }
+    }
 
     return {
       success: true,

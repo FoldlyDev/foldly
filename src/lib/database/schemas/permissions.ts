@@ -52,6 +52,7 @@ export const permissions = pgTable(
 
     // Activity tracking
     lastActivityAt: timestamp("last_activity_at", { withTimezone: true }), // Last upload/action
+    lastInvitationSentAt: timestamp("last_invitation_sent_at", { withTimezone: true }), // Last invitation email sent
 
     // Timestamps
     createdAt: timestamp("created_at", { withTimezone: true })

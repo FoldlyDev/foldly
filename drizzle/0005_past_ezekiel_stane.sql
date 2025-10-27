@@ -1,0 +1,1 @@
+ALTER TABLE "permissions" ADD COLUMN "last_invitation_sent_at" timestamp with time zone;

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useUser } from "@clerk/nextjs";
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
 import { Button } from "@/components/ui/shadcn/button";
@@ -13,8 +14,21 @@ import {
   SelectValue,
 } from "@/components/ui/shadcn/select";
 import { Card } from "@/components/ui/shadcn/card";
-import { Search, Plus, Trash2, AlertCircle } from "lucide-react";
-import type { Link, Permission } from "@/lib/database/schemas";
+import { Separator } from "@/components/ui/shadcn/separator";
+import { Search, Plus, Trash2, AlertCircle, Lock, Globe, Crown } from "lucide-react";
+import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
+import {
+  useLinkPermissions,
+  useAddPermission,
+  useRemovePermission,
+  useUpdatePermission,
+} from "@/hooks";
+import {
+  isValidEmail,
+  isDuplicateEmail,
+  normalizeEmail,
+} from "@/lib/utils/validation-helpers";
+import type { Link, Permission, PermissionRole } from "@/lib/database/schemas";
 
 // =============================================================================
 // TYPES
@@ -72,7 +86,7 @@ const AddEmailInput = React.memo<{
   return (
     <div className="space-y-2">
       <Label>Add Email</Label>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
         <div className="flex-1">
           <Input
             type="email"
@@ -118,13 +132,14 @@ AddEmailInput.displayName = "AddEmailInput";
 const PermissionCard = React.memo<PermissionCardProps>(
   ({ permission, isOwner, onRoleChange, onRemove }) => {
     return (
-      <Card className="p-4">
+      <Card className="p-4 foldly-glass-light dark:foldly-glass">
         <div className="flex items-center justify-between gap-4">
           {/* Email section */}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{permission.email}</p>
             {isOwner && (
-              <Badge variant="secondary" className="mt-1">
+              <Badge variant="default" className="mt-1 gap-1">
+                <Crown className="h-3 w-3" />
                 Owner
               </Badge>
             )}
@@ -172,11 +187,71 @@ PermissionCard.displayName = "PermissionCard";
 // =============================================================================
 
 /**
+ * Link type info badge with description
+ */
+const LinkTypeInfo = React.memo<{ isPublic: boolean }>(({ isPublic }) => {
+  return (
+    <div className="flex items-center gap-2">
+      <Badge variant={isPublic ? "success" : "outline"} className="gap-1">
+        {isPublic ? (
+          <>
+            <Globe className="h-3 w-3" />
+            Public Link
+          </>
+        ) : (
+          <>
+            <Lock className="h-3 w-3" />
+            Private Link
+          </>
+        )}
+      </Badge>
+      <p className="text-sm text-muted-foreground">
+        {isPublic
+          ? "Anyone can upload. New uploaders are automatically added to this list."
+          : "Only listed emails can upload files."}
+      </p>
+    </div>
+  );
+});
+LinkTypeInfo.displayName = "LinkTypeInfo";
+
+/**
+ * Badge filters for role filtering
+ */
+const RoleBadgeFilters = React.memo<{
+  selected: PermissionRole | null;
+  onSelect: (role: PermissionRole | null) => void;
+}>(({ selected, onSelect }) => {
+  const filters: Array<{ role: PermissionRole; label: string }> = [
+    { role: "owner", label: "Owner" },
+    { role: "editor", label: "Editor" },
+    { role: "uploader", label: "Uploader" },
+  ];
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-sm text-muted-foreground">Filter:</span>
+      {filters.map((filter) => (
+        <Badge
+          key={filter.role}
+          variant={selected === filter.role ? "default" : "outline"}
+          className="cursor-pointer transition-colors hover:opacity-80"
+          onClick={() => onSelect(selected === filter.role ? null : filter.role)}
+        >
+          {filter.label}
+        </Badge>
+      ))}
+    </div>
+  );
+});
+RoleBadgeFilters.displayName = "RoleBadgeFilters";
+
+/**
  * Empty state when no permissions exist (besides owner)
  */
 const EmptyState = React.memo<{ isPublic: boolean }>(({ isPublic }) => {
   return (
-    <Card className="p-8">
+    <Card className="p-8 foldly-glass-light dark:foldly-glass">
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
           {isPublic
@@ -228,67 +303,126 @@ PermissionsListSection.displayName = "PermissionsListSection";
 // =============================================================================
 
 export function AccessControlForm({ link, ownerEmail }: AccessControlFormProps) {
-  // Local state for UI only
+  // Clerk user data for invitation emails
+  const { user } = useUser();
+
+  // Local state for UI
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [roleFilter, setRoleFilter] = React.useState<PermissionRole | null>(null);
   const [newEmail, setNewEmail] = React.useState("");
   const [newRole, setNewRole] = React.useState<string>("uploader");
   const [inputError, setInputError] = React.useState<string>("");
 
-  // Mock permissions data (will be replaced with actual data)
-  const mockPermissions: Permission[] = [
-    {
-      id: "1",
-      linkId: link?.id || "",
-      email: ownerEmail,
-      role: "owner",
-      isVerified: "true",
-      verifiedAt: new Date(),
-      lastActivityAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  // React Query hooks for permissions
+  const { data: permissions = [], isLoading, error } = useLinkPermissions(link?.id);
+  const addPermission = useAddPermission();
+  const removePermission = useRemovePermission();
+  const updatePermission = useUpdatePermission();
 
-  // Filter permissions based on search query
-  const filteredPermissions = React.useMemo(() => {
-    if (!searchQuery.trim()) return mockPermissions;
-    const query = searchQuery.toLowerCase();
-    return mockPermissions.filter((p) =>
-      p.email.toLowerCase().includes(query)
-    );
-  }, [searchQuery, mockPermissions]);
+  // Filter and sort permissions
+  const filteredAndSortedPermissions = React.useMemo(() => {
+    let filtered = permissions;
 
-  // Handler functions (UI only for now)
-  const handleAddEmail = () => {
+    // Stage 1: Filter by role
+    if (roleFilter) {
+      filtered = filtered.filter((p) => p.role === roleFilter);
+    }
+
+    // Stage 2: Filter by email search
+    if (searchQuery.trim()) {
+      const normalizedQuery = normalizeEmail(searchQuery);
+      filtered = filtered.filter((p) =>
+        normalizeEmail(p.email).includes(normalizedQuery)
+      );
+    }
+
+    // Stage 3: Sort (owner always first)
+    return [...filtered].sort((a, b) => {
+      if (a.role === "owner") return -1;
+      if (b.role === "owner") return 1;
+      return 0;
+    });
+  }, [permissions, roleFilter, searchQuery]);
+
+  // Handler functions with backend integration
+  const handleAddEmail = async () => {
+    if (!link?.id) return;
+
     if (!newEmail.trim()) {
       setInputError("Email is required");
       return;
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail)) {
-      setInputError("Please enter a valid email address");
+    // Email validation using centralized helper
+    if (!isValidEmail(newEmail)) {
+      setInputError("Please enter a valid email address (e.g., user@example.com)");
       return;
     }
 
-    // TODO: Wire up backend logic
-    console.log("Adding email:", { email: newEmail, role: newRole });
+    // Duplicate detection using centralized helper
+    if (isDuplicateEmail(newEmail, permissions.map((p) => p.email))) {
+      setInputError("This email already has access");
+      return;
+    }
 
-    // Reset form
-    setNewEmail("");
-    setNewRole("uploader");
-    setInputError("");
+    try {
+      // Construct invitation data (all data is in scope, no additional queries needed)
+      const senderName = user?.firstName || user?.username || "Foldly User";
+      const senderEmail = user?.primaryEmailAddress?.emailAddress || "";
+      const username = user?.username || "";
+      const linkUrl = `${window.location.origin}/${username}/${link.slug}`;
+
+      await addPermission.mutateAsync({
+        linkId: link.id,
+        email: normalizeEmail(newEmail), // Normalize email (trim + lowercase)
+        role: newRole as "uploader" | "editor",
+        // Optional invitation data (enables automatic email sending)
+        invitationData: {
+          senderName,
+          senderEmail,
+          linkName: link.name,
+          linkUrl,
+          customMessage: link.linkConfig.customMessage || undefined,
+        },
+      });
+
+      // Reset form on success
+      setNewEmail("");
+      setNewRole("uploader");
+      setInputError("");
+    } catch (error) {
+      // Error already handled by React Query onError
+      console.error("Failed to add permission:", error);
+    }
   };
 
-  const handleRoleChange = (email: string, role: string) => {
-    // TODO: Wire up backend logic
-    console.log("Changing role:", { email, role });
+  const handleRoleChange = async (email: string, role: string) => {
+    if (!link?.id) return;
+
+    try {
+      await updatePermission.mutateAsync({
+        linkId: link.id,
+        email,
+        role: role as "uploader" | "editor",
+      });
+    } catch (error) {
+      // Error already handled by React Query onError
+      console.error("Failed to update permission:", error);
+    }
   };
 
-  const handleRemove = (email: string) => {
-    // TODO: Wire up backend logic
-    console.log("Removing permission:", { email });
+  const handleRemove = async (email: string) => {
+    if (!link?.id) return;
+
+    try {
+      await removePermission.mutateAsync({
+        linkId: link.id,
+        email,
+      });
+    } catch (error) {
+      // Error already handled by React Query onError
+      console.error("Failed to remove permission:", error);
+    }
   };
 
   // Clear input error when email changes
@@ -306,45 +440,93 @@ export function AccessControlForm({ link, ownerEmail }: AccessControlFormProps) 
     );
   }
 
-  const hasNonOwnerPermissions = filteredPermissions.length > 1;
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <LinkTypeInfo isPublic={link.isPublic} />
+        <div className="flex items-center justify-center py-8">
+          <DynamicContentLoader text="Loading permissions..." />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <LinkTypeInfo isPublic={link.isPublic} />
+        <Card className="p-6 foldly-glass-light dark:foldly-glass">
+          <div className="text-center space-y-2">
+            <AlertCircle className="h-8 w-8 mx-auto text-destructive" />
+            <p className="text-sm text-destructive">
+              Failed to load permissions. Please try again.
+            </p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if there are any non-owner permissions in the ORIGINAL list
+  const hasNonOwnerPermissions = permissions.length > 1;
+
+  // Check if filters returned no results
+  const hasFilteredResults = filteredAndSortedPermissions.length > 0;
+
+  const isSubmitting =
+    addPermission.isPending ||
+    removePermission.isPending ||
+    updatePermission.isPending;
 
   return (
     <div className="space-y-6">
       {/* Link type info */}
-      <div className="flex items-center gap-2">
-        <Badge variant={link.isPublic ? "success" : "secondary"}>
-          {link.isPublic ? "Public Link" : "Private Link"}
-        </Badge>
-        <p className="text-sm text-muted-foreground">
-          {link.isPublic
-            ? "Anyone can upload. New uploaders are automatically added to this list."
-            : "Only listed emails can upload files."}
-        </p>
+      <div className="space-y-4">
+        <LinkTypeInfo isPublic={link.isPublic} />
+        <Separator />
       </div>
 
-      {/* Search bar */}
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      {/* Filters */}
+      <div className="space-y-4">
+        <RoleBadgeFilters selected={roleFilter} onSelect={setRoleFilter} />
+        <SearchBar value={searchQuery} onChange={setSearchQuery} />
+        <Separator />
+      </div>
 
       {/* Add email input */}
-      <AddEmailInput
-        email={newEmail}
-        role={newRole}
-        onEmailChange={setNewEmail}
-        onRoleChange={setNewRole}
-        onAdd={handleAddEmail}
-        error={inputError}
-      />
+      <div className="space-y-4">
+        <AddEmailInput
+          email={newEmail}
+          role={newRole}
+          onEmailChange={setNewEmail}
+          onRoleChange={setNewRole}
+          onAdd={handleAddEmail}
+          disabled={isSubmitting}
+          error={inputError}
+        />
+        <Separator />
+      </div>
 
       {/* Permissions list */}
-      {hasNonOwnerPermissions ? (
+      {!hasNonOwnerPermissions ? (
+        <EmptyState isPublic={link.isPublic} />
+      ) : (searchQuery || roleFilter) && !hasFilteredResults ? (
+        <Card className="p-8 foldly-glass-light dark:foldly-glass">
+          <div className="text-center space-y-2">
+            <p className="text-sm text-muted-foreground">
+              No permissions found matching your filters
+            </p>
+          </div>
+        </Card>
+      ) : (
         <PermissionsListSection
-          permissions={filteredPermissions}
+          permissions={filteredAndSortedPermissions}
           ownerEmail={ownerEmail}
           onRoleChange={handleRoleChange}
           onRemove={handleRemove}
         />
-      ) : (
-        <EmptyState isPublic={link.isPublic} />
       )}
     </div>
   );

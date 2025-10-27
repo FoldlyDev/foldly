@@ -12,13 +12,29 @@ import { uuidSchema, emailSchema, permissionRoleSchema } from './base-schemas';
 // =============================================================================
 
 /**
+ * Schema for invitation data (optional when adding permission)
+ * Contains all data needed to send invitation email without additional queries
+ */
+export const invitationDataSchema = z.object({
+  senderName: z.string().min(1, 'Sender name is required'),
+  senderEmail: emailSchema,
+  linkName: z.string().min(1, 'Link name is required'),
+  linkUrl: z.string().url('Invalid link URL'),
+  customMessage: z.string().max(500).optional(),
+}).optional();
+
+export type InvitationData = z.infer<typeof invitationDataSchema>;
+
+/**
  * Schema for adding a permission to a resource
  * Validates: linkId, email, role
+ * Optional: invitationData (to send invitation email atomically)
  */
 export const addPermissionSchema = z.object({
   linkId: uuidSchema,
   email: emailSchema,
   role: permissionRoleSchema,
+  invitationData: invitationDataSchema,
 });
 
 export type AddPermissionInput = z.infer<typeof addPermissionSchema>;

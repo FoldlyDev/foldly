@@ -84,7 +84,6 @@ export function UserLinks() {
       {/* Management Bar - Always render */}
       <LinksManagementBar onCreateLink={handleCreateLink} />
       {/* Modals - Always render */}
-      A{" "}
       <LinkManagementModal
         link={linkSettingsModal.data}
         isOpen={linkSettingsModal.isOpen}

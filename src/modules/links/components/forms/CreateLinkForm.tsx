@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/animateui";
 import { MultiStepLoader } from "@/components/ui/aceternityui";
 import { Button } from "@/components/ui/shadcn/button";
-import { Loader2 } from "lucide-react";
+import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
 import { sanitizeSlug } from "@/lib/utils/security";
 import {
   createLinkFormSchema,
@@ -110,8 +110,11 @@ const FormActions: React.FC<FormActionsProps> = React.memo(
             console.log("📋 Dirty fields:", formState.dirtyFields);
           }}
         >
-          {isLoading && <Loader2 className="mr-2 size-4 animate-spin" />}
-          Create Link
+          {isLoading ? (
+            <DynamicContentLoader text="" size="20" speed="2.5" />
+          ) : (
+            "Create Link"
+          )}
         </Button>
       </div>
     );
