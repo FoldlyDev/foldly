@@ -4,17 +4,25 @@ import { useUserLinks } from "@/hooks";
 import { useModalState } from "@/hooks";
 import { LinksSkeleton } from "../ui/LinksSkeleton";
 import { LinkCard } from "../ui/LinkCard";
-import { LinkDetailsModal, CreateLinkModal } from "../modals";
+import { LinkManagementModal, CreateLinkModal, AccessControlModal } from "../modals";
 import { LinksManagementBar } from "../sections/LinksManagementBar";
 import type { Link } from "@/lib/database/schemas";
 
 export function UserLinks() {
   const { data: links, isLoading, error } = useUserLinks();
-  const linkDetailsModal = useModalState<Link>();
+  const linkSettingsModal = useModalState<Link>();
   const createLinkModal = useModalState<void>();
+  const permissionsModal = useModalState<Link>();
 
-  const handleOpenLinkDetails = (link: Link) => {
-    linkDetailsModal.open(link);
+  const handleOpenSettings = (link: Link) => {
+    linkSettingsModal.open(link);
+  };
+
+  const handleOpenPermissions = (link: Link) => {
+    // Close settings modal if open
+    linkSettingsModal.close();
+    // Open permissions modal
+    permissionsModal.open(link);
   };
 
   const handleCreateLink = () => {
@@ -56,7 +64,8 @@ export function UserLinks() {
             <LinkCard
               key={link.id}
               link={link}
-              onOpenDetails={() => handleOpenLinkDetails(link)}
+              onOpenSettings={() => handleOpenSettings(link)}
+              onOpenPermissions={() => handleOpenPermissions(link)}
             />
           ))}
         </div>
@@ -66,10 +75,19 @@ export function UserLinks() {
       <LinksManagementBar onCreateLink={handleCreateLink} />
 
       {/* Modals */}
-      <LinkDetailsModal
-        link={linkDetailsModal.data}
-        isOpen={linkDetailsModal.isOpen}
-        onOpenChange={(open) => !open && linkDetailsModal.close()}
+      <LinkManagementModal
+        link={linkSettingsModal.data}
+        isOpen={linkSettingsModal.isOpen}
+        onOpenChange={(open) => !open && linkSettingsModal.close()}
+        onOpenAccessControl={() =>
+          linkSettingsModal.data &&
+          handleOpenPermissions(linkSettingsModal.data)
+        }
+      />
+      <AccessControlModal
+        link={permissionsModal.data}
+        isOpen={permissionsModal.isOpen}
+        onOpenChange={(open) => !open && permissionsModal.close()}
       />
       <CreateLinkModal
         isOpen={createLinkModal.isOpen}

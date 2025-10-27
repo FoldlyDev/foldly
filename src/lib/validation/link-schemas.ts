@@ -124,7 +124,7 @@ export type CreateLinkInput = z.infer<typeof createLinkSchema>;
 
 /**
  * Schema for updating an existing link
- * Validates: linkId, optional name, slug, isPublic, isActive
+ * Validates: linkId, optional name, slug, isPublic, isActive, linkConfig, branding
  * Used by: updateLinkAction (global)
  */
 export const updateLinkSchema = z.object({
@@ -133,6 +133,19 @@ export const updateLinkSchema = z.object({
   slug: slugSchema.optional(),
   isPublic: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  linkConfig: linkConfigSchema.optional(),
+  branding: z
+    .object({
+      enabled: z.boolean(),
+      colors: z
+        .object({
+          accentColor: z.string(),
+          backgroundColor: z.string(),
+        })
+        .nullable()
+        .optional(),
+    })
+    .optional(),
 });
 
 export type UpdateLinkInput = z.infer<typeof updateLinkSchema>;

@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { DottedGlowBackground } from "@/components/ui/aceternityui";
-import { Eye, Share2, Settings, Trash2, MoreVertical, BadgeCheckIcon, AlertCircleIcon } from "lucide-react";
+import { Eye, Share2, Settings, Trash2, MoreVertical, BadgeCheckIcon, AlertCircleIcon, UserCog, Globe, Lock } from "lucide-react";
 import type { Link } from "@/lib/database/schemas";
 import {
   DropdownMenu,
@@ -15,10 +15,11 @@ import { Badge } from "@/components/ui/shadcn/badge";
 
 interface LinkCardProps {
   link: Link;
-  onOpenDetails?: () => void;
+  onOpenSettings?: () => void;
+  onOpenPermissions?: () => void;
 }
 
-export function LinkCard({ link, onOpenDetails }: LinkCardProps) {
+export function LinkCard({ link, onOpenSettings, onOpenPermissions }: LinkCardProps) {
   const accentColor = link.branding?.colors?.accentColor || "#6366f1";
   const backgroundColor = link.branding?.colors?.backgroundColor || "#ffffff";
 
@@ -34,7 +35,11 @@ export function LinkCard({ link, onOpenDetails }: LinkCardProps) {
         linkId={link.id}
         accentColorWithOpacity={accentColorWithOpacity}
       />
-      <LinkCardActions link={link} onOpenDetails={onOpenDetails} />
+      <LinkCardActions
+        link={link}
+        onOpenSettings={onOpenSettings}
+        onOpenPermissions={onOpenPermissions}
+      />
       <DottedGlowBackground
         className="pointer-events-none mask-radial-to-90% mask-radial-at-center"
         opacity={1}
@@ -100,10 +105,12 @@ function LinkCardHeader({
  */
 function LinkCardActions({
   link,
-  onOpenDetails,
+  onOpenSettings,
+  onOpenPermissions,
 }: {
   link: Link;
-  onOpenDetails?: () => void;
+  onOpenSettings?: () => void;
+  onOpenPermissions?: () => void;
 }) {
   const accentColor = link.branding?.colors?.accentColor || "#6366f1";
   const accentColorWithOpacity = addOpacityToColor(accentColor, 20);
@@ -111,29 +118,46 @@ function LinkCardActions({
   return (
     <div className="relative z-20 flex w-full justify-between items-center gap-2 px-2 py-3 backdrop-blur-[2px] md:px-4">
       <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-        {/* {link.linkConfig.customMessage && (
-          <p className="text-xs font-normal text-neutral-600 md:text-sm dark:text-neutral-400 line-clamp-2">
-            {link.linkConfig.customMessage}
-          </p>
-        )} */}
-        {link.isActive ? (
-          <Badge
-            variant="secondary"
-            className="w-fit text-white backdrop-blur-xl shadow-lg ring-1 ring-white/20 border border-white/10"
-            style={{ backgroundColor: accentColorWithOpacity }}
-          >
-            <BadgeCheckIcon />
-            Active
-          </Badge>
-        ) : (
-          <Badge
-            variant="destructive"
-            className="w-fit"
-          >
-            <AlertCircleIcon />
-            Inactive
-          </Badge>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {/* Active/Inactive Badge */}
+          {link.isActive ? (
+            <Badge
+              variant="secondary"
+              className="w-fit text-white backdrop-blur-xl shadow-lg ring-1 ring-white/20 border border-white/10"
+              style={{ backgroundColor: accentColorWithOpacity }}
+            >
+              <BadgeCheckIcon />
+              Active
+            </Badge>
+          ) : (
+            <Badge
+              variant="destructive"
+              className="w-fit"
+            >
+              <AlertCircleIcon />
+              Inactive
+            </Badge>
+          )}
+
+          {/* Public/Private Badge */}
+          {link.isPublic ? (
+            <Badge
+              variant="success"
+              className="w-fit"
+            >
+              <Globe className="size-3" />
+              Public
+            </Badge>
+          ) : (
+            <Badge
+              variant="default"
+              className="w-fit"
+            >
+              <Lock className="size-3" />
+              Private
+            </Badge>
+          )}
+        </div>
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -147,17 +171,21 @@ function LinkCardActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="foldly-glass-light-solid dark:foldly-glass-solid">
-          <DropdownMenuItem onClick={onOpenDetails} className="cursor-pointer">
+          <DropdownMenuItem onClick={onOpenSettings} className="cursor-pointer">
+            <Settings className="size-4" />
+            Settings
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onOpenPermissions} className="cursor-pointer">
+            <UserCog className="size-4" />
+            Permissions
+          </DropdownMenuItem>
+          <DropdownMenuItem className="cursor-pointer">
             <Eye className="size-4" />
             Preview
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer">
             <Share2 className="size-4" />
             Share
-          </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer">
-            <Settings className="size-4" />
-            Settings
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" className="cursor-pointer">

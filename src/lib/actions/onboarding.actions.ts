@@ -282,7 +282,7 @@ export const completeOnboardingAction = withAuthInput<
     workspaceId: workspaceId,
     slug: `${validated.username.toLowerCase()}-first-link`, // Convert to lowercase for URL-safe slug
     name: `${validated.username}'s First Link`, // Keep original case for display name
-    isPublic: false,
+    isPublic: true,
     isActive: true,
   };
 

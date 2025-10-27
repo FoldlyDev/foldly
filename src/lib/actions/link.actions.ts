@@ -414,7 +414,7 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
 );
 
 /**
- * Update link details (name, slug, isPublic, isActive)
+ * Update link details (name, slug, isPublic, isActive, linkConfig, branding)
  * Validates ownership and slug availability if slug is being changed
  * Rate limited: 20 requests per minute
  *
@@ -426,7 +426,20 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
  * const result = await updateLinkAction({
  *   linkId: 'link_123',
  *   name: 'Updated Name',
- *   isActive: false
+ *   isActive: false,
+ *   linkConfig: {
+ *     notifyOnUpload: true,
+ *     customMessage: 'Please upload your files here',
+ *     passwordProtected: true,
+ *     password: 'secure123'
+ *   },
+ *   branding: {
+ *     enabled: true,
+ *     colors: {
+ *       accentColor: '#6c47ff',
+ *       backgroundColor: '#ffffff'
+ *     }
+ *   }
  * });
  * ```
  */
@@ -488,6 +501,35 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
       }
     }
 
+    // Prepare linkConfig if provided
+    let linkConfig: Link['linkConfig'] | undefined;
+    if (validated.linkConfig) {
+      linkConfig = {
+        notifyOnUpload: validated.linkConfig.notifyOnUpload ?? existingLink.linkConfig.notifyOnUpload,
+        customMessage: validated.linkConfig.customMessage !== undefined
+          ? validated.linkConfig.customMessage
+          : existingLink.linkConfig.customMessage,
+        requiresName: validated.linkConfig.requiresName ?? existingLink.linkConfig.requiresName,
+        expiresAt: validated.linkConfig.expiresAt !== undefined
+          ? validated.linkConfig.expiresAt
+          : existingLink.linkConfig.expiresAt,
+        passwordProtected: validated.linkConfig.passwordProtected ?? existingLink.linkConfig.passwordProtected,
+        password: validated.linkConfig.password !== undefined
+          ? validated.linkConfig.password
+          : existingLink.linkConfig.password,
+      };
+    }
+
+    // Prepare branding if provided
+    let branding: Link['branding'] | undefined;
+    if (validated.branding) {
+      branding = {
+        enabled: validated.branding.enabled,
+        logo: existingLink.branding?.logo ?? null, // Preserve existing logo (logo updates via separate action)
+        colors: validated.branding.colors ?? existingLink.branding?.colors ?? null,
+      };
+    }
+
     // Update link with race condition handling
     try {
       const updatedLink = await updateLink(validated.linkId, {
@@ -495,11 +537,21 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
         slug: validated.slug,
         isPublic: validated.isPublic,
         isActive: validated.isActive,
+        linkConfig,
+        branding,
       });
 
       logger.info('Link updated successfully', {
         userId,
         linkId: validated.linkId,
+        fieldsUpdated: {
+          name: validated.name !== undefined,
+          slug: validated.slug !== undefined,
+          isPublic: validated.isPublic !== undefined,
+          isActive: validated.isActive !== undefined,
+          linkConfig: linkConfig !== undefined,
+          branding: branding !== undefined,
+        },
       });
 
       return {

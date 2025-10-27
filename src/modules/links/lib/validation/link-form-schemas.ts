@@ -102,19 +102,51 @@ export const createLinkFormSchema = z
 export type CreateLinkFormData = z.infer<typeof createLinkFormSchema>;
 
 /**
- * Edit Link Form Schema
- * Reuses the same schema as create form since they have identical fields
- * This ensures consistency across create and edit operations
+ * Edit/Settings Link Form Schema
+ * Used for the link management/settings form
+ *
+ * Differences from create form:
+ * - No email validation: Users manage permissions via dedicated Permissions modal
+ * - Password validation remains the same
+ * - All other fields identical to create form
  */
-export const editLinkFormSchema = createLinkFormSchema;
+export const editLinkFormSchema = z
+  .object({
+    name: linkNameSchema,
+    slug: slugSchema,
+    isPublic: isPublicFieldSchema,
+    allowedEmails: allowedEmailsFieldSchema,
+    passwordProtected: passwordProtectedFieldSchema,
+    password: z.string().optional(),
+    brandingEnabled: z.boolean(),
+    logo: logoFieldSchema,
+    accentColor: accentColorFieldSchema,
+    backgroundColor: backgroundColorFieldSchema,
+    // Advanced Options
+    customMessage: customMessageFieldSchema,
+    notifyOnUpload: notifyOnUploadFieldSchema,
+    requireName: requireNameFieldSchema,
+    expiresAt: expiresAtFieldSchema,
+  })
+  .superRefine((data, ctx) => {
+    // Conditional validation: password required when password protection is enabled
+    if (data.passwordProtected && (!data.password || data.password.length < 8)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Password must be at least 8 characters when password protection is enabled',
+        path: ['password'],
+      });
+    }
+
+    // NO email validation for edit form - users manage via Permissions modal
+  });
 
 export type EditLinkFormData = z.infer<typeof editLinkFormSchema>;
 
 /**
  * Link Settings Form Schema
  * Alias for edit form schema - used in settings modal/page
- * All three forms (create, edit, settings) use the same validation
  */
-export const linkSettingsFormSchema = createLinkFormSchema;
+export const linkSettingsFormSchema = editLinkFormSchema;
 
 export type LinkSettingsFormData = z.infer<typeof linkSettingsFormSchema>;
