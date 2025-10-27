@@ -49,9 +49,13 @@ export const BRANDING_FILE_EXTENSIONS: Record<AllowedBrandingType, string> = {
 export const MAX_BRANDING_FILE_SIZE = VALIDATION_LIMITS.BRANDING.MAX_FILE_SIZE_BYTES;
 
 /**
- * GCS bucket name for branding assets
+ * Storage bucket name for branding assets
+ * Automatically selects the correct bucket based on STORAGE_PROVIDER env variable
  */
-export const BRANDING_BUCKET_NAME = process.env.GCS_BRANDING_BUCKET_NAME || '';
+export const BRANDING_BUCKET_NAME =
+  process.env.STORAGE_PROVIDER === 'gcs'
+    ? process.env.GCS_BRANDING_BUCKET_NAME || ''
+    : process.env.SUPABASE_BRANDING_BUCKET_NAME || '';
 
 // =============================================================================
 // VALIDATION HELPERS

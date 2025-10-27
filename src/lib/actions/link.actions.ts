@@ -9,6 +9,7 @@
 // Import from global utilities
 import { withAuth, withAuthInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyLinkOwnership } from '@/lib/utils/authorization';
+import { encryptPassword, isEncryptedPassword } from '@/lib/utils/security';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 // Import database queries
@@ -269,6 +270,18 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
       } as const;
     }
 
+    // Encrypt password if provided and not already encrypted
+    let encryptedPassword: string | null = null;
+    if (validated.linkConfig?.password) {
+      // Only encrypt if it's not already encrypted
+      if (!isEncryptedPassword(validated.linkConfig.password)) {
+        encryptedPassword = encryptPassword(validated.linkConfig.password);
+      } else {
+        // Already encrypted (shouldn't happen in normal flow, but handle it)
+        encryptedPassword = validated.linkConfig.password;
+      }
+    }
+
     // Prepare link configuration with defaults
     const linkConfig = {
       notifyOnUpload: validated.linkConfig?.notifyOnUpload ?? true,
@@ -276,7 +289,7 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
       requiresName: validated.linkConfig?.requiresName ?? false,
       expiresAt: validated.linkConfig?.expiresAt ?? null,
       passwordProtected: validated.linkConfig?.passwordProtected ?? false,
-      password: validated.linkConfig?.password ?? null,
+      password: encryptedPassword,
     };
 
     // Prepare branding configuration
@@ -501,6 +514,21 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
       }
     }
 
+    // Encrypt password if provided and not already encrypted
+    let passwordToStore: string | null | undefined = undefined;
+    if (validated.linkConfig?.password !== undefined) {
+      if (validated.linkConfig.password === null) {
+        // Explicitly setting to null (removing password)
+        passwordToStore = null;
+      } else if (!isEncryptedPassword(validated.linkConfig.password)) {
+        // New password provided - encrypt it
+        passwordToStore = encryptPassword(validated.linkConfig.password);
+      } else {
+        // Already encrypted (shouldn't happen in normal flow, but handle it)
+        passwordToStore = validated.linkConfig.password;
+      }
+    }
+
     // Prepare linkConfig if provided
     let linkConfig: Link['linkConfig'] | undefined;
     if (validated.linkConfig) {
@@ -514,8 +542,8 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
           ? validated.linkConfig.expiresAt
           : existingLink.linkConfig.expiresAt,
         passwordProtected: validated.linkConfig.passwordProtected ?? existingLink.linkConfig.passwordProtected,
-        password: validated.linkConfig.password !== undefined
-          ? validated.linkConfig.password
+        password: passwordToStore !== undefined
+          ? passwordToStore
           : existingLink.linkConfig.password,
       };
     }
@@ -653,8 +681,18 @@ export const updateLinkConfigAction = withAuthInput<
     'updateLinkConfigAction'
   );
 
+  // Encrypt password if provided and not already encrypted
+  let configToStore = { ...validated.config };
+  if (validated.config.password !== undefined && validated.config.password !== null) {
+    if (!isEncryptedPassword(validated.config.password)) {
+      // New password provided - encrypt it
+      configToStore.password = encryptPassword(validated.config.password);
+    }
+    // If already encrypted, use as-is (already in configToStore)
+  }
+
   // Update link config
-  const updatedLink = await updateLinkConfig(validated.linkId, validated.config);
+  const updatedLink = await updateLinkConfig(validated.linkId, configToStore);
 
   logger.info('Link config updated successfully', {
     userId,

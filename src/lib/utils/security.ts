@@ -2,10 +2,10 @@
 // SECURITY UTILITIES
 // =============================================================================
 // Security helper functions following OWASP best practices
-// For path traversal prevention, IP validation, and input sanitization
+// For path traversal prevention, IP validation, input sanitization, and password hashing
 
 import path from 'path';
-import { randomInt } from 'crypto';
+import { randomInt, randomBytes, createCipheriv, createDecipheriv } from 'crypto';
 import { logger } from '@/lib/utils/logger';
 
 /**
@@ -462,4 +462,156 @@ export function getOTPExpiration(expiryMinutes: number = 10): Date {
  */
 export function isOTPExpired(expiresAt: Date): boolean {
   return Date.now() > expiresAt.getTime();
+}
+
+// =============================================================================
+// PASSWORD ENCRYPTION UTILITIES (AES-256-GCM)
+// =============================================================================
+// Two-way encryption for link passwords so owners can view/share them
+// Link passwords are NOT user authentication - they're access codes that owners share
+
+/**
+ * Gets the encryption key from environment variable
+ * Must be 32 bytes (64 hex characters) for AES-256
+ */
+function getEncryptionKey(): Buffer {
+  const key = process.env.LINK_PASSWORD_ENCRYPTION_KEY;
+
+  if (!key) {
+    throw new Error('LINK_PASSWORD_ENCRYPTION_KEY environment variable is not set');
+  }
+
+  // Convert hex string to buffer
+  if (key.length !== 64) {
+    throw new Error('LINK_PASSWORD_ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
+  }
+
+  return Buffer.from(key, 'hex');
+}
+
+/**
+ * Encrypts a plaintext password using AES-256-GCM
+ * Returns format: iv:authTag:encryptedData (all hex encoded)
+ *
+ * @param password - The plaintext password to encrypt
+ * @returns Encrypted password string in format "iv:authTag:ciphertext"
+ *
+ * @example
+ * ```typescript
+ * const encrypted = encryptPassword('mySecurePassword123');
+ * // Returns: "a1b2c3d4...:e5f6g7h8...:i9j0k1l2..." (hex encoded)
+ * ```
+ */
+export function encryptPassword(password: string): string {
+  if (!password) {
+    throw new Error('Password is required for encryption');
+  }
+
+  try {
+    const key = getEncryptionKey();
+
+    // Generate random 12-byte IV (recommended for GCM)
+    const iv = randomBytes(12);
+
+    // Create cipher
+    const cipher = createCipheriv('aes-256-gcm', key, iv);
+
+    // Encrypt the password
+    let encrypted = cipher.update(password, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+
+    // Get authentication tag (ensures integrity)
+    const authTag = cipher.getAuthTag();
+
+    // Return iv:authTag:encrypted (all hex encoded, colon separated)
+    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+  } catch (error) {
+    logger.error('Password encryption failed', error);
+    throw new Error('Failed to encrypt password');
+  }
+}
+
+/**
+ * Decrypts an encrypted password using AES-256-GCM
+ *
+ * @param encryptedPassword - The encrypted password in format "iv:authTag:ciphertext"
+ * @returns Decrypted plaintext password
+ *
+ * @example
+ * ```typescript
+ * const decrypted = decryptPassword(encryptedPassword);
+ * // Returns: "mySecurePassword123"
+ * ```
+ */
+export function decryptPassword(encryptedPassword: string): string {
+  if (!encryptedPassword) {
+    throw new Error('Encrypted password is required for decryption');
+  }
+
+  try {
+    const key = getEncryptionKey();
+
+    // Split the encrypted string into parts
+    const parts = encryptedPassword.split(':');
+    if (parts.length !== 3) {
+      throw new Error('Invalid encrypted password format');
+    }
+
+    const [ivHex, authTagHex, encryptedHex] = parts;
+
+    // Convert hex strings back to buffers
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const encrypted = Buffer.from(encryptedHex, 'hex');
+
+    // Create decipher
+    const decipher = createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(authTag);
+
+    // Decrypt the password
+    let decrypted = decipher.update(encrypted, undefined, 'utf8');
+    decrypted += decipher.final('utf8');
+
+    return decrypted;
+  } catch (error) {
+    logger.error('Password decryption failed', error);
+    throw new Error('Failed to decrypt password');
+  }
+}
+
+/**
+ * Checks if a string is an encrypted password (has the correct format)
+ * Format: iv:authTag:ciphertext (3 parts separated by colons, all hex)
+ *
+ * @param value - The string to check
+ * @returns True if the string appears to be an encrypted password
+ *
+ * @example
+ * ```typescript
+ * isEncryptedPassword('a1b2c3:d4e5f6:g7h8i9'); // true
+ * isEncryptedPassword('plaintext'); // false
+ * isEncryptedPassword(null); // false
+ * ```
+ */
+export function isEncryptedPassword(value: string | null | undefined): boolean {
+  if (!value) return false;
+
+  // Check format: iv:authTag:ciphertext (3 hex parts)
+  const parts = value.split(':');
+  if (parts.length !== 3) return false;
+
+  // IV should be 12 bytes (24 hex chars)
+  // Auth tag should be 16 bytes (32 hex chars)
+  // Ciphertext varies based on password length
+  const [ivHex, authTagHex, cipherHex] = parts;
+
+  const hexRegex = /^[0-9a-f]+$/i;
+  return (
+    ivHex.length === 24 &&
+    authTagHex.length === 32 &&
+    cipherHex.length > 0 &&
+    hexRegex.test(ivHex) &&
+    hexRegex.test(authTagHex) &&
+    hexRegex.test(cipherHex)
+  );
 }
