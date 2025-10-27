@@ -6,6 +6,16 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/utils/logger';
+import type {
+  UploadSession,
+  InitiateUploadParams,
+  VerifyUploadParams,
+  UploadVerificationResult,
+} from '../types';
+import {
+  DEFAULT_CHUNK_SIZES,
+  SESSION_EXPIRATION_MS,
+} from '../types';
 
 /**
  * Validates required Supabase environment variables
@@ -280,5 +290,147 @@ export async function fileExists(params: {
       gcsPath,
     });
     return false;
+  }
+}
+
+// =============================================================================
+// RESUMABLE UPLOAD METHODS (TUS Protocol)
+// =============================================================================
+
+/**
+ * Initiate TUS resumable upload session for Supabase Storage
+ * Returns session URL and configuration for client-side chunked upload
+ *
+ * TUS Protocol: https://tus.io/
+ * Supabase Endpoint: {SUPABASE_URL}/storage/v1/upload/resumable
+ *
+ * @param params - Upload initiation parameters
+ * @returns Upload session with TUS endpoint and configuration
+ *
+ * @example
+ * ```typescript
+ * const session = await initiateResumableUpload({
+ *   fileName: 'logo.png',
+ *   fileSize: 102400,
+ *   contentType: 'image/png',
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456',
+ * });
+ * // Client uploads directly to session.sessionUrl using TUS protocol
+ * ```
+ */
+export async function initiateResumableUpload(
+  params: InitiateUploadParams
+): Promise<UploadSession> {
+  const { fileName, bucket, path } = params;
+
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      throw new Error('NEXT_PUBLIC_SUPABASE_URL not configured');
+    }
+
+    const filePath = `${path}/${fileName}`;
+
+    // Supabase TUS endpoint for resumable uploads
+    // Note: Bucket and file path are passed as Uppy metadata, not in URL
+    const tusEndpoint = `${supabaseUrl}/storage/v1/upload/resumable`;
+
+    // Generate unique upload ID for tracking
+    const uploadId = crypto.randomUUID();
+
+    logger.info('Initiated TUS resumable upload session', {
+      bucket,
+      filePath,
+      tusEndpoint,
+      chunkSize: DEFAULT_CHUNK_SIZES.SUPABASE,
+    });
+
+    return {
+      uploadId,
+      sessionUrl: tusEndpoint,
+      chunkSize: DEFAULT_CHUNK_SIZES.SUPABASE,
+      expiresAt: new Date(Date.now() + SESSION_EXPIRATION_MS),
+      finalPath: filePath,
+      bucket,
+    };
+  } catch (error) {
+    logger.error('Failed to initiate resumable upload', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      bucket,
+      path,
+      fileName,
+    });
+    throw new Error('Failed to initiate file upload.');
+  }
+}
+
+/**
+ * Verify upload completion in Supabase Storage
+ * Checks that file exists and returns public URL
+ *
+ * Call this after client completes TUS upload to:
+ * 1. Verify file was uploaded successfully
+ * 2. Get public URL for database storage
+ *
+ * @param params - Verification parameters
+ * @returns Verification result with file URL
+ *
+ * @example
+ * ```typescript
+ * const result = await verifyUpload({
+ *   uploadId: 'abc123',
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456/logo.png',
+ * });
+ * if (result.success) {
+ *   // Store result.url in database
+ * }
+ * ```
+ */
+export async function verifyUpload(
+  params: VerifyUploadParams
+): Promise<UploadVerificationResult> {
+  const { bucket, path } = params;
+
+  try {
+    const supabase = getSupabaseStorageClient();
+
+    // Check if file exists
+    const exists = await fileExists({ gcsPath: path, bucket });
+
+    if (!exists) {
+      logger.warn('Upload verification failed: file not found', {
+        bucket,
+        path,
+      });
+      return {
+        success: false,
+        url: '',
+      };
+    }
+
+    // Get public URL
+    const { data } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(path);
+
+    logger.info('Upload verified successfully', {
+      bucket,
+      path,
+      url: data.publicUrl,
+    });
+
+    return {
+      success: true,
+      url: data.publicUrl,
+    };
+  } catch (error) {
+    logger.error('Failed to verify upload', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      bucket,
+      path,
+    });
+    throw new Error('Failed to verify file upload.');
   }
 }

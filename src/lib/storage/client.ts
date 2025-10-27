@@ -4,27 +4,37 @@
 // Routes storage operations to the correct provider based on STORAGE_PROVIDER
 // environment variable. Allows seamless switching between Supabase and GCS.
 
-import { logger } from '@/lib/utils/logger';
+import { logger } from "@/lib/utils/logger";
 
 // Import both provider implementations
-import * as gcsClient from './gcs/client';
-import * as supabaseClient from './supabase/client';
+import * as gcsClient from "./gcs/client";
+import * as supabaseClient from "./supabase/client";
+
+// Import types
+import type {
+  UploadSession,
+  InitiateUploadParams,
+  VerifyUploadParams,
+  UploadVerificationResult,
+} from "./types";
 
 /**
  * Get the configured storage provider
  * Defaults to 'supabase' if not set
  */
-function getStorageProvider(): 'supabase' | 'gcs' {
+function getStorageProvider(): "supabase" | "gcs" {
   const provider = process.env.STORAGE_PROVIDER;
 
   if (!provider) {
-    logger.warn('STORAGE_PROVIDER not set, defaulting to supabase');
-    return 'supabase';
+    logger.warn("STORAGE_PROVIDER not set, defaulting to supabase");
+    return "supabase";
   }
 
-  if (provider !== 'supabase' && provider !== 'gcs') {
-    logger.error(`Invalid STORAGE_PROVIDER: ${provider}. Must be 'supabase' or 'gcs'. Defaulting to supabase.`);
-    return 'supabase';
+  if (provider !== "supabase" && provider !== "gcs") {
+    logger.error(
+      `Invalid STORAGE_PROVIDER: ${provider}. Must be 'supabase' or 'gcs'. Defaulting to supabase.`
+    );
+    return "supabase";
   }
 
   return provider;
@@ -71,7 +81,7 @@ export async function uploadFile(params: {
     file: Buffer.isBuffer(params.file) ? params.file : Buffer.from(params.file),
   };
 
-  if (provider === 'gcs') {
+  if (provider === "gcs") {
     return gcsClient.uploadFile(normalizedParams);
   }
 
@@ -97,7 +107,7 @@ export async function deleteFile(params: {
 }): Promise<void> {
   const provider = getStorageProvider();
 
-  if (provider === 'gcs') {
+  if (provider === "gcs") {
     return gcsClient.deleteFile(params);
   }
 
@@ -126,7 +136,7 @@ export async function getSignedUrl(params: {
 }): Promise<string> {
   const provider = getStorageProvider();
 
-  if (provider === 'gcs') {
+  if (provider === "gcs") {
     return gcsClient.getSignedUrl(params);
   }
 
@@ -153,7 +163,7 @@ export async function fileExists(params: {
 }): Promise<boolean> {
   const provider = getStorageProvider();
 
-  if (provider === 'gcs') {
+  if (provider === "gcs") {
     return gcsClient.fileExists(params);
   }
 
@@ -164,6 +174,83 @@ export async function fileExists(params: {
  * Get the current storage provider name
  * Useful for logging and debugging
  */
-export function getCurrentProvider(): 'supabase' | 'gcs' {
+export function getCurrentProvider(): "supabase" | "gcs" {
   return getStorageProvider();
+}
+
+// =============================================================================
+// RESUMABLE UPLOAD METHODS (Provider-Agnostic)
+// =============================================================================
+
+/**
+ * Initiate resumable upload session
+ * Routes to provider-specific implementation (TUS for Supabase, Resumable API for GCS)
+ *
+ * Returns session configuration for direct client-to-storage upload.
+ * Client uploads file in chunks directly to storage, bypassing Server Actions.
+ *
+ * @param params - Upload initiation parameters
+ * @returns Upload session with provider-specific upload URL
+ *
+ * @example
+ * ```typescript
+ * // Server action initiates upload
+ * const session = await initiateResumableUpload({
+ *   fileName: 'logo.png',
+ *   fileSize: 2048000,
+ *   contentType: 'image/png',
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456',
+ * });
+ *
+ * // Client uploads directly to session.sessionUrl
+ * // Then calls verification action
+ * ```
+ */
+export async function initiateResumableUpload(
+  params: InitiateUploadParams
+): Promise<UploadSession> {
+  const provider = getStorageProvider();
+
+  if (provider === "gcs") {
+    return gcsClient.initiateResumableUpload(params);
+  }
+
+  return supabaseClient.initiateResumableUpload(params);
+}
+
+/**
+ * Verify upload completion
+ * Checks that file exists in storage and returns public URL
+ *
+ * Call this after client completes direct upload to storage.
+ * Verifies file integrity and retrieves URL for database storage.
+ *
+ * @param params - Verification parameters
+ * @returns Verification result with file URL
+ *
+ * @example
+ * ```typescript
+ * // After client completes upload
+ * const result = await verifyUpload({
+ *   uploadId: session.uploadId,
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456/logo.png',
+ * });
+ *
+ * if (result.success) {
+ *   // Update database with result.url
+ * }
+ * ```
+ */
+export async function verifyUpload(
+  params: VerifyUploadParams
+): Promise<UploadVerificationResult> {
+  const provider = getStorageProvider();
+
+  if (provider === "gcs") {
+    return gcsClient.verifyUpload(params);
+  }
+
+  return supabaseClient.verifyUpload(params);
 }

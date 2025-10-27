@@ -5,7 +5,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   updateLinkBrandingAction,
-  uploadBrandingLogoAction,
+  // TODO: Update tests for new resumable upload flow
+  // uploadBrandingLogoAction has been replaced with:
+  // - initiateBrandingLogoUploadAction
+  // - completeBrandingLogoUploadAction
+  // uploadBrandingLogoAction,
   deleteBrandingLogoAction,
 } from "../branding.actions";
 import {

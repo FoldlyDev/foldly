@@ -9,3 +9,4 @@ export * from './workspace.actions';
 export * from './email.actions';
 export * from './link.actions';
 export * from './permission.actions';
+export * from './storage.actions';

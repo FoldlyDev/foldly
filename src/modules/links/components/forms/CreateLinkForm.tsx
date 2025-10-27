@@ -23,9 +23,9 @@ import {
   createLinkFormSchema,
   type CreateLinkFormData,
 } from "../../lib/validation";
-import { useCreateLink } from "@/hooks";
-import { useUploadBrandingLogo } from "../../hooks";
-import { serializeFileForUpload } from "@/lib/utils/file-helpers";
+import { useCreateLink, useUppyUpload, useUserWorkspace } from "@/hooks";
+import { BRANDING_BUCKET_NAME, generateBrandingPath } from "../../lib/validation/link-branding-schemas";
+import { useUpdateLinkBranding } from "../../hooks";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -90,8 +90,6 @@ interface FormActionsProps {
 
 const FormActions: React.FC<FormActionsProps> = React.memo(
   ({ onCancel, isLoading }) => {
-    const { formState } = useFormContext<CreateLinkFormData>();
-
     return (
       <div className="flex items-center justify-end gap-3 pt-4 border-t">
         <Button
@@ -105,12 +103,6 @@ const FormActions: React.FC<FormActionsProps> = React.memo(
         <Button
           type="submit"
           disabled={isLoading}
-          onClick={() => {
-            console.log("🔘 Submit button clicked");
-            console.log("❌ Form errors:", formState.errors);
-            console.log("✅ Form is valid:", formState.isValid);
-            console.log("📋 Dirty fields:", formState.dirtyFields);
-          }}
         >
           {isLoading ? (
             <DynamicContentLoader text="" size="20" speed="2.5" />
@@ -139,9 +131,18 @@ export function CreateLinkForm({
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [loadingMessage, setLoadingMessage] = React.useState("");
 
-  // React Query hooks for link creation and logo upload
+  // React Query hooks for link creation
   const createLink = useCreateLink();
-  const uploadLogo = useUploadBrandingLogo();
+  const { data: workspace } = useUserWorkspace();
+  const updateBranding = useUpdateLinkBranding();
+
+  // Uppy hook for logo upload
+  const logoUpload = useUppyUpload({
+    bucket: BRANDING_BUCKET_NAME || 'foldly-link-branding',
+    onSuccess: () => {
+      setLoadingMessage("");
+    },
+  });
 
   // React Hook Form setup with Zod validation
   const methods = useForm<CreateLinkFormData>({
@@ -177,8 +178,6 @@ export function CreateLinkForm({
 
   // Form submission handler
   const handleFormSubmit = async (data: CreateLinkFormData) => {
-    console.log("🚀 Form submission triggered with data:", data);
-
     setIsSubmitting(true);
     setLoadingMessage("Creating your link...");
 
@@ -206,36 +205,38 @@ export function CreateLinkForm({
         allowedEmails: !data.isPublic && data.allowedEmails.length > 0 ? data.allowedEmails : undefined,
       };
 
-      console.log("📤 Transformed input for action:", input);
-
       // Create link
       const link = await createLink.mutateAsync(input);
 
-      console.log("✅ Link created successfully:", link);
-
       // Upload branding logo if provided
-      if (data.brandingEnabled && data.logo.length > 0) {
+      if (data.brandingEnabled && data.logo.length > 0 && workspace) {
         try {
-          setLoadingMessage("Uploading branding logo...");
           const logoFile = data.logo[0].file as File;
 
-          console.log("📤 Uploading logo:", {
-            fileName: logoFile.name,
-            size: logoFile.size,
-            type: logoFile.type,
+          setLoadingMessage("Uploading logo...");
+
+          // Upload using Uppy (handles all orchestration)
+          const logoUrl = await logoUpload.upload(logoFile, {
+            path: generateBrandingPath(workspace.id, link.id),
+            metadata: {
+              workspaceId: workspace.id,
+              linkId: link.id,
+              originalFileName: logoFile.name,
+            },
           });
 
-          // Serialize file for server action using centralized utility
-          const fileData = await serializeFileForUpload(logoFile);
-
-          await uploadLogo.mutateAsync({
+          // Update link branding with logo URL
+          setLoadingMessage("Saving logo...");
+          await updateBranding.mutateAsync({
             linkId: link.id,
-            file: fileData,
+            branding: {
+              logo: {
+                url: logoUrl,
+                altText: data.name, // Use link name as alt text
+              },
+            },
           });
-
-          console.log("✅ Logo uploaded successfully");
         } catch (logoError) {
-          console.error("❌ Logo upload failed:", logoError);
           // Don't fail the entire form if logo upload fails
           // User can retry logo upload from the edit form
         }
@@ -257,10 +258,10 @@ export function CreateLinkForm({
     <>
       {/* Multi-step loader overlay */}
       <MultiStepLoader
-        loading={isSubmitting}
+        loading={isSubmitting || logoUpload.isUploading}
         loadingStates={[]}
         variant="simple"
-        message={loadingMessage}
+        message={loadingMessage || (logoUpload.isUploading ? `Uploading logo... ${logoUpload.progress}%` : "")}
       />
 
       {/* Form */}
@@ -290,7 +291,7 @@ export function CreateLinkForm({
             </TabsContents>
           </Tabs>
 
-          <FormActions onCancel={onCancel} isLoading={isSubmitting} />
+          <FormActions onCancel={onCancel} isLoading={isSubmitting || logoUpload.isUploading} />
         </form>
       </FormProvider>
     </>
