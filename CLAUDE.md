@@ -45,7 +45,7 @@ npm run format:check # Check if code is formatted
 - **Framework**: Next.js 15 (App Router) + React 19 + TypeScript
 - **Authentication**: Clerk (with email/password, magic links)
 - **Database**: Supabase (PostgreSQL) via Drizzle ORM
-- **File Storage**: Google Cloud Storage
+- **File Storage**: Supabase Storage & Google Cloud Storage (provider-agnostic abstraction)
 - **Styling**: Tailwind CSS 4 + shadcn/ui components
 - **State Management**: TanStack Query (React Query) + Zustand
 - **Animations**: Framer Motion + GSAP + Lenis (smooth scroll)
@@ -106,7 +106,10 @@ src/
 │   │   ├── queries/     # Reusable database queries (called by actions)
 │   │   ├── migrations/  # Database migration utilities
 │   │   └── connection.ts # Database connection setup
-│   ├── gcs/             # Google Cloud Storage client
+│   ├── storage/         # Storage abstraction layer (provider-agnostic)
+│   │   ├── client.ts    # Main abstraction layer
+│   │   ├── gcs/client.ts      # Google Cloud Storage implementation
+│   │   └── supabase/client.ts # Supabase Storage implementation
 │   └── utils/           # Utility functions (security, logger, browser-detection)
 │
 └── middleware.ts         # Clerk authentication middleware
@@ -136,7 +139,7 @@ Six core tables using Drizzle ORM:
 5. **files** - File metadata with `uploader_email` tracking
 6. **permissions** - Email-based access control for links
 
-**Link Configuration** (JSONB): `notifyOnUpload`, `customMessage`, `requiresName`, `expiresAt`, `passwordProtected`, `password` (hashed)
+**Link Configuration** (JSONB): `notifyOnUpload`, `customMessage`, `requiresName`, `expiresAt`, `passwordProtected`, `password` (encrypted with AES-256-GCM)
 
 All schemas are exported from `src/lib/database/schemas/index.ts`.
 
@@ -340,6 +343,65 @@ User operations follow the three-layer architecture:
 - **Server Actions**: `createUserAction()`, `getUserAction()`, `updateUserProfileAction()`
 - **Important**: User must be created in database BEFORE workspace (foreign key dependency)
 
+### Storage Operations
+The application uses a provider-agnostic storage abstraction supporting both Supabase Storage and Google Cloud Storage:
+
+**Import Pattern**:
+```typescript
+// Always import from the abstraction layer
+import { uploadFile, deleteFile, getSignedUrl, fileExists } from '@/lib/storage/client';
+
+// Example: Upload a file
+const { url, gcsPath } = await uploadFile({
+  file: buffer,
+  fileName: 'logo.png',
+  path: 'branding/workspace123/link456',
+  bucket: 'foldly-link-branding',
+  contentType: 'image/png',
+});
+```
+
+**Provider Switching**:
+- Set `STORAGE_PROVIDER=supabase` or `STORAGE_PROVIDER=gcs` in environment variables
+- Defaults to `supabase` if not specified
+- All storage operations automatically route to the configured provider
+- No code changes required when switching providers
+
+**Bucket Configuration**:
+- **Supabase Storage**: `foldly-link-branding` (public), `foldly-uploads` (private)
+- **Google Cloud Storage**: Provider-specific bucket names via environment variables
+- Public buckets for branding assets (logos accessible via public URLs)
+- Private buckets for file uploads (access via signed URLs only)
+
+### Security Patterns
+
+**Link Password Encryption**:
+Link passwords use AES-256-GCM two-way encryption (NOT one-way hashing):
+- Link passwords are shareable access codes, not user authentication credentials
+- Owners need to view/share passwords with external users
+- Encryption key stored in `LINK_PASSWORD_ENCRYPTION_KEY` environment variable (32 bytes, 64 hex characters)
+
+```typescript
+import { encryptPassword, decryptPassword, isEncryptedPassword } from '@/lib/utils/security';
+
+// Encrypt before storing
+const encrypted = encryptPassword('myAccessCode123');
+// Format: "iv:authTag:ciphertext" (hex encoded)
+
+// Decrypt when displaying to owner
+const plaintext = decryptPassword(encrypted);
+
+// Verify if already encrypted
+if (!isEncryptedPassword(value)) {
+  // Encrypt it first
+}
+```
+
+**When to use encryption vs hashing**:
+- ✅ **Encryption**: Shareable access codes, API keys, tokens (need to retrieve original value)
+- ✅ **Hashing**: User authentication passwords, sensitive data verification (never need original value)
+- Link passwords are in the first category - they're shared with external users, not authentication secrets
+
 ### Modal Management Pattern
 The application uses a lightweight modal state management pattern with AnimateUI Modal components:
 
@@ -451,10 +513,21 @@ Key environment variables (see `.env.local`):
 - `RESEND_API_KEY` - Resend email service API key
 - `UPSTASH_REDIS_REST_URL` - Upstash Redis REST URL (distributed rate limiting)
 - `UPSTASH_REDIS_REST_TOKEN` - Upstash Redis REST token
+
+**Storage Configuration**:
+- `STORAGE_PROVIDER` - Storage provider selection: `supabase` or `gcs` (defaults to `supabase`)
 - `GCS_PROJECT_ID` - Google Cloud Storage project ID
 - `GCS_CLIENT_EMAIL` - GCS service account email
 - `GCS_PRIVATE_KEY` - GCS service account private key (base64 encoded)
-- `GCS_BRANDING_BUCKET_NAME` - Branding assets bucket name
+- `GCS_BRANDING_BUCKET_NAME` - GCS branding bucket name
+- `GCS_UPLOADS_BUCKET_NAME` - GCS uploads bucket name
+- `SUPABASE_BRANDING_BUCKET_NAME` - Supabase branding bucket name
+- `SUPABASE_UPLOADS_BUCKET_NAME` - Supabase uploads bucket name
+- `NEXT_PUBLIC_SUPABASE_BRANDING_BUCKET_URL` - Public URL for Supabase branding bucket
+- `NEXT_PUBLIC_SUPABASE_UPLOADS_BUCKET_URL` - Public URL for Supabase uploads bucket
+
+**Security Configuration**:
+- `LINK_PASSWORD_ENCRYPTION_KEY` - 32-byte hex key (64 characters) for AES-256-GCM link password encryption
 
 ## Database Workflow
 
@@ -562,14 +635,16 @@ Key environment variables (see `.env.local`):
 - `src/lib/email/constants.ts` - Email configuration and constants
 - `src/lib/redis/client.ts` - Upstash Redis client for distributed rate limiting
 - `src/lib/middleware/rate-limit.ts` - Redis-backed rate limiting with presets
-- `src/lib/utils/security.ts` - OTP generation and validation utilities
+- `src/lib/utils/security.ts` - OTP generation, AES-256-GCM encryption utilities
 
-**GCS & File Storage**:
-- `src/lib/gcs/client.ts` - GCS client singleton (upload, delete, signed URLs, file exists)
+**Storage Infrastructure**:
+- `src/lib/storage/client.ts` - Provider-agnostic storage abstraction layer
+- `src/lib/storage/gcs/client.ts` - Google Cloud Storage implementation
+- `src/lib/storage/supabase/client.ts` - Supabase Storage implementation
 
 **Links Module**:
 - `src/modules/links/lib/actions/branding.actions.ts` - Branding operations (3 actions: update, upload logo, delete logo)
-- `src/modules/links/lib/validation/branding-schemas.ts` - Branding validation (5MB limit, PNG/JPEG/WebP)
+- `src/modules/links/lib/validation/link-branding-schemas.ts` - Branding validation (5MB limit, PNG/JPEG/WebP)
 - `src/modules/links/lib/actions/__tests__/branding.actions.test.ts` - Branding tests (17 tests)
 
 **Documentation**:

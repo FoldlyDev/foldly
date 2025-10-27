@@ -6,21 +6,28 @@ Last Updated: October 8, 2025
 
 ### 1. Storage Architecture
 
-**Decision:** Single Google Cloud Storage bucket with database-driven logical organization
+**Decision:** Provider-agnostic storage abstraction with Supabase Storage as default
 
 **Rationale:**
-- Simpler architecture
+- Flexibility to switch between Supabase Storage and Google Cloud Storage
+- Integrated with existing Supabase infrastructure (default provider)
+- GCS available for higher storage requirements
 - Database acts as source of truth for all organization
-- Avoids storage duplication complexity
-- Easier quota management
-- GCS handles high storage consumption better than Supabase Storage
+- Easier quota management across providers
 
 **Implementation:**
 ```
-Storage: gs://foldly-files/
-  └── {owner_user_id}/
-      └── {link_id}/
-          └── {file_id}
+Storage Provider: Configurable via STORAGE_PROVIDER env var (supabase | gcs)
+
+Supabase Storage (Default):
+  Buckets:
+    - foldly-link-branding (public)
+    - foldly-uploads (private)
+
+GCS (Optional):
+  Buckets:
+    - foldly-link-branding
+    - foldly-uploads
 
 Database manages:
   - Folder hierarchy
@@ -191,13 +198,13 @@ If confirmed →
 **Backend:**
 - Supabase (PostgreSQL Database)
 - Clerk (Auth + Payments via Stripe)
-- Google Cloud Storage (File storage)
+- Supabase Storage + Google Cloud Storage (provider-agnostic)
 - Next.js API Routes / Server Actions
 
 **Infrastructure:**
 - Vercel (Deployment)
-- Supabase (PostgreSQL database)
-- GCS (File storage)
+- Supabase (PostgreSQL database + Storage)
+- GCS (Optional alternative storage)
 - Stripe (via Clerk)
 
 ---
@@ -684,7 +691,7 @@ files:
 
 | Decision | Choice | Status |
 |----------|--------|--------|
-| Storage | Single GCS bucket | ✅ Locked |
+| Storage | Provider-agnostic (Supabase + GCS) | ✅ Locked |
 | Link-Folder Model | Links = Folders with 🔗 icon | ✅ Locked |
 | Roles | Owner / Editor / Uploader | ✅ Locked |
 | Ownership | Link owner = file owner | ✅ Locked |
@@ -713,6 +720,7 @@ files:
 | Date | Decision | Changed From | Changed To | Reason |
 |------|----------|--------------|------------|--------|
 | 2025-10-08 | Storage | Dual Supabase buckets | Single GCS bucket | Higher storage capacity, simpler architecture |
+| 2025-10-27 | Storage | Single GCS bucket | Provider-agnostic abstraction | Flexibility, Supabase integration |
 | 2025-10-08 | Role Names | Contributor/Collaborator | Uploader/Editor | Clearer intent for non-technical users |
 | 2025-10-08 | Public Links | Strict (no auto-add) | Auto-append emails | Better UX and continuity |
 | 2025-10-08 | Link URLs | N/A (new decision) | `/{username}/{slug}` | Professional, memorable, scalable |

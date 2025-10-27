@@ -67,11 +67,22 @@ Foldly is built as a modern full-stack web application using Next.js, Supabase, 
   - User profiles and metadata
 
 ### File Storage
-- **Google Cloud Storage (GCS)**
+- **Provider-Agnostic Storage Abstraction**
+  - Supports both Supabase Storage and Google Cloud Storage
+  - Switch providers via `STORAGE_PROVIDER` environment variable
+  - Unified API for upload, delete, signed URLs, file existence checks
+
+- **Supabase Storage**
+  - Default provider (integrated with existing Supabase infrastructure)
+  - Two buckets: `foldly-link-branding` (public), `foldly-uploads` (private)
+  - No file size limits or MIME type restrictions (flexible configuration)
+  - Public URLs for branding assets, signed URLs for private uploads
+
+- **Google Cloud Storage (GCS)** (Optional)
+  - Alternative provider for higher storage requirements
   - Scalable object storage
   - Signed URLs for secure access
   - Lifecycle policies for retention
-  - Higher storage limits than Supabase Storage
 
 ### API Layer
 - **Next.js Server Actions**
@@ -103,10 +114,15 @@ Foldly is built as a modern full-stack web application using Next.js, Supabase, 
   - SSL connections
 
 ### File Storage Hosting
-- **Google Cloud Platform**
-  - GCS bucket: `foldly-files`
+- **Supabase Storage** (Default)
+  - Buckets: `foldly-link-branding` (public), `foldly-uploads` (private)
+  - Integrated with existing Supabase infrastructure
+  - Public access for branding assets only
+
+- **Google Cloud Platform** (Optional Alternative)
+  - GCS buckets: `foldly-link-branding`, `foldly-uploads`
   - Region: Multi-region (US or EU)
-  - Public access: disabled
+  - Public access: disabled (signed URLs only)
   - Signed URLs for access control
 
 ---
@@ -315,11 +331,24 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
 
-# Google Cloud Storage
-GCS_BUCKET_NAME=foldly-files
+# Storage Provider Configuration
+STORAGE_PROVIDER=supabase  # or 'gcs'
+
+# Supabase Storage
+SUPABASE_BRANDING_BUCKET_NAME=foldly-link-branding
+SUPABASE_UPLOADS_BUCKET_NAME=foldly-uploads
+NEXT_PUBLIC_SUPABASE_BRANDING_BUCKET_URL=
+NEXT_PUBLIC_SUPABASE_UPLOADS_BUCKET_URL=
+
+# Google Cloud Storage (optional - only needed if STORAGE_PROVIDER=gcs)
 GCS_PROJECT_ID=
 GCS_CLIENT_EMAIL=
 GCS_PRIVATE_KEY=
+GCS_BRANDING_BUCKET_NAME=foldly-link-branding
+GCS_UPLOADS_BUCKET_NAME=foldly-uploads
+
+# Security
+LINK_PASSWORD_ENCRYPTION_KEY=  # 32-byte hex key (64 characters)
 
 # Stripe (via Clerk)
 STRIPE_SECRET_KEY=
@@ -404,7 +433,7 @@ NEXT_PUBLIC_APP_URL=https://foldly.com
 | Component | Chosen | Alternatives Considered | Reason |
 |-----------|--------|------------------------|--------|
 | Database | Supabase | Firebase, PlanetScale | RLS, real-time, PostgreSQL |
-| Storage | GCS | Supabase Storage, S3 | Higher limits, existing infra |
+| Storage | Supabase Storage + GCS | Supabase only, S3 | Flexibility, provider abstraction |
 | Auth | Clerk | Supabase Auth, Auth0 | Payment integration, UX |
 | Frontend | Next.js | Remix, Astro | App Router, Server Actions |
 | Styling | Tailwind | CSS Modules, Styled Components | Utility-first, fast |
@@ -419,7 +448,7 @@ NEXT_PUBLIC_APP_URL=https://foldly.com
 - Supabase (PostgreSQL) + Drizzle ORM
 - Clerk (Auth + Payments)
 - Resend (Email) + Upstash Redis (Rate Limiting)
-- Google Cloud Storage
+- Supabase Storage + Google Cloud Storage (provider-agnostic)
 - Vercel (Hosting)
 
 **Key Benefits:**
@@ -428,3 +457,4 @@ NEXT_PUBLIC_APP_URL=https://foldly.com
 - ✅ Managed services (low ops burden)
 - ✅ Modern DX
 - ✅ Production-ready security
+- ✅ Storage flexibility (easy provider switching)

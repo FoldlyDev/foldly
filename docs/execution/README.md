@@ -47,7 +47,10 @@ execution/
 | **Links Module** | ✅ Completed | `src/lib/actions/link.actions.ts` | 7 actions with 18 tests (create, read, update, delete, validate) |
 | **Permission Management** | ✅ Completed | `src/lib/actions/permission.actions.ts` | 4 actions with 23 tests |
 | **Branding Module** | ✅ Completed | `src/modules/links/lib/actions/branding.actions.ts` | 3 actions with 17 tests (logo uploads & color customization) |
-| GCS Setup | ✅ Completed | `src/lib/gcs/client.ts` | Client singleton with 4 operations |
+| **Storage Abstraction** | ✅ Completed | `src/lib/storage/client.ts` | Provider-agnostic layer (Supabase + GCS) |
+| **Link Password Encryption** | ✅ Completed | `src/lib/utils/security.ts` | AES-256-GCM encryption for shareable access codes |
+| Supabase Storage Setup | ✅ Completed | - | 2 buckets configured (branding, uploads) |
+| GCS Setup | ✅ Completed | `src/lib/storage/gcs/client.ts` | Alternative provider implementation |
 | Next.js Project | ✅ Completed | - | Next.js 15 + React 19 configured |
 | Supabase Config | ✅ Completed | `.env.local` | Database connection configured |
 | Clerk Auth | ✅ Completed | `.env.local` | Authentication configured |
@@ -191,13 +194,17 @@ execution/
 
 **Implementation Files**:
 - `src/lib/actions/permission.actions.ts` (4 actions: add, remove, update, get)
-- `src/lib/gcs/client.ts` (GCS client with upload, delete, signed URLs)
+- `src/lib/storage/client.ts` (Storage abstraction layer)
+- `src/lib/storage/supabase/client.ts` (Supabase Storage implementation)
+- `src/lib/storage/gcs/client.ts` (GCS implementation)
 - `src/modules/links/lib/actions/branding.actions.ts` (3 actions: update, upload, delete)
-- `src/modules/links/lib/validation/branding-schemas.ts`
+- `src/modules/links/lib/validation/link-branding-schemas.ts`
 
 **Key Features**:
 - Email-based permission management (add, remove, update role, get permissions)
-- GCS client singleton (upload, delete, fileExists, getSignedUrl)
+- Provider-agnostic storage abstraction (Supabase Storage + GCS)
+- Supabase Storage: 2 buckets configured (foldly-link-branding, foldly-uploads)
+- GCS: Optional alternative provider
 - Branding logo uploads (5MB limit, PNG/JPEG/WebP support)
 - Color customization (accent, background)
 - Rate limiting on all branding operations
@@ -205,8 +212,38 @@ execution/
 **Status**:
 - ✅ 4 permission actions (23 tests, optimized: 55.33s)
 - ✅ 3 branding actions (17 tests, 38.57s)
-- ✅ GCS client integration
+- ✅ Storage abstraction layer complete
 - ✅ Comprehensive validation schemas
+
+### ✅ Storage Abstraction & Link Password Encryption (October 27, 2025)
+
+**Implementation Files**:
+- `src/lib/storage/client.ts` - Main abstraction layer
+- `src/lib/storage/supabase/client.ts` - Supabase Storage implementation
+- `src/lib/storage/gcs/client.ts` - Google Cloud Storage implementation
+- `src/lib/utils/security.ts` - AES-256-GCM encryption utilities
+
+**Key Features**:
+- **Storage Abstraction**:
+  - Provider-agnostic API (uploadFile, deleteFile, getSignedUrl, fileExists)
+  - Switch providers via `STORAGE_PROVIDER` environment variable
+  - Supabase Storage as default (integrated with existing infrastructure)
+  - GCS as optional alternative for higher storage requirements
+  - Unified bucket configuration (branding, uploads)
+
+- **Link Password Encryption**:
+  - AES-256-GCM two-way encryption (replaces bcrypt one-way hashing)
+  - Link passwords are shareable access codes, not user authentication
+  - Owners can view/share passwords with external users
+  - Encryption key stored in `LINK_PASSWORD_ENCRYPTION_KEY` environment variable
+  - Format: "iv:authTag:ciphertext" (hex encoded, colon separated)
+
+**Status**:
+- ✅ Storage abstraction implemented and tested
+- ✅ Supabase Storage buckets configured
+- ✅ GCS alternative provider ready
+- ✅ Link password encryption utilities complete
+- ✅ 3 link actions updated to use encryption (create, update, validate)
 
 ---
 
@@ -349,8 +386,11 @@ When implementing a new feature:
 - ✅ **Links Module** (7 actions: create, read, update, delete, validate, 18 tests)
 - ✅ **Permission Management** (4 global actions with 23 tests)
 - ✅ **Branding Module** (3 actions: logo uploads, color customization, 17 tests)
+- ✅ **Storage Abstraction Layer** (provider-agnostic: Supabase Storage + GCS)
+- ✅ **Link Password Encryption** (AES-256-GCM for shareable access codes)
 - ✅ **262 total passing tests** across 13 test suites
-- ✅ GCS client integration (upload, delete, signed URLs, branding bucket)
+- ✅ Supabase Storage integration (2 buckets: branding, uploads)
+- ✅ GCS integration (alternative provider option)
 - ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 project setup
 - ✅ Supabase database connection configured
