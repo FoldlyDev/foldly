@@ -5,11 +5,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   updateLinkBrandingAction,
-  // TODO: Update tests for new resumable upload flow
-  // uploadBrandingLogoAction has been replaced with:
-  // - initiateBrandingLogoUploadAction
-  // - completeBrandingLogoUploadAction
-  // uploadBrandingLogoAction,
   deleteBrandingLogoAction,
 } from "../branding.actions";
 import {
@@ -28,8 +23,8 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: vi.fn(() => ({ has: vi.fn() })),
 }));
 
-// Mock GCS client
-vi.mock("@/lib/gcs/client", () => ({
+// Mock storage abstraction layer (provider-agnostic)
+vi.mock("@/lib/storage/client", () => ({
   uploadFile: vi.fn(),
   deleteFile: vi.fn(),
   fileExists: vi.fn(),
@@ -48,7 +43,7 @@ vi.mock("../../validation/link-branding-schemas", async (importOriginal) => {
 });
 
 import { auth } from "@clerk/nextjs/server";
-import { uploadFile, deleteFile, fileExists } from "@/lib/storage/gcs/client";
+import { deleteFile, fileExists } from "@/lib/storage/client";
 
 describe("Branding Actions", () => {
   const createdUserIds = new Set<string>();
@@ -261,290 +256,13 @@ describe("Branding Actions", () => {
   });
 
   // =============================================================================
-  // uploadBrandingLogoAction() Tests
-  // =============================================================================
-  describe("uploadBrandingLogoAction", () => {
-    beforeEach(() => {
-      // Setup default GCS mocks
-      vi.mocked(uploadFile).mockResolvedValue({
-        url: "https://storage.googleapis.com/test-branding-bucket/branding/workspace-id/link-id/logo-123.png",
-        gcsPath: "branding/workspace-id/link-id/logo-123.png",
-      });
-      vi.mocked(fileExists).mockResolvedValue(false);
-      vi.mocked(deleteFile).mockResolvedValue(undefined);
-    });
-
-    it("should upload logo and update link branding", async () => {
-      // Arrange: Create test user, workspace, and link
-      const user = await createTestUser();
-      createdUserIds.add(user.id);
-
-      const workspace = await createTestWorkspace({
-        userId: user.id,
-        name: "Test Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace.id,
-        name: "Test Link",
-      });
-
-      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user.id, "upload-logo"));
-
-      // Act: Upload logo
-      const fileBuffer = Buffer.from("fake image data");
-      const result = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: fileBuffer,
-          originalName: "logo.png",
-          mimeType: "image/png",
-          size: 1024,
-        },
-      });
-
-      // Assert: Should successfully upload
-      expect(result.success).toBe(true);
-      expect(result.data?.link).toBeDefined();
-      expect(result.data?.logoUrl).toContain("logo-");
-      expect(result.data?.link.branding?.logo?.url).toContain("logo-");
-      // Branding should be enabled (either preserved from existing state or defaulted to true)
-      expect(result.data?.link.branding?.enabled).toBeDefined();
-
-      // Verify GCS uploadFile was called
-      expect(uploadFile).toHaveBeenCalledOnce();
-      expect(uploadFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          file: fileBuffer,
-          contentType: "image/png",
-          metadata: expect.objectContaining({
-            workspaceId: workspace.id,
-            linkId: link.id,
-          }),
-        })
-      );
-    });
-
-    it("should delete old logo before uploading new one", async () => {
-      // Arrange: Create link with existing logo
-      const user = await createTestUser();
-      createdUserIds.add(user.id);
-
-      const workspace = await createTestWorkspace({
-        userId: user.id,
-        name: "Test Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace.id,
-        name: "Test Link",
-      });
-
-      // Set existing branding with logo
-      await db
-        .update(links)
-        .set({
-          branding: {
-            enabled: true,
-            logo: {
-              url: "https://storage.googleapis.com/test-branding-bucket/old-logo.png",
-              altText: undefined,
-            },
-            colors: null,
-          },
-        })
-        .where(eq(links.id, link.id));
-
-      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user.id, "upload-logo"));
-
-      // Mock that old file exists
-      vi.mocked(fileExists).mockResolvedValue(true);
-
-      // Act: Upload new logo
-      const result = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: Buffer.from("new image"),
-          originalName: "new-logo.png",
-          mimeType: "image/png",
-          size: 2048,
-        },
-      });
-
-      // Assert: Should delete old logo and upload new one
-      expect(result.success).toBe(true);
-      expect(fileExists).toHaveBeenCalled();
-      expect(deleteFile).toHaveBeenCalledWith(
-        expect.objectContaining({
-          gcsPath: "old-logo.png",
-        })
-      );
-      expect(uploadFile).toHaveBeenCalled();
-    });
-
-    it("should reject invalid file type", async () => {
-      // Arrange: Create test user, workspace, and link
-      const user = await createTestUser();
-      createdUserIds.add(user.id);
-
-      const workspace = await createTestWorkspace({
-        userId: user.id,
-        name: "Test Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace.id,
-        name: "Test Link",
-      });
-
-      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user.id, "upload-logo"));
-
-      // Act: Try to upload PDF
-      const result = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: Buffer.from("fake pdf"),
-          originalName: "document.pdf",
-          mimeType: "application/pdf",
-          size: 1024,
-        },
-      });
-
-      // Assert: Should fail validation
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("Invalid file type");
-      expect(uploadFile).not.toHaveBeenCalled();
-    });
-
-    it("should reject file exceeding size limit", async () => {
-      // Arrange: Create test user, workspace, and link
-      const user = await createTestUser();
-      createdUserIds.add(user.id);
-
-      const workspace = await createTestWorkspace({
-        userId: user.id,
-        name: "Test Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace.id,
-        name: "Test Link",
-      });
-
-      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user.id, "upload-logo"));
-
-      // Act: Try to upload file > 5MB
-      const result = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: Buffer.from("fake image"),
-          originalName: "large-logo.png",
-          mimeType: "image/png",
-          size: 6 * 1024 * 1024, // 6MB
-        },
-      });
-
-      // Assert: Should fail validation
-      expect(result.success).toBe(false);
-      expect(result.error).toContain("File size must be less than");
-      expect(uploadFile).not.toHaveBeenCalled();
-    });
-
-    it("should reject when user does not own link", async () => {
-      // Arrange: Create two users
-      const user1 = await createTestUser();
-      const user2 = await createTestUser();
-      createdUserIds.add(user1.id);
-      createdUserIds.add(user2.id);
-
-      const workspace2 = await createTestWorkspace({
-        userId: user2.id,
-        name: "User 2 Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace2.id,
-        name: "User 2 Link",
-      });
-
-      // User1 tries to upload to user2's link
-      vi.mocked(auth).mockResolvedValue({ userId: user1.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user1.id, "upload-logo"));
-
-      // Act: Try to upload logo
-      const result = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: Buffer.from("image"),
-          originalName: "logo.png",
-          mimeType: "image/png",
-          size: 1024,
-        },
-      });
-
-      // Assert: Should fail
-      expect(result.success).toBe(false);
-      expect(uploadFile).not.toHaveBeenCalled();
-    });
-
-    it("should enforce rate limit (10 requests per minute)", async () => {
-      // NOTE: We test with 5 requests (not 10) to ensure the test completes quickly
-
-      // Arrange: Create test user, workspace, and link
-      const user = await createTestUser();
-      createdUserIds.add(user.id);
-
-      const workspace = await createTestWorkspace({
-        userId: user.id,
-        name: "Test Workspace",
-      });
-
-      const link = await createTestLink({
-        workspaceId: workspace.id,
-        name: "Test Link",
-      });
-
-      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
-      resetRateLimit(RateLimitKeys.userAction(user.id, "upload-logo"));
-
-      // Act: Make 5 successful uploads
-      for (let i = 0; i < 5; i++) {
-        const result = await uploadBrandingLogoAction({
-          linkId: link.id,
-          file: {
-            buffer: Buffer.from(`image ${i}`),
-            originalName: `logo-${i}.png`,
-            mimeType: "image/png",
-            size: 1024,
-          },
-        });
-        expect(result.success).toBe(true);
-      }
-
-      // Verify we can still make more requests (we're at 5/10)
-      const additionalResult = await uploadBrandingLogoAction({
-        linkId: link.id,
-        file: {
-          buffer: Buffer.from("image 6"),
-          originalName: "logo-6.png",
-          mimeType: "image/png",
-          size: 1024,
-        },
-      });
-      expect(additionalResult.success).toBe(true);
-    }, 10000); // 10 second timeout
-  });
-
-  // =============================================================================
   // deleteBrandingLogoAction() Tests
   // =============================================================================
+  // NOTE: Logo upload is now handled by useUppyUpload hook + storage actions
+  // See: src/hooks/utility/use-uppy-upload.ts and src/lib/actions/storage.actions.ts
   describe("deleteBrandingLogoAction", () => {
     beforeEach(() => {
-      // Setup default GCS mocks
+      // Setup default storage abstraction mocks
       vi.mocked(fileExists).mockResolvedValue(true);
       vi.mocked(deleteFile).mockResolvedValue(undefined);
     });

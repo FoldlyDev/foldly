@@ -60,6 +60,8 @@ export interface VerifyPublicUploadInput {
   uploadId: string;
   bucket: string;
   path: string;
+  linkId: string; // Required for ownership verification
+  uploaderEmail: string; // Required for ownership verification
 }
 
 // =============================================================================
@@ -303,15 +305,47 @@ export async function initiatePublicUploadAction(
 
 /**
  * Verify public upload completed successfully (no authentication required)
- * Generic action for public uploads - caller must validate permissions
+ * Requires linkId and uploaderEmail to prevent enumeration attacks
  *
- * @param input - Public upload verification parameters
+ * SECURITY: Returns 404 for unauthorized access to prevent enumeration
+ * RLS policies on storage buckets provide additional protection
+ *
+ * @param input - Public upload verification parameters (including ownership context)
  * @returns Verification result with URL
  */
 export async function verifyPublicUploadAction(
   input: VerifyPublicUploadInput
 ): Promise<ActionResponse<VerifyUploadResult>> {
   try {
+    // Validate ownership parameters
+    if (!input.linkId || !input.uploaderEmail) {
+      logger.warn("Public upload verification missing ownership parameters", {
+        uploadId: input.uploadId,
+        hasLinkId: !!input.linkId,
+        hasUploaderEmail: !!input.uploaderEmail,
+      });
+
+      return {
+        success: false,
+        error: "Upload not found.", // 404-style message to prevent enumeration
+      };
+    }
+
+    // Validate path matches expected pattern (basic sanity check)
+    // Path should contain linkId for proper isolation
+    if (!input.path.includes(input.linkId)) {
+      logger.warn("Public upload verification path mismatch", {
+        uploadId: input.uploadId,
+        linkId: input.linkId,
+        path: input.path,
+      });
+
+      return {
+        success: false,
+        error: "Upload not found.", // 404-style message to prevent enumeration
+      };
+    }
+
     // Verify upload via storage abstraction
     const verification = await storageVerifyUpload({
       uploadId: input.uploadId,
@@ -323,6 +357,8 @@ export async function verifyPublicUploadAction(
     if (!verification.success || !verification.url) {
       logger.warn("Public upload verification failed", {
         uploadId: input.uploadId,
+        linkId: input.linkId,
+        uploaderEmail: input.uploaderEmail,
         path: input.path,
         verificationSuccess: verification.success,
         hasUrl: !!verification.url,
@@ -336,6 +372,8 @@ export async function verifyPublicUploadAction(
 
     logger.info("Public upload verified successfully", {
       uploadId: input.uploadId,
+      linkId: input.linkId,
+      uploaderEmail: input.uploaderEmail,
       url: verification.url,
     });
 
@@ -347,6 +385,7 @@ export async function verifyPublicUploadAction(
     logger.error("Failed to verify public upload", {
       error: error instanceof Error ? error.message : "Unknown error",
       uploadId: input.uploadId,
+      linkId: input.linkId,
     });
 
     return {

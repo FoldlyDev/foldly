@@ -27,6 +27,8 @@ interface UseUppyUploadOptions {
   bucket: string;
   authMode?: 'authenticated' | 'public'; // Default: 'authenticated'
   rateLimitKey?: string; // Required for public uploads (e.g., email+IP)
+  linkId?: string; // Required for public uploads (ownership verification)
+  uploaderEmail?: string; // Required for public uploads (ownership verification)
   onSuccess?: (url: string) => void;
   onError?: (error: Error) => void;
 }
@@ -296,6 +298,8 @@ export function useUppyUpload(
               uploadId: session.uploadId,
               bucket: options.bucket,
               path: session.finalPath,
+              linkId: options.linkId || '',
+              uploaderEmail: options.uploaderEmail || '',
             });
 
         setProgress(100);
