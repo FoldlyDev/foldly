@@ -18,14 +18,16 @@ import {
 import { MultiStepLoader } from "@/components/ui/aceternityui";
 import { Button } from "@/components/ui/shadcn/button";
 import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
-import { sanitizeSlug } from "@/lib/utils/security";
 import {
   createLinkFormSchema,
   type CreateLinkFormData,
 } from "../../lib/validation";
-import { useCreateLink } from "@/hooks";
-import { useUploadBrandingLogo } from "../../hooks";
-import { serializeFileForUpload } from "@/lib/utils/file-helpers";
+import { useCreateLink, useUserWorkspace } from "@/hooks";
+import {
+  useLinkFormState,
+  useSlugAutoGeneration,
+  useLinkLogoUpload,
+} from "../../hooks";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -90,8 +92,6 @@ interface FormActionsProps {
 
 const FormActions: React.FC<FormActionsProps> = React.memo(
   ({ onCancel, isLoading }) => {
-    const { formState } = useFormContext<CreateLinkFormData>();
-
     return (
       <div className="flex items-center justify-end gap-3 pt-4 border-t">
         <Button
@@ -105,12 +105,6 @@ const FormActions: React.FC<FormActionsProps> = React.memo(
         <Button
           type="submit"
           disabled={isLoading}
-          onClick={() => {
-            console.log("🔘 Submit button clicked");
-            console.log("❌ Form errors:", formState.errors);
-            console.log("✅ Form is valid:", formState.isValid);
-            console.log("📋 Dirty fields:", formState.dirtyFields);
-          }}
         >
           {isLoading ? (
             <DynamicContentLoader text="" size="20" speed="2.5" />
@@ -132,16 +126,24 @@ export function CreateLinkForm({
   onCancel,
   onSuccess,
 }: CreateLinkFormProps) {
-  // Tab state (controlled)
-  const [activeTab, setActiveTab] = React.useState("basic");
+  // Form state management (tab navigation, loading states)
+  const {
+    activeTab,
+    setActiveTab,
+    isSubmitting,
+    setIsSubmitting,
+    loadingMessage,
+    setLoadingMessage,
+  } = useLinkFormState();
 
-  // Loading state for MultiStepLoader
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [loadingMessage, setLoadingMessage] = React.useState("");
-
-  // React Query hooks for link creation and logo upload
+  // React Query hooks for link creation
   const createLink = useCreateLink();
-  const uploadLogo = useUploadBrandingLogo();
+  const { data: workspace } = useUserWorkspace();
+
+  // Logo upload orchestration
+  const { logoUpload, uploadLogoAndUpdateBranding } = useLinkLogoUpload({
+    onSuccess: () => setLoadingMessage(""),
+  });
 
   // React Hook Form setup with Zod validation
   const methods = useForm<CreateLinkFormData>({
@@ -166,19 +168,11 @@ export function CreateLinkForm({
     mode: "onBlur",
   });
 
-  // Watch name field for slug generation
-  const watchName = methods.watch("name");
-
-  // Auto-generate slug from name using global utility
-  React.useEffect(() => {
-    const generatedSlug = sanitizeSlug(watchName);
-    methods.setValue("slug", generatedSlug);
-  }, [watchName, methods]);
+  // Auto-generate slug from name field
+  useSlugAutoGeneration(methods);
 
   // Form submission handler
   const handleFormSubmit = async (data: CreateLinkFormData) => {
-    console.log("🚀 Form submission triggered with data:", data);
-
     setIsSubmitting(true);
     setLoadingMessage("Creating your link...");
 
@@ -206,36 +200,24 @@ export function CreateLinkForm({
         allowedEmails: !data.isPublic && data.allowedEmails.length > 0 ? data.allowedEmails : undefined,
       };
 
-      console.log("📤 Transformed input for action:", input);
-
       // Create link
       const link = await createLink.mutateAsync(input);
 
-      console.log("✅ Link created successfully:", link);
-
       // Upload branding logo if provided
-      if (data.brandingEnabled && data.logo.length > 0) {
+      if (data.brandingEnabled && data.logo.length > 0 && workspace) {
         try {
-          setLoadingMessage("Uploading branding logo...");
           const logoFile = data.logo[0].file as File;
 
-          console.log("📤 Uploading logo:", {
-            fileName: logoFile.name,
-            size: logoFile.size,
-            type: logoFile.type,
-          });
+          setLoadingMessage("Uploading logo...");
 
-          // Serialize file for server action using centralized utility
-          const fileData = await serializeFileForUpload(logoFile);
-
-          await uploadLogo.mutateAsync({
+          // Upload logo and update branding (orchestrated by primitive)
+          await uploadLogoAndUpdateBranding({
+            logoFile,
             linkId: link.id,
-            file: fileData,
+            workspaceId: workspace.id,
+            altText: data.name, // Use link name as alt text
           });
-
-          console.log("✅ Logo uploaded successfully");
         } catch (logoError) {
-          console.error("❌ Logo upload failed:", logoError);
           // Don't fail the entire form if logo upload fails
           // User can retry logo upload from the edit form
         }
@@ -257,10 +239,10 @@ export function CreateLinkForm({
     <>
       {/* Multi-step loader overlay */}
       <MultiStepLoader
-        loading={isSubmitting}
+        loading={isSubmitting || logoUpload.isUploading}
         loadingStates={[]}
         variant="simple"
-        message={loadingMessage}
+        message={loadingMessage || (logoUpload.isUploading ? `Uploading logo... ${logoUpload.progress}%` : "")}
       />
 
       {/* Form */}
@@ -290,7 +272,7 @@ export function CreateLinkForm({
             </TabsContents>
           </Tabs>
 
-          <FormActions onCancel={onCancel} isLoading={isSubmitting} />
+          <FormActions onCancel={onCancel} isLoading={isSubmitting || logoUpload.isUploading} />
         </form>
       </FormProvider>
     </>

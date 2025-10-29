@@ -1,7 +1,18 @@
 import React from "react";
 import Image from "next/image";
 import { DottedGlowBackground } from "@/components/ui/aceternityui";
-import { Eye, Share2, Settings, Trash2, MoreVertical, BadgeCheckIcon, AlertCircleIcon, UserCog, Globe, Lock } from "lucide-react";
+import {
+  Eye,
+  Share2,
+  Settings,
+  Trash2,
+  MoreVertical,
+  BadgeCheckIcon,
+  AlertCircleIcon,
+  UserCog,
+  Globe,
+  Lock,
+} from "lucide-react";
 import type { Link } from "@/lib/database/schemas";
 import {
   DropdownMenu,
@@ -19,7 +30,11 @@ interface LinkCardProps {
   onOpenPermissions?: () => void;
 }
 
-export function LinkCard({ link, onOpenSettings, onOpenPermissions }: LinkCardProps) {
+export function LinkCard({
+  link,
+  onOpenSettings,
+  onOpenPermissions,
+}: LinkCardProps) {
   const accentColor = link.branding?.colors?.accentColor || "#6366f1";
   const backgroundColor = link.branding?.colors?.backgroundColor || "#ffffff";
 
@@ -75,14 +90,14 @@ function LinkCardHeader({
   accentColorWithOpacity: string;
 }) {
   return (
-    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3">
+    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-8 -translate-y-5">
       {link.branding?.logo?.url && (
         <Image
           src={link.branding.logo.url}
           alt={link.branding.logo.altText || `${link.name} logo`}
           width={80}
           height={80}
-          className="size-10 md:size-20 dark:invert dark:filter"
+          className="size-15 md:size-20 rounded-lg object-cover"
         />
       )}
       <h1
@@ -130,10 +145,7 @@ function LinkCardActions({
               Active
             </Badge>
           ) : (
-            <Badge
-              variant="destructive"
-              className="w-fit"
-            >
+            <Badge variant="destructive" className="w-fit">
               <AlertCircleIcon />
               Inactive
             </Badge>
@@ -141,18 +153,12 @@ function LinkCardActions({
 
           {/* Public/Private Badge */}
           {link.isPublic ? (
-            <Badge
-              variant="success"
-              className="w-fit"
-            >
+            <Badge variant="success" className="w-fit">
               <Globe className="size-3" />
               Public
             </Badge>
           ) : (
-            <Badge
-              variant="default"
-              className="w-fit"
-            >
+            <Badge variant="default" className="w-fit">
               <Lock className="size-3" />
               Private
             </Badge>
@@ -170,12 +176,18 @@ function LinkCardActions({
             <MoreVertical className="size-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="foldly-glass-light-solid dark:foldly-glass-solid">
+        <DropdownMenuContent
+          align="end"
+          className="foldly-glass-light-solid dark:foldly-glass-solid"
+        >
           <DropdownMenuItem onClick={onOpenSettings} className="cursor-pointer">
             <Settings className="size-4" />
             Settings
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onOpenPermissions} className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={onOpenPermissions}
+            className="cursor-pointer"
+          >
             <UserCog className="size-4" />
             Permissions
           </DropdownMenuItem>

@@ -8,3 +8,4 @@ export * from './use-data-state';
 export * from './use-file-upload';
 export * from './use-is-in-view';
 export * from './use-scroll-position';
+export * from './use-uppy-upload';

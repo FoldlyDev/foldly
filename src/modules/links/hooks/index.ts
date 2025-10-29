@@ -7,3 +7,4 @@
 // Only advanced branding features remain here (used only in Links module)
 
 export * from './use-link-branding';
+export * from './use-link-form-primitives';

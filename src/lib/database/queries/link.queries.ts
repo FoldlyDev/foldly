@@ -137,38 +137,6 @@ export async function updateLinkConfig(
 }
 
 /**
- * Update link branding (visual identity settings)
- */
-export async function updateLinkBranding(
-  linkId: string,
-  branding: Partial<Link['branding']>
-): Promise<Link> {
-  // Get current branding
-  const currentLink = await getLinkById(linkId);
-  if (!currentLink) {
-    throw new Error('Link not found');
-  }
-
-  // Merge with existing branding
-  const updatedBranding = {
-    ...currentLink.branding,
-    ...branding,
-  };
-
-  const [link] = await db
-    .update(links)
-    .set({ branding: updatedBranding, updatedAt: new Date() })
-    .where(eq(links.id, linkId))
-    .returning();
-
-  if (!link) {
-    throw new Error(`Failed to update link branding: Link with ID ${linkId} not found or update failed`);
-  }
-
-  return link;
-}
-
-/**
  * Check if slug is available (not taken by another link)
  * Used for slug validation during link creation/update
  */

@@ -15,7 +15,10 @@ import {
 import { ERROR_MESSAGES } from "@/lib/constants";
 
 // Import storage client (cross-module, provider-agnostic)
-import { uploadFile, deleteFile, fileExists } from "@/lib/storage/client";
+import {
+  deleteFile,
+  fileExists,
+} from "@/lib/storage/client";
 
 // Import database queries
 import { updateLink } from "@/lib/database/queries";
@@ -37,16 +40,11 @@ import type { Link } from "@/lib/database/schemas";
 import { validateInput } from "@/lib/validation";
 
 import {
-  type UploadBrandingLogoInput,
   type DeleteBrandingLogoInput,
   type UpdateLinkBrandingInput,
-  uploadBrandingLogoSchema,
   deleteBrandingLogoSchema,
   updateLinkBrandingSchema,
   BRANDING_BUCKET_NAME,
-  generateBrandingPath,
-  getFileExtension,
-  type AllowedBrandingType,
 } from "../validation/link-branding-schemas";
 
 // =============================================================================
@@ -158,170 +156,10 @@ export const updateLinkBrandingAction = withAuthInput<
 );
 
 // =============================================================================
-// LOGO UPLOAD ACTIONS
+// LOGO DELETION ACTION
 // =============================================================================
-
-/**
- * Upload branding logo to GCS and update link branding
- * Rate limited: 10 requests per minute
- *
- * @param input - Logo upload input
- * @returns Updated link with logo URL
- *
- * @example
- * ```typescript
- * const result = await uploadBrandingLogoAction({
- *   linkId: 'link123',
- *   file: {
- *     buffer: fileBuffer,
- *     originalName: 'logo.png',
- *     mimeType: 'image/png',
- *     size: 102400,
- *   },
- * });
- * ```
- */
-export const uploadBrandingLogoAction = withAuthInput<
-  UploadBrandingLogoInput,
-  { link: Link; logoUrl: string }
->(
-  "uploadBrandingLogoAction",
-  async (
-    userId: string,
-    input: UploadBrandingLogoInput
-  ): Promise<ActionResponse<{ link: Link; logoUrl: string }>> => {
-    // Validate input
-    const validated = validateInput(uploadBrandingLogoSchema, input);
-
-    const { linkId, file } = validated;
-
-    // Rate limit
-    const rateLimitKey = RateLimitKeys.userAction(userId, "upload-logo");
-    const rateLimit = await checkRateLimit(
-      rateLimitKey,
-      RateLimitPresets.PERMISSION_MANAGEMENT
-    );
-
-    if (!rateLimit.allowed) {
-      logRateLimitViolation("Logo upload rate limit exceeded", {
-        userId,
-        linkId,
-        action: "uploadBrandingLogoAction",
-        limit: RateLimitPresets.PERMISSION_MANAGEMENT.limit,
-        window: RateLimitPresets.PERMISSION_MANAGEMENT.windowMs,
-        attempts: rateLimit.remaining,
-      });
-      return {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimit.resetAt,
-      };
-    }
-
-    // Validate bucket configuration
-    if (!BRANDING_BUCKET_NAME) {
-      logger.error("GCS branding bucket not configured");
-      return {
-        success: false,
-        error: ERROR_MESSAGES.STORAGE.NOT_CONFIGURED,
-      };
-    }
-
-    // Get authenticated workspace
-    const workspace = await getAuthenticatedWorkspace(userId);
-
-    // Verify link ownership
-    const link = await verifyLinkOwnership(
-      linkId,
-      workspace.id,
-      "uploadBrandingLogoAction"
-    );
-
-    // Delete old logo if exists
-    if (link.branding?.logo?.url) {
-      const oldGcsPath = link.branding.logo.url.replace(
-        `https://storage.googleapis.com/${BRANDING_BUCKET_NAME}/`,
-        ""
-      );
-
-      try {
-        const exists = await fileExists({
-          gcsPath: oldGcsPath,
-          bucket: BRANDING_BUCKET_NAME,
-        });
-
-        if (exists) {
-          await deleteFile({
-            gcsPath: oldGcsPath,
-            bucket: BRANDING_BUCKET_NAME,
-          });
-          logger.info("Old branding logo deleted", { linkId, oldGcsPath });
-        }
-      } catch (error) {
-        logger.warn("Failed to delete old logo, continuing with upload", {
-          error: error instanceof Error ? error.message : "Unknown error",
-          oldGcsPath,
-        });
-      }
-    }
-
-    // Generate GCS path
-    const path = generateBrandingPath(workspace.id, linkId);
-    const extension = getFileExtension(file.mimeType as AllowedBrandingType);
-    const timestamp = Date.now();
-    const fileName = `logo-${timestamp}.${extension}`;
-
-    // Upload to storage (GCS or Supabase based on STORAGE_PROVIDER)
-    // Storage layer handles Buffer/Uint8Array conversion internally
-    const { url: logoUrl } = await uploadFile({
-      file: file.buffer, // Can be Buffer (tests) or Uint8Array (client)
-      fileName,
-      path,
-      bucket: BRANDING_BUCKET_NAME,
-      contentType: file.mimeType,
-      metadata: {
-        workspaceId: workspace.id,
-        linkId,
-        originalFileName: file.originalName,
-      },
-    });
-
-    // Update link branding with new logo
-    const updatedLink = await updateLink(linkId, {
-      branding: {
-        ...link.branding,
-        enabled: link.branding?.enabled ?? true,
-        logo: {
-          url: logoUrl,
-          altText: link.branding?.logo?.altText,
-        },
-        colors: link.branding?.colors ?? null,
-      },
-    });
-
-    if (!updatedLink) {
-      return {
-        success: false,
-        error: ERROR_MESSAGES.LINK.UPDATE_FAILED,
-      };
-    }
-
-    logger.info("Branding logo uploaded successfully", {
-      userId,
-      linkId,
-      logoUrl,
-    });
-
-    return {
-      success: true,
-      data: {
-        link: updatedLink,
-        logoUrl,
-      },
-    };
-  }
-);
+// NOTE: Logo upload actions removed - now handled by useUppyUpload hook
+// See: src/hooks/utility/use-uppy-upload.ts
 
 /**
  * Delete branding logo from GCS and clear link branding

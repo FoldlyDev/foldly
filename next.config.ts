@@ -109,6 +109,11 @@ const nextConfig: NextConfig = {
         hostname: "em-content.zobj.net",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
     ],
   },
 

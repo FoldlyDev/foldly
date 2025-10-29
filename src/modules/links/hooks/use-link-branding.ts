@@ -12,12 +12,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   updateLinkBrandingAction,
-  uploadBrandingLogoAction,
   deleteBrandingLogoAction,
 } from '../lib/actions/branding.actions';
 import type {
   UpdateLinkBrandingInput,
-  UploadBrandingLogoInput,
   DeleteBrandingLogoInput,
 } from '../lib/validation/link-branding-schemas';
 import { transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
@@ -81,63 +79,8 @@ export function useUpdateLinkBranding() {
   });
 }
 
-/**
- * Upload branding logo
- *
- * Used in:
- * - Links module settings (logo upload component)
- *
- * Features:
- * - Upload logo to GCS branding bucket
- * - Validates file type (PNG, JPEG, WebP)
- * - Validates file size (max 5MB)
- * - Generates unique filename with timestamp
- * - Updates link branding with logo URL
- * - Rate limited (10 requests/minute)
- * - Automatic query invalidation
- *
- * @returns Mutation for uploading logo
- *
- * @example
- * ```tsx
- * function LogoUpload({ linkId }: { linkId: string }) {
- *   const uploadLogo = useUploadBrandingLogo();
- *
- *   const handleFileSelect = async (file: File) => {
- *     uploadLogo.mutate({ linkId, file });
- *   };
- *
- *   return (
- *     <input
- *       type="file"
- *       accept="image/png,image/jpeg,image/webp"
- *       onChange={e => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
- *       disabled={uploadLogo.isPending}
- *     />
- *   );
- * }
- * ```
- */
-export function useUploadBrandingLogo() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (data: UploadBrandingLogoInput) => {
-      const result = await uploadBrandingLogoAction(data);
-      return transformActionError(result, 'Failed to upload logo');
-    },
-    retry: false, // Never retry mutations
-    onSuccess: (data, variables) => {
-      // TODO: Add success notification when notification system is implemented
-      // Invalidate specific link cache (logo URL is part of link branding)
-      queryClient.invalidateQueries({ queryKey: linkKeys.detail(variables.linkId) });
-
-      // Also invalidate links list
-      queryClient.invalidateQueries({ queryKey: linkKeys.lists() });
-    },
-    onError: createMutationErrorHandler('Logo upload'),
-  });
-}
+// NOTE: Logo upload hooks removed - now using useUppyUpload from @/hooks
+// See: src/hooks/utility/use-uppy-upload.ts
 
 /**
  * Delete branding logo

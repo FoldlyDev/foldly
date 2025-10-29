@@ -46,6 +46,7 @@ npm run format:check # Check if code is formatted
 - **Authentication**: Clerk (with email/password, magic links)
 - **Database**: Supabase (PostgreSQL) via Drizzle ORM
 - **File Storage**: Supabase Storage & Google Cloud Storage (provider-agnostic abstraction)
+- **File Uploads**: Uppy.js (resumable uploads via TUS/GCS Resumable)
 - **Styling**: Tailwind CSS 4 + shadcn/ui components
 - **State Management**: TanStack Query (React Query) + Zustand
 - **Animations**: Framer Motion + GSAP + Lenis (smooth scroll)
@@ -209,6 +210,7 @@ CLIENT          →  REACT QUERY HOOK   →  SERVER ACTION     →  DATABASE QUE
   - ✅ `use-controlled-state.ts` - Controlled component pattern
   - ✅ `use-data-state.ts` - Generic data state machine
   - ✅ `use-file-upload.ts` - File upload state machine
+  - ✅ `use-uppy-upload.ts` - Uppy.js resumable upload integration
   - ✅ `use-is-in-view.ts` - Intersection observer
   - ✅ `use-scroll-position.ts` - Scroll position tracking
   - Framework-agnostic patterns, not tied to specific UI
@@ -346,18 +348,50 @@ User operations follow the three-layer architecture:
 ### Storage Operations
 The application uses a provider-agnostic storage abstraction supporting both Supabase Storage and Google Cloud Storage:
 
-**Import Pattern**:
+**Direct Storage Operations** (server-side):
 ```typescript
-// Always import from the abstraction layer
+// Import from abstraction layer (server actions only)
 import { uploadFile, deleteFile, getSignedUrl, fileExists } from '@/lib/storage/client';
 
-// Example: Upload a file
+// Example: Upload a file in a server action
 const { url, gcsPath } = await uploadFile({
   file: buffer,
   fileName: 'logo.png',
   path: 'branding/workspace123/link456',
   bucket: 'foldly-link-branding',
   contentType: 'image/png',
+});
+```
+
+**Resumable Upload Workflow** (client-side):
+Three-step process using Uppy.js for large file uploads:
+1. **Initiate**: Server action creates upload session (TUS/Resumable URL)
+2. **Upload**: Client uploads directly to storage bucket
+3. **Verify**: Server action confirms upload success
+
+```typescript
+// Use useUppyUpload hook (wraps workflow)
+import { useUppyUpload } from '@/hooks/utility/use-uppy-upload';
+
+// Authenticated upload (dashboard users)
+const logoUpload = useUppyUpload({
+  bucket: 'foldly-link-branding',
+  authMode: 'authenticated',
+  onSuccess: (url) => console.log('Uploaded:', url),
+});
+
+await logoUpload.upload(file, {
+  path: `branding/${workspaceId}/${linkId}`,
+  metadata: { linkId, workspaceId },
+});
+
+// Public upload (external users via shareable links)
+const fileUpload = useUppyUpload({
+  bucket: 'foldly-uploads',
+  authMode: 'public',
+  rateLimitKey: `upload:${email}:${ip}`,
+  linkId: link.id,
+  uploaderEmail: email,
 });
 ```
 
@@ -372,6 +406,12 @@ const { url, gcsPath } = await uploadFile({
 - **Google Cloud Storage**: Provider-specific bucket names via environment variables
 - Public buckets for branding assets (logos accessible via public URLs)
 - Private buckets for file uploads (access via signed URLs only)
+
+**Dual Authentication Modes**:
+- **Authenticated**: Dashboard users (Clerk JWT token, workspace-scoped)
+- **Public**: External users via links (Supabase anon key, RLS policies enforce access)
+- Storage actions: `initiateUploadAction`, `verifyUploadAction` (auth), `initiatePublicUploadAction`, `verifyPublicUploadAction` (public)
+- Rate limiting: 10 uploads per 5 minutes (per user or per rate limit key)
 
 ### Security Patterns
 
@@ -578,7 +618,9 @@ Key environment variables (see `.env.local`):
 - ✅ **Links Module COMPLETE** (7 actions, 18 tests, production-ready)
 - ✅ **Permission management** (4 actions with 23 tests)
 - ✅ **Branding module** (3 actions, 17 tests, GCS integration)
+- ✅ **Upload infrastructure** (4 storage actions, useUppyUpload hook, dual auth modes)
 - ✅ GCS integration (client, upload, delete, signed URLs, branding bucket)
+- ✅ Resumable uploads (Uppy.js + TUS/GCS Resumable protocols)
 - ✅ Comprehensive test coverage (262 tests total, 13 suites)
 - ✅ Base UI components (shadcn/ui + custom CTA buttons)
 - ✅ Next.js 15 + React 19 configured
@@ -641,6 +683,10 @@ Key environment variables (see `.env.local`):
 - `src/lib/storage/client.ts` - Provider-agnostic storage abstraction layer
 - `src/lib/storage/gcs/client.ts` - Google Cloud Storage implementation
 - `src/lib/storage/supabase/client.ts` - Supabase Storage implementation
+- `src/lib/storage/types.ts` - Storage type definitions (UploadSession, UploadResult)
+- `src/lib/actions/storage.actions.ts` - Storage server actions (4 actions: initiate/verify for auth + public)
+- `src/hooks/utility/use-uppy-upload.ts` - Uppy.js resumable upload hook
+- `src/hooks/data/use-storage.ts` - React Query hooks for storage actions
 
 **Links Module**:
 - `src/modules/links/lib/actions/branding.actions.ts` - Branding operations (3 actions: update, upload logo, delete logo)

@@ -6,6 +6,16 @@
 
 import { Storage } from '@google-cloud/storage';
 import { logger } from '@/lib/utils/logger';
+import type {
+  UploadSession,
+  InitiateUploadParams,
+  VerifyUploadParams,
+  UploadVerificationResult,
+} from '../types';
+import {
+  DEFAULT_CHUNK_SIZES,
+  SESSION_EXPIRATION_MS,
+} from '../types';
 
 /**
  * Validates required GCS environment variables
@@ -271,5 +281,155 @@ export async function fileExists(params: {
       gcsPath,
     });
     return false;
+  }
+}
+
+// =============================================================================
+// RESUMABLE UPLOAD METHODS (GCS Resumable Upload API)
+// =============================================================================
+
+/**
+ * Initiate GCS resumable upload session
+ * Returns session URL for client-side chunked upload
+ *
+ * GCS Resumable Upload: https://cloud.google.com/storage/docs/resumable-uploads
+ *
+ * @param params - Upload initiation parameters
+ * @returns Upload session with resumable session URL and configuration
+ *
+ * @example
+ * ```typescript
+ * const session = await initiateResumableUpload({
+ *   fileName: 'logo.png',
+ *   fileSize: 102400,
+ *   contentType: 'image/png',
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456',
+ * });
+ * // Client uploads directly to session.sessionUrl using GCS resumable API
+ * ```
+ */
+export async function initiateResumableUpload(
+  params: InitiateUploadParams
+): Promise<UploadSession> {
+  const { fileName, fileSize, contentType, bucket, path, metadata = {} } = params;
+
+  try {
+    const storage = getGCSClient();
+    const bucketInstance = storage.bucket(bucket);
+
+    const filePath = `${path}/${fileName}`;
+    const fileRef = bucketInstance.file(filePath);
+
+    // Create resumable upload session
+    // This generates a unique session URL for client-side upload
+    const [sessionUrl] = await fileRef.createResumableUpload({
+      metadata: {
+        contentType,
+        metadata: {
+          ...metadata,
+          uploadedAt: new Date().toISOString(),
+        },
+      },
+      origin: '*', // Allow CORS from any origin (adjust for production)
+    });
+
+    // Generate unique upload ID for tracking
+    const uploadId = crypto.randomUUID();
+
+    logger.info('Initiated GCS resumable upload session', {
+      bucket,
+      filePath,
+      fileSize,
+      sessionUrl,
+      chunkSize: DEFAULT_CHUNK_SIZES.GCS,
+    });
+
+    return {
+      uploadId,
+      sessionUrl,
+      chunkSize: DEFAULT_CHUNK_SIZES.GCS,
+      expiresAt: new Date(Date.now() + SESSION_EXPIRATION_MS),
+      finalPath: filePath,
+      bucket,
+    };
+  } catch (error) {
+    logger.error('Failed to initiate GCS resumable upload', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      bucket,
+      path,
+      fileName,
+    });
+    throw new Error('Failed to initiate file upload.');
+  }
+}
+
+/**
+ * Verify upload completion in GCS
+ * Checks that file exists and returns public URL
+ *
+ * Call this after client completes resumable upload to:
+ * 1. Verify file was uploaded successfully
+ * 2. Get public URL for database storage
+ *
+ * @param params - Verification parameters
+ * @returns Verification result with file URL
+ *
+ * @example
+ * ```typescript
+ * const result = await verifyUpload({
+ *   uploadId: 'abc123',
+ *   bucket: 'foldly-link-branding',
+ *   path: 'branding/workspace123/link456/logo.png',
+ * });
+ * if (result.success) {
+ *   // Store result.url in database
+ * }
+ * ```
+ */
+export async function verifyUpload(
+  params: VerifyUploadParams
+): Promise<UploadVerificationResult> {
+  const { bucket, path } = params;
+
+  try {
+    const storage = getGCSClient();
+    const bucketInstance = storage.bucket(bucket);
+    const fileRef = bucketInstance.file(path);
+
+    // Check if file exists
+    const [exists] = await fileRef.exists();
+
+    if (!exists) {
+      logger.warn('Upload verification failed: file not found', {
+        bucket,
+        path,
+      });
+      return {
+        success: false,
+        url: '',
+      };
+    }
+
+    // Generate public URL
+    const url = `https://storage.googleapis.com/${bucket}/${path}`;
+
+    logger.info('Upload verified successfully', {
+      bucket,
+      path,
+      url,
+    });
+
+    return {
+      success: true,
+      url,
+    };
+  } catch (error) {
+    logger.error('Failed to verify GCS upload', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      bucket,
+      path,
+    });
+    throw new Error('Failed to verify file upload.');
   }
 }

@@ -40,8 +40,7 @@ export type { ActionResponse as LinkActionResponse } from '@/lib/utils/action-he
 export {
   // Branding configuration
   updateLinkBrandingAction,
-  // Logo upload/deletion
-  uploadBrandingLogoAction,
+  // Logo deletion (upload now handled by useUppyUpload hook)
   deleteBrandingLogoAction,
 } from './lib/actions/branding.actions';
 
@@ -78,8 +77,8 @@ export {
 
 export {
   // Branding mutation hooks (module-specific)
+  // Note: Logo upload now uses global useUppyUpload hook from @/hooks
   useUpdateLinkBranding,
-  useUploadBrandingLogo,
   useDeleteBrandingLogo,
 } from './hooks';
 
@@ -105,7 +104,7 @@ export type {
 
 export type {
   // Branding action types
+  // Note: UploadBrandingLogoInput removed - now using useUppyUpload hook
   UpdateLinkBrandingInput,
-  UploadBrandingLogoInput,
   DeleteBrandingLogoInput,
 } from './lib/validation/link-branding-schemas';
