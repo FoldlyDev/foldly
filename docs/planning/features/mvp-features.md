@@ -56,7 +56,7 @@ These features are non-negotiable for MVP launch.
 
 **Acceptance Criteria:**
 - [ ] User can create unlimited folders
-- [ ] Folders support nesting up to 5 levels
+- [ ] Folders support nesting up to 20 levels
 - [ ] Deletion shows confirmation with item count
 - [ ] Moving folders preserves permissions
 

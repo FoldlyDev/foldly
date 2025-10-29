@@ -18,7 +18,7 @@ export const VALIDATION_LIMITS = {
   FOLDER: {
     NAME_MIN_LENGTH: 1,
     NAME_MAX_LENGTH: 255,
-    MAX_NESTING_DEPTH: 5, // Maximum folder nesting level
+    MAX_NESTING_DEPTH: 20, // Maximum folder nesting level
   },
 
   FILE: {
