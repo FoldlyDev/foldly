@@ -19,6 +19,16 @@ export const userKeys = {
 } as const;
 
 /**
+ * Workspace-related query keys
+ */
+export const workspaceKeys = {
+  all: ['workspace'] as const,
+  detail: () => [...workspaceKeys.all, 'detail'] as const,
+  stats: () => [...workspaceKeys.all, 'stats'] as const,
+  recentActivity: (limit?: number) => [...workspaceKeys.all, 'recent-activity', { limit }] as const,
+} as const;
+
+/**
  * Onboarding-related query keys
  */
 export const onboardingKeys = {
@@ -36,6 +46,35 @@ export const linkKeys = {
   details: () => [...linkKeys.all, 'detail'] as const,
   detail: (id: string) => [...linkKeys.details(), id] as const,
   slugCheck: (slug: string) => [...linkKeys.all, 'slug-check', slug] as const,
+} as const;
+
+/**
+ * Folder-related query keys
+ */
+export const folderKeys = {
+  all: ['folders'] as const,
+  lists: () => [...folderKeys.all, 'list'] as const,
+  roots: (workspaceId: string) => [...folderKeys.lists(), 'roots', workspaceId] as const,
+  subfolders: (parentId: string) => [...folderKeys.lists(), 'subfolders', parentId] as const,
+  details: () => [...folderKeys.all, 'detail'] as const,
+  detail: (id: string) => [...folderKeys.details(), id] as const,
+  hierarchy: (id: string) => [...folderKeys.all, 'hierarchy', id] as const,
+} as const;
+
+/**
+ * File-related query keys
+ */
+export const fileKeys = {
+  all: ['files'] as const,
+  lists: () => [...fileKeys.all, 'list'] as const,
+  workspace: (workspaceId: string) => [...fileKeys.lists(), 'workspace', workspaceId] as const,
+  folder: (folderId: string) => [...fileKeys.lists(), 'folder', folderId] as const,
+  byEmail: (workspaceId: string, email: string) => [...fileKeys.lists(), 'by-email', workspaceId, email] as const,
+  byDate: (workspaceId: string, startDate: string, endDate?: string) =>
+    [...fileKeys.lists(), 'by-date', workspaceId, { startDate, endDate }] as const,
+  search: (workspaceId: string, query: string) => [...fileKeys.all, 'search', workspaceId, query] as const,
+  details: () => [...fileKeys.all, 'detail'] as const,
+  detail: (id: string) => [...fileKeys.details(), id] as const,
 } as const;
 
 /**

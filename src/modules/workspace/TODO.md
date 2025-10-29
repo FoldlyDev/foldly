@@ -61,18 +61,18 @@ The Workspace Module is the **primary user interface** for file collection manag
 
 ### 1. Database Queries Layer
 
-#### `src/lib/database/queries/folder.queries.ts` (NEW FILE)
+#### `src/lib/database/queries/folder.queries.ts` ✅ COMPLETE
 **Pattern:** Follow `link.queries.ts` structure (pure database operations, no auth)
 
-- [ ] `getFolderById(folderId: string)` - Get single folder with relations
-- [ ] `getRootFolders(workspaceId: string)` - Get workspace root folders (parentFolderId = NULL)
-- [ ] `getSubfolders(parentFolderId: string)` - Get child folders
-- [ ] `getFolderHierarchy(folderId: string)` - Get folder + all ancestors (breadcrumb)
-- [ ] `createFolder(data: NewFolder)` - Create folder (personal or linked)
-- [ ] `updateFolder(folderId: string, data: Partial<Folder>)` - Update folder name/parent
-- [ ] `deleteFolder(folderId: string)` - Delete folder (cascade handled by DB)
-- [ ] `isFolderNameAvailable(workspaceId: string, name: string, parentFolderId?: string)` - Check uniqueness
-- [ ] `getFolderDepth(folderId: string)` - Calculate folder nesting depth (for 20-level limit enforcement)
+- [x] `getFolderById(folderId: string)` - Get single folder with relations
+- [x] `getRootFolders(workspaceId: string)` - Get workspace root folders (parentFolderId = NULL)
+- [x] `getSubfolders(parentFolderId: string)` - Get child folders
+- [x] `getFolderHierarchy(folderId: string)` - Get folder + all ancestors (breadcrumb)
+- [x] `createFolder(data: NewFolder)` - Create folder (personal or linked)
+- [x] `updateFolder(folderId: string, data: Partial<Folder>)` - Update folder name/parent
+- [x] `deleteFolder(folderId: string)` - Delete folder (cascade handled by DB)
+- [x] `isFolderNameAvailable(workspaceId: string, name: string, parentFolderId?: string)` - Check uniqueness
+- [x] `getFolderDepth(folderId: string)` - Calculate folder nesting depth (for 20-level limit enforcement)
 
 **Notes:**
 - Workspace is responsible for querying its own folders (`getRootFolders` takes `workspaceId`)
@@ -80,19 +80,19 @@ The Workspace Module is the **primary user interface** for file collection manag
 - Follow existing query patterns (typed returns, error handling)
 - Maximum nesting depth: **20 levels** (enforced in validation, not database schema)
 
-#### `src/lib/database/queries/file.queries.ts` (NEW FILE)
+#### `src/lib/database/queries/file.queries.ts` ✅ COMPLETE
 **Pattern:** Follow `link.queries.ts` structure
 
-- [ ] `getFileById(fileId: string)` - Get single file with metadata
-- [ ] `getFolderFiles(folderId: string)` - Get files in specific folder
-- [ ] `getWorkspaceFiles(workspaceId: string)` - Get all workspace files (cross-folder)
-- [ ] `getFilesByEmail(workspaceId: string, uploaderEmail: string)` - Email-filtered files
-- [ ] `getFilesByDateRange(workspaceId: string, startDate: Date, endDate?: Date)` - Chronological files
-- [ ] `searchFiles(workspaceId: string, query: string)` - Search by filename/email
-- [ ] `createFile(data: NewFile)` - Create file record after upload
-- [ ] `updateFileMetadata(fileId: string, data: Partial<File>)` - Update file metadata
-- [ ] `deleteFile(fileId: string)` - Delete file record
-- [ ] `bulkDeleteFiles(fileIds: string[])` - Batch delete
+- [x] `getFileById(fileId: string)` - Get single file with metadata
+- [x] `getFolderFiles(folderId: string)` - Get files in specific folder
+- [x] `getWorkspaceFiles(workspaceId: string)` - Get all workspace files (cross-folder)
+- [x] `getFilesByEmail(workspaceId: string, uploaderEmail: string)` - Email-filtered files
+- [x] `getFilesByDateRange(workspaceId: string, startDate: Date, endDate?: Date)` - Chronological files
+- [x] `searchFiles(workspaceId: string, query: string)` - Search by filename/email
+- [x] `createFile(data: NewFile)` - Create file record after upload
+- [x] `updateFileMetadata(fileId: string, data: Partial<File>)` - Update file metadata
+- [x] `deleteFile(fileId: string)` - Delete file record
+- [x] `bulkDeleteFiles(fileIds: string[])` - Batch delete
 
 **Notes:**
 - File queries are separate from folder queries (separation of concerns)
@@ -103,22 +103,24 @@ The Workspace Module is the **primary user interface** for file collection manag
 
 ### 2. Global Validation Schemas
 
-#### `src/lib/validation/folder-schemas.ts` (NEW FILE)
+#### `src/lib/validation/folder-schemas.ts` ✅ COMPLETE
 **Pattern:** Follow `link-schemas.ts` structure, use `base-schemas.ts` builders
 
-- [ ] `createFolderSchema` - Validation for folder creation (name, parentFolderId, linkId)
-- [ ] `updateFolderSchema` - Validation for folder updates (name, parentFolderId)
-- [ ] Reuse `nameSchema` from base-schemas.ts for folder names
-- [ ] Folder name validation rules (1-255 chars, no special chars)
-- [ ] Use `VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH` (20) from `constants/validation.ts` for depth checks
+- [x] `createFolderSchema` - Validation for folder creation (name, parentFolderId, linkId)
+- [x] `updateFolderSchema` - Validation for folder updates (name, parentFolderId)
+- [x] Reuse `nameSchema` from base-schemas.ts for folder names
+- [x] Folder name validation rules (1-255 chars, no special chars)
+- [x] Use `VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH` (20) from `constants/validation.ts` for depth checks
+- [x] Additional schemas: `moveFolderSchema`, `deleteFolderSchema`, `getFolderHierarchySchema`
 
-#### `src/lib/validation/file-schemas.ts` (NEW FILE)
+#### `src/lib/validation/file-schemas.ts` ✅ COMPLETE
 **Pattern:** Follow `link-schemas.ts` structure
 
-- [ ] `createFileSchema` - Validation for file metadata (filename, size, contentType, folderId)
-- [ ] `updateFileMetadataSchema` - Validation for file metadata updates
-- [ ] File size limits validation (per file, per workspace)
-- [ ] File type validation (MIME types)
+- [x] `createFileSchema` - Validation for file metadata (filename, size, contentType, folderId)
+- [x] `updateFileMetadataSchema` - Validation for file metadata updates
+- [x] File size limits validation (per file, per workspace)
+- [x] File type validation (MIME types)
+- [x] Additional schemas: `deleteFileSchema`, `bulkDeleteFilesSchema`, `searchFilesSchema`, `getFilesByEmailSchema`
 
 **Notes:**
 - Global schemas go in `src/lib/validation/` (consumed by global actions)
@@ -212,13 +214,12 @@ The Workspace Module is the **primary user interface** for file collection manag
 - Rename `use-user-workspace.ts` → `use-workspace.ts` for consistency
 - Workspace hooks fetch workspace-level data (stats, activity)
 
-#### `src/lib/config/query-keys.ts` (EXTEND EXISTING)
+#### `src/lib/config/query-keys.ts` ✅ COMPLETE
 **Add centralized query keys:**
 
-- [ ] `folderKeys` - Folder query key factory
-- [ ] `fileKeys` - File query key factory
-- [ ] `workspaceKeys.stats()` - Workspace stats key
-- [ ] `workspaceKeys.recentActivity()` - Recent activity key
+- [x] `folderKeys` - Folder query key factory (all, lists, roots, subfolders, details, detail, hierarchy)
+- [x] `fileKeys` - File query key factory (all, lists, workspace, folder, byEmail, byDate, search, details, detail)
+- [x] `workspaceKeys` - Workspace query key factory (all, detail, stats, recentActivity)
 
 **Pattern:**
 ```typescript

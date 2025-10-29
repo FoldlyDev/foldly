@@ -6,4 +6,6 @@
 export * from './user.queries';
 export * from './workspace.queries';
 export * from './link.queries';
+export * from './folder.queries';
+export * from './file.queries';
 export * from './permission.queries';
