@@ -51,7 +51,7 @@ export const links = pgTable("links", {
       requiresName: boolean;
       expiresAt: string | null; // ISO 8601 timestamp for link expiration
       passwordProtected: boolean;
-      password: string | null; // Hashed password for link access
+      password: string | null; // Encrypted password (AES-256-GCM) for link access
       [key: string]: any; // Allow future settings
     }>(),
 
