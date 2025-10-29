@@ -18,15 +18,20 @@ import {
   AccordionTrigger,
   AccordionContent,
 } from "@/components/ui/animateui";
+import { MultiStepLoader } from "@/components/ui/aceternityui";
 import { Button } from "@/components/ui/shadcn/button";
 import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
-import { sanitizeSlug } from "@/lib/utils/security";
 import {
   editLinkFormSchema,
   type EditLinkFormData,
 } from "../../lib/validation";
-import { useUpdateLink } from "@/hooks";
-import { useUpdateLinkBranding } from "../../hooks";
+import { useUpdateLink, useUserWorkspace } from "@/hooks";
+import {
+  useLinkFormState,
+  useSlugAutoGeneration,
+  useLinkLogoUpload,
+  useUpdateLinkBranding,
+} from "../../hooks";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -173,13 +178,25 @@ export function LinkManagementForm({
   onSuccess,
   onOpenAccessControl,
 }: LinkManagementFormProps) {
-  // Tab state
-  const [activeTab, setActiveTab] = React.useState("general");
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  // Form state management (tab navigation, loading states)
+  const {
+    activeTab,
+    setActiveTab,
+    isSubmitting,
+    setIsSubmitting,
+    loadingMessage,
+    setLoadingMessage,
+  } = useLinkFormState({ initialTab: "general" });
 
   // React Query hooks for link and branding updates
   const updateLink = useUpdateLink();
   const updateBranding = useUpdateLinkBranding();
+  const { data: workspace } = useUserWorkspace();
+
+  // Logo upload orchestration
+  const { logoUpload, uploadLogoAndUpdateBranding } = useLinkLogoUpload({
+    onSuccess: () => setLoadingMessage(""),
+  });
 
   // React Hook Form setup with Zod validation
   const methods = useForm<EditLinkFormData>({
@@ -205,16 +222,8 @@ export function LinkManagementForm({
     mode: "onBlur",
   });
 
-  // Watch name field for slug generation
-  const watchName = methods.watch("name");
-
-  // Auto-generate slug from name when user edits name
-  React.useEffect(() => {
-    if (methods.formState.dirtyFields.name) {
-      const generatedSlug = sanitizeSlug(watchName);
-      methods.setValue("slug", generatedSlug, { shouldDirty: true });
-    }
-  }, [watchName, methods]);
+  // Auto-generate slug from name when user edits name (only if dirty)
+  useSlugAutoGeneration(methods, { onlyIfDirty: true });
 
   // Form submission handler
   const handleFormSubmit = async (data: EditLinkFormData) => {
@@ -247,14 +256,39 @@ export function LinkManagementForm({
 
       console.log("✅ Link updated successfully:", updatedLink);
 
-      // Handle branding updates if branding fields changed
-      const brandingFieldsChanged =
+      // Handle logo upload if user uploaded a new logo
+      if (methods.formState.dirtyFields.logo && data.logo.length > 0 && workspace) {
+        try {
+          const logoFile = data.logo[0].file as File;
+
+          setLoadingMessage("Uploading logo...");
+
+          // Upload logo and update branding (orchestrated by primitive)
+          // deleteOldLogo: true prevents storage leaks by removing old file
+          await uploadLogoAndUpdateBranding({
+            logoFile,
+            linkId: link.id,
+            workspaceId: workspace.id,
+            altText: data.name,
+            deleteOldLogo: true, // Delete existing logo before uploading new one
+          });
+
+          console.log("✅ Logo uploaded and branding updated");
+        } catch (logoError) {
+          console.error("❌ Logo upload failed:", logoError);
+          // Don't fail the entire form if logo upload fails
+          // User can retry logo upload later
+        }
+      }
+
+      // Handle branding color updates if branding fields changed
+      const brandingColorFieldsChanged =
         methods.formState.dirtyFields.brandingEnabled ||
         methods.formState.dirtyFields.accentColor ||
         methods.formState.dirtyFields.backgroundColor;
 
-      if (brandingFieldsChanged) {
-        console.log("🎨 Branding fields changed, updating branding...");
+      if (brandingColorFieldsChanged) {
+        console.log("🎨 Branding colors changed, updating branding...");
 
         const brandingInput = {
           linkId: link.id,
@@ -266,18 +300,17 @@ export function LinkManagementForm({
                   backgroundColor: data.backgroundColor,
                 }
               : null,
-            // Skip logo for now (GCS not set up yet)
-            logo: null,
           },
         };
 
         await updateBranding.mutateAsync(brandingInput);
-        console.log("✅ Branding updated successfully");
+        console.log("✅ Branding colors updated successfully");
       }
 
       // TODO: Handle permission updates separately if allowedEmails changed
 
       setIsSubmitting(false);
+      setLoadingMessage("");
 
       // Call success callback
       onSuccess?.(updatedLink);
@@ -288,13 +321,23 @@ export function LinkManagementForm({
   };
 
   return (
-    <FormProvider {...methods}>
-      <form
-        onSubmit={methods.handleSubmit(handleFormSubmit)}
-        className="space-y-6"
-        noValidate
-      >
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+    <>
+      {/* Multi-step loader overlay */}
+      <MultiStepLoader
+        loading={isSubmitting || logoUpload.isUploading}
+        loadingStates={[]}
+        variant="simple"
+        message={loadingMessage || (logoUpload.isUploading ? `Uploading logo... ${logoUpload.progress}%` : "")}
+      />
+
+      {/* Form */}
+      <FormProvider {...methods}>
+        <form
+          onSubmit={methods.handleSubmit(handleFormSubmit)}
+          className="space-y-6"
+          noValidate
+        >
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="general" type="button" disabled={isSubmitting}>
               General
@@ -318,10 +361,11 @@ export function LinkManagementForm({
 
         <FormActions
           onCancel={onCancel}
-          isLoading={isSubmitting}
+          isLoading={isSubmitting || logoUpload.isUploading}
           isDirty={methods.formState.isDirty}
         />
       </form>
     </FormProvider>
+    </>
   );
 }

@@ -18,14 +18,16 @@ import {
 import { MultiStepLoader } from "@/components/ui/aceternityui";
 import { Button } from "@/components/ui/shadcn/button";
 import { DynamicContentLoader } from "@/components/layout/DynamicContentLoader";
-import { sanitizeSlug } from "@/lib/utils/security";
 import {
   createLinkFormSchema,
   type CreateLinkFormData,
 } from "../../lib/validation";
-import { useCreateLink, useUppyUpload, useUserWorkspace } from "@/hooks";
-import { BRANDING_BUCKET_NAME, generateBrandingPath } from "../../lib/validation/link-branding-schemas";
-import { useUpdateLinkBranding } from "../../hooks";
+import { useCreateLink, useUserWorkspace } from "@/hooks";
+import {
+  useLinkFormState,
+  useSlugAutoGeneration,
+  useLinkLogoUpload,
+} from "../../hooks";
 import type { Link } from "@/lib/database/schemas";
 import {
   BasicSettingsSection,
@@ -124,24 +126,23 @@ export function CreateLinkForm({
   onCancel,
   onSuccess,
 }: CreateLinkFormProps) {
-  // Tab state (controlled)
-  const [activeTab, setActiveTab] = React.useState("basic");
-
-  // Loading state for MultiStepLoader
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [loadingMessage, setLoadingMessage] = React.useState("");
+  // Form state management (tab navigation, loading states)
+  const {
+    activeTab,
+    setActiveTab,
+    isSubmitting,
+    setIsSubmitting,
+    loadingMessage,
+    setLoadingMessage,
+  } = useLinkFormState();
 
   // React Query hooks for link creation
   const createLink = useCreateLink();
   const { data: workspace } = useUserWorkspace();
-  const updateBranding = useUpdateLinkBranding();
 
-  // Uppy hook for logo upload
-  const logoUpload = useUppyUpload({
-    bucket: BRANDING_BUCKET_NAME || 'foldly-link-branding',
-    onSuccess: () => {
-      setLoadingMessage("");
-    },
+  // Logo upload orchestration
+  const { logoUpload, uploadLogoAndUpdateBranding } = useLinkLogoUpload({
+    onSuccess: () => setLoadingMessage(""),
   });
 
   // React Hook Form setup with Zod validation
@@ -167,14 +168,8 @@ export function CreateLinkForm({
     mode: "onBlur",
   });
 
-  // Watch name field for slug generation
-  const watchName = methods.watch("name");
-
-  // Auto-generate slug from name using global utility
-  React.useEffect(() => {
-    const generatedSlug = sanitizeSlug(watchName);
-    methods.setValue("slug", generatedSlug);
-  }, [watchName, methods]);
+  // Auto-generate slug from name field
+  useSlugAutoGeneration(methods);
 
   // Form submission handler
   const handleFormSubmit = async (data: CreateLinkFormData) => {
@@ -215,26 +210,12 @@ export function CreateLinkForm({
 
           setLoadingMessage("Uploading logo...");
 
-          // Upload using Uppy (handles all orchestration)
-          const logoUrl = await logoUpload.upload(logoFile, {
-            path: generateBrandingPath(workspace.id, link.id),
-            metadata: {
-              workspaceId: workspace.id,
-              linkId: link.id,
-              originalFileName: logoFile.name,
-            },
-          });
-
-          // Update link branding with logo URL
-          setLoadingMessage("Saving logo...");
-          await updateBranding.mutateAsync({
+          // Upload logo and update branding (orchestrated by primitive)
+          await uploadLogoAndUpdateBranding({
+            logoFile,
             linkId: link.id,
-            branding: {
-              logo: {
-                url: logoUrl,
-                altText: data.name, // Use link name as alt text
-              },
-            },
+            workspaceId: workspace.id,
+            altText: data.name, // Use link name as alt text
           });
         } catch (logoError) {
           // Don't fail the entire form if logo upload fails
