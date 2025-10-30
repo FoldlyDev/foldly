@@ -11,8 +11,19 @@ import type { Folder, NewFolder } from '@/lib/database/schemas';
 /**
  * Get folder by ID
  * Returns folder with all relations (workspace, link, parent, subfolders)
+ *
+ * @param folderId - The UUID of the folder to retrieve
+ * @returns Folder with relations or undefined if not found
+ *
+ * @example
+ * ```typescript
+ * const folder = await getFolderById('folder_123');
+ * if (folder) {
+ *   console.log(folder.name, folder.workspace, folder.subfolders);
+ * }
+ * ```
  */
-export async function getFolderById(folderId: string) {
+export async function getFolderById(folderId: string): Promise<Folder | undefined> {
   return await db.query.folders.findFirst({
     where: eq(folders.id, folderId),
     with: {
@@ -27,8 +38,17 @@ export async function getFolderById(folderId: string) {
 /**
  * Get all root folders for a workspace
  * Root folders have parentFolderId = NULL
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @returns Array of root folders ordered by creation date (newest first)
+ *
+ * @example
+ * ```typescript
+ * const rootFolders = await getRootFolders('workspace_123');
+ * // Returns: [{ id: 'folder_1', name: 'Documents', parentFolderId: null, ... }, ...]
+ * ```
  */
-export async function getRootFolders(workspaceId: string) {
+export async function getRootFolders(workspaceId: string): Promise<Folder[]> {
   return await db.query.folders.findMany({
     where: and(
       eq(folders.workspaceId, workspaceId),
@@ -40,8 +60,17 @@ export async function getRootFolders(workspaceId: string) {
 
 /**
  * Get all child folders of a parent folder
+ *
+ * @param parentFolderId - The UUID of the parent folder
+ * @returns Array of child folders ordered alphabetically by name
+ *
+ * @example
+ * ```typescript
+ * const subfolders = await getSubfolders('folder_123');
+ * // Returns: [{ id: 'folder_2', name: 'Invoices', parentFolderId: 'folder_123', ... }, ...]
+ * ```
  */
-export async function getSubfolders(parentFolderId: string) {
+export async function getSubfolders(parentFolderId: string): Promise<Folder[]> {
   return await db.query.folders.findMany({
     where: eq(folders.parentFolderId, parentFolderId),
     orderBy: (folders, { asc }) => [asc(folders.name)],
@@ -73,6 +102,26 @@ export async function getFolderHierarchy(folderId: string): Promise<Folder[]> {
 
 /**
  * Create a new folder
+ *
+ * @param data - Folder creation data
+ * @param data.workspaceId - The UUID of the workspace
+ * @param data.name - Folder name (1-255 characters)
+ * @param data.parentFolderId - Optional parent folder UUID (null for root folder)
+ * @param data.linkId - Optional link UUID (if folder created via shareable link)
+ * @param data.uploaderEmail - Optional uploader email (if folder created by external user)
+ * @param data.uploaderName - Optional uploader name (if folder created by external user)
+ * @returns Created folder object with generated ID and timestamps
+ * @throws Error if database insert fails
+ *
+ * @example
+ * ```typescript
+ * const folder = await createFolder({
+ *   workspaceId: 'workspace_123',
+ *   name: 'Tax Documents 2024',
+ *   parentFolderId: 'folder_456',
+ * });
+ * // Returns: { id: 'folder_789', name: 'Tax Documents 2024', createdAt: ..., ... }
+ * ```
  */
 export async function createFolder(data: {
   workspaceId: string;
@@ -105,6 +154,25 @@ export async function createFolder(data: {
 /**
  * Update folder details
  * Can update name, parentFolderId (move), or both
+ *
+ * @param folderId - The UUID of the folder to update
+ * @param data - Partial folder data to update
+ * @param data.name - Optional new folder name
+ * @param data.parentFolderId - Optional new parent folder UUID (use null to move to root)
+ * @returns Updated folder object
+ * @throws Error if folder not found or update fails
+ *
+ * @example
+ * ```typescript
+ * // Rename folder
+ * const renamed = await updateFolder('folder_123', { name: 'New Name' });
+ *
+ * // Move folder to new parent
+ * const moved = await updateFolder('folder_123', { parentFolderId: 'folder_456' });
+ *
+ * // Move to root
+ * const toRoot = await updateFolder('folder_123', { parentFolderId: null });
+ * ```
  */
 export async function updateFolder(
   folderId: string,
@@ -128,7 +196,17 @@ export async function updateFolder(
 
 /**
  * Delete a folder
- * Cascade delete of subfolders and files is handled by database constraints
+ * Cascade delete of subfolders handled by database constraints
+ * Files in deleted folders have their parentFolderId set to NULL
+ *
+ * @param folderId - The UUID of the folder to delete
+ * @returns Promise that resolves when deletion is complete
+ *
+ * @example
+ * ```typescript
+ * await deleteFolder('folder_123');
+ * // All subfolders cascade deleted, files become orphaned (parentFolderId = null)
+ * ```
  */
 export async function deleteFolder(folderId: string): Promise<void> {
   await db.delete(folders).where(eq(folders.id, folderId));
@@ -137,6 +215,22 @@ export async function deleteFolder(folderId: string): Promise<void> {
 /**
  * Check if folder name is available within the same parent context
  * Used for validation during folder creation/update
+ * Folders must have unique names within the same parent (or at root level)
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @param name - The folder name to check
+ * @param parentFolderId - The parent folder UUID (null/undefined for root level)
+ * @param excludeFolderId - Optional folder UUID to exclude from check (for renames)
+ * @returns True if name is available, false if already exists
+ *
+ * @example
+ * ```typescript
+ * // Check if "Documents" is available at root level
+ * const available = await isFolderNameAvailable('workspace_123', 'Documents', null);
+ *
+ * // Check if "Invoices" is available in specific parent (excluding current folder during rename)
+ * const canRename = await isFolderNameAvailable('workspace_123', 'Invoices', 'folder_456', 'folder_123');
+ * ```
  */
 export async function isFolderNameAvailable(
   workspaceId: string,
@@ -173,6 +267,20 @@ export async function isFolderNameAvailable(
  * Calculate folder nesting depth
  * Returns depth number (0 = root folder, 1 = first level, etc.)
  * Used to enforce MAX_NESTING_DEPTH limit (20 levels)
+ *
+ * @param folderId - The UUID of the folder to calculate depth for
+ * @returns Depth number (0 = root, 1 = first level, 2 = second level, etc.)
+ *
+ * @example
+ * ```typescript
+ * const depth = await getFolderDepth('folder_123');
+ * // Returns: 3 (means folder is at 3rd nesting level)
+ *
+ * // Used for validation:
+ * if (depth >= 20) {
+ *   throw new Error('Maximum nesting depth reached');
+ * }
+ * ```
  */
 export async function getFolderDepth(folderId: string): Promise<number> {
   let depth = 0;

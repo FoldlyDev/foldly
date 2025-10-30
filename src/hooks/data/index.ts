@@ -8,5 +8,7 @@ export * from './use-user';
 export * from './use-workspace';
 export * from './use-email';
 export * from './use-links';
+export * from './use-folders';
+export * from './use-files';
 export * from './use-permissions';
 export * from './use-storage';

@@ -6,10 +6,14 @@
 
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateWorkspaceNameAction } from '@/lib/actions';
-import { transformActionError, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
-import { legacyKeys } from '@/lib/config/query-keys';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  updateWorkspaceNameAction,
+  getWorkspaceStatsAction,
+  getRecentActivityAction,
+} from '@/lib/actions';
+import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import { legacyKeys, workspaceKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // NOTE: Workspace Creation
@@ -21,6 +25,94 @@ import { legacyKeys } from '@/lib/config/query-keys';
 //
 // Individual workspace creation will be added in future when multiple workspaces
 // per user are supported (post-MVP feature).
+
+// =============================================================================
+// QUERY HOOKS (Data Fetching)
+// =============================================================================
+
+/**
+ * Get workspace statistics
+ *
+ * Used in:
+ * - Dashboard overview
+ * - Workspace header stats
+ * - Analytics summary cards
+ *
+ * @returns Query with workspace statistics
+ *
+ * @example
+ * ```tsx
+ * function WorkspaceStats() {
+ *   const { data: stats, isLoading } = useWorkspaceStats();
+ *
+ *   if (isLoading) return <Skeleton />;
+ *
+ *   return (
+ *     <div>
+ *       <StatCard label="Files" value={stats?.totalFiles} />
+ *       <StatCard label="Storage" value={formatBytes(stats?.storageUsed)} />
+ *       <StatCard label="Links" value={stats?.activeLinks} />
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useWorkspaceStats() {
+  return useQuery({
+    queryKey: workspaceKeys.stats(),
+    queryFn: async () => {
+      const result = await getWorkspaceStatsAction();
+      return transformQueryResult(result, 'Failed to fetch workspace statistics', {
+        totalFiles: 0,
+        storageUsed: 0,
+        activeLinks: 0,
+      });
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - stats don't change frequently
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
+ * Get recent file activity
+ *
+ * Used in:
+ * - Dashboard recent activity feed
+ * - Recent uploads widget
+ * - Activity timeline
+ *
+ * @param limit - Maximum number of files to return (default: 10)
+ * @returns Query with array of recent files
+ *
+ * @example
+ * ```tsx
+ * function RecentActivity() {
+ *   const { data: recentFiles, isLoading } = useRecentActivity(20);
+ *
+ *   if (isLoading) return <Skeleton />;
+ *
+ *   return (
+ *     <div>
+ *       <h2>Recent Uploads</h2>
+ *       {recentFiles?.map(file => (
+ *         <ActivityItem key={file.id} file={file} />
+ *       ))}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useRecentActivity(limit?: number) {
+  return useQuery({
+    queryKey: workspaceKeys.recentActivity(limit),
+    queryFn: async () => {
+      const result = await getRecentActivityAction({ limit });
+      return transformQueryResult(result, 'Failed to fetch recent activity', []);
+    },
+    staleTime: 30 * 1000, // 30 seconds - activity changes frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
 
 // =============================================================================
 // MUTATION HOOKS (Data Modifications)

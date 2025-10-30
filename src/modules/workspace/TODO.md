@@ -130,15 +130,15 @@ The Workspace Module is the **primary user interface** for file collection manag
 
 ### 3. Server Actions Layer
 
-#### `src/lib/actions/folder.actions.ts` (NEW FILE)
+#### `src/lib/actions/folder.actions.ts` ✅ COMPLETE
 **Pattern:** Follow `link.actions.ts` structure (withAuth, withAuthInput, formatActionError)
 
-- [ ] `createFolderAction(input: CreateFolderInput)` - Auth + ownership verification + create
-- [ ] `updateFolderAction(input: UpdateFolderInput)` - Auth + ownership verification + update
-- [ ] `deleteFolderAction(folderId: string)` - Auth + ownership verification + cascade delete
-- [ ] `moveFolderAction(folderId: string, newParentId: string | null)` - Auth + ownership verification + move
-- [ ] `getRootFoldersAction()` - Auth + get user workspace folders
-- [ ] `getFolderHierarchyAction(folderId: string)` - Auth + ownership verification + get breadcrumb
+- [x] `createFolderAction(input: CreateFolderInput)` - Auth + ownership verification + create
+- [x] `updateFolderAction(input: UpdateFolderInput)` - Auth + ownership verification + update
+- [x] `deleteFolderAction(folderId: string)` - Auth + ownership verification + cascade delete
+- [x] `moveFolderAction(folderId: string, newParentId: string | null)` - Auth + ownership verification + move
+- [x] `getRootFoldersAction()` - Auth + get user workspace folders
+- [x] `getFolderHierarchyAction(folderId: string)` - Auth + ownership verification + get breadcrumb
 
 **Notes:**
 - Use `withAuth` HOF from `action-helpers.ts`
@@ -147,43 +147,48 @@ The Workspace Module is the **primary user interface** for file collection manag
 - Rate limiting where appropriate (create/update/delete)
 - **Depth validation**: `createFolderAction` and `moveFolderAction` must check parent depth ≤ 20 before allowing operation
 
-#### `src/lib/actions/file.actions.ts` (NEW FILE)
+#### `src/lib/actions/file.actions.ts` ✅ COMPLETE
 **Pattern:** Follow `link.actions.ts` structure
 
-- [ ] `createFileRecordAction(input: CreateFileInput)` - Auth + create file record after storage upload
-- [ ] `deleteFileAction(fileId: string)` - Auth + ownership verification + delete from storage + delete record
-- [ ] `bulkDeleteFilesAction(fileIds: string[])` - Auth + ownership verification + batch delete
-- [ ] `getWorkspaceFilesAction(view: 'all' | 'byEmail' | 'byDate', filters?: FileFilters)` - Auth + get files with filtering
-- [ ] `searchFilesAction(query: string)` - Auth + cross-folder search
+- [x] `createFileRecordAction(input: CreateFileInput)` - Auth + create file record after storage upload
+- [x] `updateFileMetadataAction(input: UpdateFileMetadataInput)` - Auth + ownership verification + update metadata
+- [x] `deleteFileAction(fileId: string)` - Auth + ownership verification + delete from storage + delete record
+- [x] `bulkDeleteFilesAction(fileIds: string[])` - Auth + ownership verification + batch delete
+- [x] `getWorkspaceFilesAction()` - Auth + get all workspace files
+- [x] `getFilesByEmailAction(uploaderEmail: string)` - Auth + get files by uploader email
+- [x] `searchFilesAction(query: string)` - Auth + cross-folder search
 
 **Notes:**
 - File delete must trigger storage deletion (use storage client)
 - Ownership verification on all mutations
 - Follow existing action patterns (ActionResult return type)
+- Added `UPLOADS_BUCKET_NAME` constant to `file-schemas.ts` for bucket configuration
 
-#### `src/lib/actions/workspace.actions.ts` (EXTEND EXISTING)
+#### `src/lib/actions/workspace.actions.ts` ✅ COMPLETE (EXTENDED)
 **Current:** getUserWorkspaceAction, createUserWorkspaceAction
 
-- [ ] `getWorkspaceStatsAction()` - Auth + aggregate stats (total files, storage used, active links)
-- [ ] `getRecentActivityAction(limit?: number)` - Auth + get recent file uploads
+- [x] `getWorkspaceStatsAction()` - Auth + aggregate stats (total files, storage used, active links)
+- [x] `getRecentActivityAction(limit?: number)` - Auth + get recent file uploads
 
 **Notes:**
 - Workspace is responsible for fetching workspace-level aggregations
 - Use existing workspace queries + extend with new stats queries
+- Added `getWorkspaceStats()` and `getRecentActivity()` queries to `workspace.queries.ts`
+- New actions use modern pattern (withAuth HOF, rate limiting, proper error handling)
 
 ---
 
 ### 4. React Query Hooks Layer
 
-#### `src/hooks/data/use-folders.ts` (NEW FILE)
+#### `src/hooks/data/use-folders.ts` ✅ COMPLETE
 **Pattern:** Follow `use-links.ts` structure (transformQueryResult, transformActionError, createMutationErrorHandler)
 
-- [ ] `useRootFolders()` - Query hook for workspace root folders
-- [ ] `useFolderHierarchy(folderId: string)` - Query hook for folder breadcrumb
-- [ ] `useCreateFolder()` - Mutation hook for folder creation
-- [ ] `useUpdateFolder()` - Mutation hook for folder updates
-- [ ] `useDeleteFolder()` - Mutation hook for folder deletion
-- [ ] `useMoveFolder()` - Mutation hook for folder move
+- [x] `useRootFolders()` - Query hook for workspace root folders
+- [x] `useFolderHierarchy(folderId: string)` - Query hook for folder breadcrumb
+- [x] `useCreateFolder()` - Mutation hook for folder creation
+- [x] `useUpdateFolder()` - Mutation hook for folder updates
+- [x] `useDeleteFolder()` - Mutation hook for folder deletion
+- [x] `useMoveFolder()` - Mutation hook for folder move
 
 **Notes:**
 - Import query keys from `src/lib/config/query-keys.ts` (centralized keys)
@@ -191,28 +196,32 @@ The Workspace Module is the **primary user interface** for file collection manag
 - Follow existing invalidation patterns (invalidate parent queries on mutations)
 - Toast notifications on success/error using `createMutationErrorHandler`
 
-#### `src/hooks/data/use-files.ts` (NEW FILE)
+#### `src/hooks/data/use-files.ts` ✅ COMPLETE
 **Pattern:** Follow `use-links.ts` structure
 
-- [ ] `useWorkspaceFiles(view: 'all' | 'byEmail' | 'byDate', filters?: FileFilters)` - Query hook for files with view switching
-- [ ] `useSearchFiles(query: string)` - Query hook for file search
-- [ ] `useDeleteFile()` - Mutation hook for file deletion
-- [ ] `useBulkDeleteFiles()` - Mutation hook for batch deletion
+- [x] `useWorkspaceFiles()` - Query hook for all workspace files
+- [x] `useFilesByEmail(uploaderEmail: string)` - Query hook for email-filtered files 🎯 Core feature
+- [x] `useSearchFiles(query: string)` - Query hook for cross-folder search
+- [x] `useCreateFileRecord()` - Mutation hook for file record creation
+- [x] `useUpdateFileMetadata()` - Mutation hook for file metadata updates
+- [x] `useDeleteFile()` - Mutation hook for file deletion
+- [x] `useBulkDeleteFiles()` - Mutation hook for batch deletion
 
 **Notes:**
 - Use centralized query keys from `query-keys.ts`
 - Follow existing React Query patterns (caching, invalidation)
 - File upload handled by storage module (`use-uppy-upload.ts`)
 
-#### `src/hooks/data/use-workspace.ts` (EXTEND EXISTING - rename from use-user-workspace.ts)
-**Current:** useUserWorkspace, useCreateWorkspace
+#### `src/hooks/data/use-workspace.ts` ✅ COMPLETE (EXTENDED)
+**Current:** useUpdateWorkspaceName
 
-- [ ] `useWorkspaceStats()` - Query hook for workspace stats
-- [ ] `useRecentActivity(limit?: number)` - Query hook for recent activity feed
+- [x] `useWorkspaceStats()` - Query hook for workspace stats
+- [x] `useRecentActivity(limit?: number)` - Query hook for recent activity feed
 
 **Notes:**
-- Rename `use-user-workspace.ts` → `use-workspace.ts` for consistency
+- File already named `use-workspace.ts` (no rename needed)
 - Workspace hooks fetch workspace-level data (stats, activity)
+- Added 2 query hooks to existing mutation hook
 
 #### `src/lib/config/query-keys.ts` ✅ COMPLETE
 **Add centralized query keys:**

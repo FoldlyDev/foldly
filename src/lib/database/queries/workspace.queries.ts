@@ -4,9 +4,9 @@
 // 🎯 Pure database queries for workspace operations (called by server actions)
 
 import { db } from '@/lib/database/connection';
-import { workspaces, users } from '@/lib/database/schemas';
-import { eq } from 'drizzle-orm';
-import type { Workspace, NewWorkspace } from '@/lib/database/schemas';
+import { workspaces, users, files, links } from '@/lib/database/schemas';
+import { eq, and, desc, sql, count, sum } from 'drizzle-orm';
+import type { Workspace, NewWorkspace, File } from '@/lib/database/schemas';
 
 /**
  * Get workspace by userId (1:1 relationship in MVP)
@@ -61,4 +61,63 @@ export async function updateWorkspaceName(
     .returning();
 
   return workspace;
+}
+
+/**
+ * Get workspace statistics (file count, storage used, active link count)
+ * Used by dashboard for overview statistics
+ *
+ * @param workspaceId - Workspace ID
+ * @returns Workspace statistics
+ */
+export async function getWorkspaceStats(workspaceId: string): Promise<{
+  totalFiles: number;
+  storageUsed: number;
+  activeLinks: number;
+}> {
+  // Get file count and storage size in one query
+  const [fileStats] = await db
+    .select({
+      totalFiles: count(files.id),
+      storageUsed: sum(files.fileSize),
+    })
+    .from(files)
+    .where(eq(files.workspaceId, workspaceId));
+
+  // Get active link count
+  const [linkStats] = await db
+    .select({
+      activeLinks: count(links.id),
+    })
+    .from(links)
+    .where(and(eq(links.workspaceId, workspaceId), eq(links.isActive, true)));
+
+  return {
+    totalFiles: Number(fileStats?.totalFiles ?? 0),
+    storageUsed: Number(fileStats?.storageUsed ?? 0),
+    activeLinks: Number(linkStats?.activeLinks ?? 0),
+  };
+}
+
+/**
+ * Get recent file activity for workspace
+ * Returns most recently uploaded files with uploader info
+ *
+ * @param workspaceId - Workspace ID
+ * @param limit - Maximum number of files to return (default: 10)
+ * @returns Array of recent files
+ */
+export async function getRecentActivity(
+  workspaceId: string,
+  limit: number = 10
+): Promise<File[]> {
+  return await db.query.files.findMany({
+    where: eq(files.workspaceId, workspaceId),
+    orderBy: [desc(files.uploadedAt)],
+    limit,
+    with: {
+      parentFolder: true,
+      link: true,
+    },
+  });
 }

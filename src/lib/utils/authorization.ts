@@ -153,24 +153,68 @@ export async function verifyLinkOwnership(
 
 /**
  * Convenience wrapper: Verify folder ownership
- * TODO: Implement when folder queries are created
+ *
+ * @param folderId - Folder ID to verify
+ * @param workspaceId - Workspace ID that should own the folder
+ * @param action - Action name for security logging
+ * @returns Folder object if authorized
+ * @throws ActionResponse if folder not found or unauthorized
+ *
+ * @example
+ * ```typescript
+ * const folder = await verifyFolderOwnership(folderId, workspace.id, 'updateFolderAction');
+ * // folder.workspaceId === workspace.id is guaranteed
+ * ```
  */
 export async function verifyFolderOwnership(
   folderId: string,
   workspaceId: string,
   action: string
-): Promise<never> {
-  throw new Error('Folder ownership verification not implemented yet');
+): Promise<import('@/lib/database/schemas').Folder> {
+  const { getFolderById } = await import('@/lib/database/queries');
+
+  return verifyResourceOwnership({
+    resourceId: folderId,
+    resourceType: 'folder',
+    expectedOwnerId: workspaceId,
+    ownerField: 'workspaceId',
+    action,
+    fetchResource: getFolderById,
+    notFoundError: 'Folder not found.',
+    unauthorizedError: 'You do not have permission to access this folder.',
+  });
 }
 
 /**
  * Convenience wrapper: Verify file ownership
- * TODO: Implement when file queries are created
+ *
+ * @param fileId - File ID to verify
+ * @param workspaceId - Workspace ID that should own the file
+ * @param action - Action name for security logging
+ * @returns File object if authorized
+ * @throws ActionResponse if file not found or unauthorized
+ *
+ * @example
+ * ```typescript
+ * const file = await verifyFileOwnership(fileId, workspace.id, 'deleteFileAction');
+ * // file.workspaceId === workspace.id is guaranteed
+ * ```
  */
 export async function verifyFileOwnership(
   fileId: string,
   workspaceId: string,
   action: string
-): Promise<never> {
-  throw new Error('File ownership verification not implemented yet');
+): Promise<import('@/lib/database/schemas').File> {
+  const { getFileById } = await import('@/lib/database/queries');
+
+  return verifyResourceOwnership({
+    resourceId: fileId,
+    resourceType: 'file',
+    expectedOwnerId: workspaceId,
+    ownerField: 'workspaceId',
+    action,
+    fetchResource: getFileById,
+    notFoundError: 'File not found.',
+    unauthorizedError: 'You do not have permission to access this file.',
+  });
 }

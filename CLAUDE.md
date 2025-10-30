@@ -413,6 +413,71 @@ const fileUpload = useUppyUpload({
 - Storage actions: `initiateUploadAction`, `verifyUploadAction` (auth), `initiatePublicUploadAction`, `verifyPublicUploadAction` (public)
 - Rate limiting: 10 uploads per 5 minutes (per user or per rate limit key)
 
+**Storage-First Deletion Pattern** (CRITICAL):
+Foldly is a paid storage platform - users pay for storage space. Therefore, file deletion MUST follow storage-first pattern to prevent unethical billing:
+
+**The Pattern**:
+```typescript
+// CRITICAL: Delete storage FIRST (users pay for storage)
+try {
+  await deleteFileFromStorage({
+    gcsPath: file.storagePath,
+    bucket: UPLOADS_BUCKET_NAME,
+  });
+} catch (error) {
+  // Storage deletion failed - ABORT operation
+  // User can retry, and storage will eventually be deleted
+  logger.error('Failed to delete file from storage - aborting operation');
+  return {
+    success: false,
+    error: 'Failed to delete file from storage. Please try again.',
+  };
+}
+
+// Storage deleted successfully - now delete database record
+try {
+  await deleteFile(fileId);
+  logger.info('File deleted successfully (storage + DB)');
+} catch (error) {
+  // DB deletion failed but storage is already deleted
+  // Log orphaned DB record for cleanup (acceptable)
+  logger.warn('Orphaned DB record (storage deleted, DB delete failed)', {
+    fileId,
+    requiresCleanup: true,
+  });
+  // Still return success - file is deleted from storage (primary concern)
+}
+
+return { success: true };
+```
+
+**Why This Matters**:
+- **Orphaned storage files** = Users pay for files they can't access (UNETHICAL BILLING)
+- **Orphaned DB records** = UI shows files that don't exist (fixable with retry or cleanup)
+- Storage is the paid resource - it MUST be deleted first
+- If storage deletion fails, abort and let user retry
+- If DB deletion fails after storage succeeds, log for cleanup (acceptable trade-off)
+
+**Applies To**:
+- ✅ `deleteFileAction` - Single file deletion (storage first, then DB)
+- ✅ `bulkDeleteFilesAction` - Bulk file deletion (delete storage first, only remove DB records for successful deletions)
+- ❌ `deleteFolderAction` - **NOT APPLICABLE** (folders don't have storage - DB deletion only with CASCADE)
+- ✅ All future file deletion operations (when storage is involved)
+- ✅ Cleanup operations and background jobs (for files with storage)
+
+**Note on Folder Deletion**:
+Folder deletion does NOT follow storage-first pattern because:
+- Folders have no storage representation (they're purely database entities)
+- Folder cascade deletion is handled by database foreign key constraints (ON DELETE CASCADE)
+- Files within deleted folders retain their storage (parent_folder_id set to NULL, preserving file accessibility)
+- No billing implications (folders are free organizational structures)
+
+**Referenced Implementation**:
+- `src/lib/actions/file.actions.ts` - deleteFileAction, bulkDeleteFilesAction (storage-first pattern)
+- `src/lib/actions/folder.actions.ts` - deleteFolderAction (DB-only deletion)
+- `src/modules/links/lib/actions/branding.actions.ts` - Logo deletion pattern (storage-first)
+- `src/lib/database/queries/file.queries.ts` - Documentation emphasizing storage-first approach
+
 ### Security Patterns
 
 **Link Password Encryption**:

@@ -13,6 +13,19 @@ import { uuidSchema, emailSchema } from './base-schemas';
 import { VALIDATION_LIMITS, ALLOWED_FILE_TYPES } from '@/lib/constants/validation';
 
 // =============================================================================
+// CONSTANTS
+// =============================================================================
+
+/**
+ * Storage bucket name for file uploads
+ * Automatically selects the correct bucket based on STORAGE_PROVIDER env variable
+ */
+export const UPLOADS_BUCKET_NAME =
+  process.env.STORAGE_PROVIDER === 'gcs'
+    ? process.env.GCS_UPLOADS_BUCKET_NAME || ''
+    : process.env.SUPABASE_UPLOADS_BUCKET_NAME || '';
+
+// =============================================================================
 // FIELD SCHEMAS
 // =============================================================================
 
