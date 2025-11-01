@@ -365,7 +365,7 @@ describe("Branding Actions", () => {
       expect(deleteFile).not.toHaveBeenCalled(); // Should not try to delete non-existent file
     });
 
-    it("should continue with database update even if GCS delete fails", async () => {
+    it("should abort operation if GCS delete fails (storage-first pattern)", async () => {
       // Arrange: Create link with logo
       const user = await createTestUser();
       createdUserIds.add(user.id);
@@ -403,9 +403,16 @@ describe("Branding Actions", () => {
       // Act: Delete logo
       const result = await deleteBrandingLogoAction({ linkId: link.id });
 
-      // Assert: Should still clear logo from database
-      expect(result.success).toBe(true);
-      expect(result.data?.branding?.logo).toBeNull();
+      // Assert: Should abort and return error (storage-first deletion pattern)
+      // If storage delete fails, operation should fail - do NOT delete DB record
+      expect(result.success).toBe(false);
+      expect(result.error).toBe("Failed to delete logo from storage. Please try again.");
+
+      // Verify logo is still in database (operation aborted)
+      const updatedLink = await db.query.links.findFirst({
+        where: (links, { eq }) => eq(links.id, link.id),
+      });
+      expect(updatedLink?.branding?.logo).not.toBeNull();
     });
 
     it("should reject when user does not own link", async () => {

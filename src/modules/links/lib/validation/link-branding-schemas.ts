@@ -10,15 +10,18 @@ import { z } from 'zod';
 // Import base schemas from global
 import { uuidSchema } from '@/lib/validation/base-schemas';
 
-// Import validation helpers from global
-import { createHexColorSchema } from '@/lib/utils/validation-helpers';
-
 // Import validation constants from global
 import { VALIDATION_LIMITS } from '@/lib/constants/validation';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
+
+/**
+ * Hex color validation pattern (6-digit format)
+ * Used for branding accent and background colors
+ */
+const HEX_COLOR_REGEX = /^#[A-Fa-f0-9]{6}$/;
 
 /**
  * Allowed MIME types for branding logo uploads
@@ -60,6 +63,27 @@ export const BRANDING_BUCKET_NAME =
 // =============================================================================
 // VALIDATION HELPERS
 // =============================================================================
+
+/**
+ * Create a hex color validation schema for branding
+ * Module-specific implementation for link branding colors
+ *
+ * @param fieldName - Name for error messages (e.g., 'Accent color')
+ * @returns Zod string schema with hex color validation
+ *
+ * @example
+ * ```typescript
+ * const accentColor = createHexColorSchema('Accent color');
+ * accentColor.parse('#6c47ff'); // ✅ Valid
+ * accentColor.parse('#fff');    // ❌ Invalid (must be 6 digits)
+ * ```
+ */
+function createHexColorSchema(options: { fieldName: string; allowShorthand?: boolean }) {
+  const { fieldName } = options;
+  return z.string().regex(HEX_COLOR_REGEX, {
+    message: `${fieldName} must be a valid 6-digit hex color (e.g., #6c47ff).`,
+  });
+}
 
 /**
  * Type guard to check if a MIME type is allowed for branding logos

@@ -13,13 +13,13 @@ interface RateLimitEntry {
   blockedUntil?: number;  // Timestamp when block expires
 }
 
-interface RateLimitConfig {
+export interface RateLimitConfig {
   limit: number;  // Maximum requests allowed
   windowMs: number;  // Time window in milliseconds
   blockDurationMs?: number;  // How long to block after exceeding limit
 }
 
-interface RateLimitResult {
+export interface RateLimitResult {
   allowed: boolean;
   remaining: number;
   resetAt: number;  // Timestamp when limit resets

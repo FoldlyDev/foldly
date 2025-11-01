@@ -25,7 +25,12 @@ import type {
   UpdateLinkConfigInput,
   DeleteLinkInput,
 } from '@/lib/validation';
-import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
+import {
+  transformActionError,
+  transformQueryResult,
+  createMutationErrorHandler,
+  invalidateLinks
+} from '@/lib/utils/react-query-helpers';
 import { linkKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
@@ -197,10 +202,10 @@ export function useCreateLink() {
       const result = await createLinkAction(input);
       return transformActionError(result, 'Failed to create link');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate links list to show new link
-      queryClient.invalidateQueries({ queryKey: linkKeys.lists() });
+      // Invalidate links to show new link
+      await invalidateLinks(queryClient, data.id);
 
       // Set the new link in cache
       queryClient.setQueryData(linkKeys.detail(data.id), data);
@@ -249,13 +254,10 @@ export function useUpdateLink() {
       const result = await updateLinkAction(input);
       return transformActionError(result, 'Failed to update link');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate links list
-      queryClient.invalidateQueries({ queryKey: linkKeys.lists() });
-
-      // Invalidate specific link cache
-      queryClient.invalidateQueries({ queryKey: linkKeys.detail(data.id) });
+      // Invalidate link caches
+      await invalidateLinks(queryClient, data.id);
     },
     onError: createMutationErrorHandler('Link update'),
     retry: false,
@@ -301,13 +303,10 @@ export function useUpdateLinkConfig() {
       const result = await updateLinkConfigAction(input);
       return transformActionError(result, 'Failed to update link configuration');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate specific link cache (config is part of link data)
-      queryClient.invalidateQueries({ queryKey: linkKeys.detail(data.id) });
-
-      // Also invalidate list in case config affects list display
-      queryClient.invalidateQueries({ queryKey: linkKeys.lists() });
+      // Invalidate link caches (config is part of link data)
+      await invalidateLinks(queryClient, data.id);
     },
     onError: createMutationErrorHandler('Link configuration update'),
     retry: false,
@@ -352,13 +351,11 @@ export function useDeleteLink() {
       const result = await deleteLinkAction(input);
       return transformActionError(result, 'Failed to delete link');
     },
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       // TODO: Add success notification when notification system is implemented
-      // Remove from cache
+      // Remove from cache and invalidate links
       queryClient.removeQueries({ queryKey: linkKeys.detail(variables.linkId) });
-
-      // Invalidate links list
-      queryClient.invalidateQueries({ queryKey: linkKeys.lists() });
+      await invalidateLinks(queryClient);
     },
     onError: createMutationErrorHandler('Link deletion'),
     retry: false,

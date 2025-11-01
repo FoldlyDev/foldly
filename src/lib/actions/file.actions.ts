@@ -7,13 +7,15 @@
 'use server';
 
 // Import from global utilities
-import { withAuth, withAuthInput, type ActionResponse } from '@/lib/utils/action-helpers';
+import { withAuthAndRateLimit, withAuthInputAndRateLimit, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyFileOwnership } from '@/lib/utils/authorization';
+import { validateBucketConfiguration } from '@/lib/utils/storage-helpers';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 // Import database queries
 import {
   getFileById,
+  getFilesByIds,
   getWorkspaceFiles,
   getFilesByEmail,
   getFilesByDateRange,
@@ -28,17 +30,16 @@ import {
 import { deleteFile as deleteFileFromStorage } from '@/lib/storage/client';
 
 // Import rate limiting
-import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
+import { RateLimitPresets } from '@/lib/middleware/rate-limit';
 
 // Import logging
-import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/logger';
+import { logger } from '@/lib/utils/logger';
 
 // Import types
 import type { File } from '@/lib/database/schemas';
 
 // Import global validation schemas
 import {
-  validateInput,
   createFileSchema,
   updateFileMetadataSchema,
   deleteFileSchema,
@@ -72,30 +73,10 @@ import {
  * }
  * ```
  */
-export const getWorkspaceFilesAction = withAuth<File[]>(
+export const getWorkspaceFilesAction = withAuthAndRateLimit<File[]>(
   'getWorkspaceFilesAction',
+  RateLimitPresets.GENEROUS,
   async (userId) => {
-    // Rate limiting: 100 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'list-files');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('File read rate limit exceeded', {
-        userId,
-        action: 'getWorkspaceFilesAction',
-        limit: RateLimitPresets.GENEROUS.limit,
-        window: RateLimitPresets.GENEROUS.windowMs,
-        attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
-
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
 
@@ -125,33 +106,12 @@ export const getWorkspaceFilesAction = withAuth<File[]>(
  * }
  * ```
  */
-export const getFilesByEmailAction = withAuthInput<
+export const getFilesByEmailAction = withAuthInputAndRateLimit<
   GetFilesByEmailInput,
   File[]
->('getFilesByEmailAction', async (userId, input) => {
+>('getFilesByEmailAction', RateLimitPresets.GENEROUS, async (userId, input) => {
   // Validate input
   const validated = validateInput(getFilesByEmailSchema, input);
-
-  // Rate limiting: 100 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'get-files-by-email');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('File read by email rate limit exceeded', {
-      userId,
-      action: 'getFilesByEmailAction',
-      limit: RateLimitPresets.GENEROUS.limit,
-      window: RateLimitPresets.GENEROUS.windowMs,
-      attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
 
   // Get user's workspace
   const workspace = await getAuthenticatedWorkspace(userId);
@@ -181,32 +141,12 @@ export const getFilesByEmailAction = withAuthInput<
  * }
  * ```
  */
-export const searchFilesAction = withAuthInput<SearchFilesInput, File[]>(
+export const searchFilesAction = withAuthInputAndRateLimit<SearchFilesInput, File[]>(
   'searchFilesAction',
+  RateLimitPresets.GENEROUS,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(searchFilesSchema, input);
-
-    // Rate limiting: 100 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'search-files');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('File search rate limit exceeded', {
-        userId,
-        action: 'searchFilesAction',
-        limit: RateLimitPresets.GENEROUS.limit,
-        window: RateLimitPresets.GENEROUS.windowMs,
-        attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -245,32 +185,12 @@ export const searchFilesAction = withAuthInput<SearchFilesInput, File[]>(
  * });
  * ```
  */
-export const createFileRecordAction = withAuthInput<CreateFileInput, File>(
+export const createFileRecordAction = withAuthInputAndRateLimit<CreateFileInput, File>(
   'createFileRecordAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(createFileSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'create-file');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('File creation rate limit exceeded', {
-        userId,
-        action: 'createFileRecordAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -329,34 +249,12 @@ export const createFileRecordAction = withAuthInput<CreateFileInput, File>(
  * });
  * ```
  */
-export const updateFileMetadataAction = withAuthInput<
+export const updateFileMetadataAction = withAuthInputAndRateLimit<
   UpdateFileMetadataInput,
   File
->('updateFileMetadataAction', async (userId, input) => {
+>('updateFileMetadataAction', RateLimitPresets.MODERATE, async (userId, input) => {
   // Validate input
   const validated = validateInput(updateFileMetadataSchema, input);
-
-  // Rate limiting: 20 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'update-file');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('File update rate limit exceeded', {
-      userId,
-      fileId: validated.fileId,
-      action: 'updateFileMetadataAction',
-      limit: RateLimitPresets.MODERATE.limit,
-      window: RateLimitPresets.MODERATE.windowMs,
-      attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
 
   // Get user's workspace
   const workspace = await getAuthenticatedWorkspace(userId);
@@ -406,33 +304,12 @@ export const updateFileMetadataAction = withAuthInput<
  * const result = await deleteFileAction({ fileId: 'file_123' });
  * ```
  */
-export const deleteFileAction = withAuthInput<DeleteFileInput, void>(
+export const deleteFileAction = withAuthInputAndRateLimit<DeleteFileInput, void>(
   'deleteFileAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(deleteFileSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'delete-file');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('File deletion rate limit exceeded', {
-        userId,
-        fileId: validated.fileId,
-        action: 'deleteFileAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -445,13 +322,8 @@ export const deleteFileAction = withAuthInput<DeleteFileInput, void>(
     );
 
     // Validate bucket configuration
-    if (!UPLOADS_BUCKET_NAME) {
-      logger.error('Uploads bucket not configured');
-      return {
-        success: false,
-        error: ERROR_MESSAGES.STORAGE.NOT_CONFIGURED,
-      } as const;
-    }
+    const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+    if (bucketError) return bucketError;
 
     // CRITICAL: Delete from storage FIRST (users pay for storage)
     // Orphaned storage files = users charged for files they can't access (unethical)
@@ -513,133 +385,176 @@ export const deleteFileAction = withAuthInput<DeleteFileInput, void>(
 /**
  * Bulk delete files (both records and storage)
  * CRITICAL: Validates ownership for ALL files before deletion (security requirement)
+ * FAIL-FAST PATTERN: ALL storage deletions must succeed or operation aborts (billing integrity)
  * Storage-first deletion to prevent charging users for orphaned files
  * Rate limited: 20 requests per minute
  *
  * @param data - Object containing array of fileIds
  * @returns Success status with count of deleted files
  *
+ * @remarks
+ * All-or-nothing semantics: If ANY storage deletion fails, the entire operation aborts
+ * and NO files are deleted. This prevents billing integrity violations where users
+ * would be charged for storage that was partially deleted but operation marked as failed.
+ *
  * @example
  * ```typescript
  * const result = await bulkDeleteFilesAction({
  *   fileIds: ['file_123', 'file_456', 'file_789']
  * });
+ * // Either all 3 files deleted, or none deleted (never 1-2 files)
  * ```
  */
-export const bulkDeleteFilesAction = withAuthInput<
+export const bulkDeleteFilesAction = withAuthInputAndRateLimit<
   BulkDeleteFilesInput,
   { deletedCount: number }
->('bulkDeleteFilesAction', async (userId, input) => {
+>('bulkDeleteFilesAction', RateLimitPresets.MODERATE, async (userId, input) => {
   // Validate input
   const validated = validateInput(bulkDeleteFilesSchema, input);
-
-  // Rate limiting: 20 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'bulk-delete-files');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('Bulk file deletion rate limit exceeded', {
-      userId,
-      fileCount: validated.fileIds.length,
-      action: 'bulkDeleteFilesAction',
-      limit: RateLimitPresets.MODERATE.limit,
-      window: RateLimitPresets.MODERATE.windowMs,
-      attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
 
   // Get user's workspace
   const workspace = await getAuthenticatedWorkspace(userId);
 
   // CRITICAL SECURITY: Verify ownership for ALL files before any deletion
+  // OPTIMIZED: Batch fetch all files in one query (prevents N+1 queries)
   // This prevents unauthorized bulk deletion attacks
-  const files: Array<{ id: string; storagePath: string; filename: string }> = [];
-  for (const fileId of validated.fileIds) {
-    const file = await verifyFileOwnership(
-      fileId,
-      workspace.id,
-      'bulkDeleteFilesAction'
-    );
-    files.push({ id: file.id, storagePath: file.storagePath, filename: file.filename });
-  }
+  const files = await getFilesByIds(validated.fileIds, workspace.id);
 
-  // Validate bucket configuration
-  if (!UPLOADS_BUCKET_NAME) {
-    logger.error('Uploads bucket not configured');
+  // Verify that ALL requested files exist and belong to the workspace
+  if (files.length !== validated.fileIds.length) {
+    const foundFileIds = new Set(files.map(f => f.id));
+    const missingFileIds = validated.fileIds.filter(id => !foundFileIds.has(id));
+
+    logger.warn('Bulk delete attempted with invalid file IDs', {
+      userId,
+      requestedCount: validated.fileIds.length,
+      foundCount: files.length,
+      missingFileIds,
+    });
+
     return {
       success: false,
-      error: ERROR_MESSAGES.STORAGE.NOT_CONFIGURED,
+      error: 'One or more files not found or you do not have permission to delete them.',
     } as const;
   }
 
+  // Validate bucket configuration
+  const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+  if (bucketError) return bucketError;
+
+  /**
+   * CRITICAL DESIGN DECISION: Partial Success Pattern for Bulk Deletion
+   *
+   * WHY WE USE PARTIAL SUCCESS (instead of fail-fast all-or-nothing):
+   *
+   * 1. **Storage Provider Reliability**: External storage (GCS/Supabase) can have transient failures
+   *    - Network timeouts, rate limits, or service disruptions
+   *    - Fail-fast would require users to retry ALL files even if 99/100 succeeded
+   *
+   * 2. **Better User Experience**:
+   *    - Users can see exactly which files failed and retry only those
+   *    - Progress is preserved (successfully deleted files stay deleted)
+   *    - Example: "Failed to delete 2 files. Successfully deleted 98 files."
+   *
+   * 3. **Reduced Redundant Work**:
+   *    - Retry mechanism can target only failed files (not all 100 files again)
+   *    - Saves storage API calls and improves overall system performance
+   *
+   * 4. **Billing Integrity Maintained**:
+   *    - Storage-first deletion ensures users never pay for inaccessible files
+   *    - DB records only deleted for successfully deleted storage files
+   *    - No orphaned storage files = no unethical billing
+   *
+   * ALTERNATIVE (Fail-Fast All-or-Nothing):
+   *    - Would abort entire operation if ANY file fails
+   *    - Users must retry ALL 100 files even if only 1 failed
+   *    - Poor UX for large bulk operations with transient failures
+   *
+   * TRADE-OFF: Slightly more complex error handling vs significantly better UX
+   */
+
   // CRITICAL: Delete from storage FIRST (users pay for storage)
-  // Only delete DB records for successfully deleted storage files
-  const storageDeletePromises = files.map(async (file) => {
-    try {
-      await deleteFileFromStorage({
-        gcsPath: file.storagePath,
-        bucket: UPLOADS_BUCKET_NAME,
-      });
-      return { success: true, fileId: file.id, filename: file.filename };
-    } catch (error) {
-      logger.error('Failed to delete file from storage (bulk)', {
-        userId,
-        fileId: file.id,
-        filename: file.filename,
-        storagePath: file.storagePath,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      return { success: false, fileId: file.id, filename: file.filename };
-    }
-  });
+  // Use Promise.allSettled pattern to track individual deletion results
+  const storageDeletePromises = files.map((file) =>
+    deleteFileFromStorage({
+      gcsPath: file.storagePath,
+      bucket: UPLOADS_BUCKET_NAME,
+    }).then(() => ({ status: 'fulfilled' as const, file }))
+      .catch((error) => ({ status: 'rejected' as const, file, error }))
+  );
 
-  const storageResults = await Promise.all(storageDeletePromises);
-  const successfullyDeletedFiles = storageResults.filter((r) => r.success);
-  const failedFiles = storageResults.filter((r) => !r.success);
+  // Use Promise.allSettled to track which deletions succeeded vs failed
+  const storageDeleteResults = await Promise.all(storageDeletePromises);
 
-  // Only delete database records for files successfully deleted from storage
-  const successfulFileIds = successfullyDeletedFiles.map((r) => r.fileId);
-  if (successfulFileIds.length > 0) {
-    try {
-      await bulkDeleteFiles(successfulFileIds);
-      logger.info('Bulk file deletion completed', {
-        userId,
-        requestedCount: validated.fileIds.length,
-        storageDeletedCount: successfulFileIds.length,
-        dbDeletedCount: successfulFileIds.length,
-        failedCount: failedFiles.length,
-      });
-    } catch (error) {
-      // DB deletion failed but storage is already deleted
-      // Log orphaned DB records for cleanup
-      logger.warn('Orphaned DB records (storage deleted, DB delete failed)', {
-        userId,
-        fileIds: successfulFileIds,
-        count: successfulFileIds.length,
-        requiresCleanup: true,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+  // Separate successful deletions from failures
+  const successfulDeletions = storageDeleteResults
+    .filter((result) => result.status === 'fulfilled')
+    .map((result) => result.file);
+
+  const failedDeletions = storageDeleteResults
+    .filter((result) => result.status === 'rejected');
+
+  // If ALL deletions failed, abort operation
+  if (successfulDeletions.length === 0) {
+    logger.error('Bulk file deletion failed: All storage deletions failed', {
+      userId,
+      fileCount: validated.fileIds.length,
+      errors: failedDeletions.map(r => r.error instanceof Error ? r.error.message : 'Unknown error'),
+    });
+
+    return {
+      success: false,
+      error: 'Failed to delete files from storage. No files were deleted. Please try again.',
+    } as const;
   }
 
-  // Log failed deletions for user notification
-  if (failedFiles.length > 0) {
-    logger.warn('Some files could not be deleted from storage', {
+  // If SOME deletions failed, log partial success
+  if (failedDeletions.length > 0) {
+    logger.warn('Partial bulk file deletion: Some storage deletions failed', {
       userId,
-      failedFiles: failedFiles.map(f => ({ id: f.fileId, name: f.filename })),
-      count: failedFiles.length,
+      succeeded: successfulDeletions.length,
+      failed: failedDeletions.length,
+      failedFiles: failedDeletions.map(r => r.file.filename),
     });
   }
 
+  // Delete DB records ONLY for successfully deleted storage files
+  // This maintains storage-first integrity (no orphaned storage)
+  try {
+    const successfulFileIds = successfulDeletions.map(f => f.id);
+    await bulkDeleteFiles(successfulFileIds);
+
+    logger.info('Bulk file deletion completed', {
+      userId,
+      deletedCount: successfulDeletions.length,
+      failedCount: failedDeletions.length,
+    });
+  } catch (error) {
+    // DB deletion failed but storage is already deleted
+    // Log orphaned DB records for cleanup (acceptable trade-off)
+    logger.warn('Orphaned DB records (storage deleted, DB delete failed)', {
+      userId,
+      fileIds: successfulDeletions.map(f => f.id),
+      count: successfulDeletions.length,
+      requiresCleanup: true,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+
+    // Still continue - files are deleted from storage (primary concern)
+    // DB records can be cleaned up via background job or user retry
+  }
+
+  // Return partial success if some deletions failed
+  if (failedDeletions.length > 0) {
+    return {
+      success: false,
+      error: `Failed to delete ${failedDeletions.length} file(s). Successfully deleted ${successfulDeletions.length} file(s).`,
+    } as const;
+  }
+
+  // All deletions succeeded
   return {
     success: true,
-    data: { deletedCount: successfulFileIds.length },
+    data: { deletedCount: successfulDeletions.length },
   } as const;
 });

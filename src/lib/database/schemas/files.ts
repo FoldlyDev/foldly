@@ -11,7 +11,15 @@ import {
   bigint,
   index,
   uniqueIndex,
+  customType,
 } from "drizzle-orm/pg-core";
+
+// Custom type for PostgreSQL tsvector (full-text search)
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return 'tsvector';
+  },
+});
 import { relations } from "drizzle-orm";
 import { workspaces } from "./workspaces";
 import { links } from "./links";
@@ -59,6 +67,10 @@ export const files = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+
+    // Full-text search vector (auto-generated from filename, uploader_email, uploader_name)
+    // This column is managed by PostgreSQL and automatically updated when source columns change
+    searchVector: tsvector("search_vector"),
   },
   (table) => ({
     // Unique constraint: filenames must be unique within same parent folder
@@ -66,6 +78,9 @@ export const files = pgTable(
       table.parentFolderId,
       table.filename
     ),
+    // GIN index for full-text search (significantly faster than LIKE queries)
+    searchVectorIdx: index("files_search_vector_idx")
+      .using('gin', table.searchVector),
   })
 );
 

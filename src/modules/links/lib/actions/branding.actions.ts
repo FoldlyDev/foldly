@@ -7,7 +7,7 @@
 "use server";
 
 // Import from global utilities
-import { withAuthInput, type ActionResponse } from "@/lib/utils/action-helpers";
+import { withAuthInputAndRateLimit, validateInput, type ActionResponse } from "@/lib/utils/action-helpers";
 import {
   getAuthenticatedWorkspace,
   verifyLinkOwnership,
@@ -24,20 +24,13 @@ import {
 import { updateLink } from "@/lib/database/queries";
 
 // Import rate limiting
-import {
-  checkRateLimit,
-  RateLimitPresets,
-  RateLimitKeys,
-} from "@/lib/middleware/rate-limit";
+import { RateLimitPresets } from "@/lib/middleware/rate-limit";
 
 // Import logging
-import { logger, logRateLimitViolation } from "@/lib/utils/logger";
+import { logger } from "@/lib/utils/logger";
 
 // Import types
 import type { Link } from "@/lib/database/schemas";
-
-// Import global validation helper
-import { validateInput } from "@/lib/validation";
 
 import {
   type DeleteBrandingLogoInput,
@@ -72,11 +65,12 @@ import {
  * });
  * ```
  */
-export const updateLinkBrandingAction = withAuthInput<
+export const updateLinkBrandingAction = withAuthInputAndRateLimit<
   UpdateLinkBrandingInput,
   Link
 >(
   "updateLinkBrandingAction",
+  RateLimitPresets.PERMISSION_MANAGEMENT,
   async (
     userId: string,
     input: UpdateLinkBrandingInput
@@ -85,30 +79,6 @@ export const updateLinkBrandingAction = withAuthInput<
     const validated = validateInput(updateLinkBrandingSchema, input);
 
     const { linkId, branding } = validated;
-
-    // Rate limit
-    const rateLimitKey = RateLimitKeys.userAction(userId, "update-branding");
-    const rateLimit = await checkRateLimit(
-      rateLimitKey,
-      RateLimitPresets.PERMISSION_MANAGEMENT
-    );
-
-    if (!rateLimit.allowed) {
-      logRateLimitViolation("Branding update rate limit exceeded", {
-        userId,
-        linkId,
-        action: "updateLinkBrandingAction",
-        limit: RateLimitPresets.PERMISSION_MANAGEMENT.limit,
-        window: RateLimitPresets.PERMISSION_MANAGEMENT.windowMs,
-        attempts: rateLimit.remaining,
-      });
-      return {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimit.resetAt,
-      };
-    }
 
     // Get authenticated workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -175,11 +145,12 @@ export const updateLinkBrandingAction = withAuthInput<
  * });
  * ```
  */
-export const deleteBrandingLogoAction = withAuthInput<
+export const deleteBrandingLogoAction = withAuthInputAndRateLimit<
   DeleteBrandingLogoInput,
   Link
 >(
   "deleteBrandingLogoAction",
+  RateLimitPresets.PERMISSION_MANAGEMENT,
   async (
     userId: string,
     input: DeleteBrandingLogoInput
@@ -188,30 +159,6 @@ export const deleteBrandingLogoAction = withAuthInput<
     const validated = validateInput(deleteBrandingLogoSchema, input);
 
     const { linkId } = validated;
-
-    // Rate limit
-    const rateLimitKey = RateLimitKeys.userAction(userId, "delete-logo");
-    const rateLimit = await checkRateLimit(
-      rateLimitKey,
-      RateLimitPresets.PERMISSION_MANAGEMENT
-    );
-
-    if (!rateLimit.allowed) {
-      logRateLimitViolation("Logo deletion rate limit exceeded", {
-        userId,
-        linkId,
-        action: "deleteBrandingLogoAction",
-        limit: RateLimitPresets.PERMISSION_MANAGEMENT.limit,
-        window: RateLimitPresets.PERMISSION_MANAGEMENT.windowMs,
-        attempts: rateLimit.remaining,
-      });
-      return {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimit.resetAt,
-      };
-    }
 
     // Validate bucket configuration
     if (!BRANDING_BUCKET_NAME) {
@@ -232,7 +179,8 @@ export const deleteBrandingLogoAction = withAuthInput<
       "deleteBrandingLogoAction"
     );
 
-    // Delete logo from GCS if exists
+    // CRITICAL: Delete logo from storage FIRST (storage-first deletion pattern)
+    // Users don't pay for logo storage, but consistency matters
     if (link.branding?.logo?.url) {
       const gcsPath = link.branding.logo.url.replace(
         `https://storage.googleapis.com/${BRANDING_BUCKET_NAME}/`,
@@ -253,39 +201,66 @@ export const deleteBrandingLogoAction = withAuthInput<
           logger.info("Branding logo deleted from GCS", { linkId, gcsPath });
         }
       } catch (error) {
-        logger.error("Failed to delete logo from GCS", {
-          error: error instanceof Error ? error.message : "Unknown error",
+        // Storage deletion failed - ABORT operation
+        // User can retry, and logo will eventually be deleted
+        logger.error("Failed to delete logo from GCS - aborting operation", {
+          userId,
+          linkId,
           gcsPath,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
-        // Continue with database update even if GCS delete fails
+
+        return {
+          success: false,
+          error: "Failed to delete logo from storage. Please try again.",
+        };
       }
     }
 
-    // Clear logo from link branding
-    const updatedLink = await updateLink(linkId, {
-      branding: {
-        ...link.branding,
-        enabled: link.branding?.enabled ?? false,
-        logo: null,
-        colors: link.branding?.colors ?? null,
-      },
-    });
+    // Storage deleted successfully (or no logo) - now update database
+    // If this fails, we have orphaned DB reference (acceptable - can be cleaned up)
+    try {
+      const updatedLink = await updateLink(linkId, {
+        branding: {
+          ...link.branding,
+          enabled: link.branding?.enabled ?? false,
+          logo: null,
+          colors: link.branding?.colors ?? null,
+        },
+      });
 
-    if (!updatedLink) {
+      if (!updatedLink) {
+        return {
+          success: false,
+          error: ERROR_MESSAGES.LINK.UPDATE_FAILED,
+        };
+      }
+
+      logger.info("Branding logo cleared successfully (storage + DB)", {
+        userId,
+        linkId,
+      });
+
       return {
-        success: false,
-        error: ERROR_MESSAGES.LINK.UPDATE_FAILED,
+        success: true,
+        data: updatedLink,
+      };
+    } catch (error) {
+      // DB update failed but storage is already deleted
+      // Log orphaned DB reference for cleanup
+      logger.warn("Orphaned DB reference (storage deleted, DB update failed)", {
+        userId,
+        linkId,
+        requiresCleanup: true,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+
+      // Still return success - logo is deleted from storage (primary concern)
+      // DB reference can be cleaned up via retry or background job
+      return {
+        success: true,
+        data: link, // Return original link data
       };
     }
-
-    logger.info("Branding logo cleared successfully", {
-      userId,
-      linkId,
-    });
-
-    return {
-      success: true,
-      data: updatedLink,
-    };
   }
 );

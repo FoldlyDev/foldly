@@ -24,11 +24,15 @@ import type {
   UpdateFileMetadataInput,
   DeleteFileInput,
   BulkDeleteFilesInput,
-  SearchFilesInput,
-  GetFilesByEmailInput,
 } from '@/lib/validation';
-import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
-import { fileKeys, folderKeys } from '@/lib/config/query-keys';
+import {
+  transformActionError,
+  transformQueryResult,
+  createMutationErrorHandler,
+  invalidateFiles,
+  invalidateFolders
+} from '@/lib/utils/react-query-helpers';
+import { fileKeys, contextKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)
@@ -105,7 +109,7 @@ export function useFilesByEmail(
   const isEnabled = options?.enabled !== false && !!uploaderEmail;
 
   return useQuery({
-    queryKey: fileKeys.byEmail('workspace', uploaderEmail || 'disabled'),
+    queryKey: fileKeys.byEmail(contextKeys.currentWorkspace()[0], uploaderEmail || 'disabled'),
     queryFn: async () => {
       if (!uploaderEmail) {
         throw new Error('Uploader email is required');
@@ -219,24 +223,10 @@ export function useCreateFileRecord() {
       const result = await createFileRecordAction(input);
       return transformActionError(result, 'Failed to create file record');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all file lists to show new file
-      queryClient.invalidateQueries({ queryKey: fileKeys.lists() });
-
-      // Invalidate folder file list if file is in a folder
-      if (data.parentFolderId) {
-        queryClient.invalidateQueries({
-          queryKey: fileKeys.folder(data.parentFolderId),
-        });
-      }
-
-      // Invalidate email filter if file has uploader email
-      if (data.uploaderEmail) {
-        queryClient.invalidateQueries({
-          queryKey: fileKeys.byEmail('workspace', data.uploaderEmail),
-        });
-      }
+      // Invalidate file caches to show new file
+      await invalidateFiles(queryClient, data.id, data.parentFolderId || undefined);
 
       // Set the new file in cache
       queryClient.setQueryData(fileKeys.detail(data.id), data);
@@ -285,20 +275,10 @@ export function useUpdateFileMetadata() {
       const result = await updateFileMetadataAction(input);
       return transformActionError(result, 'Failed to update file');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate file lists
-      queryClient.invalidateQueries({ queryKey: fileKeys.lists() });
-
-      // Invalidate specific file cache
-      queryClient.invalidateQueries({ queryKey: fileKeys.detail(data.id) });
-
-      // Invalidate folder file list if applicable
-      if (data.parentFolderId) {
-        queryClient.invalidateQueries({
-          queryKey: fileKeys.folder(data.parentFolderId),
-        });
-      }
+      // Invalidate file caches
+      await invalidateFiles(queryClient, data.id, data.parentFolderId || undefined);
     },
     onError: createMutationErrorHandler('File update'),
     retry: false,
@@ -344,13 +324,13 @@ export function useDeleteFile() {
       const result = await deleteFileAction(input);
       return transformActionError(result, 'Failed to delete file');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all file lists
-      queryClient.invalidateQueries({ queryKey: fileKeys.all });
+      // Invalidate all file caches
+      await invalidateFiles(queryClient);
 
-      // Invalidate folder lists (file counts may have changed)
-      queryClient.invalidateQueries({ queryKey: folderKeys.all });
+      // Invalidate folder caches (file counts may have changed)
+      await invalidateFolders(queryClient);
     },
     onError: createMutationErrorHandler('File deletion'),
     retry: false,
@@ -403,13 +383,13 @@ export function useBulkDeleteFiles() {
       const result = await bulkDeleteFilesAction(input);
       return transformActionError(result, 'Failed to delete files');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all file lists
-      queryClient.invalidateQueries({ queryKey: fileKeys.all });
+      // Invalidate all file caches
+      await invalidateFiles(queryClient);
 
-      // Invalidate folder lists (file counts may have changed)
-      queryClient.invalidateQueries({ queryKey: folderKeys.all });
+      // Invalidate folder caches (file counts may have changed)
+      await invalidateFolders(queryClient);
     },
     onError: createMutationErrorHandler('Bulk file deletion'),
     retry: false,

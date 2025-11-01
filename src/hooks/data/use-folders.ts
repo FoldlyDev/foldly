@@ -23,10 +23,15 @@ import type {
   UpdateFolderInput,
   MoveFolderInput,
   DeleteFolderInput,
-  GetFolderHierarchyInput,
 } from '@/lib/validation';
-import { transformActionError, transformQueryResult, createMutationErrorHandler } from '@/lib/utils/react-query-helpers';
-import { folderKeys, fileKeys } from '@/lib/config/query-keys';
+import {
+  transformActionError,
+  transformQueryResult,
+  createMutationErrorHandler,
+  invalidateFolders,
+  invalidateFiles
+} from '@/lib/utils/react-query-helpers';
+import { folderKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)
@@ -163,17 +168,10 @@ export function useCreateFolder() {
       const result = await createFolderAction(input);
       return transformActionError(result, 'Failed to create folder');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate folder lists to show new folder
-      queryClient.invalidateQueries({ queryKey: folderKeys.lists() });
-
-      // Invalidate parent folder's subfolders if applicable
-      if (data.parentFolderId) {
-        queryClient.invalidateQueries({
-          queryKey: folderKeys.subfolders(data.parentFolderId),
-        });
-      }
+      // Invalidate folder caches to show new folder
+      await invalidateFolders(queryClient, data.id);
 
       // Set the new folder in cache
       queryClient.setQueryData(folderKeys.detail(data.id), data);
@@ -222,16 +220,10 @@ export function useUpdateFolder() {
       const result = await updateFolderAction(input);
       return transformActionError(result, 'Failed to update folder');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate folder lists
-      queryClient.invalidateQueries({ queryKey: folderKeys.lists() });
-
-      // Invalidate specific folder cache
-      queryClient.invalidateQueries({ queryKey: folderKeys.detail(data.id) });
-
-      // Invalidate hierarchy for this folder
-      queryClient.invalidateQueries({ queryKey: folderKeys.hierarchy(data.id) });
+      // Invalidate folder caches (lists, detail, hierarchy)
+      await invalidateFolders(queryClient, data.id);
     },
     onError: createMutationErrorHandler('Folder update'),
     retry: false,
@@ -278,13 +270,13 @@ export function useMoveFolder() {
       const result = await moveFolderAction(input);
       return transformActionError(result, 'Failed to move folder');
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all folder lists (structure changed)
-      queryClient.invalidateQueries({ queryKey: folderKeys.all });
+      // Invalidate all folder caches (structure changed)
+      await invalidateFolders(queryClient, data.id);
 
       // Invalidate files in this folder (parentFolderId references may need update)
-      queryClient.invalidateQueries({ queryKey: fileKeys.folder(data.id) });
+      await invalidateFiles(queryClient, undefined, data.id);
     },
     onError: createMutationErrorHandler('Folder move'),
     retry: false,
@@ -330,13 +322,10 @@ export function useDeleteFolder() {
       const result = await deleteFolderAction(input);
       return transformActionError(result, 'Failed to delete folder');
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all folder queries (structure changed)
-      queryClient.invalidateQueries({ queryKey: folderKeys.all });
-
-      // Invalidate file lists (files may have been orphaned)
-      queryClient.invalidateQueries({ queryKey: fileKeys.all });
+      // Invalidate folders and files (structure changed, files may have been orphaned)
+      await invalidateFolders(queryClient, undefined, { invalidateFiles: true });
     },
     onError: createMutationErrorHandler('Folder deletion'),
     retry: false,

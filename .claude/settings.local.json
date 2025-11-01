@@ -7,12 +7,9 @@
       "mcp__Ref__ref_search_documentation",
       "mcp__Ref__ref_read_url",
       "Bash(tree:*)",
-      "Bash(npm run test:run -- src/lib/actions/__tests__/link.actions.test.ts)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run test:run -- src/lib/actions/__tests__/link.actions.test.ts)"
     ]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "shadcn"
-  ]
+  "enabledMcpjsonServers": ["shadcn"]
 }

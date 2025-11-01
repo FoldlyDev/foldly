@@ -151,35 +151,6 @@ export function createDescriptionSchema(options?: {
 }
 
 /**
- * Validates data against a schema and returns typed result
- * Throws ActionResponse if validation fails (to be caught by HOF)
- *
- * @param schema - Zod schema to validate against
- * @param data - Data to validate
- * @returns Validated and typed data
- * @throws ActionResponse if validation fails
- *
- * @example
- * ```typescript
- * const validated = validateInput(createLinkSchema, input);
- * // validated has inferred type from schema
- * ```
+ * NOTE: validateInput() has been moved to '@/lib/utils/action-helpers'
+ * Import it from there for all server action validation needs.
  */
-export function validateInput<T extends z.ZodType>(
-  schema: T,
-  data: unknown
-): z.infer<T> {
-  const result = schema.safeParse(data);
-
-  if (!result.success) {
-    const firstError = result.error.issues[0];
-    const errorMessage = firstError?.message || 'Validation failed';
-
-    throw {
-      success: false,
-      error: errorMessage,
-    } as const;
-  }
-
-  return result.data;
-}

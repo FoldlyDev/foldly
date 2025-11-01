@@ -11,6 +11,19 @@
 // - ['entity', 'operation', params] - specific operation
 
 /**
+ * Context keys for client-side placeholders
+ * Used when workspace ID is not available in client components
+ * The actual workspace ID is resolved server-side via auth
+ */
+export const contextKeys = {
+  /**
+   * Placeholder for current authenticated user's workspace
+   * Used in client hooks where workspace ID is fetched server-side
+   */
+  currentWorkspace: () => ['current-workspace'] as const,
+} as const;
+
+/**
  * User-related query keys
  */
 export const userKeys = {

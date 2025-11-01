@@ -3,7 +3,7 @@
 // =============================================================================
 // 🎯 Pure database queries for folder operations (called by server actions)
 
-import { db } from '@/lib/database/connection';
+import { db, postgresClient } from '@/lib/database/connection';
 import { folders } from '@/lib/database/schemas';
 import { eq, and, isNull } from 'drizzle-orm';
 import type { Folder, NewFolder } from '@/lib/database/schemas';
@@ -80,24 +80,70 @@ export async function getSubfolders(parentFolderId: string): Promise<Folder[]> {
 /**
  * Get folder hierarchy (breadcrumb path)
  * Returns array of folders from root to current folder
+ *
+ * OPTIMIZED: Uses PostgreSQL recursive CTE for single-query traversal
+ * Performance: O(1) database query (vs O(depth) queries in iterative approach)
+ *
+ * @param folderId - The UUID of the folder to get hierarchy for
+ * @returns Array of folders from root to current (ordered by depth)
+ *
+ * @example
+ * ```typescript
+ * const hierarchy = await getFolderHierarchy('folder_123');
+ * // Returns: [rootFolder, parentFolder, currentFolder]
+ * // Used for breadcrumb: Home > Documents > 2024 > Tax Returns
+ * ```
  */
 export async function getFolderHierarchy(folderId: string): Promise<Folder[]> {
-  const hierarchy: Folder[] = [];
-  let currentFolderId: string | null = folderId;
+  const result = await postgresClient<{
+    id: string;
+    name: string;
+    parent_folder_id: string | null;
+    workspace_id: string;
+    link_id: string | null;
+    uploader_email: string | null;
+    uploader_name: string | null;
+    created_at: Date;
+    updated_at: Date;
+  }[]>`
+    WITH RECURSIVE folder_path AS (
+      -- Base case: Start with the target folder
+      SELECT
+        id, name, parent_folder_id, workspace_id, link_id,
+        uploader_email, uploader_name, created_at, updated_at,
+        0 as depth
+      FROM folders
+      WHERE id = ${folderId}
 
-  // Traverse up the tree to build breadcrumb
-  while (currentFolderId) {
-    const folder: Folder | undefined = await db.query.folders.findFirst({
-      where: eq(folders.id, currentFolderId),
-    });
+      UNION ALL
 
-    if (!folder) break;
+      -- Recursive case: Get parent folders
+      SELECT
+        f.id, f.name, f.parent_folder_id, f.workspace_id, f.link_id,
+        f.uploader_email, f.uploader_name, f.created_at, f.updated_at,
+        fp.depth + 1 as depth
+      FROM folders f
+      INNER JOIN folder_path fp ON f.id = fp.parent_folder_id
+    )
+    SELECT
+      id, name, parent_folder_id, workspace_id, link_id,
+      uploader_email, uploader_name, created_at, updated_at
+    FROM folder_path
+    ORDER BY depth DESC
+  `;
 
-    hierarchy.unshift(folder); // Add to beginning of array
-    currentFolderId = folder.parentFolderId;
-  }
-
-  return hierarchy;
+  // Map snake_case database columns to camelCase TypeScript properties
+  return result.map(row => ({
+    id: row.id,
+    name: row.name,
+    parentFolderId: row.parent_folder_id,
+    workspaceId: row.workspace_id,
+    linkId: row.link_id,
+    uploaderEmail: row.uploader_email,
+    uploaderName: row.uploader_name,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  })) as Folder[];
 }
 
 /**
@@ -268,6 +314,9 @@ export async function isFolderNameAvailable(
  * Returns depth number (0 = root folder, 1 = first level, etc.)
  * Used to enforce MAX_NESTING_DEPTH limit (20 levels)
  *
+ * OPTIMIZED: Uses PostgreSQL recursive CTE for single-query depth calculation
+ * Performance: O(1) database query (vs O(depth) queries in iterative approach)
+ *
  * @param folderId - The UUID of the folder to calculate depth for
  * @returns Depth number (0 = root, 1 = first level, 2 = second level, etc.)
  *
@@ -283,28 +332,23 @@ export async function isFolderNameAvailable(
  * ```
  */
 export async function getFolderDepth(folderId: string): Promise<number> {
-  let depth = 0;
-  let currentFolderId: string | null = folderId;
+  const result = await postgresClient<{ max_depth: number }[]>`
+    WITH RECURSIVE folder_ancestors AS (
+      -- Base case: Start with the target folder
+      SELECT id, parent_folder_id, 0 as depth
+      FROM folders
+      WHERE id = ${folderId}
 
-  // Traverse up the tree to count ancestors
-  while (currentFolderId) {
-    const folder: Pick<Folder, 'parentFolderId'> | undefined = await db.query.folders.findFirst({
-      where: eq(folders.id, currentFolderId),
-      columns: {
-        parentFolderId: true,
-      },
-    });
+      UNION ALL
 
-    if (!folder) break;
+      -- Recursive case: Traverse up to parent folders
+      SELECT f.id, f.parent_folder_id, fa.depth + 1 as depth
+      FROM folders f
+      INNER JOIN folder_ancestors fa ON f.id = fa.parent_folder_id
+    )
+    SELECT COALESCE(MAX(depth), 0) as max_depth
+    FROM folder_ancestors
+  `;
 
-    if (folder.parentFolderId) {
-      depth++;
-      currentFolderId = folder.parentFolderId;
-    } else {
-      // Reached root folder
-      break;
-    }
-  }
-
-  return depth;
+  return result[0]?.max_depth ?? 0;
 }

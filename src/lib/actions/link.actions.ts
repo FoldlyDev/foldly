@@ -7,7 +7,13 @@
 'use server';
 
 // Import from global utilities
-import { withAuth, withAuthInput, type ActionResponse } from '@/lib/utils/action-helpers';
+import {
+  withAuth,
+  withAuthInput,
+  withAuthAndRateLimit,
+  withAuthInputAndRateLimit,
+  type ActionResponse,
+} from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyLinkOwnership } from '@/lib/utils/authorization';
 import { encryptPassword, isEncryptedPassword } from '@/lib/utils/security';
 import { ERROR_MESSAGES } from '@/lib/constants';
@@ -26,11 +32,11 @@ import {
   createPermission,
 } from '@/lib/database/queries';
 
-// Import rate limiting
-import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
+// Import rate limiting (RateLimitPresets used in HOF parameters)
+import { RateLimitPresets } from '@/lib/middleware/rate-limit';
 
 // Import logging
-import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/logger';
+import { logger, logSecurityEvent } from '@/lib/utils/logger';
 
 // Import types
 import type { Link } from '@/lib/database/schemas';
@@ -84,30 +90,10 @@ type GetLinkByIdInput = z.infer<typeof getLinkByIdInputSchema>;
  * }
  * ```
  */
-export const getUserLinksAction = withAuth<Link[]>(
+export const getUserLinksAction = withAuthAndRateLimit<Link[]>(
   'getUserLinksAction',
+  RateLimitPresets.GENEROUS,
   async (userId) => {
-    // Rate limiting: 100 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'list-links');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Link read rate limit exceeded', {
-        userId,
-        action: 'getUserLinksAction',
-        limit: RateLimitPresets.GENEROUS.limit,
-        window: RateLimitPresets.GENEROUS.windowMs,
-        attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
-
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
 
@@ -137,64 +123,46 @@ export const getUserLinksAction = withAuth<Link[]>(
  * }
  * ```
  */
-export const getLinkByIdAction = withAuthInput<
+export const getLinkByIdAction = withAuthInputAndRateLimit<
   GetLinkByIdInput,
   Awaited<ReturnType<typeof getLinkWithPermissions>>
->('getLinkByIdAction', async (userId, input) => {
-  // Validate input
-  const validated = validateInput(getLinkByIdInputSchema, input);
+>(
+  'getLinkByIdAction',
+  RateLimitPresets.GENEROUS,
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(getLinkByIdInputSchema, input);
 
-  // Rate limiting: 100 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'get-link');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
 
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('Link read rate limit exceeded', {
-      userId,
-      linkId: validated.linkId,
-      action: 'getLinkByIdAction',
-      limit: RateLimitPresets.GENEROUS.limit,
-      window: RateLimitPresets.GENEROUS.windowMs,
-      attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-    });
+    // Verify link ownership
+    await verifyLinkOwnership(
+      validated.linkId,
+      workspace.id,
+      'getLinkByIdAction'
+    );
 
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
+    // Get link with permissions (ownership already verified)
+    const link = await getLinkWithPermissions(validated.linkId);
+    if (!link) {
+      // This shouldn't happen since we just verified it exists, but handle it
+      logSecurityEvent('linkDisappeared', {
+        linkId: validated.linkId,
+        userId,
+      });
+      throw {
+        success: false,
+        error: ERROR_MESSAGES.LINK.NOT_FOUND,
+      } as const;
+    }
+
+    return {
+      success: true,
+      data: link,
     } as const;
   }
-
-  // Get user's workspace
-  const workspace = await getAuthenticatedWorkspace(userId);
-
-  // Verify link ownership
-  await verifyLinkOwnership(
-    validated.linkId,
-    workspace.id,
-    'getLinkByIdAction'
-  );
-
-  // Get link with permissions (ownership already verified)
-  const link = await getLinkWithPermissions(validated.linkId);
-  if (!link) {
-    // This shouldn't happen since we just verified it exists, but handle it
-    logSecurityEvent('linkDisappeared', {
-      linkId: validated.linkId,
-      userId,
-    });
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.LINK.NOT_FOUND,
-    } as const;
-  }
-
-  return {
-    success: true,
-    data: link,
-  } as const;
-});
+);
 
 // =============================================================================
 // WRITE ACTIONS
@@ -217,32 +185,12 @@ export const getLinkByIdAction = withAuthInput<
  * });
  * ```
  */
-export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
+export const createLinkAction = withAuthInputAndRateLimit<CreateLinkInput, Link>(
   'createLinkAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(createLinkSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.linkCreation(userId);
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Link creation rate limit exceeded', {
-        userId,
-        action: 'createLinkAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -456,33 +404,12 @@ export const createLinkAction = withAuthInput<CreateLinkInput, Link>(
  * });
  * ```
  */
-export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
+export const updateLinkAction = withAuthInputAndRateLimit<UpdateLinkInput, Link>(
   'updateLinkAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(updateLinkSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'update-link');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Link update rate limit exceeded', {
-        userId,
-        linkId: validated.linkId,
-        action: 'updateLinkAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -642,36 +569,17 @@ export const updateLinkAction = withAuthInput<UpdateLinkInput, Link>(
  * });
  * ```
  */
-export const updateLinkConfigAction = withAuthInput<
+export const updateLinkConfigAction = withAuthInputAndRateLimit<
   UpdateLinkConfigInput,
   Link
->('updateLinkConfigAction', async (userId, input) => {
-  // Validate input
-  const validated = validateInput(updateLinkConfigSchema, input);
+>(
+  'updateLinkConfigAction',
+  RateLimitPresets.MODERATE,
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(updateLinkConfigSchema, input);
 
-  // Rate limiting: 20 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'update-link-config');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('Link config update rate limit exceeded', {
-      userId,
-      linkId: validated.linkId,
-      action: 'updateLinkConfigAction',
-      limit: RateLimitPresets.MODERATE.limit,
-      window: RateLimitPresets.MODERATE.windowMs,
-      attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
-
-  // Get user's workspace
+    // Get user's workspace
   const workspace = await getAuthenticatedWorkspace(userId);
 
   // Verify link ownership
@@ -719,33 +627,12 @@ export const updateLinkConfigAction = withAuthInput<
  * const result = await deleteLinkAction({ linkId: 'link_123' });
  * ```
  */
-export const deleteLinkAction = withAuthInput<DeleteLinkInput, void>(
+export const deleteLinkAction = withAuthInputAndRateLimit<DeleteLinkInput, void>(
   'deleteLinkAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(deleteLinkSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'delete-link');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Link deletion rate limit exceeded', {
-        userId,
-        linkId: validated.linkId,
-        action: 'deleteLinkAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -791,35 +678,17 @@ export const deleteLinkAction = withAuthInput<DeleteLinkInput, void>(
  * }
  * ```
  */
-export const checkSlugAvailabilityAction = withAuthInput<
+export const checkSlugAvailabilityAction = withAuthInputAndRateLimit<
   { slug: string },
   boolean
->('checkSlugAvailabilityAction', async (userId, input) => {
-  // Validate input (includes slug sanitization)
-  const validated = validateInput(checkSlugSchema, input);
+>(
+  'checkSlugAvailabilityAction',
+  RateLimitPresets.SLUG_VALIDATION,
+  async (userId, input) => {
+    // Validate input (includes slug sanitization)
+    const validated = validateInput(checkSlugSchema, input);
 
-  // Rate limiting: 30 requests/minute (strict to prevent slug enumeration)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'check-slug');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.SLUG_VALIDATION);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('Slug availability check rate limit exceeded', {
-      userId,
-      action: 'checkSlugAvailabilityAction',
-      limit: RateLimitPresets.SLUG_VALIDATION.limit,
-      window: RateLimitPresets.SLUG_VALIDATION.windowMs,
-      attempts: RateLimitPresets.SLUG_VALIDATION.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
-
-  // Check availability
+    // Check availability
   const available = await isSlugAvailable(validated.slug);
 
   return {

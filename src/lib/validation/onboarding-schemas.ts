@@ -6,10 +6,8 @@
 import { z } from 'zod';
 
 // Import base schemas from global
-import {
-  usernameSchema,
-  validateInput,
-} from '@/lib/validation/base-schemas';
+import { usernameSchema } from '@/lib/validation/base-schemas';
+import { validateInput } from '@/lib/utils/action-helpers';
 
 // Re-export for convenience
 export { validateInput };

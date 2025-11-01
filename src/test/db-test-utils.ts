@@ -4,7 +4,7 @@
 // Shared helpers for database testing with real PostgreSQL operations
 
 import { db } from '@/lib/database/connection';
-import { workspaces, users, links } from '@/lib/database/schemas';
+import { workspaces, users, links, folders, files } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -81,6 +81,67 @@ export async function createTestLink(data: {
     .returning();
 
   return link;
+}
+
+/**
+ * Create a test folder in the database
+ */
+export async function createTestFolder(data: {
+  workspaceId: string;
+  name?: string;
+  parentFolderId?: string | null;
+  linkId?: string | null;
+  uploaderEmail?: string | null;
+  uploaderName?: string | null;
+}) {
+  const [folder] = await db
+    .insert(folders)
+    .values({
+      id: crypto.randomUUID(),
+      workspaceId: data.workspaceId,
+      name: data.name || 'Test Folder',
+      parentFolderId: data.parentFolderId ?? null,
+      linkId: data.linkId ?? null,
+      uploaderEmail: data.uploaderEmail ?? null,
+      uploaderName: data.uploaderName ?? null,
+    })
+    .returning();
+
+  return folder;
+}
+
+/**
+ * Create a test file in the database
+ */
+export async function createTestFile(data: {
+  workspaceId: string;
+  filename?: string;
+  fileSize?: number;
+  mimeType?: string;
+  storagePath?: string;
+  parentFolderId?: string | null;
+  linkId?: string | null;
+  uploaderEmail?: string | null;
+  uploaderName?: string | null;
+}) {
+  const fileId = crypto.randomUUID();
+  const [file] = await db
+    .insert(files)
+    .values({
+      id: fileId,
+      workspaceId: data.workspaceId,
+      filename: data.filename || 'test-file.pdf',
+      fileSize: data.fileSize || 1024000, // 1MB default
+      mimeType: data.mimeType || 'application/pdf',
+      storagePath: data.storagePath || `test/${data.workspaceId}/${fileId}.pdf`,
+      parentFolderId: data.parentFolderId ?? null,
+      linkId: data.linkId ?? null,
+      uploaderEmail: data.uploaderEmail ?? null,
+      uploaderName: data.uploaderName ?? null,
+    })
+    .returning();
+
+  return file;
 }
 
 /**

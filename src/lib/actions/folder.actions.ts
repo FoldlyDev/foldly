@@ -7,8 +7,9 @@
 'use server';
 
 // Import from global utilities
-import { withAuth, withAuthInput, type ActionResponse } from '@/lib/utils/action-helpers';
+import { withAuthAndRateLimit, withAuthInputAndRateLimit, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyFolderOwnership } from '@/lib/utils/authorization';
+import { withTransaction } from '@/lib/database/transactions';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 // Import database queries
@@ -25,17 +26,16 @@ import {
 } from '@/lib/database/queries';
 
 // Import rate limiting
-import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
+import { RateLimitPresets } from '@/lib/middleware/rate-limit';
 
 // Import logging
-import { logger, logRateLimitViolation, logSecurityEvent } from '@/lib/utils/logger';
+import { logger, logSecurityEvent } from '@/lib/utils/logger';
 
 // Import types
 import type { Folder } from '@/lib/database/schemas';
 
 // Import global validation schemas
 import {
-  validateInput,
   createFolderSchema,
   updateFolderSchema,
   moveFolderSchema,
@@ -70,30 +70,10 @@ import { VALIDATION_LIMITS } from '@/lib/constants/validation';
  * }
  * ```
  */
-export const getRootFoldersAction = withAuth<Folder[]>(
+export const getRootFoldersAction = withAuthAndRateLimit<Folder[]>(
   'getRootFoldersAction',
+  RateLimitPresets.GENEROUS,
   async (userId) => {
-    // Rate limiting: 100 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'list-folders');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Folder read rate limit exceeded', {
-        userId,
-        action: 'getRootFoldersAction',
-        limit: RateLimitPresets.GENEROUS.limit,
-        window: RateLimitPresets.GENEROUS.windowMs,
-        attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
-
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
 
@@ -124,34 +104,12 @@ export const getRootFoldersAction = withAuth<Folder[]>(
  * }
  * ```
  */
-export const getFolderHierarchyAction = withAuthInput<
+export const getFolderHierarchyAction = withAuthInputAndRateLimit<
   GetFolderHierarchyInput,
   Folder[]
->('getFolderHierarchyAction', async (userId, input) => {
+>('getFolderHierarchyAction', RateLimitPresets.GENEROUS, async (userId, input) => {
   // Validate input
   const validated = validateInput(getFolderHierarchySchema, input);
-
-  // Rate limiting: 100 requests/minute (using global preset)
-  const rateLimitKey = RateLimitKeys.userAction(userId, 'get-folder-hierarchy');
-  const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.GENEROUS);
-
-  if (!rateLimitResult.allowed) {
-    logRateLimitViolation('Folder hierarchy rate limit exceeded', {
-      userId,
-      folderId: validated.folderId,
-      action: 'getFolderHierarchyAction',
-      limit: RateLimitPresets.GENEROUS.limit,
-      window: RateLimitPresets.GENEROUS.windowMs,
-      attempts: RateLimitPresets.GENEROUS.limit - rateLimitResult.remaining,
-    });
-
-    throw {
-      success: false,
-      error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-      blocked: true,
-      resetAt: rateLimitResult.resetAt,
-    } as const;
-  }
 
   // Get user's workspace
   const workspace = await getAuthenticatedWorkspace(userId);
@@ -192,32 +150,12 @@ export const getFolderHierarchyAction = withAuthInput<
  * });
  * ```
  */
-export const createFolderAction = withAuthInput<CreateFolderInput, Folder>(
+export const createFolderAction = withAuthInputAndRateLimit<CreateFolderInput, Folder>(
   'createFolderAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(createFolderSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'create-folder');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Folder creation rate limit exceeded', {
-        userId,
-        action: 'createFolderAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -230,13 +168,16 @@ export const createFolderAction = withAuthInput<CreateFolderInput, Folder>(
         'createFolderAction'
       );
 
-      // Check nesting depth: Parent must be < 20 (so child will be ≤ 20)
+      // Check nesting depth: Child will be at parentDepth + 1
+      // Reject if child depth would reach MAX_NESTING_DEPTH (20 levels = depth 0-19)
       const parentDepth = await getFolderDepth(validated.parentFolderId);
-      if (parentDepth >= VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH) {
+      const childDepth = parentDepth + 1;
+      if (childDepth >= VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH) {
         logSecurityEvent('folderNestingLimitExceeded', {
           userId,
           parentFolderId: validated.parentFolderId,
           parentDepth,
+          childDepth,
           limit: VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH,
         });
         throw {
@@ -305,33 +246,12 @@ export const createFolderAction = withAuthInput<CreateFolderInput, Folder>(
  * });
  * ```
  */
-export const updateFolderAction = withAuthInput<UpdateFolderInput, Folder>(
+export const updateFolderAction = withAuthInputAndRateLimit<UpdateFolderInput, Folder>(
   'updateFolderAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(updateFolderSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'update-folder');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Folder update rate limit exceeded', {
-        userId,
-        folderId: validated.folderId,
-        action: 'updateFolderAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -402,33 +322,12 @@ export const updateFolderAction = withAuthInput<UpdateFolderInput, Folder>(
  * });
  * ```
  */
-export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
+export const moveFolderAction = withAuthInputAndRateLimit<MoveFolderInput, Folder>(
   'moveFolderAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(moveFolderSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'move-folder');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Folder move rate limit exceeded', {
-        userId,
-        folderId: validated.folderId,
-        action: 'moveFolderAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
@@ -440,7 +339,8 @@ export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
       'moveFolderAction'
     );
 
-    // If newParentId is provided, verify it exists and belongs to workspace
+    // Perform all business logic validations BEFORE transaction
+    // Following pattern from link.actions.ts - validations don't need transaction atomicity
     if (validated.newParentId) {
       // Prevent moving folder into itself
       if (validated.newParentId === validated.folderId) {
@@ -478,14 +378,17 @@ export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
         } as const;
       }
 
-      // Check nesting depth: New parent must be < 20 (so moved folder will be ≤ 20)
+      // Check nesting depth: Moved folder will be at newParentDepth + 1
+      // Reject if new depth would reach MAX_NESTING_DEPTH (20 levels = depth 0-19)
       const newParentDepth = await getFolderDepth(validated.newParentId);
-      if (newParentDepth >= VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH) {
+      const newDepth = newParentDepth + 1;
+      if (newDepth >= VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH) {
         logSecurityEvent('folderNestingLimitExceeded', {
           userId,
           folderId: validated.folderId,
           newParentId: validated.newParentId,
           newParentDepth,
+          newDepth,
           limit: VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH,
         });
         throw {
@@ -516,10 +419,41 @@ export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
       } as const;
     }
 
-    // Move folder (update parentFolderId)
-    const updatedFolder = await updateFolder(validated.folderId, {
-      parentFolderId: validated.newParentId,
-    });
+    // Execute move operation in transaction (only the database update)
+    // Following link.actions.ts pattern - transaction wraps only the DB operation
+    const transactionResult = await withTransaction(
+      async (tx) => {
+        // Move folder (update parentFolderId)
+        const updatedFolder = await updateFolder(validated.folderId, {
+          parentFolderId: validated.newParentId,
+        });
+
+        if (!updatedFolder) {
+          throw new Error('Failed to move folder: Database update returned no rows');
+        }
+
+        return updatedFolder;
+      },
+      {
+        name: 'move-folder',
+        maxRetries: 1, // Retry once on serialization errors
+        context: { userId, folderId: validated.folderId, newParentId: validated.newParentId }
+      }
+    );
+
+    // Check transaction result and RETURN error (don't throw - HOF will handle)
+    // Following link.actions.ts pattern
+    if (!transactionResult.success || !transactionResult.data) {
+      logger.error('Folder move transaction failed', {
+        userId,
+        folderId: validated.folderId,
+        error: transactionResult.error,
+      });
+      return {
+        success: false,
+        error: transactionResult.error || 'Failed to move folder',
+      } as const;
+    }
 
     logger.info('Folder moved successfully', {
       userId,
@@ -530,7 +464,7 @@ export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
 
     return {
       success: true,
-      data: updatedFolder,
+      data: transactionResult.data,
     } as const;
   }
 );
@@ -549,33 +483,12 @@ export const moveFolderAction = withAuthInput<MoveFolderInput, Folder>(
  * const result = await deleteFolderAction({ folderId: 'folder_123' });
  * ```
  */
-export const deleteFolderAction = withAuthInput<DeleteFolderInput, void>(
+export const deleteFolderAction = withAuthInputAndRateLimit<DeleteFolderInput, void>(
   'deleteFolderAction',
+  RateLimitPresets.MODERATE,
   async (userId, input) => {
     // Validate input
     const validated = validateInput(deleteFolderSchema, input);
-
-    // Rate limiting: 20 requests/minute (using global preset)
-    const rateLimitKey = RateLimitKeys.userAction(userId, 'delete-folder');
-    const rateLimitResult = await checkRateLimit(rateLimitKey, RateLimitPresets.MODERATE);
-
-    if (!rateLimitResult.allowed) {
-      logRateLimitViolation('Folder deletion rate limit exceeded', {
-        userId,
-        folderId: validated.folderId,
-        action: 'deleteFolderAction',
-        limit: RateLimitPresets.MODERATE.limit,
-        window: RateLimitPresets.MODERATE.windowMs,
-        attempts: RateLimitPresets.MODERATE.limit - rateLimitResult.remaining,
-      });
-
-      throw {
-        success: false,
-        error: ERROR_MESSAGES.RATE_LIMIT.EXCEEDED,
-        blocked: true,
-        resetAt: rateLimitResult.resetAt,
-      } as const;
-    }
 
     // Get user's workspace
     const workspace = await getAuthenticatedWorkspace(userId);
