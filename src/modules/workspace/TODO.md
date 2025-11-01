@@ -1,31 +1,32 @@
 # Workspace Module - Implementation TODO
 
-**Last Updated:** 2025-10-30
-**Status:** Phase 2 Complete + Post-Review Fixes Applied
+**Last Updated:** 2025-10-31
+**Status:** Phase 3 Ready - UX Architecture Approved
 **Branch:** `v2/workspace-module`
 
 **Completed:**
 - ✅ Phase 1: Foundation (database queries, validation, query keys)
 - ✅ Phase 2: Actions & Hooks (11 actions, 10 hooks, comprehensive tests)
 - ✅ Code Review: 9.2/10, Tech Lead: 9.5/10 - Authorized for Phase 3
-- ✅ **Post-Review Fixes Applied** (2025-10-30):
-  - Fixed bulk delete rollback handling (Promise.allSettled pattern)
-  - Optimized N+1 query in bulk operations (batch getFilesByIds)
-  - Consolidated email validation (removed duplication)
-  - Moved createHexColorSchema to links module (module-specific)
-  - Moved validateInput to action-helpers.ts (proper location)
+- ✅ **Post-Review Fixes Applied** (2025-10-30)
+- ✅ **UX Architecture Review** (2025-10-31):
+  - Replaced 3-view tabs with single-view + dynamic filters
+  - Approved by UX Reviewer and Tech Lead
+  - Single responsive component pattern (matches Links Module)
+  - Desktop/Mobile layouts for complex UI sections
 
-**Next:** Phase 3 UI Implementation
+**Next:** Phase 3 UI Implementation - Single View + Filters
 
 ---
 
 ## 🎯 Module Scope
 
 The Workspace Module is the **primary user interface** for file collection management. It provides:
+- **Single workspace view** with dynamic filtering (Group by / Filter / Sort)
 - Folder management (CRUD, hierarchy, navigation)
 - File management (listing, filtering, bulk operations)
-- Dashboard with 3 views: Files (grid), By Email (grouped), By Date (chronological)
-- Cross-folder search and email-based filtering
+- Email-based filtering (core feature - primary filter option)
+- Cross-folder search and multi-criteria filtering
 
 ---
 
@@ -256,66 +257,93 @@ export const folderKeys = {
 
 ### 5. Workspace Module Components
 
-#### Views (`src/modules/workspace/components/views/`)
-**Pattern:** Follow `src/modules/links/components/views/` structure
+#### **APPROVED STRUCTURE** (UX Review 2025-10-31)
+Single-view + dynamic filters (replaces 3-view tabs approach)
 
-- [ ] `WorkspaceDashboard.tsx` - Main dashboard with tab navigation, search bar, quick stats
-- [ ] `FilesView.tsx` - Google Drive-style grid (root folders + files)
-- [ ] `ByEmailView.tsx` - Files grouped by uploader email (expandable sections)
-- [ ] `ByDateView.tsx` - Chronological file list (grouped by date ranges)
+#### Views (`src/modules/workspace/components/views/`)
+**Pattern:** Single responsive component (matches Links Module)
+
+- [ ] `UserWorkspace.tsx` - Main orchestrator (data fetching, state management, responsive routing)
+- [ ] `layouts/DesktopLayout.tsx` - Desktop-specific UI (toolbar, grid, multi-panel)
+- [ ] `layouts/MobileLayout.tsx` - Mobile-specific UI (bottom sheet, touch gestures)
 
 **Notes:**
-- Use data hooks (`useWorkspaceFiles`, `useRootFolders`, etc.)
-- Tab state managed by module-specific hook (`use-workspace-view.ts`)
-- Follow existing view patterns (error boundaries, loading states)
+- UserWorkspace handles data + routing to Desktop/Mobile layouts
+- Desktop/Mobile layouts receive props from parent (no data duplication)
+- Single source of truth for filter state (`use-workspace-filters.ts`)
+
+#### Filters (`src/modules/workspace/components/filters/`) **NEW**
+**Pattern:** Reusable filter controls
+
+- [ ] `GroupByFilter.tsx` - Dropdown (None, Email, Date, Folder, File Type)
+- [ ] `EmailFilter.tsx` - Multi-select email filter with autocomplete
+- [ ] `SortDropdown.tsx` - Sort control (Name, Date, Size)
+- [ ] `FilterToolbar.tsx` - Desktop toolbar container
+- [ ] `FilterBottomSheet.tsx` - Mobile bottom sheet (Vaul library)
+
+**Notes:**
+- Follow AnimateUI dropdown patterns
+- Filters update Zustand store (global filter state)
 
 #### Sections (`src/modules/workspace/components/sections/`)
-**Pattern:** Follow `src/modules/links/components/sections/` structure
+**Pattern:** Reusable layout sections
 
-- [ ] `FolderGrid.tsx` - Grid layout component for folders/files
-- [ ] `FolderDetails.tsx` - Sidebar details panel (name, size, access, actions)
-- [ ] `SearchBar.tsx` - Search input with filters
-- [ ] `QuickStats.tsx` - Stats cards (total files, storage, active links)
-- [ ] `RecentActivity.tsx` - Recent uploads feed (last 20 items)
+- [ ] `WorkspaceHeader.tsx` - Search bar + QuickStats
+- [ ] `FileGrid.tsx` - Responsive CSS Grid (folders + files)
+- [ ] `GroupedFileList.tsx` - Accordion for grouped views (email/date)
+- [ ] `FolderBreadcrumb.tsx` - Navigation breadcrumb
+- [ ] `SelectionToolbar.tsx` - Bulk actions bar (appears when items selected)
 
 **Notes:**
-- Sections are reusable across views
-- Use existing UI primitives from shadcn/ui
+- FileGrid handles both flat + grouped display
+- GroupedFileList uses AnimateUI Accordion
+
+#### Modals (`src/modules/workspace/components/modals/`)
+**Pattern:** Modal dialogs
+
+- [ ] `FilePreviewModal.tsx` - Image/PDF viewer with signed URLs
+- [ ] `CreateFolderModal.tsx` - Folder creation form
+- [ ] `RenameFolderModal.tsx` - Inline rename
+- [ ] `MoveFolderModal.tsx` - Folder picker tree
+- [ ] `DeleteConfirmModal.tsx` - Bulk delete confirmation
+
+**Notes:**
+- Use `useModalState` hook pattern (from Links Module)
+- AnimateUI Modal primitives
 
 #### UI Components (`src/modules/workspace/components/ui/`)
-**Pattern:** Follow `src/modules/links/components/ui/` structure
+**Pattern:** Atomic components
 
-- [ ] `FolderCard.tsx` - Folder item with 🔗 badge for linked folders, people count
-- [ ] `FileCard.tsx` - File item with thumbnail preview, metadata
-- [ ] `FilePreview.tsx` - Modal for image/PDF preview (use storage signed URLs)
-- [ ] `BulkActionsBar.tsx` - Toolbar for multi-select operations
+- [ ] `FolderCard.tsx` - Folder item with 🔗 badge, people count
+- [ ] `FileCard.tsx` - File item with thumbnail, metadata
+- [ ] `FileThumbnail.tsx` - Image preview/icon renderer
+- [ ] `UploaderBadge.tsx` - Email badge component
 - [ ] `FolderContextMenu.tsx` - Right-click menu for folders
 - [ ] `FileContextMenu.tsx` - Right-click menu for files
-- [ ] `EmptyFolderState.tsx` - Empty state for folders with no content
-- [ ] `EmptyFilesState.tsx` - Empty state for no files view
+- [ ] `EmptyFolderState.tsx` - Empty state component
+- [ ] `EmptyFilesState.tsx` - No files state
+- [ ] `WorkspaceSkeleton.tsx` - Loading skeleton
 
 **Notes:**
-- Use AnimateUI components from `@/components/ui/animateui`
-- Follow existing card patterns from Links Module
-- Context menus use Radix UI primitives
+- FileThumbnail handles lazy-loaded signed URLs
+- Context menus use Radix UI DropdownMenu
 
 ---
 
 ### 6. Module-Specific Hooks
 
 #### `src/modules/workspace/hooks/` (NEW DIRECTORY)
-**Pattern:** Follow `src/modules/links/hooks/` structure (composable primitives)
+**Pattern:** Composable UI state hooks (not data hooks)
 
-- [ ] `use-workspace-view.ts` - Tab state management (Files, By Email, By Date)
-- [ ] `use-folder-selection.ts` - Multi-select state for folders
+- [ ] `use-workspace-filters.ts` - Filter state (Zustand store: groupBy, sortBy, filterEmail, searchQuery)
 - [ ] `use-file-selection.ts` - Multi-select state for files
-- [ ] `use-search-state.ts` - Search query and filter state
-- [ ] `use-folder-navigation.ts` - Breadcrumb navigation state
+- [ ] `use-folder-selection.ts` - Multi-select state for folders
+- [ ] `use-folder-navigation.ts` - Breadcrumb navigation state (current folder, hierarchy)
 
 **Notes:**
-- These are UI state hooks (not data hooks)
-- Composable primitives pattern (single responsibility)
-- Similar to `use-link-form-primitives.ts` structure
+- use-workspace-filters.ts is Zustand store (global filter state)
+- Selection hooks are local component state
+- No data fetching (use global hooks: useWorkspaceFiles, useRootFolders)
 
 ---
 
@@ -338,39 +366,64 @@ export const folderKeys = {
 
 ---
 
-## 📦 File Organization Summary
+## 📦 File Organization Summary (APPROVED STRUCTURE)
 
 ```
-src/
+src/modules/workspace/
+├── components/
+│   ├── filters/                     [5 components - NEW]
+│   │   ├── GroupByFilter.tsx
+│   │   ├── EmailFilter.tsx
+│   │   ├── SortDropdown.tsx
+│   │   ├── FilterToolbar.tsx       (Desktop)
+│   │   └── FilterBottomSheet.tsx   (Mobile)
+│   ├── modals/                      [5 modals]
+│   │   ├── FilePreviewModal.tsx
+│   │   ├── CreateFolderModal.tsx
+│   │   ├── RenameFolderModal.tsx
+│   │   ├── MoveFolderModal.tsx
+│   │   └── DeleteConfirmModal.tsx
+│   ├── sections/                    [5 sections]
+│   │   ├── WorkspaceHeader.tsx
+│   │   ├── FileGrid.tsx
+│   │   ├── GroupedFileList.tsx
+│   │   ├── FolderBreadcrumb.tsx
+│   │   └── SelectionToolbar.tsx
+│   ├── ui/                          [9 atomic components]
+│   │   ├── FolderCard.tsx
+│   │   ├── FileCard.tsx
+│   │   ├── FileThumbnail.tsx
+│   │   ├── UploaderBadge.tsx
+│   │   ├── FolderContextMenu.tsx
+│   │   ├── FileContextMenu.tsx
+│   │   ├── EmptyFolderState.tsx
+│   │   ├── EmptyFilesState.tsx
+│   │   └── WorkspaceSkeleton.tsx
+│   └── views/                       [1 main view + 2 layouts]
+│       ├── UserWorkspace.tsx       (Main orchestrator)
+│       └── layouts/
+│           ├── DesktopLayout.tsx
+│           └── MobileLayout.tsx
+├── hooks/                           [4 UI state hooks]
+│   ├── use-workspace-filters.ts    (Zustand store)
+│   ├── use-file-selection.ts
+│   ├── use-folder-selection.ts
+│   └── use-folder-navigation.ts
 ├── lib/
-│   ├── actions/
-│   │   ├── folder.actions.ts        [NEW - 6 actions]
-│   │   ├── file.actions.ts          [NEW - 5 actions]
-│   │   └── workspace.actions.ts     [EXTEND - add 2 actions]
-│   ├── database/
-│   │   └── queries/
-│   │       ├── folder.queries.ts    [NEW - 8 queries]
-│   │       └── file.queries.ts      [NEW - 10 queries]
-│   ├── validation/
-│   │   ├── folder-schemas.ts        [NEW]
-│   │   └── file-schemas.ts          [NEW]
-│   └── config/
-│       └── query-keys.ts            [EXTEND - add folderKeys, fileKeys]
-├── hooks/
-│   └── data/
-│       ├── use-folders.ts           [NEW - 6 hooks]
-│       ├── use-files.ts             [NEW - 4 hooks]
-│       └── use-workspace.ts         [EXTEND - add 2 hooks]
-└── modules/
-    └── workspace/
-        ├── components/
-        │   ├── views/               [4 view components]
-        │   ├── sections/            [5 section components]
-        │   └── ui/                  [8 UI components]
-        ├── hooks/                   [5 module-specific hooks]
-        └── lib/
-            └── validation/          [Module form schemas if needed]
+│   └── utils/                       [Client-side utilities - NEW]
+│       ├── groupByEmail.ts
+│       ├── groupByDate.ts
+│       ├── groupByFolder.ts
+│       └── sortFiles.ts
+└── index.ts                         (Module exports)
 ```
+
+**Global Infrastructure (already complete):**
+- ✅ `src/lib/actions/` - file.actions.ts, folder.actions.ts (11 actions)
+- ✅ `src/lib/database/queries/` - file.queries.ts, folder.queries.ts (24 queries)
+- ✅ `src/lib/validation/` - file-schemas.ts, folder-schemas.ts
+- ✅ `src/hooks/data/` - use-files.ts, use-folders.ts (10 hooks)
+- ✅ `src/lib/config/query-keys.ts` - fileKeys, folderKeys
 
 ---
 
@@ -386,16 +439,13 @@ src/
 5. ✅ React Query hooks (folder + file + workspace extensions) - 10 hooks
 6. ✅ Comprehensive tests for queries + actions - 262+ tests passing
 
-**Phase 3: UI Components (Week 2-3)**
-7. Basic UI components (FolderCard, FileCard, context menus)
-8. Module-specific hooks (view state, selection, navigation)
-9. Section components (FolderGrid, FolderDetails, QuickStats)
-
-**Phase 4: Dashboard Views (Week 3-4)**
-10. FilesView (Google Drive-style grid)
-11. ByEmailView (email grouping)
-12. ByDateView (chronological)
-13. WorkspaceDashboard (main dashboard with tabs)
+**Phase 3: UI Implementation (Week 2-3)** ← CURRENT PHASE
+7. Module infrastructure (hooks, utils, Zustand store)
+8. Atomic UI components (cards, thumbnails, badges, context menus, skeletons)
+9. Filter components (dropdowns, toolbar, bottom sheet)
+10. Section components (header, grid, breadcrumb, selection toolbar)
+11. Modals (preview, create, rename, move, delete)
+12. Main view + layouts (UserWorkspace, DesktopLayout, MobileLayout)
 
 **Phase 5: Polish & Features (Week 4+)**
 14. Search functionality
