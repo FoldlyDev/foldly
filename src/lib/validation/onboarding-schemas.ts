@@ -89,4 +89,11 @@ export type CompleteOnboardingResult = {
     isVerified: 'true';
     verifiedAt: Date;
   };
+  folder: {
+    id: string;
+    workspaceId: string;
+    linkId: string;
+    parentFolderId: null;
+    name: string;
+  };
 };

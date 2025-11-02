@@ -258,6 +258,10 @@ export const completeOnboardingAction = withAuthInput<
   const workspaceId = randomUUID();
   const linkId = randomUUID();
   const permissionId = randomUUID();
+  const folderId = randomUUID();
+
+  // Prepare slug for link (lowercase for URL)
+  const linkSlug = `${validated.username.toLowerCase()}-first-link`;
 
   // Prepare data for transaction
   const userData = {
@@ -280,7 +284,7 @@ export const completeOnboardingAction = withAuthInput<
   const linkData = {
     id: linkId,
     workspaceId: workspaceId,
-    slug: `${validated.username.toLowerCase()}-first-link`, // Convert to lowercase for URL-safe slug
+    slug: linkSlug,
     name: `${validated.username}'s First Link`, // Keep original case for display name
     isPublic: true,
     isActive: true,
@@ -293,6 +297,14 @@ export const completeOnboardingAction = withAuthInput<
     role: 'owner' as const,
     isVerified: 'true' as const,
     verifiedAt: new Date(),
+  };
+
+  const folderData = {
+    id: folderId,
+    workspaceId: workspaceId,
+    linkId: linkId,
+    parentFolderId: null, // Root folder
+    name: `${linkSlug}-files`, // Pattern: {slug}-files
   };
 
   // Execute atomic transaction (SEC-003: All operations succeed or all fail)
@@ -308,6 +320,7 @@ export const completeOnboardingAction = withAuthInput<
     workspaceData,
     linkData,
     permissionData,
+    folderData,
   });
 
   // Check transaction result
@@ -352,6 +365,7 @@ export const completeOnboardingAction = withAuthInput<
         workspace: transactionResult.data!.workspace,
         link: transactionResult.data!.link,
         permission: transactionResult.data!.permission,
+        folder: transactionResult.data!.folder,
       },
     } as const;
   } catch (clerkError) {
@@ -375,6 +389,7 @@ export const completeOnboardingAction = withAuthInput<
         workspace: transactionResult.data!.workspace,
         link: transactionResult.data!.link,
         permission: transactionResult.data!.permission,
+        folder: transactionResult.data!.folder,
       },
     } as const;
   }

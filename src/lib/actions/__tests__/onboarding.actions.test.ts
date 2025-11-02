@@ -18,7 +18,7 @@ import { getUserById } from '@/lib/database/queries/user.queries';
 import { getUserWorkspace } from '@/lib/database/queries/workspace.queries';
 import { resetRateLimit, RateLimitKeys } from '@/lib/middleware/rate-limit';
 import { db } from '@/lib/database/connection';
-import { workspaces as workspacesTable, links, permissions } from '@/lib/database/schemas';
+import { workspaces as workspacesTable, links, permissions, folders } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 
 // Mock Clerk authentication
@@ -401,7 +401,7 @@ describe('Onboarding Actions', () => {
         // Act: Complete onboarding
         const result = await completeOnboardingAction({ username: 'testuser' });
 
-        // Assert: Verify ALL 4 resources created
+        // Assert: Verify ALL 5 resources created
         expect(result.success).toBe(true);
         expect(result.data).toBeDefined();
 
@@ -426,6 +426,13 @@ describe('Onboarding Actions', () => {
         expect(permsResult.length).toBe(1);
         expect(permsResult[0].email).toBe('test@example.com');
         expect(permsResult[0].role).toBe('owner');
+
+        // Verify root folder in database
+        const foldersResult = await db.select().from(folders).where(eq(folders.linkId, linksResult[0].id));
+        expect(foldersResult.length).toBe(1);
+        expect(foldersResult[0].name).toBe('testuser-first-link-files');
+        expect(foldersResult[0].parentFolderId).toBeNull();
+        expect(foldersResult[0].workspaceId).toBe(workspace!.id);
       });
 
       it('should use sanitized username for all resources', async () => {

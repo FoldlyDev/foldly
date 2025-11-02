@@ -21,7 +21,7 @@ import {
 } from '@/test/db-test-utils';
 import { resetRateLimit, RateLimitKeys } from '@/lib/middleware/rate-limit';
 import { db } from '@/lib/database/connection';
-import { links, permissions } from '@/lib/database/schemas';
+import { links, permissions, folders } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 
 // Mock Clerk authentication
@@ -286,6 +286,17 @@ describe('Link Actions', () => {
       expect(perms.length).toBe(1);
       expect(perms[0].email).toBe(user.email);
       expect(perms[0].role).toBe('owner');
+
+      // Verify root folder was created for the link
+      const linkFolders = await db
+        .select()
+        .from(folders)
+        .where(eq(folders.linkId, result.data!.id));
+
+      expect(linkFolders.length).toBe(1);
+      expect(linkFolders[0].name).toBe('new-test-link-files');
+      expect(linkFolders[0].parentFolderId).toBeNull();
+      expect(linkFolders[0].workspaceId).toBe(workspace.id);
     });
 
     it('should reject duplicate slug', async () => {

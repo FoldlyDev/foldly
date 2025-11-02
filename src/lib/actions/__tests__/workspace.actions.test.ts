@@ -18,6 +18,9 @@ import {
 import {
   getPermissionByLinkAndEmail,
 } from '@/lib/database/queries';
+import { db } from '@/lib/database/connection';
+import { folders } from '@/lib/database/schemas';
+import { eq } from 'drizzle-orm';
 
 // Mock Clerk authentication
 vi.mock('@clerk/nextjs/server', () => ({
@@ -288,6 +291,17 @@ describe('Workspace Actions', () => {
         expect(result.link.slug).toBe('test-first-link');
         expect(result.link.name).toBe('My First Link');
         expect(result.link.isPublic).toBe(true);
+
+        // Verify root folder was created for the link
+        const linkFolders = await db
+          .select()
+          .from(folders)
+          .where(eq(folders.linkId, result.link.id));
+
+        expect(linkFolders.length).toBe(1);
+        expect(linkFolders[0].name).toBe('test-first-link-files');
+        expect(linkFolders[0].parentFolderId).toBeNull();
+        expect(linkFolders[0].workspaceId).toBe(workspace.id);
       }
     });
 

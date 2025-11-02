@@ -4,7 +4,7 @@
 // 🎯 Pure database queries for link operations (called by server actions)
 
 import { db } from '@/lib/database/connection';
-import { links, workspaces, users } from '@/lib/database/schemas';
+import { links, workspaces, users, folders } from '@/lib/database/schemas';
 import { eq } from 'drizzle-orm';
 import type { Link } from '@/lib/database/schemas';
 
@@ -50,6 +50,7 @@ export async function getWorkspaceLinks(workspaceId: string) {
 
 /**
  * Create a new shareable link
+ * Automatically creates root folder for the link
  */
 export async function createLink(data: {
   workspaceId: string;
@@ -72,6 +73,16 @@ export async function createLink(data: {
   if (!link) {
     throw new Error('Failed to create link: Database insert returned no rows');
   }
+
+  // Auto-create root folder for this link
+  // Pattern: {slug}-files (e.g., "tax-docs-2024-files")
+  await db.insert(folders).values({
+    id: crypto.randomUUID(),
+    workspaceId: data.workspaceId,
+    linkId: link.id,
+    parentFolderId: null, // Root folder
+    name: `${data.slug}-files`,
+  });
 
   return link;
 }

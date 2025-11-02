@@ -60,6 +60,7 @@ export async function createTestWorkspace(data: {
 
 /**
  * Create a test link in the database
+ * Automatically creates root folder for the link (matches production behavior)
  */
 export async function createTestLink(data: {
   workspaceId: string;
@@ -68,17 +69,28 @@ export async function createTestLink(data: {
   isActive?: boolean;
   isPublic?: boolean;
 }) {
+  const slug = data.slug || testData.generateLinkSlug();
+
   const [link] = await db
     .insert(links)
     .values({
       id: crypto.randomUUID(),
       workspaceId: data.workspaceId,
-      slug: data.slug || testData.generateLinkSlug(),
+      slug,
       name: data.name || 'Test Link',
       isActive: data.isActive ?? true,
       isPublic: data.isPublic ?? false,
     })
     .returning();
+
+  // Auto-create root folder for this link (matches production behavior)
+  await db.insert(folders).values({
+    id: crypto.randomUUID(),
+    workspaceId: data.workspaceId,
+    linkId: link.id,
+    parentFolderId: null, // Root folder
+    name: `${slug}-files`,
+  });
 
   return link;
 }

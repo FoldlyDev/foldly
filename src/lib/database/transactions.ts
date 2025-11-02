@@ -221,7 +221,7 @@ export function isConstraintViolation(error: unknown): boolean {
 
 /**
  * Transaction helper for onboarding flow
- * Creates user, workspace, and first link atomically
+ * Creates user, workspace, first link, owner permission, and root folder atomically
  */
 export async function onboardingTransaction(params: {
   userId: string;
@@ -229,8 +229,9 @@ export async function onboardingTransaction(params: {
   workspaceData: any;
   linkData: any;
   permissionData: any;
-}): Promise<TransactionResult<{ user: any; workspace: any; link: any; permission: any }>> {
-  const { users, workspaces, links, permissions } = await import('./schemas');
+  folderData: any;
+}): Promise<TransactionResult<{ user: any; workspace: any; link: any; permission: any; folder: any }>> {
+  const { users, workspaces, links, permissions, folders } = await import('./schemas');
 
   return withTransaction(
     async (tx) => {
@@ -246,7 +247,10 @@ export async function onboardingTransaction(params: {
       // Step 4: Create owner permission
       const [permission] = await tx.insert(permissions).values(params.permissionData).returning();
 
-      return { user, workspace, link, permission };
+      // Step 5: Create root folder for link
+      const [folder] = await tx.insert(folders).values(params.folderData).returning();
+
+      return { user, workspace, link, permission, folder };
     },
     {
       name: 'onboarding',

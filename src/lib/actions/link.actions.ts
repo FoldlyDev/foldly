@@ -42,7 +42,7 @@ import { logger, logSecurityEvent } from '@/lib/utils/logger';
 import type { Link } from '@/lib/database/schemas';
 import { withTransaction, isConstraintViolation } from '@/lib/database/transactions';
 import { db } from '@/lib/database/connection';
-import { links, permissions } from '@/lib/database/schemas';
+import { links, permissions, folders } from '@/lib/database/schemas';
 import { z } from 'zod';
 
 // Import global validation schemas
@@ -247,8 +247,8 @@ export const createLinkAction = withAuthInputAndRateLimit<CreateLinkInput, Link>
       colors: validated.branding?.colors ?? null,
     };
 
-    // Create link, owner permission, and additional permissions atomically in a transaction
-    // This ensures all are created or none are created (prevents orphaned links/permissions)
+    // Create link, owner permission, additional permissions, and root folder atomically in a transaction
+    // This ensures all are created or none are created (prevents orphaned links/permissions/folders)
     try {
       const transactionResult = await withTransaction(
         async (tx) => {
@@ -305,7 +305,24 @@ export const createLinkAction = withAuthInputAndRateLimit<CreateLinkInput, Link>
             await tx.insert(permissions).values(additionalPermissions);
           }
 
-          return { link, permission, additionalPermissions };
+          // Step 4: Auto-create root folder for this link
+          // Pattern: {slug}-files (e.g., "tax-docs-2024-files")
+          const [folder] = await tx
+            .insert(folders)
+            .values({
+              id: crypto.randomUUID(),
+              workspaceId: workspace.id,
+              linkId: link.id,
+              parentFolderId: null, // Root folder
+              name: `${validated.slug}-files`,
+            })
+            .returning();
+
+          if (!folder) {
+            throw new Error('Failed to create root folder: Database insert returned no rows');
+          }
+
+          return { link, permission, additionalPermissions, folder };
         },
         {
           name: 'create-link-with-owner',
