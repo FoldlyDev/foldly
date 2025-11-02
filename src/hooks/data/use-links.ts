@@ -29,7 +29,8 @@ import {
   transformActionError,
   transformQueryResult,
   createMutationErrorHandler,
-  invalidateLinks
+  invalidateLinks,
+  invalidateFolders,
 } from '@/lib/utils/react-query-helpers';
 import { linkKeys } from '@/lib/config/query-keys';
 
@@ -204,8 +205,13 @@ export function useCreateLink() {
     },
     onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate links to show new link
-      await invalidateLinks(queryClient, data.id);
+
+      // Cross-module invalidation: Link creation also creates a root folder
+      // Invalidate both links and folders so workspace module sees the new folder
+      await Promise.all([
+        invalidateLinks(queryClient, data.id),
+        invalidateFolders(queryClient), // New root folder created for link
+      ]);
 
       // Set the new link in cache
       queryClient.setQueryData(linkKeys.detail(data.id), data);
@@ -353,9 +359,14 @@ export function useDeleteLink() {
     },
     onSuccess: async (data, variables) => {
       // TODO: Add success notification when notification system is implemented
-      // Remove from cache and invalidate links
+
+      // Cross-module invalidation: Link deletion cascades to associated folders
+      // Invalidate both links and folders so workspace module updates
       queryClient.removeQueries({ queryKey: linkKeys.detail(variables.linkId) });
-      await invalidateLinks(queryClient);
+      await Promise.all([
+        invalidateLinks(queryClient),
+        invalidateFolders(queryClient), // Associated folders deleted via CASCADE
+      ]);
     },
     onError: createMutationErrorHandler('Link deletion'),
     retry: false,
