@@ -61,15 +61,15 @@ import {
 
 /**
  * Get all files for the authenticated user's workspace
- * Rate limited: 100 requests per minute
+ * Rate limited: 100 requests per minute (GENEROUS preset)
  *
- * @returns Array of files for the user's workspace
+ * @returns Action response with array of files for the user's workspace
  *
  * @example
  * ```typescript
  * const result = await getWorkspaceFilesAction();
  * if (result.success) {
- *   console.log('Files:', result.data);
+ *   console.log('Files:', result.data); // File[]
  * }
  * ```
  */
@@ -93,16 +93,17 @@ export const getWorkspaceFilesAction = withAuthAndRateLimit<File[]>(
 /**
  * Get files filtered by uploader email
  * Core feature for email-centric file collection
- * Rate limited: 100 requests per minute
+ * Rate limited: 100 requests per minute (GENEROUS preset)
  *
- * @param input - Object containing uploaderEmail
- * @returns Array of files uploaded by the specified email
+ * @param input - Files by email input
+ * @param input.uploaderEmail - Email address of the uploader (normalized lowercase)
+ * @returns Action response with array of files uploaded by the specified email
  *
  * @example
  * ```typescript
  * const result = await getFilesByEmailAction({ uploaderEmail: 'john@example.com' });
  * if (result.success) {
- *   console.log('Files by john@example.com:', result.data);
+ *   console.log('Files by john@example.com:', result.data); // File[]
  * }
  * ```
  */
@@ -127,17 +128,19 @@ export const getFilesByEmailAction = withAuthInputAndRateLimit<
 
 /**
  * Search files by filename or uploader email
- * Cross-folder search with fuzzy matching
- * Rate limited: 100 requests per minute
+ * Cross-folder search with fuzzy matching using PostgreSQL full-text search
+ * Searches across filename and uploader email fields
+ * Rate limited: 100 requests per minute (GENEROUS preset)
  *
- * @param input - Object containing search query
- * @returns Array of matching files
+ * @param input - Search input
+ * @param input.query - Search query string (1-100 characters) - searches filename and uploader email
+ * @returns Action response with array of matching files
  *
  * @example
  * ```typescript
  * const result = await searchFilesAction({ query: 'invoice' });
  * if (result.success) {
- *   console.log('Search results:', result.data);
+ *   console.log('Search results:', result.data); // File[]
  * }
  * ```
  */
@@ -168,10 +171,21 @@ export const searchFilesAction = withAuthInputAndRateLimit<SearchFilesInput, Fil
 /**
  * Create a file record after successful storage upload
  * This action is called after the file has been uploaded to storage
- * Rate limited: 20 requests per minute
+ * IMPORTANT: Storage upload must complete BEFORE calling this action
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - File metadata
- * @returns Created file record
+ * @param input - File creation input
+ * @param input.filename - Original filename (1-255 characters)
+ * @param input.fileSize - File size in bytes (max 100MB per VALIDATION_LIMITS)
+ * @param input.mimeType - MIME type (e.g., 'application/pdf', 'image/png')
+ * @param input.storagePath - Path to file in storage bucket (GCS path format)
+ * @param input.parentFolderId - Optional parent folder ID (null for root-level files)
+ * @param input.linkId - Optional shareable link ID if uploaded via link
+ * @param input.uploaderEmail - Email address of uploader (required for tracking)
+ * @param input.uploaderName - Optional name of uploader
+ * @param input.uploaderMessage - Optional message from uploader
+ * @returns Action response with created file record
+ * @throws Error if parent folder not found or doesn't belong to user's workspace
  *
  * @example
  * ```typescript
@@ -183,6 +197,9 @@ export const searchFilesAction = withAuthInputAndRateLimit<SearchFilesInput, Fil
  *   parentFolderId: 'folder_456',
  *   uploaderEmail: 'john@example.com'
  * });
+ * if (result.success) {
+ *   console.log('File record created:', result.data.id);
+ * }
  * ```
  */
 export const createFileRecordAction = withAuthInputAndRateLimit<CreateFileInput, File>(
@@ -236,17 +253,27 @@ export const createFileRecordAction = withAuthInputAndRateLimit<CreateFileInput,
 /**
  * Update file metadata (filename, uploader info)
  * Validates ownership before updating
- * Rate limited: 20 requests per minute
+ * Does NOT modify the actual file in storage - only the database record
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - File metadata update data
- * @returns Updated file
+ * @param input - File metadata update input
+ * @param input.fileId - ID of the file to update
+ * @param input.filename - Optional new filename (1-255 characters)
+ * @param input.uploaderName - Optional uploader name to update
+ * @param input.uploaderMessage - Optional uploader message to update
+ * @returns Action response with updated file data
+ * @throws Error if file not found or doesn't belong to user's workspace
  *
  * @example
  * ```typescript
  * const result = await updateFileMetadataAction({
  *   fileId: 'file_123',
  *   filename: 'renamed-invoice.pdf',
+ *   uploaderName: 'John Smith'
  * });
+ * if (result.success) {
+ *   console.log('File updated:', result.data.filename);
+ * }
  * ```
  */
 export const updateFileMetadataAction = withAuthInputAndRateLimit<
@@ -294,14 +321,23 @@ export const updateFileMetadataAction = withAuthInputAndRateLimit<
  * Validates ownership before deletion
  * CRITICAL: Storage-first deletion to prevent charging users for orphaned files
  * Users pay for storage - orphaned storage files = unethical billing
- * Rate limited: 20 requests per minute
+ * Pattern: Delete storage FIRST, then DB record
+ * If storage deletion fails, operation aborts (user can retry)
+ * If DB deletion fails after storage success, orphaned DB record logged for cleanup
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Object containing fileId
- * @returns Success status
+ * @param input - File deletion input
+ * @param input.fileId - ID of the file to delete
+ * @returns Action response with success status
+ * @throws Error if file not found or doesn't belong to user's workspace
+ * @throws Error if storage deletion fails (operation aborted, user should retry)
  *
  * @example
  * ```typescript
  * const result = await deleteFileAction({ fileId: 'file_123' });
+ * if (result.success) {
+ *   console.log('File deleted successfully (storage + DB)');
+ * }
  * ```
  */
 export const deleteFileAction = withAuthInputAndRateLimit<DeleteFileInput, void>(
@@ -385,24 +421,32 @@ export const deleteFileAction = withAuthInputAndRateLimit<DeleteFileInput, void>
 /**
  * Bulk delete files (both records and storage)
  * CRITICAL: Validates ownership for ALL files before deletion (security requirement)
- * FAIL-FAST PATTERN: ALL storage deletions must succeed or operation aborts (billing integrity)
+ * PARTIAL SUCCESS PATTERN: Deletes storage first, only removes DB records for successful deletions
  * Storage-first deletion to prevent charging users for orphaned files
- * Rate limited: 20 requests per minute
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Object containing array of fileIds
- * @returns Success status with count of deleted files
+ * @param input - Bulk file deletion input
+ * @param input.fileIds - Array of file IDs to delete (1-100 files per request)
+ * @returns Action response with count of successfully deleted files
+ * @throws Error if any file not found or doesn't belong to user's workspace
  *
  * @remarks
- * All-or-nothing semantics: If ANY storage deletion fails, the entire operation aborts
- * and NO files are deleted. This prevents billing integrity violations where users
- * would be charged for storage that was partially deleted but operation marked as failed.
+ * Partial success semantics: For each file, delete storage FIRST. Only delete DB records
+ * for files where storage deletion succeeded. This prevents billing integrity violations
+ * while maximizing successful deletions. Users see which files failed and can retry.
+ *
+ * Design decision documented in code (lines 445-474) explains why partial success
+ * is better than fail-fast all-or-nothing for bulk operations.
  *
  * @example
  * ```typescript
  * const result = await bulkDeleteFilesAction({
  *   fileIds: ['file_123', 'file_456', 'file_789']
  * });
- * // Either all 3 files deleted, or none deleted (never 1-2 files)
+ * if (result.success) {
+ *   console.log(`Deleted ${result.data.deletedCount} files`);
+ *   // Could be 3, 2, 1, or 0 depending on storage deletion success
+ * }
  * ```
  */
 export const bulkDeleteFilesAction = withAuthInputAndRateLimit<

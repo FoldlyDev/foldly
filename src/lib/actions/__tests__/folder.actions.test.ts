@@ -976,6 +976,124 @@ describe('Folder Actions', () => {
       expect(result.success).toBe(false);
       expect(result.error).toBeDefined();
     });
+
+    it('should rollback transaction on database update failure', async () => {
+      // Arrange: Create folders for move operation
+      const user = await createTestUser();
+      createdUserIds.add(user.id);
+
+      const workspace = await createTestWorkspace({
+        userId: user.id,
+        name: 'Test Workspace',
+      });
+
+      const parent1 = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Parent 1',
+        parentFolderId: null,
+      });
+
+      const parent2 = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Parent 2',
+        parentFolderId: null,
+      });
+
+      const childFolder = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Child',
+        parentFolderId: parent1.id,
+      });
+
+      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
+      resetRateLimit(RateLimitKeys.userAction(user.id, 'move-folder'));
+
+      // Get folder state before move attempt
+      const { getFolderById } = await import('@/lib/database/queries');
+      const folderBeforeMove = await getFolderById(childFolder.id);
+
+      // Act: Attempt move with invalid parent ID (UUID format but non-existent)
+      // This should fail during transaction execution
+      const invalidParentId = '00000000-0000-0000-0000-000000000000';
+      const result = await moveFolderAction({
+        folderId: childFolder.id,
+        newParentId: invalidParentId,
+      });
+
+      // Assert: Transaction should fail and rollback
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+
+      // Verify folder state unchanged after failed transaction (rollback successful)
+      const folderAfterFailedMove = await getFolderById(childFolder.id);
+      expect(folderAfterFailedMove).toBeDefined();
+      expect(folderAfterFailedMove?.parentFolderId).toBe(folderBeforeMove?.parentFolderId);
+      expect(folderAfterFailedMove?.parentFolderId).toBe(parent1.id); // Still in original parent
+    });
+
+    it('should maintain data integrity when transaction fails mid-operation', async () => {
+      // Arrange: Create complex folder structure
+      const user = await createTestUser();
+      createdUserIds.add(user.id);
+
+      const workspace = await createTestWorkspace({
+        userId: user.id,
+        name: 'Test Workspace',
+      });
+
+      // Create hierarchy: Root → Parent → Child → Grandchild
+      const rootFolder = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Root',
+        parentFolderId: null,
+      });
+
+      const parentFolder = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Parent',
+        parentFolderId: rootFolder.id,
+      });
+
+      const childFolder = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Child',
+        parentFolderId: parentFolder.id,
+      });
+
+      const grandchildFolder = await createTestFolder({
+        workspaceId: workspace.id,
+        name: 'Grandchild',
+        parentFolderId: childFolder.id,
+      });
+
+      vi.mocked(auth).mockResolvedValue({ userId: user.id } as any);
+      resetRateLimit(RateLimitKeys.userAction(user.id, 'move-folder'));
+
+      // Get all folder states before move
+      const { getFolderById } = await import('@/lib/database/queries');
+      const childBeforeMove = await getFolderById(childFolder.id);
+      const grandchildBeforeMove = await getFolderById(grandchildFolder.id);
+
+      // Act: Attempt to move parent into grandchild (circular reference - should fail)
+      const result = await moveFolderAction({
+        folderId: parentFolder.id,
+        newParentId: grandchildFolder.id,
+      });
+
+      // Assert: Should reject due to circular reference
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Cannot move folder into its own subfolder');
+
+      // Verify all folders maintain original state (no partial updates)
+      const childAfterFailedMove = await getFolderById(childFolder.id);
+      const grandchildAfterFailedMove = await getFolderById(grandchildFolder.id);
+      const parentAfterFailedMove = await getFolderById(parentFolder.id);
+
+      // All relationships should be unchanged
+      expect(parentAfterFailedMove?.parentFolderId).toBe(rootFolder.id);
+      expect(childAfterFailedMove?.parentFolderId).toBe(childBeforeMove?.parentFolderId);
+      expect(grandchildAfterFailedMove?.parentFolderId).toBe(grandchildBeforeMove?.parentFolderId);
+    });
   });
 
   // =============================================================================

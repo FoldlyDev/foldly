@@ -39,7 +39,15 @@ import {
  * - Links module (associate links with workspace)
  * - Files module (workspace-scoped operations)
  *
- * @returns User's workspace or null if doesn't exist
+ * @returns Action response with user's workspace or null if doesn't exist
+ *
+ * @example
+ * ```typescript
+ * const result = await getUserWorkspaceAction();
+ * if (result.success) {
+ *   console.log(result.data); // Workspace | null
+ * }
+ * ```
  */
 export const getUserWorkspaceAction = withAuth<Workspace | null>(
   'getUserWorkspaceAction',
@@ -59,8 +67,18 @@ export const getUserWorkspaceAction = withAuth<Workspace | null>(
  * Used by:
  * - Onboarding flow (create workspace after username selection)
  *
- * @param input - Username for workspace name generation
- * @returns Success status with workspace data or error
+ * @param input - Workspace creation input containing username
+ * @param input.username - User's chosen username (used to generate workspace name: "{username}'s Workspace")
+ * @returns Action response with created workspace data
+ * @throws Error if workspace already exists for user
+ *
+ * @example
+ * ```typescript
+ * const result = await createUserWorkspaceAction({ username: 'john' });
+ * if (result.success) {
+ *   console.log(result.data.name); // "john's Workspace"
+ * }
+ * ```
  */
 export const createUserWorkspaceAction = withAuthInput<CreateWorkspaceInput, Workspace>(
   'createUserWorkspaceAction',
@@ -102,8 +120,22 @@ export const createUserWorkspaceAction = withAuthInput<CreateWorkspaceInput, Wor
  * Used across modules:
  * - Settings module (rename workspace)
  *
- * @param input - Workspace ID and new name
- * @returns Success status with updated workspace or error
+ * @param input - Workspace update input
+ * @param input.workspaceId - ID of the workspace to update
+ * @param input.name - New workspace name (2-50 characters)
+ * @returns Action response with updated workspace data
+ * @throws Error if workspace not found or user is not the owner
+ *
+ * @example
+ * ```typescript
+ * const result = await updateWorkspaceNameAction({
+ *   workspaceId: 'ws_abc123',
+ *   name: 'My Updated Workspace'
+ * });
+ * if (result.success) {
+ *   console.log(result.data.name); // "My Updated Workspace"
+ * }
+ * ```
  */
 export const updateWorkspaceNameAction = withAuthInput<UpdateWorkspaceNameInput, Workspace>(
   'updateWorkspaceNameAction',
@@ -148,8 +180,19 @@ export const updateWorkspaceNameAction = withAuthInput<UpdateWorkspaceNameInput,
  * Creates link + owner permission (email-based access control)
  *
  * @param workspaceId - ID of the workspace
- * @param slug - Unique slug for the link
- * @returns Success status with link data
+ * @param slug - Unique slug for the link (e.g., "my-first-link")
+ * @returns Action response with created link data or error
+ * @throws Error if user is not authenticated
+ * @throws Error if user doesn't own the workspace
+ * @throws Error if user has no valid email address
+ *
+ * @example
+ * ```typescript
+ * const result = await createDefaultLinkAction('ws_abc123', 'my-first-link');
+ * if (result.success) {
+ *   console.log(result.link.name); // "My First Link"
+ * }
+ * ```
  */
 export async function createDefaultLinkAction(workspaceId: string, slug: string) {
   const { userId } = await auth();

@@ -58,15 +58,15 @@ import { VALIDATION_LIMITS } from '@/lib/constants/validation';
 /**
  * Get all root folders for the authenticated user's workspace
  * Root folders have parentFolderId = NULL
- * Rate limited: 100 requests per minute
+ * Rate limited: 100 requests per minute (GENEROUS preset)
  *
- * @returns Array of root folders for the user's workspace
+ * @returns Action response with array of root folders for the user's workspace
  *
  * @example
  * ```typescript
  * const result = await getRootFoldersAction();
  * if (result.success) {
- *   console.log('Root folders:', result.data);
+ *   console.log('Root folders:', result.data); // Folder[]
  * }
  * ```
  */
@@ -91,16 +91,18 @@ export const getRootFoldersAction = withAuthAndRateLimit<Folder[]>(
  * Get folder hierarchy (breadcrumb path)
  * Returns array of folders from root to current folder
  * Validates that the folder belongs to the authenticated user's workspace
- * Rate limited: 100 requests per minute
+ * Rate limited: 100 requests per minute (GENEROUS preset)
  *
- * @param input - Object containing folderId
- * @returns Array of folders in hierarchy order (root to current)
+ * @param input - Folder hierarchy input
+ * @param input.folderId - ID of the folder to get hierarchy for
+ * @returns Action response with array of folders in hierarchy order (root to current)
+ * @throws Error if folder not found or doesn't belong to user's workspace
  *
  * @example
  * ```typescript
  * const result = await getFolderHierarchyAction({ folderId: 'folder_123' });
  * if (result.success) {
- *   console.log('Breadcrumb:', result.data);
+ *   console.log('Breadcrumb:', result.data); // [rootFolder, parentFolder, currentFolder]
  * }
  * ```
  */
@@ -137,16 +139,28 @@ export const getFolderHierarchyAction = withAuthInputAndRateLimit<
 /**
  * Create a new folder
  * Validates name uniqueness within parent context and enforces nesting depth limit (20 levels)
- * Rate limited: 20 requests per minute
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Folder creation data
- * @returns Created folder
+ * @param input - Folder creation input
+ * @param input.name - Folder name (1-255 characters)
+ * @param input.parentFolderId - Optional parent folder ID (null or undefined for root folder)
+ * @param input.linkId - Optional link ID if folder is associated with a shareable link
+ * @param input.uploaderEmail - Optional uploader email for external uploads
+ * @param input.uploaderName - Optional uploader name for external uploads
+ * @returns Action response with created folder data
+ * @throws Error if nesting depth limit (20 levels) would be exceeded
+ * @throws Error if folder name already exists in parent context
+ * @throws Error if parent folder not found or doesn't belong to user's workspace
  *
  * @example
  * ```typescript
+ * // Create root folder
+ * const result = await createFolderAction({ name: 'Tax Documents' });
+ *
+ * // Create nested folder
  * const result = await createFolderAction({
- *   name: 'Tax Documents',
- *   parentFolderId: 'folder_123', // null for root folder
+ *   name: '2024 Returns',
+ *   parentFolderId: 'folder_123'
  * });
  * ```
  */
@@ -233,10 +247,14 @@ export const createFolderAction = withAuthInputAndRateLimit<CreateFolderInput, F
 /**
  * Update folder details (name)
  * Validates ownership and name uniqueness if name is being changed
- * Rate limited: 20 requests per minute
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Folder update data
- * @returns Updated folder
+ * @param input - Folder update input
+ * @param input.folderId - ID of the folder to update
+ * @param input.name - New folder name (1-255 characters)
+ * @returns Action response with updated folder data
+ * @throws Error if folder not found or doesn't belong to user's workspace
+ * @throws Error if new name already exists in same parent context
  *
  * @example
  * ```typescript
@@ -244,6 +262,9 @@ export const createFolderAction = withAuthInputAndRateLimit<CreateFolderInput, F
  *   folderId: 'folder_123',
  *   name: 'Updated Folder Name',
  * });
+ * if (result.success) {
+ *   console.log(result.data.name); // "Updated Folder Name"
+ * }
  * ```
  */
 export const updateFolderAction = withAuthInputAndRateLimit<UpdateFolderInput, Folder>(
@@ -309,16 +330,30 @@ export const updateFolderAction = withAuthInputAndRateLimit<UpdateFolderInput, F
 /**
  * Move a folder to a new parent
  * Validates ownership, prevents circular references, and enforces nesting depth limit (20 levels)
- * Rate limited: 20 requests per minute
+ * Uses database transaction for atomicity
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Move folder data
- * @returns Updated folder
+ * @param input - Move folder input
+ * @param input.folderId - ID of the folder to move
+ * @param input.newParentId - ID of the new parent folder (null or undefined to move to root)
+ * @returns Action response with updated folder data
+ * @throws Error if folder not found or doesn't belong to user's workspace
+ * @throws Error if circular reference detected (moving folder into itself or its descendant)
+ * @throws Error if nesting depth limit (20 levels) would be exceeded
+ * @throws Error if folder name already exists in destination
  *
  * @example
  * ```typescript
+ * // Move to root
  * const result = await moveFolderAction({
  *   folderId: 'folder_123',
- *   newParentId: 'folder_456', // null to move to root
+ *   newParentId: null
+ * });
+ *
+ * // Move to another folder
+ * const result = await moveFolderAction({
+ *   folderId: 'folder_123',
+ *   newParentId: 'folder_456'
  * });
  * ```
  */
@@ -472,15 +507,21 @@ export const moveFolderAction = withAuthInputAndRateLimit<MoveFolderInput, Folde
 /**
  * Delete a folder
  * Validates ownership before deletion
- * Note: Cascade deletes all subfolders; files have their parent_folder_id set to NULL
- * Rate limited: 20 requests per minute
+ * Note: Cascade deletes all subfolders; files have their parent_folder_id set to NULL (preserving file accessibility)
+ * Folders are purely database entities with no storage representation
+ * Rate limited: 20 requests per minute (MODERATE preset)
  *
- * @param data - Object containing folderId
- * @returns Success status
+ * @param input - Folder deletion input
+ * @param input.folderId - ID of the folder to delete
+ * @returns Action response with success status
+ * @throws Error if folder not found or doesn't belong to user's workspace
  *
  * @example
  * ```typescript
  * const result = await deleteFolderAction({ folderId: 'folder_123' });
+ * if (result.success) {
+ *   console.log('Folder and subfolders deleted successfully');
+ * }
  * ```
  */
 export const deleteFolderAction = withAuthInputAndRateLimit<DeleteFolderInput, void>(
