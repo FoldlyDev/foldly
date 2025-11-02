@@ -9,6 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getUserWorkspaceAction } from '@/lib/actions';
 import { legacyKeys } from '@/lib/config/query-keys';
+import { transformQueryResult } from '@/lib/utils/react-query-helpers';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)
@@ -44,7 +45,10 @@ import { legacyKeys } from '@/lib/config/query-keys';
 export function useUserWorkspace() {
   return useQuery({
     queryKey: legacyKeys.userWorkspace,
-    queryFn: getUserWorkspaceAction,
+    queryFn: async () => {
+      const result = await getUserWorkspaceAction();
+      return transformQueryResult(result, 'Failed to fetch workspace', null);
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes - workspace data rarely changes
   });
 }

@@ -163,14 +163,14 @@ export function useUpdateWorkspaceName() {
       workspaceId: string;
       name: string;
     }) => {
-      const result = await updateWorkspaceNameAction(workspaceId, name);
+      const result = await updateWorkspaceNameAction({ workspaceId, name });
       return transformActionError(result, 'Failed to update workspace name');
     },
     retry: false, // Never retry mutations
     onSuccess: (data) => {
       // TODO: Add success notification when notification system is implemented
       // Invalidate workspace query to refetch updated data
-      queryClient.invalidateQueries({ queryKey: legacyKeys.userWorkspace });
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.all });
     },
     onError: createMutationErrorHandler('Workspace name update'),
   });

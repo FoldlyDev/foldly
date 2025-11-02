@@ -48,11 +48,11 @@ describe('Workspace Actions', () => {
       vi.mocked(currentUser).mockResolvedValue(null);
 
       // Act: Attempt to create workspace
-      const result = await createUserWorkspaceAction('testuser');
+      const result = await createUserWorkspaceAction({ username: 'testuser' });
 
       // Assert: Should return unauthorized error
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unauthorized - user not authenticated');
+      expect(result.error).toContain('Unauthorized');
     });
 
     it('should successfully create workspace for authenticated user', async () => {
@@ -67,14 +67,14 @@ describe('Workspace Actions', () => {
       } as any);
 
       // Act: Create workspace
-      const result = await createUserWorkspaceAction('testuser');
+      const result = await createUserWorkspaceAction({ username: 'testuser' });
 
       // Assert: Workspace should be created successfully
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.workspace).toBeDefined();
-        expect(result.workspace.userId).toBe(testUserId);
-        expect(result.workspace.name).toBe("testuser's Workspace");
+      if (result.success && result.data) {
+        expect(result.data).toBeDefined();
+        expect(result.data.userId).toBe(testUserId);
+        expect(result.data.name).toBe("testuser's Workspace");
       }
     });
 
@@ -95,11 +95,11 @@ describe('Workspace Actions', () => {
       } as any);
 
       // Act: Attempt to create second workspace
-      const result = await createUserWorkspaceAction('testuser');
+      const result = await createUserWorkspaceAction({ username: 'testuser' });
 
       // Assert: Should return duplicate workspace error
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Workspace already exists for this user');
+      expect(result.error).toContain('Workspace already exists');
     });
   });
 
@@ -109,14 +109,14 @@ describe('Workspace Actions', () => {
       vi.mocked(auth).mockResolvedValue({ userId: null } as any);
 
       // Act: Attempt to update workspace
-      const result = await updateWorkspaceNameAction(
-        'workspace-id',
-        'New Name'
-      );
+      const result = await updateWorkspaceNameAction({
+        workspaceId: 'workspace-id',
+        name: 'New Name',
+      });
 
       // Assert: Should return unauthorized error
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Unauthorized');
+      expect(result.error).toContain('Unauthorized');
     });
 
     it('should return error when user does not own workspace', async () => {
@@ -134,14 +134,14 @@ describe('Workspace Actions', () => {
       vi.mocked(auth).mockResolvedValue({ userId: differentUserId } as any);
 
       // Act: Attempt to update workspace owned by different user
-      const result = await updateWorkspaceNameAction(
-        workspace.id,
-        'New Name'
-      );
+      const result = await updateWorkspaceNameAction({
+        workspaceId: workspace.id,
+        name: 'New Name',
+      });
 
       // Assert: Should return not found/unauthorized error
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Workspace not found or unauthorized');
+      expect(result.error).toContain('Workspace not found');
     });
 
     it('should successfully update workspace name for owner', async () => {
@@ -157,17 +157,17 @@ describe('Workspace Actions', () => {
       vi.mocked(auth).mockResolvedValue({ userId: testUserId } as any);
 
       // Act: Update workspace name
-      const result = await updateWorkspaceNameAction(
-        workspace.id,
-        'Updated Workspace Name'
-      );
+      const result = await updateWorkspaceNameAction({
+        workspaceId: workspace.id,
+        name: 'Updated Workspace Name',
+      });
 
       // Assert: Name should be updated successfully
       expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.workspace).toBeDefined();
-        expect(result.workspace.id).toBe(workspace.id);
-        expect(result.workspace.name).toBe('Updated Workspace Name');
+      if (result.success && result.data) {
+        expect(result.data).toBeDefined();
+        expect(result.data.id).toBe(workspace.id);
+        expect(result.data.name).toBe('Updated Workspace Name');
       }
     });
 
@@ -181,14 +181,14 @@ describe('Workspace Actions', () => {
       const nonExistentId = testData.generateWorkspaceId();
 
       // Act: Attempt to update non-existent workspace
-      const result = await updateWorkspaceNameAction(
-        nonExistentId,
-        'New Name'
-      );
+      const result = await updateWorkspaceNameAction({
+        workspaceId: nonExistentId,
+        name: 'New Name',
+      });
 
       // Assert: Should return not found error
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Workspace not found or unauthorized');
+      expect(result.error).toContain('Workspace not found');
     });
   });
 

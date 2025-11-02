@@ -1,0 +1,199 @@
+"use client";
+
+import * as React from "react";
+import type { File, Folder } from "@/lib/database/schemas";
+import type { GroupBy, SortBy, SortOrder } from "../../../hooks/use-workspace-filters";
+import { WorkspaceHeader } from "../../sections/WorkspaceHeader";
+import { FilterBottomSheet } from "../../filters/FilterBottomSheet";
+import { FileGrid } from "../../sections/FileGrid";
+import { GroupedFileList } from "../../sections/GroupedFileList";
+import { SelectionToolbar } from "../../sections/SelectionToolbar";
+import { Button } from "@/components/ui/shadcn/button";
+import { FolderPlus } from "lucide-react";
+import {
+  groupFilesByEmail,
+  groupFilesByDate,
+  groupFilesByFolder,
+  groupFilesByType,
+  sortFiles,
+} from "@/lib/utils/workspace-helpers";
+
+/**
+ * Mobile layout for workspace
+ * Bottom sheet filters, compact grid, mobile-optimized spacing
+ */
+
+interface MobileLayoutProps {
+  files: File[];
+  folders: Folder[];
+  groupBy: GroupBy;
+  sortBy: SortBy;
+  sortOrder: SortOrder;
+  filterEmail: string | null;
+  searchQuery: string;
+  currentFolderId: string | null;
+  onNavigateFolder: (folderId: string | null) => void;
+  onCreateFolder: () => void;
+  onRenameFolder: (folder: Folder) => void;
+  onMoveFolder: (folder: Folder) => void;
+  onDeleteFolder: (folder: Folder) => void;
+  onPreviewFile: (file: File) => void;
+  onDownloadFile: (file: File) => void;
+  onDeleteFile: (file: File) => void;
+  selectedFiles: Set<string>;
+  onSelectFile: (fileId: string) => void;
+  selectedFolders: Set<string>;
+  onSelectFolder: (folderId: string) => void;
+  isSelectMode: boolean;
+  onClearSelection: () => void;
+  onBulkDownload: () => void;
+  onBulkDelete: () => void;
+}
+
+export function MobileLayout({
+  files,
+  folders,
+  groupBy,
+  sortBy,
+  sortOrder,
+  filterEmail,
+  searchQuery,
+  currentFolderId,
+  onNavigateFolder,
+  onCreateFolder,
+  onRenameFolder,
+  onMoveFolder,
+  onDeleteFolder,
+  onPreviewFile,
+  onDownloadFile,
+  onDeleteFile,
+  selectedFiles,
+  onSelectFile,
+  selectedFolders,
+  onSelectFolder,
+  isSelectMode,
+  onClearSelection,
+  onBulkDownload,
+  onBulkDelete,
+}: MobileLayoutProps) {
+  // Filter files by email if active
+  const filteredFiles = React.useMemo(() => {
+    let result = files;
+
+    if (filterEmail) {
+      result = result.filter((file) => file.uploaderEmail === filterEmail);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (file) =>
+          file.filename.toLowerCase().includes(query) ||
+          file.uploaderEmail?.toLowerCase().includes(query) ||
+          file.uploaderName?.toLowerCase().includes(query)
+      );
+    }
+
+    return result;
+  }, [files, filterEmail, searchQuery]);
+
+  // Sort files
+  const sortedFiles = React.useMemo(
+    () => sortFiles(filteredFiles, sortBy, sortOrder),
+    [filteredFiles, sortBy, sortOrder]
+  );
+
+  // Group files if needed
+  const groupedFiles = React.useMemo(() => {
+    switch (groupBy) {
+      case "email":
+        return groupFilesByEmail(sortedFiles);
+      case "date":
+        return groupFilesByDate(sortedFiles);
+      case "folder": {
+        // groupFilesByFolder returns FolderGroup[], convert to Map for consistency
+        const folderGroups = groupFilesByFolder(sortedFiles, folders);
+        const grouped = new Map<string, File[]>();
+        folderGroups.forEach((group) => {
+          const key = group.folder?.name || "Root";
+          grouped.set(key, group.files);
+        });
+        return grouped;
+      }
+      case "type":
+        return groupFilesByType(sortedFiles);
+      case "none":
+      default:
+        return null;
+    }
+  }, [groupBy, sortedFiles, folders]);
+
+  const selectedCount = selectedFiles.size + selectedFolders.size;
+  const hasFolders = selectedFolders.size > 0;
+  const hasFiles = selectedFiles.size > 0;
+
+  return (
+    <div className="relative min-h-screen pb-32">
+      <div className="space-y-4 p-4">
+        {/* Header with breadcrumb and search */}
+        <WorkspaceHeader
+          currentFolderId={currentFolderId}
+          onNavigate={onNavigateFolder}
+        />
+
+        {/* Mobile toolbar: Filter sheet + Create button */}
+        <div className="flex items-center justify-between gap-3">
+          <FilterBottomSheet />
+          <Button onClick={onCreateFolder} size="sm" className="gap-2">
+            <FolderPlus className="size-4" />
+            New
+          </Button>
+        </div>
+
+        {/* Main content area */}
+        {groupedFiles ? (
+          <GroupedFileList
+            groups={groupedFiles}
+            groupBy={groupBy}
+            onPreviewFile={onPreviewFile}
+            onDownloadFile={onDownloadFile}
+            onDeleteFile={onDeleteFile}
+            selectedFiles={selectedFiles}
+            onSelectFile={onSelectFile}
+            showCheckboxes={isSelectMode}
+          />
+        ) : (
+          <FileGrid
+            folders={folders}
+            files={sortedFiles}
+            currentFolderId={currentFolderId}
+            onNavigate={onNavigateFolder}
+            onRenameFolder={onRenameFolder}
+            onMoveFolder={onMoveFolder}
+            onDeleteFolder={onDeleteFolder}
+            onPreviewFile={onPreviewFile}
+            onDownloadFile={onDownloadFile}
+            onDeleteFile={onDeleteFile}
+            selectedFolders={selectedFolders}
+            onSelectFolder={onSelectFolder}
+            selectedFiles={selectedFiles}
+            onSelectFile={onSelectFile}
+            showCheckboxes={isSelectMode}
+          />
+        )}
+      </div>
+
+      {/* Selection toolbar (fixed bottom) */}
+      {selectedCount > 0 && (
+        <SelectionToolbar
+          selectedCount={selectedCount}
+          onClear={onClearSelection}
+          onDownload={hasFiles ? onBulkDownload : undefined}
+          onDelete={onBulkDelete}
+          hasFolders={hasFolders}
+          hasFiles={hasFiles}
+        />
+      )}
+    </div>
+  );
+}

@@ -19,11 +19,17 @@ import {
 import type { Workspace, File } from '@/lib/database/schemas';
 
 // Import utilities for new actions
-import { withAuth, withAuthInput, type ActionResponse } from '@/lib/utils/action-helpers';
+import { withAuth, withAuthInput, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace } from '@/lib/utils/authorization';
 import { checkRateLimit, RateLimitPresets, RateLimitKeys } from '@/lib/middleware/rate-limit';
 import { logger, logRateLimitViolation } from '@/lib/utils/logger';
 import { ERROR_MESSAGES } from '@/lib/constants';
+import {
+  createWorkspaceInputSchema,
+  updateWorkspaceNameInputSchema,
+  type CreateWorkspaceInput,
+  type UpdateWorkspaceNameInput,
+} from '@/lib/validation/workspace-schemas';
 
 /**
  * Get authenticated user's workspace
@@ -35,16 +41,17 @@ import { ERROR_MESSAGES } from '@/lib/constants';
  *
  * @returns User's workspace or null if doesn't exist
  */
-export async function getUserWorkspaceAction(): Promise<Workspace | null> {
-  const { userId } = await auth();
+export const getUserWorkspaceAction = withAuth<Workspace | null>(
+  'getUserWorkspaceAction',
+  async (userId) => {
+    const workspace = await getUserWorkspace(userId);
 
-  if (!userId) {
-    return null;
+    return {
+      success: true,
+      data: workspace ?? null,
+    } as const;
   }
-
-  const workspace = await getUserWorkspace(userId);
-  return workspace ?? null;
-}
+);
 
 /**
  * Create workspace for user during onboarding
@@ -52,48 +59,42 @@ export async function getUserWorkspaceAction(): Promise<Workspace | null> {
  * Used by:
  * - Onboarding flow (create workspace after username selection)
  *
- * @param username - User's chosen username
+ * @param input - Username for workspace name generation
  * @returns Success status with workspace data or error
  */
-export async function createUserWorkspaceAction(username: string) {
-  const { userId } = await auth();
-  const user = await currentUser();
+export const createUserWorkspaceAction = withAuthInput<CreateWorkspaceInput, Workspace>(
+  'createUserWorkspaceAction',
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(createWorkspaceInputSchema, input);
 
-  if (!userId || !user) {
-    return {
-      success: false as const,
-      error: 'Unauthorized - user not authenticated',
-    };
-  }
+    // Check if workspace already exists (prevent duplicates)
+    const existingWorkspace = await getUserWorkspace(userId);
+    if (existingWorkspace) {
+      throw {
+        success: false,
+        error: ERROR_MESSAGES.WORKSPACE.ALREADY_EXISTS,
+      } as const;
+    }
 
-  // Check if workspace already exists (prevent duplicates)
-  const existingWorkspace = await getUserWorkspace(userId);
-  if (existingWorkspace) {
-    return {
-      success: false as const,
-      error: 'Workspace already exists for this user',
-    };
-  }
-
-  try {
     // Create workspace with user's chosen name
     const workspace = await createWorkspace({
       userId,
-      name: `${username}'s Workspace`,
+      name: `${validated.username}'s Workspace`,
+    });
+
+    logger.info('Workspace created successfully', {
+      userId,
+      workspaceId: workspace.id,
+      username: validated.username,
     });
 
     return {
-      success: true as const,
-      workspace,
-    };
-  } catch (error) {
-    console.error('Failed to create workspace:', error);
-    return {
-      success: false as const,
-      error: 'Failed to create workspace',
-    };
+      success: true,
+      data: workspace,
+    } as const;
   }
-}
+);
 
 /**
  * Update workspace name
@@ -101,47 +102,42 @@ export async function createUserWorkspaceAction(username: string) {
  * Used across modules:
  * - Settings module (rename workspace)
  *
- * @param workspaceId - ID of workspace to update
- * @param name - New workspace name
+ * @param input - Workspace ID and new name
  * @returns Success status with updated workspace or error
  */
-export async function updateWorkspaceNameAction(
-  workspaceId: string,
-  name: string
-) {
-  const { userId } = await auth();
+export const updateWorkspaceNameAction = withAuthInput<UpdateWorkspaceNameInput, Workspace>(
+  'updateWorkspaceNameAction',
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(updateWorkspaceNameInputSchema, input);
 
-  if (!userId) {
+    // Verify user owns this workspace
+    const workspace = await getWorkspaceById(validated.workspaceId);
+    if (!workspace || workspace.userId !== userId) {
+      throw {
+        success: false,
+        error: ERROR_MESSAGES.WORKSPACE.NOT_FOUND,
+      } as const;
+    }
+
+    // Update workspace name
+    const updatedWorkspace = await updateWorkspaceName(
+      validated.workspaceId,
+      validated.name
+    );
+
+    logger.info('Workspace name updated successfully', {
+      userId,
+      workspaceId: validated.workspaceId,
+      newName: validated.name,
+    });
+
     return {
-      success: false as const,
-      error: 'Unauthorized',
-    };
+      success: true,
+      data: updatedWorkspace,
+    } as const;
   }
-
-  // Verify user owns this workspace
-  const workspace = await getWorkspaceById(workspaceId);
-  if (!workspace || workspace.userId !== userId) {
-    return {
-      success: false as const,
-      error: 'Workspace not found or unauthorized',
-    };
-  }
-
-  try {
-    const updatedWorkspace = await updateWorkspaceName(workspaceId, name);
-
-    return {
-      success: true as const,
-      workspace: updatedWorkspace,
-    };
-  } catch (error) {
-    console.error('Failed to update workspace:', error);
-    return {
-      success: false as const,
-      error: 'Failed to update workspace',
-    };
-  }
-}
+);
 
 /**
  * Create the first default link during onboarding

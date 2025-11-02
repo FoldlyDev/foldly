@@ -18,6 +18,7 @@ export const ERROR_MESSAGES = {
     ACCESS_DENIED: 'You do not have access to this workspace.',
     UPDATE_FAILED: 'Failed to update workspace. Please try again.',
     CREATION_FAILED: 'Failed to create workspace. Please try again.',
+    ALREADY_EXISTS: 'Workspace already exists for this user.',
   },
 
   // Link errors
