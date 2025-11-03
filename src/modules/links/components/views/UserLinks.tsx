@@ -1,5 +1,7 @@
 "use client";
 
+import * as React from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useUserLinks } from "@/hooks";
 import { useModalState } from "@/hooks";
 import { LinksSkeleton } from "../ui/LinksSkeleton";
@@ -13,10 +15,31 @@ import { LinksManagementBar } from "../sections/LinksManagementBar";
 import type { Link } from "@/lib/database/schemas";
 
 export function UserLinks() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { data: links, isLoading, error } = useUserLinks();
   const linkSettingsModal = useModalState<Link>();
   const createLinkModal = useModalState<void>();
   const permissionsModal = useModalState<Link>();
+
+  // Handle opening modal from query parameter (e.g., from workspace folder context menu)
+  React.useEffect(() => {
+    const linkId = searchParams.get('id');
+
+    // Only proceed if we have a link ID and links are loaded
+    if (linkId && links && links.length > 0 && !linkSettingsModal.isOpen) {
+      // Find the link with the matching ID
+      const targetLink = links.find(link => link.id === linkId);
+
+      if (targetLink) {
+        // Open the management modal for this link
+        linkSettingsModal.open(targetLink);
+
+        // Clear the query parameter to avoid reopening on refresh
+        router.replace('/dashboard/links', { scroll: false });
+      }
+    }
+  }, [searchParams, links, linkSettingsModal, router]);
 
   const handleOpenSettings = (link: Link) => {
     linkSettingsModal.open(link);

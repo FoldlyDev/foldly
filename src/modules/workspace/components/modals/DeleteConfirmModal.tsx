@@ -57,7 +57,7 @@ export function DeleteConfirmModal({
     try {
       await onConfirm();
       onOpenChange(false);
-    } catch (error) {
+    } catch {
       // TODO: Add error notification when notification system is implemented
       // toast.error("Failed to delete resource");
       console.error("Failed to delete resource");

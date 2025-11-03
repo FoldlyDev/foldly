@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/animateui/dialog";
 import { Button } from "@/components/ui/shadcn/button";
 import { Eye, Copy, ExternalLink, Globe, Lock, BadgeCheck, AlertCircle } from "lucide-react";
+import { useUserWorkspace } from "@/hooks";
 import type { Folder, Link } from "@/lib/database/schemas";
 import { format } from "date-fns";
 
@@ -41,13 +42,13 @@ export function ViewFolderLinkDetailsModal({
 }: ViewFolderLinkDetailsModalProps) {
   const folder = data?.folder;
   const link = data?.link;
+  const { data: workspace } = useUserWorkspace();
 
   const handleCopyUrl = async () => {
-    if (!link) return;
+    if (!link || !workspace?.user?.username) return;
 
-    // Link should have workspace.user.username from database query (getLinkById)
-    const username = (link as any).workspace?.user?.username || 'user';
-    const url = `${window.location.origin}/${username}/${link.slug}`;
+    // Workspace includes user.username from getUserWorkspace query (WorkspaceWithUser type)
+    const url = `${window.location.origin}/${workspace.user.username}/${link.slug}`;
     await navigator.clipboard.writeText(url);
     // TODO: Add success notification when notification system is implemented
     // toast.success("Link copied to clipboard");

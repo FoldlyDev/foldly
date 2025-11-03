@@ -138,8 +138,9 @@ function formatGroupHeader(groupKey: string, groupBy: GroupBy): string {
     case "none":
       return "All Files";
 
-    default:
+    default: {
       const _exhaustive: never = groupBy;
       return _exhaustive;
+    }
   }
 }

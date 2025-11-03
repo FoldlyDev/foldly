@@ -7,6 +7,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/animateui/dropdown-menu";
 import { Button } from "@/components/ui/shadcn/button";
@@ -101,31 +104,39 @@ export function FolderContextMenu({
         )}
 
         {/* Personal Folder Actions (linkId IS NULL) */}
-        {!folder.linkId && (
+        {!folder.linkId && (onShareFolder || onLinkToExisting) && (
           <>
-            {(onRename || onMove) && (onShareFolder || onLinkToExisting) && <DropdownMenuSeparator />}
-            {onShareFolder && (
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onShareFolder();
-                }}
-              >
-                <Share2 className="mr-2 size-4" />
-                Share Folder
-              </DropdownMenuItem>
-            )}
-            {onLinkToExisting && (
-              <DropdownMenuItem
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLinkToExisting();
-                }}
-              >
+            {(onRename || onMove) && <DropdownMenuSeparator />}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
                 <LinkIcon className="mr-2 size-4" />
-                Link to Existing
-              </DropdownMenuItem>
-            )}
+                Link Folder
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {onShareFolder && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShareFolder();
+                    }}
+                  >
+                    <Share2 className="mr-2 size-4" />
+                    Create New Link
+                  </DropdownMenuItem>
+                )}
+                {onLinkToExisting && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLinkToExisting();
+                    }}
+                  >
+                    <LinkIcon className="mr-2 size-4" />
+                    Link to Existing
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
           </>
         )}
 

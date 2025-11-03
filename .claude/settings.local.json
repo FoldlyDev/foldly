@@ -8,7 +8,8 @@
       "mcp__Ref__ref_read_url",
       "Bash(tree:*)",
       "Bash(npm run test:run -- src/lib/actions/__tests__/link.actions.test.ts)",
-      "Bash(npm run type-check:*)"
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)"
     ]
   },
   "enableAllProjectMcpServers": true,

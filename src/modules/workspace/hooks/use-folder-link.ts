@@ -26,7 +26,7 @@ import {
   invalidateFolders,
   invalidateLinks,
 } from '@/lib/utils/react-query-helpers';
-import { folderKeys, linkKeys, contextKeys } from '@/lib/config/query-keys';
+import { folderKeys, linkKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)

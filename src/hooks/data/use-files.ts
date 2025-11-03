@@ -32,7 +32,7 @@ import {
   invalidateFiles,
   invalidateFolders
 } from '@/lib/utils/react-query-helpers';
-import { fileKeys, contextKeys } from '@/lib/config/query-keys';
+import { fileKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)

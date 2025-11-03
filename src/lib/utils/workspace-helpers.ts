@@ -439,10 +439,11 @@ export function sortFiles(
         comparison = a.fileSize - b.fileSize;
         break;
 
-      default:
+      default: {
         // Exhaustive check
         const _exhaustive: never = sortBy;
         return _exhaustive;
+      }
     }
 
     // Apply sort order

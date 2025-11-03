@@ -8,10 +8,8 @@
 
 // Import from global utilities
 import {
-  withAuthInput,
   withAuthInputAndRateLimit,
   validateInput,
-  type ActionResponse,
 } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace } from '@/lib/utils/authorization';
 import { sanitizeSlug } from '@/lib/utils/security';
@@ -39,7 +37,7 @@ import { RateLimitPresets } from '@/lib/middleware/rate-limit';
 import { logger } from '@/lib/utils/logger';
 
 // Import types
-import type { Link, Folder } from '@/lib/database/schemas';
+import type { Link } from '@/lib/database/schemas';
 
 // Import validation schemas
 import {

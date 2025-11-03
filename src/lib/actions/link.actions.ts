@@ -817,7 +817,7 @@ export const updateLinkConfigAction = withAuthInputAndRateLimit<
   );
 
   // Encrypt password if provided and not already encrypted
-  let configToStore = { ...validated.config };
+  const configToStore = { ...validated.config };
   if (validated.config.password !== undefined && validated.config.password !== null) {
     if (!isEncryptedPassword(validated.config.password)) {
       // New password provided - encrypt it

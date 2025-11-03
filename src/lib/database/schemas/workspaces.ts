@@ -50,3 +50,11 @@ export const workspacesRelations = relations(workspaces, ({ one, many }) => ({
 // TypeScript types
 export type Workspace = typeof workspaces.$inferSelect;
 export type NewWorkspace = typeof workspaces.$inferInsert;
+
+// Workspace with user relation (returned by getUserWorkspace query)
+export type WorkspaceWithUser = Workspace & {
+  user: {
+    username: string;
+    email: string;
+  };
+};

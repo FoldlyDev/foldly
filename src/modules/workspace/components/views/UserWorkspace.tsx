@@ -105,7 +105,7 @@ export function UserWorkspace() {
     filePreviewModal.open(file);
   };
 
-  const handleDownloadFile = (file: File) => {
+  const handleDownloadFile = (_file: File) => {
     // TODO: Implement file download
     // TODO: Add info notification when notification system is implemented
     // toast.info("Download feature coming soon");
@@ -173,17 +173,16 @@ export function UserWorkspace() {
         return;
       }
 
-      // Extract username from link.workspace.user.username (from getLinkById query)
-      const username = (result.data as any).workspace?.user?.username;
-      if (!username) {
-        console.error("Cannot copy link: link missing workspace.user.username relation");
+      // Workspace includes user.username from getUserWorkspace query (WorkspaceWithUser type)
+      if (!workspace?.user?.username) {
+        console.error("Cannot copy link: workspace missing user.username");
         // TODO: Add error notification when notification system is implemented
         // toast.error("Failed to generate link URL. Please try again.");
         return;
       }
 
       // Generate full URL with username: origin/username/slug
-      const url = `${window.location.origin}/${username}/${result.data.slug}`;
+      const url = `${window.location.origin}/${workspace.user.username}/${result.data.slug}`;
       await navigator.clipboard.writeText(url);
 
       console.log("Link copied to clipboard:", url);

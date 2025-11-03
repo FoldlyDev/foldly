@@ -16,7 +16,7 @@ import {
   getWorkspaceStats,
   getRecentActivity,
 } from '@/lib/database/queries';
-import type { Workspace, File } from '@/lib/database/schemas';
+import type { Workspace, WorkspaceWithUser, File } from '@/lib/database/schemas';
 
 // Import utilities for new actions
 import { withAuth, withAuthInput, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
@@ -45,11 +45,11 @@ import {
  * ```typescript
  * const result = await getUserWorkspaceAction();
  * if (result.success) {
- *   console.log(result.data); // Workspace | null
+ *   console.log(result.data); // WorkspaceWithUser | null (includes user.username and user.email)
  * }
  * ```
  */
-export const getUserWorkspaceAction = withAuth<Workspace | null>(
+export const getUserWorkspaceAction = withAuth<WorkspaceWithUser | null>(
   'getUserWorkspaceAction',
   async (userId) => {
     const workspace = await getUserWorkspace(userId);

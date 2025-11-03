@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -13,12 +13,12 @@ import {
   ModalFooter,
 } from "@/components/ui/animateui/dialog";
 import { Button } from "@/components/ui/shadcn/button";
-import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
 import { Share2, Copy, ExternalLink } from "lucide-react";
 import { useLinkFolderWithNewLink } from "../../hooks/use-folder-link";
+import { useUserWorkspace, useSendLinkInvitations } from "@/hooks";
 import type { Folder } from "@/lib/database/schemas";
-import { emailSchema } from "@/lib/validation/base-schemas";
+import { MultiEmailInput } from "../inputs/MultiEmailInput";
 
 /**
  * Share folder modal
@@ -36,16 +36,10 @@ import { emailSchema } from "@/lib/validation/base-schemas";
  */
 
 const shareFolderSchema = z.object({
-  emails: z.string().optional(),
+  allowedEmails: z.array(z.string().email()).optional(),
 });
 
 type ShareFolderFormData = z.infer<typeof shareFolderSchema>;
-
-// Email validation error state
-interface EmailValidationError {
-  hasError: boolean;
-  message: string;
-}
 
 interface ShareFolderModalProps {
   folder: Folder | null;
@@ -58,31 +52,39 @@ export function ShareFolderModal({
   isOpen,
   onOpenChange,
 }: ShareFolderModalProps) {
-  const [createdLink, setCreatedLink] = React.useState<{ id: string; slug: string; username: string } | null>(null);
-  const [emailError, setEmailError] = React.useState<EmailValidationError>({ hasError: false, message: '' });
+  const [createdLink, setCreatedLink] = React.useState<{ id: string; slug: string } | null>(null);
+  const { data: workspace } = useUserWorkspace();
   const linkWithNew = useLinkFolderWithNewLink();
+  const sendInvitations = useSendLinkInvitations();
 
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<ShareFolderFormData>({
     resolver: zodResolver(shareFolderSchema),
+    defaultValues: {
+      allowedEmails: [],
+    },
   });
+
+  // Watch email count for dynamic button text
+  const allowedEmails = watch("allowedEmails");
+  const hasEmails = allowedEmails && allowedEmails.length > 0;
 
   const handleClose = () => {
     reset();
     setCreatedLink(null);
-    setEmailError({ hasError: false, message: '' });
     onOpenChange(false);
   };
 
   const handleCopyUrl = async () => {
-    if (!createdLink) return;
+    if (!createdLink || !workspace?.user?.username) return;
 
-    // Link returned from mutation includes workspace.user.username
-    const url = `${window.location.origin}/${createdLink.username}/${createdLink.slug}`;
+    // Workspace includes user.username from getUserWorkspace query (WorkspaceWithUser type)
+    const url = `${window.location.origin}/${workspace.user.username}/${createdLink.slug}`;
     await navigator.clipboard.writeText(url);
     // TODO: Add success notification when notification system is implemented
     // toast.success("Link copied to clipboard");
@@ -92,47 +94,37 @@ export function ShareFolderModal({
   const onSubmit = async (data: ShareFolderFormData) => {
     if (!folder) return;
 
-    // Clear previous email errors
-    setEmailError({ hasError: false, message: '' });
-
-    // Parse and validate emails
-    const emailsArray = data.emails
-      ? data.emails
-          .split(/[\s,]+/)
-          .map((e) => e.trim())
-          .filter((e) => e.length > 0)
-      : undefined;
-
-    // Validate emails
-    if (emailsArray && emailsArray.length > 0) {
-      for (const email of emailsArray) {
-        try {
-          emailSchema.parse(email);
-        } catch (error) {
-          // Use inline error state instead of toast
-          setEmailError({ hasError: true, message: `Invalid email: ${email}` });
-          return;
-        }
-      }
-    }
-
     linkWithNew.mutate(
       {
         folderId: folder.id,
-        allowedEmails: emailsArray,
+        allowedEmails: data.allowedEmails && data.allowedEmails.length > 0
+          ? data.allowedEmails
+          : undefined,
       },
       {
-        onSuccess: (link) => {
-          // Link includes workspace.user.username from getLinkById query
-          const username = (link as any).workspace?.user?.username || 'user';
-          setCreatedLink({ id: link.id, slug: link.slug, username });
+        onSuccess: async (link) => {
+          // Workspace includes user.username from getUserWorkspace query (WorkspaceWithUser type)
+          setCreatedLink({ id: link.id, slug: link.slug });
           // TODO: Add success notification when notification system is implemented
           // toast.success("Link created and shared");
           console.log("Link created and shared:", link.slug);
 
           // Auto-copy link URL to clipboard
-          const url = `${window.location.origin}/${username}/${link.slug}`;
-          navigator.clipboard.writeText(url);
+          if (workspace?.user?.username) {
+            const url = `${window.location.origin}/${workspace.user.username}/${link.slug}`;
+            navigator.clipboard.writeText(url);
+          }
+
+          // Send invitation emails if there are allowed emails (fire-and-forget)
+          if (data.allowedEmails && data.allowedEmails.length > 0) {
+            sendInvitations.mutate({
+              linkId: link.id,
+              linkSlug: link.slug,
+              linkName: link.name,
+              allowedEmails: data.allowedEmails,
+              customMessage: undefined,
+            });
+          }
         },
       }
     );
@@ -185,25 +177,25 @@ export function ShareFolderModal({
               <Label htmlFor="share-emails">
                 Email addresses (optional)
               </Label>
-              <Input
-                id="share-emails"
-                placeholder="client@example.com, partner@example.com"
-                {...register("emails")}
-                aria-invalid={errors.emails || emailError.hasError ? "true" : "false"}
+              <Controller
+                name="allowedEmails"
+                control={control}
+                render={({ field }) => (
+                  <MultiEmailInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Enter email address..."
+                    disabled={linkWithNew.isPending}
+                  />
+                )}
               />
-              {errors.emails && (
+              {errors.allowedEmails && (
                 <p className="text-xs text-destructive">
-                  {errors.emails.message}
-                </p>
-              )}
-              {emailError.hasError && (
-                <p className="text-xs text-destructive">
-                  {emailError.message}
+                  {errors.allowedEmails.message}
                 </p>
               )}
               <p className="text-xs text-muted-foreground">
-                Separate multiple emails with commas or spaces. Leave empty for
-                a public link.
+                Add email addresses to grant access. Leave empty for a public link.
               </p>
             </div>
 
@@ -217,7 +209,11 @@ export function ShareFolderModal({
                 Cancel
               </Button>
               <Button type="submit" disabled={linkWithNew.isPending}>
-                {linkWithNew.isPending ? "Creating..." : "Create & Share"}
+                {linkWithNew.isPending
+                  ? "Creating..."
+                  : hasEmails
+                    ? "Create & Share"
+                    : "Create"}
               </Button>
             </ModalFooter>
           </form>

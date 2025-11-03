@@ -22,7 +22,8 @@ import {
   createLinkFormSchema,
   type CreateLinkFormData,
 } from "../../lib/validation";
-import { useCreateLink, useUserWorkspace } from "@/hooks";
+import { useUser } from "@clerk/nextjs";
+import { useCreateLink, useUserWorkspace, useSendLinkInvitations } from "@/hooks";
 import {
   useLinkFormState,
   useSlugAutoGeneration,
@@ -139,6 +140,8 @@ export function CreateLinkForm({
   // React Query hooks for link creation
   const createLink = useCreateLink();
   const { data: workspace } = useUserWorkspace();
+  const { user } = useUser();
+  const sendInvitations = useSendLinkInvitations();
 
   // Logo upload orchestration
   const { logoUpload, uploadLogoAndUpdateBranding } = useLinkLogoUpload({
@@ -221,6 +224,17 @@ export function CreateLinkForm({
           // Don't fail the entire form if logo upload fails
           // User can retry logo upload from the edit form
         }
+      }
+
+      // Send invitation emails if there are allowed emails (fire-and-forget)
+      if (!data.isPublic && data.allowedEmails.length > 0) {
+        sendInvitations.mutate({
+          linkId: link.id,
+          linkSlug: link.slug,
+          linkName: link.name,
+          allowedEmails: data.allowedEmails,
+          customMessage: data.customMessage || undefined,
+        });
       }
 
       setIsSubmitting(false);
