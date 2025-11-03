@@ -37,6 +37,11 @@ interface DesktopLayoutProps {
   onRenameFolder: (folder: Folder) => void;
   onMoveFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
+  onShareFolder: (folder: Folder) => void;
+  onLinkToExisting: (folder: Folder) => void;
+  onCopyLinkUrl: (folder: Folder) => void;
+  onViewLinkDetails: (folder: Folder) => void;
+  onUnlinkFolder: (folder: Folder) => void;
   onPreviewFile: (file: File) => void;
   onDownloadFile: (file: File) => void;
   onDeleteFile: (file: File) => void;
@@ -64,6 +69,11 @@ export function DesktopLayout({
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
+  onShareFolder,
+  onLinkToExisting,
+  onCopyLinkUrl,
+  onViewLinkDetails,
+  onUnlinkFolder,
   onPreviewFile,
   onDownloadFile,
   onDeleteFile,
@@ -171,6 +181,11 @@ export function DesktopLayout({
             onRenameFolder={onRenameFolder}
             onMoveFolder={onMoveFolder}
             onDeleteFolder={onDeleteFolder}
+            onShareFolder={onShareFolder}
+            onLinkToExisting={onLinkToExisting}
+            onCopyLinkUrl={onCopyLinkUrl}
+            onViewLinkDetails={onViewLinkDetails}
+            onUnlinkFolder={onUnlinkFolder}
             onPreviewFile={onPreviewFile}
             onDownloadFile={onDownloadFile}
             onDeleteFile={onDeleteFile}

@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/shadcn/button";
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
-import { toast } from "sonner";
+
 import { Edit } from "lucide-react";
 import { updateFolderAction } from "@/lib/actions/folder.actions";
 import type { Folder } from "@/lib/database/schemas";
@@ -99,14 +99,20 @@ export function RenameFolderModal({
       });
 
       if (result.success) {
-        toast.success("Folder renamed successfully");
+        // TODO: Add success notification when notification system is implemented
+        // toast.success("Folder renamed successfully");
+        console.log("Folder renamed successfully");
         handleClose();
         onSuccess?.();
       } else {
-        toast.error(result.error || "Failed to rename folder");
+        // TODO: Add error notification when notification system is implemented
+        // toast.error(result.error || "Failed to rename folder");
+        console.error("Failed to rename folder:", result.error);
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      // TODO: Add error notification when notification system is implemented
+      // toast.error("An unexpected error occurred");
+      console.error("Unexpected error renaming folder:", error);
     } finally {
       setIsRenaming(false);
     }

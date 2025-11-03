@@ -10,7 +10,7 @@ import {
   ModalFooter,
 } from "@/components/ui/animateui/dialog";
 import { Button } from "@/components/ui/shadcn/button";
-import { toast } from "sonner";
+
 import { AlertTriangle } from "lucide-react";
 
 /**
@@ -58,7 +58,9 @@ export function DeleteConfirmModal({
       await onConfirm();
       onOpenChange(false);
     } catch (error) {
-      toast.error("Failed to delete resource");
+      // TODO: Add error notification when notification system is implemented
+      // toast.error("Failed to delete resource");
+      console.error("Failed to delete resource");
     } finally {
       setIsDeleting(false);
     }

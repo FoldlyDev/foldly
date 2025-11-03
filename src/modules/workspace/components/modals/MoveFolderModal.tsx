@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/shadcn/select";
-import { toast } from "sonner";
+
 import { FolderInput } from "lucide-react";
 import { updateFolderAction } from "@/lib/actions/folder.actions";
 import { useRootFolders } from "@/hooks";
@@ -122,14 +122,20 @@ export function MoveFolderModal({
       });
 
       if (result.success) {
-        toast.success("Folder moved successfully");
+        // TODO: Add success notification when notification system is implemented
+        // toast.success("Folder moved successfully");
+        console.log("Folder moved successfully");
         handleClose();
         onSuccess?.();
       } else {
-        toast.error(result.error || "Failed to move folder");
+        // TODO: Add error notification when notification system is implemented
+        // toast.error(result.error || "Failed to move folder");
+        console.error("Failed to move folder:", result.error);
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      // TODO: Add error notification when notification system is implemented
+      // toast.error("An unexpected error occurred");
+      console.error("Unexpected error moving folder:", error);
     } finally {
       setIsMoving(false);
     }

@@ -10,11 +10,19 @@ import type { Workspace, NewWorkspace, File } from '@/lib/database/schemas';
 
 /**
  * Get workspace by userId (1:1 relationship in MVP)
- * Returns workspace with user relation
+ * Returns workspace with user relation (includes username for URL generation)
  */
 export async function getUserWorkspace(userId: string) {
   return await db.query.workspaces.findFirst({
     where: eq(workspaces.userId, userId),
+    with: {
+      user: {
+        columns: {
+          username: true,
+          email: true,
+        },
+      },
+    },
   });
 }
 

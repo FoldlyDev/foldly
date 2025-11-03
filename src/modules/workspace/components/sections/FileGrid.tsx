@@ -52,6 +52,31 @@ interface FileGridProps {
   onDeleteFolder?: (folder: Folder) => void;
 
   /**
+   * Callback when sharing a folder (personal folder)
+   */
+  onShareFolder?: (folder: Folder) => void;
+
+  /**
+   * Callback when linking folder to existing link (personal folder)
+   */
+  onLinkToExisting?: (folder: Folder) => void;
+
+  /**
+   * Callback when copying link URL (linked folder)
+   */
+  onCopyLinkUrl?: (folder: Folder) => void;
+
+  /**
+   * Callback when viewing link details (linked folder)
+   */
+  onViewLinkDetails?: (folder: Folder) => void;
+
+  /**
+   * Callback when unlinking a folder (linked folder)
+   */
+  onUnlinkFolder?: (folder: Folder) => void;
+
+  /**
    * Callback when previewing a file
    */
   onPreviewFile?: (file: File) => void;
@@ -110,6 +135,11 @@ export function FileGrid({
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
+  onShareFolder,
+  onLinkToExisting,
+  onCopyLinkUrl,
+  onViewLinkDetails,
+  onUnlinkFolder,
   onPreviewFile,
   onDownloadFile,
   onDeleteFile,
@@ -157,6 +187,11 @@ export function FileGrid({
                   onRename={onRenameFolder ? () => onRenameFolder(folder) : undefined}
                   onMove={onMoveFolder ? () => onMoveFolder(folder) : undefined}
                   onDelete={onDeleteFolder ? () => onDeleteFolder(folder) : undefined}
+                  onShareFolder={onShareFolder ? () => onShareFolder(folder) : undefined}
+                  onLinkToExisting={onLinkToExisting ? () => onLinkToExisting(folder) : undefined}
+                  onCopyLinkUrl={onCopyLinkUrl ? () => onCopyLinkUrl(folder) : undefined}
+                  onViewLinkDetails={onViewLinkDetails ? () => onViewLinkDetails(folder) : undefined}
+                  onUnlinkFolder={onUnlinkFolder ? () => onUnlinkFolder(folder) : undefined}
                   isSelected={selectedFolders.has(folder.id)}
                   onSelect={
                     onSelectFolder

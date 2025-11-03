@@ -33,7 +33,7 @@ export function FilterBottomSheet() {
           Filters & Sort
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="h-auto">
+      <SheetContent side="bottom" className="h-auto pb-16">
         <SheetHeader>
           <SheetTitle>Filters & Sorting</SheetTitle>
           <SheetDescription>
@@ -41,7 +41,7 @@ export function FilterBottomSheet() {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="grid flex-1 auto-rows-min gap-6 px-4">
           {/* Group By */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Group by</label>

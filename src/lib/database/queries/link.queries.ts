@@ -5,7 +5,7 @@
 
 import { db } from '@/lib/database/connection';
 import { links, workspaces, users, folders } from '@/lib/database/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import type { Link } from '@/lib/database/schemas';
 
 /**
@@ -30,11 +30,22 @@ export async function getLinkBySlug(slug: string) {
 }
 
 /**
- * Get link by ID
+ * Get link by ID (includes workspace → user → username for URL generation)
  */
 export async function getLinkById(linkId: string) {
   return await db.query.links.findFirst({
     where: eq(links.id, linkId),
+    with: {
+      workspace: {
+        with: {
+          user: {
+            columns: {
+              username: true,
+            },
+          },
+        },
+      },
+    },
   });
 }
 
@@ -209,4 +220,34 @@ export async function getLinkBySlugWithPermissions(slug: string) {
  */
 export async function deleteLink(linkId: string) {
   await db.delete(links).where(eq(links.id, linkId));
+}
+
+/**
+ * Get available links for workspace
+ * Returns links that are either:
+ * - Inactive (isActive = false)
+ * - OR not linked to any folder (can be reused)
+ *
+ * Used in: LinkFolderModal's "Use Existing Link" dropdown
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @returns Array of available links for re-use
+ *
+ * @example
+ * ```typescript
+ * const availableLinks = await getAvailableLinks('workspace_123');
+ * // Returns links that can be linked to personal folders
+ * ```
+ */
+export async function getAvailableLinks(workspaceId: string): Promise<Link[]> {
+  // Get all inactive links for this workspace
+  const inactiveLinks = await db.query.links.findMany({
+    where: and(
+      eq(links.workspaceId, workspaceId),
+      eq(links.isActive, false)
+    ),
+    orderBy: (links, { desc }) => [desc(links.updatedAt)],
+  });
+
+  return inactiveLinks;
 }

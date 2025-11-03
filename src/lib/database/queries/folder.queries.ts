@@ -4,7 +4,7 @@
 // 🎯 Pure database queries for folder operations (called by server actions)
 
 import { db, postgresClient } from '@/lib/database/connection';
-import { folders } from '@/lib/database/schemas';
+import { folders, links } from '@/lib/database/schemas';
 import { eq, and, isNull } from 'drizzle-orm';
 import type { Folder, NewFolder } from '@/lib/database/schemas';
 
@@ -351,4 +351,96 @@ export async function getFolderDepth(folderId: string): Promise<number> {
   `;
 
   return result[0]?.max_depth ?? 0;
+}
+
+// =============================================================================
+// FOLDER-LINK RELATIONSHIP QUERIES
+// =============================================================================
+
+/**
+ * Link folder to existing link
+ * Updates folder.linkId and link.isActive in single transaction
+ * Used when converting personal folder to shared folder
+ *
+ * @param folderId - The UUID of the folder to link
+ * @param linkId - The UUID of the link to associate with folder
+ * @returns Updated folder object
+ * @throws Error if folder or link not found, or update fails
+ *
+ * @example
+ * ```typescript
+ * const folder = await linkFolderToLink('folder_123', 'link_456');
+ * // folder.linkId = 'link_456', link.isActive = true
+ * ```
+ */
+export async function linkFolderToLink(
+  folderId: string,
+  linkId: string
+): Promise<Folder> {
+  return await db.transaction(async (tx) => {
+    // Update link to active
+    await tx
+      .update(links)
+      .set({ isActive: true, updatedAt: new Date() })
+      .where(eq(links.id, linkId));
+
+    // Update folder with linkId
+    const [folder] = await tx
+      .update(folders)
+      .set({ linkId, updatedAt: new Date() })
+      .where(eq(folders.id, folderId))
+      .returning();
+
+    if (!folder) {
+      throw new Error(`Failed to link folder: Folder with ID ${folderId} not found`);
+    }
+
+    return folder;
+  });
+}
+
+/**
+ * Unlink folder from link
+ * Sets folder.linkId = NULL and link.isActive = false (preserves link for re-use)
+ * Used when converting shared folder to personal folder (non-destructive)
+ *
+ * @param folderId - The UUID of the folder to unlink
+ * @returns Updated folder object
+ * @throws Error if folder not found or update fails
+ *
+ * @example
+ * ```typescript
+ * const folder = await unlinkFolder('folder_123');
+ * // folder.linkId = null, associated link.isActive = false
+ * ```
+ */
+export async function unlinkFolder(folderId: string): Promise<Folder> {
+  return await db.transaction(async (tx) => {
+    // Get folder to find associated linkId
+    const existingFolder = await tx.query.folders.findFirst({
+      where: eq(folders.id, folderId),
+      columns: { linkId: true },
+    });
+
+    // Update folder linkId to NULL
+    const [folder] = await tx
+      .update(folders)
+      .set({ linkId: null, updatedAt: new Date() })
+      .where(eq(folders.id, folderId))
+      .returning();
+
+    if (!folder) {
+      throw new Error(`Failed to unlink folder: Folder with ID ${folderId} not found`);
+    }
+
+    // If folder had a link, set link to inactive
+    if (existingFolder?.linkId) {
+      await tx
+        .update(links)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(links.id, existingFolder.linkId));
+    }
+
+    return folder;
+  });
 }

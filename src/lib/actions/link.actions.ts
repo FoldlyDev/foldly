@@ -169,8 +169,218 @@ export const getLinkByIdAction = withAuthInputAndRateLimit<
 // =============================================================================
 
 /**
- * Create a new shareable link
- * Validates slug availability and creates owner permission automatically
+ * Create a standalone link without auto-creating root folder
+ * Used when linking existing folders (Workspace Module)
+ * Creates link + owner permission + additional permissions (NO folder)
+ * Rate limited: 20 requests per minute
+ *
+ * @param data - Link creation data
+ * @returns Created link
+ *
+ * @example
+ * ```typescript
+ * const result = await createStandaloneLinkAction({
+ *   name: 'Client Docs',
+ *   slug: 'client-docs',
+ *   isPublic: false
+ * });
+ * // Link created, but no root folder (user will link existing folder separately)
+ * ```
+ */
+export const createStandaloneLinkAction = withAuthInputAndRateLimit<CreateLinkInput, Link>(
+  'createStandaloneLinkAction',
+  RateLimitPresets.MODERATE,
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(createLinkSchema, input);
+
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
+
+    // Get user to retrieve email for owner permission
+    const user = await getUserById(userId);
+    if (!user || !user.email) {
+      logSecurityEvent('userEmailNotFound', { userId });
+      throw {
+        success: false,
+        error: 'User email not found.',
+      } as const;
+    }
+
+    // Check slug availability (optimistic check for UX)
+    const slugAvailable = await isSlugAvailable(validated.slug);
+    if (!slugAvailable) {
+      logSecurityEvent('slugAlreadyTaken', {
+        userId,
+        slug: validated.slug,
+      });
+      throw {
+        success: false,
+        error: ERROR_MESSAGES.LINK.SLUG_TAKEN,
+      } as const;
+    }
+
+    // Encrypt password if provided and not already encrypted
+    let encryptedPassword: string | null = null;
+    if (validated.linkConfig?.password) {
+      if (!isEncryptedPassword(validated.linkConfig.password)) {
+        encryptedPassword = encryptPassword(validated.linkConfig.password);
+      } else {
+        encryptedPassword = validated.linkConfig.password;
+      }
+    }
+
+    // Prepare link configuration with defaults
+    const linkConfig = {
+      notifyOnUpload: validated.linkConfig?.notifyOnUpload ?? true,
+      customMessage: validated.linkConfig?.customMessage ?? null,
+      requiresName: validated.linkConfig?.requiresName ?? false,
+      expiresAt: validated.linkConfig?.expiresAt ?? null,
+      passwordProtected: validated.linkConfig?.passwordProtected ?? false,
+      password: encryptedPassword,
+    };
+
+    // Prepare branding configuration
+    const branding = {
+      enabled: validated.branding?.enabled ?? false,
+      logo: null,
+      colors: validated.branding?.colors ?? null,
+    };
+
+    // Create link, owner permission, and additional permissions atomically
+    // NO root folder creation (caller will link existing folder)
+    try {
+      const transactionResult = await withTransaction(
+        async (tx) => {
+          // Step 1: Create link
+          const [link] = await tx
+            .insert(links)
+            .values({
+              id: crypto.randomUUID(),
+              workspaceId: workspace.id,
+              slug: validated.slug,
+              name: validated.name,
+              isPublic: validated.isPublic ?? false,
+              isActive: false, // Will be activated when folder is linked
+              linkConfig,
+              branding,
+            })
+            .returning();
+
+          if (!link) {
+            throw new Error('Failed to create link: Database insert returned no rows');
+          }
+
+          // Step 2: Create owner permission
+          const [permission] = await tx
+            .insert(permissions)
+            .values({
+              id: crypto.randomUUID(),
+              linkId: link.id,
+              email: user.email,
+              role: 'owner',
+              isVerified: 'true',
+              verifiedAt: new Date(),
+            })
+            .returning();
+
+          if (!permission) {
+            throw new Error('Failed to create permission: Database insert returned no rows');
+          }
+
+          // Step 3: Create permissions for allowed emails (if private link with emails)
+          const additionalPermissions: typeof permissions.$inferInsert[] = [];
+          if (!validated.isPublic && validated.allowedEmails && validated.allowedEmails.length > 0) {
+            for (const email of validated.allowedEmails) {
+              additionalPermissions.push({
+                id: crypto.randomUUID(),
+                linkId: link.id,
+                email,
+                role: 'editor',
+                isVerified: 'false',
+                verifiedAt: null,
+              });
+            }
+
+            await tx.insert(permissions).values(additionalPermissions);
+          }
+
+          // NOTE: NO root folder creation (Step 4 from createLinkAction)
+          // Caller will link existing folder to this link
+
+          return { link, permission, additionalPermissions };
+        },
+        {
+          name: 'create-standalone-link',
+          context: { userId, slug: validated.slug },
+        }
+      );
+
+      // Check transaction result
+      if (!transactionResult.success || !transactionResult.data) {
+        logSecurityEvent('standaloneLinkCreationTransactionFailed', {
+          userId,
+          slug: validated.slug,
+          error: transactionResult.error,
+        });
+        return {
+          success: false,
+          error: ERROR_MESSAGES.LINK.CREATION_FAILED,
+        } as const;
+      }
+
+      const { link } = transactionResult.data;
+
+      logger.info('Standalone link created successfully', {
+        userId,
+        linkId: link.id,
+        slug: link.slug,
+        isActive: false, // Will be activated when folder is linked
+      });
+
+      return {
+        success: true,
+        data: link,
+      } as const;
+    } catch (error) {
+      // Handle race condition: slug claimed between availability check and insert
+      if (error instanceof Error && isConstraintViolation(error)) {
+        const message = error.message.toLowerCase();
+        if (message.includes('unique') && message.includes('slug')) {
+          logSecurityEvent('slugRaceConditionDetected', {
+            userId,
+            slug: validated.slug,
+          });
+          return {
+            success: false,
+            error: ERROR_MESSAGES.LINK.SLUG_TAKEN,
+          } as const;
+        }
+      }
+
+      // If error is already an ActionResponse, re-throw it
+      if (typeof error === 'object' && error !== null && 'success' in error) {
+        throw error;
+      }
+
+      // For unexpected errors, return generic failure
+      logSecurityEvent('unexpectedStandaloneLinkCreationError', {
+        userId,
+        slug: validated.slug,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return {
+        success: false,
+        error: ERROR_MESSAGES.LINK.CREATION_FAILED,
+      } as const;
+    }
+  }
+);
+
+/**
+ * Create a new shareable link with auto-created root folder
+ * Used by Links Module for standard link creation
+ * Creates link + owner permission + additional permissions + root folder
  * Rate limited: 20 requests per minute
  *
  * @param data - Link creation data

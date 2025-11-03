@@ -7,3 +7,9 @@ export * from './CreateFolderModal';
 export * from './RenameFolderModal';
 export * from './MoveFolderModal';
 export * from './DeleteConfirmModal';
+
+// Folder-link modals
+export * from './ShareFolderModal';
+export * from './LinkFolderToExistingModal';
+export * from './ViewFolderLinkDetailsModal';
+export * from './UnlinkFolderConfirmModal';

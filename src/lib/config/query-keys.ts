@@ -59,15 +59,17 @@ export const linkKeys = {
   details: () => [...linkKeys.all, 'detail'] as const,
   detail: (id: string) => [...linkKeys.details(), id] as const,
   slugCheck: (slug: string) => [...linkKeys.all, 'slug-check', slug] as const,
+  available: () => [...linkKeys.all, 'available'] as const,
 } as const;
 
 /**
  * Folder-related query keys
+ * Note: workspaceId removed from roots key due to 1:1 user-workspace relationship
  */
 export const folderKeys = {
   all: ['folders'] as const,
   lists: () => [...folderKeys.all, 'list'] as const,
-  roots: (workspaceId: string) => [...folderKeys.lists(), 'roots', workspaceId] as const,
+  roots: () => [...folderKeys.lists(), 'roots'] as const,
   subfolders: (parentId: string) => [...folderKeys.lists(), 'subfolders', parentId] as const,
   details: () => [...folderKeys.all, 'detail'] as const,
   detail: (id: string) => [...folderKeys.details(), id] as const,
@@ -76,16 +78,18 @@ export const folderKeys = {
 
 /**
  * File-related query keys
+ * Note: workspaceId removed from keys due to 1:1 user-workspace relationship
+ * Auth context always resolves to current user's workspace
  */
 export const fileKeys = {
   all: ['files'] as const,
   lists: () => [...fileKeys.all, 'list'] as const,
-  workspace: (workspaceId: string) => [...fileKeys.lists(), 'workspace', workspaceId] as const,
+  workspace: () => [...fileKeys.lists(), 'workspace'] as const,
   folder: (folderId: string) => [...fileKeys.lists(), 'folder', folderId] as const,
-  byEmail: (workspaceId: string, email: string) => [...fileKeys.lists(), 'by-email', workspaceId, email] as const,
-  byDate: (workspaceId: string, startDate: string, endDate?: string) =>
-    [...fileKeys.lists(), 'by-date', workspaceId, { startDate, endDate }] as const,
-  search: (workspaceId: string, query: string) => [...fileKeys.all, 'search', workspaceId, query] as const,
+  byEmail: (email: string) => [...fileKeys.lists(), 'by-email', email] as const,
+  byDate: (startDate: string, endDate?: string) =>
+    [...fileKeys.lists(), 'by-date', { startDate, endDate }] as const,
+  search: (query: string) => [...fileKeys.all, 'search', query] as const,
   details: () => [...fileKeys.all, 'detail'] as const,
   detail: (id: string) => [...fileKeys.details(), id] as const,
 } as const;

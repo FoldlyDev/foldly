@@ -17,6 +17,13 @@ interface FolderCardProps {
   showCheckbox?: boolean;
   fileCount?: number;
   uploaderCount?: number;
+  // Folder-link actions (personal folder)
+  onShareFolder?: () => void;
+  onLinkToExisting?: () => void;
+  // Folder-link actions (linked folder)
+  onCopyLinkUrl?: () => void;
+  onViewLinkDetails?: () => void;
+  onUnlinkFolder?: () => void;
 }
 
 /**
@@ -44,6 +51,11 @@ export function FolderCard({
   showCheckbox = false,
   fileCount = 0,
   uploaderCount = 0,
+  onShareFolder,
+  onLinkToExisting,
+  onCopyLinkUrl,
+  onViewLinkDetails,
+  onUnlinkFolder,
 }: FolderCardProps) {
   const isLinkedFolder = !!folder.linkId;
 
@@ -84,6 +96,11 @@ export function FolderCard({
           onRename={onRename}
           onMove={onMove}
           onDelete={onDelete}
+          onShareFolder={onShareFolder}
+          onLinkToExisting={onLinkToExisting}
+          onCopyLinkUrl={onCopyLinkUrl}
+          onViewLinkDetails={onViewLinkDetails}
+          onUnlinkFolder={onUnlinkFolder}
         />
       </div>
 

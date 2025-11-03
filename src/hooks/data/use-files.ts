@@ -109,7 +109,7 @@ export function useFilesByEmail(
   const isEnabled = options?.enabled !== false && !!uploaderEmail;
 
   return useQuery({
-    queryKey: fileKeys.byEmail(contextKeys.currentWorkspace()[0], uploaderEmail || 'disabled'),
+    queryKey: fileKeys.byEmail(uploaderEmail || 'disabled'),
     queryFn: async () => {
       if (!uploaderEmail) {
         throw new Error('Uploader email is required');
@@ -162,7 +162,7 @@ export function useSearchFiles(
   const isEnabled = options?.enabled !== false && !!query;
 
   return useQuery({
-    queryKey: fileKeys.search('workspace', query || 'disabled'),
+    queryKey: fileKeys.search(query || 'disabled'),
     queryFn: async () => {
       if (!query) {
         throw new Error('Search query is required');

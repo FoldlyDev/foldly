@@ -15,7 +15,6 @@ import {
 import { Button } from "@/components/ui/shadcn/button";
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
-import { toast } from "sonner";
 import { Folder } from "lucide-react";
 import { createFolderAction } from "@/lib/actions/folder.actions";
 
@@ -86,14 +85,20 @@ export function CreateFolderModal({
       });
 
       if (result.success) {
-        toast.success("Folder created successfully");
+        // TODO: Add success notification when notification system is implemented
+        // toast.success("Folder created successfully");
+        console.log("Folder created successfully");
         handleClose();
         onSuccess?.();
       } else {
-        toast.error(result.error || "Failed to create folder");
+        // TODO: Add error notification when notification system is implemented
+        // toast.error(result.error || "Failed to create folder");
+        console.error("Failed to create folder:", result.error);
       }
     } catch (error) {
-      toast.error("An unexpected error occurred");
+      // TODO: Add error notification when notification system is implemented
+      // toast.error("An unexpected error occurred");
+      console.error("Unexpected error creating folder:", error);
     } finally {
       setIsCreating(false);
     }

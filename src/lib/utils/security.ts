@@ -362,11 +362,17 @@ export function sanitizeSlug(slug: string | null | undefined): string {
   // Trim whitespace and convert to lowercase
   const trimmed = slug.trim().toLowerCase();
 
+  // CONVERT SPACES TO HYPHENS FIRST (before filtering)
+  const withHyphens = trimmed.replace(/\s+/g, '-');
+
   // Allow only lowercase alphanumeric characters and hyphens
-  const sanitized = trimmed.replace(/[^a-z0-9-]/g, '');
+  const sanitized = withHyphens.replace(/[^a-z0-9-]/g, '');
+
+  // Remove consecutive hyphens and trim hyphens from start/end
+  const cleaned = sanitized.replace(/-+/g, '-').replace(/^-|-$/g, '');
 
   // Enforce maximum length (100 chars to match schema)
-  const limited = sanitized.slice(0, 100);
+  const limited = cleaned.slice(0, 100);
 
   // Log warning if sanitization changed the input significantly
   if (limited !== trimmed) {
