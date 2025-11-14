@@ -381,7 +381,73 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 3. File Download (MEDIUM) ⏳ 2-3 hours
+### 3. Search Bar Implementation (HIGH) ⏳ 1-2 hours
+
+**Priority:** 🔴 **HIGH** (Core UX feature - currently non-functional)
+
+**Current State:**
+- Search bar UI exists in workspace filters
+- `searchQuery` state exists in `useWorkspaceFilters()` hook
+- 🚨 **CRITICAL BUG**: Search input does nothing - doesn't filter files/folders
+
+**Required:**
+- [ ] Wire up search query to filter files in current folder
+- [ ] Wire up search query to filter folders in current folder
+- [ ] Implement fuzzy search or contains-based filtering
+- [ ] Search should work on filename and folder name
+- [ ] Clear search button (X icon) when query is not empty
+- [ ] Show "No results found" state when search returns empty
+- [ ] Debounce search input (300ms delay) for performance
+- [ ] Search should be case-insensitive
+- [ ] Optional: Highlight search matches in results
+
+**Implementation Options:**
+
+**Option A: Client-Side Filtering (Recommended for MVP)**
+- Filter files/folders in UserWorkspace.tsx based on `searchQuery`
+- Use `files.filter(f => f.filename.toLowerCase().includes(searchQuery.toLowerCase()))`
+- Pros: Fast, no server round-trip, works offline
+- Cons: Only searches current page of results
+
+**Option B: Server-Side Search (Future Enhancement)**
+- Use existing `searchFilesAction` (already implemented in file.actions.ts)
+- Pros: Can search across all folders, full-text search capabilities
+- Cons: Requires server round-trip, more complex state management
+
+**Files to Modify:**
+1. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add client-side filtering logic
+2. `src/modules/workspace/components/sections/FilterToolbar.tsx` - Verify search input is properly bound
+3. `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - Pass filtered data
+4. `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - Pass filtered data
+
+**Code Example (Client-Side Filtering):**
+```typescript
+// In UserWorkspace.tsx
+const filteredFiles = React.useMemo(() => {
+  if (!searchQuery.trim()) return files;
+  const query = searchQuery.toLowerCase();
+  return files.filter(file =>
+    file.filename.toLowerCase().includes(query)
+  );
+}, [files, searchQuery]);
+
+const filteredFolders = React.useMemo(() => {
+  if (!searchQuery.trim()) return folders;
+  const query = searchQuery.toLowerCase();
+  return folders.filter(folder =>
+    folder.name.toLowerCase().includes(query)
+  );
+}, [folders, searchQuery]);
+
+// Pass filteredFiles and filteredFolders to layouts instead of raw files/folders
+```
+
+**Estimated Time:** 1-2 hours
+**Blocks:** Search is core UX - users expect it to work
+
+---
+
+### 4. File Download (MEDIUM) ⏳ 2-3 hours
 
 **Priority:** 🟡 **MEDIUM** (Nice-to-have, not blocking)
 
@@ -406,7 +472,7 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 4. Bulk Delete Modal (LOW) ⏳ 1 hour
+### 5. Bulk Delete Modal (LOW) ⏳ 1 hour
 
 **Priority:** 🟢 **LOW** (UX improvement, not functionality)
 
@@ -430,7 +496,7 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 5. Recently Opened Files Section (MEDIUM) ⏳ 2-3 hours
+### 6. Recently Opened Files Section (MEDIUM) ⏳ 2-3 hours
 
 **Priority:** 🟡 **MEDIUM** (Nice-to-have UX improvement)
 
@@ -496,7 +562,7 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 6. Polish & Nice-to-Haves (OPTIONAL) ⏳ 2-4 hours
+### 7. Polish & Nice-to-Haves (OPTIONAL) ⏳ 2-4 hours
 
 **Priority:** 🟢 **OPTIONAL** (Post-MVP)
 
@@ -508,7 +574,7 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 7. Drag-and-Drop Support (POST-MVP) ⏳ 4-6 hours
+### 8. Drag-and-Drop Support (POST-MVP) ⏳ 4-6 hours
 
 **Priority:** 🟢 **POST-MVP** (UX Enhancement - Phase 2)
 
@@ -613,7 +679,7 @@ export function UserWorkspace() {
 
 ---
 
-### 8. Storage Quotas & Upload Limits (POST-MVP) ⏳ 4-6 hours
+### 9. Storage Quotas & Upload Limits (POST-MVP) ⏳ 4-6 hours
 
 **Priority:** 🟢 **POST-MVP** (Phase 2 Enhancement)
 
