@@ -12,6 +12,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getRootFoldersAction,
+  getFoldersByParentAction,
   getFolderHierarchyAction,
   createFolderAction,
   updateFolderAction,
@@ -72,6 +73,49 @@ export function useRootFolders() {
 }
 
 /**
+ * Get folders by parent (root or child folders)
+ * Universal hook for folder navigation
+ *
+ * Used in:
+ * - Workspace folder grid with folder navigation
+ * - Folder browser with current folder context
+ *
+ * @param parentFolderId - Parent folder ID (null for root folders)
+ * @param options - Optional configuration
+ * @param options.enabled - Whether to run the query (default: true)
+ * @returns Query with array of folders at the specified location
+ *
+ * @example
+ * ```tsx
+ * function FoldersView({ currentFolderId }: { currentFolderId: string | null }) {
+ *   const { data: folders, isLoading } = useFoldersByParent(currentFolderId);
+ *
+ *   if (isLoading) return <FoldersSkeleton />;
+ *
+ *   return <div>{folders?.map(folder => <FolderCard key={folder.id} folder={folder} />)}</div>;
+ * }
+ * ```
+ */
+export function useFoldersByParent(
+  parentFolderId: string | null,
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? true;
+
+  return useQuery({
+    queryKey: folderKeys.byParent(parentFolderId),
+    queryFn: async () => {
+      const result = await getFoldersByParentAction({ parentFolderId });
+      return transformQueryResult(result, 'Failed to fetch folders', []);
+    },
+    enabled,
+    placeholderData: (previousData) => previousData, // Keep previous data while loading
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  });
+}
+
+/**
  * Get folder hierarchy (breadcrumb path)
  *
  * Used in:
@@ -117,6 +161,7 @@ export function useFolderHierarchy(
       return transformQueryResult(result, 'Failed to fetch folder hierarchy', []);
     },
     enabled: isEnabled,
+    placeholderData: (previousData) => previousData, // Keep previous breadcrumb while loading
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

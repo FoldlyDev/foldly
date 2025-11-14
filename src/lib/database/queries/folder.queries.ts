@@ -78,6 +78,40 @@ export async function getSubfolders(parentFolderId: string): Promise<Folder[]> {
 }
 
 /**
+ * Get folders by parent (root or child folders)
+ * Universal query for folder navigation - handles both root and nested folders
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @param parentFolderId - The UUID of the parent folder, or null for root folders
+ * @returns Array of folders in the specified location ordered by creation date (newest first)
+ *
+ * @example
+ * ```typescript
+ * // Get root-level folders (not in any folder)
+ * const rootFolders = await getFoldersByParent('workspace_123', null);
+ * // Returns: Folders where parentFolderId IS NULL
+ *
+ * // Get child folders of a parent
+ * const subfolders = await getFoldersByParent('workspace_123', 'folder_456');
+ * // Returns: Folders where parentFolderId = 'folder_456'
+ * ```
+ */
+export async function getFoldersByParent(
+  workspaceId: string,
+  parentFolderId: string | null
+): Promise<Folder[]> {
+  return await db.query.folders.findMany({
+    where: and(
+      eq(folders.workspaceId, workspaceId),
+      parentFolderId === null
+        ? isNull(folders.parentFolderId)
+        : eq(folders.parentFolderId, parentFolderId)
+    ),
+    orderBy: (folders, { desc }) => [desc(folders.createdAt)],
+  });
+}
+
+/**
  * Get folder hierarchy (breadcrumb path)
  * Returns array of folders from root to current folder
  *

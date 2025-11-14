@@ -1,9 +1,10 @@
 "use client";
 
-import { ChevronRight, Home } from "lucide-react";
+import * as React from "react";
+import { ChevronRight, Home, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
 import { Skeleton } from "@/components/ui/shadcn/skeleton";
-import { useFolderNavigation } from "../../hooks/use-folder-navigation";
+import { useFolderHierarchy } from "@/hooks";
 
 /**
  * Folder breadcrumb navigation
@@ -30,7 +31,16 @@ export function FolderBreadcrumb({
   currentFolderId,
   onNavigate,
 }: FolderBreadcrumbProps) {
-  const { hierarchy, isLoadingHierarchy } = useFolderNavigation(currentFolderId);
+  const { data: hierarchy, isLoading: isLoadingHierarchy } = useFolderHierarchy(currentFolderId);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  // Responsive detection
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // Loading state
   if (isLoadingHierarchy && currentFolderId) {
@@ -55,6 +65,33 @@ export function FolderBreadcrumb({
     );
   }
 
+  // Mobile: Show only "My Workspace ... Current Folder"
+  if (isMobile) {
+    const currentFolder = hierarchy[hierarchy.length - 1];
+
+    return (
+      <nav className="flex items-center gap-2" aria-label="Breadcrumb">
+        {/* Home button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onNavigate(null)}
+          className="gap-2 text-sm font-medium hover:bg-accent"
+        >
+          <Home className="size-4" />
+          <span>My Workspace</span>
+        </Button>
+
+        {/* Ellipsis indicator */}
+        <MoreHorizontal className="size-4 text-muted-foreground" />
+
+        {/* Current folder (non-clickable) */}
+        <span className="text-sm font-medium">{currentFolder.name}</span>
+      </nav>
+    );
+  }
+
+  // Desktop: Show full breadcrumb trail
   return (
     <nav className="flex items-center gap-2" aria-label="Breadcrumb">
       {/* Home button */}

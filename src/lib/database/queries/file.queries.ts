@@ -114,6 +114,40 @@ export async function getWorkspaceFiles(workspaceId: string): Promise<File[]> {
 }
 
 /**
+ * Get files by folder (root or specific folder)
+ * Universal query for folder navigation - handles both root and nested folders
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @param parentFolderId - The UUID of the parent folder, or null for root files
+ * @returns Array of files in the specified folder ordered by upload date (newest first)
+ *
+ * @example
+ * ```typescript
+ * // Get root-level files (not in any folder)
+ * const rootFiles = await getFilesByFolder('workspace_123', null);
+ * // Returns: Files where parentFolderId IS NULL
+ *
+ * // Get files in a specific folder
+ * const folderFiles = await getFilesByFolder('workspace_123', 'folder_456');
+ * // Returns: Files where parentFolderId = 'folder_456'
+ * ```
+ */
+export async function getFilesByFolder(
+  workspaceId: string,
+  parentFolderId: string | null
+): Promise<File[]> {
+  return await db.query.files.findMany({
+    where: and(
+      eq(files.workspaceId, workspaceId),
+      parentFolderId === null
+        ? isNull(files.parentFolderId)
+        : eq(files.parentFolderId, parentFolderId)
+    ),
+    orderBy: (files, { desc }) => [desc(files.uploadedAt)],
+  });
+}
+
+/**
  * Get files uploaded by specific email (cross-folder)
  * Used for dashboard "By Email" view - core feature for email-centric file collection
  *

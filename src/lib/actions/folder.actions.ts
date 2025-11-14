@@ -16,6 +16,7 @@ import { ERROR_MESSAGES } from '@/lib/constants';
 import {
   getRootFolders,
   getSubfolders,
+  getFoldersByParent,
   getFolderById,
   createFolder,
   updateFolder,
@@ -41,11 +42,13 @@ import {
   moveFolderSchema,
   deleteFolderSchema,
   getFolderHierarchySchema,
+  getFoldersByParentSchema,
   type CreateFolderInput,
   type UpdateFolderInput,
   type MoveFolderInput,
   type DeleteFolderInput,
   type GetFolderHierarchyInput,
+  type GetFoldersByParentInput,
 } from '@/lib/validation';
 
 // Import constants
@@ -79,6 +82,37 @@ export const getRootFoldersAction = withAuthAndRateLimit<Folder[]>(
 
     // Get all root folders for workspace
     const folders = await getRootFolders(workspace.id);
+
+    return {
+      success: true,
+      data: folders,
+    } as const;
+  }
+);
+
+/**
+ * Get folders by parent (root or child folders)
+ * Universal action for folder navigation
+ *
+ * @param input - Folders by parent input
+ * @param input.parentFolderId - Parent folder ID (null for root folders)
+ * @returns Action response with array of folders at the specified location
+ *
+ * @example
+ * ```typescript
+ * const result = await getFoldersByParentAction({ parentFolderId: null });
+ * if (result.success) {
+ *   console.log('Root folders:', result.data);
+ * }
+ * ```
+ */
+export const getFoldersByParentAction = withAuthInputAndRateLimit<GetFoldersByParentInput, Folder[]>(
+  'getFoldersByParentAction',
+  RateLimitPresets.GENEROUS,
+  async (userId, input) => {
+    const validatedInput = validateInput(getFoldersByParentSchema, input);
+    const workspace = await getAuthenticatedWorkspace(userId);
+    const folders = await getFoldersByParent(workspace.id, validatedInput.parentFolderId);
 
     return {
       success: true,

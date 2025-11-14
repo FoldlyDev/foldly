@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   FileIcon,
   FileTextIcon,
@@ -80,14 +81,17 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
       return (
         <div
           className={cn(
-            "flex size-full items-center justify-center overflow-hidden",
+            "relative flex size-full items-center justify-center overflow-hidden",
             className
           )}
         >
-          <img
+          <Image
             src={signedUrl}
             alt={file.filename}
-            className="size-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={false}
           />
         </div>
       );

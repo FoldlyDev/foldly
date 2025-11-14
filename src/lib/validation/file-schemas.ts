@@ -186,3 +186,14 @@ export const getFilesByEmailSchema = z.object({
 });
 
 export type GetFilesByEmailInput = z.infer<typeof getFilesByEmailSchema>;
+
+/**
+ * Schema for getting files by folder
+ * Validates: parent folder ID (null for root files)
+ * Used by: getFilesByFolderAction (global)
+ */
+export const getFilesByFolderSchema = z.object({
+  parentFolderId: uuidSchema.nullable(),
+});
+
+export type GetFilesByFolderInput = z.infer<typeof getFilesByFolderSchema>;

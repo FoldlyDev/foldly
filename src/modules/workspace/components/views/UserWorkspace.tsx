@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useWorkspaceFiles, useRootFolders, useModalState, useUserWorkspace } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
-import { useFolderNavigation } from "../../hooks/use-folder-navigation";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
 import { WorkspaceSkeleton } from "../ui/WorkspaceSkeleton";
@@ -39,12 +38,14 @@ export function UserWorkspace() {
 
   // Data fetching
   const { data: workspace, isLoading: isLoadingWorkspace } = useUserWorkspace();
-  const { data: files = [], isLoading: isLoadingFiles } = useWorkspaceFiles();
-  const { data: folders = [], isLoading: isLoadingFolders } = useRootFolders();
 
   // State management
-  const { groupBy, sortBy, sortOrder, filterEmail, searchQuery } = useWorkspaceFilters();
+  const { groupBy, sortBy, sortOrder, filterEmail, searchQuery} = useWorkspaceFilters();
   const folderNavigation = useFolderNavigation();
+
+  // Folder-based data fetching (uses currentFolderId from navigation)
+  const { data: files = [], isLoading: isLoadingFiles } = useFilesByFolder(folderNavigation.currentFolderId);
+  const { data: folders = [], isLoading: isLoadingFolders } = useFoldersByParent(folderNavigation.currentFolderId);
   const fileSelection = useFileSelection();
   const folderSelection = useFolderSelection();
 

@@ -12,6 +12,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getWorkspaceFilesAction,
+  getFilesByFolderAction,
   getFilesByEmailAction,
   searchFilesAction,
   createFileRecordAction,
@@ -69,6 +70,49 @@ export function useWorkspaceFiles() {
       return transformQueryResult(result, 'Failed to fetch files', []);
     },
     staleTime: 1 * 60 * 1000, // 1 minute - files change more frequently
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * Get files by folder (root or specific folder)
+ * Universal hook for folder navigation
+ *
+ * Used in:
+ * - Workspace file grid with folder navigation
+ * - File browser with current folder context
+ *
+ * @param parentFolderId - Parent folder ID (null for root files)
+ * @param options - Optional configuration
+ * @param options.enabled - Whether to run the query (default: true)
+ * @returns Query with array of files in the specified folder
+ *
+ * @example
+ * ```tsx
+ * function FilesView({ currentFolderId }: { currentFolderId: string | null }) {
+ *   const { data: files, isLoading } = useFilesByFolder(currentFolderId);
+ *
+ *   if (isLoading) return <FilesSkeleton />;
+ *
+ *   return <div>{files?.map(file => <FileCard key={file.id} file={file} />)}</div>;
+ * }
+ * ```
+ */
+export function useFilesByFolder(
+  parentFolderId: string | null,
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? true;
+
+  return useQuery({
+    queryKey: fileKeys.byFolder(parentFolderId),
+    queryFn: async () => {
+      const result = await getFilesByFolderAction({ parentFolderId });
+      return transformQueryResult(result, 'Failed to fetch files', []);
+    },
+    enabled,
+    placeholderData: (previousData) => previousData, // Keep previous data while loading
+    staleTime: 1 * 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
 }

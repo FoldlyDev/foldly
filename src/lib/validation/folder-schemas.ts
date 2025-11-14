@@ -112,6 +112,17 @@ export const deleteFolderSchema = z.object({
 export type DeleteFolderInput = z.infer<typeof deleteFolderSchema>;
 
 /**
+ * Schema for getting folders by parent
+ * Validates: parent folder ID (null for root folders)
+ * Used by: getFoldersByParentAction (global)
+ */
+export const getFoldersByParentSchema = z.object({
+  parentFolderId: parentFolderIdSchema,
+});
+
+export type GetFoldersByParentInput = z.infer<typeof getFoldersByParentSchema>;
+
+/**
  * Schema for getting folder hierarchy (breadcrumb)
  * Validates: folderId
  * Used by: getFolderHierarchyAction (global)

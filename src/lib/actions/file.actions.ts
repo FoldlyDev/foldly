@@ -17,6 +17,7 @@ import {
   getFileById,
   getFilesByIds,
   getWorkspaceFiles,
+  getFilesByFolder,
   getFilesByEmail,
   getFilesByDateRange,
   searchFiles,
@@ -46,6 +47,7 @@ import {
   bulkDeleteFilesSchema,
   searchFilesSchema,
   getFilesByEmailSchema,
+  getFilesByFolderSchema,
   UPLOADS_BUCKET_NAME,
   type CreateFileInput,
   type UpdateFileMetadataInput,
@@ -53,6 +55,7 @@ import {
   type BulkDeleteFilesInput,
   type SearchFilesInput,
   type GetFilesByEmailInput,
+  type GetFilesByFolderInput,
 } from '@/lib/validation';
 
 // =============================================================================
@@ -82,6 +85,50 @@ export const getWorkspaceFilesAction = withAuthAndRateLimit<File[]>(
 
     // Get all files for workspace
     const files = await getWorkspaceFiles(workspace.id);
+
+    return {
+      success: true,
+      data: files,
+    } as const;
+  }
+);
+
+/**
+ * Get files by folder (root or specific folder)
+ * Universal action for folder navigation
+ * Rate limited: 100 requests per minute (GENEROUS preset)
+ *
+ * @param input - Files by folder input
+ * @param input.parentFolderId - Parent folder ID (null for root files)
+ * @returns Action response with array of files in the specified folder
+ *
+ * @example
+ * ```typescript
+ * // Get root-level files
+ * const rootResult = await getFilesByFolderAction({ parentFolderId: null });
+ * if (rootResult.success) {
+ *   console.log('Root files:', rootResult.data); // File[]
+ * }
+ *
+ * // Get files in a specific folder
+ * const folderResult = await getFilesByFolderAction({ parentFolderId: 'folder_123' });
+ * if (folderResult.success) {
+ *   console.log('Folder files:', folderResult.data); // File[]
+ * }
+ * ```
+ */
+export const getFilesByFolderAction = withAuthInputAndRateLimit<GetFilesByFolderInput, File[]>(
+  'getFilesByFolderAction',
+  RateLimitPresets.GENEROUS,
+  async (userId, input) => {
+    // Validate input
+    const validatedInput = validateInput(getFilesByFolderSchema, input);
+
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
+
+    // Get files by folder
+    const files = await getFilesByFolder(workspace.id, validatedInput.parentFolderId);
 
     return {
       success: true,

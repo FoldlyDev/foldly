@@ -97,16 +97,6 @@ export function FilePreviewModal({
               <p className="mb-1 text-sm font-medium">Uploaded</p>
               <p className="text-sm text-muted-foreground">{uploadDate}</p>
             </div>
-
-            {/* File Path */}
-            {file.storagePath && (
-              <div>
-                <p className="mb-1 text-sm font-medium">Storage Path</p>
-                <p className="font-mono text-xs text-muted-foreground">
-                  {file.storagePath}
-                </p>
-              </div>
-            )}
           </div>
         </div>
 

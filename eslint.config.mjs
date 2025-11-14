@@ -16,6 +16,7 @@ export default tseslint.config(
       '**/.cache/**',
       '**/coverage/**',
       'drizzle/**',
+      'next-env.d.ts', // Next.js generated file
     ],
   },
 

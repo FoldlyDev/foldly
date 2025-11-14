@@ -71,6 +71,7 @@ export const folderKeys = {
   lists: () => [...folderKeys.all, 'list'] as const,
   roots: () => [...folderKeys.lists(), 'roots'] as const,
   subfolders: (parentId: string) => [...folderKeys.lists(), 'subfolders', parentId] as const,
+  byParent: (parentFolderId: string | null) => [...folderKeys.lists(), 'by-parent', parentFolderId ?? 'root'] as const,
   details: () => [...folderKeys.all, 'detail'] as const,
   detail: (id: string) => [...folderKeys.details(), id] as const,
   hierarchy: (id: string) => [...folderKeys.all, 'hierarchy', id] as const,
@@ -86,6 +87,7 @@ export const fileKeys = {
   lists: () => [...fileKeys.all, 'list'] as const,
   workspace: () => [...fileKeys.lists(), 'workspace'] as const,
   folder: (folderId: string) => [...fileKeys.lists(), 'folder', folderId] as const,
+  byFolder: (parentFolderId: string | null) => [...fileKeys.lists(), 'by-folder', parentFolderId ?? 'root'] as const,
   byEmail: (email: string) => [...fileKeys.lists(), 'by-email', email] as const,
   byDate: (startDate: string, endDate?: string) =>
     [...fileKeys.lists(), 'by-date', { startDate, endDate }] as const,
