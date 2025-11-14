@@ -31,6 +31,7 @@ export interface InitiateUploadInput {
   contentType: string;
   bucket: string;
   path: string;
+  parentFolderId?: string | null; // For duplicate detection
   metadata?: Record<string, string>;
 }
 
@@ -117,9 +118,35 @@ export const initiateUploadAction = withAuthInput<
       // Get authenticated workspace (validates user session)
       const workspace = await getAuthenticatedWorkspace(userId);
 
-      // Initiate resumable upload via storage abstraction
+      // Check for duplicate filename and generate unique name if needed
+      // Windows-style naming: photo.jpg → photo (1).jpg → photo (2).jpg
+      // CRITICAL: Check BOTH database AND storage to prevent 409 conflicts
+      const { checkFilenameExists } = await import('@/lib/database/queries/file.queries');
+      const { generateUniqueFilename } = await import('@/lib/utils/file-helpers');
+      const { fileExists } = await import('@/lib/storage/client');
+
+      const uniqueFilename = await generateUniqueFilename(
+        input.fileName,
+        async (filename) => {
+          // Check database for duplicate filenames in the same folder
+          const dbExists = await checkFilenameExists(input.parentFolderId ?? null, filename);
+          if (dbExists) return true;
+
+          // Check storage for existing file at the same path
+          // This prevents 409 errors from orphaned storage files
+          const storagePath = `${input.path}/${filename}`;
+          const storageExists = await fileExists({
+            gcsPath: storagePath,
+            bucket: input.bucket,
+          });
+
+          return storageExists;
+        }
+      );
+
+      // Initiate resumable upload via storage abstraction with unique filename
       const session = await storageInitiateUpload({
-        fileName: input.fileName,
+        fileName: uniqueFilename,
         fileSize: input.fileSize,
         contentType: input.contentType,
         bucket: input.bucket,
@@ -134,13 +161,17 @@ export const initiateUploadAction = withAuthInput<
       logger.info("Upload session initiated", {
         userId,
         workspaceId: workspace.id,
-        fileName: input.fileName,
+        originalFileName: input.fileName,
+        uniqueFileName: uniqueFilename,
         bucket: input.bucket,
       });
 
       return {
         success: true,
-        data: session,
+        data: {
+          ...session,
+          uniqueFileName: uniqueFilename,
+        },
       };
     } catch (error) {
       logger.error("Failed to initiate upload", {

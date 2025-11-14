@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/shadcn/select";
 
 import { FolderInput } from "lucide-react";
-import { updateFolderAction } from "@/lib/actions/folder.actions";
+import { moveFolderAction } from "@/lib/actions/folder.actions";
 import { useRootFolders } from "@/hooks";
 import type { Folder } from "@/lib/database/schemas";
 
@@ -110,15 +110,22 @@ export function MoveFolderModal({
     onOpenChange(false);
   };
 
+  // Check if the selected destination is the same as current location
+  const isSameLocation = React.useMemo(() => {
+    const normalizedSelected = selectedParent ?? null;
+    const normalizedCurrent = folder?.parentFolderId ?? null;
+    return normalizedSelected === normalizedCurrent;
+  }, [selectedParent, folder?.parentFolderId]);
+
   const onSubmit = async (data: MoveFolderFormData) => {
     if (!folder) return;
 
     setIsMoving(true);
 
     try {
-      const result = await updateFolderAction({
+      const result = await moveFolderAction({
         folderId: folder.id,
-        parentFolderId: data.parentFolderId,
+        newParentId: data.parentFolderId,
       });
 
       if (result.success) {
@@ -171,15 +178,33 @@ export function MoveFolderModal({
                 <SelectValue placeholder="Select destination folder" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="root">Root Folder (My Workspace)</SelectItem>
+                <SelectItem value="root">
+                  Root Folder (My Workspace)
+                  {folder.parentFolderId === null && (
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      (Current)
+                    </span>
+                  )}
+                </SelectItem>
                 {availableFolders.map((f: Folder) => (
                   <SelectItem key={f.id} value={f.id}>
                     {f.name}
+                    {folder.parentFolderId === f.id && (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        (Current)
+                      </span>
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          {isSameLocation && (
+            <p className="text-sm text-muted-foreground">
+              This folder is already in the selected location.
+            </p>
+          )}
 
           <ModalFooter className="gap-2">
             <Button
@@ -190,7 +215,7 @@ export function MoveFolderModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isMoving}>
+            <Button type="submit" disabled={isMoving || isSameLocation}>
               {isMoving ? "Moving..." : "Move Folder"}
             </Button>
           </ModalFooter>

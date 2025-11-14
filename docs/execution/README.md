@@ -25,6 +25,11 @@ execution/
 │   └── testing-guide.md        - ✅ Testing strategy & patterns
 ├── infrastructure/
 │   └── email-and-redis.md      - ✅ Email service & Redis rate limiting
+├── patterns/
+│   ├── storage-first-deletion-pattern.md  - ✅ Ethical deletion pattern for paid resources
+│   ├── duplicate-detection-pattern.md     - ✅ Dual-layer validation to prevent 409 errors
+│   ├── action-organization-pattern.md     - ✅ Global vs module-specific action placement
+│   └── validation-organization-pattern.md - ✅ Validation schema organization
 ├── api/
 │   └── (API endpoint specs)     - ⏳ Coming soon
 └── components/
@@ -281,6 +286,60 @@ execution/
 - ✅ Documentation: CLAUDE.md updated with storage-first deletion pattern
 - ✅ Code Review: 9.2/10 - Production-ready
 - ✅ Tech Lead Approval: 9.5/10 - Authorized for Phase 3
+
+### ✅ Duplicate File Detection Pattern (October 30, 2025)
+
+**Implementation Files**:
+- `src/lib/actions/storage.actions.ts` - `initiateUploadAction`, `initiatePublicUploadAction` (dual-layer validation)
+- `src/lib/utils/file-helpers.ts` - `generateUniqueFilename()` utility (Windows-style naming)
+- `src/lib/database/queries/file.queries.ts` - `checkFilenameExists()` query
+- `src/lib/storage/client.ts` - `fileExists()` storage check
+- `src/lib/storage/types.ts` - `UploadSession` interface with `uniqueFileName` field
+- `src/hooks/utility/use-uppy-upload.ts` - Returns `UploadResult` with `uniqueFileName`
+- `src/modules/workspace/components/modals/UploadFilesModal.tsx` - Uses `uniqueFileName` for DB records
+
+**Key Features**:
+- **Dual-Layer Validation**: Checks BOTH database AND storage before upload initiation
+- **Prevents 409 Errors**: Eliminates "Resource already exists" conflicts from orphaned files
+- **Windows-Style Naming**: photo.jpg → photo (1).jpg → photo (2).jpg
+- **Orphaned File Detection**: Catches files uploaded successfully but DB record creation failed
+- **Abandoned Session Handling**: Prevents conflicts with incomplete TUS/Resumable sessions
+- **Pre-Upload Validation**: Generates unique filename BEFORE initiating storage upload
+
+**Problem Solved**:
+- Orphaned storage files (uploaded but no DB record) caused 409 errors on retry uploads
+- Abandoned TUS upload sessions reserved storage paths but never completed
+- Users experienced upload failures requiring manual intervention
+- No way to detect storage conflicts before upload attempt
+
+**Architectural Pattern**:
+```typescript
+// 1. Check database for duplicate in same folder
+const dbExists = await checkFilenameExists(folderId, filename);
+if (dbExists) return true;
+
+// 2. Check storage for existing file at path (catches orphans)
+const storageExists = await fileExists({ gcsPath, bucket });
+return storageExists;
+
+// 3. Generate unique filename if conflicts found
+const uniqueFilename = await generateUniqueFilename(fileName, checker);
+
+// 4. Initiate upload with unique filename
+const session = await storageInitiateUpload({ fileName: uniqueFilename, ... });
+
+// 5. Client uses uniqueFileName for DB record creation
+```
+
+**Status**:
+- ✅ Implemented in `initiateUploadAction` and `initiatePublicUploadAction`
+- ✅ Type definitions updated (`UploadSession.uniqueFileName`, `UploadResult`)
+- ✅ Client hooks updated to return and use unique filename
+- ✅ Documentation: Pattern file created, CLAUDE.md updated
+- ✅ 409 errors eliminated from upload operations
+- ✅ Production-ready
+
+**Documentation**: [Duplicate Detection Pattern](./patterns/duplicate-detection-pattern.md)
 
 ---
 

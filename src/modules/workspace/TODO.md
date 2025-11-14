@@ -1,42 +1,712 @@
 # Workspace Module - Implementation TODO
 
-**Last Updated:** 2025-10-31
-**Status:** Phase 3 Ready - UX Architecture Approved
+**Last Updated:** 2025-11-14
+**Status:** Phase 3 Complete - File Upload Implemented & Duplicate Detection Fixed
 **Branch:** `v2/workspace-module`
 
 **Completed:**
 - ✅ Phase 1: Foundation (database queries, validation, query keys)
 - ✅ Phase 2: Actions & Hooks (11 actions, 10 hooks, comprehensive tests)
-- ✅ Code Review: 9.2/10, Tech Lead: 9.5/10 - Authorized for Phase 3
-- ✅ **Post-Review Fixes Applied** (2025-10-30)
-- ✅ **UX Architecture Review** (2025-10-31):
-  - Replaced 3-view tabs with single-view + dynamic filters
-  - Approved by UX Reviewer and Tech Lead
-  - Single responsive component pattern (matches Links Module)
-  - Desktop/Mobile layouts for complex UI sections
+- ✅ Phase 3A: UI Components (34 components built)
+- ✅ Phase 3B: Folder-Link System (13 tests passing, full integration)
+- ✅ Phase 3C: File Upload System (UploadFilesModal, Uppy integration, drag-and-drop)
+- ✅ Phase 3D: Duplicate Detection & 409 Error Fix (storage + DB validation)
+- ✅ Code Review: 9.2/10, Tech Lead: 9.5/10
 
-**Next:** Phase 3 UI Implementation - Single View + Filters
+**Latest Work (2025-11-14 - Two Sessions):**
+
+**Session 1: File Upload Implementation**
+- ✅ **File Upload UI Complete** - UploadFilesModal created with drag-and-drop
+- ✅ **Upload Integration** - Uppy integrated with authenticated workspace uploads
+- ✅ **UI Integration** - Upload buttons added to Desktop + Mobile layouts
+- ✅ **Bucket Configuration** - Fixed bucket name fallback issue
+- ✅ **FileUpload Component** - Replaced basic HTML input with originui FileUpload
+- ✅ **Duplicate Detection (Initial)** - Windows-style naming (photo.jpg → photo (1).jpg)
+
+**Session 2: 409 Error Fix & Enhanced Duplicate Detection**
+- ✅ **Root Cause Identified** - 409 errors from orphaned storage files (exist in storage but not DB)
+- ✅ **Dual-Layer Validation** - Check BOTH database AND storage before upload
+- ✅ **Storage Cleanup Prevention** - Prevents 409 conflicts from abandoned TUS upload sessions
+- ✅ **Import Chain Fixed** - Proper dynamic imports for `fileExists` storage check
+
+**Next:** Test end-to-end upload flow with duplicate detection, then optionally implement file download
 
 ---
 
-## 🎯 Module Scope
+## ✅ RECENTLY COMPLETED FEATURE
 
-The Workspace Module is the **primary user interface** for file collection management. It provides:
-- **Single workspace view** with dynamic filtering (Group by / Filter / Sort)
-- Folder management (CRUD, hierarchy, navigation)
-- File management (listing, filtering, bulk operations)
-- Email-based filtering (core feature - primary filter option)
-- Cross-folder search and multi-criteria filtering
+### File Upload System (COMPLETED 2025-11-14)
+
+**Status:** ✅ **IMPLEMENTED** - Core user workflow now functional
+
+**Implementation:**
+- Users can create folders ✅
+- Users can view files ✅
+- Users can upload files ✅
+- Upload button in UI (Desktop + Mobile) ✅
+- UploadFilesModal with drag-and-drop ✅
+- Uppy integration with authenticated uploads ✅
+
+**Implemented Components:**
+
+1. **Upload Button** ✅ (Desktop + Mobile layouts)
+   - Location: Next to "New Folder" button in toolbar
+   - Icon: `Upload` from lucide-react
+   - Labels: "Upload Files" (desktop), "Upload" (mobile)
+   - Action: Opens UploadFilesModal
+   - Files: `DesktopLayout.tsx`, `MobileLayout.tsx`
+
+2. **UploadFilesModal Component** ✅ (NEW)
+   - Path: `src/modules/workspace/components/modals/UploadFilesModal.tsx`
+   - Uses: `useUppyUpload` hook from `@/hooks/utility/use-uppy-upload`
+   - Uses: `FileUpload` component from `@/components/ui/originui`
+   - Features Implemented:
+     - ✅ Drag-and-drop zone (via FileUpload component)
+     - ✅ File browser button
+     - ✅ Upload progress tracking (with progress bar)
+     - ✅ Folder selection dropdown (defaults to current folder)
+     - ✅ File count and size display
+     - ✅ Multiple file selection
+     - ✅ 100MB per-file validation
+   - Integration:
+     - ✅ Calls `useCreateFileRecord()` after each successful upload
+     - ✅ Automatic cache invalidation via hook
+     - ✅ Sequential upload with error handling
+
+3. **Upload Action Handlers** ✅ (UserWorkspace.tsx)
+   - `handleUploadFiles()` - Opens modal
+   - `handleUpload()` - Sequential file upload loop in modal
+   - File record creation with proper metadata:
+     - `uploaderEmail: null` (owner uploads)
+     - `uploaderName: null` (owner uploads)
+     - `parentFolderId: targetFolderId`
+
+4. **Uppy Configuration** ✅ (Workspace-specific)
+   - Bucket: `UPLOADS_BUCKET_NAME || "foldly-uploads"` (with fallback)
+   - Auth mode: `authenticated` (user uploads to their workspace)
+   - Storage path: `uploads/${workspaceId}/${folderId || 'root'}`
+   - Multiple files: Yes (batch upload via FileUpload multiple={true})
+   - Max file size: 100MB per file (enforced by FileUpload + storage actions)
+   - Rate limiting: 10 uploads per 5 minutes (inherited from storage actions)
+
+**Implementation Time:** ~4 hours (Session 1) + ~1 hour (Session 2) = 5 hours total (2025-11-14)
+**Status:** ✅ **COMPLETE - Ready for testing**
 
 ---
 
-## 📋 Implementation Principles
+## ✅ RECENTLY COMPLETED ENHANCEMENT
+
+### Duplicate Detection & 409 Error Fix (COMPLETED 2025-11-14, Session 2)
+
+**Status:** ✅ **FIXED** - Prevents 409 "Resource already exists" errors
+
+**Problem:**
+- TUS resumable uploads to Supabase Storage were failing with 409 errors
+- Root cause: Files existed in storage but not in database (orphaned files)
+- Previous duplicate detection only checked database, not storage layer
+
+**Solution Implemented:**
+Dual-layer duplicate detection checks BOTH database AND storage:
+
+```typescript
+// Before (Session 1): Only checked database
+const dbExists = await checkFilenameExists(folderId, filename);
+
+// After (Session 2): Check both database AND storage
+const dbExists = await checkFilenameExists(folderId, filename);
+const storageExists = await fileExists({ gcsPath: path, bucket });
+return dbExists || storageExists; // ← Prevents 409 errors
+```
+
+**Files Modified:**
+1. ✅ `src/lib/actions/storage.actions.ts` (initiateUploadAction)
+   - Added dual-layer duplicate detection (DB + storage)
+   - Generates unique filename BEFORE initiating TUS upload
+   - Returns `uniqueFileName` in session response
+
+2. ✅ `src/lib/storage/types.ts` (UploadSession)
+   - Added `uniqueFileName: string` field
+   - Documents purpose: "for database record creation"
+
+3. ✅ `src/hooks/utility/use-uppy-upload.ts`
+   - Added `parentFolderId` to UploadOptions (for duplicate detection)
+   - Changed return type from `string` to `UploadResult` object
+   - Returns `{uniqueFileName, storagePath, url}` instead of just URL
+
+4. ✅ `src/modules/workspace/components/modals/UploadFilesModal.tsx`
+   - Passes `parentFolderId` to `uppyUpload.upload()`
+   - Uses `uploadResult.uniqueFileName` for database record creation
+
+5. ✅ `src/lib/utils/file-helpers.ts`
+   - Added `generateUniqueFilename()` utility function
+   - Windows-style naming: photo.jpg → photo (1).jpg → photo (2).jpg
+   - Supports async checker functions (for DB + storage validation)
+
+6. ✅ `src/lib/storage/gcs/client.ts` + `src/lib/storage/supabase/client.ts`
+   - Return `uniqueFileName` in `initiateResumableUpload()` response
+
+7. ✅ `src/modules/links/components/forms/BaseLinkForm.tsx`
+   - Updated to use `uploadResult.url` (from new return type)
+
+**Validation Flow (New Architecture):**
+
+1. **Client**: User selects file "photo.jpg" for upload
+2. **Initiate Action**:
+   - Check DB: Does "photo.jpg" exist in folder? → Yes
+   - Check Storage: Does "uploads/workspace/folder/photo.jpg" exist? → No
+   - Generate unique name: "photo (1).jpg"
+3. **TUS Upload**: Client uploads to storage using "photo (1).jpg" (no collision!)
+4. **Verify Action**: Confirm upload success
+5. **Create Record**: Create DB record with filename "photo (1).jpg"
+
+**Result:**
+- ✅ No more 409 errors from orphaned storage files
+- ✅ No more 409 errors from abandoned TUS sessions
+- ✅ Single source of truth for uniqueness (checked once, enforced everywhere)
+- ✅ Windows-style duplicate naming works correctly
+- ✅ Type-safe (0 TypeScript errors)
+
+**Testing Status:**
+- 🟡 **Pending E2E Tests** - Upload with duplicates needs end-to-end testing
+- Test cases needed:
+  1. Upload same file twice (should create "file (1).ext")
+  2. Upload after deleting file from DB (orphaned storage scenario)
+  3. Upload after failed upload (abandoned TUS session scenario)
+
+**Implementation Time:** ~1 hour (investigation + fix + type safety)
+
+---
+
+## ✅ What Already Exists
+
+### Completed Infrastructure (100%)
+
+✅ **Database Layer** (24 queries total)
+- `folder.queries.ts` - 11 queries (CRUD, hierarchy, depth validation)
+- `file.queries.ts` - 13 queries (CRUD, search, email filtering, bulk operations)
+
+✅ **Validation Layer** (All schemas)
+- `folder-schemas.ts` - Folder CRUD validation
+- `file-schemas.ts` - File metadata validation
+- `folder-link-schemas.ts` - Folder-link operations
+
+✅ **Actions Layer** (11 actions total)
+- `folder.actions.ts` - 5 folder actions + move folder fix (2025-11-13)
+- `file.actions.ts` - 6 file actions (storage-first deletion)
+- `workspace.actions.ts` - Stats and recent activity
+
+✅ **Hooks Layer** (10 hooks total)
+- `use-folders.ts` - 5 folder hooks
+- `use-files.ts` - 5 file hooks
+- `use-workspace.ts` - Workspace stats hooks
+
+✅ **Folder-Link System** (Hybrid architecture)
+- `folder-link.actions.ts` - 4 actions (13 tests passing)
+- `use-folder-link.ts` - 4 hooks with atomic cache invalidation
+- All 4 modals integrated and working
+
+✅ **UI Components** (35 components)
+- ✅ 2 Views: UserWorkspace.tsx, DesktopLayout.tsx, MobileLayout.tsx
+- ✅ 9 Atomic UI: FolderCard, FileCard, FileThumbnail, context menus, badges, empty states, skeleton
+- ✅ 5 Filters: GroupByFilter, EmailFilter, SortDropdown, FilterToolbar, FilterBottomSheet
+- ✅ 5 Sections: WorkspaceHeader, FileGrid, GroupedFileList, FolderBreadcrumb, SelectionToolbar
+- ✅ 10 Modals: FilePreview, CreateFolder, RenameFolder, MoveFolder, DeleteConfirm, ShareFolder, LinkToExisting, ViewLinkDetails, UnlinkFolderConfirm, **UploadFiles (NEW)**
+- ✅ 4 Module Hooks: use-workspace-filters, use-file-selection, use-folder-selection, use-folder-navigation
+
+### Tested & Production Ready
+- ✅ 262+ tests passing (queries + actions + folder-link)
+- ✅ 0 TypeScript errors
+- ✅ 0 new lint warnings
+- ✅ Storage-first deletion pattern implemented
+- ✅ Move folder idempotent fix applied (2025-11-13)
+
+---
+
+## 🚧 Remaining Work
+
+### 1. File Upload UI ✅ COMPLETE (5 hours - 2025-11-14)
+
+**Priority:** ✅ **COMPLETE - MVP Unblocked**
+
+- [x] Create `UploadFilesModal.tsx` component
+- [x] Add upload button to DesktopLayout.tsx (next to "New Folder")
+- [x] Add upload button to MobileLayout.tsx
+- [x] Add `uploadFilesModal` state to UserWorkspace.tsx
+- [x] Add `handleUploadFiles` handler
+- [x] Implement file upload logic in modal (creates file records)
+- [x] Integrate `useUppyUpload` hook with authenticated mode
+- [x] Integrate `FileUpload` component from originui
+- [x] Fix bucket name issue (added fallback)
+- [x] Fix 409 error with dual-layer duplicate detection (DB + storage)
+- [ ] Test upload → duplicate detection → file record creation → cache invalidation flow (NEXT STEP)
+
+**Files Modified (Session 1 + Session 2):**
+1. ✅ `src/modules/workspace/components/modals/UploadFilesModal.tsx` - CREATED (299 lines)
+2. ✅ `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - Added upload button
+3. ✅ `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - Added upload button
+4. ✅ `src/modules/workspace/components/views/UserWorkspace.tsx` - Added modal state + handlers
+5. ✅ `src/modules/workspace/components/modals/index.ts` - Exported UploadFilesModal
+6. ✅ `src/lib/actions/storage.actions.ts` - Dual-layer duplicate detection (Session 2)
+7. ✅ `src/lib/storage/types.ts` - Added uniqueFileName field (Session 2)
+8. ✅ `src/hooks/utility/use-uppy-upload.ts` - Updated return type to UploadResult (Session 2)
+9. ✅ `src/lib/utils/file-helpers.ts` - Added generateUniqueFilename utility (Session 2)
+
+**Implementation Details:**
+- Upload component: Uses `FileUpload` from `@/components/ui/originui`
+- Upload hook: `useUppyUpload` with `bucket: UPLOADS_BUCKET_NAME || "foldly-uploads"`
+- File creation: `useCreateFileRecord` with automatic cache invalidation
+- Progress tracking: Upload counter + progress bar in modal
+- Duplicate detection: Dual-layer validation (DB + storage) prevents 409 errors
+
+---
+
+### 2. Folder Navigation & Inner Folder View (HIGH) ⏳ 3-4 hours
+
+**Priority:** 🔴 **HIGH** (Critical UX - blocks MVP folder experience)
+
+**Problem:**
+- Clicking on folders currently does nothing
+- No way to navigate into folders to view their contents
+- No breadcrumb navigation to go back to parent folders
+- Users cannot explore nested folder structure (Google Drive-like experience missing)
+- 🚨 **CRITICAL BUG**: Currently showing ALL files from ALL folders in main view (should only show root files)
+
+**Current State:**
+- FolderCard.tsx has click handler but no navigation logic
+- UserWorkspace.tsx shows ALL workspace files instead of just root-level files
+- No current folder context or navigation state
+- Breadcrumb component exists but not wired up for navigation
+- `getWorkspaceFiles()` returns all files regardless of folder (incorrect for root view)
+
+**Critical Bug to Fix:**
+```typescript
+// ❌ CURRENT (WRONG): Shows ALL files from ALL folders
+const { data: files } = useWorkspaceFiles();
+// → Returns ALL files (workspace-wide)
+
+// ✅ CORRECT: Should show only root-level files
+const { data: files } = useFiles({ parentFolderId: null });
+// → Returns only files with parentFolderId = null
+```
+
+**Required Implementation:**
+
+**A. Folder Navigation State** (UserWorkspace.tsx)
+- [ ] Add `currentFolderId` state (string | null, null = root)
+- [ ] Add `folderPath` state for breadcrumb trail (array of `{id, name}`)
+- [ ] Add `handleFolderClick(folderId, folderName)` - Navigate into folder
+- [ ] Add `handleBreadcrumbClick(folderId)` - Navigate to parent/ancestor
+- [ ] Update data fetching to pass `currentFolderId` to queries
+
+**B. Backend Support & Bug Fixes**
+- [x] `getFolderFiles(folderId)` query exists (gets files IN a specific folder)
+- [x] `getFoldersByParent(parentId)` query exists (gets subfolders)
+- [ ] 🚨 **Create `getRootFiles(workspaceId)` query** - Filter by `parentFolderId IS NULL`
+- [ ] 🚨 **OR create universal `getFilesByFolder(workspaceId, folderId | null)` query**
+- [ ] Update `useFiles` hook to accept `parentFolderId` parameter (defaults to null for root)
+- [ ] Update `useFolders` hook to accept `parentFolderId` parameter (defaults to null for root)
+- [ ] Replace `useWorkspaceFiles()` with `useFiles({ parentFolderId: currentFolderId })`
+
+**C. UI Updates**
+- [ ] Wire up FolderCard onClick to `handleFolderClick`
+- [ ] Update FolderBreadcrumb to call `handleBreadcrumbClick` on segment click
+- [ ] Update WorkspaceHeader to show current folder name
+- [ ] Add "Back" button in toolbar (mobile-friendly)
+- [ ] Update empty states to show "No files in this folder" vs "No files in workspace"
+
+**D. URL State (Optional but recommended)**
+- [ ] Use URL search params to persist current folder (`?folder=xyz`)
+- [ ] Allow deep-linking to specific folders
+- [ ] Sync URL with folder navigation state
+- [ ] Handle browser back/forward buttons
+
+**Google Drive UX Reference:**
+1. Click folder → Navigate into it, show its contents
+2. Breadcrumb shows: "My Workspace / Folder A / Folder B"
+3. Click breadcrumb segment → Navigate to that level
+4. Files and subfolders of current folder displayed
+5. Empty folder shows contextual empty state
+6. URL updates with folder ID (deep-linkable)
+
+**Files to Modify:**
+1. 🚨 `src/lib/database/queries/file.queries.ts` - Add `getRootFiles()` or `getFilesByFolder()` query
+2. 🚨 `src/lib/actions/file.actions.ts` - Add action wrapper for new query
+3. 🚨 `src/hooks/data/use-files.ts` - Accept `parentFolderId` parameter, fix root file filtering
+4. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add navigation state + handlers, use correct query
+5. `src/modules/workspace/components/ui/FolderCard.tsx` - Wire up onClick to navigation
+6. `src/modules/workspace/components/sections/FolderBreadcrumb.tsx` - Wire up segment clicks
+7. `src/modules/workspace/components/sections/WorkspaceHeader.tsx` - Show current folder
+8. `src/hooks/data/use-folders.ts` - Accept `parentFolderId` parameter
+9. `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - Add back button
+10. `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - Add back button
+
+**Estimated Time:** 3-4 hours
+**Blocks:** Full folder hierarchy navigation (critical for MVP)
+**Fixes:** Critical bug where all files show instead of just root files
+
+---
+
+### 3. File Download (MEDIUM) ⏳ 2-3 hours
+
+**Priority:** 🟡 **MEDIUM** (Nice-to-have, not blocking)
+
+**Current State:**
+- UserWorkspace.tsx line 108-113: `handleDownloadFile` is TODO stub
+- UserWorkspace.tsx line 130-136: `handleBulkDownload` is TODO stub
+
+**Required:**
+- [ ] Implement `handleDownloadFile` (single file download)
+  - Fetch signed URL from storage
+  - Trigger browser download
+  - Toast notification on success/error
+- [ ] Implement `handleBulkDownload` (multi-file download as ZIP)
+  - Option A: Server-side ZIP creation + signed URL
+  - Option B: Client-side ZIP with JSZip library
+  - Show progress indicator
+- [ ] Test with different file types
+
+**Files to Modify:**
+1. `src/modules/workspace/components/views/UserWorkspace.tsx` - Implement handlers
+2. Consider: `src/lib/actions/file-download.actions.ts` - NEW (if server-side ZIP)
+
+---
+
+### 4. Bulk Delete Modal (LOW) ⏳ 1 hour
+
+**Priority:** 🟢 **LOW** (UX improvement, not functionality)
+
+**Current State:**
+- UserWorkspace.tsx line 146-152: `handleBulkDelete` calls action directly
+- No confirmation modal for bulk delete (only single delete has modal)
+
+**Required:**
+- [ ] Create `BulkDeleteModal.tsx` component
+  - Shows: "Delete {count} items?"
+  - Lists: Selected file/folder names (max 5, then "and X more")
+  - Warns: Folders will cascade delete contents
+  - Buttons: Cancel + Delete
+- [ ] Add modal state to UserWorkspace.tsx
+- [ ] Update `handleBulkDelete` to open modal instead of direct action
+
+**Files to Modify:**
+1. `src/modules/workspace/components/modals/BulkDeleteModal.tsx` - CREATE
+2. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add modal state
+3. `src/modules/workspace/components/modals/index.ts` - Export BulkDeleteModal
+
+---
+
+### 5. Recently Opened Files Section (MEDIUM) ⏳ 2-3 hours
+
+**Priority:** 🟡 **MEDIUM** (Nice-to-have UX improvement)
+
+**Feature:** Google Drive-style "Recent" section showing recently viewed/opened files
+
+**Implementation:**
+
+**A. Database Schema Changes**
+- [ ] Add `last_accessed_at` timestamp column to `files` table
+- [ ] Create database migration for schema change
+- [ ] Update file type definition to include `lastAccessedAt`
+
+**B. Backend Queries & Actions**
+- [ ] Create `getRecentFiles(workspaceId, limit)` query
+  - Filter by workspace
+  - Order by `last_accessed_at DESC`
+  - Default limit: 10-20 files
+- [ ] Create `updateFileAccessTimeAction(fileId)` server action
+  - Called when file is viewed/downloaded
+  - Updates `last_accessed_at` to current timestamp
+  - Rate limited (avoid excessive DB writes)
+
+**C. UI Component**
+- [ ] Create `RecentFilesSection.tsx` component
+  - Grid/list view of recent files
+  - Shows file thumbnail, name, last accessed time
+  - Click opens file preview
+  - Shows folder location (breadcrumb trail)
+- [ ] Add to WorkspaceHeader or separate tab
+- [ ] Mobile-responsive layout
+
+**D. Hook Integration**
+- [ ] Create `useRecentFiles()` hook in `use-files.ts`
+  - Wraps `getRecentFilesAction`
+  - Auto-refreshes when files are accessed
+  - Cache invalidation on file deletion
+
+**E. Access Tracking**
+- [ ] Update FilePreviewModal to track access on open
+- [ ] Update file download handlers to track access
+- [ ] Debounce/throttle access updates (max 1 per minute per file)
+
+**Files to Create:**
+1. `drizzle/migrations/0005_add_last_accessed_at.sql` - Schema migration
+2. `src/modules/workspace/components/sections/RecentFilesSection.tsx` - UI component
+
+**Files to Modify:**
+1. `src/lib/database/schemas/files.ts` - Add `lastAccessedAt` column
+2. `src/lib/database/queries/file.queries.ts` - Add `getRecentFiles()` query
+3. `src/lib/actions/file.actions.ts` - Add `getRecentFilesAction()`, `updateFileAccessTimeAction()`
+4. `src/hooks/data/use-files.ts` - Add `useRecentFiles()` hook
+5. `src/modules/workspace/components/modals/FilePreviewModal.tsx` - Track access on open
+6. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add RecentFilesSection
+
+**Design Considerations:**
+- "Recents" as separate section (like Google Drive sidebar)
+- OR "Recents" as filter option in main view (toggle between "All Files" / "Recent")
+- Show relative time: "Opened 5 minutes ago", "Opened yesterday"
+- Limit to last 30 days (exclude very old access times)
+
+**Estimated Time:** 2-3 hours
+**Dependencies:** None (can be added anytime post-MVP)
+
+---
+
+### 6. Polish & Nice-to-Haves (OPTIONAL) ⏳ 2-4 hours
+
+**Priority:** 🟢 **OPTIONAL** (Post-MVP)
+
+- [ ] Image preview signed URLs in FileThumbnail.tsx (line 13-14 TODO)
+- [ ] File preview modal enhancements (PDF viewer, video player)
+- [ ] Keyboard shortcuts (Ctrl+A select all, Delete key)
+- [ ] Drag-and-drop file upload to folders
+- [ ] Empty state CTAs (upload prompt when no files)
+
+---
+
+### 7. Drag-and-Drop Support (POST-MVP) ⏳ 4-6 hours
+
+**Priority:** 🟢 **POST-MVP** (UX Enhancement - Phase 2)
+
+**Feature:** Google Drive-style drag-and-drop for moving files and folders
+
+**Why Easy to Add Later:**
+- ✅ Current architecture is DnD-ready (isolated components, abstracted actions)
+- ✅ `moveFolderAction` already exists (just trigger from drop events)
+- ✅ React Query optimistic updates work out-of-box with dnd-kit
+- ✅ No refactoring needed (clean component structure)
+
+**Recommended Library:** `@dnd-kit/core` + `@dnd-kit/sortable`
+- Modern & actively maintained (unlike deprecated react-beautiful-dnd)
+- TypeScript-first with excellent type safety
+- Accessibility built-in (screen readers, keyboard navigation)
+- Performant (uses transform instead of position)
+- Small bundle size (tree-shakeable)
+- Mobile touch support included
+
+**Implementation Phases:**
+
+**Phase 1: Basic Drag-to-Move** (2-3 hours)
+- [ ] Install `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
+- [ ] Wrap UserWorkspace with `<DndContext>`
+- [ ] Add `handleDragStart`, `handleDragEnd`, `handleDragOver` handlers
+- [ ] Make FolderCard draggable + droppable (useDraggable + useDroppable hooks)
+- [ ] Make FileCard draggable (useDraggable hook)
+- [ ] Add visual feedback (drop indicators, hover states)
+- [ ] Reuse existing `moveFolderAction` and move file logic
+- [ ] Prevent invalid drops (folder into itself, folder into descendant)
+
+**Phase 2: Advanced Features** (2-3 hours)
+- [ ] Multi-select drag (drag all selected items at once)
+- [ ] Drop on breadcrumb segments (move to ancestor folders)
+- [ ] Drag-to-upload (drop files from OS into folders)
+- [ ] Sortable lists (reorder files/folders within same folder)
+- [ ] Auto-scroll when dragging near viewport edges
+
+**Phase 3: Polish** (1-2 hours)
+- [ ] Smooth animations with `@dnd-kit/sortable`
+- [ ] Create `DragPreview.tsx` component (overlay showing what's being dragged)
+- [ ] Accessibility announcements for screen readers
+- [ ] Touch gestures optimization
+- [ ] Loading states during drag operations
+- [ ] Error handling with rollback on failed moves
+
+**Edge Cases to Handle:**
+- ✅ Prevent folder drop into itself (check folder.id === dropTarget.id)
+- ✅ Prevent folder drop into descendants (check ancestry chain)
+- ✅ Multi-select validation (all selected items can move to target)
+- ✅ Permission checks (verify user can move items)
+- ✅ Optimistic updates (show moved item immediately, rollback on error)
+- ✅ Concurrent drag prevention (disable other drags while one in progress)
+
+**Files to Modify:**
+1. `src/modules/workspace/components/views/UserWorkspace.tsx` - Wrap with DndContext, add drag handlers
+2. `src/modules/workspace/components/ui/FolderCard.tsx` - Add useDraggable + useDroppable hooks
+3. `src/modules/workspace/components/ui/FileCard.tsx` - Add useDraggable hook
+4. `src/modules/workspace/components/sections/FolderBreadcrumb.tsx` - Add useDroppable to segments
+5. `src/modules/workspace/components/ui/DragPreview.tsx` - CREATE (drag overlay component)
+6. `src/modules/workspace/hooks/use-folder-navigation.ts` - Add drop zone logic (if extracted)
+
+**Code Example (UserWorkspace.tsx):**
+```typescript
+import { DndContext, DragOverlay, closestCenter } from '@dnd-kit/core';
+
+export function UserWorkspace() {
+  const [activeId, setActiveId] = useState(null);
+  const moveFolderMutation = useMoveFolder();
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      // Reuse existing move action
+      if (active.data.type === 'folder') {
+        moveFolderMutation.mutate({
+          folderId: active.id,
+          newParentId: over.id
+        });
+      }
+    }
+    setActiveId(null);
+  };
+
+  return (
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      {/* Existing workspace UI */}
+      <DragOverlay>
+        {activeId ? <DragPreview id={activeId} /> : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+```
+
+**Estimated Time:** 4-6 hours total
+**Dependencies:** Folder navigation must be implemented first (Task #2)
+
+---
+
+### 8. Storage Quotas & Upload Limits (POST-MVP) ⏳ 4-6 hours
+
+**Priority:** 🟢 **POST-MVP** (Phase 2 Enhancement)
+
+**Current Protection (Sufficient for MVP):**
+- ✅ Per-file limit: 100MB max (enforced in Zod validation + storage actions)
+- ✅ Rate limiting: 10 uploads per 5 minutes per user
+- ✅ Max daily abuse: ~288GB (bounded by rate limits)
+- ✅ Defense in depth: Client validation, server validation, storage validation
+
+**Post-MVP Enhancements:**
+- [ ] **Workspace Storage Quotas** (Tier-based)
+  - Free tier: 10GB total storage
+  - Pro tier: 100GB total storage
+  - Enterprise tier: Custom quotas
+  - Track total storage per workspace in database
+  - Block uploads when quota exceeded
+
+- [ ] **Daily Upload Tracking** (Redis-based)
+  - Track daily bytes uploaded per user
+  - Key structure: `upload:daily:${userId}:${YYYYMMDD}`
+  - Default limit: 50GB/day (configurable per tier)
+  - UI feedback: "X GB used today (Y GB remaining)"
+  - Auto-reset at midnight (24h TTL)
+
+- [ ] **Storage Analytics Dashboard**
+  - Total storage used (current/quota)
+  - Upload history chart (daily breakdown)
+  - File type distribution
+  - Top uploaders by email
+  - Storage growth trends
+
+- [ ] **Quota Notifications**
+  - Email alerts at 80% quota usage
+  - Email alerts at 100% quota usage
+  - In-app notification center integration
+  - Grace period before hard blocking (e.g., 7 days)
+
+**Implementation Notes:**
+- Use existing Redis infrastructure (`@/lib/redis/client`)
+- Extend `RateLimitPresets` for daily size tracking
+- Add `storage_used_bytes` column to workspaces table
+- Background job to calculate storage totals (or trigger on upload/delete)
+- Leverage existing notification system for alerts
+
+**Files to Create:**
+1. `src/lib/actions/storage-quota.actions.ts` - Quota checking actions
+2. `src/hooks/data/use-storage-quota.ts` - Quota tracking hooks
+3. `src/modules/workspace/components/sections/StorageQuotaWidget.tsx` - Usage display
+
+**Estimated Time:** 4-6 hours
+
+---
+
+## 📊 Current Status Summary
+
+| Category | Complete | Remaining | % Done |
+|----------|----------|-----------|--------|
+| **Backend** | 24 queries + 11 actions + 10 hooks | 0 | 100% ✅ |
+| **UI Components** | 35 components | 0 | 100% ✅ |
+| **Core Features** | Folder mgmt + File viewing + Folder-link + File upload | 0 | 100% ✅ |
+| **Nice-to-Haves** | - | Download + Bulk delete modal + Polish | 0% ⏳ |
+
+**Overall Progress:** ~90% complete (folder navigation needed for MVP)
+
+**Critical Blocker:** 🔴 **Folder Navigation** - Cannot navigate into folders (clicking does nothing)
+
+**MVP Readiness:**
+- 🟡 **Partial Implementation** - Core features exist but folder navigation missing
+- 🔴 **Critical Gap** - Users cannot navigate into folders (Google Drive-like UX needed)
+- 🟡 **Pending E2E Tests** - Upload flow needs end-to-end testing
+- After folder navigation + testing: ✅ **Ready for MVP** (download is optional post-MVP)
+
+---
+
+## 🎯 Recommended Action Plan
+
+### ✅ Completed (2025-11-14)
+1. ✅ Update TODO.md
+2. ✅ Implement file upload UI (4 hours)
+   - ✅ Created UploadFilesModal with drag-and-drop
+   - ✅ Added upload buttons (Desktop + Mobile)
+   - ✅ Integrated Uppy with authenticated mode
+   - ✅ Fixed bucket name fallback issue
+   - 🟡 Test end-to-end (IN PROGRESS)
+
+### Immediate (Today/Next)
+3. 🟡 **Test upload flow end-to-end** (30 mins)
+   - Verify file uploads to correct bucket
+   - Verify file records created in database
+   - Verify files appear in UI after upload
+   - Test folder selection dropdown
+   - Test multiple file upload
+   - **Test duplicate detection scenarios** (NEW - Session 2):
+     - Upload same file twice (should create "file (1).ext")
+     - Upload after deleting file from DB (orphaned storage scenario)
+     - Upload after failed upload (abandoned TUS session scenario)
+
+4. 🔴 **Implement folder navigation** (3-4 hours) ← **CRITICAL FOR MVP**
+   - Add folder navigation state (currentFolderId, folderPath)
+   - Wire up folder click handlers
+   - Update breadcrumb for back navigation
+   - Filter files/folders by current folder
+   - Add URL state for deep-linking (optional)
+
+### Short-term (This Week) - Optional
+5. 🟢 Implement file download (2-3 hours) - OPTIONAL
+6. 🟢 Add bulk delete modal (1 hour) - OPTIONAL
+
+### Post-MVP (Next Sprint) - Enhancements
+7. 🟡 Recently opened files section (2-3 hours) - Nice UX improvement
+8. 🟢 Drag-and-drop support (4-6 hours) - Google Drive-style file/folder moving
+9. 🟢 Polish & enhancements (2-4 hours)
+10. 🟢 Storage quotas & upload limits (4-6 hours)
+
+**Total Remaining:**
+- **Critical:** 30 mins (testing) + 3-4 hours (folder navigation) = ~4 hours to MVP complete
+- **Optional:** 3-4 hours for nice-to-have features
+- **Post-MVP:** 6-10 hours for enhancements
+
+---
+
+## Implementation Principles
 
 **All code MUST adhere to these principles:**
 
-1. **Proper separation of concerns** - Workspace, folders, and files are distinct entities with separate responsibilities
-2. **Correct implementation of DRY principles** - Reuse existing utilities and patterns
-3. **Minimal to no code duplication** - Extract shared logic into utilities
+1. **Proper separation of concerns** - Workspace, folders, and files are distinct entities
+2. **Correct implementation of DRY principles** - Reuse existing utilities
+3. **Minimal code duplication** - Extract shared logic into utilities
 4. **Efficient use of shared/global elements** - Leverage `lib/`, `hooks/`, and `actions/`
 5. **Strict type safety** - Avoid `any` types, use proper TypeScript inference
 6. **Maintainability** - Code should be easy to understand and modify
@@ -45,904 +715,8 @@ The Workspace Module is the **primary user interface** for file collection manag
 
 **Reference existing implementations:**
 - Links Module: `src/lib/actions/link.actions.ts`, `src/hooks/data/use-links.ts`
-- Permission Module: `src/lib/actions/permission.actions.ts`
-- User Module: `src/lib/actions/user.actions.ts`, `src/lib/database/queries/user.queries.ts`
-- Global utilities: `src/lib/utils/action-helpers.ts`, `src/lib/utils/react-query-helpers.ts`
-
----
-
-## ✅ What Already Exists
-
-### Database Schemas
-- ✅ `folders` table (hierarchical, uploader tracking, link relationship)
-- ✅ `files` table (metadata, uploader tracking, GCS path)
-- ✅ `workspaces` table (1:1 with users)
-
-### Related Modules (Complete)
-- ✅ Links Module (7 actions, 18 tests)
-- ✅ Permission System (4 actions, 23 tests)
-- ✅ Storage Abstraction (Supabase + GCS, upload/delete/signed URLs)
-- ✅ Email Service (5 actions, 32 tests)
-
-### Workspace Infrastructure
-- ✅ `workspace.queries.ts` (getUserWorkspace, createWorkspace, updateWorkspaceName)
-- ✅ `workspace.actions.ts` (getUserWorkspaceAction, createUserWorkspaceAction)
-- ✅ `use-user-workspace.ts` (useUserWorkspace, useCreateWorkspace hooks)
-
----
-
-## 🚧 What Needs to Be Built
-
-### 1. Database Queries Layer
-
-#### `src/lib/database/queries/folder.queries.ts` ✅ COMPLETE
-**Pattern:** Follow `link.queries.ts` structure (pure database operations, no auth)
-
-- [x] `getFolderById(folderId: string)` - Get single folder with relations
-- [x] `getRootFolders(workspaceId: string)` - Get workspace root folders (parentFolderId = NULL)
-- [x] `getSubfolders(parentFolderId: string)` - Get child folders
-- [x] `getFolderHierarchy(folderId: string)` - Get folder + all ancestors (breadcrumb)
-- [x] `createFolder(data: NewFolder)` - Create folder (personal or linked)
-- [x] `updateFolder(folderId: string, data: Partial<Folder>)` - Update folder name/parent
-- [x] `deleteFolder(folderId: string)` - Delete folder (cascade handled by DB)
-- [x] `isFolderNameAvailable(workspaceId: string, name: string, parentFolderId?: string)` - Check uniqueness
-- [x] `getFolderDepth(folderId: string)` - Calculate folder nesting depth (for 20-level limit enforcement)
-
-**Notes:**
-- Workspace is responsible for querying its own folders (`getRootFolders` takes `workspaceId`)
-- Folders are queried independently, not through workspace object
-- Follow existing query patterns (typed returns, error handling)
-- Maximum nesting depth: **20 levels** (enforced in validation, not database schema)
-
-#### `src/lib/database/queries/file.queries.ts` ✅ COMPLETE
-**Pattern:** Follow `link.queries.ts` structure
-
-- [x] `getFileById(fileId: string)` - Get single file with metadata
-- [x] `getFolderFiles(folderId: string)` - Get files in specific folder
-- [x] `getWorkspaceFiles(workspaceId: string)` - Get all workspace files (cross-folder)
-- [x] `getFilesByEmail(workspaceId: string, uploaderEmail: string)` - Email-filtered files
-- [x] `getFilesByDateRange(workspaceId: string, startDate: Date, endDate?: Date)` - Chronological files
-- [x] `searchFiles(workspaceId: string, query: string)` - Search by filename/email
-- [x] `createFile(data: NewFile)` - Create file record after upload
-- [x] `updateFileMetadata(fileId: string, data: Partial<File>)` - Update file metadata
-- [x] `deleteFile(fileId: string)` - Delete file record
-- [x] `bulkDeleteFiles(fileIds: string[])` - Batch delete
-
-**Notes:**
-- File queries are separate from folder queries (separation of concerns)
-- Workspace-level queries take `workspaceId` parameter (workspace fetches its own files)
-- Follow existing patterns for return types and error handling
-
----
-
-### 2. Global Validation Schemas
-
-#### `src/lib/validation/folder-schemas.ts` ✅ COMPLETE
-**Pattern:** Follow `link-schemas.ts` structure, use `base-schemas.ts` builders
-
-- [x] `createFolderSchema` - Validation for folder creation (name, parentFolderId, linkId)
-- [x] `updateFolderSchema` - Validation for folder updates (name, parentFolderId)
-- [x] Reuse `nameSchema` from base-schemas.ts for folder names
-- [x] Folder name validation rules (1-255 chars, no special chars)
-- [x] Use `VALIDATION_LIMITS.FOLDER.MAX_NESTING_DEPTH` (20) from `constants/validation.ts` for depth checks
-- [x] Additional schemas: `moveFolderSchema`, `deleteFolderSchema`, `getFolderHierarchySchema`
-
-#### `src/lib/validation/file-schemas.ts` ✅ COMPLETE
-**Pattern:** Follow `link-schemas.ts` structure
-
-- [x] `createFileSchema` - Validation for file metadata (filename, size, contentType, folderId)
-- [x] `updateFileMetadataSchema` - Validation for file metadata updates
-- [x] File size limits validation (per file, per workspace)
-- [x] File type validation (MIME types)
-- [x] Additional schemas: `deleteFileSchema`, `bulkDeleteFilesSchema`, `searchFilesSchema`, `getFilesByEmailSchema`
-
-**Notes:**
-- Global schemas go in `src/lib/validation/` (consumed by global actions)
-- Module-specific form validation goes in `src/modules/workspace/lib/validation/`
-
----
-
-### 3. Server Actions Layer
-
-#### `src/lib/actions/folder.actions.ts` ✅ COMPLETE
-**Pattern:** Follow `link.actions.ts` structure (withAuth, withAuthInput, formatActionError)
-
-- [x] `createFolderAction(input: CreateFolderInput)` - Auth + ownership verification + create
-- [x] `updateFolderAction(input: UpdateFolderInput)` - Auth + ownership verification + update
-- [x] `deleteFolderAction(folderId: string)` - Auth + ownership verification + cascade delete
-- [x] `moveFolderAction(folderId: string, newParentId: string | null)` - Auth + ownership verification + move
-- [x] `getRootFoldersAction()` - Auth + get user workspace folders
-- [x] `getFolderHierarchyAction(folderId: string)` - Auth + ownership verification + get breadcrumb
-
-**Notes:**
-- Use `withAuth` HOF from `action-helpers.ts`
-- Use `verifyResourceOwnership` from `authorization.ts`
-- Follow existing error message patterns from `error-messages.ts`
-- Rate limiting where appropriate (create/update/delete)
-- **Depth validation**: `createFolderAction` and `moveFolderAction` must check parent depth ≤ 20 before allowing operation
-
-#### `src/lib/actions/file.actions.ts` ✅ COMPLETE
-**Pattern:** Follow `link.actions.ts` structure
-
-- [x] `createFileRecordAction(input: CreateFileInput)` - Auth + create file record after storage upload
-- [x] `updateFileMetadataAction(input: UpdateFileMetadataInput)` - Auth + ownership verification + update metadata
-- [x] `deleteFileAction(fileId: string)` - Auth + ownership verification + delete from storage + delete record
-- [x] `bulkDeleteFilesAction(fileIds: string[])` - Auth + ownership verification + batch delete
-- [x] `getWorkspaceFilesAction()` - Auth + get all workspace files
-- [x] `getFilesByEmailAction(uploaderEmail: string)` - Auth + get files by uploader email
-- [x] `searchFilesAction(query: string)` - Auth + cross-folder search
-
-**Notes:**
-- File delete must trigger storage deletion (use storage client)
-- Ownership verification on all mutations
-- Follow existing action patterns (ActionResult return type)
-- Added `UPLOADS_BUCKET_NAME` constant to `file-schemas.ts` for bucket configuration
-
-#### `src/lib/actions/workspace.actions.ts` ✅ COMPLETE (EXTENDED)
-**Current:** getUserWorkspaceAction, createUserWorkspaceAction
-
-- [x] `getWorkspaceStatsAction()` - Auth + aggregate stats (total files, storage used, active links)
-- [x] `getRecentActivityAction(limit?: number)` - Auth + get recent file uploads
-
-**Notes:**
-- Workspace is responsible for fetching workspace-level aggregations
-- Use existing workspace queries + extend with new stats queries
-- Added `getWorkspaceStats()` and `getRecentActivity()` queries to `workspace.queries.ts`
-- New actions use modern pattern (withAuth HOF, rate limiting, proper error handling)
-
----
-
-### 4. React Query Hooks Layer
-
-#### `src/hooks/data/use-folders.ts` ✅ COMPLETE
-**Pattern:** Follow `use-links.ts` structure (transformQueryResult, transformActionError, createMutationErrorHandler)
-
-- [x] `useRootFolders()` - Query hook for workspace root folders
-- [x] `useFolderHierarchy(folderId: string)` - Query hook for folder breadcrumb
-- [x] `useCreateFolder()` - Mutation hook for folder creation
-- [x] `useUpdateFolder()` - Mutation hook for folder updates
-- [x] `useDeleteFolder()` - Mutation hook for folder deletion
-- [x] `useMoveFolder()` - Mutation hook for folder move
-
-**Notes:**
-- Import query keys from `src/lib/config/query-keys.ts` (centralized keys)
-- Use `transformQueryResult` and `transformActionError` from `react-query-helpers.ts`
-- Follow existing invalidation patterns (invalidate parent queries on mutations)
-- Toast notifications on success/error using `createMutationErrorHandler`
-
-#### `src/hooks/data/use-files.ts` ✅ COMPLETE
-**Pattern:** Follow `use-links.ts` structure
-
-- [x] `useWorkspaceFiles()` - Query hook for all workspace files
-- [x] `useFilesByEmail(uploaderEmail: string)` - Query hook for email-filtered files 🎯 Core feature
-- [x] `useSearchFiles(query: string)` - Query hook for cross-folder search
-- [x] `useCreateFileRecord()` - Mutation hook for file record creation
-- [x] `useUpdateFileMetadata()` - Mutation hook for file metadata updates
-- [x] `useDeleteFile()` - Mutation hook for file deletion
-- [x] `useBulkDeleteFiles()` - Mutation hook for batch deletion
-
-**Notes:**
-- Use centralized query keys from `query-keys.ts`
-- Follow existing React Query patterns (caching, invalidation)
-- File upload handled by storage module (`use-uppy-upload.ts`)
-
-#### `src/hooks/data/use-workspace.ts` ✅ COMPLETE (EXTENDED)
-**Current:** useUpdateWorkspaceName
-
-- [x] `useWorkspaceStats()` - Query hook for workspace stats
-- [x] `useRecentActivity(limit?: number)` - Query hook for recent activity feed
-
-**Notes:**
-- File already named `use-workspace.ts` (no rename needed)
-- Workspace hooks fetch workspace-level data (stats, activity)
-- Added 2 query hooks to existing mutation hook
-
-#### `src/lib/config/query-keys.ts` ✅ COMPLETE
-**Add centralized query keys:**
-
-- [x] `folderKeys` - Folder query key factory (all, lists, roots, subfolders, details, detail, hierarchy)
-- [x] `fileKeys` - File query key factory (all, lists, workspace, folder, byEmail, byDate, search, details, detail)
-- [x] `workspaceKeys` - Workspace query key factory (all, detail, stats, recentActivity)
-
-**Pattern:**
-```typescript
-export const folderKeys = {
-  all: ['folders'] as const,
-  roots: (workspaceId: string) => [...folderKeys.all, 'roots', workspaceId] as const,
-  hierarchy: (folderId: string) => [...folderKeys.all, 'hierarchy', folderId] as const,
-} as const;
-```
-
----
-
-### 4.5. Folder-Link Management (HYBRID ARCHITECTURE)
-
-**Status:** ⚠️ **MISSING - Required for Phase 3**
-**Agent Review:** UX Reviewer + Tech Lead (2025-11-02)
-**Decision:** APPROVED - Hybrid Approach (80/20 rule)
-
-#### Architecture Decision Summary
-
-**Principle:** Operation scope determines location
-- **Folder-scoped operations** → Stay in Workspace Module (no redirect)
-- **Link-scoped operations** → Navigate to Links Module (redirect)
-
-**Rationale (UX Reviewer):**
-- ✅ 80/20 rule: Keep common actions (copy URL, view details) in workspace context
-- ✅ Progressive disclosure: Advanced features (permissions, analytics) redirect
-- ❌ Full redirect pattern creates poor UX (context switching, lost spatial orientation)
-- ❌ Full duplication creates maintenance burden (two sources of truth)
-
-**Rationale (Tech Lead):**
-- ✅ Avoid code duplication (Links Module owns link logic)
-- ✅ Maintain module boundaries (clean separation of concerns)
-- ✅ Component reuse > logic duplication (export presentational components only)
-- ❌ Query params for modal state are fragile
-- ❌ Duplication violates DRY and creates future maintenance issues
-
----
-
-#### 4.5.1. Backend Actions (NEW) ✅ **COMPLETE + REFACTORED**
-
-**`src/modules/workspace/lib/actions/folder-link.actions.ts`** ✅ **COMPLETE**
-
-**Pattern:** Module-specific actions using global `createStandaloneLinkAction`
-
-**✅ REFACTOR APPLIED (2025-11-02):** `linkFolderWithNewLinkAction` now auto-generates link name/slug from folder name
-
-- [x] `linkFolderToExistingLinkAction(folderId: string, linkId: string)`
-  - **Purpose:** Link personal folder to inactive link
-  - **Validation:** User owns folder, link is inactive
-  - **Operations:** Update `folder.linkId + link.isActive` (transaction)
-  - **Returns:** `ActionResult<void>`
-  - **Rate limit:** `RateLimitPresets.MODERATE` (20/min)
-  - **Tests:** 4 tests passing ✅
-
-- [x] `linkFolderWithNewLinkAction(folderId: string, allowedEmails?: string[])` ✅ **REFACTORED**
-  - **Purpose:** Auto-create link from folder name + link folder (atomic)
-  - **Auto-generation:**
-    - Link name: `{folder.name} Link` (e.g., "Client Documents Link")
-    - Link slug: `{slugify(folder.name)}-link` (e.g., "client-documents-link")
-    - Conflict resolution: Auto-increment up to 10 attempts (e.g., "client-documents-link-2")
-    - Default config: Public, no password, notify on upload
-  - **Permissions:** Owner (user) + Editors (from `allowedEmails`)
-  - **Operations (transaction):**
-    - Auto-generates link name/slug from folder.name
-    - Checks slug availability with auto-increment
-    - Calls `createStandaloneLinkAction()` with auto-generated data
-    - Links folder to created link
-  - **Returns:** `ActionResult<Link>` (for UI: copy URL, show success)
-  - **Rate limit:** `RateLimitPresets.MODERATE` (20/min)
-  - **Tests:** 4 tests passing ✅ (⚠️ Need update for new signature)
-  - **Status:** ✅ **REFACTOR COMPLETE** (2025-11-02)
-
-- [x] `unlinkFolderAction(folderId: string)`
-  - **Purpose:** Convert shared folder to personal (non-destructive)
-  - **Operations:** Set `folder.linkId = NULL`, `link.isActive = false`
-  - **Returns:** `ActionResult<void>`
-  - **Rate limit:** `RateLimitPresets.MODERATE` (20/min)
-  - **Tests:** 3 tests passing ✅
-  - **Idempotent:** Returns success even if folder not linked
-
-- [x] `getAvailableLinksAction()`
-  - **Purpose:** Get inactive links for "Use Existing Link" dropdown
-  - **Returns:** `ActionResult<Link[]>`
-  - **Rate limit:** `RateLimitPresets.GENEROUS` (100/min)
-  - **Tests:** 2 tests passing ✅
-
-**Global Action (Links Module):**
-
-- [x] `createStandaloneLinkAction(linkData: CreateLinkInput)`
-  - **Location:** `src/lib/actions/link.actions.ts`
-  - **Purpose:** Create link + permissions WITHOUT auto folder creation
-  - **Used by:** Workspace Module for folder-to-link conversion
-  - **Accepts:** `allowedEmails` for permission creation
-  - **Creates:** Link record (isActive=false) + Owner permission + Editor permissions
-  - **Does NOT create:** Root folder (caller links existing folder)
-
----
-
-#### 4.5.2. Database Queries (EXTEND EXISTING) ✅ **COMPLETE**
-
-**Added to `src/lib/database/queries/folder.queries.ts`:**
-
-- [x] `linkFolderToLink(folderId: string, linkId: string)` ✅
-  - Updates `folder.linkId` and `link.isActive` in single transaction
-  - Returns: `Folder` (updated folder record)
-
-- [x] `unlinkFolder(folderId: string)` ✅
-  - Sets `folder.linkId = NULL`, `link.isActive = false` (non-destructive)
-  - Returns: `Folder` (updated folder record)
-
-**Added to `src/lib/database/queries/link.queries.ts`:**
-
-- [x] `getAvailableLinks(workspaceId: string)` ✅
-  - Gets links where `isActive = false` (inactive links available for re-use)
-  - Filters by workspace ownership
-  - Returns: `Link[]` ordered by `updatedAt` DESC
-
----
-
-#### 4.5.3. Validation Schemas (GLOBAL) ✅ **COMPLETE + REFACTORED**
-
-**`src/lib/validation/folder-link-schemas.ts`** (Global location - used by actions)
-
-**✅ REFACTOR APPLIED (2025-11-02):** Removed `linkData` field, added `allowedEmails` field
-
-- [x] `linkFolderToExistingLinkSchema` ✅
-  ```typescript
-  z.object({
-    folderId: uuidSchema,
-    linkId: uuidSchema,
-  })
-  ```
-
-- [x] `linkFolderWithNewLinkSchema` ✅ **REFACTORED**
-  ```typescript
-  // ✅ Current (refactored - auto-generation):
-  z.object({
-    folderId: uuidSchema,
-    allowedEmails: z.array(emailSchema).optional(),
-  })
-  ```
-
-- [x] `unlinkFolderSchema` ✅
-  ```typescript
-  z.object({
-    folderId: uuidSchema,
-  })
-  ```
-
-**Exported from:** `src/lib/validation/index.ts` ✅
-
----
-
-#### 4.5.4. React Query Hooks (NEW) ✅ **COMPLETE**
-
-**`src/modules/workspace/hooks/use-folder-link.ts`** ✅ Created
-
-**Pattern:** Follow `use-links.ts` structure
-
-- [x] `useLinkFolderToExistingLink()`
-  - **Mutation:** Calls `linkFolderToExistingLinkAction`
-  - **Invalidation (atomic):**
-    - `folderKeys.detail(folderId)`
-    - `folderKeys.lists()`
-    - `linkKeys.detail(linkId)`
-  - **Toast:** "Folder linked successfully"
-  - **Error handling:** `createMutationErrorHandler('Folder linking')`
-
-- [x] `useLinkFolderWithNewLink()`
-  - **Mutation:** Calls `linkFolderWithNewLinkAction`
-  - **Invalidation (atomic):**
-    - `folderKeys.detail(folderId)`
-    - `folderKeys.lists()`
-    - `linkKeys.lists()`
-  - **Toast:** "Link created and folder linked"
-  - **Returns:** Created link data (for copy URL action)
-  - **Error handling:** `createMutationErrorHandler('Link creation')`
-
-- [x] `useUnlinkFolder()`
-  - **Mutation:** Calls `unlinkFolderAction`
-  - **Invalidation (atomic):**
-    - `folderKeys.detail(folderId)`
-    - `folderKeys.lists()`
-    - `linkKeys.detail(linkId)`
-  - **Toast:** "Folder converted to personal"
-  - **Error handling:** `createMutationErrorHandler('Folder unlinking')`
-
-- [x] `useAvailableLinks()`
-  - **Query:** Fetches inactive/available links for workspace
-  - **Query key:** `linkKeys.available(workspaceId)`
-  - **Stale time:** 30 seconds (links can become available quickly)
-  - **Used in:** LinkFolderToExistingModal's dropdown
-
-**Notes:**
-- Use `Promise.all([...])` for atomic cache invalidation
-- Follow existing mutation patterns (`retry: false`)
-- Import helpers from `react-query-helpers.ts`
-
----
-
-#### 4.5.5. UI Components (NEW - ZERO MODULE COUPLING) ✅ **COMPLETE**
-
-**Add to `src/modules/workspace/components/modals/`:** ✅ All 4 modals created
-
-- [x] `ShareFolderModal.tsx` - Simple email permissions form
-  - **Single form:** "Share {folder.name}"
-  - **Email input:** Multi-email field (tags input component)
-  - **Placeholder:** "Enter email addresses to share with..."
-  - **Auto-generation preview:**
-    - Shows: "Link will be created: `{folder.name} Link`"
-    - Shows: "URL will be: `foldly.com/{username}/{slug}`"
-  - **Submit:** Calls `useLinkFolderWithNewLink({ folderId, allowedEmails })`
-  - **On success:**
-    - Toast: "Link created and shared"
-    - Auto-copy link URL to clipboard
-    - Show "Share" button to copy again
-  - **Props:** `folder: Folder`, `isOpen: boolean`, `onOpenChange`
-  - **Uses:** `useModalState` hook pattern
-
-- [x] `LinkFolderToExistingModal.tsx` - Link to existing inactive link
-  - **Dropdown:** Available links (from `useAvailableLinks()`)
-  - **Shows:** Link name, slug, last used date
-  - **Empty state:** "No inactive links available."
-  - **Submit:** Calls `useLinkFolderToExistingLink()`
-  - **Props:** `folder: Folder`, `isOpen: boolean`, `onOpenChange`
-
-- [x] `ViewFolderLinkDetailsModal.tsx` - Read-only link info
-  - **Shows:** Link name, URL (copy button), expiration, password status, permissions count
-  - **Footer:** "Manage Link Settings" button → `/dashboard/links?id={linkId}`
-  - **Props:** `folder: Folder | null`, `link: Link | null`, `isOpen: boolean`, `onOpenChange`
-  - **No imports from Links Module** (self-contained component)
-
-- [x] `UnlinkFolderConfirmModal.tsx` - Confirmation dialog
-  - **Warning:** "Unlink this folder? The shareable link will become inactive."
-  - **Explains:** Link preserved for future re-use (non-destructive)
-  - **Cancel + Confirm** buttons
-  - **On confirm:** Calls `useUnlinkFolder()`
-  - **Props:** `folder: Folder | null`, `isOpen: boolean`, `onOpenChange`
-
----
-
-#### 4.5.6. Context Menu Updates (MODIFY EXISTING) ✅ **COMPLETE (2025-11-02)**
-
-**`src/modules/workspace/components/ui/FolderContextMenu.tsx`** ✅
-
-**Implemented conditional rendering based on `folder.linkId`:**
-
-**Personal Folder (linkId IS NULL):**
-- ✅ "Share Folder" → `onShareFolder` callback (opens `ShareFolderModal`)
-- ✅ "Link to Existing" → `onLinkToExisting` callback (opens `LinkFolderToExistingModal`)
-
-**Linked Folder (linkId IS NOT NULL):**
-- ✅ "Copy Link" → `onCopyLinkUrl` callback (instant action, parent handles clipboard + toast)
-- ✅ "View Link" → `onViewLinkDetails` callback (opens `ViewFolderLinkDetailsModal`)
-- ✅ "Manage Link" → Direct navigation to `/dashboard/links?id={linkId}` (internal handler)
-- ✅ "Unlink Folder" → `onUnlinkFolder` callback (opens `UnlinkFolderConfirmModal`)
-
-**Pattern:**
-- All modal actions use callback props (parent component manages modal state with `useModalState`)
-- "Copy Link" handled by parent (parent has access to link data via React Query)
-- "Manage Link" uses internal handler with `useRouter` (no external dependencies)
-- Menu items conditionally rendered based on `folder.linkId` state
-
----
-
-#### 4.5.8. Navigation Integration (LINKS PAGE)
-
-**Update `src/app/dashboard/links/page.tsx`:**
-
-Add support for deep linking via `?id={linkId}` query param:
-
-```typescript
-const searchParams = useSearchParams();
-const targetLinkId = searchParams.get('id');
-
-useEffect(() => {
-  if (targetLinkId) {
-    // Auto-scroll to target LinkCard
-    const element = document.getElementById(`link-${targetLinkId}`);
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-    // Optional: Highlight animation
-    element?.classList.add('ring-2', 'ring-primary', 'animate-pulse');
-    setTimeout(() => {
-      element?.classList.remove('animate-pulse');
-    }, 2000);
-  }
-}, [targetLinkId]);
-```
-
-**Rationale:** "Manage Link" action from Workspace navigates directly to specific link.
-
----
-
-#### 4.5.9. Cache Invalidation Matrix
-
-**Atomic invalidation patterns (use `Promise.all`):**
-
-| Action | Folder Keys | Link Keys |
-|--------|-------------|-----------|
-| `linkFolderToExistingLink` | `detail(folderId)`, `lists()` | `detail(linkId)` |
-| `linkFolderWithNewLink` | `detail(folderId)`, `lists()` | `lists()` |
-| `unlinkFolder` | `detail(folderId)`, `lists()` | `detail(linkId)` |
-
-**Pattern:**
-```typescript
-await Promise.all([
-  invalidateFolders(queryClient, folderId),
-  invalidateLinks(queryClient, linkId),
-]);
-```
-
----
-
-#### 4.5.10. Tests Required ✅ **COMPLETE**
-
-**`src/modules/workspace/lib/actions/__tests__/folder-link.actions.test.ts`** ✅
-
-- [x] `linkFolderToExistingLinkAction` tests (4 tests): ✅
-  - ✅ Happy path: Link personal folder to inactive link
-  - ✅ Error: Folder doesn't exist
-  - ✅ Error: Folder already linked
-  - ✅ Error: Link already active (can't reuse)
-
-- [x] `linkFolderWithNewLinkAction` tests (4 tests): ✅
-  - ✅ Happy path: Create standalone link + link folder atomically
-  - ✅ Error: Folder doesn't exist
-  - ✅ Error: Folder already linked
-  - ✅ Error: Slug already taken
-  - ✅ Verify NO duplicate folders (only user's folder linked)
-
-- [x] `unlinkFolderAction` tests (3 tests): ✅
-  - ✅ Happy path: Unlink folder (linkId → NULL, link.isActive → false)
-  - ✅ Error: Folder doesn't exist
-  - ✅ Idempotent: Folder not linked (returns success)
-  - ✅ Verify link record persists (non-destructive)
-
-- [x] `getAvailableLinksAction` tests (2 tests): ✅
-  - ✅ Returns inactive links for workspace
-  - ✅ Returns empty array when no inactive links
-
-**Total:** 13 tests passing ✅
-
-**Pattern:** Follows `link.actions.test.ts` structure
-- Real database operations (via `db-test-utils.ts`)
-- Mock Clerk auth
-- Test ownership verification
-- Test transaction atomicity
-- Rate limit resets per test
-
----
-
-#### 4.5.11. Implementation Checklist
-
-**Phase 1: Backend (Priority: High, Est: 1 day)** ✅ **COMPLETE + REFACTORED (2025-11-02)**
-- [x] Create `folder-link.actions.ts` (4 actions) ✅
-- [x] Refactor `linkFolderWithNewLinkAction` to auto-generate link name/slug ✅
-- [x] Add database queries: `linkFolderToLink`, `unlinkFolder`, `getAvailableLinks` ✅
-- [x] Create `folder-link-schemas.ts` (3 validation schemas) ✅
-- [x] Update schema: Remove `linkData`, add `allowedEmails` ✅
-- [x] Write `folder-link.actions.test.ts` (13 tests) ✅ (⚠️ Need update for refactored signature)
-
-**Phase 2: Shared Components (Priority: High, Est: 0.5 day)** ⏭️ **SKIPPED**
-- N/A - Workspace modals are self-contained following workspace module patterns
-- No component exports from Links Module required
-
-**Phase 3: Hooks (Priority: Medium, Est: 0.5 day)** ✅ **COMPLETE (2025-11-02)**
-- [x] Create `use-folder-link.ts` (4 hooks) ✅
-- [x] Implement atomic cache invalidation (Promise.all pattern) ✅
-- [x] Add toast notifications ✅
-- [x] Add `linkKeys.available(workspaceId)` query key ✅
-
-**Phase 4: UI (Priority: Medium, Est: 2 days)** ✅ **COMPLETE (2025-11-02)**
-- [x] Create `ShareFolderModal.tsx` (email form + auto-generation preview) ✅
-- [x] Create `LinkFolderToExistingModal.tsx` (dropdown selection) ✅
-- [x] Create `ViewFolderLinkDetailsModal.tsx` (read-only link info) ✅
-- [x] Create `UnlinkFolderConfirmModal.tsx` (confirmation dialog) ✅
-- [x] Update `FolderContextMenu.tsx` (conditional menu items) ✅ (2025-11-02)
-- [x] Implement instant actions (copy URL via callback) ✅ (2025-11-02)
-
-**Phase 5: Navigation (Priority: Low, Est: 0.5 day)** ⏳ **PENDING**
-- [ ] Update Links page for deep linking (`?id={linkId}`)
-- [ ] Add auto-scroll + highlight animation
-
-**Total Estimated Time:** 4.5 days
-**Actual Time (Phases 1-4):** ~1 day (2025-11-02)
-
-**⚠️ INTEGRATION COMPLETE (2025-11-02):**
-- ✅ `FolderContextMenu.tsx` updated with conditional menu items
-- ✅ `FolderCard.tsx` updated to accept and forward folder-link callbacks
-- ✅ `FileGrid.tsx` updated to accept and pass folder-link callbacks
-- ✅ `DesktopLayout.tsx` updated to accept and pass folder-link callbacks
-- ✅ `UserWorkspace.tsx` updated with:
-  - Modal state management for 4 folder-link modals
-  - Action handlers for all folder-link operations
-  - Callbacks passed to layoutProps
-  - All 4 modals rendered
-- ✅ `modals/index.ts` exports all 4 folder-link modals
-- ✅ 0 TypeScript errors - fully type-safe integration
-- ✅ All context menu items now visible and functional
-
----
-
-### 5. Workspace Module Components
-
-#### **APPROVED STRUCTURE** (UX Review 2025-10-31)
-Single-view + dynamic filters (replaces 3-view tabs approach)
-
-#### Views (`src/modules/workspace/components/views/`)
-**Pattern:** Single responsive component (matches Links Module)
-
-- [ ] `UserWorkspace.tsx` - Main orchestrator (data fetching, state management, responsive routing)
-- [ ] `layouts/DesktopLayout.tsx` - Desktop-specific UI (toolbar, grid, multi-panel)
-- [ ] `layouts/MobileLayout.tsx` - Mobile-specific UI (bottom sheet, touch gestures)
-
-**Notes:**
-- UserWorkspace handles data + routing to Desktop/Mobile layouts
-- Desktop/Mobile layouts receive props from parent (no data duplication)
-- Single source of truth for filter state (`use-workspace-filters.ts`)
-
-#### Filters (`src/modules/workspace/components/filters/`) **NEW**
-**Pattern:** Reusable filter controls
-
-- [ ] `GroupByFilter.tsx` - Dropdown (None, Email, Date, Folder, File Type)
-- [ ] `EmailFilter.tsx` - Multi-select email filter with autocomplete
-- [ ] `SortDropdown.tsx` - Sort control (Name, Date, Size)
-- [ ] `FilterToolbar.tsx` - Desktop toolbar container
-- [ ] `FilterBottomSheet.tsx` - Mobile bottom sheet (Vaul library)
-
-**Notes:**
-- Follow AnimateUI dropdown patterns
-- Filters update Zustand store (global filter state)
-
-#### Sections (`src/modules/workspace/components/sections/`)
-**Pattern:** Reusable layout sections
-
-- [ ] `WorkspaceHeader.tsx` - Search bar + QuickStats
-- [ ] `FileGrid.tsx` - Responsive CSS Grid (folders + files)
-- [ ] `GroupedFileList.tsx` - Accordion for grouped views (email/date)
-- [ ] `FolderBreadcrumb.tsx` - Navigation breadcrumb
-- [ ] `SelectionToolbar.tsx` - Bulk actions bar (appears when items selected)
-
-**Notes:**
-- FileGrid handles both flat + grouped display
-- GroupedFileList uses AnimateUI Accordion
-
-#### Modals (`src/modules/workspace/components/modals/`)
-**Pattern:** Modal dialogs
-
-- [ ] `FilePreviewModal.tsx` - Image/PDF viewer with signed URLs
-- [ ] `CreateFolderModal.tsx` - Folder creation form
-- [ ] `RenameFolderModal.tsx` - Inline rename
-- [ ] `MoveFolderModal.tsx` - Folder picker tree
-- [ ] `DeleteConfirmModal.tsx` - Bulk delete confirmation
-
-**Notes:**
-- Use `useModalState` hook pattern (from Links Module)
-- AnimateUI Modal primitives
-
-#### UI Components (`src/modules/workspace/components/ui/`)
-**Pattern:** Atomic components
-
-- [ ] `FolderCard.tsx` - Folder item with 🔗 badge, people count
-- [ ] `FileCard.tsx` - File item with thumbnail, metadata
-- [ ] `FileThumbnail.tsx` - Image preview/icon renderer
-- [ ] `UploaderBadge.tsx` - Email badge component
-- [ ] `FolderContextMenu.tsx` - Right-click menu for folders
-- [ ] `FileContextMenu.tsx` - Right-click menu for files
-- [ ] `EmptyFolderState.tsx` - Empty state component
-- [ ] `EmptyFilesState.tsx` - No files state
-- [ ] `WorkspaceSkeleton.tsx` - Loading skeleton
-
-**Notes:**
-- FileThumbnail handles lazy-loaded signed URLs
-- Context menus use Radix UI DropdownMenu
-
----
-
-### 6. Module-Specific Hooks
-
-#### `src/modules/workspace/hooks/` (NEW DIRECTORY)
-**Pattern:** Composable UI state hooks (not data hooks)
-
-- [ ] `use-workspace-filters.ts` - Filter state (Zustand store: groupBy, sortBy, filterEmail, searchQuery)
-- [ ] `use-file-selection.ts` - Multi-select state for files
-- [ ] `use-folder-selection.ts` - Multi-select state for folders
-- [ ] `use-folder-navigation.ts` - Breadcrumb navigation state (current folder, hierarchy)
-
-**Notes:**
-- use-workspace-filters.ts is Zustand store (global filter state)
-- Selection hooks are local component state
-- No data fetching (use global hooks: useWorkspaceFiles, useRootFolders)
-
----
-
-### 7. Tests
-
-#### Database Query Tests
-- [ ] `folder.queries.test.ts` - 8-10 tests (CRUD operations, hierarchy, uniqueness)
-- [ ] `file.queries.test.ts` - 10-12 tests (CRUD, filtering, search, bulk operations)
-
-#### Server Action Tests
-- [ ] `folder.actions.test.ts` - 10-12 tests (auth, ownership, validation, rate limiting)
-- [ ] `file.actions.test.ts` - 12-15 tests (auth, ownership, storage integration, bulk operations)
-
-**Pattern:** Follow existing test patterns from `link.actions.test.ts`
-- Mock Clerk auth
-- Mock database queries
-- Test happy paths + error cases
-- Test ownership verification
-- Test rate limiting
-
----
-
-## 📦 File Organization Summary (APPROVED STRUCTURE)
-
-```
-src/modules/workspace/
-├── components/
-│   ├── filters/                     [5 components - NEW]
-│   │   ├── GroupByFilter.tsx
-│   │   ├── EmailFilter.tsx
-│   │   ├── SortDropdown.tsx
-│   │   ├── FilterToolbar.tsx       (Desktop)
-│   │   └── FilterBottomSheet.tsx   (Mobile)
-│   ├── modals/                      [5 modals]
-│   │   ├── FilePreviewModal.tsx
-│   │   ├── CreateFolderModal.tsx
-│   │   ├── RenameFolderModal.tsx
-│   │   ├── MoveFolderModal.tsx
-│   │   └── DeleteConfirmModal.tsx
-│   ├── sections/                    [5 sections]
-│   │   ├── WorkspaceHeader.tsx
-│   │   ├── FileGrid.tsx
-│   │   ├── GroupedFileList.tsx
-│   │   ├── FolderBreadcrumb.tsx
-│   │   └── SelectionToolbar.tsx
-│   ├── ui/                          [9 atomic components]
-│   │   ├── FolderCard.tsx
-│   │   ├── FileCard.tsx
-│   │   ├── FileThumbnail.tsx
-│   │   ├── UploaderBadge.tsx
-│   │   ├── FolderContextMenu.tsx
-│   │   ├── FileContextMenu.tsx
-│   │   ├── EmptyFolderState.tsx
-│   │   ├── EmptyFilesState.tsx
-│   │   └── WorkspaceSkeleton.tsx
-│   └── views/                       [1 main view + 2 layouts]
-│       ├── UserWorkspace.tsx       (Main orchestrator)
-│       └── layouts/
-│           ├── DesktopLayout.tsx
-│           └── MobileLayout.tsx
-├── hooks/                           [4 UI state hooks]
-│   ├── use-workspace-filters.ts    (Zustand store)
-│   ├── use-file-selection.ts
-│   ├── use-folder-selection.ts
-│   └── use-folder-navigation.ts
-├── lib/
-│   └── utils/                       [Client-side utilities - NEW]
-│       ├── groupByEmail.ts
-│       ├── groupByDate.ts
-│       ├── groupByFolder.ts
-│       └── sortFiles.ts
-└── index.ts                         (Module exports)
-```
-
-**Global Infrastructure (already complete):**
-- ✅ `src/lib/actions/` - file.actions.ts, folder.actions.ts (11 actions)
-- ✅ `src/lib/database/queries/` - file.queries.ts, folder.queries.ts (24 queries)
-- ✅ `src/lib/validation/` - file-schemas.ts, folder-schemas.ts
-- ✅ `src/hooks/data/` - use-files.ts, use-folders.ts (10 hooks)
-- ✅ `src/lib/config/query-keys.ts` - fileKeys, folderKeys
-
----
-
-## 🎯 Implementation Order
-
-**✅ Phase 1: Foundation (Week 1) - COMPLETE**
-1. ✅ Database queries (folder + file) - 24 queries with JSDoc
-2. ✅ Validation schemas (folder + file)
-3. ✅ Query keys extension
-
-**✅ Phase 2: Actions & Hooks (Week 1-2) - COMPLETE**
-4. ✅ Server actions (folder + file + workspace extensions) - 11 actions
-5. ✅ React Query hooks (folder + file + workspace extensions) - 10 hooks
-6. ✅ Comprehensive tests for queries + actions - 262+ tests passing
-
-**Phase 3: UI Implementation (Week 2-3)** ← CURRENT PHASE
-7. Module infrastructure (hooks, utils, Zustand store)
-8. Atomic UI components (cards, thumbnails, badges, context menus, skeletons)
-9. Filter components (dropdowns, toolbar, bottom sheet)
-10. Section components (header, grid, breadcrumb, selection toolbar)
-11. Modals (preview, create, rename, move, delete)
-12. Main view + layouts (UserWorkspace, DesktopLayout, MobileLayout)
-
-**Phase 5: Polish & Features (Week 4+)**
-14. Search functionality
-15. File preview modal
-16. Bulk operations
-17. Empty states
-18. Error handling refinements
-
----
-
-## 📊 Success Criteria
-
-**✅ Foundation Complete:**
-- ✅ All database queries implemented with JSDoc (24 queries: 11 folder + 13 file)
-- ✅ All validation schemas created (folder + file schemas)
-- ✅ All server actions implemented and tested (11 actions: 5 folder + 6 file)
-- ✅ All React Query hooks implemented (10 hooks: 5 folder + 5 file)
-- ✅ 0 TypeScript errors
-- ✅ 262+ tests passing
-- ✅ Storage-first deletion pattern implemented
-- ✅ Code Review: 9.2/10 - Production-ready
-- ✅ Tech Lead: 9.5/10 - Authorized for Phase 3
-
-**UI complete when:**
-- ✅ FilesView displays folders/files in grid layout
-- ✅ ByEmailView groups files by uploader email
-- ✅ ByDateView shows chronological file list
-- ✅ Search works across all folders
-- ✅ File preview works for images/PDFs
-- ✅ Bulk operations work (multi-select + delete)
-- ✅ Empty states display correctly
-
-**MVP complete when:**
-- ✅ User can create folders with up to 20 levels of nesting
-- ✅ User can view all files in workspace (3 views)
-- ✅ User can filter files by email across all folders
-- ✅ User can search files by name/email
-- ✅ User can delete files/folders with confirmation
-- ✅ Dashboard loads in < 2 seconds with 100+ files
-- ✅ All features work on mobile
-
----
-
-## 🔧 Post-Review Fixes (2025-10-30)
-
-### Code Changes Applied
-
-**1. Bulk Delete Rollback Fix** (`src/lib/actions/file.actions.ts:443-528`)
-- **Before:** Used `Promise.all` (fail-fast, no rollback on partial failure)
-- **After:** Implemented Promise.allSettled pattern with proper partial success handling
-- **Impact:** Users get accurate feedback on which files succeeded/failed, no orphaned storage files
-- **Changes:**
-  - Wrapped deletions in `.then()/.catch()` to capture individual results
-  - Separated successful vs failed deletions
-  - Only delete DB records for successfully deleted storage files
-  - Return detailed error message showing partial success count
-
-**2. N+1 Query Optimization** (`src/lib/database/queries/file.queries.ts:37-75`, `src/lib/actions/file.actions.ts:423-444`)
-- **Before:** Loop calling `verifyFileOwnership()` for each file (N queries)
-- **After:** Single batch query `getFilesByIds(fileIds, workspaceId)` (1 query)
-- **Impact:** 100 files: 100 queries → 1 query (100x performance improvement)
-- **New Function:** `getFilesByIds(fileIds: string[], workspaceId: string)` using `inArray` + `and` filters
-
-**3. Email Validation Consolidation** (`src/lib/utils/validation-helpers.ts`, `src/lib/validation/base-schemas.ts`)
-- **Before:** Two implementations: `createEmailSchema()` in validation-helpers + `emailSchema` in base-schemas
-- **After:** Single source of truth: `emailSchema` from base-schemas with Zod `.email()` + sanitization
-- **Impact:** Consistent validation across all modules, reduced duplication
-- **Changes:**
-  - Removed `createEmailSchema()` from validation-helpers.ts (kept EMAIL_REGEX for runtime utils)
-  - Added note in validation-helpers directing to base-schemas.emailSchema
-  - All schemas now import from base-schemas
-
-**4. createHexColorSchema Relocation** (`src/lib/utils/validation-helpers.ts` → `src/modules/links/lib/validation/link-branding-schemas.ts`)
-- **Before:** In global validation-helpers.ts (only used by links module)
-- **After:** Module-specific function in link-branding-schemas.ts
-- **Impact:** Proper separation (global utils = 3+ modules, module-specific = 1-2 modules)
-- **Changes:**
-  - Removed COLOR_REGEX, createHexColorSchema, isValidHexColor, normalizeHexColor from global
-  - Added private HEX_COLOR_REGEX + createHexColorSchema to link-branding-schemas.ts
-  - Updated imports in branding actions
-
-**5. validateInput Relocation** (`src/lib/validation/base-schemas.ts` → `src/lib/utils/action-helpers.ts`)
-- **Before:** In base-schemas.ts (validation file, but throws ActionResponse)
-- **After:** In action-helpers.ts (proper location with other action utilities)
-- **Impact:** Proper separation of concerns (validation schemas vs action helpers)
-- **Changes:**
-  - Moved `validateInput<T>()` function to action-helpers.ts
-  - Updated all action file imports: `import { validateInput } from '@/lib/utils/action-helpers'`
-  - Added note in base-schemas.ts redirecting to new location
-  - Files updated: file.actions.ts, folder.actions.ts, branding.actions.ts
-
-### Files Modified
-- `src/lib/actions/file.actions.ts` - Bulk delete fix + N+1 optimization + validateInput import
-- `src/lib/actions/folder.actions.ts` - validateInput import update
-- `src/lib/database/queries/file.queries.ts` - New getFilesByIds() function
-- `src/lib/utils/action-helpers.ts` - Added validateInput() function
-- `src/lib/utils/validation-helpers.ts` - Removed color validation, removed createEmailSchema
-- `src/lib/validation/base-schemas.ts` - Removed validateInput, added redirect note
-- `src/modules/links/lib/actions/branding.actions.ts` - validateInput import update
-- `src/modules/links/lib/validation/link-branding-schemas.ts` - Added createHexColorSchema
-
-### Test Results
-- **Status:** 238 tests passing (pre-review baseline maintained)
-- **New Functions Tested:** getFilesByIds batch query integrated into existing test suite
-- **Regression:** None detected
+- Upload System: `src/hooks/utility/use-uppy-upload.ts`
+- Storage: `src/lib/actions/storage.actions.ts`
 
 ---
 

@@ -18,6 +18,7 @@ import {
   updateFileMetadataAction,
   deleteFileAction,
   bulkDeleteFilesAction,
+  getFileSignedUrlAction,
 } from '@/lib/actions';
 import type {
   CreateFileInput,
@@ -173,6 +174,58 @@ export function useSearchFiles(
     enabled: isEnabled,
     staleTime: 30 * 1000, // 30 seconds - search results can change
     gcTime: 2 * 60 * 1000, // 2 minutes
+  });
+}
+
+/**
+ * Get signed URL for file preview/download
+ * Returns temporary URL for accessing files in private storage
+ *
+ * Used in:
+ * - FileThumbnail (image previews)
+ * - FilePreviewModal (full file display)
+ * - File download functionality
+ *
+ * Features:
+ * - URLs expire after 24 hours
+ * - Automatic ownership verification
+ * - Only fetches when enabled (optimize for non-images)
+ *
+ * @param fileId - UUID of the file to access
+ * @param options - Optional configuration
+ * @param options.enabled - Whether to fetch URL (default: true)
+ * @returns Query with signed URL or undefined
+ *
+ * @example
+ * ```tsx
+ * function ImageThumbnail({ file }: { file: File }) {
+ *   const isImage = file.mimeType.startsWith('image/');
+ *   const { data: signedUrl, isLoading } = useFileSignedUrl(file.id, {
+ *     enabled: isImage
+ *   });
+ *
+ *   if (!isImage) return <FileIcon />;
+ *   if (isLoading) return <Skeleton />;
+ *   if (signedUrl) return <img src={signedUrl} alt={file.filename} />;
+ *   return <FileIcon />;
+ * }
+ * ```
+ */
+export function useFileSignedUrl(
+  fileId: string,
+  options?: { enabled?: boolean }
+) {
+  const enabled = options?.enabled ?? true;
+
+  return useQuery({
+    queryKey: fileKeys.signedUrl(fileId),
+    queryFn: async () => {
+      const result = await getFileSignedUrlAction({ fileId });
+      return transformQueryResult(result, 'Failed to generate file URL', undefined);
+    },
+    enabled: enabled && !!fileId,
+    staleTime: 20 * 60 * 1000, // 20 minutes - URL valid for 24h, refresh periodically
+    gcTime: 25 * 60 * 1000, // 25 minutes
   });
 }
 

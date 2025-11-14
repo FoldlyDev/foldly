@@ -30,7 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/shadcn/card";
-import { FileUpload } from "@/components/ui/originui";
+import { SingleFileUpload } from "@/components/ui/originui/file-upload";
 import { MultiEmailInput } from "../inputs/MultiEmailInput";
 import { ColorPickerInput } from "../inputs/ColorPickerInput";
 import { ImageIcon, CalendarIcon, Eye, EyeOff } from "lucide-react";
@@ -265,7 +265,7 @@ export const LogoUploadField: React.FC = React.memo(() => {
         name="logo"
         control={control}
         render={({ field }) => (
-          <FileUpload
+          <SingleFileUpload
             maxSizeMB={5}
             accept="image/png,image/jpeg,image/webp"
             onFilesChange={field.onChange}

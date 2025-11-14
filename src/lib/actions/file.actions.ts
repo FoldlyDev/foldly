@@ -27,7 +27,7 @@ import {
 } from '@/lib/database/queries';
 
 // Import storage client
-import { deleteFile as deleteFileFromStorage } from '@/lib/storage/client';
+import { deleteFile as deleteFileFromStorage, getSignedUrl } from '@/lib/storage/client';
 
 // Import rate limiting
 import { RateLimitPresets } from '@/lib/middleware/rate-limit';
@@ -221,6 +221,9 @@ export const createFileRecordAction = withAuthInputAndRateLimit<CreateFileInput,
         'createFileRecordAction'
       );
     }
+
+    // Note: Duplicate detection already handled in initiateUploadAction
+    // The filename passed here is already unique (Windows-style: photo.jpg → photo (1).jpg)
 
     // Create file record
     const file = await createFile({
@@ -600,5 +603,75 @@ export const bulkDeleteFilesAction = withAuthInputAndRateLimit<
   return {
     success: true,
     data: { deletedCount: successfulDeletions.length },
+  } as const;
+});
+
+// =============================================================================
+// FILE ACCESS ACTIONS
+// =============================================================================
+
+/**
+ * Get signed URL for file preview/download
+ * Returns temporary URL for accessing private storage files
+ *
+ * Used by:
+ * - Workspace file thumbnails (image previews)
+ * - File download functionality
+ * - File preview modals
+ *
+ * Security:
+ * - Verifies file ownership before granting access
+ * - URLs expire after 24 hours (configurable)
+ * - Only works for files in user's workspace
+ *
+ * @param fileId - UUID of the file to access
+ * @returns Signed URL valid for 24 hours
+ *
+ * @example
+ * ```typescript
+ * const result = await getFileSignedUrlAction({ fileId: 'file_123' });
+ * if (result.success) {
+ *   // Display image: <img src={result.data} />
+ *   // Or download: window.open(result.data);
+ * }
+ * ```
+ */
+export const getFileSignedUrlAction = withAuthInputAndRateLimit<
+  DeleteFileInput,
+  string
+>('getFileSignedUrlAction', RateLimitPresets.GENEROUS, async (userId, input) => {
+  // Validate input
+  const validated = validateInput(deleteFileSchema, input);
+
+  // Get user's workspace
+  const workspace = await getAuthenticatedWorkspace(userId);
+
+  // Verify file ownership and get file data (throws if not found/unauthorized)
+  const file = await verifyFileOwnership(
+    validated.fileId,
+    workspace.id,
+    'getFileSignedUrlAction'
+  );
+
+  // Validate bucket configuration
+  const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+  if (bucketError) return bucketError;
+
+  // Generate signed URL (24 hour expiry)
+  const signedUrl = await getSignedUrl({
+    gcsPath: file.storagePath,
+    bucket: UPLOADS_BUCKET_NAME,
+    expiresIn: 86400, // 24 hours in seconds
+  });
+
+  logger.info('File signed URL generated', {
+    userId,
+    fileId: file.id,
+    filename: file.filename,
+  });
+
+  return {
+    success: true,
+    data: signedUrl,
   } as const;
 });

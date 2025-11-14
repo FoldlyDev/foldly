@@ -33,6 +33,9 @@ export interface UploadSession {
 
   /** Storage bucket name */
   bucket: string;
+
+  /** Unique filename (after duplicate detection) for database record creation */
+  uniqueFileName: string;
 }
 
 /**

@@ -9,7 +9,7 @@ import { FileGrid } from "../../sections/FileGrid";
 import { GroupedFileList } from "../../sections/GroupedFileList";
 import { SelectionToolbar } from "../../sections/SelectionToolbar";
 import { Button } from "@/components/ui/shadcn/button";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Upload } from "lucide-react";
 import {
   groupFilesByEmail,
   groupFilesByDate,
@@ -34,6 +34,7 @@ interface DesktopLayoutProps {
   currentFolderId: string | null;
   onNavigateFolder: (folderId: string | null) => void;
   onCreateFolder: () => void;
+  onUploadFiles: () => void;
   onRenameFolder: (folder: Folder) => void;
   onMoveFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
@@ -66,6 +67,7 @@ export function DesktopLayout({
   currentFolderId,
   onNavigateFolder,
   onCreateFolder,
+  onUploadFiles,
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
@@ -151,13 +153,19 @@ export function DesktopLayout({
           onNavigate={onNavigateFolder}
         />
 
-        {/* Toolbar: Filters + Create Folder Button */}
+        {/* Toolbar: Filters + Action Buttons */}
         <div className="flex items-center justify-between gap-4">
           <FilterToolbar />
-          <Button onClick={onCreateFolder} className="gap-2">
-            <FolderPlus className="size-4" />
-            New Folder
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={onUploadFiles} variant="default" className="gap-2">
+              <Upload className="size-4" />
+              Upload Files
+            </Button>
+            <Button onClick={onCreateFolder} variant="outline" className="gap-2">
+              <FolderPlus className="size-4" />
+              New Folder
+            </Button>
+          </div>
         </div>
 
         {/* Main content area */}

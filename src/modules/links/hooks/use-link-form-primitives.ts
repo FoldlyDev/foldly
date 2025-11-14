@@ -226,7 +226,7 @@ export function useLinkLogoUpload(config?: {
     }
 
     // Step 2: Upload new logo via Uppy (resumable upload)
-    const logoUrl = await logoUpload.upload(logoFile, {
+    const uploadResult = await logoUpload.upload(logoFile, {
       path: generateBrandingPath(workspaceId, linkId),
       metadata: {
         workspaceId,
@@ -240,13 +240,13 @@ export function useLinkLogoUpload(config?: {
       linkId,
       branding: {
         logo: {
-          url: logoUrl,
+          url: uploadResult.url,
           altText,
         },
       },
     });
 
-    return logoUrl;
+    return uploadResult.url;
   };
 
   return {

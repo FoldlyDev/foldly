@@ -19,6 +19,7 @@ import {
   LinkFolderToExistingModal,
   ViewFolderLinkDetailsModal,
   UnlinkFolderConfirmModal,
+  UploadFilesModal,
 } from "../modals";
 import type { File, Folder, Link } from "@/lib/database/schemas";
 import { deleteFolderAction, deleteFileAction, getLinkByIdAction } from "@/lib/actions";
@@ -54,6 +55,7 @@ export function UserWorkspace() {
   const moveFolderModal = useModalState<Folder>();
   const deleteFolderModal = useModalState<{ id: string; name: string }>();
   const deleteFileModal = useModalState<{ id: string; name: string }>();
+  const uploadFilesModal = useModalState<void>();
 
   // Folder-link modal state
   const shareFolderModal = useModalState<Folder>();
@@ -72,6 +74,10 @@ export function UserWorkspace() {
   // Action handlers
   const handleCreateFolder = () => {
     createFolderModal.open(undefined);
+  };
+
+  const handleUploadFiles = () => {
+    uploadFilesModal.open(undefined);
   };
 
   const handleRenameFolder = (folder: Folder) => {
@@ -249,6 +255,7 @@ export function UserWorkspace() {
     currentFolderId: folderNavigation.currentFolderId,
     onNavigateFolder: folderNavigation.navigateToFolder,
     onCreateFolder: handleCreateFolder,
+    onUploadFiles: handleUploadFiles,
     onRenameFolder: handleRenameFolder,
     onMoveFolder: handleMoveFolder,
     onDeleteFolder: handleDeleteFolder,
@@ -349,6 +356,13 @@ export function UserWorkspace() {
         folder={unlinkFolderModal.data}
         isOpen={unlinkFolderModal.isOpen}
         onOpenChange={(open: boolean) => !open && unlinkFolderModal.close()}
+      />
+
+      {/* Upload modal */}
+      <UploadFilesModal
+        isOpen={uploadFilesModal.isOpen}
+        onOpenChange={(open) => !open && uploadFilesModal.close()}
+        currentFolderId={folderNavigation.currentFolderId}
       />
     </>
   );

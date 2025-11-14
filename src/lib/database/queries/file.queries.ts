@@ -5,7 +5,7 @@
 
 import { db, postgresClient } from '@/lib/database/connection';
 import { files } from '@/lib/database/schemas';
-import { eq, and, or, gte, lte, ilike, inArray } from 'drizzle-orm';
+import { eq, and, or, gte, lte, ilike, inArray, isNull } from 'drizzle-orm';
 import type { File, NewFile } from '@/lib/database/schemas';
 
 /**
@@ -436,4 +436,41 @@ export async function bulkDeleteFiles(fileIds: string[]): Promise<void> {
   if (fileIds.length === 0) return;
 
   await db.delete(files).where(inArray(files.id, fileIds));
+}
+
+/**
+ * Check if a filename already exists in a specific folder
+ * Used for Windows-style duplicate detection before file upload
+ * Database enforces uniqueness via fileNameParentUnique index
+ *
+ * @param parentFolderId - The UUID of the parent folder (null for root)
+ * @param filename - The filename to check (case-sensitive, with extension)
+ * @returns True if filename exists in folder, false otherwise
+ *
+ * @example
+ * ```typescript
+ * // Check before upload
+ * const exists = await checkFilenameExists('folder_123', 'document.pdf');
+ * if (exists) {
+ *   // Generate unique filename: "document (1).pdf"
+ * }
+ *
+ * // Check in root folder
+ * const existsInRoot = await checkFilenameExists(null, 'photo.jpg');
+ * ```
+ */
+export async function checkFilenameExists(
+  parentFolderId: string | null,
+  filename: string
+): Promise<boolean> {
+  const result = await db.query.files.findFirst({
+    where: parentFolderId
+      ? and(eq(files.parentFolderId, parentFolderId), eq(files.filename, filename))
+      : and(isNull(files.parentFolderId), eq(files.filename, filename)),
+    columns: {
+      id: true,
+    },
+  });
+
+  return !!result;
 }

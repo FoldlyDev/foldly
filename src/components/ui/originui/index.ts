@@ -6,9 +6,16 @@
 // Button component
 export { Button, buttonVariants } from "./button";
 
-// File upload component
-export { default as FileUpload } from "./file-upload";
-export type { FileUploadProps } from "./file-upload";
+// File upload components
+export {
+  SingleFileUpload,
+  MultipleFileUpload
+} from "./file-upload";
+export type {
+  BaseFileUploadProps,
+  SingleFileUploadProps,
+  MultipleFileUploadProps
+} from "./file-upload";
 
 // Toast system components
 export {

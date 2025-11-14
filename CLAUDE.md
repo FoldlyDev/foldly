@@ -413,6 +413,55 @@ const fileUpload = useUppyUpload({
 - Storage actions: `initiateUploadAction`, `verifyUploadAction` (auth), `initiatePublicUploadAction`, `verifyPublicUploadAction` (public)
 - Rate limiting: 10 uploads per 5 minutes (per user or per rate limit key)
 
+**Duplicate File Detection Pattern** (CRITICAL):
+File uploads require dual-layer validation to prevent 409 errors from orphaned storage files:
+
+```typescript
+// CRITICAL: Check BOTH database AND storage before upload initiation
+const uniqueFilename = await generateUniqueFilename(
+  fileName,
+  async (filename) => {
+    // Layer 1: Database check (prevents duplicate records in same folder)
+    const dbExists = await checkFilenameExists(folderId, filename);
+    if (dbExists) return true;
+
+    // Layer 2: Storage check (prevents 409 from orphaned files/abandoned TUS sessions)
+    const storageExists = await fileExists({
+      gcsPath: `${path}/${filename}`,
+      bucket,
+    });
+    return storageExists;
+  }
+);
+
+// Initiate upload with unique filename (Windows-style: photo.jpg → photo (1).jpg)
+const session = await storageInitiateUpload({
+  fileName: uniqueFilename, // Use unique filename, not original
+  // ...
+});
+
+// Client uses session.uniqueFileName for database record creation
+```
+
+**Why This Matters**:
+- **Orphaned storage files** = Files uploaded successfully but DB record creation failed (network errors, crashes)
+- **Abandoned TUS sessions** = Upload initiated but never completed (path still reserved)
+- **409 Conflicts** = Upload attempts to same storage path (user-facing failures)
+- Dual-layer validation prevents 409 errors by generating unique filenames BEFORE upload initiation
+
+**Applies To**:
+- ✅ `initiateUploadAction` - Authenticated uploads (dashboard users)
+- ✅ `initiatePublicUploadAction` - Public uploads (external users)
+- ✅ All resumable upload operations (TUS/GCS Resumable)
+- ✅ Multi-file batch uploads
+
+**Referenced Implementation**:
+- `src/lib/actions/storage.actions.ts` - Upload initiation with dual-layer validation
+- `src/lib/utils/file-helpers.ts` - `generateUniqueFilename()` utility
+- `src/lib/database/queries/file.queries.ts` - `checkFilenameExists()` query
+- `src/lib/storage/client.ts` - `fileExists()` storage check
+- `docs/execution/patterns/duplicate-detection-pattern.md` - Complete pattern documentation
+
 **Storage-First Deletion Pattern** (CRITICAL):
 Foldly is a paid storage platform - users pay for storage space. Therefore, file deletion MUST follow storage-first pattern to prevent unethical billing:
 

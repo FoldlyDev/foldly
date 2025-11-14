@@ -35,11 +35,18 @@ interface UseUppyUploadOptions {
 
 interface UploadOptions {
   path: string;
+  parentFolderId?: string | null; // For duplicate detection
   metadata?: Record<string, string>;
 }
 
+interface UploadResult {
+  uniqueFileName: string;
+  storagePath: string;
+  url: string; // Public or signed URL (for branding/public uploads)
+}
+
 interface UseUppyUploadReturn {
-  upload: (file: File, options: UploadOptions) => Promise<string>;
+  upload: (file: File, options: UploadOptions) => Promise<UploadResult>;
   isUploading: boolean;
   progress: number;
   error: Error | null;
@@ -162,13 +169,14 @@ export function useUppyUpload(
   }, []);
 
   const upload = useCallback(
-    async (file: File, uploadOptions: UploadOptions): Promise<string> => {
+    async (file: File, uploadOptions: UploadOptions): Promise<UploadResult> => {
       try {
         setIsUploading(true);
         setProgress(0);
         setError(null);
 
         // Step 1: Initiate resumable upload to get session URL (via server action)
+        // Includes duplicate detection for authenticated uploads
         const session = authMode === 'authenticated'
           ? await initiateAuthUpload.mutateAsync({
               fileName: file.name,
@@ -176,6 +184,7 @@ export function useUppyUpload(
               contentType: file.type,
               bucket: options.bucket,
               path: uploadOptions.path,
+              parentFolderId: uploadOptions.parentFolderId,
               metadata: uploadOptions.metadata,
             })
           : await initiatePublicUpload.mutateAsync({
@@ -312,7 +321,11 @@ export function useUppyUpload(
         // Call success callback
         options.onSuccess?.(verification.url);
 
-        return verification.url;
+        return {
+          uniqueFileName: session.uniqueFileName,
+          storagePath: session.finalPath,
+          url: verification.url,
+        };
       } catch (err) {
         const error = err instanceof Error ? err : new Error('Upload failed');
         setError(error);

@@ -353,6 +353,7 @@ export async function initiateResumableUpload(
       expiresAt: new Date(Date.now() + SESSION_EXPIRATION_MS),
       finalPath: filePath,
       bucket,
+      uniqueFileName: fileName, // Will be set by initiateUploadAction after duplicate detection
     };
   } catch (error) {
     logger.error('Failed to initiate resumable upload', {

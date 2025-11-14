@@ -92,6 +92,7 @@ export const fileKeys = {
   search: (query: string) => [...fileKeys.all, 'search', query] as const,
   details: () => [...fileKeys.all, 'detail'] as const,
   detail: (id: string) => [...fileKeys.details(), id] as const,
+  signedUrl: (fileId: string) => [...fileKeys.all, 'signed-url', fileId] as const,
 } as const;
 
 /**

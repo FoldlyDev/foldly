@@ -6,7 +6,9 @@ import {
   FileSpreadsheetIcon,
   FileArchiveIcon,
   FileImageIcon,
+  Loader2,
 } from "lucide-react";
+import { useFileSignedUrl } from "@/hooks/data/use-files";
 import type { File } from "@/lib/database/schemas";
 import { cn } from "@/lib/utils";
 
@@ -42,8 +44,8 @@ function getFileIcon(mimeType: string) {
  * File thumbnail component
  * Shows image preview for images, icons for other file types
  *
- * Note: Image previews will use signed URLs in production
- * For now, using placeholder until storage integration
+ * Uses signed URLs for private storage file access
+ * URLs expire after 24 hours and are cached for 20 minutes
  *
  * @example
  * ```tsx
@@ -53,12 +55,45 @@ function getFileIcon(mimeType: string) {
 export function FileThumbnail({ file, className }: FileThumbnailProps) {
   const isImage = file.mimeType.startsWith('image/');
 
-  // TODO: Implement signed URL fetching for image previews
-  // const { data: signedUrl } = useSignedUrl(file.id, { enabled: isImage });
+  // Fetch signed URL for image previews
+  const { data: signedUrl, isLoading } = useFileSignedUrl(file.id, {
+    enabled: isImage,
+  });
 
   if (isImage) {
-    // TODO: Use signedUrl when storage integration is complete
-    // For now, show image icon
+    // Show loading spinner while fetching signed URL
+    if (isLoading) {
+      return (
+        <div
+          className={cn(
+            "flex size-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5",
+            className
+          )}
+        >
+          <Loader2 className="size-16 animate-spin text-primary/40" strokeWidth={1.5} />
+        </div>
+      );
+    }
+
+    // Display actual image if signed URL is available
+    if (signedUrl) {
+      return (
+        <div
+          className={cn(
+            "flex size-full items-center justify-center overflow-hidden",
+            className
+          )}
+        >
+          <img
+            src={signedUrl}
+            alt={file.filename}
+            className="size-full object-cover"
+          />
+        </div>
+      );
+    }
+
+    // Fallback to icon if signed URL fetch failed
     const Icon = FileImageIcon;
     return (
       <div

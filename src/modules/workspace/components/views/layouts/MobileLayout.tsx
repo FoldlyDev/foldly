@@ -9,7 +9,7 @@ import { FileGrid } from "../../sections/FileGrid";
 import { GroupedFileList } from "../../sections/GroupedFileList";
 import { SelectionToolbar } from "../../sections/SelectionToolbar";
 import { Button } from "@/components/ui/shadcn/button";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Upload } from "lucide-react";
 import {
   groupFilesByEmail,
   groupFilesByDate,
@@ -34,6 +34,7 @@ interface MobileLayoutProps {
   currentFolderId: string | null;
   onNavigateFolder: (folderId: string | null) => void;
   onCreateFolder: () => void;
+  onUploadFiles: () => void;
   onRenameFolder: (folder: Folder) => void;
   onMoveFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
@@ -66,6 +67,7 @@ export function MobileLayout({
   currentFolderId,
   onNavigateFolder,
   onCreateFolder,
+  onUploadFiles,
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
@@ -151,13 +153,19 @@ export function MobileLayout({
           onNavigate={onNavigateFolder}
         />
 
-        {/* Mobile toolbar: Filter sheet + Create button */}
+        {/* Mobile toolbar: Filter sheet + Action buttons */}
         <div className="flex items-center justify-between gap-3">
           <FilterBottomSheet />
-          <Button onClick={onCreateFolder} size="sm" className="gap-2">
-            <FolderPlus className="size-4" />
-            New
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={onUploadFiles} size="sm" className="gap-2">
+              <Upload className="size-4" />
+              Upload
+            </Button>
+            <Button onClick={onCreateFolder} size="sm" variant="outline" className="gap-2">
+              <FolderPlus className="size-4" />
+              New
+            </Button>
+          </div>
         </div>
 
         {/* Main content area */}

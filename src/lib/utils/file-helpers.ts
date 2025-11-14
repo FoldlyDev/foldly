@@ -87,3 +87,63 @@ export function isFileTypeValid(file: File, allowedTypes: string[]): boolean {
 export function isFile(value: unknown): value is File {
   return value instanceof File;
 }
+
+/**
+ * Generates a Windows-style unique filename by appending " (N)" before extension
+ * Used when uploading duplicate filenames to the same folder
+ *
+ * Pattern: filename.ext → filename (1).ext → filename (2).ext
+ *
+ * @param baseFilename - Original filename with extension
+ * @param checkExists - Async function to check if filename exists
+ * @returns Promise resolving to unique filename
+ *
+ * @example
+ * ```typescript
+ * // If "photo.jpg" exists, returns "photo (1).jpg"
+ * const uniqueName = await generateUniqueFilename(
+ *   'photo.jpg',
+ *   (name) => checkFilenameExists(folderId, name)
+ * );
+ *
+ * // If "photo.jpg" and "photo (1).jpg" exist, returns "photo (2).jpg"
+ * ```
+ */
+export async function generateUniqueFilename(
+  baseFilename: string,
+  checkExists: (filename: string) => Promise<boolean>
+): Promise<string> {
+  // Check if base filename is available
+  const exists = await checkExists(baseFilename);
+  if (!exists) {
+    return baseFilename;
+  }
+
+  // Extract filename and extension
+  const lastDotIndex = baseFilename.lastIndexOf('.');
+  const hasExtension = lastDotIndex > 0 && lastDotIndex < baseFilename.length - 1;
+
+  const nameWithoutExt = hasExtension
+    ? baseFilename.substring(0, lastDotIndex)
+    : baseFilename;
+  const extension = hasExtension ? baseFilename.substring(lastDotIndex) : '';
+
+  // Try incrementing numbers until we find an available filename
+  let counter = 1;
+  let candidateFilename: string;
+
+  do {
+    candidateFilename = `${nameWithoutExt} (${counter})${extension}`;
+    counter++;
+
+    // Safety limit to prevent infinite loop (unlikely but defensive)
+    if (counter > 1000) {
+      // Fallback: Add timestamp to ensure uniqueness
+      const timestamp = Date.now();
+      candidateFilename = `${nameWithoutExt} (${timestamp})${extension}`;
+      break;
+    }
+  } while (await checkExists(candidateFilename));
+
+  return candidateFilename;
+}

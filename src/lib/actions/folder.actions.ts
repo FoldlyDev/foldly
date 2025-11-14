@@ -374,6 +374,25 @@ export const moveFolderAction = withAuthInputAndRateLimit<MoveFolderInput, Folde
       'moveFolderAction'
     );
 
+    // Early return if folder is already in target location (idempotent no-op)
+    // Normalize both values to handle null vs undefined comparison
+    const normalizedNewParentId = validated.newParentId ?? null;
+    const normalizedCurrentParentId = existingFolder.parentFolderId ?? null;
+
+    if (normalizedNewParentId === normalizedCurrentParentId) {
+      logger.info('Folder already in target location (no-op)', {
+        userId,
+        folderId: validated.folderId,
+        parentFolderId: normalizedCurrentParentId,
+      });
+
+      // Return success with existing folder data (idempotent operation)
+      return {
+        success: true,
+        data: existingFolder,
+      } as const;
+    }
+
     // Perform all business logic validations BEFORE transaction
     // Following pattern from link.actions.ts - validations don't need transaction atomicity
     if (validated.newParentId) {
