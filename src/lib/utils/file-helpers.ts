@@ -147,3 +147,32 @@ export async function generateUniqueFilename(
 
   return candidateFilename;
 }
+
+/**
+ * Checks if a file can be previewed in the browser
+ * Based on MIME type, determines if file supports native preview
+ *
+ * Supported types:
+ * - Images: image/*
+ * - Videos: video/*
+ * - PDFs: application/pdf
+ *
+ * @param mimeType - File MIME type (e.g., 'image/png', 'video/mp4')
+ * @returns True if file can be previewed
+ *
+ * @example
+ * ```typescript
+ * if (isPreviewableFile(file.mimeType)) {
+ *   // Show preview option
+ * } else {
+ *   // Show download-only option
+ * }
+ * ```
+ */
+export function isPreviewableFile(mimeType: string): boolean {
+  return (
+    mimeType.startsWith('image/') ||
+    mimeType.startsWith('video/') ||
+    mimeType === 'application/pdf'
+  );
+}

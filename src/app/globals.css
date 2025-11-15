@@ -192,7 +192,7 @@
     rgba(12, 13, 13, 0.4)
   );
   --foldly-glass-border-light: rgba(32, 34, 34, 0.8);
-  --foldly-glass-blur-light: 8px;
+  --foldly-glass-blur-light: 20px;
 
   /* Foldly Glass Morphism - Dark Mode */
   --foldly-glass-bg-dark: rgba(2, 6, 24, 0.85);

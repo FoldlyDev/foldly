@@ -12,17 +12,17 @@ import { useFileSignedUrl } from "@/hooks/data/use-files";
 import type { File } from "@/lib/database/schemas";
 import { cn } from "@/lib/utils";
 
-interface FileThumbnailProps {
+interface FilePreviewProps {
   file: File;
   className?: string;
 }
 
 /**
  * Generic blur placeholder for image loading
- * Tiny SVG gradient that Next.js displays while image loads
+ * Larger version for full-size previews
  */
 const IMAGE_BLUR_DATA_URL =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmNWY1ZjUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlNWU1ZTUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=";
+  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZjVmNWY1Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZTVlNWU1Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=";
 
 /**
  * Get icon component for file type
@@ -48,27 +48,27 @@ function getFileIcon(mimeType: string) {
 }
 
 /**
- * File thumbnail component
- * Shows image preview for images, icons for other file types
+ * Full-size file preview component for modals
+ * Shows high-quality image preview for images, icons for other file types
  *
- * Uses signed URLs for private storage file access
- * URLs expire after 24 hours and are cached for 20 minutes
+ * Optimized for large display (modal previews, full-screen views)
+ * Uses 90% quality and responsive sizing for crisp images
  *
  * @example
  * ```tsx
- * <FileThumbnail file={file} />
+ * <FilePreview file={file} className="aspect-video" />
  * ```
  */
-export function FileThumbnail({ file, className }: FileThumbnailProps) {
+export function FilePreview({ file, className }: FilePreviewProps) {
   const isImage = file.mimeType.startsWith('image/');
 
   // Fetch signed URL for image previews
-  const { data: signedUrl, isLoading } = useFileSignedUrl(file.id, {
+  const { data: signedUrl } = useFileSignedUrl(file.id, {
     enabled: isImage,
   });
 
   if (isImage) {
-    // Display image with blur placeholder (Next.js handles loading state)
+    // Display high-quality image with blur placeholder
     if (signedUrl) {
       return (
         <div
@@ -81,10 +81,10 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
             src={signedUrl}
             alt={file.filename}
             fill
-            className="object-cover"
-            sizes="48px"
-            quality={75}
-            priority={false}
+            className="object-contain"
+            sizes="(max-width: 640px) 100vw, 600px"
+            quality={90}
+            priority={true}
             placeholder="blur"
             blurDataURL={IMAGE_BLUR_DATA_URL}
           />
@@ -101,12 +101,12 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
           className
         )}
       >
-        <Icon className="size-16 text-primary/40" strokeWidth={1.5} />
+        <Icon className="size-24 text-primary/40" strokeWidth={1.5} />
       </div>
     );
   }
 
-  // Non-image files: show icon
+  // Non-image files: show larger icon
   const Icon = getFileIcon(file.mimeType);
 
   return (
@@ -116,7 +116,7 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
         className
       )}
     >
-      <Icon className="size-16 text-muted-foreground/40" strokeWidth={1.5} />
+      <Icon className="size-24 text-muted-foreground/40" strokeWidth={1.5} />
     </div>
   );
 }

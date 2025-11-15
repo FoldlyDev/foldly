@@ -217,32 +217,36 @@ export async function getFilesByDateRange(
 
 /**
  * Search files by filename or uploader email
- * Uses PostgreSQL full-text search with GIN index for optimal performance
+ * Uses case-insensitive substring matching (ILIKE) for intuitive user experience
  *
- * OPTIMIZED: Uses tsvector column with GIN index for fast full-text search
- * Performance: ~20ms for 1000+ files (vs ~500ms with LIKE queries)
+ * Search behavior:
+ * - Searches filename, uploader_email, and uploader_name fields
+ * - Case-insensitive partial matching (e.g., "screen" matches "Screenshot")
+ * - Orders results by upload date (newest first)
  *
  * @param workspaceId - The UUID of the workspace
  * @param query - Search query string (searches filename, uploader_email, uploader_name)
- * @returns Array of matching files with folder info ordered by relevance ranking
+ * @returns Array of matching files with folder info ordered by upload date
  *
  * @example
  * ```typescript
- * // Search for invoice files
+ * // Search for files with "invoice" in filename
  * const invoices = await searchFiles('workspace_123', 'invoice');
- * // Matches: 'invoice.pdf', 'Invoice_2024.docx', 'john@invoicing.com', etc.
+ * // Matches: 'invoice.pdf', 'Invoice_2024.docx', 'tax-invoice.xlsx', etc.
  *
- * // Search by uploader domain
+ * // Search by uploader email/domain
  * const clientFiles = await searchFiles('workspace_123', '@example.com');
  * // Returns all files from users with @example.com email addresses
  *
- * // Multi-word search
- * const results = await searchFiles('workspace_123', 'tax invoice 2024');
- * // Matches files containing any of the words (ranked by relevance)
+ * // Partial filename search
+ * const results = await searchFiles('workspace_123', 'screen');
+ * // Matches: 'Screenshot.png', 'screencast.mp4', 'fullscreen-mode.jpg', etc.
  * ```
  */
 export async function searchFiles(workspaceId: string, query: string): Promise<File[]> {
-  // Use PostgreSQL full-text search with ts_rank for relevance sorting
+  // Use ILIKE for case-insensitive substring matching
+  const searchPattern = `%${query}%`;
+
   const result = await postgresClient<{
     id: string;
     filename: string;
@@ -271,9 +275,12 @@ export async function searchFiles(workspaceId: string, query: string): Promise<F
     LEFT JOIN folders folder ON f.parent_folder_id = folder.id
     WHERE
       f.workspace_id = ${workspaceId}
-      AND f.search_vector @@ plainto_tsquery('english', ${query})
+      AND (
+        f.filename ILIKE ${searchPattern}
+        OR f.uploader_email ILIKE ${searchPattern}
+        OR f.uploader_name ILIKE ${searchPattern}
+      )
     ORDER BY
-      ts_rank(f.search_vector, plainto_tsquery('english', ${query})) DESC,
       f.uploaded_at DESC
   `;
 

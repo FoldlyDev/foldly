@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
@@ -19,6 +19,7 @@ import {
   ViewFolderLinkDetailsModal,
   UnlinkFolderConfirmModal,
   UploadFilesModal,
+  SearchModal,
 } from "../modals";
 import type { File, Folder, Link } from "@/lib/database/schemas";
 import { deleteFolderAction, deleteFileAction, getLinkByIdAction } from "@/lib/actions";
@@ -40,7 +41,7 @@ export function UserWorkspace() {
   const { data: workspace, isLoading: isLoadingWorkspace } = useUserWorkspace();
 
   // State management
-  const { groupBy, sortBy, sortOrder, filterEmail, searchQuery} = useWorkspaceFilters();
+  const { groupBy, sortBy, sortOrder, filterEmail } = useWorkspaceFilters();
   const folderNavigation = useFolderNavigation();
 
   // Folder-based data fetching (uses currentFolderId from navigation)
@@ -50,6 +51,7 @@ export function UserWorkspace() {
   const folderSelection = useFolderSelection();
 
   // Modal state
+  const searchModal = useModalState<void>();
   const filePreviewModal = useModalState<File>();
   const createFolderModal = useModalState<void>();
   const renameFolderModal = useModalState<Folder>();
@@ -64,6 +66,11 @@ export function UserWorkspace() {
   const viewLinkDetailsModal = useModalState<{ folder: Folder; link: Link }>();
   const unlinkFolderModal = useModalState<Folder>();
 
+  // Keyboard shortcut: CMD+K (Mac) / CTRL+K (Windows/Linux)
+  useKeyboardShortcut('mod+k', () => {
+    searchModal.open(undefined);
+  });
+
   // Responsive detection
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -73,6 +80,10 @@ export function UserWorkspace() {
   }, []);
 
   // Action handlers
+  const handleSearchClick = () => {
+    searchModal.open(undefined);
+  };
+
   const handleCreateFolder = () => {
     createFolderModal.open(undefined);
   };
@@ -252,9 +263,9 @@ export function UserWorkspace() {
     sortBy,
     sortOrder,
     filterEmail,
-    searchQuery,
     currentFolderId: folderNavigation.currentFolderId,
     onNavigateFolder: folderNavigation.navigateToFolder,
+    onSearchClick: handleSearchClick,
     onCreateFolder: handleCreateFolder,
     onUploadFiles: handleUploadFiles,
     onRenameFolder: handleRenameFolder,
@@ -363,6 +374,24 @@ export function UserWorkspace() {
       <UploadFilesModal
         isOpen={uploadFilesModal.isOpen}
         onOpenChange={(open) => !open && uploadFilesModal.close()}
+        currentFolderId={folderNavigation.currentFolderId}
+      />
+
+      {/* Search modal */}
+      <SearchModal
+        isOpen={searchModal.isOpen}
+        onOpenChange={(open) => !open && searchModal.close()}
+        onFileSelect={(file) => {
+          handlePreviewFile(file);
+        }}
+        onLocateFile={(file) => {
+          // Navigate to the file's parent folder (or root if no parent)
+          folderNavigation.navigateToFolder(file.parentFolderId);
+          searchModal.close();
+        }}
+        onFolderSelect={(folder) => {
+          folderNavigation.navigateToFolder(folder.id);
+        }}
         currentFolderId={folderNavigation.currentFolderId}
       />
     </>

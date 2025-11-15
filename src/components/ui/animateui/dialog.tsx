@@ -53,22 +53,46 @@ function DialogOverlay({ className, ...props }: DialogOverlayProps) {
   );
 }
 
+/**
+ * Glass background variants for modals
+ */
+export type GlassVariant =
+  | "foldly-glass"
+  | "foldly-glass-solid"
+  | "foldly-glass-light"
+  | "foldly-glass-light-solid"
+  | "none";
+
 type DialogContentProps = DialogContentPrimitiveProps & {
   showCloseButton?: boolean;
+  /**
+   * Glass background variant to apply
+   * @default "foldly-glass-light-solid dark:foldly-glass-solid"
+   */
+  background?: GlassVariant;
 };
 
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  background,
   ...props
 }: DialogContentProps) {
+  // Determine background classes based on variant
+  const backgroundClasses = background === "none"
+    ? ""
+    : background
+      ? background
+      : "foldly-glass-light-solid dark:foldly-glass-solid";
+
   return (
     <DialogPortalPrimitive>
       <DialogOverlay />
       <DialogContentPrimitive
         className={cn(
-          "foldly-glass-light-solid dark:foldly-glass-solid fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg sm:max-w-lg",
+          backgroundClasses,
+          "fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-3rem)] max-w-[calc(100%-3rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg sm:max-w-lg",
           "max-h-[calc(100vh-3rem)] overflow-y-auto",
           "[transform:translate3d(-50%,-50%,0)] will-change-transform",
           "[&>*]:min-w-0",

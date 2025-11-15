@@ -8,6 +8,7 @@ export * from './RenameFolderModal';
 export * from './MoveFolderModal';
 export * from './DeleteConfirmModal';
 export * from './UploadFilesModal';
+export * from './SearchModal';
 
 // Folder-link modals
 export * from './ShareFolderModal';

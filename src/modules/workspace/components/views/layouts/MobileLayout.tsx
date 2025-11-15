@@ -30,9 +30,9 @@ interface MobileLayoutProps {
   sortBy: SortBy;
   sortOrder: SortOrder;
   filterEmail: string | null;
-  searchQuery: string;
   currentFolderId: string | null;
   onNavigateFolder: (folderId: string | null) => void;
+  onSearchClick: () => void;
   onCreateFolder: () => void;
   onUploadFiles: () => void;
   onRenameFolder: (folder: Folder) => void;
@@ -63,9 +63,9 @@ export function MobileLayout({
   sortBy,
   sortOrder,
   filterEmail,
-  searchQuery,
   currentFolderId,
   onNavigateFolder,
+  onSearchClick,
   onCreateFolder,
   onUploadFiles,
   onRenameFolder,
@@ -88,28 +88,15 @@ export function MobileLayout({
   onBulkDownload,
   onBulkDelete,
 }: MobileLayoutProps) {
-  // Filter files by email if active
+  // Apply email filter to files
   const filteredFiles = React.useMemo(() => {
-    let result = files;
-
     if (filterEmail) {
-      result = result.filter((file) => file.uploaderEmail === filterEmail);
+      return files.filter((file) => file.uploaderEmail === filterEmail);
     }
+    return files;
+  }, [files, filterEmail]);
 
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (file) =>
-          file.filename.toLowerCase().includes(query) ||
-          file.uploaderEmail?.toLowerCase().includes(query) ||
-          file.uploaderName?.toLowerCase().includes(query)
-      );
-    }
-
-    return result;
-  }, [files, filterEmail, searchQuery]);
-
-  // Sort files
+  // Sort files using existing utility
   const sortedFiles = React.useMemo(
     () => sortFiles(filteredFiles, sortBy, sortOrder),
     [filteredFiles, sortBy, sortOrder]
@@ -151,6 +138,7 @@ export function MobileLayout({
         <WorkspaceHeader
           currentFolderId={currentFolderId}
           onNavigate={onNavigateFolder}
+          onSearchClick={onSearchClick}
         />
 
         {/* Mobile toolbar: Filter sheet + Action buttons */}

@@ -5,8 +5,10 @@
 
 export * from './use-controlled-state';
 export * from './use-data-state';
+export * from './use-debounced-value';
 export * from './use-file-upload';
 export * from './use-folder-navigation';
 export * from './use-is-in-view';
+export * from './use-keyboard-shortcut';
 export * from './use-scroll-position';
 export * from './use-uppy-upload';

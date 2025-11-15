@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/shadcn/button";
 import { Download, Trash2, X } from "lucide-react";
 import type { File } from "@/lib/database/schemas";
-import { FileThumbnail } from "../ui/FileThumbnail";
+import { FilePreview } from "../ui/FilePreview";
 import { UploaderBadge } from "../ui/UploaderBadge";
 
 /**
@@ -62,9 +62,9 @@ export function FilePreviewModal({
         </ModalHeader>
 
         <div className="space-y-6">
-          {/* File Thumbnail */}
+          {/* File Preview */}
           <div className="aspect-video w-full overflow-hidden rounded-lg border bg-muted">
-            <FileThumbnail file={file} className="size-full" />
+            <FilePreview file={file} className="size-full" />
           </div>
 
           {/* File Details */}

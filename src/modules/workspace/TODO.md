@@ -1,21 +1,22 @@
 # Workspace Module - Implementation TODO
 
-**Last Updated:** 2025-11-14
-**Status:** Phase 3F Complete - Production Optimizations & URL State
+**Last Updated:** 2025-11-15
+**Status:** Phase 3G Complete - Global Search Implementation
 **Branch:** `v2/workspace-module`
 
 **Completed:**
 - ✅ Phase 1: Foundation (database queries, validation, query keys)
 - ✅ Phase 2: Actions & Hooks (11 actions, 10 hooks, comprehensive tests)
-- ✅ Phase 3A: UI Components (35 components built)
+- ✅ Phase 3A: UI Components (36 components built)
 - ✅ Phase 3B: Folder-Link System (13 tests passing, full integration)
 - ✅ Phase 3C: File Upload System (UploadFilesModal, Uppy integration, drag-and-drop)
 - ✅ Phase 3D: Duplicate Detection & 409 Error Fix (storage + DB validation)
 - ✅ Phase 3E: Folder Navigation (universal queries/actions/hooks, critical bug fixed)
 - ✅ Phase 3F: Production Optimizations (lint fixes, image optimization, URL state, mobile UX)
+- ✅ Phase 3G: Global Search (SearchModal, ILIKE substring matching, keyboard navigation)
 - ✅ Code Review: 9.2/10, Tech Lead: 9.5/10
 
-**Latest Work (2025-11-14 - Four Sessions):**
+**Latest Work (2025-11-14 to 2025-11-15 - Six Sessions):**
 
 **Session 1: File Upload Implementation**
 - ✅ **File Upload UI Complete** - UploadFilesModal created with drag-and-drop
@@ -47,7 +48,26 @@
 - ✅ **URL State Synchronization** - Global hook with search params for bookmarkable/shareable folders
 - ✅ **Browser Navigation** - Back/forward buttons work, refresh persistence, deep linking
 
-**Next:** Test complete workflow end-to-end, then ready for production
+**Session 5: Global Search Implementation (2025-11-15)**
+- ✅ **SearchModal Component** - Full-featured modal with keyboard navigation (↑↓, Enter, ESC)
+- ✅ **Search Functionality Fixed** - Changed from full-text search to ILIKE substring matching
+- ✅ **Database Trigger Created** - Added trigger for search_vector column (via Supabase MCP)
+- ✅ **Text Highlighting** - Search matches highlighted in results
+- ✅ **Debounced Search** - 300ms debounce for optimal performance
+- ✅ **Utility Components** - Created use-debounced-value, text-highlight, highlight-text
+- ✅ **Keyboard Shortcuts** - Arrow key navigation, Enter to select, ESC to close
+- ✅ **Empty States** - Proper "No results found" and "Searching..." states
+
+**Session 6: Search Enhancements & UI Improvements (2025-11-15)**
+- ✅ **Search Actions Menu** - Added Preview/Locate dropdown for file results
+- ✅ **isPreviewableFile Helper** - Detects image/video/PDF files for preview option
+- ✅ **Locate Functionality** - Navigate to file's parent folder from search results
+- ✅ **Mobile-Compatible Menu** - Reused existing DropdownMenu component
+- ✅ **Compact FileCard Redesign** - Horizontal layout (thumbnail → title → menu)
+- ✅ **Space Efficiency** - Cards now ~64px tall (was 256px), 4x more visible
+- ✅ **Glass Effect Polish** - Increased blur to 20px for premium feel
+
+**Next:** Optional enhancements (file download, bulk delete modal), then production ready
 
 ---
 
@@ -381,69 +401,50 @@ return dbExists || storageExists; // ← Prevents 409 errors
 
 ---
 
-### 3. Search Bar Implementation (HIGH) ⏳ 1-2 hours
+### 3. Global Search ✅ COMPLETE (1.5 hours - 2025-11-15)
 
-**Priority:** 🔴 **HIGH** (Core UX feature - currently non-functional)
+**Priority:** ✅ **COMPLETE** - Core UX feature now fully functional
 
-**Current State:**
-- Search bar UI exists in workspace filters
-- `searchQuery` state exists in `useWorkspaceFilters()` hook
-- 🚨 **CRITICAL BUG**: Search input does nothing - doesn't filter files/folders
+**Implementation:**
+- [x] SearchModal component with keyboard navigation
+- [x] Server-side file search (cross-folder, workspace-wide)
+- [x] Client-side folder filtering (current folder context)
+- [x] ILIKE substring matching (case-insensitive, intuitive)
+- [x] Text highlighting for search matches
+- [x] Debounced search input (300ms)
+- [x] Clear search button
+- [x] "No results found" empty state
+- [x] Loading state with spinner
+- [x] Keyboard shortcuts (↑↓ navigate, Enter select, ESC close)
 
-**Required:**
-- [ ] Wire up search query to filter files in current folder
-- [ ] Wire up search query to filter folders in current folder
-- [ ] Implement fuzzy search or contains-based filtering
-- [ ] Search should work on filename and folder name
-- [ ] Clear search button (X icon) when query is not empty
-- [ ] Show "No results found" state when search returns empty
-- [ ] Debounce search input (300ms delay) for performance
-- [ ] Search should be case-insensitive
-- [ ] Optional: Highlight search matches in results
+**Files Created:**
+1. ✅ `src/modules/workspace/components/modals/SearchModal.tsx` - Full-featured search modal (370 lines)
+2. ✅ `src/hooks/utility/use-debounced-value.ts` - Debounce hook for search input
+3. ✅ `src/hooks/utility/use-keyboard-shortcut.ts` - Keyboard shortcut utility
+4. ✅ `src/lib/utils/text-highlight.ts` - Text matching utility
+5. ✅ `src/components/ui/highlight-text.tsx` - Highlight component for matches
 
-**Implementation Options:**
+**Files Modified:**
+1. ✅ `src/lib/database/queries/file.queries.ts` - Changed searchFiles from full-text to ILIKE
+2. ✅ `src/modules/workspace/components/modals/index.ts` - Exported SearchModal
+3. ✅ `src/modules/workspace/components/views/UserWorkspace.tsx` - Added search modal integration
+4. ✅ `src/modules/workspace/components/sections/WorkspaceHeader.tsx` - Added search button
+5. ✅ `src/hooks/utility/index.ts` - Exported new utility hooks
 
-**Option A: Client-Side Filtering (Recommended for MVP)**
-- Filter files/folders in UserWorkspace.tsx based on `searchQuery`
-- Use `files.filter(f => f.filename.toLowerCase().includes(searchQuery.toLowerCase()))`
-- Pros: Fast, no server round-trip, works offline
-- Cons: Only searches current page of results
+**Database Changes:**
+- ✅ Created PostgreSQL trigger for search_vector column (via Supabase MCP)
+- ✅ Trigger auto-updates search_vector on file insert/update
+- ✅ Backfilled existing files with search vectors
 
-**Option B: Server-Side Search (Future Enhancement)**
-- Use existing `searchFilesAction` (already implemented in file.actions.ts)
-- Pros: Can search across all folders, full-text search capabilities
-- Cons: Requires server round-trip, more complex state management
+**Search Behavior:**
+- Searches filename, uploader_email, and uploader_name
+- Case-insensitive partial matching (e.g., "screen" matches "Screenshot")
+- Server-side file search (searches entire workspace)
+- Client-side folder filtering (searches current folder only)
+- Results ordered by upload date (newest first)
 
-**Files to Modify:**
-1. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add client-side filtering logic
-2. `src/modules/workspace/components/sections/FilterToolbar.tsx` - Verify search input is properly bound
-3. `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - Pass filtered data
-4. `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - Pass filtered data
-
-**Code Example (Client-Side Filtering):**
-```typescript
-// In UserWorkspace.tsx
-const filteredFiles = React.useMemo(() => {
-  if (!searchQuery.trim()) return files;
-  const query = searchQuery.toLowerCase();
-  return files.filter(file =>
-    file.filename.toLowerCase().includes(query)
-  );
-}, [files, searchQuery]);
-
-const filteredFolders = React.useMemo(() => {
-  if (!searchQuery.trim()) return folders;
-  const query = searchQuery.toLowerCase();
-  return folders.filter(folder =>
-    folder.name.toLowerCase().includes(query)
-  );
-}, [folders, searchQuery]);
-
-// Pass filteredFiles and filteredFolders to layouts instead of raw files/folders
-```
-
-**Estimated Time:** 1-2 hours
-**Blocks:** Search is core UX - users expect it to work
+**Implementation Time:** ~1.5 hours (2025-11-15)
+**Status:** ✅ **PRODUCTION READY**
 
 ---
 
@@ -679,7 +680,166 @@ export function UserWorkspace() {
 
 ---
 
-### 9. Storage Quotas & Upload Limits (POST-MVP) ⏳ 4-6 hours
+### 9. Full-Screen Image Viewer (MEDIUM) ⏳ 3-4 hours
+
+**Priority:** 🟡 **MEDIUM** (Significant UX enhancement)
+
+**Feature:** Google Drive/Photos-style full-screen lightbox for image viewing
+
+**Current State:**
+- FilePreviewModal shows images at modal size (~600px max)
+- No zoom, pan, or full-screen capabilities
+- No navigation between images
+- Limited viewing experience for large images
+
+**Recommended Library:** `yet-another-react-lightbox`
+- **Why This Library:**
+  - Modern (2024 active development, TypeScript-first)
+  - Feature-rich (zoom, pan, fullscreen, keyboard nav, swipe gestures)
+  - Plugin system (thumbnails, captions, video support, slideshow)
+  - SSR compatible (works with Next.js App Router)
+  - Mobile optimized (touch gestures, pinch-to-zoom)
+  - Accessible (ARIA labels, keyboard navigation)
+  - Lightweight (~30KB gzipped)
+
+**Features to Implement:**
+
+**A. Core Lightbox Functionality**
+- [ ] Install `yet-another-react-lightbox` package
+- [ ] Create lightbox wrapper component or integrate into FilePreviewModal
+- [ ] Click image → Full-screen overlay with original quality
+- [ ] ESC key to close, click outside to close
+- [ ] Smooth open/close transitions
+
+**B. Image Navigation**
+- [ ] Navigate between files in current folder (←→ arrow keys)
+- [ ] Show image counter ("1 / 15")
+- [ ] Next/Previous buttons on hover
+- [ ] Swipe gestures on mobile
+- [ ] Filter to show only previewable files (images/videos/PDFs)
+
+**C. Zoom & Pan**
+- [ ] Mouse wheel zoom in/out
+- [ ] Pinch-to-zoom on mobile
+- [ ] Pan/drag when zoomed in
+- [ ] Zoom controls (+/- buttons)
+- [ ] Double-click to zoom
+- [ ] Reset zoom on image change
+
+**D. Additional Controls**
+- [ ] Download button (reuse existing download handler)
+- [ ] Delete button (reuse existing delete handler)
+- [ ] Share button (optional - copy file link)
+- [ ] Fullscreen toggle button
+- [ ] Show file metadata overlay (filename, size, upload date)
+
+**E. Optional Plugins**
+- [ ] Thumbnails strip at bottom (navigate between images)
+- [ ] Captions (show filename + uploader email)
+- [ ] Video support (extend to video files)
+- [ ] Slideshow mode (auto-advance timer)
+
+**Implementation Options:**
+
+**Option A: Extend FilePreviewModal**
+- Keep existing modal for metadata view
+- Add "Fullscreen" button to open lightbox
+- Lightbox opens from modal
+- Best for: Gradual enhancement
+
+**Option B: Replace FilePreviewModal**
+- Click file → Directly open lightbox (no modal)
+- Add metadata overlay in lightbox
+- Cleaner UX, fewer clicks
+- Best for: Modern, streamlined experience
+
+**Option C: Context-Based**
+- Click file thumbnail → FilePreviewModal (quick preview + metadata)
+- Click "Fullscreen" in modal → Lightbox
+- Search result click → Direct to lightbox
+- Best for: Flexible UX based on context
+
+**Files to Create:**
+1. `src/modules/workspace/components/ui/ImageLightbox.tsx` - Lightbox wrapper component
+2. `src/modules/workspace/hooks/use-lightbox-state.ts` - Lightbox state management (optional)
+
+**Files to Modify:**
+1. `src/modules/workspace/components/modals/FilePreviewModal.tsx` - Add fullscreen button OR replace with lightbox
+2. `src/modules/workspace/components/views/UserWorkspace.tsx` - Add lightbox state + handlers
+3. `src/modules/workspace/components/ui/FileCard.tsx` - Optional: Direct lightbox on image click
+4. `package.json` - Add `yet-another-react-lightbox` dependency
+
+**Code Example:**
+```typescript
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import Fullscreen from "yet-another-react-lightbox/plugins/fullscreen";
+import "yet-another-react-lightbox/styles.css";
+
+export function ImageLightbox({ files, currentIndex, isOpen, onClose }) {
+  // Convert files to lightbox slides format
+  const slides = files
+    .filter(file => file.mimeType.startsWith('image/'))
+    .map(file => ({
+      src: file.signedUrl, // Fetch signed URLs
+      alt: file.filename,
+      // Optional metadata
+      title: file.filename,
+      description: `Uploaded by ${file.uploaderEmail}`,
+    }));
+
+  return (
+    <Lightbox
+      open={isOpen}
+      close={onClose}
+      index={currentIndex}
+      slides={slides}
+      plugins={[Zoom, Fullscreen]}
+      zoom={{
+        maxZoomPixelRatio: 3,
+        scrollToZoom: true,
+      }}
+      // Custom toolbar buttons
+      toolbar={{
+        buttons: [
+          <DownloadButton key="download" />,
+          <DeleteButton key="delete" />,
+          "close",
+        ],
+      }}
+    />
+  );
+}
+```
+
+**Design Considerations:**
+- Fetch signed URLs for all images in folder (prefetch for fast navigation)
+- Cache signed URLs in React Query (20min cache TTL)
+- Show loading state while fetching signed URL
+- Handle permission errors (signed URL fetch failures)
+- Keyboard shortcuts overlay (show "Press ? for help")
+- Mobile: Disable browser pull-to-refresh during zoom
+
+**Performance Notes:**
+- Lazy-load adjacent images (current + 1 before + 1 after)
+- Prefetch on hover/focus (faster transitions)
+- Use Next.js Image optimization for thumbnails
+- Full-quality images for lightbox (no quality param)
+
+**Estimated Time:** 3-4 hours
+- Setup + basic lightbox: 1 hour
+- Navigation between files: 1 hour
+- Zoom/pan + plugins: 1 hour
+- Polish + mobile testing: 1 hour
+
+**Dependencies:**
+- FilePreview component already exists (high-quality image rendering)
+- Signed URL fetching already implemented (useFileSignedUrl hook)
+- File filtering by mime type (isPreviewableFile helper exists)
+
+---
+
+### 10. Storage Quotas & Upload Limits (POST-MVP) ⏳ 4-6 hours
 
 **Priority:** 🟢 **POST-MVP** (Phase 2 Enhancement)
 
@@ -738,9 +898,9 @@ export function UserWorkspace() {
 | Category | Complete | Remaining | % Done |
 |----------|----------|-----------|--------|
 | **Backend** | 24 queries + 11 actions + 10 hooks | 0 | 100% ✅ |
-| **UI Components** | 35 components | 0 | 100% ✅ |
-| **Core Features** | Folder mgmt + File viewing + Folder-link + File upload + Navigation + URL state | 0 | 100% ✅ |
-| **Production Optimizations** | Lint fixes + Image optimization + Mobile UX | 0 | 100% ✅ |
+| **UI Components** | 36 components | 0 | 100% ✅ |
+| **Core Features** | Folder mgmt + File viewing + Folder-link + File upload + Navigation + URL state + Global search | 0 | 100% ✅ |
+| **Production Optimizations** | Lint fixes + Image optimization + Mobile UX + Search optimization | 0 | 100% ✅ |
 | **Nice-to-Haves** | - | Download + Bulk delete modal + Polish | 0% ⏳ |
 
 **Overall Progress:** 100% complete (MVP feature-complete)
@@ -750,6 +910,7 @@ export function UserWorkspace() {
 - ✅ File upload (drag-and-drop, progress tracking, duplicate detection)
 - ✅ Folder navigation (click to enter, breadcrumb, URL state)
 - ✅ Folder-link system (share folders, permissions)
+- ✅ Global search (modal, keyboard nav, text highlighting, debounced)
 - ✅ Production-ready (0 lint errors, image optimization, mobile UX)
 
 **MVP Readiness:**
@@ -763,7 +924,7 @@ export function UserWorkspace() {
 
 ## 🎯 Recommended Action Plan
 
-### ✅ Completed (2025-11-14 - Sessions 1-4)
+### ✅ Completed (2025-11-14 to 2025-11-15 - Sessions 1-5)
 1. ✅ **File Upload System** (Sessions 1-2)
    - ✅ Created UploadFilesModal with drag-and-drop
    - ✅ Added upload buttons (Desktop + Mobile)
@@ -783,6 +944,14 @@ export function UserWorkspace() {
    - ✅ Mobile breadcrumb UX enhancement
    - ✅ Browser back/forward navigation
    - ✅ Deep linking support
+
+4. ✅ **Global Search** (Session 5)
+   - ✅ Created SearchModal component with full keyboard navigation
+   - ✅ Fixed search functionality (ILIKE substring matching)
+   - ✅ Added database trigger for search_vector column
+   - ✅ Text highlighting for search matches
+   - ✅ Debounced search input (300ms)
+   - ✅ Created utility components (debounce, highlight, text-match)
 
 ### 🎉 MVP COMPLETE - Ready for Production
 

@@ -1,17 +1,20 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/aceternityui/input";
-import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
+import { Button } from "@/components/ui/shadcn/button";
 import { FolderBreadcrumb } from "./FolderBreadcrumb";
 
 /**
  * Workspace header section
- * Contains search bar and folder breadcrumb navigation
+ * Contains search button and folder breadcrumb navigation
  *
  * @example
  * ```tsx
- * <WorkspaceHeader currentFolderId={folderId} onNavigate={handleNavigate} />
+ * <WorkspaceHeader
+ *   currentFolderId={folderId}
+ *   onNavigate={handleNavigate}
+ *   onSearchClick={handleOpenSearch}
+ * />
  * ```
  */
 interface WorkspaceHeaderProps {
@@ -24,14 +27,18 @@ interface WorkspaceHeaderProps {
    * Callback when navigating to a folder
    */
   onNavigate: (folderId: string | null) => void;
+
+  /**
+   * Callback when search button is clicked
+   */
+  onSearchClick: () => void;
 }
 
 export function WorkspaceHeader({
   currentFolderId,
   onNavigate,
+  onSearchClick,
 }: WorkspaceHeaderProps) {
-  const { searchQuery, setSearchQuery } = useWorkspaceFilters();
-
   return (
     <header className="space-y-4">
       {/* Breadcrumb Navigation */}
@@ -40,17 +47,18 @@ export function WorkspaceHeader({
         onNavigate={onNavigate}
       />
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search files and folders..."
-          value={searchQuery}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {/* Search Button */}
+      <Button
+        onClick={onSearchClick}
+        variant="outline"
+        className="w-full justify-start text-muted-foreground font-normal gap-3"
+      >
+        <Search className="size-4 shrink-0" />
+        <span>Search files and folders...</span>
+        <kbd className="ml-auto hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+          <span className="text-xs">⌘</span>K
+        </kbd>
+      </Button>
     </header>
   );
 }

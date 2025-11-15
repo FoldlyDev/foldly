@@ -167,11 +167,17 @@ export type BulkDeleteFilesInput = z.infer<typeof bulkDeleteFilesSchema>;
 
 /**
  * Schema for searching files
- * Validates: search query string
+ * Validates: search query string (2-100 characters)
+ * Minimum 2 characters prevents accidental searches and reduces server load
+ * Maximum 100 characters prevents abuse of PostgreSQL full-text search
  * Used by: searchFilesAction (global)
  */
 export const searchFilesSchema = z.object({
-  query: z.string().min(1, { message: 'Search query is required.' }).trim(),
+  query: z
+    .string()
+    .min(2, { message: 'Search query must be at least 2 characters.' })
+    .max(100, { message: 'Search query must be at most 100 characters.' })
+    .trim(),
 });
 
 export type SearchFilesInput = z.infer<typeof searchFilesSchema>;

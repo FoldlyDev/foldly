@@ -17,8 +17,9 @@ interface FileCardProps {
 }
 
 /**
- * File card component for grid display
- * Shows thumbnail, filename, metadata, and actions
+ * Compact file card component for grid display
+ * Horizontal layout: thumbnail (left) → title (middle) → menu (right)
+ * Flows left-to-right in grid layout for maximum space efficiency
  *
  * @example
  * ```tsx
@@ -42,13 +43,12 @@ export function FileCard({
   const uploadDate = new Date(file.uploadedAt).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
   });
 
   return (
     <article
       className={cn(
-        "relative flex h-64 flex-col overflow-hidden rounded-lg border transition-all hover:shadow-md",
+        "group relative flex items-center gap-3 rounded-lg border p-2 transition-all hover:shadow-md",
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
@@ -61,56 +61,55 @@ export function FileCard({
       }}
       aria-labelledby={`file-${file.id}`}
     >
-      {/* Selection checkbox */}
+      {/* Selection checkbox - left of thumbnail */}
       {showCheckbox && (
-        <div className="absolute left-2 top-2 z-10">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onSelect}
-            onClick={(e) => e.stopPropagation()}
-            className="size-4 rounded border-gray-300 text-primary focus:ring-primary"
-            aria-label={`Select ${file.filename}`}
-          />
-        </div>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={onSelect}
+          onClick={(e) => e.stopPropagation()}
+          className="size-4 shrink-0 rounded border-gray-300 text-primary focus:ring-primary"
+          aria-label={`Select ${file.filename}`}
+        />
       )}
 
-      {/* Context menu */}
-      <div className="absolute right-2 top-2 z-10">
+      {/* Compact thumbnail - 48x48px */}
+      <div className="relative size-12 shrink-0 overflow-hidden rounded bg-muted">
+        <FileThumbnail file={file} />
+      </div>
+
+      {/* File info - flex-1 to take available space */}
+      <div className="flex-1 min-w-0">
+        <h3
+          id={`file-${file.id}`}
+          className="truncate text-sm font-medium"
+          title={file.filename}
+        >
+          {file.filename}
+        </h3>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{fileSizeMB} MB</span>
+          <span>•</span>
+          <span>{uploadDate}</span>
+          {file.uploaderEmail && (
+            <>
+              <span>•</span>
+              <span className="truncate" title={file.uploaderEmail}>
+                {file.uploaderEmail}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Context menu - right side */}
+      <div className="shrink-0">
         <FileContextMenu
           file={file}
           onPreview={onPreview}
           onDownload={onDownload}
           onDelete={onDelete}
         />
-      </div>
-
-      {/* File thumbnail */}
-      <div className="relative h-40 overflow-hidden bg-muted">
-        <FileThumbnail file={file} />
-      </div>
-
-      {/* File metadata */}
-      <div className="flex flex-1 flex-col justify-between p-3">
-        <div className="space-y-1">
-          <h3
-            id={`file-${file.id}`}
-            className="line-clamp-2 text-sm font-medium leading-tight"
-            title={file.filename}
-          >
-            {file.filename}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {fileSizeMB} MB • {uploadDate}
-          </p>
-        </div>
-
-        {/* Uploader badge */}
-        {file.uploaderEmail && (
-          <div className="mt-2">
-            <UploaderBadge email={file.uploaderEmail} name={file.uploaderName} />
-          </div>
-        )}
       </div>
     </article>
   );
