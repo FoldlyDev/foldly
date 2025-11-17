@@ -107,7 +107,6 @@ export function MoveFileModal({
       await moveFile.mutateAsync({
         fileId: file.id,
         newParentId: data.parentFolderId,
-        oldParentId: file.parentFolderId, // For cache invalidation
       });
 
       // TODO: Add success notification when notification system is implemented

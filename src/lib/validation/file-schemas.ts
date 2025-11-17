@@ -148,12 +148,10 @@ export type UpdateFileMetadataInput = z.infer<typeof updateFileMetadataSchema>;
  * Schema for moving a file to a new parent folder
  * Validates: fileId, newParentId (nullable for moving to root)
  * Used by: moveFileAction (global)
- * Note: oldParentId is optional and used only for cache invalidation in the hook
  */
 export const moveFileSchema = z.object({
   fileId: uuidSchema,
   newParentId: fileFolderIdSchema,
-  oldParentId: fileFolderIdSchema.optional(),
 });
 
 export type MoveFileInput = z.infer<typeof moveFileSchema>;

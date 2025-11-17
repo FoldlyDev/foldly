@@ -119,6 +119,16 @@
 - ✅ **Type Safety** - 0 TypeScript errors, proper type definitions with FolderCounts interface
 - ✅ **Files Modified** - 5 files updated (workspace-helpers, UserWorkspace, layouts)
 
+**Session 11: Cache Invalidation Standardization (2025-11-17)**
+- ✅ **Pattern Analysis** - Analyzed cache invalidation across all hooks (Links, Auth, Workspace modules)
+- ✅ **Standardized useMoveFile** - Simplified to use broad invalidation pattern (consistent with useDeleteFile)
+- ✅ **Schema Cleanup** - Removed unused `oldParentId` parameter from `moveFileSchema`
+- ✅ **Component Update** - Removed `oldParentId` from MoveFileModal mutation call
+- ✅ **Architecture Compliance** - All mutations now follow established patterns (targeted for create/update, broad for move/delete)
+- ✅ **Test Validation** - All tests passing (22 file actions, 33 folder actions)
+- ✅ **Type Safety** - 0 TypeScript errors, clean compilation
+- ✅ **Files Modified** - 3 files (use-files.ts, file-schemas.ts, MoveFileModal.tsx)
+
 **Next:** Optional enhancements (bulk delete modal, recently opened files), fully production ready
 
 ---

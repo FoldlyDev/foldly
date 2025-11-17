@@ -424,24 +424,15 @@ export function useMoveFile() {
       const result = await moveFileAction(input);
       return transformActionError(result, 'Failed to move file');
     },
-    onSuccess: async (data, variables) => {
+    onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
 
-      // Invalidate file caches for BOTH old and new parent folders
-      // This ensures folder file counts update correctly
+      // Use broad invalidation for consistency with useDeleteFile and useBulkDeleteFiles
+      // invalidateFiles helper already invalidates fileKeys.all, ensuring all file
+      // queries refresh (workspace, byFolder, byEmail, search, etc.)
+      await invalidateFiles(queryClient);
 
-      // Invalidate new parent folder (where file moved TO)
-      await invalidateFiles(queryClient, data.id, data.parentFolderId || undefined);
-
-      // Invalidate old parent folder (where file moved FROM)
-      if (variables.oldParentId) {
-        await invalidateFiles(queryClient, data.id, variables.oldParentId);
-      } else if (variables.oldParentId === null) {
-        // If moving from root, invalidate root folder queries
-        await invalidateFiles(queryClient, data.id, undefined);
-      }
-
-      // Also invalidate folder caches to update file counts
+      // Invalidate folder caches to update file counts for both source and destination folders
       await invalidateFolders(queryClient);
     },
     onError: createMutationErrorHandler('File move'),
