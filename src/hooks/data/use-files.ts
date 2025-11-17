@@ -17,6 +17,7 @@ import {
   searchFilesAction,
   createFileRecordAction,
   updateFileMetadataAction,
+  moveFileAction,
   deleteFileAction,
   bulkDeleteFilesAction,
   getFileSignedUrlAction,
@@ -24,6 +25,7 @@ import {
 import type {
   CreateFileInput,
   UpdateFileMetadataInput,
+  MoveFileInput,
   DeleteFileInput,
   BulkDeleteFilesInput,
 } from '@/lib/validation';
@@ -378,6 +380,71 @@ export function useUpdateFileMetadata() {
       await invalidateFiles(queryClient, data.id, data.parentFolderId || undefined);
     },
     onError: createMutationErrorHandler('File update'),
+    retry: false,
+  });
+}
+
+/**
+ * Move a file to a new parent folder
+ *
+ * Used in:
+ * - File context menu move action
+ * - File move modal
+ * - Drag-and-drop file organization
+ *
+ * Features:
+ * - Toast notifications on success/error
+ * - Validates destination folder
+ * - Checks for duplicate filenames
+ * - Automatic query invalidation for both source and destination
+ *
+ * @returns Mutation for moving files
+ *
+ * @example
+ * ```tsx
+ * function MoveFileButton({ file }: { file: File }) {
+ *   const moveFile = useMoveFile();
+ *
+ *   const handleMove = (newParentId: string | null) => {
+ *     moveFile.mutate({
+ *       fileId: file.id,
+ *       newParentId
+ *     });
+ *   };
+ *
+ *   return <Button onClick={() => handleMove('folder_123')}>Move</Button>;
+ * }
+ * ```
+ */
+export function useMoveFile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (input: MoveFileInput) => {
+      const result = await moveFileAction(input);
+      return transformActionError(result, 'Failed to move file');
+    },
+    onSuccess: async (data, variables) => {
+      // TODO: Add success notification when notification system is implemented
+
+      // Invalidate file caches for BOTH old and new parent folders
+      // This ensures folder file counts update correctly
+
+      // Invalidate new parent folder (where file moved TO)
+      await invalidateFiles(queryClient, data.id, data.parentFolderId || undefined);
+
+      // Invalidate old parent folder (where file moved FROM)
+      if (variables.oldParentId) {
+        await invalidateFiles(queryClient, data.id, variables.oldParentId);
+      } else if (variables.oldParentId === null) {
+        // If moving from root, invalidate root folder queries
+        await invalidateFiles(queryClient, data.id, undefined);
+      }
+
+      // Also invalidate folder caches to update file counts
+      await invalidateFolders(queryClient);
+    },
+    onError: createMutationErrorHandler('File move'),
     retry: false,
   });
 }

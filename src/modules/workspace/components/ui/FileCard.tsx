@@ -10,6 +10,7 @@ interface FileCardProps {
   file: File;
   onPreview?: () => void;
   onDownload?: () => void;
+  onMove?: () => void;
   onDelete?: () => void;
   isSelected?: boolean;
   onSelect?: () => void;
@@ -34,6 +35,7 @@ export function FileCard({
   file,
   onPreview,
   onDownload,
+  onMove,
   onDelete,
   isSelected = false,
   onSelect,
@@ -108,6 +110,7 @@ export function FileCard({
           file={file}
           onPreview={onPreview}
           onDownload={onDownload}
+          onMove={onMove}
           onDelete={onDelete}
         />
       </div>

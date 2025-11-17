@@ -92,6 +92,11 @@ interface FileGridProps {
   onDownloadFile?: (file: File) => void;
 
   /**
+   * Callback when moving a file
+   */
+  onMoveFile?: (file: File) => void;
+
+  /**
    * Callback when deleting a file
    */
   onDeleteFile?: (file: File) => void;
@@ -148,6 +153,7 @@ export function FileGrid({
   onUnlinkFolder,
   onPreviewFile,
   onDownloadFile,
+  onMoveFile,
   onDeleteFile,
   selectedFolders = new Set(),
   onSelectFolder,
@@ -228,6 +234,7 @@ export function FileGrid({
                 file={file}
                 onPreview={onPreviewFile ? () => onPreviewFile(file) : undefined}
                 onDownload={onDownloadFile ? () => onDownloadFile(file) : undefined}
+                onMove={onMoveFile ? () => onMoveFile(file) : undefined}
                 onDelete={onDeleteFile ? () => onDeleteFile(file) : undefined}
                 isSelected={selectedFiles.has(file.id)}
                 onSelect={

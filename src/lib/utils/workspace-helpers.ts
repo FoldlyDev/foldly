@@ -389,6 +389,70 @@ export function groupFilesByDate(files: File[]): Map<DateRange, File[]> {
 }
 
 // =============================================================================
+// FOLDER COUNTS
+// =============================================================================
+
+/**
+ * Folder count metadata
+ */
+export interface FolderCounts {
+  fileCount: number;
+  uploaderCount: number;
+}
+
+/**
+ * Compute file counts and uploader counts for folders
+ *
+ * @param files - Array of all files in workspace
+ * @param folders - Array of folders to compute counts for
+ * @returns Map of folder ID to counts
+ *
+ * @example
+ * ```typescript
+ * const files = await getWorkspaceFiles(workspaceId);
+ * const folders = await getRootFolders(workspaceId);
+ * const counts = computeFolderCounts(files, folders);
+ *
+ * counts.forEach((count, folderId) => {
+ *   console.log(`Folder ${folderId}: ${count.fileCount} files, ${count.uploaderCount} uploaders`);
+ * });
+ * ```
+ */
+export function computeFolderCounts(
+  files: File[],
+  folders: Folder[]
+): Map<string, FolderCounts> {
+  const counts = new Map<string, FolderCounts>();
+
+  // Initialize counts for all folders
+  for (const folder of folders) {
+    counts.set(folder.id, { fileCount: 0, uploaderCount: 0 });
+  }
+
+  // Group files by parent folder and count
+  for (const folder of folders) {
+    const folderFiles = files.filter(
+      (file) => file.parentFolderId === folder.id
+    );
+
+    // Count unique uploader emails
+    const uploaderEmails = new Set<string>();
+    for (const file of folderFiles) {
+      if (file.uploaderEmail) {
+        uploaderEmails.add(file.uploaderEmail);
+      }
+    }
+
+    counts.set(folder.id, {
+      fileCount: folderFiles.length,
+      uploaderCount: uploaderEmails.size,
+    });
+  }
+
+  return counts;
+}
+
+// =============================================================================
 // SORTING
 // =============================================================================
 

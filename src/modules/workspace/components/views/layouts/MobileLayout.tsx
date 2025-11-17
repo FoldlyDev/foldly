@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { File, Folder } from "@/lib/database/schemas";
 import type { GroupBy, SortBy, SortOrder } from "../../../hooks/use-workspace-filters";
+import type { FolderCounts } from "@/lib/utils/workspace-helpers";
 import { WorkspaceHeader } from "../../sections/WorkspaceHeader";
 import { FilterBottomSheet } from "../../filters/FilterBottomSheet";
 import { FileGrid } from "../../sections/FileGrid";
@@ -26,6 +27,7 @@ import {
 interface MobileLayoutProps {
   files: File[];
   folders: Folder[];
+  folderCounts: Map<string, FolderCounts>;
   groupBy: GroupBy;
   sortBy: SortBy;
   sortOrder: SortOrder;
@@ -46,6 +48,7 @@ interface MobileLayoutProps {
   onUnlinkFolder: (folder: Folder) => void;
   onPreviewFile: (file: File) => void;
   onDownloadFile: (file: File) => void;
+  onMoveFile: (file: File) => void;
   onDeleteFile: (file: File) => void;
   selectedFiles: Set<string>;
   onSelectFile: (fileId: string) => void;
@@ -60,6 +63,7 @@ interface MobileLayoutProps {
 export function MobileLayout({
   files,
   folders,
+  folderCounts,
   groupBy,
   sortBy,
   sortOrder,
@@ -80,6 +84,7 @@ export function MobileLayout({
   onUnlinkFolder,
   onPreviewFile,
   onDownloadFile,
+  onMoveFile,
   onDeleteFile,
   selectedFiles,
   onSelectFile,
@@ -165,6 +170,7 @@ export function MobileLayout({
             groupBy={groupBy}
             onPreviewFile={onPreviewFile}
             onDownloadFile={onDownloadFile}
+            onMoveFile={onMoveFile}
             onDeleteFile={onDeleteFile}
             selectedFiles={selectedFiles}
             onSelectFile={onSelectFile}
@@ -174,6 +180,7 @@ export function MobileLayout({
           <FileGrid
             folders={folders}
             files={sortedFiles}
+            folderCounts={folderCounts}
             currentFolderId={currentFolderId}
             onNavigate={onNavigateFolder}
             onRenameFolder={onRenameFolder}
@@ -187,6 +194,7 @@ export function MobileLayout({
             onUnlinkFolder={onUnlinkFolder}
             onPreviewFile={onPreviewFile}
             onDownloadFile={onDownloadFile}
+            onMoveFile={onMoveFile}
             onDeleteFile={onDeleteFile}
             selectedFolders={selectedFolders}
             onSelectFolder={onSelectFolder}

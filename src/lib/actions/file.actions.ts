@@ -8,7 +8,7 @@
 
 // Import from global utilities
 import { withAuthAndRateLimit, withAuthInputAndRateLimit, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
-import { getAuthenticatedWorkspace, verifyFileOwnership } from '@/lib/utils/authorization';
+import { getAuthenticatedWorkspace, verifyFileOwnership, verifyFolderOwnership } from '@/lib/utils/authorization';
 import { validateBucketConfiguration } from '@/lib/utils/storage-helpers';
 import { createZipFromFiles, type FileForDownload } from '@/lib/utils/download-helpers';
 import { ERROR_MESSAGES } from '@/lib/constants';
@@ -26,6 +26,7 @@ import {
   updateFileMetadata,
   deleteFile,
   bulkDeleteFiles,
+  checkFilenameExists,
 } from '@/lib/database/queries';
 
 // Import storage client
@@ -44,6 +45,7 @@ import type { File } from '@/lib/database/schemas';
 import {
   createFileSchema,
   updateFileMetadataSchema,
+  moveFileSchema,
   deleteFileSchema,
   bulkDeleteFilesSchema,
   bulkDownloadFilesSchema,
@@ -53,6 +55,7 @@ import {
   UPLOADS_BUCKET_NAME,
   type CreateFileInput,
   type UpdateFileMetadataInput,
+  type MoveFileInput,
   type DeleteFileInput,
   type BulkDeleteFilesInput,
   type BulkDownloadFilesInput,
@@ -368,6 +371,117 @@ export const updateFileMetadataAction = withAuthInputAndRateLimit<
     data: updatedFile,
   } as const;
 });
+
+/**
+ * Move a file to a new parent folder
+ * Validates ownership, verifies destination folder, and checks for duplicate filenames
+ * Rate limited: 20 requests per minute (MODERATE preset)
+ *
+ * @param input - Move file input
+ * @param input.fileId - ID of the file to move
+ * @param input.newParentId - ID of the new parent folder (null or undefined to move to root)
+ * @returns Action response with updated file data
+ * @throws Error if file not found or doesn't belong to user's workspace
+ * @throws Error if destination folder doesn't exist or doesn't belong to user's workspace
+ * @throws Error if file with same name already exists in destination
+ *
+ * @example
+ * ```typescript
+ * // Move to root
+ * const result = await moveFileAction({
+ *   fileId: 'file_123',
+ *   newParentId: null
+ * });
+ *
+ * // Move to another folder
+ * const result = await moveFileAction({
+ *   fileId: 'file_123',
+ *   newParentId: 'folder_456'
+ * });
+ * ```
+ */
+export const moveFileAction = withAuthInputAndRateLimit<MoveFileInput, File>(
+  'moveFileAction',
+  RateLimitPresets.MODERATE,
+  async (userId, input) => {
+    // Validate input
+    const validated = validateInput(moveFileSchema, input);
+
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
+
+    // Verify file ownership
+    const existingFile = await verifyFileOwnership(
+      validated.fileId,
+      workspace.id,
+      'moveFileAction'
+    );
+
+    // Early return if file is already in target location (idempotent no-op)
+    // Normalize both values to handle null vs undefined comparison
+    const normalizedNewParentId = validated.newParentId ?? null;
+    const normalizedCurrentParentId = existingFile.parentFolderId ?? null;
+
+    if (normalizedNewParentId === normalizedCurrentParentId) {
+      logger.info('File already in target location (no-op)', {
+        userId,
+        fileId: validated.fileId,
+        parentFolderId: normalizedCurrentParentId,
+      });
+
+      // Return success with existing file data (idempotent operation)
+      return {
+        success: true,
+        data: existingFile,
+      } as const;
+    }
+
+    // Verify destination folder exists and belongs to workspace (if moving to folder)
+    if (validated.newParentId) {
+      await verifyFolderOwnership(
+        validated.newParentId,
+        workspace.id,
+        'moveFileAction'
+      );
+    }
+
+    // Check filename uniqueness in new location
+    const filenameExists = await checkFilenameExists(
+      validated.newParentId,
+      existingFile.filename
+    );
+
+    if (filenameExists) {
+      logger.warn('File with same name already exists in destination', {
+        userId,
+        fileId: validated.fileId,
+        filename: existingFile.filename,
+        newParentId: validated.newParentId,
+      });
+      throw {
+        success: false,
+        error: 'A file with this name already exists in the destination folder.',
+      } as const;
+    }
+
+    // Move file (update parentFolderId)
+    const updatedFile = await updateFileMetadata(validated.fileId, {
+      parentFolderId: validated.newParentId,
+    });
+
+    logger.info('File moved successfully', {
+      userId,
+      fileId: validated.fileId,
+      oldParentId: existingFile.parentFolderId,
+      newParentId: validated.newParentId,
+    });
+
+    return {
+      success: true,
+      data: updatedFile,
+    } as const;
+  }
+);
 
 /**
  * Delete a file (both record and storage)

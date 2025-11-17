@@ -131,17 +131,32 @@ export type CreateFileInput = z.infer<typeof createFileSchema>;
 
 /**
  * Schema for updating file metadata
- * Validates: fileId, optional filename, uploader info
+ * Validates: fileId, optional filename, parentFolderId (for move), uploader info
  * Used by: updateFileMetadataAction (global)
  */
 export const updateFileMetadataSchema = z.object({
   fileId: uuidSchema,
   filename: filenameSchema.optional(),
+  parentFolderId: fileFolderIdSchema.optional(),
   uploaderName: fileUploaderNameSchema.optional(),
   uploaderMessage: uploaderMessageSchema.optional(),
 });
 
 export type UpdateFileMetadataInput = z.infer<typeof updateFileMetadataSchema>;
+
+/**
+ * Schema for moving a file to a new parent folder
+ * Validates: fileId, newParentId (nullable for moving to root)
+ * Used by: moveFileAction (global)
+ * Note: oldParentId is optional and used only for cache invalidation in the hook
+ */
+export const moveFileSchema = z.object({
+  fileId: uuidSchema,
+  newParentId: fileFolderIdSchema,
+  oldParentId: fileFolderIdSchema.optional(),
+});
+
+export type MoveFileInput = z.infer<typeof moveFileSchema>;
 
 /**
  * Schema for deleting a file

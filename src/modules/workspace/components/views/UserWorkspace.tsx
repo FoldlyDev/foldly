@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
+import { computeFolderCounts } from "@/lib/utils/workspace-helpers";
 import { WorkspaceSkeleton } from "../ui/WorkspaceSkeleton";
 import { DesktopLayout } from "./layouts/DesktopLayout";
 import { MobileLayout } from "./layouts/MobileLayout";
@@ -13,6 +14,7 @@ import {
   CreateFolderModal,
   RenameFolderModal,
   MoveFolderModal,
+  MoveFileModal,
   DeleteConfirmModal,
   ShareFolderModal,
   LinkFolderToExistingModal,
@@ -47,6 +49,10 @@ export function UserWorkspace() {
   // Folder-based data fetching (uses currentFolderId from navigation)
   const { data: files = [], isLoading: isLoadingFiles } = useFilesByFolder(folderNavigation.currentFolderId);
   const { data: folders = [], isLoading: isLoadingFolders } = useFoldersByParent(folderNavigation.currentFolderId);
+
+  // Fetch ALL workspace files for folder count computation
+  const { data: allWorkspaceFiles = [] } = useWorkspaceFiles();
+
   const fileSelection = useFileSelection();
   const folderSelection = useFolderSelection();
 
@@ -56,6 +62,7 @@ export function UserWorkspace() {
   const createFolderModal = useModalState<void>();
   const renameFolderModal = useModalState<Folder>();
   const moveFolderModal = useModalState<Folder>();
+  const moveFileModal = useModalState<File>();
   const deleteFolderModal = useModalState<{ id: string; name: string }>();
   const deleteFileModal = useModalState<{ id: string; name: string }>();
   const uploadFilesModal = useModalState<void>();
@@ -140,6 +147,10 @@ export function UserWorkspace() {
     } else {
       console.error("Failed to download file:", result.error);
     }
+  };
+
+  const handleMoveFile = (file: File) => {
+    moveFileModal.open(file);
   };
 
   const handleDeleteFile = (file: File) => {
@@ -313,6 +324,12 @@ export function UserWorkspace() {
     unlinkFolderModal.open(folder);
   };
 
+  // Compute folder counts from ALL workspace files
+  const folderCounts = React.useMemo(
+    () => computeFolderCounts(allWorkspaceFiles, folders),
+    [allWorkspaceFiles, folders]
+  );
+
   // Loading state
   if (isLoadingWorkspace || isLoadingFiles || isLoadingFolders) {
     return <WorkspaceSkeleton />;
@@ -327,6 +344,7 @@ export function UserWorkspace() {
   const layoutProps = {
     files,
     folders,
+    folderCounts, // Add folder counts for display
     groupBy,
     sortBy,
     sortOrder,
@@ -347,6 +365,7 @@ export function UserWorkspace() {
     onUnlinkFolder: handleUnlinkFolder,
     onPreviewFile: handlePreviewFile,
     onDownloadFile: handleDownloadFile,
+    onMoveFile: handleMoveFile,
     onDeleteFile: handleDeleteFile,
     selectedFiles: fileSelection.selectedFiles,
     onSelectFile: fileSelection.toggleFile,
@@ -399,6 +418,11 @@ export function UserWorkspace() {
         folder={moveFolderModal.data}
         isOpen={moveFolderModal.isOpen}
         onOpenChange={(open) => !open && moveFolderModal.close()}
+      />
+      <MoveFileModal
+        file={moveFileModal.data}
+        isOpen={moveFileModal.isOpen}
+        onOpenChange={(open) => !open && moveFileModal.close()}
       />
       <DeleteConfirmModal
         isOpen={deleteFolderModal.isOpen}

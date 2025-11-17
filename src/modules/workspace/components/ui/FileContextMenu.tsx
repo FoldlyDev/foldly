@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, Eye, Download, Trash2 } from "lucide-react";
+import { MoreVertical, Eye, Download, Move, Trash2 } from "lucide-react";
 import type { File } from "@/lib/database/schemas";
 import {
   DropdownMenu,
@@ -15,18 +15,20 @@ interface FileContextMenuProps {
   file: File;
   onPreview?: () => void;
   onDownload?: () => void;
+  onMove?: () => void;
   onDelete?: () => void;
 }
 
 /**
  * File context menu
- * Provides actions: Preview, Download, Delete
+ * Provides actions: Preview, Download, Move, Delete
  *
  * @example
  * ```tsx
  * <FileContextMenu
  *   file={file}
  *   onPreview={() => previewModal.open(file)}
+ *   onMove={() => moveModal.open(file)}
  *   onDelete={() => deleteModal.open({ fileId: file.id })}
  * />
  * ```
@@ -35,6 +37,7 @@ export function FileContextMenu({
   file,
   onPreview,
   onDownload,
+  onMove,
   onDelete,
 }: FileContextMenuProps) {
   return (
@@ -73,7 +76,18 @@ export function FileContextMenu({
             Download
           </DropdownMenuItem>
         )}
-        {(onPreview || onDownload) && onDelete && <DropdownMenuSeparator />}
+        {onMove && (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove();
+            }}
+          >
+            <Move className="mr-2 size-4" />
+            Move
+          </DropdownMenuItem>
+        )}
+        {(onPreview || onDownload || onMove) && onDelete && <DropdownMenuSeparator />}
         {onDelete && (
           <DropdownMenuItem
             onClick={(e) => {

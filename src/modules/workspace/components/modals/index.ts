@@ -6,6 +6,7 @@ export * from './FilePreviewModal';
 export * from './CreateFolderModal';
 export * from './RenameFolderModal';
 export * from './MoveFolderModal';
+export * from './MoveFileModal';
 export * from './DeleteConfirmModal';
 export * from './UploadFilesModal';
 export * from './SearchModal';

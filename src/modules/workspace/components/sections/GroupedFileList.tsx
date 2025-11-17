@@ -41,6 +41,11 @@ interface GroupedFileListProps<T extends string> {
   onDownloadFile?: (file: File) => void;
 
   /**
+   * Callback when moving a file
+   */
+  onMoveFile?: (file: File) => void;
+
+  /**
    * Callback when deleting a file
    */
   onDeleteFile?: (file: File) => void;
@@ -66,6 +71,7 @@ export function GroupedFileList<T extends string>({
   groupBy,
   onPreviewFile,
   onDownloadFile,
+  onMoveFile,
   onDeleteFile,
   selectedFiles = new Set(),
   onSelectFile,
@@ -99,6 +105,9 @@ export function GroupedFileList<T extends string>({
                   onPreview={onPreviewFile ? () => onPreviewFile(file) : undefined}
                   onDownload={
                     onDownloadFile ? () => onDownloadFile(file) : undefined
+                  }
+                  onMove={
+                    onMoveFile ? () => onMoveFile(file) : undefined
                   }
                   onDelete={
                     onDeleteFile ? () => onDeleteFile(file) : undefined

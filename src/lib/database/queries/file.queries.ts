@@ -377,11 +377,12 @@ export async function createFile(data: {
 
 /**
  * Update file metadata
- * Can update filename or other metadata fields
+ * Can update filename, parentFolderId (move), or other metadata fields
  *
  * @param fileId - The UUID of the file to update
  * @param data - Partial file metadata to update
  * @param data.filename - Optional new filename
+ * @param data.parentFolderId - Optional new parent folder UUID (use null to move to root)
  * @param data.uploaderName - Optional new uploader name
  * @param data.uploaderMessage - Optional new uploader message
  * @returns Updated file object
@@ -392,6 +393,16 @@ export async function createFile(data: {
  * // Rename file
  * const renamed = await updateFileMetadata('file_123', {
  *   filename: 'invoice-final.pdf'
+ * });
+ *
+ * // Move file to new folder
+ * const moved = await updateFileMetadata('file_123', {
+ *   parentFolderId: 'folder_456'
+ * });
+ *
+ * // Move to root
+ * const toRoot = await updateFileMetadata('file_123', {
+ *   parentFolderId: null
  * });
  *
  * // Update uploader information
@@ -405,6 +416,7 @@ export async function updateFileMetadata(
   fileId: string,
   data: {
     filename?: string;
+    parentFolderId?: string | null;
     uploaderName?: string | null;
     uploaderMessage?: string | null;
   }
