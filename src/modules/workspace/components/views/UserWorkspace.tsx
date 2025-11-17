@@ -22,7 +22,7 @@ import {
   SearchModal,
 } from "../modals";
 import type { File, Folder, Link } from "@/lib/database/schemas";
-import { deleteFolderAction, deleteFileAction, getLinkByIdAction } from "@/lib/actions";
+import { deleteFolderAction, deleteFileAction, getLinkByIdAction, getFileSignedUrlAction, bulkDownloadFilesAction, downloadFolderAction } from "@/lib/actions";
 
 /**
  * User Workspace view
@@ -123,11 +123,23 @@ export function UserWorkspace() {
     filePreviewModal.open(file);
   };
 
-  const handleDownloadFile = (_file: File) => {
-    // TODO: Implement file download
-    // TODO: Add info notification when notification system is implemented
-    // toast.info("Download feature coming soon");
-    console.log("Download feature coming soon");
+  const handleDownloadFile = async (file: File) => {
+    // Get signed URL for file download
+    const result = await getFileSignedUrlAction({ fileId: file.id });
+
+    if (result.success && result.data) {
+      // Trigger browser download using signed URL
+      const link = document.createElement('a');
+      link.href = result.data;
+      link.download = file.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log("File download started:", file.filename);
+    } else {
+      console.error("Failed to download file:", result.error);
+    }
   };
 
   const handleDeleteFile = (file: File) => {
@@ -149,11 +161,67 @@ export function UserWorkspace() {
     }
   };
 
-  const handleBulkDownload = () => {
-    // TODO: Implement bulk download
-    // TODO: Add info notification when notification system is implemented
-    // toast.info("Bulk download feature coming soon");
-    console.log("Bulk download feature coming soon");
+  const handleBulkDownload = async () => {
+    // Get selected file IDs
+    const selectedFileIds = Array.from(fileSelection.selectedFiles);
+
+    if (selectedFileIds.length === 0) {
+      console.log("No files selected for download");
+      return;
+    }
+
+    // Create ZIP archive of selected files
+    const result = await bulkDownloadFilesAction({ fileIds: selectedFileIds });
+
+    if (result.success && result.data) {
+      // Convert Buffer to Uint8Array for Blob constructor
+      const uint8Array = new Uint8Array(result.data);
+      const blob = new Blob([uint8Array], { type: 'application/zip' });
+
+      // Trigger browser download
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `files-${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup blob URL
+      URL.revokeObjectURL(link.href);
+
+      // Clear selection after download
+      fileSelection.clearSelection();
+
+      console.log("Bulk download completed:", selectedFileIds.length, "files");
+    } else {
+      console.error("Failed to download files:", result.error);
+    }
+  };
+
+  const handleDownloadFolder = async (folder: Folder) => {
+    // Create ZIP archive of folder and all contents
+    const result = await downloadFolderAction({ folderId: folder.id });
+
+    if (result.success && result.data) {
+      // Convert Buffer to Uint8Array for Blob constructor
+      const uint8Array = new Uint8Array(result.data);
+      const blob = new Blob([uint8Array], { type: 'application/zip' });
+
+      // Trigger browser download
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${folder.name}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup blob URL
+      URL.revokeObjectURL(link.href);
+
+      console.log("Folder download completed:", folder.name);
+    } else {
+      console.error("Failed to download folder:", result.error);
+    }
   };
 
   const handleBulkDelete = () => {
@@ -271,6 +339,7 @@ export function UserWorkspace() {
     onRenameFolder: handleRenameFolder,
     onMoveFolder: handleMoveFolder,
     onDeleteFolder: handleDeleteFolder,
+    onDownloadFolder: handleDownloadFolder,
     onShareFolder: handleShareFolder,
     onLinkToExisting: handleLinkToExisting,
     onCopyLinkUrl: handleCopyLinkUrl,

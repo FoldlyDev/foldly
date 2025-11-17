@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreVertical, Edit, Move, Trash2, Share2, Link as LinkIcon, Copy, Eye, Settings, Unlink } from "lucide-react";
+import { MoreVertical, Edit, Move, Trash2, Share2, Link as LinkIcon, Copy, Eye, Settings, Unlink, Download } from "lucide-react";
 import type { Folder } from "@/lib/database/schemas";
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ interface FolderContextMenuProps {
   onRename?: () => void;
   onMove?: () => void;
   onDelete?: () => void;
+  onDownload?: () => void;
   // Folder-link actions (personal folder)
   onShareFolder?: () => void;
   onLinkToExisting?: () => void;
@@ -50,6 +51,7 @@ export function FolderContextMenu({
   onRename,
   onMove,
   onDelete,
+  onDownload,
   onShareFolder,
   onLinkToExisting,
   onCopyLinkUrl,
@@ -100,6 +102,17 @@ export function FolderContextMenu({
           >
             <Move className="mr-2 size-4" />
             Move
+          </DropdownMenuItem>
+        )}
+        {onDownload && (
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload();
+            }}
+          >
+            <Download className="mr-2 size-4" />
+            Download as ZIP
           </DropdownMenuItem>
         )}
 

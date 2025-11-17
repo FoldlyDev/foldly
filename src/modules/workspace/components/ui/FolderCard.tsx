@@ -12,6 +12,7 @@ interface FolderCardProps {
   onRename?: () => void;
   onMove?: () => void;
   onDelete?: () => void;
+  onDownload?: () => void;
   isSelected?: boolean;
   onSelect?: () => void;
   showCheckbox?: boolean;
@@ -46,6 +47,7 @@ export function FolderCard({
   onRename,
   onMove,
   onDelete,
+  onDownload,
   isSelected = false,
   onSelect,
   showCheckbox = false,
@@ -62,7 +64,7 @@ export function FolderCard({
   return (
     <article
       className={cn(
-        "relative flex h-32 flex-col justify-between overflow-hidden rounded-lg border p-4 transition-all hover:shadow-md",
+        "relative flex h-28 flex-col justify-between overflow-hidden rounded-lg border p-4 transition-all hover:shadow-md",
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
@@ -96,6 +98,7 @@ export function FolderCard({
           onRename={onRename}
           onMove={onMove}
           onDelete={onDelete}
+          onDownload={onDownload}
           onShareFolder={onShareFolder}
           onLinkToExisting={onLinkToExisting}
           onCopyLinkUrl={onCopyLinkUrl}
@@ -104,39 +107,47 @@ export function FolderCard({
         />
       </div>
 
-      {/* Folder icon and badges */}
-      <div className="flex items-start gap-3">
+      {/* Folder content */}
+      <div className="flex flex-col items-start justify-center gap-3">
+
+        <div className="flex items-center gap-3">
+          {/* Folder icon */}
         <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
           <FolderIcon className="size-6 text-primary" />
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {isLinkedFolder && (
-            <Badge variant="secondary" className="gap-1 text-xs">
-              <LinkIcon className="size-3" />
-              Shared
-            </Badge>
-          )}
-          {uploaderCount > 0 && (
-            <Badge variant="outline" className="gap-1 text-xs">
-              <Users className="size-3" />
-              {uploaderCount}
-            </Badge>
-          )}
-        </div>
-      </div>
+        {/* Badges, folder name, and file count (vertically stacked) */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1.5">
+            {isLinkedFolder && (
+              <Badge variant="secondary" className="gap-1 text-xs">
+                <LinkIcon className="size-3" />
+                Shared
+              </Badge>
+            )}
+            {uploaderCount > 0 && (
+              <Badge variant="outline" className="gap-1 text-xs">
+                <Users className="size-3" />
+                {uploaderCount}
+              </Badge>
+            )}
+          </div>
 
-      {/* Folder name and file count */}
-      <div className="space-y-1">
-        <h3
-          id={`folder-${folder.id}`}
-          className="line-clamp-2 text-sm font-medium leading-tight"
-        >
-          {folder.name}
-        </h3>
-        <p className="text-xs text-muted-foreground">
-          {fileCount} {fileCount === 1 ? 'file' : 'files'}
-        </p>
+          {/* Folder name */}
+          <h3
+            id={`folder-${folder.id}`}
+            className="line-clamp-2 text-sm font-medium leading-tight"
+          >
+            {folder.name}
+          </h3>
+        </div>
+        </div>
+
+          {/* File count */}
+          <p className="text-xs text-muted-foreground">
+            {fileCount} {fileCount === 1 ? 'file' : 'files'}
+          </p>
       </div>
     </article>
   );

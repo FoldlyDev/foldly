@@ -6,6 +6,7 @@
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/utils/logger';
+import { sanitizeFilenameForStorage } from '@/lib/utils/file-helpers';
 import type {
   UploadSession,
   InitiateUploadParams,
@@ -106,8 +107,12 @@ export async function uploadFile(params: {
   try {
     const supabase = getSupabaseStorageClient();
 
-    // Full path in bucket: path/fileName (matching GCS format)
-    const storagePath = `${path}/${fileName}`;
+    // Sanitize filename for storage path (handles emojis, special chars, Unicode)
+    // Display name remains unchanged in database `filename` column
+    const sanitizedFilename = sanitizeFilenameForStorage(fileName);
+
+    // Full path in bucket: path/sanitizedFileName (matching GCS format)
+    const storagePath = `${path}/${sanitizedFilename}`;
 
     // Convert Buffer to Uint8Array for Supabase upload
     const fileData = new Uint8Array(file);
@@ -221,9 +226,14 @@ export async function getSignedUrl(params: {
   try {
     const supabase = getSupabaseStorageClient();
 
+    // Create signed URL with download parameter to force browser download
+    // This adds Content-Disposition: attachment header to the signed URL
+    // Without this, browsers open previewable files (PDF, images) instead of downloading
     const { data, error } = await supabase.storage
       .from(bucket)
-      .createSignedUrl(gcsPath, expiresIn);
+      .createSignedUrl(gcsPath, expiresIn, {
+        download: true, // Forces Content-Disposition: attachment
+      });
 
     if (error) {
       throw error;
@@ -233,7 +243,7 @@ export async function getSignedUrl(params: {
       throw new Error('Failed to generate signed URL');
     }
 
-    logger.info('Generated signed URL', {
+    logger.info('Generated signed URL with download header', {
       bucket,
       gcsPath,
       expiresIn,

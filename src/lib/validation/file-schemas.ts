@@ -203,3 +203,32 @@ export const getFilesByFolderSchema = z.object({
 });
 
 export type GetFilesByFolderInput = z.infer<typeof getFilesByFolderSchema>;
+
+// =============================================================================
+// DOWNLOAD VALIDATION SCHEMAS
+// =============================================================================
+
+/**
+ * Schema for downloading a single file
+ * Validates: fileId
+ * Used by: downloadFileAction (global)
+ */
+export const downloadFileSchema = z.object({
+  fileId: uuidSchema,
+});
+
+export type DownloadFileInput = z.infer<typeof downloadFileSchema>;
+
+/**
+ * Schema for bulk downloading files
+ * Validates: array of fileIds (max 100 files per download)
+ * Used by: bulkDownloadFilesAction (global)
+ */
+export const bulkDownloadFilesSchema = z.object({
+  fileIds: z
+    .array(uuidSchema)
+    .min(1, { message: 'At least one file ID is required for download.' })
+    .max(100, { message: 'Cannot download more than 100 files at once.' }),
+});
+
+export type BulkDownloadFilesInput = z.infer<typeof bulkDownloadFilesSchema>;

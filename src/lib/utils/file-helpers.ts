@@ -176,3 +176,72 @@ export function isPreviewableFile(mimeType: string): boolean {
     mimeType === 'application/pdf'
   );
 }
+
+/**
+ * Sanitizes filename for safe use in storage paths
+ *
+ * IMPORTANT: This is ONLY for storage paths. Display names (database `filename` column)
+ * should remain unchanged to show users their original filename.
+ *
+ * Uses URL encoding (encodeURIComponent) to handle:
+ * - Emojis (💙, 🎉, etc.)
+ * - Special characters (&, =, ?, etc.)
+ * - Spaces (already handled by storage providers, but encoded for consistency)
+ * - Unicode characters (™, ©, etc.)
+ *
+ * Industry standard approach (2025): URL encoding preserves all characters,
+ * is reversible via decodeURIComponent(), and is universally supported by
+ * storage providers (Supabase Storage, GCS, S3, Azure Blob).
+ *
+ * @param filename - Original filename with extension (may contain emojis/special chars)
+ * @returns URL-encoded filename safe for storage paths
+ *
+ * @example
+ * ```typescript
+ * // Emoji filename
+ * sanitizeFilenameForStorage("💙 Eddy's Notebook.url");
+ * // Returns: "%F0%9F%92%99%20Eddy's%20Notebook.url"
+ *
+ * // Special characters
+ * sanitizeFilenameForStorage("Report Q1 2024 (Final).pdf");
+ * // Returns: "Report%20Q1%202024%20(Final).pdf"
+ *
+ * // Usage in storage path construction:
+ * const storagePath = `uploads/${workspaceId}/${sanitizeFilenameForStorage(filename)}`;
+ * ```
+ */
+export function sanitizeFilenameForStorage(filename: string): string {
+  // URL-encode the entire filename (handles all special characters, emojis, Unicode)
+  // This is reversible via decodeURIComponent() for debugging/logging
+  return encodeURIComponent(filename);
+}
+
+/**
+ * Reverses storage path sanitization for debugging/logging purposes
+ *
+ * Converts URL-encoded storage filename back to human-readable format.
+ * Useful for debugging, logging, or displaying storage paths in admin tools.
+ *
+ * NOTE: User-facing filenames should come from the `filename` database column,
+ * NOT from storage paths. This utility is for internal/debugging use only.
+ *
+ * @param encodedFilename - URL-encoded filename from storage path
+ * @returns Original human-readable filename
+ *
+ * @example
+ * ```typescript
+ * // Debugging storage paths
+ * const storagePath = "uploads/123/%F0%9F%92%99%20Eddy's%20Notebook.url";
+ * const filename = storagePath.split('/').pop();
+ * console.log(desanitizeFilenameFromStorage(filename));
+ * // Logs: "💙 Eddy's Notebook.url"
+ * ```
+ */
+export function desanitizeFilenameFromStorage(encodedFilename: string): string {
+  try {
+    return decodeURIComponent(encodedFilename);
+  } catch (error) {
+    // If decoding fails (malformed encoding), return original string
+    return encodedFilename;
+  }
+}

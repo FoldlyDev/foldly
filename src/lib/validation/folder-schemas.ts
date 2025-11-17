@@ -132,3 +132,14 @@ export const getFolderHierarchySchema = z.object({
 });
 
 export type GetFolderHierarchyInput = z.infer<typeof getFolderHierarchySchema>;
+
+/**
+ * Schema for downloading a folder as ZIP
+ * Validates: folderId
+ * Used by: downloadFolderAction (global)
+ */
+export const downloadFolderSchema = z.object({
+  folderId: uuidSchema,
+});
+
+export type DownloadFolderInput = z.infer<typeof downloadFolderSchema>;

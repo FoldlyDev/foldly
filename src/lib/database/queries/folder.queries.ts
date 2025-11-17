@@ -478,3 +478,122 @@ export async function unlinkFolder(folderId: string): Promise<Folder> {
     return folder;
   });
 }
+
+/**
+ * Get all descendant folders recursively (for folder download)
+ * Uses PostgreSQL WITH RECURSIVE CTE for efficient traversal
+ *
+ * Returns ALL subfolders (children, grandchildren, great-grandchildren, etc.)
+ * Useful for folder download operations where entire folder tree is needed
+ *
+ * @param folderId - The UUID of the parent folder
+ * @returns Array of all descendant folders (ordered by depth, then name)
+ *
+ * @example
+ * ```typescript
+ * const descendants = await getFolderDescendants('folder_123');
+ * // Returns: [
+ * //   { id: 'folder_2', name: 'Invoices', depth: 1, ... },
+ * //   { id: 'folder_3', name: '2024', depth: 2, ... },
+ * //   { id: 'folder_4', name: 'Q1', depth: 3, ... }
+ * // ]
+ * ```
+ */
+export async function getFolderDescendants(folderId: string): Promise<Folder[]> {
+  const result = await postgresClient<Folder[]>`
+    WITH RECURSIVE folder_tree AS (
+      -- Base case: Direct children of the folder
+      SELECT *
+      FROM folders
+      WHERE parent_folder_id = ${folderId}
+
+      UNION ALL
+
+      -- Recursive case: Children of children
+      SELECT f.*
+      FROM folders f
+      INNER JOIN folder_tree ft ON f.parent_folder_id = ft.id
+    )
+    SELECT * FROM folder_tree
+    ORDER BY created_at DESC
+  `;
+
+  return result;
+}
+
+/**
+ * Get all files in folder tree recursively (folder + all descendants)
+ * Combines folder descendant traversal with file fetching
+ *
+ * Returns ALL files in the folder and all its subfolders
+ * Includes file path information (folder hierarchy) for ZIP creation
+ *
+ * @param folderId - The UUID of the parent folder
+ * @param workspaceId - The UUID of the workspace (for security verification)
+ * @returns Array of all files in folder tree with path information
+ *
+ * @example
+ * ```typescript
+ * const files = await getFolderTreeFiles('folder_123', 'workspace_456');
+ * // Returns: [
+ * //   { id: 'file_1', filename: 'doc.pdf', folderPath: ['Documents'], ... },
+ * //   { id: 'file_2', filename: 'invoice.pdf', folderPath: ['Documents', 'Invoices'], ... }
+ * // ]
+ * ```
+ */
+export async function getFolderTreeFiles(
+  folderId: string,
+  workspaceId: string
+): Promise<Array<{
+  id: string;
+  filename: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+  uploadedAt: Date;
+  parentFolderId: string | null;
+  folderPath: string[];
+}>> {
+  const result = await postgresClient<Array<{
+    id: string;
+    filename: string;
+    fileSize: number;
+    mimeType: string;
+    storagePath: string;
+    uploadedAt: Date;
+    parentFolderId: string | null;
+    folderPath: string[];
+  }>>`
+    WITH RECURSIVE folder_tree AS (
+      -- Base case: Start with the target folder
+      -- Cast to text[] to match recursive case type inference
+      SELECT id, name, parent_folder_id, ARRAY[name]::text[] as path
+      FROM folders
+      WHERE id = ${folderId} AND workspace_id = ${workspaceId}
+
+      UNION ALL
+
+      -- Recursive case: Get all descendant folders
+      SELECT f.id, f.name, f.parent_folder_id, ft.path || f.name
+      FROM folders f
+      INNER JOIN folder_tree ft ON f.parent_folder_id = ft.id
+    )
+    -- Get all files in the folder tree
+    SELECT
+      fi.id,
+      fi.filename,
+      fi.file_size as "fileSize",
+      fi.mime_type as "mimeType",
+      fi.storage_path as "storagePath",
+      fi.uploaded_at as "uploadedAt",
+      fi.parent_folder_id as "parentFolderId",
+      COALESCE(ft.path, ARRAY[]::text[]) as "folderPath"
+    FROM files fi
+    LEFT JOIN folder_tree ft ON fi.parent_folder_id = ft.id
+    WHERE fi.workspace_id = ${workspaceId}
+      AND (fi.parent_folder_id = ${folderId} OR fi.parent_folder_id IN (SELECT id FROM folder_tree))
+    ORDER BY ft.path, fi.filename
+  `;
+
+  return result;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { BlurImage } from "@/components/ui/blur-image";
 import {
   FileIcon,
   FileTextIcon,
@@ -16,13 +16,6 @@ interface FileThumbnailProps {
   file: File;
   className?: string;
 }
-
-/**
- * Generic blur placeholder for image loading
- * Tiny SVG gradient that Next.js displays while image loads
- */
-const IMAGE_BLUR_DATA_URL =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmNWY1ZjUiLz48c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlNWU1ZTUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=";
 
 /**
  * Get icon component for file type
@@ -68,7 +61,7 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
   });
 
   if (isImage) {
-    // Display image with blur placeholder (Next.js handles loading state)
+    // Display image with progressive blur effect
     if (signedUrl) {
       return (
         <div
@@ -77,7 +70,7 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
             className
           )}
         >
-          <Image
+          <BlurImage
             src={signedUrl}
             alt={file.filename}
             fill
@@ -85,8 +78,8 @@ export function FileThumbnail({ file, className }: FileThumbnailProps) {
             sizes="48px"
             quality={75}
             priority={false}
-            placeholder="blur"
-            blurDataURL={IMAGE_BLUR_DATA_URL}
+            transitionDuration={300}
+            blurIntensity="blur-sm"
           />
         </div>
       );

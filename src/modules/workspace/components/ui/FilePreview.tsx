@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { BlurImage } from "@/components/ui/blur-image";
 import {
   FileIcon,
   FileTextIcon,
@@ -16,13 +16,6 @@ interface FilePreviewProps {
   file: File;
   className?: string;
 }
-
-/**
- * Generic blur placeholder for image loading
- * Larger version for full-size previews
- */
-const IMAGE_BLUR_DATA_URL =
-  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDYwMCA0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjZjVmNWY1Ii8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjZTVlNWU1Ii8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjYwMCIgaGVpZ2h0PSI0MDAiIGZpbGw9InVybCgjZykiLz48L3N2Zz4=";
 
 /**
  * Get icon component for file type
@@ -68,7 +61,7 @@ export function FilePreview({ file, className }: FilePreviewProps) {
   });
 
   if (isImage) {
-    // Display high-quality image with blur placeholder
+    // Display high-quality image with progressive blur effect
     if (signedUrl) {
       return (
         <div
@@ -77,7 +70,7 @@ export function FilePreview({ file, className }: FilePreviewProps) {
             className
           )}
         >
-          <Image
+          <BlurImage
             src={signedUrl}
             alt={file.filename}
             fill
@@ -85,8 +78,8 @@ export function FilePreview({ file, className }: FilePreviewProps) {
             sizes="(max-width: 640px) 100vw, 600px"
             quality={90}
             priority={true}
-            placeholder="blur"
-            blurDataURL={IMAGE_BLUR_DATA_URL}
+            transitionDuration={700}
+            blurIntensity="blur-md"
           />
         </div>
       );

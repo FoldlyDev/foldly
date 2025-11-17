@@ -6,6 +6,7 @@
 
 import { Storage } from '@google-cloud/storage';
 import { logger } from '@/lib/utils/logger';
+import { sanitizeFilenameForStorage } from '@/lib/utils/file-helpers';
 import type {
   UploadSession,
   InitiateUploadParams,
@@ -121,8 +122,12 @@ export async function uploadFile(params: {
     const storage = getGCSClient();
     const bucketInstance = storage.bucket(bucket);
 
-    // Full path in bucket: path/fileName
-    const gcsPath = `${path}/${fileName}`;
+    // Sanitize filename for storage path (handles emojis, special chars, Unicode)
+    // Display name remains unchanged in database `filename` column
+    const sanitizedFilename = sanitizeFilenameForStorage(fileName);
+
+    // Full path in bucket: path/sanitizedFileName
+    const gcsPath = `${path}/${sanitizedFilename}`;
     const fileRef = bucketInstance.file(gcsPath);
 
     // Upload file
@@ -224,13 +229,16 @@ export async function getSignedUrl(params: {
     const bucketInstance = storage.bucket(bucket);
     const fileRef = bucketInstance.file(gcsPath);
 
+    // Generate signed URL with Content-Disposition header to force download
+    // Without this, browsers open previewable files (PDF, images) instead of downloading
     const [signedUrl] = await fileRef.getSignedUrl({
       version: 'v4',
       action: 'read',
       expires: Date.now() + expiresIn * 1000,
+      responseDisposition: 'attachment', // Forces Content-Disposition: attachment header
     });
 
-    logger.info('Generated signed URL', {
+    logger.info('Generated signed URL with download header', {
       bucket,
       gcsPath,
       expiresIn,

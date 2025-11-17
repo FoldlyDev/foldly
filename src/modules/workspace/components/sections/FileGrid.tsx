@@ -52,6 +52,11 @@ interface FileGridProps {
   onDeleteFolder?: (folder: Folder) => void;
 
   /**
+   * Callback when downloading a folder as ZIP
+   */
+  onDownloadFolder?: (folder: Folder) => void;
+
+  /**
    * Callback when sharing a folder (personal folder)
    */
   onShareFolder?: (folder: Folder) => void;
@@ -135,6 +140,7 @@ export function FileGrid({
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
+  onDownloadFolder,
   onShareFolder,
   onLinkToExisting,
   onCopyLinkUrl,
@@ -187,6 +193,7 @@ export function FileGrid({
                   onRename={onRenameFolder ? () => onRenameFolder(folder) : undefined}
                   onMove={onMoveFolder ? () => onMoveFolder(folder) : undefined}
                   onDelete={onDeleteFolder ? () => onDeleteFolder(folder) : undefined}
+                  onDownload={onDownloadFolder ? () => onDownloadFolder(folder) : undefined}
                   onShareFolder={onShareFolder ? () => onShareFolder(folder) : undefined}
                   onLinkToExisting={onLinkToExisting ? () => onLinkToExisting(folder) : undefined}
                   onCopyLinkUrl={onCopyLinkUrl ? () => onCopyLinkUrl(folder) : undefined}

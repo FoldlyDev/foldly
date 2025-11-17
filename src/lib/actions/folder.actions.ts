@@ -10,6 +10,8 @@
 import { withAuthAndRateLimit, withAuthInputAndRateLimit, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyFolderOwnership } from '@/lib/utils/authorization';
 import { withTransaction } from '@/lib/database/transactions';
+import { createZipFromFolderTree, type FileForDownload } from '@/lib/utils/download-helpers';
+import { validateBucketConfiguration } from '@/lib/utils/storage-helpers';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 // Import database queries
@@ -24,7 +26,12 @@ import {
   isFolderNameAvailable,
   getFolderHierarchy,
   getFolderDepth,
+  getFolderTreeFiles,
 } from '@/lib/database/queries';
+
+// Import storage client
+import { getSignedUrl } from '@/lib/storage/client';
+import { UPLOADS_BUCKET_NAME } from '@/lib/validation';
 
 // Import rate limiting
 import { RateLimitPresets } from '@/lib/middleware/rate-limit';
@@ -43,12 +50,14 @@ import {
   deleteFolderSchema,
   getFolderHierarchySchema,
   getFoldersByParentSchema,
+  downloadFolderSchema,
   type CreateFolderInput,
   type UpdateFolderInput,
   type MoveFolderInput,
   type DeleteFolderInput,
   type GetFolderHierarchyInput,
   type GetFoldersByParentInput,
+  type DownloadFolderInput,
 } from '@/lib/validation';
 
 // Import constants
@@ -607,3 +616,143 @@ export const deleteFolderAction = withAuthInputAndRateLimit<DeleteFolderInput, v
     } as const;
   }
 );
+
+// =============================================================================
+// FOLDER DOWNLOAD ACTIONS
+// =============================================================================
+
+/**
+ * Download folder and all contents as ZIP archive
+ * Creates a ZIP containing the folder and all files in its hierarchy
+ *
+ * Used by:
+ * - Workspace folder download
+ * - Folder export functionality
+ *
+ * Security:
+ * - Verifies folder ownership before creating ZIP
+ * - Generates temporary signed URLs for all files
+ * - Preserves folder structure in ZIP
+ *
+ * @param folderId - UUID of the folder to download
+ * @returns ZIP archive as number array (serializable across server/client boundary)
+ *
+ * @example
+ * ```typescript
+ * const result = await downloadFolderAction({ folderId: 'folder_123' });
+ * if (result.success) {
+ *   // Create download: const blob = new Blob([new Uint8Array(result.data)], { type: 'application/zip' });
+ * }
+ * ```
+ */
+export const downloadFolderAction = withAuthInputAndRateLimit<
+  DownloadFolderInput,
+  number[]
+>('downloadFolderAction', RateLimitPresets.GENEROUS, async (userId, input) => {
+  try {
+    // Validate input
+    const validated = validateInput(downloadFolderSchema, input);
+
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
+
+    // Verify folder ownership (throws if not found/unauthorized)
+    const folder = await verifyFolderOwnership(
+      validated.folderId,
+      workspace.id,
+      'downloadFolderAction'
+    );
+
+    // Validate bucket configuration
+    const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+    if (bucketError) return bucketError;
+
+    // Get all files in folder tree (includes all subfolders recursively)
+    const filesInTree = await getFolderTreeFiles(validated.folderId, workspace.id);
+
+    logger.info('Files found in folder tree', {
+      userId,
+      folderId: validated.folderId,
+      fileCount: filesInTree.length,
+    });
+
+    // Generate signed URLs for all files (empty array if folder is empty)
+    logger.info('Generating signed URLs for files', {
+      userId,
+      folderId: validated.folderId,
+      fileCount: filesInTree.length,
+    });
+
+    const filesForDownload: FileForDownload[] = await Promise.all(
+      filesInTree.map(async (file) => {
+        try {
+          const signedUrl = await getSignedUrl({
+            gcsPath: file.storagePath,
+            bucket: UPLOADS_BUCKET_NAME,
+            expiresIn: 3600, // 1 hour for ZIP creation
+          });
+
+          return {
+            filename: file.filename,
+            signedUrl,
+            folderPath: file.folderPath, // Preserves folder structure in ZIP
+          };
+        } catch (error) {
+          logger.error('Failed to generate signed URL for file', {
+            userId,
+            folderId: validated.folderId,
+            filename: file.filename,
+            storagePath: file.storagePath,
+            error: error instanceof Error ? error.message : String(error),
+          });
+          throw error;
+        }
+      })
+    );
+
+    logger.info('Signed URLs generated successfully', {
+      userId,
+      folderId: validated.folderId,
+      urlCount: filesForDownload.length,
+    });
+
+    // Create ZIP archive with folder structure
+    logger.info('Creating ZIP archive', {
+      userId,
+      folderId: validated.folderId,
+      folderName: folder.name,
+      fileCount: filesForDownload.length,
+    });
+
+    const zipBuffer = await createZipFromFolderTree(filesForDownload, folder.name);
+
+    logger.info('Folder download completed', {
+      userId,
+      workspaceId: workspace.id,
+      folderId: validated.folderId,
+      folderName: folder.name,
+      fileCount: filesInTree.length,
+      zipSizeBytes: zipBuffer.length,
+    });
+
+    // Convert Buffer to number array for Next.js serialization
+    // Buffers/Uint8Arrays cannot be serialized across server/client boundary
+    return {
+      success: true,
+      data: Array.from(zipBuffer),
+    } as const;
+  } catch (error) {
+    logger.error('downloadFolderAction failed with detailed error', {
+      userId,
+      folderId: input.folderId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // Return the actual error message instead of generic one
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred while downloading the folder.',
+    } as const;
+  }
+});

@@ -38,6 +38,7 @@ interface MobileLayoutProps {
   onRenameFolder: (folder: Folder) => void;
   onMoveFolder: (folder: Folder) => void;
   onDeleteFolder: (folder: Folder) => void;
+  onDownloadFolder: (folder: Folder) => void;
   onShareFolder: (folder: Folder) => void;
   onLinkToExisting: (folder: Folder) => void;
   onCopyLinkUrl: (folder: Folder) => void;
@@ -71,6 +72,7 @@ export function MobileLayout({
   onRenameFolder,
   onMoveFolder,
   onDeleteFolder,
+  onDownloadFolder,
   onShareFolder,
   onLinkToExisting,
   onCopyLinkUrl,
@@ -177,6 +179,7 @@ export function MobileLayout({
             onRenameFolder={onRenameFolder}
             onMoveFolder={onMoveFolder}
             onDeleteFolder={onDeleteFolder}
+            onDownloadFolder={onDownloadFolder}
             onShareFolder={onShareFolder}
             onLinkToExisting={onLinkToExisting}
             onCopyLinkUrl={onCopyLinkUrl}

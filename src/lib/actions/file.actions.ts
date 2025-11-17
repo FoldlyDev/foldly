@@ -10,6 +10,7 @@
 import { withAuthAndRateLimit, withAuthInputAndRateLimit, validateInput, type ActionResponse } from '@/lib/utils/action-helpers';
 import { getAuthenticatedWorkspace, verifyFileOwnership } from '@/lib/utils/authorization';
 import { validateBucketConfiguration } from '@/lib/utils/storage-helpers';
+import { createZipFromFiles, type FileForDownload } from '@/lib/utils/download-helpers';
 import { ERROR_MESSAGES } from '@/lib/constants';
 
 // Import database queries
@@ -45,6 +46,7 @@ import {
   updateFileMetadataSchema,
   deleteFileSchema,
   bulkDeleteFilesSchema,
+  bulkDownloadFilesSchema,
   searchFilesSchema,
   getFilesByEmailSchema,
   getFilesByFolderSchema,
@@ -53,6 +55,7 @@ import {
   type UpdateFileMetadataInput,
   type DeleteFileInput,
   type BulkDeleteFilesInput,
+  type BulkDownloadFilesInput,
   type SearchFilesInput,
   type GetFilesByEmailInput,
   type GetFilesByFolderInput,
@@ -720,5 +723,115 @@ export const getFileSignedUrlAction = withAuthInputAndRateLimit<
   return {
     success: true,
     data: signedUrl,
+  } as const;
+});
+
+// =============================================================================
+// FILE DOWNLOAD ACTIONS
+// =============================================================================
+
+/**
+ * Download multiple files as a ZIP archive
+ * Creates a ZIP containing all specified files from user's workspace
+ *
+ * Used by:
+ * - Workspace bulk file download
+ * - Multi-select file operations
+ *
+ * Security:
+ * - Verifies all files belong to user's workspace
+ * - Generates temporary signed URLs for ZIP creation
+ * - Maximum 100 files per download (validation limit)
+ *
+ * @param fileIds - Array of file UUIDs to download (max 100)
+ * @returns ZIP archive as number array (serializable across server/client boundary)
+ *
+ * @example
+ * ```typescript
+ * const result = await bulkDownloadFilesAction({
+ *   fileIds: ['file_1', 'file_2', 'file_3']
+ * });
+ * if (result.success) {
+ *   // Create download: const blob = new Blob([new Uint8Array(result.data)], { type: 'application/zip' });
+ * }
+ * ```
+ */
+export const bulkDownloadFilesAction = withAuthInputAndRateLimit<
+  BulkDownloadFilesInput,
+  number[]
+>('bulkDownloadFilesAction', RateLimitPresets.GENEROUS, async (userId, input) => {
+  // Validate input
+  const validated = validateInput(bulkDownloadFilesSchema, input);
+
+  // Get user's workspace
+  const workspace = await getAuthenticatedWorkspace(userId);
+
+  // Validate bucket configuration
+  const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+  if (bucketError) return bucketError;
+
+  // Get all files and verify ownership
+  const files = await getFilesByIds(validated.fileIds, workspace.id);
+
+  // Verify all files exist and belong to user's workspace
+  const unauthorizedFiles = files.filter((file) => file.workspaceId !== workspace.id);
+  if (unauthorizedFiles.length > 0) {
+    logger.warn('Attempted download of unauthorized files', {
+      userId,
+      workspaceId: workspace.id,
+      fileIds: unauthorizedFiles.map((f) => f.id),
+    });
+
+    return {
+      success: false,
+      error: ERROR_MESSAGES.FILE.ACCESS_DENIED,
+    } as const;
+  }
+
+  // Check if all requested files were found
+  if (files.length !== validated.fileIds.length) {
+    logger.warn('Some files not found for bulk download', {
+      userId,
+      requestedCount: validated.fileIds.length,
+      foundCount: files.length,
+    });
+
+    return {
+      success: false,
+      error: 'One or more files were not found.',
+    } as const;
+  }
+
+  // Generate signed URLs for all files
+  const filesForDownload: FileForDownload[] = await Promise.all(
+    files.map(async (file) => {
+      const signedUrl = await getSignedUrl({
+        gcsPath: file.storagePath,
+        bucket: UPLOADS_BUCKET_NAME,
+        expiresIn: 3600, // 1 hour for ZIP creation
+      });
+
+      return {
+        filename: file.filename,
+        signedUrl,
+      };
+    })
+  );
+
+  // Create ZIP archive
+  const zipBuffer = await createZipFromFiles(filesForDownload, 'files');
+
+  logger.info('Bulk file download completed', {
+    userId,
+    workspaceId: workspace.id,
+    fileCount: files.length,
+    zipSizeBytes: zipBuffer.length,
+  });
+
+  // Convert Buffer to number array for Next.js serialization
+  // Buffers/Uint8Arrays cannot be serialized across server/client boundary
+  return {
+    success: true,
+    data: Array.from(zipBuffer),
   } as const;
 });
