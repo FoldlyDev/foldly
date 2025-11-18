@@ -1130,7 +1130,7 @@ describe('Folder Actions', () => {
       expect(verifyResult.success).toBe(false);
     });
 
-    it('should cascade delete subfolders', async () => {
+    it('should cascade delete subfolders', { timeout: 10000 }, async () => {
       // Arrange: Create folder with subfolders
       const user = await createTestUser();
       createdUserIds.add(user.id);

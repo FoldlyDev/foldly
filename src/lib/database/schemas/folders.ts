@@ -35,7 +35,9 @@ export const folders = pgTable(
     linkId: text("link_id").references(() => links.id, {
       onDelete: "set null",
     }), // FK to links (nullable, set null on link deletion)
-    parentFolderId: text("parent_folder_id"), // Self-reference for hierarchy (nullable for root folders)
+    parentFolderId: text("parent_folder_id").references((): any => folders.id, {
+      onDelete: "cascade",
+    }), // Self-reference for hierarchy (nullable for root folders, CASCADE delete children)
 
     name: varchar("name", { length: 255 }).notNull(), // Folder name
 
