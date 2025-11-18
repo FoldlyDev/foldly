@@ -193,8 +193,8 @@
 - ✅ Phase 1: Extract `use-responsive-detection.ts` - Platform detection hook (COMPLETE)
 - ✅ Phase 2: Create `use-interaction-handlers.ts` - Unified click/tap handlers (COMPLETE)
 - ✅ Phase 3: FileCard/FolderCard integration - Platform-specific behaviors (COMPLETE)
-- ⏳ Phase 4: Keyboard shortcuts (1.5 hrs) - Ctrl+A, Escape, Delete (desktop only)
-- ⏳ Phase 5: Selection auto-clear (30 min) - Clear on folder navigation
+- ✅ Phase 4: Keyboard shortcuts - Ctrl+A, Escape, Delete (desktop only) - COMPLETE
+- ✅ Phase 5: Selection auto-clear - Clear on folder navigation - COMPLETE
 - ⏳ Phase 6: Visual feedback (1 hr) - Selection indicator + card states
 - ⏳ Phase 7: Mobile exit mechanism (30 min) - Cancel button for selection mode
 
@@ -231,8 +231,8 @@
 
 ### Implementation Summary
 
-**Phase 1: Architectural Refactoring (Foundation)** ✅ COMPLETE
-- Create new file structure for mixed operations (better separation of concerns)
+**Phase 1: Architectural Refactoring (Foundation)** ✅ COMPLETEs
+Y- Create new file structure for mixed operations (better separation of concerns)
 - Files to CREATE:
   - `src/lib/actions/file-folder.actions.ts` - Mixed operations
   - `src/lib/validation/file-folder-schemas.ts` - Mixed validation
@@ -319,11 +319,11 @@
 - [x] Run type check (0 errors confirmed)
 - [x] Pattern consistency verified (follows all existing patterns)
 
-**Phase 2: Single File Download** ⏳ PENDING
-- [ ] Modify `handleBulkDownload` to detect single file
-- [ ] Add direct download path using `getFileSignedUrlAction`
-- [ ] Test single file download (direct)
-- [ ] Test multi-item download (ZIP)
+**Phase 2: Single File Download** ✅ COMPLETE
+- [x] Modify `handleBulkDownload` to detect single file
+- [x] Add direct download path using `getFileSignedUrlAction`
+- [x] Test single file download (direct)
+- [x] Test multi-item download (ZIP)
 
 **Phase 3: Mixed Move** ✅ COMPLETE
 - [x] Create `moveMixedSchema` validation

@@ -26,7 +26,7 @@ import {
   SearchModal,
 } from "../modals";
 import type { File, Folder, Link } from "@/lib/database/schemas";
-import { deleteFolderAction, deleteFileAction, getLinkByIdAction, getFileSignedUrlAction, bulkDownloadFilesAction, downloadFolderAction } from "@/lib/actions";
+import { deleteFolderAction, deleteFileAction, getLinkByIdAction, getFileSignedUrlAction, downloadFolderAction } from "@/lib/actions";
 
 /**
  * User Workspace view
@@ -96,6 +96,56 @@ export function UserWorkspace() {
     folderSelection.clearSelection();
     // eslint-disable-next-line
   }, [folderNavigation.currentFolderId]);
+
+  // Keyboard shortcuts (desktop only)
+  // CMD+A / CTRL+A - Select all files and folders
+  useKeyboardShortcut(
+    'mod+a',
+    () => {
+      const fileIds = files.map(f => f.id);
+      const folderIds = folders.map(f => f.id);
+
+      if (fileIds.length > 0) {
+        fileSelection.selectAll(fileIds);
+      }
+      if (folderIds.length > 0) {
+        folderSelection.selectAll(folderIds);
+      }
+    },
+    { enabled: !isMobile && (files.length > 0 || folders.length > 0) }
+  );
+
+  // Delete key - Open bulk delete modal if items selected
+  useKeyboardShortcut(
+    'Delete',
+    () => {
+      const selectedFileIds = Array.from(fileSelection.selectedFiles);
+      const selectedFolderIds = Array.from(folderSelection.selectedFolders);
+      const hasSelection = selectedFileIds.length > 0 || selectedFolderIds.length > 0;
+
+      if (hasSelection) {
+        const selectedFiles = files.filter(f => selectedFileIds.includes(f.id));
+        const selectedFolders = folders.filter(f => selectedFolderIds.includes(f.id));
+        bulkDeleteModal.open({ files: selectedFiles, folders: selectedFolders });
+      }
+    },
+    {
+      enabled: !isMobile && (fileSelection.selectedCount > 0 || folderSelection.selectedCount > 0)
+    }
+  );
+
+  // Escape key - Clear selection
+  useKeyboardShortcut(
+    'Escape',
+    () => {
+      fileSelection.clearSelection();
+      folderSelection.clearSelection();
+    },
+    {
+      enabled: !isMobile && (fileSelection.isSelectMode || folderSelection.isSelectMode),
+      preventDefault: false // Allow Escape to work for modals too
+    }
+  );
 
   // Action handlers
   const handleSearchClick = () => {
@@ -183,10 +233,44 @@ export function UserWorkspace() {
     }
   };
 
-  const handleBulkDownload = () => {
+  const handleBulkDownload = async () => {
     const selectedFileIds = Array.from(fileSelection.selectedFiles);
     const selectedFolderIds = Array.from(folderSelection.selectedFolders);
 
+    // Optimization: Single file download without ZIP wrapper
+    if (selectedFileIds.length === 1 && selectedFolderIds.length === 0) {
+      try {
+        const result = await getFileSignedUrlAction({ fileId: selectedFileIds[0] });
+
+        if (result.success && result.data) {
+          // Find file metadata for better filename
+          const file = files.find(f => f.id === selectedFileIds[0]);
+          const filename = file?.filename || 'download';
+
+          // Direct download via signed URL
+          const link = document.createElement('a');
+          link.href = result.data;
+          link.download = filename;
+          link.target = '_blank'; // Open in new tab if download fails
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Clear selections after successful download
+          fileSelection.clearSelection();
+          folderSelection.clearSelection();
+
+          console.log("Single file download completed:", filename);
+        } else {
+          console.error("Failed to get signed URL:", result.error);
+        }
+      } catch (error) {
+        console.error("Single file download failed:", error);
+      }
+      return;
+    }
+
+    // Multiple items: Use ZIP download (existing logic)
     bulkDownloadMixed.mutate(
       {
         fileIds: selectedFileIds,
