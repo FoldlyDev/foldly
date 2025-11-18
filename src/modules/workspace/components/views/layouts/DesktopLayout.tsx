@@ -58,6 +58,10 @@ interface DesktopLayoutProps {
   onClearSelection: () => void;
   onBulkDownload: () => void;
   onBulkDelete: () => void;
+  enableFileSelectMode?: () => void;
+  isFileSelectMode?: boolean;
+  enableFolderSelectMode?: () => void;
+  isFolderSelectMode?: boolean;
 }
 
 export function DesktopLayout({
@@ -94,6 +98,10 @@ export function DesktopLayout({
   onClearSelection,
   onBulkDownload,
   onBulkDelete,
+  enableFileSelectMode,
+  isFileSelectMode = false,
+  enableFolderSelectMode,
+  isFolderSelectMode = false,
 }: DesktopLayoutProps) {
   // Apply email filter to files
   const filteredFiles = React.useMemo(() => {
@@ -201,6 +209,10 @@ export function DesktopLayout({
             selectedFiles={selectedFiles}
             onSelectFile={onSelectFile}
             showCheckboxes={isSelectMode}
+            enableFileSelectMode={enableFileSelectMode}
+            isFileSelectMode={isFileSelectMode}
+            enableFolderSelectMode={enableFolderSelectMode}
+            isFolderSelectMode={isFolderSelectMode}
           />
         )}
       </div>
@@ -210,7 +222,7 @@ export function DesktopLayout({
         <SelectionToolbar
           selectedCount={selectedCount}
           onClear={onClearSelection}
-          onDownload={hasFiles ? onBulkDownload : undefined}
+          onDownload={onBulkDownload}
           onDelete={onBulkDelete}
           hasFolders={hasFolders}
           hasFiles={hasFiles}

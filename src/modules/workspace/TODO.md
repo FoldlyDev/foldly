@@ -1,7 +1,7 @@
 # Workspace Module - Implementation TODO
 
-**Last Updated:** 2025-11-16
-**Status:** Phase 3K Complete - File Move & Folder Count System
+**Last Updated:** 2025-11-17
+**Status:** Multi-Selection Enhancements Complete - Architectural Refactoring Planned
 **Branch:** `v2/workspace-module`
 
 **Completed:**
@@ -129,7 +129,177 @@
 - ✅ **Type Safety** - 0 TypeScript errors, clean compilation
 - ✅ **Files Modified** - 3 files (use-files.ts, file-schemas.ts, MoveFileModal.tsx)
 
-**Next:** Optional enhancements (bulk delete modal, recently opened files), fully production ready
+**Session 12: Multi-Selection System Planning (2025-11-17)**
+- ✅ **Tech Lead Review** - Comprehensive plan review with GO WITH FIXES decision
+- ✅ **Plan Revision** - Incorporated all 6 blocker fixes and recommendations
+- ✅ **Hook Naming Fixed** - Renamed to `use-responsive-detection.ts` and `use-interaction-handlers.ts`
+- ✅ **Type Safety Added** - Complete TypeScript interfaces for all hooks
+- ✅ **Mobile Exit Mechanism** - Added Cancel button in WorkspaceHeader for selection mode
+- ✅ **Haptic Fallback** - Feature detection + graceful degradation for iOS
+- ✅ **Click Implementation** - Using native `onDoubleClick` (no artificial delays)
+- ✅ **Cleanup Functions** - Timer cleanup in effects and event handlers
+- ✅ **Implementation Complete** - Phases 1-3 implemented and tested
+
+**Session 13: Multi-Selection Enhancements & Bug Fixes (2025-11-17)**
+- ✅ **Selection Mode Auto-Disable** - Checkboxes disappear when all items deselected
+- ✅ **Mixed Download System** - Single ZIP for files + folders with hierarchy preservation
+- ✅ **Download Button Fix** - Shows for any selection type (files, folders, or mixed)
+- ✅ **Clear Button Fix** - Properly disables selection mode when clearing
+- ✅ **3-Layer Architecture** - bulkDownloadMixedAction with validation → action → hook
+- ✅ **Dual Selection Hooks** - use-file-selection.ts and use-folder-selection.ts synchronized
+- ✅ **Toolbar Integration** - SelectionToolbar shows count and bulk actions
+- ✅ **Type Safety** - 0 TypeScript errors across all components
+- ⏳ **Architectural Refactoring Planned** - Separate file-folder operations for better separation of concerns
+
+**Multi-Selection Implementation Plan:**
+- ✅ Phase 1: Extract `use-responsive-detection.ts` - Platform detection hook (COMPLETE)
+- ✅ Phase 2: Create `use-interaction-handlers.ts` - Unified click/tap handlers (COMPLETE)
+- ✅ Phase 3: FileCard/FolderCard integration - Platform-specific behaviors (COMPLETE)
+- ⏳ Phase 4: Keyboard shortcuts (1.5 hrs) - Ctrl+A, Escape, Delete (desktop only)
+- ⏳ Phase 5: Selection auto-clear (30 min) - Clear on folder navigation
+- ⏳ Phase 6: Visual feedback (1 hr) - Selection indicator + card states
+- ⏳ Phase 7: Mobile exit mechanism (30 min) - Cancel button for selection mode
+
+**Features Implemented:**
+- ✅ Desktop: Single-click selects, double-click opens
+- ✅ Mobile: Tap opens, long-press enters selection mode + haptic
+- ✅ SelectionToolbar: Fixed bottom bar with count + bulk actions
+- ✅ Bulk Download: Mixed file/folder download as single ZIP
+- ✅ Auto-disable: Selection mode turns off when all items deselected
+- ✅ Clear button: Properly exits selection mode
+
+**Files Created:** 2 utility hooks + SelectionToolbar component
+**Files Modified:** 15+ components across workspace module
+**Time Spent:** ~8 hours (Phases 1-3 + enhancements)
+
+**Next:** ⏳ Architectural refactoring (see below)
+
+---
+
+## 🚧 PLANNED: File-Folder Architectural Refactoring (2025-11-17)
+
+**Priority:** 🟡 **HIGH** (Architectural improvement + new functionality)
+
+**Status:** ⏳ **PLANNED** - Analysis complete, implementation pending
+
+### Problem Statement
+
+**Current Issues:**
+1. **Mixed Move Missing** - Users can select files + folders but can't move them together
+2. **Mixed Delete Missing** - Users can select files + folders but can't delete them together
+3. **Architectural Violation** - `bulkDownloadMixedAction` is in `file.actions.ts` (should be in dedicated file-folder file)
+4. **Single File Download UX** - Single file wrapped in ZIP instead of direct download
+
+### Solution Overview
+
+**Phase 1: Architectural Refactoring (Foundation)** ⏳ 2-3 hours
+- Create new file structure for mixed operations (better separation of concerns)
+- Files to CREATE:
+  - `src/lib/actions/file-folder.actions.ts` - Mixed operations
+  - `src/lib/validation/file-folder-schemas.ts` - Mixed validation
+  - `src/hooks/data/use-file-folder.ts` - Mixed hooks
+- Move existing `bulkDownloadMixed` functionality:
+  - Move `bulkDownloadMixedAction` from file.actions.ts → file-folder.actions.ts
+  - Move `bulkDownloadMixedSchema` from file-schemas.ts → file-folder-schemas.ts
+  - Move `useBulkDownloadMixed` from use-files.ts → use-file-folder.ts
+- Update imports in UserWorkspace.tsx and verify no regressions
+
+**Phase 2: Single File Download Optimization** ⏳ 1 hour
+- Optimize `handleBulkDownload` to detect single file selection
+- If `fileIds.length === 1 && folderIds.length === 0`: Use direct download via `getFileSignedUrlAction`
+- Otherwise: Use `bulkDownloadMixed` for ZIP
+- Better UX: "document.pdf" instead of "download-2025-01-17.zip"
+
+**Phase 3: Mixed Move Action** ⏳ 3-4 hours
+- Create 3-layer architecture:
+  1. **Validation**: `moveMixedSchema` (fileIds[], folderIds[], targetFolderId)
+  2. **Server Action**: `moveMixedAction` (ownership verification, edge case handling)
+  3. **React Query Hook**: `useMoveMixed` (optimistic updates, cache invalidation)
+- Integrate into UserWorkspace.tsx
+- Update SelectionToolbar to show Move button
+- Handle edge cases: circular references, name conflicts, permissions
+
+**Phase 4: Mixed Delete Action** ⏳ 3-4 hours
+- Create 3-layer architecture:
+  1. **Validation**: `deleteMixedSchema` (fileIds[], folderIds[])
+  2. **Server Action**: `deleteMixedAction` with dual deletion patterns:
+     - Files: Storage-first deletion (billing integrity)
+     - Folders: DB deletion with CASCADE
+     - Partial success pattern (delete what succeeds, report failures)
+  3. **React Query Hook**: `useDeleteMixed` (cache invalidation, error handling)
+- Integrate into UserWorkspace.tsx
+- Update SelectionToolbar delete handler
+
+### Files to Create (4 total)
+1. `src/lib/actions/file-folder.actions.ts` - Mixed operations (download, move, delete)
+2. `src/lib/validation/file-folder-schemas.ts` - Mixed validation schemas
+3. `src/hooks/data/use-file-folder.ts` - Mixed React Query hooks
+4. `src/lib/database/queries/file-folder.queries.ts` (if needed) - Mixed queries
+
+### Files to Modify (10+ total)
+1. `src/lib/actions/file.actions.ts` - Remove bulkDownloadMixedAction
+2. `src/lib/validation/file-schemas.ts` - Remove bulkDownloadMixedSchema
+3. `src/hooks/data/use-files.ts` - Remove useBulkDownloadMixed
+4. `src/modules/workspace/components/views/UserWorkspace.tsx` - Update imports + handlers
+5. `src/modules/workspace/components/sections/SelectionToolbar.tsx` - Add Move button
+6. `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - Update props
+7. `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - Update props
+8. Additional components as needed for prop threading
+
+### Implementation Checklist
+
+**Phase 1: Architectural Refactoring**
+- [ ] Create `src/lib/actions/file-folder.actions.ts` file
+- [ ] Create `src/lib/validation/file-folder-schemas.ts` file
+- [ ] Create `src/hooks/data/use-file-folder.ts` file
+- [ ] Move `bulkDownloadMixedAction` to new file
+- [ ] Move `bulkDownloadMixedSchema` to new file
+- [ ] Move `useBulkDownloadMixed` to new file
+- [ ] Update imports in UserWorkspace.tsx
+- [ ] Run type check (0 errors expected)
+- [ ] Test bulk download still works
+
+**Phase 2: Single File Download**
+- [ ] Modify `handleBulkDownload` to detect single file
+- [ ] Add direct download path using `getFileSignedUrlAction`
+- [ ] Test single file download (direct)
+- [ ] Test multi-item download (ZIP)
+
+**Phase 3: Mixed Move**
+- [ ] Create `moveMixedSchema` validation
+- [ ] Create `moveMixedAction` server action
+- [ ] Create `useMoveMixed` React Query hook
+- [ ] Integrate into UserWorkspace.tsx
+- [ ] Add Move button to SelectionToolbar
+- [ ] Test move files + folders together
+- [ ] Write unit tests (recommended)
+
+**Phase 4: Mixed Delete**
+- [ ] Create `deleteMixedSchema` validation
+- [ ] Create `deleteMixedAction` with storage-first pattern
+- [ ] Create `useDeleteMixed` React Query hook
+- [ ] Integrate into UserWorkspace.tsx
+- [ ] Update SelectionToolbar delete handler
+- [ ] Test delete files + folders together
+- [ ] Verify storage-first integrity maintained
+- [ ] Write unit tests (recommended)
+
+### Estimated Time
+- **Phase 1:** 2-3 hours (foundation refactoring)
+- **Phase 2:** 1 hour (download optimization)
+- **Phase 3:** 3-4 hours (move action + integration)
+- **Phase 4:** 3-4 hours (delete action + integration)
+- **Total:** 9-12 hours
+
+### Key Architectural Decisions
+- ✅ **Separation of Concerns**: Single-entity operations stay in their files, mixed operations in dedicated file-folder files
+- ✅ **3-Layer Pattern**: All actions follow Database Query → Server Action → React Query Hook
+- ✅ **Storage-First for Files**: Files deleted from storage first (billing integrity), DB second
+- ✅ **Partial Success Pattern**: Delete what succeeds, report what fails (better UX for bulk operations)
+- ✅ **Better UX**: Single file = direct download, multiple items = ZIP
+
+### Dependencies
+- None - can start immediately after multi-selection Phases 1-3 complete ✅
 
 ---
 

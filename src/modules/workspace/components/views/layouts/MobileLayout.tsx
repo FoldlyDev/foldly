@@ -58,6 +58,10 @@ interface MobileLayoutProps {
   onClearSelection: () => void;
   onBulkDownload: () => void;
   onBulkDelete: () => void;
+  enableFileSelectMode?: () => void;
+  isFileSelectMode?: boolean;
+  enableFolderSelectMode?: () => void;
+  isFolderSelectMode?: boolean;
 }
 
 export function MobileLayout({
@@ -94,6 +98,10 @@ export function MobileLayout({
   onClearSelection,
   onBulkDownload,
   onBulkDelete,
+  enableFileSelectMode,
+  isFileSelectMode = false,
+  enableFolderSelectMode,
+  isFolderSelectMode = false,
 }: MobileLayoutProps) {
   // Apply email filter to files
   const filteredFiles = React.useMemo(() => {
@@ -201,6 +209,10 @@ export function MobileLayout({
             selectedFiles={selectedFiles}
             onSelectFile={onSelectFile}
             showCheckboxes={isSelectMode}
+            enableFileSelectMode={enableFileSelectMode}
+            isFileSelectMode={isFileSelectMode}
+            enableFolderSelectMode={enableFolderSelectMode}
+            isFolderSelectMode={isFolderSelectMode}
           />
         )}
       </div>
@@ -210,7 +222,7 @@ export function MobileLayout({
         <SelectionToolbar
           selectedCount={selectedCount}
           onClear={onClearSelection}
-          onDownload={hasFiles ? onBulkDownload : undefined}
+          onDownload={onBulkDownload}
           onDelete={onBulkDelete}
           hasFolders={hasFolders}
           hasFiles={hasFiles}

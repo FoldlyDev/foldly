@@ -27,6 +27,8 @@ import {
   deleteFile,
   bulkDeleteFiles,
   checkFilenameExists,
+  getFolderById,
+  getFolderTreeFiles,
 } from '@/lib/database/queries';
 
 // Import storage client
@@ -49,6 +51,7 @@ import {
   deleteFileSchema,
   bulkDeleteFilesSchema,
   bulkDownloadFilesSchema,
+  bulkDownloadMixedSchema,
   searchFilesSchema,
   getFilesByEmailSchema,
   getFilesByFolderSchema,
@@ -59,6 +62,7 @@ import {
   type DeleteFileInput,
   type BulkDeleteFilesInput,
   type BulkDownloadFilesInput,
+  type BulkDownloadMixedInput,
   type SearchFilesInput,
   type GetFilesByEmailInput,
   type GetFilesByFolderInput,
@@ -944,6 +948,170 @@ export const bulkDownloadFilesAction = withAuthInputAndRateLimit<
 
   // Convert Buffer to number array for Next.js serialization
   // Buffers/Uint8Arrays cannot be serialized across server/client boundary
+  return {
+    success: true,
+    data: Array.from(zipBuffer),
+  } as const;
+});
+
+/**
+ * Download files and folders as a single ZIP archive (mixed selection)
+ * Creates a ZIP containing selected files (at root) and selected folders (with structure)
+ *
+ * Used by:
+ * - Workspace bulk download (mixed file/folder selection)
+ *
+ * Security:
+ * - Verifies all files and folders belong to user's workspace
+ * - Generates temporary signed URLs for ZIP creation
+ * - Maximum 100 items total (validation limit)
+ *
+ * ZIP Structure:
+ * - Selected files appear at root level
+ * - Selected folders appear with full hierarchy preserved
+ *
+ * @param fileIds - Array of file UUIDs to download at root level
+ * @param folderIds - Array of folder UUIDs to download with structure
+ * @returns ZIP archive as number array (serializable across server/client boundary)
+ *
+ * @example
+ * ```typescript
+ * const result = await bulkDownloadMixedAction({
+ *   fileIds: ['file_1', 'file_2'],
+ *   folderIds: ['folder_1']
+ * });
+ * if (result.success) {
+ *   // Creates: download.zip with file_1, file_2 (at root) + Folder1/ (with contents)
+ * }
+ * ```
+ */
+export const bulkDownloadMixedAction = withAuthInputAndRateLimit<
+  BulkDownloadMixedInput,
+  number[]
+>('bulkDownloadMixedAction', RateLimitPresets.GENEROUS, async (userId, input) => {
+  // Validate input
+  const validated = validateInput(bulkDownloadMixedSchema, input);
+
+  // Get user's workspace
+  const workspace = await getAuthenticatedWorkspace(userId);
+
+  // Validate bucket configuration
+  const bucketError = validateBucketConfiguration(UPLOADS_BUCKET_NAME, 'Uploads');
+  if (bucketError) return bucketError;
+
+  const allFilesForDownload: FileForDownload[] = [];
+
+  // Process directly selected files (root level in ZIP)
+  if (validated.fileIds.length > 0) {
+    const files = await getFilesByIds(validated.fileIds, workspace.id);
+
+    // Verify ownership
+    const unauthorizedFiles = files.filter((file) => file.workspaceId !== workspace.id);
+    if (unauthorizedFiles.length > 0) {
+      logger.warn('Attempted download of unauthorized files', {
+        userId,
+        workspaceId: workspace.id,
+        fileIds: unauthorizedFiles.map((f) => f.id),
+      });
+
+      return {
+        success: false,
+        error: ERROR_MESSAGES.FILE.ACCESS_DENIED,
+      } as const;
+    }
+
+    // Check if all requested files were found
+    if (files.length !== validated.fileIds.length) {
+      logger.warn('Some files not found for bulk download', {
+        userId,
+        requestedCount: validated.fileIds.length,
+        foundCount: files.length,
+      });
+
+      return {
+        success: false,
+        error: 'One or more files were not found.',
+      } as const;
+    }
+
+    // Generate signed URLs for root-level files
+    const rootFiles = await Promise.all(
+      files.map(async (file) => {
+        const signedUrl = await getSignedUrl({
+          gcsPath: file.storagePath,
+          bucket: UPLOADS_BUCKET_NAME,
+          expiresIn: 3600,
+        });
+
+        return {
+          filename: file.filename,
+          signedUrl,
+          // No folderPath = root level in ZIP
+        };
+      })
+    );
+
+    allFilesForDownload.push(...rootFiles);
+  }
+
+  // Process selected folders (with hierarchy preserved in ZIP)
+  if (validated.folderIds.length > 0) {
+    for (const folderId of validated.folderIds) {
+      // Verify folder ownership
+      const folder = await getFolderById(folderId);
+      if (!folder || folder.workspaceId !== workspace.id) {
+        logger.warn('Attempted download of unauthorized folder', {
+          userId,
+          workspaceId: workspace.id,
+          folderId,
+        });
+
+        return {
+          success: false,
+          error: ERROR_MESSAGES.FOLDER.ACCESS_DENIED,
+        } as const;
+      }
+
+      // Get all files in folder tree (with folder paths)
+      const folderFiles = await getFolderTreeFiles(folderId, workspace.id);
+
+      // Generate signed URLs for folder files
+      const folderFilesForDownload = await Promise.all(
+        folderFiles.map(async (file) => {
+          const signedUrl = await getSignedUrl({
+            gcsPath: file.storagePath,
+            bucket: UPLOADS_BUCKET_NAME,
+            expiresIn: 3600,
+          });
+
+          return {
+            filename: file.filename,
+            signedUrl,
+            folderPath: file.folderPath, // Preserves hierarchy
+          };
+        })
+      );
+
+      allFilesForDownload.push(...folderFilesForDownload);
+    }
+  }
+
+  // Create ZIP archive with mixed structure
+  const zipBuffer = await createZipFromFiles(
+    allFilesForDownload,
+    'download'
+  );
+
+  logger.info('Mixed bulk download completed', {
+    userId,
+    workspaceId: workspace.id,
+    fileCount: validated.fileIds.length,
+    folderCount: validated.folderIds.length,
+    totalFilesInZip: allFilesForDownload.length,
+    zipSizeBytes: zipBuffer.length,
+  });
+
+  // Convert Buffer to number array for Next.js serialization
   return {
     success: true,
     data: Array.from(zipBuffer),

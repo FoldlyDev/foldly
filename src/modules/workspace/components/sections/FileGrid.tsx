@@ -136,6 +136,26 @@ interface FileGridProps {
    * Used to determine which empty state to show
    */
   currentFolderId?: string | null;
+
+  /**
+   * Callback to enable file selection mode
+   */
+  enableFileSelectMode?: () => void;
+
+  /**
+   * Whether file selection mode is active
+   */
+  isFileSelectMode?: boolean;
+
+  /**
+   * Callback to enable folder selection mode
+   */
+  enableFolderSelectMode?: () => void;
+
+  /**
+   * Whether folder selection mode is active
+   */
+  isFolderSelectMode?: boolean;
 }
 
 export function FileGrid({
@@ -162,6 +182,10 @@ export function FileGrid({
   showCheckboxes = false,
   folderCounts = new Map(),
   currentFolderId = null,
+  enableFileSelectMode,
+  isFileSelectMode = false,
+  enableFolderSelectMode,
+  isFolderSelectMode = false,
 }: FileGridProps) {
   const hasContent = folders.length > 0 || files.length > 0;
 
@@ -214,6 +238,8 @@ export function FileGrid({
                   showCheckbox={showCheckboxes}
                   fileCount={counts.fileCount}
                   uploaderCount={counts.uploaderCount}
+                  enableSelectMode={enableFolderSelectMode}
+                  isSelectMode={isFolderSelectMode}
                 />
               );
             })}
@@ -241,6 +267,8 @@ export function FileGrid({
                   onSelectFile ? () => onSelectFile(file.id) : undefined
                 }
                 showCheckbox={showCheckboxes}
+                enableSelectMode={enableFileSelectMode}
+                isSelectMode={isFileSelectMode}
               />
             ))}
           </div>

@@ -4,6 +4,7 @@ import { Folder as FolderIcon, Link as LinkIcon, Users } from "lucide-react";
 import type { Folder } from "@/lib/database/schemas";
 import { Badge } from "@/components/ui/shadcn/badge";
 import { cn } from "@/lib/utils";
+import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
 import { FolderContextMenu } from "./FolderContextMenu";
 
 interface FolderCardProps {
@@ -25,11 +26,19 @@ interface FolderCardProps {
   onCopyLinkUrl?: () => void;
   onViewLinkDetails?: () => void;
   onUnlinkFolder?: () => void;
+  /** Callback to enable selection mode */
+  enableSelectMode?: () => void;
+  /** Whether selection mode is currently active */
+  isSelectMode?: boolean;
 }
 
 /**
  * Folder card component
  * Displays folder with link badge and people count
+ *
+ * Platform-specific interactions:
+ * - Desktop: Single-click selects, double-click navigates
+ * - Mobile: Tap navigates (default), long-press enters selection mode
  *
  * @example
  * ```tsx
@@ -38,6 +47,8 @@ interface FolderCardProps {
  *   onNavigate={() => navigateToFolder(folder.id)}
  *   fileCount={15}
  *   uploaderCount={3}
+ *   enableSelectMode={folderSelection.enableSelectMode}
+ *   isSelectMode={folderSelection.isSelectMode}
  * />
  * ```
  */
@@ -58,8 +69,59 @@ export function FolderCard({
   onCopyLinkUrl,
   onViewLinkDetails,
   onUnlinkFolder,
+  enableSelectMode,
+  isSelectMode = false,
 }: FolderCardProps) {
   const isLinkedFolder = !!folder.linkId;
+
+  // Platform detection
+  const { isMobile } = useResponsiveDetection();
+
+  // Interaction handlers
+  const handlers = useInteractionHandlers({
+    onSingleClick: () => {
+      // Desktop: Single-click enters selection mode + selects
+      // Mobile: Only select if already in selection mode
+      if (isMobile && !isSelectMode) return; // On mobile, tap navigates (handled by mobile click logic)
+
+      if (!isMobile) {
+        // Desktop: Enter selection mode on first click
+        if (!isSelectMode && enableSelectMode) {
+          enableSelectMode();
+        }
+        onSelect?.();
+      } else if (isSelectMode) {
+        // Mobile in selection mode: tap toggles selection
+        onSelect?.();
+      }
+    },
+    onDoubleClick: () => {
+      // Desktop: Double-click navigates
+      if (!isMobile) {
+        onNavigate?.();
+      }
+    },
+    onLongPress: () => {
+      // Mobile: Long-press enters selection mode + selects
+      if (isMobile && !isSelectMode) {
+        if (enableSelectMode) {
+          enableSelectMode();
+        }
+        onSelect?.();
+      }
+    },
+  });
+
+  // Click handler for current onClick behavior (mobile tap to navigate)
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't handle if clicking checkbox or context menu
+    if ((e.target as HTMLElement).closest('input, button')) return;
+
+    // Mobile: Tap navigates (if not in selection mode)
+    if (isMobile && !isSelectMode) {
+      onNavigate?.();
+    }
+  };
 
   return (
     <article
@@ -68,13 +130,13 @@ export function FolderCard({
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
-        onNavigate && "cursor-pointer"
+        (onNavigate || isSelectMode) && "cursor-pointer"
       )}
-      onClick={(e) => {
-        // Don't navigate if clicking checkbox or context menu
-        if ((e.target as HTMLElement).closest('input, button')) return;
-        onNavigate?.();
-      }}
+      onClick={isMobile ? handleCardClick : handlers.handleClick}
+      onDoubleClick={!isMobile ? handlers.handleDoubleClick : undefined}
+      onTouchStart={isMobile ? handlers.handleLongPress.onTouchStart : undefined}
+      onTouchEnd={isMobile ? handlers.handleLongPress.onTouchEnd : undefined}
+      onTouchCancel={isMobile ? handlers.handleLongPress.onTouchCancel : undefined}
       aria-labelledby={`folder-${folder.id}`}
     >
       {/* Selection checkbox */}

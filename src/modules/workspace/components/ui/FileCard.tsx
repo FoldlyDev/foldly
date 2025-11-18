@@ -2,6 +2,7 @@
 
 import type { File } from "@/lib/database/schemas";
 import { cn } from "@/lib/utils";
+import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
 import { FileThumbnail } from "./FileThumbnail";
 import { UploaderBadge } from "./UploaderBadge";
 import { FileContextMenu } from "./FileContextMenu";
@@ -15,6 +16,10 @@ interface FileCardProps {
   isSelected?: boolean;
   onSelect?: () => void;
   showCheckbox?: boolean;
+  /** Callback to enable selection mode */
+  enableSelectMode?: () => void;
+  /** Whether selection mode is currently active */
+  isSelectMode?: boolean;
 }
 
 /**
@@ -22,12 +27,18 @@ interface FileCardProps {
  * Horizontal layout: thumbnail (left) → title (middle) → menu (right)
  * Flows left-to-right in grid layout for maximum space efficiency
  *
+ * Platform-specific interactions:
+ * - Desktop: Single-click selects, double-click opens preview
+ * - Mobile: Tap opens preview (default), long-press enters selection mode
+ *
  * @example
  * ```tsx
  * <FileCard
  *   file={file}
  *   onPreview={() => previewModal.open(file)}
  *   onDelete={() => deleteModal.open({ fileId: file.id })}
+ *   enableSelectMode={fileSelection.enableSelectMode}
+ *   isSelectMode={fileSelection.isSelectMode}
  * />
  * ```
  */
@@ -40,12 +51,63 @@ export function FileCard({
   isSelected = false,
   onSelect,
   showCheckbox = false,
+  enableSelectMode,
+  isSelectMode = false,
 }: FileCardProps) {
   const fileSizeMB = (file.fileSize / (1024 * 1024)).toFixed(2);
   const uploadDate = new Date(file.uploadedAt).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
+
+  // Platform detection
+  const { isMobile } = useResponsiveDetection();
+
+  // Interaction handlers
+  const handlers = useInteractionHandlers({
+    onSingleClick: () => {
+      // Desktop: Single-click enters selection mode + selects
+      // Mobile: Only select if already in selection mode
+      if (isMobile && !isSelectMode) return; // On mobile, tap opens (handled by onDoubleClick logic)
+
+      if (!isMobile) {
+        // Desktop: Enter selection mode on first click
+        if (!isSelectMode && enableSelectMode) {
+          enableSelectMode();
+        }
+        onSelect?.();
+      } else if (isSelectMode) {
+        // Mobile in selection mode: tap toggles selection
+        onSelect?.();
+      }
+    },
+    onDoubleClick: () => {
+      // Desktop: Double-click opens preview
+      if (!isMobile) {
+        onPreview?.();
+      }
+    },
+    onLongPress: () => {
+      // Mobile: Long-press enters selection mode + selects
+      if (isMobile && !isSelectMode) {
+        if (enableSelectMode) {
+          enableSelectMode();
+        }
+        onSelect?.();
+      }
+    },
+  });
+
+  // Click handler for current onClick behavior (mobile tap to open)
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't handle if clicking checkbox or context menu
+    if ((e.target as HTMLElement).closest('input, button')) return;
+
+    // Mobile: Tap opens preview (if not in selection mode)
+    if (isMobile && !isSelectMode) {
+      onPreview?.();
+    }
+  };
 
   return (
     <article
@@ -54,13 +116,13 @@ export function FileCard({
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
-        onPreview && "cursor-pointer"
+        (onPreview || isSelectMode) && "cursor-pointer"
       )}
-      onClick={(e) => {
-        // Don't preview if clicking checkbox or context menu
-        if ((e.target as HTMLElement).closest('input, button')) return;
-        onPreview?.();
-      }}
+      onClick={isMobile ? handleCardClick : handlers.handleClick}
+      onDoubleClick={!isMobile ? handlers.handleDoubleClick : undefined}
+      onTouchStart={isMobile ? handlers.handleLongPress.onTouchStart : undefined}
+      onTouchEnd={isMobile ? handlers.handleLongPress.onTouchEnd : undefined}
+      onTouchCancel={isMobile ? handlers.handleLongPress.onTouchCancel : undefined}
       aria-labelledby={`file-${file.id}`}
     >
       {/* Selection checkbox - left of thumbnail */}

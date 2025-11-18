@@ -245,3 +245,21 @@ export const bulkDownloadFilesSchema = z.object({
 });
 
 export type BulkDownloadFilesInput = z.infer<typeof bulkDownloadFilesSchema>;
+
+/**
+ * Schema for bulk downloading files and folders (mixed selection)
+ * Validates: arrays of fileIds and folderIds (max 100 items total)
+ * Used by: bulkDownloadMixedAction (global)
+ */
+export const bulkDownloadMixedSchema = z.object({
+  fileIds: z.array(uuidSchema).default([]),
+  folderIds: z.array(uuidSchema).default([]),
+}).refine(
+  (data) => data.fileIds.length + data.folderIds.length > 0,
+  { message: 'At least one file or folder ID is required for download.' }
+).refine(
+  (data) => data.fileIds.length + data.folderIds.length <= 100,
+  { message: 'Cannot download more than 100 items at once.' }
+);
+
+export type BulkDownloadMixedInput = z.infer<typeof bulkDownloadMixedSchema>;

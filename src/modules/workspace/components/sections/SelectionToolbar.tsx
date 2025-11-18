@@ -91,8 +91,8 @@ export function SelectionToolbar({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* Download (files only) */}
-          {hasFiles && onDownload && (
+          {/* Download (files and/or folders) */}
+          {onDownload && (
             <Button
               variant="outline"
               size="sm"

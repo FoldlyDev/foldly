@@ -98,6 +98,12 @@ export function useFileSelection(): UseFileSelectionReturn {
       } else {
         next.add(fileId);
       }
+
+      // Auto-disable selection mode when all items deselected
+      if (next.size === 0) {
+        setIsSelectMode(false);
+      }
+
       return next;
     });
   }, []);
@@ -109,6 +115,7 @@ export function useFileSelection(): UseFileSelectionReturn {
 
   const clearSelection = useCallback(() => {
     setSelectedFiles(new Set());
+    setIsSelectMode(false);
   }, []);
 
   const isFileSelected = useCallback(

@@ -4,7 +4,7 @@ import * as React from "react";
 import { ChevronRight, Home, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
 import { Skeleton } from "@/components/ui/shadcn/skeleton";
-import { useFolderHierarchy } from "@/hooks";
+import { useFolderHierarchy, useResponsiveDetection } from "@/hooks";
 
 /**
  * Folder breadcrumb navigation
@@ -32,15 +32,9 @@ export function FolderBreadcrumb({
   onNavigate,
 }: FolderBreadcrumbProps) {
   const { data: hierarchy, isLoading: isLoadingHierarchy } = useFolderHierarchy(currentFolderId);
-  const [isMobile, setIsMobile] = React.useState(false);
 
   // Responsive detection
-  React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  const { isMobile } = useResponsiveDetection();
 
   // Loading state
   if (isLoadingHierarchy && currentFolderId) {

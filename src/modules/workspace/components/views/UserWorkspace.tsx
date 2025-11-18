@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
@@ -37,7 +37,8 @@ import { deleteFolderAction, deleteFileAction, getLinkByIdAction, getFileSignedU
  * - Delegates presentation to DesktopLayout/MobileLayout
  */
 export function UserWorkspace() {
-  const [isMobile, setIsMobile] = React.useState(false);
+  // Responsive detection
+  const { isMobile } = useResponsiveDetection();
 
   // Data fetching
   const { data: workspace, isLoading: isLoadingWorkspace } = useUserWorkspace();
@@ -55,6 +56,9 @@ export function UserWorkspace() {
 
   const fileSelection = useFileSelection();
   const folderSelection = useFolderSelection();
+
+  // Bulk download mutation
+  const bulkDownloadMixed = useBulkDownloadMixed();
 
   // Modal state
   const searchModal = useModalState<void>();
@@ -77,14 +81,6 @@ export function UserWorkspace() {
   useKeyboardShortcut('mod+k', () => {
     searchModal.open(undefined);
   });
-
-  // Responsive detection
-  React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Action handlers
   const handleSearchClick = () => {
@@ -172,41 +168,38 @@ export function UserWorkspace() {
     }
   };
 
-  const handleBulkDownload = async () => {
-    // Get selected file IDs
+  const handleBulkDownload = () => {
     const selectedFileIds = Array.from(fileSelection.selectedFiles);
+    const selectedFolderIds = Array.from(folderSelection.selectedFolders);
 
-    if (selectedFileIds.length === 0) {
-      console.log("No files selected for download");
-      return;
-    }
+    bulkDownloadMixed.mutate(
+      {
+        fileIds: selectedFileIds,
+        folderIds: selectedFolderIds,
+      },
+      {
+        onSuccess: (zipData) => {
+          // Convert number array to Blob
+          const uint8Array = new Uint8Array(zipData);
+          const blob = new Blob([uint8Array], { type: 'application/zip' });
 
-    // Create ZIP archive of selected files
-    const result = await bulkDownloadFilesAction({ fileIds: selectedFileIds });
+          // Trigger browser download
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `download-${new Date().toISOString().split('T')[0]}.zip`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(link.href);
 
-    if (result.success && result.data) {
-      // Convert Buffer to Uint8Array for Blob constructor
-      const uint8Array = new Uint8Array(result.data);
-      const blob = new Blob([uint8Array], { type: 'application/zip' });
+          // Clear selections after successful download
+          fileSelection.clearSelection();
+          folderSelection.clearSelection();
 
-      // Trigger browser download
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `files-${new Date().toISOString().split('T')[0]}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      // Cleanup blob URL
-      URL.revokeObjectURL(link.href);
-
-      // Clear selection after download
-      fileSelection.clearSelection();
-
-      console.log("Bulk download completed:", selectedFileIds.length, "files");
-    } else {
-      console.error("Failed to download files:", result.error);
-    }
+          console.log("Bulk download completed:", selectedFileIds.length, "files,", selectedFolderIds.length, "folders");
+        },
+      }
+    );
   };
 
   const handleDownloadFolder = async (folder: Folder) => {
@@ -378,6 +371,10 @@ export function UserWorkspace() {
     },
     onBulkDownload: handleBulkDownload,
     onBulkDelete: handleBulkDelete,
+    enableFileSelectMode: fileSelection.enableSelectMode,
+    isFileSelectMode: fileSelection.isSelectMode,
+    enableFolderSelectMode: folderSelection.enableSelectMode,
+    isFolderSelectMode: folderSelection.isSelectMode,
   };
 
   return (

@@ -98,6 +98,12 @@ export function useFolderSelection(): UseFolderSelectionReturn {
       } else {
         next.add(folderId);
       }
+
+      // Auto-disable selection mode when all items deselected
+      if (next.size === 0) {
+        setIsSelectMode(false);
+      }
+
       return next;
     });
   }, []);
@@ -109,6 +115,7 @@ export function useFolderSelection(): UseFolderSelectionReturn {
 
   const clearSelection = useCallback(() => {
     setSelectedFolders(new Set());
+    setIsSelectMode(false);
   }, []);
 
   const isFolderSelected = useCallback(
