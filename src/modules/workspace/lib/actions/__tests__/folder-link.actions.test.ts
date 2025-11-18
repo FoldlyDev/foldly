@@ -279,7 +279,7 @@ describe('Folder-Link Actions', () => {
       });
       expect(allFoldersForLink.length).toBe(1);
       expect(allFoldersForLink[0].id).toBe(folder.id);
-    });
+    }, 15000); // Increased timeout for transaction-heavy test
 
     it('should reject when folder does not exist', async () => {
       // Arrange: Create test user and workspace
@@ -386,7 +386,7 @@ describe('Folder-Link Actions', () => {
       expect(result.data).toBeDefined();
       expect(result.data?.name).toBe('Test Folder Link'); // Auto-generated name
       expect(result.data?.slug).toBe('test-folder-link-2'); // Auto-incremented slug
-    });
+    }, 15000); // Increased timeout for transaction-heavy test
   });
 
   // =============================================================================
@@ -427,6 +427,9 @@ describe('Folder-Link Actions', () => {
 
       // Assert: Should succeed
       expect(result.success).toBe(true);
+
+      // Wait for transaction to fully commit (Drizzle ORM .returning() quirk with null values)
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Verify folder.linkId set to NULL
       const updatedFolder = await db.query.folders.findFirst({

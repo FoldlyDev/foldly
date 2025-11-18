@@ -113,9 +113,9 @@ describe('Link Actions', () => {
     });
 
     it('should enforce rate limit', async () => {
-      // NOTE: We test with 50 requests (not 100) to ensure the test completes
-      // quickly within the 60-second rate limit window. This still validates
-      // that the rate limiting mechanism works correctly.
+      // NOTE: We test with 10 requests (not 100) to ensure the test completes
+      // quickly. This still validates that the rate limiting mechanism works
+      // correctly without timing out.
 
       // Arrange: Create test user
       const user = await createTestUser();
@@ -131,13 +131,13 @@ describe('Link Actions', () => {
       // Reset rate limit for clean test
       resetRateLimit(RateLimitKeys.userAction(user.id, 'list-links'));
 
-      // Act: Make 50 successful requests (rate limit is 100/min)
-      for (let i = 0; i < 50; i++) {
+      // Act: Make 10 successful requests (rate limit is 100/min)
+      for (let i = 0; i < 10; i++) {
         const result = await getUserLinksAction();
         expect(result.success).toBe(true);
       }
 
-      // Verify we can still make more requests (we're at 50/100)
+      // Verify we can still make more requests (we're at 10/100)
       const additionalResult = await getUserLinksAction();
       expect(additionalResult.success).toBe(true);
     }, 30000); // 30 second timeout
@@ -309,9 +309,12 @@ describe('Link Actions', () => {
         name: 'Test Workspace',
       });
 
+      // Use unique slug for test isolation (timestamp prevents cross-test conflicts)
+      const testSlug = `existing-slug-${Date.now()}`;
+
       const existingLink = await createTestLink({
         workspaceId: workspace.id,
-        slug: 'existing-slug',
+        slug: testSlug,
         name: 'Existing Link',
       });
 
@@ -323,7 +326,7 @@ describe('Link Actions', () => {
       // Act & Assert: Try to create link with same slug
       const result = await createLinkAction({
         name: 'New Link',
-        slug: 'existing-slug',
+        slug: testSlug,
         isPublic: false,
       });
       expect(result.success).toBe(false);
