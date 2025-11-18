@@ -262,8 +262,13 @@ export function useUpdateLink() {
     },
     onSuccess: async (data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate link caches
-      await invalidateLinks(queryClient, data.id);
+
+      // Cross-module invalidation: Link re-activation may recreate root folder
+      // Invalidate both links and folders so workspace module sees recreated folder
+      await Promise.all([
+        invalidateLinks(queryClient, data.id),
+        invalidateFolders(queryClient), // Root folder may be recreated on re-activation
+      ]);
     },
     onError: createMutationErrorHandler('Link update'),
     retry: false,

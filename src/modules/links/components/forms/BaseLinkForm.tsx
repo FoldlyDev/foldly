@@ -34,7 +34,7 @@ import { SingleFileUpload } from "@/components/ui/originui/file-upload";
 import { MultiEmailInput } from "../inputs/MultiEmailInput";
 import { ColorPickerInput } from "../inputs/ColorPickerInput";
 import { ImageIcon, CalendarIcon, Eye, EyeOff } from "lucide-react";
-import type { CreateLinkFormData } from "../../lib/validation";
+import type { CreateLinkFormData, EditLinkFormData } from "../../lib/validation";
 
 // =============================================================================
 // TYPES
@@ -133,6 +133,38 @@ export const LinkTypeToggle: React.FC = React.memo(() => {
   );
 });
 LinkTypeToggle.displayName = "LinkTypeToggle";
+
+export const LinkActiveToggle: React.FC = React.memo(() => {
+  const { control, watch } = useFormContext<EditLinkFormData>();
+  const isActive = watch("isActive");
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="space-y-0.5">
+          <Label htmlFor="isActive">Link Status</Label>
+          <p className="text-sm text-muted-foreground">
+            {isActive
+              ? "Link is active and accepting uploads"
+              : "Link is paused and not accepting uploads"}
+          </p>
+        </div>
+        <Controller
+          name="isActive"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="isActive"
+              checked={field.value}
+              onCheckedChange={field.onChange}
+            />
+          )}
+        />
+      </div>
+    </div>
+  );
+});
+LinkActiveToggle.displayName = "LinkActiveToggle";
 
 export const AllowedEmailsField: React.FC = React.memo(() => {
   const {

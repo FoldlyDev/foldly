@@ -30,6 +30,8 @@ import {
   getLinkById,
   getUserById,
   createPermission,
+  getRootFolderByLinkId,
+  createFolder,
 } from '@/lib/database/queries';
 
 // Import rate limiting (RateLimitPresets used in HOF parameters)
@@ -710,6 +712,30 @@ export const updateLinkAction = withAuthInputAndRateLimit<UpdateLinkInput, Link>
         logo: existingLink.branding?.logo ?? null, // Preserve existing logo (logo updates via separate action)
         colors: validated.branding.colors ?? existingLink.branding?.colors ?? null,
       };
+    }
+
+    // Check if link is being re-activated (isActive: false → true)
+    // If re-activating and link has no folder, recreate the root folder
+    if (validated.isActive === true && existingLink.isActive === false) {
+      const rootFolder = await getRootFolderByLinkId(validated.linkId);
+
+      if (!rootFolder) {
+        // Link lost its folder (likely deleted), recreate root folder
+        await createFolder({
+          workspaceId: workspace.id,
+          name: `${existingLink.slug}-files`,
+          parentFolderId: null,
+          linkId: validated.linkId,
+          uploaderEmail: null,
+          uploaderName: null,
+        });
+
+        logger.info('Root folder recreated for re-activated link', {
+          userId,
+          linkId: validated.linkId,
+          slug: existingLink.slug,
+        });
+      }
     }
 
     // Update link with race condition handling

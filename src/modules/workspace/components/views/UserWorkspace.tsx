@@ -269,30 +269,20 @@ export function UserWorkspace() {
     const selectedFileIds = bulkDeleteModal.data.files.map(f => f.id);
     const selectedFolderIds = bulkDeleteModal.data.folders.map(f => f.id);
 
-    deleteMixed.mutate(
-      {
-        fileIds: selectedFileIds,
-        folderIds: selectedFolderIds,
-      },
-      {
-        onSuccess: (result) => {
-          // Clear selections after successful deletion
-          fileSelection.clearSelection();
-          folderSelection.clearSelection();
+    const result = await deleteMixed.mutateAsync({
+      fileIds: selectedFileIds,
+      folderIds: selectedFolderIds,
+    });
 
-          console.log(
-            `Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`
-          );
-          // TODO: Add success notification when notification system is implemented
-          // toast.success(`Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`);
-        },
-        onError: (error) => {
-          console.error("Bulk delete failed:", error);
-          // TODO: Add error notification when notification system is implemented
-          // toast.error(error.message || "Failed to delete items");
-        },
-      }
+    // Clear selections after successful deletion
+    fileSelection.clearSelection();
+    folderSelection.clearSelection();
+
+    console.log(
+      `Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`
     );
+    // TODO: Add success notification when notification system is implemented
+    // toast.success(`Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`);
   };
 
   // Folder-link handlers

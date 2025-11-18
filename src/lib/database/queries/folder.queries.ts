@@ -541,6 +541,28 @@ export async function getFolderDescendants(folderId: string): Promise<Folder[]> 
 }
 
 /**
+ * Get root folder for a link
+ * Each link has at most ONE folder (the root folder)
+ * Used to check if a link has a folder before re-activation
+ *
+ * @param linkId - The UUID of the link
+ * @returns Root folder for this link, or undefined if none exists
+ *
+ * @example
+ * ```typescript
+ * const rootFolder = await getRootFolderByLinkId('link_123');
+ * if (!rootFolder) {
+ *   // Link has no folder, may need to create root folder on re-activation
+ * }
+ * ```
+ */
+export async function getRootFolderByLinkId(linkId: string): Promise<Folder | undefined> {
+  return await db.query.folders.findFirst({
+    where: eq(folders.linkId, linkId),
+  });
+}
+
+/**
  * Get all files in folder tree recursively (folder + all descendants)
  * Combines folder descendant traversal with file fetching
  *

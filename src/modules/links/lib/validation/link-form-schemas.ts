@@ -115,6 +115,7 @@ export const editLinkFormSchema = z
     name: linkNameSchema,
     slug: slugSchema,
     isPublic: isPublicFieldSchema,
+    isActive: z.boolean(),
     allowedEmails: allowedEmailsFieldSchema,
     passwordProtected: passwordProtectedFieldSchema,
     password: z.string().optional(),

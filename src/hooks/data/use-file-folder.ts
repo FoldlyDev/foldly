@@ -25,6 +25,7 @@ import {
   createMutationErrorHandler,
   invalidateFiles,
   invalidateFolders,
+  invalidateLinks,
 } from '@/lib/utils/react-query-helpers';
 
 // =============================================================================
@@ -220,9 +221,13 @@ export function useDeleteMixed() {
     onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
 
-      // Invalidate both files and folders (items deleted)
-      await invalidateFiles(queryClient);
-      await invalidateFolders(queryClient, undefined, { invalidateFiles: true });
+      // Cross-module invalidation: Deleting linked folders deactivates their links
+      // Invalidate files, folders, and links (optimistic update)
+      await Promise.all([
+        invalidateFiles(queryClient),
+        invalidateFolders(queryClient, undefined, { invalidateFiles: true }),
+        invalidateLinks(queryClient), // Linked folders deleted → links become inactive
+      ]);
     },
     onError: createMutationErrorHandler('Bulk delete'),
     retry: false,

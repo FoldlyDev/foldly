@@ -40,6 +40,7 @@ import {
   LogoUploadSection,
   ColorPickersSection,
   LinkTypeToggle,
+  LinkActiveToggle,
   PasswordProtectionToggle,
   PasswordField,
 } from "./BaseLinkForm";
@@ -69,6 +70,7 @@ const AccessControlSectionManagement: React.FC<{
     <AccordionItem value="access-control">
       <AccordionTrigger>Access Control</AccordionTrigger>
       <AccordionContent className="space-y-6 pt-4">
+        <LinkActiveToggle />
         <LinkTypeToggle />
         <PasswordProtectionToggle />
         <PasswordField />
@@ -205,6 +207,7 @@ export function LinkManagementForm({
       name: link.name,
       slug: link.slug,
       isPublic: link.isPublic,
+      isActive: link.isActive,
       allowedEmails: [], // TODO: Load from permissions
       passwordProtected: link.linkConfig.passwordProtected || false,
       password: "", // Don't pre-fill password for security
@@ -238,6 +241,7 @@ export function LinkManagementForm({
         name: data.name,
         slug: data.slug,
         isPublic: data.isPublic,
+        isActive: data.isActive,
         linkConfig: {
           customMessage: data.customMessage || null,
           notifyOnUpload: data.notifyOnUpload,
