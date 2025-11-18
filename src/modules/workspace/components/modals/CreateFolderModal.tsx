@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/shadcn/button";
 import { Input } from "@/components/ui/aceternityui/input";
 import { Label } from "@/components/ui/aceternityui/label";
 import { Folder } from "lucide-react";
-import { createFolderAction } from "@/lib/actions/folder.actions";
+import { useCreateFolder } from "@/hooks";
 
 /**
  * Create folder modal
@@ -59,7 +59,7 @@ export function CreateFolderModal({
   onSuccess,
   parentFolderId = null,
 }: CreateFolderModalProps) {
-  const [isCreating, setIsCreating] = React.useState(false);
+  const createFolder = useCreateFolder();
 
   const {
     register,
@@ -76,32 +76,26 @@ export function CreateFolderModal({
   };
 
   const onSubmit = async (data: CreateFolderFormData) => {
-    setIsCreating(true);
-
-    try {
-      const result = await createFolderAction({
+    createFolder.mutate(
+      {
         name: data.name,
         parentFolderId,
-      });
-
-      if (result.success) {
-        // TODO: Add success notification when notification system is implemented
-        // toast.success("Folder created successfully");
-        console.log("Folder created successfully");
-        handleClose();
-        onSuccess?.();
-      } else {
-        // TODO: Add error notification when notification system is implemented
-        // toast.error(result.error || "Failed to create folder");
-        console.error("Failed to create folder:", result.error);
+      },
+      {
+        onSuccess: () => {
+          // TODO: Add success notification when notification system is implemented
+          // toast.success("Folder created successfully");
+          console.log("Folder created successfully");
+          handleClose();
+          onSuccess?.();
+        },
+        onError: (error) => {
+          // TODO: Add error notification when notification system is implemented
+          // Error already handled by useCreateFolder hook (createMutationErrorHandler)
+          console.error("Error creating folder:", error);
+        },
       }
-    } catch (error) {
-      // TODO: Add error notification when notification system is implemented
-      // toast.error("An unexpected error occurred");
-      console.error("Unexpected error creating folder:", error);
-    } finally {
-      setIsCreating(false);
-    }
+    );
   };
 
   return (
@@ -136,12 +130,12 @@ export function CreateFolderModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isCreating}
+              disabled={createFolder.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Folder"}
+            <Button type="submit" disabled={createFolder.isPending}>
+              {createFolder.isPending ? "Creating..." : "Create Folder"}
             </Button>
           </ModalFooter>
         </form>

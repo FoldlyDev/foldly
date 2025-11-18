@@ -126,7 +126,7 @@ export function FolderCard({
   return (
     <article
       className={cn(
-        "relative flex h-28 flex-col justify-between overflow-hidden rounded-lg border p-4 transition-all hover:shadow-md",
+        "relative flex h-28 flex-col justify-between overflow-hidden rounded-lg border p-4 transition-all hover:shadow-md select-none",
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",

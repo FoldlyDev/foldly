@@ -57,6 +57,7 @@ interface DesktopLayoutProps {
   isSelectMode: boolean;
   onClearSelection: () => void;
   onBulkDownload: () => void;
+  onBulkMove: () => void;
   onBulkDelete: () => void;
   enableFileSelectMode?: () => void;
   isFileSelectMode?: boolean;
@@ -97,6 +98,7 @@ export function DesktopLayout({
   isSelectMode,
   onClearSelection,
   onBulkDownload,
+  onBulkMove,
   onBulkDelete,
   enableFileSelectMode,
   isFileSelectMode = false,
@@ -223,6 +225,7 @@ export function DesktopLayout({
           selectedCount={selectedCount}
           onClear={onClearSelection}
           onDownload={onBulkDownload}
+          onMove={onBulkMove}
           onDelete={onBulkDelete}
           hasFolders={hasFolders}
           hasFiles={hasFiles}

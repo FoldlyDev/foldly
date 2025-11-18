@@ -10,5 +10,6 @@ export * from './email.actions';
 export * from './link.actions';
 export * from './folder.actions';
 export * from './file.actions';
+export * from './file-folder.actions';
 export * from './permission.actions';
 export * from './storage.actions';

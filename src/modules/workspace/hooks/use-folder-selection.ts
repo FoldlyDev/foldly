@@ -4,7 +4,7 @@
 // Manages multi-select state for folders (checkboxes, bulk actions)
 // Pattern: Composable primitive (matches use-file-selection.ts)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * Folder selection state and actions
@@ -73,6 +73,13 @@ export function useFolderSelection(): UseFolderSelectionReturn {
   const [selectedFolders, setSelectedFolders] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
 
+  // Auto-disable selection mode when all items are deselected
+  useEffect(() => {
+    if (isSelectMode && selectedFolders.size === 0) {
+      setIsSelectMode(false);
+    }
+  }, [selectedFolders.size, isSelectMode]);
+
   const enableSelectMode = useCallback(() => {
     setIsSelectMode(true);
   }, []);
@@ -98,12 +105,6 @@ export function useFolderSelection(): UseFolderSelectionReturn {
       } else {
         next.add(folderId);
       }
-
-      // Auto-disable selection mode when all items deselected
-      if (next.size === 0) {
-        setIsSelectMode(false);
-      }
-
       return next;
     });
   }, []);

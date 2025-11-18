@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed, useMoveMixed, useDeleteMixed } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
@@ -15,6 +15,8 @@ import {
   RenameFolderModal,
   MoveFolderModal,
   MoveFileModal,
+  BulkMoveModal,
+  BulkDeleteModal,
   DeleteConfirmModal,
   ShareFolderModal,
   LinkFolderToExistingModal,
@@ -57,8 +59,10 @@ export function UserWorkspace() {
   const fileSelection = useFileSelection();
   const folderSelection = useFolderSelection();
 
-  // Bulk download mutation
+  // Bulk operations mutations
   const bulkDownloadMixed = useBulkDownloadMixed();
+  const moveMixed = useMoveMixed();
+  const deleteMixed = useDeleteMixed();
 
   // Modal state
   const searchModal = useModalState<void>();
@@ -67,6 +71,8 @@ export function UserWorkspace() {
   const renameFolderModal = useModalState<Folder>();
   const moveFolderModal = useModalState<Folder>();
   const moveFileModal = useModalState<File>();
+  const bulkMoveModal = useModalState<{ fileIds: string[]; folderIds: string[] }>();
+  const bulkDeleteModal = useModalState<{ files: File[]; folders: Folder[] }>();
   const deleteFolderModal = useModalState<{ id: string; name: string }>();
   const deleteFileModal = useModalState<{ id: string; name: string }>();
   const uploadFilesModal = useModalState<void>();
@@ -81,6 +87,15 @@ export function UserWorkspace() {
   useKeyboardShortcut('mod+k', () => {
     searchModal.open(undefined);
   });
+
+  // Clear selections when navigating to a different folder
+  // Note: Only depends on currentFolderId - we intentionally don't include clearSelection
+  // in the dependency array to avoid unnecessary re-renders
+  React.useEffect(() => {
+    fileSelection.clearSelection();
+    folderSelection.clearSelection();
+    // eslint-disable-next-line
+  }, [folderNavigation.currentFolderId]);
 
   // Action handlers
   const handleSearchClick = () => {
@@ -228,11 +243,56 @@ export function UserWorkspace() {
     }
   };
 
+  const handleBulkMove = () => {
+    const selectedFileIds = Array.from(fileSelection.selectedFiles);
+    const selectedFolderIds = Array.from(folderSelection.selectedFolders);
+
+    // Open bulk move modal with selected IDs
+    bulkMoveModal.open({ fileIds: selectedFileIds, folderIds: selectedFolderIds });
+  };
+
   const handleBulkDelete = () => {
-    // TODO: Implement bulk delete modal
-    // TODO: Add info notification when notification system is implemented
-    // toast.info("Bulk delete feature coming soon");
-    console.log("Bulk delete feature coming soon");
+    const selectedFileIds = Array.from(fileSelection.selectedFiles);
+    const selectedFolderIds = Array.from(folderSelection.selectedFolders);
+
+    // Get full file and folder objects for modal display
+    const selectedFiles = files.filter(f => selectedFileIds.includes(f.id));
+    const selectedFolders = folders.filter(f => selectedFolderIds.includes(f.id));
+
+    // Open bulk delete confirmation modal
+    bulkDeleteModal.open({ files: selectedFiles, folders: selectedFolders });
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (!bulkDeleteModal.data) return;
+
+    const selectedFileIds = bulkDeleteModal.data.files.map(f => f.id);
+    const selectedFolderIds = bulkDeleteModal.data.folders.map(f => f.id);
+
+    deleteMixed.mutate(
+      {
+        fileIds: selectedFileIds,
+        folderIds: selectedFolderIds,
+      },
+      {
+        onSuccess: (result) => {
+          // Clear selections after successful deletion
+          fileSelection.clearSelection();
+          folderSelection.clearSelection();
+
+          console.log(
+            `Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`
+          );
+          // TODO: Add success notification when notification system is implemented
+          // toast.success(`Deleted ${result.deletedFileCount} files and ${result.deletedFolderCount} folders`);
+        },
+        onError: (error) => {
+          console.error("Bulk delete failed:", error);
+          // TODO: Add error notification when notification system is implemented
+          // toast.error(error.message || "Failed to delete items");
+        },
+      }
+    );
   };
 
   // Folder-link handlers
@@ -370,6 +430,7 @@ export function UserWorkspace() {
       folderSelection.clearSelection();
     },
     onBulkDownload: handleBulkDownload,
+    onBulkMove: handleBulkMove,
     onBulkDelete: handleBulkDelete,
     enableFileSelectMode: fileSelection.enableSelectMode,
     isFileSelectMode: fileSelection.isSelectMode,
@@ -420,6 +481,23 @@ export function UserWorkspace() {
         file={moveFileModal.data}
         isOpen={moveFileModal.isOpen}
         onOpenChange={(open) => !open && moveFileModal.close()}
+      />
+      <BulkMoveModal
+        data={bulkMoveModal.data}
+        isOpen={bulkMoveModal.isOpen}
+        onOpenChange={(open) => !open && bulkMoveModal.close()}
+        currentFolderId={folderNavigation.currentFolderId}
+        onSuccess={() => {
+          // Clear selections after successful move
+          fileSelection.clearSelection();
+          folderSelection.clearSelection();
+        }}
+      />
+      <BulkDeleteModal
+        data={bulkDeleteModal.data}
+        isOpen={bulkDeleteModal.isOpen}
+        onOpenChange={(open) => !open && bulkDeleteModal.close()}
+        onConfirm={handleBulkDeleteConfirm}
       />
       <DeleteConfirmModal
         isOpen={deleteFolderModal.isOpen}

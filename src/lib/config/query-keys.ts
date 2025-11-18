@@ -114,6 +114,20 @@ export const emailKeys = {
 } as const;
 
 /**
+ * File-Folder mixed operations query keys
+ * For operations that work with both files and folders together
+ */
+export const fileFolderKeys = {
+  all: ['file-folder'] as const,
+  bulkDownload: (fileIds: string[], folderIds: string[]) =>
+    [...fileFolderKeys.all, 'bulk-download', { fileIds, folderIds }] as const,
+  bulkMove: (fileIds: string[], folderIds: string[], targetFolderId: string | null) =>
+    [...fileFolderKeys.all, 'bulk-move', { fileIds, folderIds, targetFolderId }] as const,
+  bulkDelete: (fileIds: string[], folderIds: string[]) =>
+    [...fileFolderKeys.all, 'bulk-delete', { fileIds, folderIds }] as const,
+} as const;
+
+/**
  * Legacy compatibility keys
  * These maintain backward compatibility with existing cache invalidations
  */

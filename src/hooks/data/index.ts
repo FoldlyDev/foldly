@@ -11,5 +11,6 @@ export * from './use-links';
 export * from './use-link-invitations';
 export * from './use-folders';
 export * from './use-files';
+export * from './use-file-folder';
 export * from './use-permissions';
 export * from './use-storage';

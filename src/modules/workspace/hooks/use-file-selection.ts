@@ -4,7 +4,7 @@
 // Manages multi-select state for files (checkboxes, bulk actions)
 // Pattern: Composable primitive (matches use-link-form-primitives.ts)
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 /**
  * File selection state and actions
@@ -73,6 +73,13 @@ export function useFileSelection(): UseFileSelectionReturn {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
 
+  // Auto-disable selection mode when all items are deselected
+  useEffect(() => {
+    if (isSelectMode && selectedFiles.size === 0) {
+      setIsSelectMode(false);
+    }
+  }, [selectedFiles.size, isSelectMode]);
+
   const enableSelectMode = useCallback(() => {
     setIsSelectMode(true);
   }, []);
@@ -98,12 +105,6 @@ export function useFileSelection(): UseFileSelectionReturn {
       } else {
         next.add(fileId);
       }
-
-      // Auto-disable selection mode when all items deselected
-      if (next.size === 0) {
-        setIsSelectMode(false);
-      }
-
       return next;
     });
   }, []);

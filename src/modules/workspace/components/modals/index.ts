@@ -7,6 +7,8 @@ export * from './CreateFolderModal';
 export * from './RenameFolderModal';
 export * from './MoveFolderModal';
 export * from './MoveFileModal';
+export * from './BulkMoveModal';
+export * from './BulkDeleteModal';
 export * from './DeleteConfirmModal';
 export * from './UploadFilesModal';
 export * from './SearchModal';

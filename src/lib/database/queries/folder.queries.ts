@@ -276,8 +276,8 @@ export async function updateFolder(
 
 /**
  * Delete a folder
- * Cascade delete of subfolders handled by database constraints
- * Files in deleted folders have their parentFolderId set to NULL
+ * CASCADE deletes all subfolders and files within (database constraints)
+ * Deactivates associated link if folder is linked (sets link.isActive = false)
  *
  * @param folderId - The UUID of the folder to delete
  * @returns Promise that resolves when deletion is complete
@@ -285,11 +285,30 @@ export async function updateFolder(
  * @example
  * ```typescript
  * await deleteFolder('folder_123');
- * // All subfolders cascade deleted, files become orphaned (parentFolderId = null)
+ * // 1. If folder has linkId, deactivates the link (isActive = false)
+ * // 2. All subfolders and files inside are CASCADE deleted permanently
  * ```
  */
 export async function deleteFolder(folderId: string): Promise<void> {
-  await db.delete(folders).where(eq(folders.id, folderId));
+  await db.transaction(async (tx) => {
+    // Get folder's linkId before deletion
+    const existingFolder = await tx.query.folders.findFirst({
+      where: eq(folders.id, folderId),
+      columns: { linkId: true },
+    });
+
+    // If folder has a link, deactivate it first
+    // This prevents orphaned active links (link with no folder)
+    if (existingFolder?.linkId) {
+      await tx
+        .update(links)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(links.id, existingFolder.linkId));
+    }
+
+    // Delete the folder (CASCADE deletes subfolders, sets file parent_folder_id to NULL)
+    await tx.delete(folders).where(eq(folders.id, folderId));
+  });
 }
 
 /**

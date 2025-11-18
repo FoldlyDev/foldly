@@ -43,8 +43,8 @@ export const files = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }), // FK to workspaces
     parentFolderId: text("parent_folder_id").references(() => folders.id, {
-      onDelete: "set null",
-    }), // FK to folders (nullable for root files, set null on folder deletion)
+      onDelete: "cascade",
+    }), // FK to folders (nullable for root files, CASCADE delete files when folder deleted)
     linkId: text("link_id").references(() => links.id, {
       onDelete: "set null",
     }), // FK to links (nullable, set null on link deletion)

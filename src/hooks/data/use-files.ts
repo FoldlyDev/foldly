@@ -20,7 +20,6 @@ import {
   moveFileAction,
   deleteFileAction,
   bulkDeleteFilesAction,
-  bulkDownloadMixedAction,
   getFileSignedUrlAction,
 } from '@/lib/actions';
 import type {
@@ -29,7 +28,6 @@ import type {
   MoveFileInput,
   DeleteFileInput,
   BulkDeleteFilesInput,
-  BulkDownloadMixedInput,
 } from '@/lib/validation';
 import {
   transformActionError,
@@ -553,73 +551,3 @@ export function useBulkDeleteFiles() {
   });
 }
 
-/**
- * Bulk download files and folders as a single ZIP (mixed selection)
- * Creates ZIP with selected files at root + selected folders with structure
- *
- * Used in:
- * - Workspace bulk download (multi-select files/folders)
- * - Selection toolbar download action
- *
- * Features:
- * - Single ZIP with mixed content
- * - Files appear at root level
- * - Folders preserve hierarchy
- * - Toast notifications on success/error
- * - No cache invalidation (read-only operation)
- *
- * ZIP Structure Example:
- * ```
- * download.zip
- * ├── file1.pdf          (selected file - root)
- * ├── file2.jpg          (selected file - root)
- * └── FolderA/           (selected folder - with structure)
- *     ├── doc.pdf
- *     └── nested/
- *         └── image.png
- * ```
- *
- * @returns Mutation for bulk downloading mixed files/folders
- *
- * @example
- * ```tsx
- * function BulkDownloadButton({ selectedFiles, selectedFolders }) {
- *   const bulkDownload = useBulkDownloadMixed();
- *
- *   const handleDownload = () => {
- *     bulkDownload.mutate(
- *       {
- *         fileIds: Array.from(selectedFiles),
- *         folderIds: Array.from(selectedFolders)
- *       },
- *       {
- *         onSuccess: (zipData) => {
- *           // Convert number array to Blob
- *           const uint8Array = new Uint8Array(zipData);
- *           const blob = new Blob([uint8Array], { type: 'application/zip' });
- *
- *           // Trigger download
- *           const link = document.createElement('a');
- *           link.href = URL.createObjectURL(blob);
- *           link.download = `download-${new Date().toISOString().split('T')[0]}.zip`;
- *           link.click();
- *           URL.revokeObjectURL(link.href);
- *         }
- *       }
- *     );
- *   };
- *
- *   return <Button onClick={handleDownload}>Download Selected</Button>;
- * }
- * ```
- */
-export function useBulkDownloadMixed() {
-  return useMutation({
-    mutationFn: async (input: BulkDownloadMixedInput) => {
-      const result = await bulkDownloadMixedAction(input);
-      return transformActionError(result, 'Failed to download items');
-    },
-    onError: createMutationErrorHandler('Bulk download'),
-    retry: false,
-  });
-}

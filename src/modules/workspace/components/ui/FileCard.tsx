@@ -112,7 +112,7 @@ export function FileCard({
   return (
     <article
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg border p-2 transition-all hover:shadow-md",
+        "group relative flex items-center gap-3 rounded-lg border p-2 transition-all hover:shadow-md select-none",
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",

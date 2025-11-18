@@ -57,6 +57,7 @@ interface MobileLayoutProps {
   isSelectMode: boolean;
   onClearSelection: () => void;
   onBulkDownload: () => void;
+  onBulkMove: () => void;
   onBulkDelete: () => void;
   enableFileSelectMode?: () => void;
   isFileSelectMode?: boolean;
@@ -97,6 +98,7 @@ export function MobileLayout({
   isSelectMode,
   onClearSelection,
   onBulkDownload,
+  onBulkMove,
   onBulkDelete,
   enableFileSelectMode,
   isFileSelectMode = false,
@@ -223,6 +225,7 @@ export function MobileLayout({
           selectedCount={selectedCount}
           onClear={onClearSelection}
           onDownload={onBulkDownload}
+          onMove={onBulkMove}
           onDelete={onBulkDelete}
           hasFolders={hasFolders}
           hasFiles={hasFiles}
