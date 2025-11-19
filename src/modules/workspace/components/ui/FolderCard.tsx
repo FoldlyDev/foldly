@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/shadcn/badge";
 import { cn } from "@/lib/utils";
 import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
 import { FolderContextMenu } from "./FolderContextMenu";
+import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 interface FolderCardProps {
   folder: Folder;
@@ -123,14 +125,59 @@ export function FolderCard({
     }
   };
 
+  // Drag-and-drop functionality
+  const {
+    attributes: draggableAttributes,
+    listeners: draggableListeners,
+    setNodeRef: setDraggableRef,
+    transform: draggableTransform,
+    isDragging,
+  } = useDraggable({
+    id: folder.id,
+    data: {
+      type: 'folder',
+      folder,
+    },
+    disabled: isSelectMode, // Disable drag during selection mode
+  });
+
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: folder.id,
+    data: {
+      type: 'folder',
+      folder,
+    },
+  });
+
+  // Combine refs (folder is both draggable AND droppable)
+  const setRefs = (element: HTMLElement | null) => {
+    setDraggableRef(element);
+    setDroppableRef(element);
+  };
+
+  // Drag transform style
+  const style = {
+    transform: CSS.Translate.toString(draggableTransform),
+    opacity: isDragging ? 0.5 : 1,
+    willChange: isDragging ? 'transform' : undefined,
+  };
+
   return (
     <article
+      ref={setRefs}
+      style={style}
+      {...draggableAttributes}
+      {...draggableListeners}
       className={cn(
-        "relative flex h-28 flex-col justify-between overflow-hidden rounded-lg border p-4 transition-all hover:shadow-md select-none",
+        "relative flex h-28 w-full flex-col justify-between overflow-hidden rounded-lg border p-4 hover:shadow-md select-none",
+        !isDragging && "transition-all",
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
-        (onNavigate || isSelectMode) && "cursor-pointer"
+        (onNavigate || isSelectMode) && "cursor-pointer",
+        !isSelectMode && !isDragging && "cursor-grab",
+        isDragging && "cursor-grabbing",
+        isOver && !isDragging && "ring-2 ring-primary/50 ring-offset-2"
       )}
       onClick={isMobile ? handleCardClick : handlers.handleClick}
       onDoubleClick={!isMobile ? handlers.handleDoubleClick : undefined}

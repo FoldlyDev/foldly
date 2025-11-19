@@ -29,10 +29,9 @@ import {
   transformActionError,
   transformQueryResult,
   createMutationErrorHandler,
-  invalidateFolders,
-  invalidateFiles
+  invalidateFolders
 } from '@/lib/utils/react-query-helpers';
-import { folderKeys } from '@/lib/config/query-keys';
+import { folderKeys, fileKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)
@@ -315,13 +314,21 @@ export function useMoveFolder() {
       const result = await moveFolderAction(input);
       return transformActionError(result, 'Failed to move folder');
     },
-    onSuccess: async (data) => {
+    onSuccess: async (_data) => {
       // TODO: Add success notification when notification system is implemented
-      // Invalidate all folder caches (structure changed)
-      await invalidateFolders(queryClient, data.id);
 
-      // Invalidate files in this folder (parentFolderId references may need update)
-      await invalidateFiles(queryClient, undefined, data.id);
+      // Force immediate refetch of active queries instead of background refetch
+      // This ensures destination folders show moved folders immediately when navigating
+      await queryClient.invalidateQueries({
+        queryKey: folderKeys.all,
+        refetchType: 'active', // Refetch active (currently rendered) queries immediately
+      });
+
+      // Invalidate files (folder move may affect file organization)
+      await queryClient.invalidateQueries({
+        queryKey: fileKeys.all,
+        refetchType: 'active',
+      });
     },
     onError: createMutationErrorHandler('Folder move'),
     retry: false,

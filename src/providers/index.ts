@@ -6,3 +6,4 @@
 export { QueryProvider } from './QueryClientProvider';
 export { ThemeProvider } from './ThemeProvider';
 export { PageTransitionProvider } from './PageTransitionProvider';
+export { DndProvider } from './DndProvider';

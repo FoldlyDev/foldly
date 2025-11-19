@@ -36,7 +36,7 @@ import {
   invalidateFiles,
   invalidateFolders
 } from '@/lib/utils/react-query-helpers';
-import { fileKeys } from '@/lib/config/query-keys';
+import { fileKeys, folderKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // QUERY HOOKS (Data Fetching)
@@ -424,16 +424,21 @@ export function useMoveFile() {
       const result = await moveFileAction(input);
       return transformActionError(result, 'Failed to move file');
     },
-    onSuccess: async () => {
+    onSuccess: async (_movedFile) => {
       // TODO: Add success notification when notification system is implemented
 
-      // Use broad invalidation for consistency with useDeleteFile and useBulkDeleteFiles
-      // invalidateFiles helper already invalidates fileKeys.all, ensuring all file
-      // queries refresh (workspace, byFolder, byEmail, search, etc.)
-      await invalidateFiles(queryClient);
+      // Force immediate refetch of active queries instead of background refetch
+      // This ensures destination folders show moved items immediately when navigating
+      await queryClient.invalidateQueries({
+        queryKey: fileKeys.all,
+        refetchType: 'active', // Refetch active (currently rendered) queries immediately
+      });
 
       // Invalidate folder caches to update file counts for both source and destination folders
-      await invalidateFolders(queryClient);
+      await queryClient.invalidateQueries({
+        queryKey: folderKeys.all,
+        refetchType: 'active',
+      });
     },
     onError: createMutationErrorHandler('File move'),
     retry: false,

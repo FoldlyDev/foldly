@@ -6,6 +6,8 @@ import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
 import { FileThumbnail } from "./FileThumbnail";
 import { UploaderBadge } from "./UploaderBadge";
 import { FileContextMenu } from "./FileContextMenu";
+import { useDraggable } from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 interface FileCardProps {
   file: File;
@@ -109,14 +111,44 @@ export function FileCard({
     }
   };
 
+  // Drag-and-drop functionality (files are draggable but NOT droppable)
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: file.id,
+    data: {
+      type: 'file',
+      file,
+    },
+    disabled: isSelectMode, // Disable drag during selection mode
+  });
+
+  // Drag transform style
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    willChange: isDragging ? 'transform' : undefined,
+  };
+
   return (
     <article
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        "group relative flex items-center gap-3 rounded-lg border p-2 transition-all hover:shadow-md select-none",
+        "group relative flex items-center gap-3 rounded-lg border p-2 hover:shadow-md select-none",
+        !isDragging && "transition-all", // Disable transitions during drag
         isSelected
           ? "border-primary bg-primary/5 ring-2 ring-primary"
           : "border-border bg-card hover:border-primary/50",
-        (onPreview || isSelectMode) && "cursor-pointer"
+        (onPreview || isSelectMode) && "cursor-pointer",
+        !isSelectMode && !isDragging && "cursor-grab",
+        isDragging && "cursor-grabbing"
       )}
       onClick={isMobile ? handleCardClick : handlers.handleClick}
       onDoubleClick={!isMobile ? handlers.handleDoubleClick : undefined}

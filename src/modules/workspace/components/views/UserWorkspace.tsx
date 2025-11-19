@@ -5,10 +5,21 @@ import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalStat
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
+import { useFileDragDrop } from "../../hooks/use-file-drag-drop";
+import { useFolderDragDrop } from "../../hooks/use-folder-drag-drop";
 import { computeFolderCounts } from "@/lib/utils/workspace-helpers";
 import { WorkspaceSkeleton } from "../ui/WorkspaceSkeleton";
 import { DesktopLayout } from "./layouts/DesktopLayout";
 import { MobileLayout } from "./layouts/MobileLayout";
+import {
+  DndContext,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  pointerWithin,
+  type DragEndEvent,
+} from '@dnd-kit/core';
 import {
   FilePreviewModal,
   CreateFolderModal,
@@ -63,6 +74,31 @@ export function UserWorkspace() {
   const bulkDownloadMixed = useBulkDownloadMixed();
   const moveMixed = useMoveMixed();
   const deleteMixed = useDeleteMixed();
+
+  // Drag-and-drop handlers
+  const { handleFileDragEnd } = useFileDragDrop();
+  const { handleFolderDragEnd } = useFolderDragDrop();
+
+  // Combined drag end handler (delegates to file or folder handler based on type)
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const activeType = event.active.data.current?.type;
+
+    if (activeType === 'file') {
+      await handleFileDragEnd(event);
+    } else if (activeType === 'folder') {
+      await handleFolderDragEnd(event);
+    }
+  };
+
+  // Configure sensors for drag interactions
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Require 5px movement before drag activates
+      },
+    }),
+    useSensor(KeyboardSensor)
+  );
 
   // Modal state
   const searchModal = useModalState<void>();
@@ -513,7 +549,11 @@ export function UserWorkspace() {
   };
 
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragEnd={handleDragEnd}
+    >
       {/* Render appropriate layout */}
       {isMobile ? <MobileLayout {...layoutProps} /> : <DesktopLayout {...layoutProps} />}
 
@@ -636,6 +676,6 @@ export function UserWorkspace() {
         }}
         currentFolderId={folderNavigation.currentFolderId}
       />
-    </>
+    </DndContext>
   );
 }

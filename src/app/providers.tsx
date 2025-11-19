@@ -6,6 +6,7 @@ import {
   QueryProvider,
   ThemeProvider,
   PageTransitionProvider,
+  DndProvider,
 } from "@/providers";
 // import { NotificationProvider } from '@/modules/notifications/providers/NotificationProvider';
 
@@ -14,9 +15,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <ClerkProvider appearance={{ theme: dark }}>
       <ThemeProvider attribute="class" enableSystem disableTransitionOnChange>
         <QueryProvider>
-          {/* <NotificationProvider> */}
-          <PageTransitionProvider>{children}</PageTransitionProvider>
-          {/* </NotificationProvider> */}
+          <DndProvider>
+            {/* <NotificationProvider> */}
+            <PageTransitionProvider>{children}</PageTransitionProvider>
+            {/* </NotificationProvider> */}
+          </DndProvider>
         </QueryProvider>
       </ThemeProvider>
     </ClerkProvider>
