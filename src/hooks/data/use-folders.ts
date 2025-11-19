@@ -12,6 +12,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getRootFoldersAction,
+  getWorkspaceFoldersAction,
   getFoldersByParentAction,
   getFolderHierarchyAction,
   createFolderAction,
@@ -72,6 +73,43 @@ export function useRootFolders() {
 }
 
 /**
+ * Get ALL folders in the workspace (all nesting levels)
+ * Used for folder count computations that require the full folder tree
+ *
+ * Used in:
+ * - Workspace dashboard (computeFolderCounts to count subfolders)
+ * - Any component that needs complete folder hierarchy data
+ *
+ * @returns Query with array of ALL workspace folders or empty array
+ *
+ * @example
+ * ```tsx
+ * function WorkspaceView() {
+ *   const { data: files } = useWorkspaceFiles();
+ *   const { data: allFolders } = useWorkspaceFolders();
+ *
+ *   const folderCounts = useMemo(
+ *     () => computeFolderCounts(files, allFolders),
+ *     [files, allFolders]
+ *   );
+ *
+ *   return <FolderGrid folders={folders} counts={folderCounts} />;
+ * }
+ * ```
+ */
+export function useWorkspaceFolders() {
+  return useQuery({
+    queryKey: folderKeys.all,
+    queryFn: async () => {
+      const result = await getWorkspaceFoldersAction();
+      return transformQueryResult(result, 'Failed to fetch workspace folders', []);
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes - folders don't change frequently
+    gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for quick navigation
+  });
+}
+
+/**
  * Get folders by parent (root or child folders)
  * Universal hook for folder navigation
  *
@@ -104,8 +142,11 @@ export function useFoldersByParent(
   return useQuery({
     queryKey: folderKeys.byParent(parentFolderId),
     queryFn: async () => {
+      console.log('[useFoldersByParent] Fetching folders for parent:', parentFolderId);
       const result = await getFoldersByParentAction({ parentFolderId });
-      return transformQueryResult(result, 'Failed to fetch folders', []);
+      const folders = transformQueryResult(result, 'Failed to fetch folders', []);
+      console.log('[useFoldersByParent] Fetched folders:', { parentFolderId, count: folders.length });
+      return folders;
     },
     enabled,
     placeholderData: (previousData) => previousData, // Keep previous data while loading
@@ -314,21 +355,68 @@ export function useMoveFolder() {
       const result = await moveFolderAction(input);
       return transformActionError(result, 'Failed to move folder');
     },
-    onSuccess: async (_data) => {
+    // Capture old parent ID before mutation executes
+    onMutate: async (variables) => {
+      console.log('[useMoveFolder] Starting mutation, capturing old parent ID', { folderId: variables.folderId });
+
+      // Find the folder in the current cache to get its old parent ID
+      const queries = queryClient.getQueriesData({ queryKey: folderKeys.all });
+
+      let oldParentId: string | null = null;
+      for (const [, data] of queries) {
+        if (Array.isArray(data)) {
+          const folder = data.find((f: any) => f.id === variables.folderId);
+          if (folder) {
+            oldParentId = folder.parentFolderId;
+            console.log('[useMoveFolder] Found old parent ID in cache', { oldParentId });
+            break;
+          }
+        }
+      }
+
+      return { oldParentId };
+    },
+    onSuccess: async (data, variables, context) => {
       // TODO: Add success notification when notification system is implemented
+      const newParentId = variables.newParentId;
+      const oldParentId = context?.oldParentId;
 
-      // Force immediate refetch of active queries instead of background refetch
-      // This ensures destination folders show moved folders immediately when navigating
-      await queryClient.invalidateQueries({
-        queryKey: folderKeys.all,
-        refetchType: 'active', // Refetch active (currently rendered) queries immediately
+      console.log('[useMoveFolder] Move successful, starting targeted cache invalidation', {
+        movedFolder: data,
+        oldParentId,
+        newParentId
       });
 
-      // Invalidate files (folder move may affect file organization)
-      await queryClient.invalidateQueries({
-        queryKey: fileKeys.all,
-        refetchType: 'active',
-      });
+      // Targeted invalidation - ONLY affected parent folders (not entire folder tree)
+      try {
+        await Promise.all([
+          // Invalidate source parent folder (where folder was moved FROM)
+          oldParentId !== undefined &&
+            queryClient.invalidateQueries({
+              queryKey: folderKeys.byParent(oldParentId),
+            }).then(() => console.log('[useMoveFolder] Invalidated source parent', { oldParentId })),
+
+          // Invalidate destination parent folder (where folder was moved TO)
+          queryClient.invalidateQueries({
+            queryKey: folderKeys.byParent(newParentId),
+          }).then(() => console.log('[useMoveFolder] Invalidated destination parent', { newParentId })),
+
+          // Invalidate workspace folders query (needed for folder count computation)
+          queryClient.invalidateQueries({
+            queryKey: folderKeys.all,
+            exact: true, // Only invalidate ['folders'], not children like byParent
+          }).then(() => console.log('[useMoveFolder] Invalidated workspace folders query')),
+
+          // Invalidate file queries (folder counts may have changed)
+          queryClient.invalidateQueries({
+            queryKey: fileKeys.all,
+            exact: true,
+          }).then(() => console.log('[useMoveFolder] Invalidated file queries')),
+        ].filter(Boolean));
+        console.log('[useMoveFolder] Targeted cache invalidation complete');
+      } catch (error) {
+        console.error('[useMoveFolder] Cache invalidation error:', error);
+      }
     },
     onError: createMutationErrorHandler('Folder move'),
     retry: false,

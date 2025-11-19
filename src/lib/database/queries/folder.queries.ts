@@ -59,6 +59,27 @@ export async function getRootFolders(workspaceId: string): Promise<Folder[]> {
 }
 
 /**
+ * Get ALL folders in a workspace (all levels)
+ * Used for folder count computations that need the full folder tree
+ *
+ * @param workspaceId - The UUID of the workspace
+ * @returns Array of ALL folders in the workspace ordered by creation date (newest first)
+ *
+ * @example
+ * ```typescript
+ * const allFolders = await getAllWorkspaceFolders('workspace_123');
+ * // Returns: ALL folders regardless of nesting level
+ * // Used by: computeFolderCounts() to count subfolders
+ * ```
+ */
+export async function getAllWorkspaceFolders(workspaceId: string): Promise<Folder[]> {
+  return await db.query.folders.findMany({
+    where: eq(folders.workspaceId, workspaceId),
+    orderBy: (folders, { desc }) => [desc(folders.createdAt)],
+  });
+}
+
+/**
  * Get all child folders of a parent folder
  *
  * @param parentFolderId - The UUID of the parent folder

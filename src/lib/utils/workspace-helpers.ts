@@ -397,6 +397,7 @@ export function groupFilesByDate(files: File[]): Map<DateRange, File[]> {
  */
 export interface FolderCounts {
   fileCount: number;
+  folderCount: number;
   uploaderCount: number;
 }
 
@@ -424,12 +425,12 @@ export function computeFolderCounts(
 ): Map<string, FolderCounts> {
   const counts = new Map<string, FolderCounts>();
 
-  // Initialize counts for all folders
+  // Initialize counts for all folders (including folderCount)
   for (const folder of folders) {
-    counts.set(folder.id, { fileCount: 0, uploaderCount: 0 });
+    counts.set(folder.id, { fileCount: 0, folderCount: 0, uploaderCount: 0 });
   }
 
-  // Group files by parent folder and count
+  // Count files and uploaders for each folder
   for (const folder of folders) {
     const folderFiles = files.filter(
       (file) => file.parentFolderId === folder.id
@@ -445,7 +446,21 @@ export function computeFolderCounts(
 
     counts.set(folder.id, {
       fileCount: folderFiles.length,
+      folderCount: 0, // Will be set in next loop
       uploaderCount: uploaderEmails.size,
+    });
+  }
+
+  // Count subfolders for each folder
+  for (const folder of folders) {
+    const subfolders = folders.filter(
+      (f) => f.parentFolderId === folder.id
+    );
+
+    const existing = counts.get(folder.id)!;
+    counts.set(folder.id, {
+      ...existing,
+      folderCount: subfolders.length,
     });
   }
 

@@ -20,6 +20,7 @@ interface FolderCardProps {
   onSelect?: () => void;
   showCheckbox?: boolean;
   fileCount?: number;
+  folderCount?: number;
   uploaderCount?: number;
   // Folder-link actions (personal folder)
   onShareFolder?: () => void;
@@ -65,6 +66,7 @@ export function FolderCard({
   onSelect,
   showCheckbox = false,
   fileCount = 0,
+  folderCount = 0,
   uploaderCount = 0,
   onShareFolder,
   onLinkToExisting,
@@ -253,10 +255,12 @@ export function FolderCard({
         </div>
         </div>
 
-          {/* File count */}
-          <p className="text-xs text-muted-foreground">
-            {fileCount} {fileCount === 1 ? 'file' : 'files'}
-          </p>
+          {/* File and folder counts */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span>{fileCount} {fileCount === 1 ? 'file' : 'files'}</span>
+            <span>•</span>
+            <span>{folderCount} {folderCount === 1 ? 'folder' : 'folders'}</span>
+          </div>
       </div>
     </article>
   );

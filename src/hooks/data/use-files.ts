@@ -424,21 +424,22 @@ export function useMoveFile() {
       const result = await moveFileAction(input);
       return transformActionError(result, 'Failed to move file');
     },
-    onSuccess: async (_movedFile) => {
+    onSuccess: async () => {
       // TODO: Add success notification when notification system is implemented
 
-      // Force immediate refetch of active queries instead of background refetch
-      // This ensures destination folders show moved items immediately when navigating
-      await queryClient.invalidateQueries({
-        queryKey: fileKeys.all,
-        refetchType: 'active', // Refetch active (currently rendered) queries immediately
-      });
-
-      // Invalidate folder caches to update file counts for both source and destination folders
-      await queryClient.invalidateQueries({
-        queryKey: folderKeys.all,
-        refetchType: 'active',
-      });
+      // Force immediate refetch of active queries to clear stale cache
+      // This ensures both source and destination folders update instantly
+      await Promise.all([
+        // Refetch active file queries immediately (don't wait for background refetch)
+        queryClient.refetchQueries({
+          queryKey: fileKeys.all,
+          type: 'active',
+        }),
+        // Also invalidate all file queries (including inactive ones) for when they become active
+        queryClient.invalidateQueries({ queryKey: fileKeys.all }),
+        // Update folder caches for file counts
+        queryClient.invalidateQueries({ queryKey: folderKeys.all }),
+      ]);
     },
     onError: createMutationErrorHandler('File move'),
     retry: false,

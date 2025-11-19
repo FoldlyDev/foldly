@@ -17,6 +17,7 @@ import { ERROR_MESSAGES } from '@/lib/constants';
 // Import database queries
 import {
   getRootFolders,
+  getAllWorkspaceFolders,
   getSubfolders,
   getFoldersByParent,
   getFolderById,
@@ -91,6 +92,42 @@ export const getRootFoldersAction = withAuthAndRateLimit<Folder[]>(
 
     // Get all root folders for workspace
     const folders = await getRootFolders(workspace.id);
+
+    return {
+      success: true,
+      data: folders,
+    } as const;
+  }
+);
+
+/**
+ * Get ALL folders in the workspace (all nesting levels)
+ * Used for folder count computations that require the full folder tree
+ *
+ * Used by:
+ * - UserWorkspace component for computeFolderCounts()
+ * - Any component that needs to count subfolders across the entire workspace
+ *
+ * @returns Action response with all workspace folders
+ *
+ * @example
+ * ```typescript
+ * const result = await getWorkspaceFoldersAction();
+ * if (result.success) {
+ *   const allFolders = result.data; // Folder[] (all levels)
+ *   const counts = computeFolderCounts(files, allFolders);
+ * }
+ * ```
+ */
+export const getWorkspaceFoldersAction = withAuthAndRateLimit<Folder[]>(
+  'getWorkspaceFoldersAction',
+  RateLimitPresets.GENEROUS,
+  async (userId) => {
+    // Get user's workspace
+    const workspace = await getAuthenticatedWorkspace(userId);
+
+    // Get ALL folders for workspace (all nesting levels)
+    const folders = await getAllWorkspaceFolders(workspace.id);
 
     return {
       success: true,

@@ -1549,8 +1549,45 @@ npm run lint        # Should pass with 0 warnings
    - **Related Files**: `MoveFileModal.tsx`, `moveFileAction` validation
    - **Priority**: P0 (Critical) - Blocks core functionality (modal-based moves only, drag-drop works)
 
+6. **🐛 CRITICAL: Folder Move Cache Invalidation Not Working** - CACHE INVALIDATION (Reported 2025-11-19)
+   - **Symptom**: When moving folders (drag-drop or modal), source and destination folders do not update instantly
+   - **Impact**: SEVERE - User must refresh page to see moved folders in correct location. Folders appear in both source AND destination
+   - **Example**:
+     - Move "Folder X" from "Parent A" to "Parent B" (via drag-drop or BulkMoveModal)
+     - "Parent A" still shows "Folder X" (should be removed)
+     - Navigate to "Parent B" → "Folder X" not visible (or shows stale data)
+     - Only updates after full page refresh
+   - **Context**:
+     - File moves work correctly and update instantly (via `useMoveFile`)
+     - Folder moves broken (via `useMoveFolder` and `useMoveMixed`)
+     - Folder counts also not updating when child folders are moved
+   - **Current Implementation Issue**:
+     - Using `refetchQueries({ queryKey: folderKeys.all, type: 'active' })` which refetches ALL workspace folders
+     - This is INEFFICIENT (refetches entire folder tree on every move operation)
+     - Despite broad invalidation, UI still doesn't update (suggests deeper issue)
+   - **Root Cause**: INVESTIGATION NEEDED
+     - Cache invalidation strategy may not be targeting correct queries
+     - `folderKeys.byParent(parentId)` queries may not be matched by `folderKeys.all` invalidation
+     - Possible race condition or query key mismatch
+   - **Proposed Fix Strategy**:
+     1. Implement **targeted invalidation** - ONLY invalidate source and destination folders
+     2. Pattern: `queryClient.invalidateQueries({ queryKey: folderKeys.byParent(sourceParentId) })`
+     3. Pattern: `queryClient.invalidateQueries({ queryKey: folderKeys.byParent(targetParentId) })`
+     4. Also invalidate `useWorkspaceFolders()` for folder count computation
+     5. Remove inefficient "invalidate all folders" approach
+   - **Files to Modify**:
+     - `src/hooks/data/use-folders.ts` (`useMoveFolder` - lines 350-384)
+     - `src/hooks/data/use-file-folder.ts` (`useMoveMixed` - lines 149-187)
+     - Compare against working `useMoveFile` pattern (lines 419-447 in use-files.ts)
+   - **Related Issues**:
+     - Folder counts not updating when child folders moved (same root cause)
+     - May be related to how `computeFolderCounts` receives data
+   - **Priority**: P0 (CRITICAL) - Breaks core folder organization functionality
+   - **Status**: REQUIRES INVESTIGATION AND FIX
+
 **Next Actions:**
 - [ ] Investigate and fix parent folder validation (Issue #5) - CRITICAL (modal issue, drag-drop unaffected)
+- [ ] **CRITICAL**: Fix folder move cache invalidation (Issue #6) - Implement targeted invalidation strategy
 
 ---
 

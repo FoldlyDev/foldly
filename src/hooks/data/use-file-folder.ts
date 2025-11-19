@@ -27,6 +27,7 @@ import {
   invalidateFolders,
   invalidateLinks,
 } from '@/lib/utils/react-query-helpers';
+import { fileKeys, folderKeys } from '@/lib/config/query-keys';
 
 // =============================================================================
 // MUTATION HOOKS (Data Modifications)
@@ -153,13 +154,114 @@ export function useMoveMixed() {
       const result = await moveMixedAction(input);
       return transformActionError(result, 'Failed to move items');
     },
-    onSuccess: async () => {
-      // TODO: Add success notification when notification system is implemented
+    // Capture old parent IDs before mutation executes
+    onMutate: async (variables) => {
+      console.log('[useMoveMixed] Starting mutation, capturing old parent IDs', {
+        folderIds: variables.folderIds,
+        fileIds: variables.fileIds
+      });
 
-      // Invalidate both files and folders (structure changed)
-      // Use broad invalidation for consistency
-      await invalidateFiles(queryClient);
-      await invalidateFolders(queryClient);
+      // Find old parent IDs for ALL folders being moved
+      const queries = queryClient.getQueriesData({ queryKey: folderKeys.all });
+      const folderOldParents = new Map<string, string | null>();
+
+      for (const [, data] of queries) {
+        if (Array.isArray(data)) {
+          for (const folderId of variables.folderIds) {
+            const folder = data.find((f: any) => f.id === folderId);
+            if (folder) {
+              folderOldParents.set(folderId, folder.parentFolderId);
+            }
+          }
+        }
+      }
+
+      // Find old parent IDs for ALL files being moved
+      const fileQueries = queryClient.getQueriesData({ queryKey: fileKeys.all });
+      const fileOldParents = new Map<string, string | null>();
+
+      for (const [, data] of fileQueries) {
+        if (Array.isArray(data)) {
+          for (const fileId of variables.fileIds) {
+            const file = data.find((f: any) => f.id === fileId);
+            if (file) {
+              fileOldParents.set(fileId, file.parentFolderId);
+            }
+          }
+        }
+      }
+
+      console.log('[useMoveMixed] Captured old parent IDs', {
+        folderOldParents: Array.from(folderOldParents.entries()),
+        fileOldParents: Array.from(fileOldParents.entries())
+      });
+
+      return { folderOldParents, fileOldParents };
+    },
+    onSuccess: async (data, variables, context) => {
+      // TODO: Add success notification when notification system is implemented
+      const targetFolderId = variables.targetFolderId;
+
+      // Collect all unique parent IDs that were affected
+      const affectedParentIds = new Set<string | null>();
+
+      // Add source parents for folders
+      if (context?.folderOldParents) {
+        for (const oldParentId of context.folderOldParents.values()) {
+          affectedParentIds.add(oldParentId);
+        }
+      }
+
+      // Add source parents for files
+      if (context?.fileOldParents) {
+        for (const oldParentId of context.fileOldParents.values()) {
+          affectedParentIds.add(oldParentId);
+        }
+      }
+
+      // Add destination parent
+      affectedParentIds.add(targetFolderId);
+
+      console.log('[useMoveMixed] Move successful, starting targeted cache invalidation', {
+        result: data,
+        affectedParentIds: Array.from(affectedParentIds)
+      });
+
+      // Targeted invalidation - ONLY affected parent folders
+      try {
+        const invalidationPromises = [
+          // Invalidate ALL affected parent folders (source + destination)
+          ...Array.from(affectedParentIds).map((parentId) =>
+            queryClient.invalidateQueries({
+              queryKey: folderKeys.byParent(parentId),
+            }).then(() => console.log('[useMoveMixed] Invalidated parent folder', { parentId }))
+          ),
+
+          // Invalidate workspace folders query (needed for folder count computation)
+          queryClient.invalidateQueries({
+            queryKey: folderKeys.all,
+            exact: true,
+          }).then(() => console.log('[useMoveMixed] Invalidated workspace folders query')),
+
+          // Invalidate affected file folder queries
+          ...Array.from(affectedParentIds).map((parentId) =>
+            queryClient.invalidateQueries({
+              queryKey: fileKeys.byFolder(parentId),
+            }).then(() => console.log('[useMoveMixed] Invalidated file folder', { parentId }))
+          ),
+
+          // Invalidate file lists query (for file count updates)
+          queryClient.invalidateQueries({
+            queryKey: fileKeys.all,
+            exact: true,
+          }).then(() => console.log('[useMoveMixed] Invalidated file lists query')),
+        ];
+
+        await Promise.all(invalidationPromises);
+        console.log('[useMoveMixed] Targeted cache invalidation complete');
+      } catch (error) {
+        console.error('[useMoveMixed] Cache invalidation error:', error);
+      }
     },
     onError: createMutationErrorHandler('Bulk move'),
     retry: false,

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed, useMoveMixed, useDeleteMixed } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useWorkspaceFolders, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed, useMoveMixed, useDeleteMixed } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
@@ -64,8 +64,9 @@ export function UserWorkspace() {
   const { data: files = [], isLoading: isLoadingFiles } = useFilesByFolder(folderNavigation.currentFolderId);
   const { data: folders = [], isLoading: isLoadingFolders } = useFoldersByParent(folderNavigation.currentFolderId);
 
-  // Fetch ALL workspace files for folder count computation
+  // Fetch ALL workspace data for folder count computation
   const { data: allWorkspaceFiles = [] } = useWorkspaceFiles();
+  const { data: allWorkspaceFolders = [] } = useWorkspaceFolders();
 
   const fileSelection = useFileSelection();
   const folderSelection = useFolderSelection();
@@ -487,10 +488,10 @@ export function UserWorkspace() {
     unlinkFolderModal.open(folder);
   };
 
-  // Compute folder counts from ALL workspace files
+  // Compute folder counts from ALL workspace files and folders
   const folderCounts = React.useMemo(
-    () => computeFolderCounts(allWorkspaceFiles, folders),
-    [allWorkspaceFiles, folders]
+    () => computeFolderCounts(allWorkspaceFiles, allWorkspaceFolders),
+    [allWorkspaceFiles, allWorkspaceFolders]
   );
 
   // Loading state

@@ -127,9 +127,9 @@ interface FileGridProps {
   showCheckboxes?: boolean;
 
   /**
-   * Folder counts (file count, uploader count)
+   * Folder counts (file count, folder count, uploader count)
    */
-  folderCounts?: Map<string, { fileCount: number; uploaderCount: number }>;
+  folderCounts?: Map<string, { fileCount: number; folderCount: number; uploaderCount: number }>;
 
   /**
    * Current folder ID (null for root workspace)
@@ -212,6 +212,7 @@ export function FileGrid({
             {folders.map((folder) => {
               const counts = folderCounts.get(folder.id) || {
                 fileCount: 0,
+                folderCount: 0,
                 uploaderCount: 0,
               };
 
@@ -237,6 +238,7 @@ export function FileGrid({
                   }
                   showCheckbox={showCheckboxes}
                   fileCount={counts.fileCount}
+                  folderCount={counts.folderCount}
                   uploaderCount={counts.uploaderCount}
                   enableSelectMode={enableFolderSelectMode}
                   isSelectMode={isFolderSelectMode}

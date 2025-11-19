@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/shadcn/select";
 
 import { FolderInput } from "lucide-react";
-import { moveFolderAction } from "@/lib/actions/folder.actions";
-import { useRootFolders } from "@/hooks";
+import { useRootFolders, useMoveFolder } from "@/hooks";
 import type { Folder } from "@/lib/database/schemas";
 
 /**
@@ -61,12 +60,12 @@ export function MoveFolderModal({
   onOpenChange,
   onSuccess,
 }: MoveFolderModalProps) {
-  const [isMoving, setIsMoving] = React.useState(false);
   const [selectedParent, setSelectedParent] = React.useState<string | null>(
     null
   );
 
   const { data: folders = [] } = useRootFolders();
+  const moveFolder = useMoveFolder();
 
   const {
     handleSubmit,
@@ -120,32 +119,26 @@ export function MoveFolderModal({
   const onSubmit = async (data: MoveFolderFormData) => {
     if (!folder) return;
 
-    setIsMoving(true);
-
-    try {
-      const result = await moveFolderAction({
+    moveFolder.mutate(
+      {
         folderId: folder.id,
         newParentId: data.parentFolderId,
-      });
-
-      if (result.success) {
-        // TODO: Add success notification when notification system is implemented
-        // toast.success("Folder moved successfully");
-        console.log("Folder moved successfully");
-        handleClose();
-        onSuccess?.();
-      } else {
-        // TODO: Add error notification when notification system is implemented
-        // toast.error(result.error || "Failed to move folder");
-        console.error("Failed to move folder:", result.error);
+      },
+      {
+        onSuccess: () => {
+          // TODO: Add success notification when notification system is implemented
+          // toast.success("Folder moved successfully");
+          console.log("Folder moved successfully");
+          handleClose();
+          onSuccess?.();
+        },
+        onError: (error) => {
+          // TODO: Add error notification when notification system is implemented
+          // toast.error("Failed to move folder");
+          console.error("Failed to move folder:", error);
+        },
       }
-    } catch (error) {
-      // TODO: Add error notification when notification system is implemented
-      // toast.error("An unexpected error occurred");
-      console.error("Unexpected error moving folder:", error);
-    } finally {
-      setIsMoving(false);
-    }
+    );
   };
 
   if (!folder) return null;
@@ -211,12 +204,12 @@ export function MoveFolderModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isMoving}
+              disabled={moveFolder.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isMoving || isSameLocation}>
-              {isMoving ? "Moving..." : "Move Folder"}
+            <Button type="submit" disabled={moveFolder.isPending || isSameLocation}>
+              {moveFolder.isPending ? "Moving..." : "Move Folder"}
             </Button>
           </ModalFooter>
         </form>
