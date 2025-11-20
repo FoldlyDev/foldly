@@ -148,8 +148,24 @@ export function DesktopLayout({
   const hasFolders = selectedFolders.size > 0;
   const hasFiles = selectedFiles.size > 0;
 
+  // Handle background clicks to clear selection
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Only clear if clicking outside of cards and buttons
+    const target = e.target as HTMLElement;
+
+    // Check if click is NOT on a card or button
+    if (!target.closest('article') && !target.closest('button')) {
+      if (isSelectMode) {
+        onClearSelection();
+      }
+    }
+  };
+
   return (
-    <div className="relative min-h-screen pb-32">
+    <div
+      className="relative min-h-screen pb-32"
+      onClick={handleBackgroundClick}
+    >
       <div className="mx-auto max-w-7xl space-y-6 p-6">
         {/* Header with breadcrumb and search */}
         <WorkspaceHeader

@@ -1,6 +1,6 @@
 # Workspace Module - Implementation TODO
 
-**Last Updated:** 2025-11-19
+**Last Updated:** 2025-11-20
 **Status:** ✅ Production Ready - Test Coverage Complete
 **Branch:** `v2/workspace-module`
 
@@ -332,6 +332,21 @@ folders_parent_folder_id_folders_id_fk
 - ✅ **Files Created** - BulkDeleteModal.tsx (1 file)
 - ✅ **Files Modified** - 5 files (modals index, UserWorkspace, folder.queries.ts, BulkDeleteModal, files.ts schema)
 - ✅ **Database Changes** - Schema migration (CASCADE delete), storage cleanup trigger function
+
+**Session 17: Multi-Select Drag-and-Drop Polish & Optimistic Updates (2025-11-20)**
+- ✅ **Optimistic Updates** - Google Drive-style instant disappearance on drag-drop (React Query onMutate pattern)
+- ✅ **Selection Clearing on Drop** - Items deselect immediately when dropped (before async operation)
+- ✅ **Automatic Rollback** - Failed moves restore items to original view with error toast
+- ✅ **Bulk Move Modal Fix** - Current folder indicator now shows correctly (initialized with currentFolderId)
+- ✅ **Checkboxes Removed** - Selection now visual-only (border + ring + background color)
+- ✅ **Click-Anywhere-to-Deselect** - Background clicks clear selection (min-h-screen container)
+- ✅ **Smooth Transitions** - Opacity animations (250ms ease-out) for card selection state
+- ✅ **Drag Overlay Animations** - Staggered cascade effect (50ms delays) for multi-select stack
+- ✅ **Architecture Refactor** - Single global DndContext (removed nested contexts from UserWorkspace)
+- ✅ **Module Extensibility** - useDndMonitor pattern allows modules to add custom drag logic
+- ✅ **Type Safety** - 0 TypeScript errors across all modified files
+- ✅ **Files Modified** - 9 files (use-file-folder.ts, drag-drop hooks, card components, layouts, modals, DragOverlayContent.tsx)
+- ✅ **Best Practices** - Optimistic UI pattern matches modern web apps (Gmail, Notion, Linear)
 
 **Multi-Selection Implementation Plan:**
 - ✅ Phase 1: Extract `use-responsive-detection.ts` - Platform detection hook (COMPLETE)
@@ -1591,12 +1606,12 @@ npm run lint        # Should pass with 0 warnings
 
 ---
 
-### **Phase 3: Advanced Features** ⏳ 2-3 hours
+### **Phase 3: Advanced Features** ✅ PARTIAL COMPLETE (2025-11-20)
 
 **Goal:** Multi-select drag, breadcrumb drops, drag-to-upload
 
 **Checklist:**
-- [ ] Multi-select drag support
+- [x] Multi-select drag support (✅ COMPLETE - Session 17)
   - [ ] Modify `handleFileDragEnd` to check `fileSelection.selectedFiles`
   - [ ] If dragging selected file, drag ALL selected files
   - [ ] Show count in DragOverlay ("Moving 5 files")

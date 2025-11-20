@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Folder as FolderIcon, Link as LinkIcon, Users } from "lucide-react";
 import type { Folder } from "@/lib/database/schemas";
 import { Badge } from "@/components/ui/shadcn/badge";
@@ -7,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
 import { FolderContextMenu } from "./FolderContextMenu";
 import { useDraggable, useDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { useDndState } from '@/hooks';
 
 interface FolderCardProps {
   folder: Folder;
@@ -132,7 +133,6 @@ export function FolderCard({
     attributes: draggableAttributes,
     listeners: draggableListeners,
     setNodeRef: setDraggableRef,
-    transform: draggableTransform,
     isDragging,
   } = useDraggable({
     id: folder.id,
@@ -140,7 +140,7 @@ export function FolderCard({
       type: 'folder',
       folder,
     },
-    disabled: isSelectMode, // Disable drag during selection mode
+    // No disabled prop - allow dragging in both normal and selection mode
   });
 
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({
@@ -157,11 +157,19 @@ export function FolderCard({
     setDroppableRef(element);
   };
 
-  // Drag transform style
+  // Global drag state for multi-select visual feedback (Google Drive approach)
+  const { activeId } = useDndState();
+  const isAnyDragging = activeId !== null;
+
+  // Multi-select drag: Folder is selected but NOT the one being actively dragged
+  const isPartOfMultiDrag = !isDragging && isSelected && isAnyDragging;
+
+  // Drag style - Google Drive approach: ALL folders stay in place, only opacity changes
   const style = {
-    transform: CSS.Translate.toString(draggableTransform),
-    opacity: isDragging ? 0.5 : 1,
-    willChange: isDragging ? 'transform' : undefined,
+    // All selected folders get reduced opacity during drag (no transform - folders stay in place)
+    opacity: isDragging ? 0.5 : isPartOfMultiDrag ? 0.6 : 1,
+    // Smooth opacity transition for visual feedback (250ms with ease-out timing)
+    transition: 'opacity 250ms ease-out',
   };
 
   return (
@@ -188,20 +196,6 @@ export function FolderCard({
       onTouchCancel={isMobile ? handlers.handleLongPress.onTouchCancel : undefined}
       aria-labelledby={`folder-${folder.id}`}
     >
-      {/* Selection checkbox */}
-      {showCheckbox && (
-        <div className="absolute left-2 top-2 z-10">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={onSelect}
-            onClick={(e) => e.stopPropagation()}
-            className="size-4 rounded border-gray-300 text-primary focus:ring-primary"
-            aria-label={`Select ${folder.name}`}
-          />
-        </div>
-      )}
-
       {/* Context menu */}
       <div className="absolute right-2 top-2 z-10">
         <FolderContextMenu

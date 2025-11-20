@@ -11,7 +11,8 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { useState } from 'react';
+import { useDndState } from '@/hooks/utility/use-dnd-state';
+import { DragOverlayContent } from '@/components/dnd/DragOverlayContent';
 
 /**
  * Global Drag-and-Drop Provider
@@ -21,8 +22,13 @@ import { useState } from 'react';
  * - Global DnD context for all draggable/droppable components
  * - Pointer sensor for mouse/touch interactions
  * - Keyboard sensor for accessibility
- * - Drag overlay for visual feedback during drag
+ * - Drag overlay for visual feedback during drag (supports multi-select)
  * - Custom collision detection for pixel-perfect drop targeting
+ *
+ * Multi-select support:
+ * - Reads from global useDndState to display multi-select counts
+ * - Shows "3 files, 2 folders" for mixed selections
+ * - Shows single item name for single drag
  *
  * @example
  * ```tsx
@@ -32,7 +38,8 @@ import { useState } from 'react';
  * ```
  */
 export function DndProvider({ children }: { children: React.ReactNode }) {
-  const [activeId, setActiveId] = useState<string | null>(null);
+  // Global DnD state (tracks multi-select drag data)
+  const { activeId, activeType, activeData } = useDndState();
 
   // Configure sensors for drag interactions
   const sensors = useSensors(
@@ -47,32 +54,21 @@ export function DndProvider({ children }: { children: React.ReactNode }) {
     useSensor(KeyboardSensor)
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveId(null);
-  };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
-  };
-
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={pointerWithin}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
     >
       {children}
       <DragOverlay>
-        {activeId && (
-          <div className="rounded-lg border border-border bg-card p-4 shadow-lg">
-            <p className="text-sm text-muted-foreground">Moving...</p>
-          </div>
+        {activeId && activeType && (
+          <DragOverlayContent
+            type={activeType}
+            name={(activeData?.file as { filename?: string })?.filename || (activeData?.folder as { name?: string })?.name || 'Item'}
+            totalCount={activeData?.dragCount || 1}
+            fileCount={activeData?.fileCount || 0}
+            folderCount={activeData?.folderCount || 0}
+          />
         )}
       </DragOverlay>
     </DndContext>

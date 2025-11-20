@@ -62,7 +62,7 @@ export function BulkMoveModal({
   currentFolderId,
 }: BulkMoveModalProps) {
   const [selectedFolder, setSelectedFolder] = React.useState<string | null>(
-    null
+    currentFolderId ?? null
   );
 
   const { data: folders = [] } = useRootFolders();
@@ -75,9 +75,18 @@ export function BulkMoveModal({
   } = useForm<BulkMoveFormData>({
     resolver: zodResolver(bulkMoveSchema),
     defaultValues: {
-      targetFolderId: null,
+      targetFolderId: currentFolderId ?? null,
     },
   });
+
+  // Update selectedFolder when currentFolderId changes (e.g., navigating between folders)
+  React.useEffect(() => {
+    if (isOpen) {
+      const initialFolder = currentFolderId ?? null;
+      setSelectedFolder(initialFolder);
+      setValue('targetFolderId', initialFolder);
+    }
+  }, [isOpen, currentFolderId, setValue]);
 
   const handleClose = () => {
     reset();

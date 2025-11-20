@@ -10,6 +10,7 @@
 // Currently using inline error handling only (matching existing hook pattern)
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   bulkDownloadMixedAction,
   moveMixedAction,
@@ -154,12 +155,16 @@ export function useMoveMixed() {
       const result = await moveMixedAction(input);
       return transformActionError(result, 'Failed to move items');
     },
-    // Capture old parent IDs before mutation executes
+    // Capture old parent IDs before mutation executes + Optimistic updates
     onMutate: async (variables) => {
       console.log('[useMoveMixed] Starting mutation, capturing old parent IDs', {
         folderIds: variables.folderIds,
         fileIds: variables.fileIds
       });
+
+      // Cancel outgoing refetches to prevent overwriting optimistic updates
+      await queryClient.cancelQueries({ queryKey: folderKeys.all });
+      await queryClient.cancelQueries({ queryKey: fileKeys.all });
 
       // Find old parent IDs for ALL folders being moved
       const queries = queryClient.getQueriesData({ queryKey: folderKeys.all });
@@ -195,6 +200,41 @@ export function useMoveMixed() {
         folderOldParents: Array.from(folderOldParents.entries()),
         fileOldParents: Array.from(fileOldParents.entries())
       });
+
+      // OPTIMISTIC UPDATE: Remove items from current view immediately (Google Drive behavior)
+      const affectedParentIds = new Set<string | null>();
+
+      // Collect source parents
+      for (const oldParentId of folderOldParents.values()) {
+        affectedParentIds.add(oldParentId);
+      }
+      for (const oldParentId of fileOldParents.values()) {
+        affectedParentIds.add(oldParentId);
+      }
+
+      // Optimistically update folder queries (remove moved folders from source parents)
+      for (const parentId of affectedParentIds) {
+        queryClient.setQueryData(
+          folderKeys.byParent(parentId),
+          (old: any) => {
+            if (!Array.isArray(old)) return old;
+            return old.filter((folder: any) => !variables.folderIds.includes(folder.id));
+          }
+        );
+      }
+
+      // Optimistically update file queries (remove moved files from source parents)
+      for (const parentId of affectedParentIds) {
+        queryClient.setQueryData(
+          fileKeys.byFolder(parentId),
+          (old: any) => {
+            if (!Array.isArray(old)) return old;
+            return old.filter((file: any) => !variables.fileIds.includes(file.id));
+          }
+        );
+      }
+
+      console.log('[useMoveMixed] Optimistic updates applied - items removed from current view');
 
       return { folderOldParents, fileOldParents };
     },
@@ -240,7 +280,6 @@ export function useMoveMixed() {
           // Invalidate workspace folders query (needed for folder count computation)
           queryClient.invalidateQueries({
             queryKey: folderKeys.all,
-            exact: true,
           }).then(() => console.log('[useMoveMixed] Invalidated workspace folders query')),
 
           // Invalidate affected file folder queries
@@ -250,11 +289,10 @@ export function useMoveMixed() {
             }).then(() => console.log('[useMoveMixed] Invalidated file folder', { parentId }))
           ),
 
-          // Invalidate file lists query (for file count updates)
+          // Invalidate all file queries (for file count updates - including workspace files list)
           queryClient.invalidateQueries({
             queryKey: fileKeys.all,
-            exact: true,
-          }).then(() => console.log('[useMoveMixed] Invalidated file lists query')),
+          }).then(() => console.log('[useMoveMixed] Invalidated all file queries')),
         ];
 
         await Promise.all(invalidationPromises);
@@ -263,7 +301,39 @@ export function useMoveMixed() {
         console.error('[useMoveMixed] Cache invalidation error:', error);
       }
     },
-    onError: createMutationErrorHandler('Bulk move'),
+    onError: (error, variables, context) => {
+      // Rollback optimistic updates on error
+      if (context) {
+        console.log('[useMoveMixed] Error occurred, rolling back optimistic updates');
+
+        // Invalidate affected queries to refetch and restore original state
+        const affectedParentIds = new Set<string | null>();
+
+        if (context.folderOldParents) {
+          for (const oldParentId of context.folderOldParents.values()) {
+            affectedParentIds.add(oldParentId);
+          }
+        }
+
+        if (context.fileOldParents) {
+          for (const oldParentId of context.fileOldParents.values()) {
+            affectedParentIds.add(oldParentId);
+          }
+        }
+
+        // Refetch to restore items
+        for (const parentId of affectedParentIds) {
+          queryClient.invalidateQueries({ queryKey: folderKeys.byParent(parentId) });
+          queryClient.invalidateQueries({ queryKey: fileKeys.byFolder(parentId) });
+        }
+
+        console.log('[useMoveMixed] Rollback complete - items restored to original location');
+      }
+
+      // Show error toast
+      toast.error('Failed to move items. Please try again.');
+      console.error('[useMoveMixed] Bulk move error:', error);
+    },
     retry: false,
   });
 }

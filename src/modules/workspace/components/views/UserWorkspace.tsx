@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useFilesByFolder, useFoldersByParent, useWorkspaceFolders, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed, useMoveMixed, useDeleteMixed } from "@/hooks";
+import { useFilesByFolder, useFoldersByParent, useWorkspaceFolders, useFolderNavigation, useModalState, useUserWorkspace, useKeyboardShortcut, useWorkspaceFiles, useResponsiveDetection, useBulkDownloadMixed, useMoveMixed, useDeleteMixed, useDndState } from "@/hooks";
 import { useWorkspaceFilters } from "../../hooks/use-workspace-filters";
 import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
@@ -12,13 +12,9 @@ import { WorkspaceSkeleton } from "../ui/WorkspaceSkeleton";
 import { DesktopLayout } from "./layouts/DesktopLayout";
 import { MobileLayout } from "./layouts/MobileLayout";
 import {
-  DndContext,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  pointerWithin,
+  useDndMonitor,
   type DragEndEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   FilePreviewModal,
@@ -76,12 +72,81 @@ export function UserWorkspace() {
   const moveMixed = useMoveMixed();
   const deleteMixed = useDeleteMixed();
 
-  // Drag-and-drop handlers
-  const { handleFileDragEnd } = useFileDragDrop();
-  const { handleFolderDragEnd } = useFolderDragDrop();
+  // Drag-and-drop handlers (with multi-select support)
+  const { handleFileDragEnd } = useFileDragDrop({
+    fileSelection,
+    folderSelection,
+    onMultiMoveSuccess: () => {
+      fileSelection.clearSelection();
+      folderSelection.clearSelection();
+    },
+  });
+  const { handleFolderDragEnd } = useFolderDragDrop({
+    fileSelection,
+    folderSelection,
+    onMultiMoveSuccess: () => {
+      fileSelection.clearSelection();
+      folderSelection.clearSelection();
+    },
+  });
+
+  // Global DnD state for drag overlay
+  const { setActive, clearActive } = useDndState();
+
+  // Drag start handler: Track multi-select state for overlay
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const activeData = active.data.current;
+    const activeType = activeData?.type;
+    const activeId = active.id as string;
+
+    // Determine if this is a multi-select drag
+    let dragCount = 1;
+    let fileCount = 0;
+    let folderCount = 0;
+
+    if (activeType === 'file' && fileSelection.isFileSelected(activeId)) {
+      // Dragging a selected file - count all selected items
+      fileCount = fileSelection.selectedCount;
+      folderCount = folderSelection.selectedCount;
+      dragCount = fileCount + folderCount;
+    } else if (activeType === 'folder' && folderSelection.isFolderSelected(activeId)) {
+      // Dragging a selected folder - count all selected items
+      fileCount = fileSelection.selectedCount;
+      folderCount = folderSelection.selectedCount;
+      dragCount = fileCount + folderCount;
+    } else {
+      // Single item drag
+      if (activeType === 'file') {
+        fileCount = 1;
+      } else if (activeType === 'folder') {
+        folderCount = 1;
+      }
+    }
+
+    // Update global DnD state with multi-select data
+    setActive(
+      activeId,
+      activeType as 'file' | 'folder',
+      {
+        ...activeData,
+        dragCount,
+        fileCount,
+        folderCount,
+      }
+    );
+  };
+
+  // Note: Transform sync is handled directly in the card components
+  // using the primary dragged item's transform from useDraggable()
 
   // Combined drag end handler (delegates to file or folder handler based on type)
   const handleDragEnd = async (event: DragEndEvent) => {
+    // Clear drag state IMMEDIATELY to reset visual feedback
+    // This ensures opacity returns to normal right away
+    clearActive();
+
+    // Then handle the actual drop logic (async operations)
     const activeType = event.active.data.current?.type;
 
     if (activeType === 'file') {
@@ -91,15 +156,11 @@ export function UserWorkspace() {
     }
   };
 
-  // Configure sensors for drag interactions
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5, // Require 5px movement before drag activates
-      },
-    }),
-    useSensor(KeyboardSensor)
-  );
+  // Listen to global drag events with module-specific handlers
+  useDndMonitor({
+    onDragStart: handleDragStart,
+    onDragEnd: handleDragEnd,
+  });
 
   // Modal state
   const searchModal = useModalState<void>();
@@ -550,11 +611,7 @@ export function UserWorkspace() {
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      onDragEnd={handleDragEnd}
-    >
+    <>
       {/* Render appropriate layout */}
       {isMobile ? <MobileLayout {...layoutProps} /> : <DesktopLayout {...layoutProps} />}
 
@@ -677,6 +734,6 @@ export function UserWorkspace() {
         }}
         currentFolderId={folderNavigation.currentFolderId}
       />
-    </DndContext>
+    </>
   );
 }

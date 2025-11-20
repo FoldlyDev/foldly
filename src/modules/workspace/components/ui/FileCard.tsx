@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import type { File } from "@/lib/database/schemas";
 import { cn } from "@/lib/utils";
 import { useResponsiveDetection, useInteractionHandlers } from "@/hooks";
@@ -7,7 +8,7 @@ import { FileThumbnail } from "./FileThumbnail";
 import { UploaderBadge } from "./UploaderBadge";
 import { FileContextMenu } from "./FileContextMenu";
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { useDndState } from '@/hooks';
 
 interface FileCardProps {
   file: File;
@@ -116,7 +117,6 @@ export function FileCard({
     attributes,
     listeners,
     setNodeRef,
-    transform,
     isDragging,
   } = useDraggable({
     id: file.id,
@@ -124,14 +124,22 @@ export function FileCard({
       type: 'file',
       file,
     },
-    disabled: isSelectMode, // Disable drag during selection mode
+    // No disabled prop - allow dragging in both normal and selection mode
   });
 
-  // Drag transform style
+  // Global drag state for multi-select visual feedback (Google Drive approach)
+  const { activeId } = useDndState();
+  const isAnyDragging = activeId !== null;
+
+  // Multi-select drag: Item is selected but NOT the one being actively dragged
+  const isPartOfMultiDrag = !isDragging && isSelected && isAnyDragging;
+
+  // Drag style - Google Drive approach: ALL items stay in place, only opacity changes
   const style = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.5 : 1,
-    willChange: isDragging ? 'transform' : undefined,
+    // All selected items get reduced opacity during drag (no transform - items stay in place)
+    opacity: isDragging ? 0.5 : isPartOfMultiDrag ? 0.6 : 1,
+    // Smooth opacity transition for visual feedback (250ms with ease-out timing)
+    transition: 'opacity 250ms ease-out',
   };
 
   return (
@@ -157,18 +165,6 @@ export function FileCard({
       onTouchCancel={isMobile ? handlers.handleLongPress.onTouchCancel : undefined}
       aria-labelledby={`file-${file.id}`}
     >
-      {/* Selection checkbox - left of thumbnail */}
-      {showCheckbox && (
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={onSelect}
-          onClick={(e) => e.stopPropagation()}
-          className="size-4 shrink-0 rounded border-gray-300 text-primary focus:ring-primary"
-          aria-label={`Select ${file.filename}`}
-        />
-      )}
-
       {/* Compact thumbnail - 48x48px */}
       <div className="relative size-12 shrink-0 overflow-hidden rounded bg-muted">
         <FileThumbnail file={file} />
