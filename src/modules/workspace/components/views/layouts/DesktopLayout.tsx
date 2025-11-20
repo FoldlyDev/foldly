@@ -63,6 +63,11 @@ interface DesktopLayoutProps {
   isFileSelectMode?: boolean;
   enableFolderSelectMode?: () => void;
   isFolderSelectMode?: boolean;
+  // Drag-to-upload handlers (OS files)
+  onDragEnter?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDrop?: (event: React.DragEvent<HTMLDivElement>) => void;
 }
 
 export function DesktopLayout({
@@ -104,6 +109,10 @@ export function DesktopLayout({
   isFileSelectMode = false,
   enableFolderSelectMode,
   isFolderSelectMode = false,
+  onDragEnter,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: DesktopLayoutProps) {
   // Apply email filter to files
   const filteredFiles = React.useMemo(() => {
@@ -165,6 +174,10 @@ export function DesktopLayout({
     <div
       className="relative min-h-screen pb-32"
       onClick={handleBackgroundClick}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <div className="mx-auto max-w-7xl space-y-6 p-6">
         {/* Header with breadcrumb and search */}

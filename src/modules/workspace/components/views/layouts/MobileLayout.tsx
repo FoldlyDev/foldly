@@ -63,6 +63,11 @@ interface MobileLayoutProps {
   isFileSelectMode?: boolean;
   enableFolderSelectMode?: () => void;
   isFolderSelectMode?: boolean;
+  // Drag-to-upload handlers (OS files)
+  onDragEnter?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave?: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDrop?: (event: React.DragEvent<HTMLDivElement>) => void;
 }
 
 export function MobileLayout({
@@ -104,6 +109,10 @@ export function MobileLayout({
   isFileSelectMode = false,
   enableFolderSelectMode,
   isFolderSelectMode = false,
+  onDragEnter,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: MobileLayoutProps) {
   // Apply email filter to files
   const filteredFiles = React.useMemo(() => {
@@ -165,6 +174,10 @@ export function MobileLayout({
     <div
       className="relative min-h-screen pb-32"
       onClick={handleBackgroundClick}
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <div className="space-y-4 p-4">
         {/* Header with breadcrumb and search */}

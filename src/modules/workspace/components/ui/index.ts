@@ -12,3 +12,4 @@ export * from './FileContextMenu';
 export * from './EmptyFolderState';
 export * from './EmptyFilesState';
 export * from './WorkspaceSkeleton';
+export * from './DragToUploadOverlay';

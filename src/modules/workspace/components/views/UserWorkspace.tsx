@@ -7,8 +7,9 @@ import { useFileSelection } from "../../hooks/use-file-selection";
 import { useFolderSelection } from "../../hooks/use-folder-selection";
 import { useFileDragDrop } from "../../hooks/use-file-drag-drop";
 import { useFolderDragDrop } from "../../hooks/use-folder-drag-drop";
+import { useDragToUpload } from "../../hooks/use-drag-to-upload";
 import { computeFolderCounts } from "@/lib/utils/workspace-helpers";
-import { WorkspaceSkeleton } from "../ui/WorkspaceSkeleton";
+import { WorkspaceSkeleton, DragToUploadOverlay } from "../ui";
 import { DesktopLayout } from "./layouts/DesktopLayout";
 import { MobileLayout } from "./layouts/MobileLayout";
 import {
@@ -34,6 +35,7 @@ import {
 } from "../modals";
 import type { File, Folder, Link } from "@/lib/database/schemas";
 import { deleteFolderAction, deleteFileAction, getLinkByIdAction, getFileSignedUrlAction, downloadFolderAction } from "@/lib/actions";
+import { VALIDATION_LIMITS } from "@/lib/constants/validation";
 
 /**
  * User Workspace view
@@ -92,6 +94,12 @@ export function UserWorkspace() {
 
   // Global DnD state for drag overlay
   const { setActive, clearActive } = useDndState();
+
+  // Drag-to-upload (OS files) handler
+  const dragToUpload = useDragToUpload({
+    currentFolderId: folderNavigation.currentFolderId,
+    workspaceId: workspace?.id || '',
+  });
 
   // Drag start handler: Track multi-select state for overlay
   const handleDragStart = (event: DragStartEvent) => {
@@ -555,6 +563,20 @@ export function UserWorkspace() {
     [allWorkspaceFiles, allWorkspaceFolders]
   );
 
+  // Get current folder name for drag-to-upload overlay
+  const currentFolderName = React.useMemo(() => {
+    if (!folderNavigation.currentFolderId) {
+      return "Root";
+    }
+    const currentFolder = allWorkspaceFolders.find(
+      (f) => f.id === folderNavigation.currentFolderId
+    );
+    return currentFolder?.name || "Root";
+  }, [folderNavigation.currentFolderId, allWorkspaceFolders]);
+
+  // Calculate max file size in MB from validation limits
+  const maxFileSizeMB = VALIDATION_LIMITS.FILE.MAX_SIZE_BYTES / (1024 * 1024);
+
   // Loading state
   if (isLoadingWorkspace || isLoadingFiles || isLoadingFolders) {
     return <WorkspaceSkeleton />;
@@ -608,6 +630,11 @@ export function UserWorkspace() {
     isFileSelectMode: fileSelection.isSelectMode,
     enableFolderSelectMode: folderSelection.enableSelectMode,
     isFolderSelectMode: folderSelection.isSelectMode,
+    // Drag-to-upload handlers (OS files)
+    onDragEnter: dragToUpload.handleDragEnter,
+    onDragOver: dragToUpload.handleDragOver,
+    onDragLeave: dragToUpload.handleDragLeave,
+    onDrop: dragToUpload.handleDrop,
   };
 
   return (
@@ -733,6 +760,14 @@ export function UserWorkspace() {
           folderNavigation.navigateToFolder(folder.id);
         }}
         currentFolderId={folderNavigation.currentFolderId}
+      />
+
+      {/* Drag-to-upload overlay (OS files) */}
+      <DragToUploadOverlay
+        isVisible={dragToUpload.isDragging}
+        currentFolderName={currentFolderName}
+        maxSizeMB={maxFileSizeMB}
+        hasError={dragToUpload.hasError}
       />
     </>
   );

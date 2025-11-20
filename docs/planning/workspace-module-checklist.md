@@ -386,7 +386,7 @@ folders_parent_folder_id_folders_id_fk
 2. ✅ **Mixed Delete Implemented** - Users can delete files + folders together (complete with UI)
 3. ✅ **Architectural Compliance** - `bulkDownloadMixedAction` moved to dedicated `file-folder.actions.ts`
 4. ✅ **Selection UX Fixes** - Auto-disable on empty, clear on navigation, no text selection interference
-5. ⏳ **Single File Download UX** - Single file wrapped in ZIP (optimization pending)
+5. ✅ **Single File Download UX** - Single file = direct download, multiple items = ZIP (complete)
 
 ### Implementation Summary
 
@@ -402,11 +402,11 @@ Y- Create new file structure for mixed operations (better separation of concerns
   - Move `useBulkDownloadMixed` from use-files.ts → use-file-folder.ts
 - Update imports in UserWorkspace.tsx and verify no regressions
 
-**Phase 2: Single File Download Optimization** ⏳ 1 hour
-- Optimize `handleBulkDownload` to detect single file selection
-- If `fileIds.length === 1 && folderIds.length === 0`: Use direct download via `getFileSignedUrlAction`
-- Otherwise: Use `bulkDownloadMixed` for ZIP
-- Better UX: "document.pdf" instead of "download-2025-01-17.zip"
+**Phase 2: Single File Download Optimization** ✅ COMPLETE
+- ✅ Optimize `handleBulkDownload` to detect single file selection
+- ✅ If `fileIds.length === 1 && folderIds.length === 0`: Use direct download via `getFileSignedUrlAction`
+- ✅ Otherwise: Use `bulkDownloadMixed` for ZIP
+- ✅ Better UX: "document.pdf" instead of "download-2025-01-17.zip"
 
 **Phase 3: Mixed Move Action** ⏳ 3-4 hours
 - Create 3-layer architecture:
@@ -1063,7 +1063,10 @@ return dbExists || storageExists; // ← Prevents 409 errors
 - [ ] Image preview signed URLs in FileThumbnail.tsx (line 13-14 TODO)
 - [ ] File preview modal enhancements (PDF viewer, video player)
 - [ ] Keyboard shortcuts (Ctrl+A select all, Delete key)
-- [ ] Drag-and-drop file upload to folders
+- [x] Drag-and-drop file upload to workspace (✅ PARTIAL - Session 18)
+  - [x] Upload to current folder by dropping on workspace background
+  - [ ] Upload to specific folder by dropping on folder cards
+  - [ ] Upload to parent folders by dropping on breadcrumb segments
 - [ ] Empty state CTAs (upload prompt when no files)
 
 ---
@@ -1612,30 +1615,53 @@ npm run lint        # Should pass with 0 warnings
 
 **Checklist:**
 - [x] Multi-select drag support (✅ COMPLETE - Session 17)
-  - [ ] Modify `handleFileDragEnd` to check `fileSelection.selectedFiles`
-  - [ ] If dragging selected file, drag ALL selected files
-  - [ ] Show count in DragOverlay ("Moving 5 files")
-  - [ ] Call `moveMixedAction` for bulk move
-- [ ] Breadcrumb segment drops
-  - [ ] Update `FolderBreadcrumb.tsx` - Add `useDroppable` to each segment
-  - [ ] Allow dropping files/folders on breadcrumb folders
-  - [ ] Visual feedback on breadcrumb hover
-- [ ] Drag-to-upload (OS files into folders)
-  - [ ] Listen to browser `drop` event on folder cards
-  - [ ] Extract `FileList` from event
-  - [ ] Open `UploadFilesModal` with pre-selected folder
-  - [ ] Pass files to Uppy for upload
+  - [x] Modify `handleFileDragEnd` to check `fileSelection.selectedFiles`
+  - [x] If dragging selected file, drag ALL selected files
+  - [x] Show count in DragOverlay ("Moving 5 files")
+  - [x] Call `moveMixedAction` for bulk move
+- [x] Breadcrumb segment drops (✅ COMPLETE - Session 18)
+  - [x] Update `FolderBreadcrumb.tsx` - Add `useDroppable` to each segment
+  - [x] Allow dropping files/folders on breadcrumb folders (dnd-kit items)
+  - [x] Visual feedback on breadcrumb hover (ring-2 ring-primary/50)
+  - [x] Created `use-breadcrumb-droppable.ts` hook
+- [x] Drag-to-upload (OS files into workspace) (✅ COMPLETE - Session 18)
+  - [x] Created `use-drag-to-upload.ts` hook with HTML5 Drag and Drop API
+  - [x] Implemented dragenter/dragover/dragleave/drop event handlers
+  - [x] File size validation (uses `VALIDATION_LIMITS.FILE.MAX_SIZE_BYTES`)
+  - [x] Duplicate file detection (Windows-style naming: file.jpg → file (1).jpg)
+  - [x] Created `DragToUploadOverlay.tsx` component with enhanced UI
+  - [x] Shows current folder name and file size limit on overlay
+  - [x] Sequential upload with progress feedback and toast notifications
+  - [x] Integrated into `UserWorkspace.tsx`, `DesktopLayout.tsx`, `MobileLayout.tsx`
+  - [x] Folder detection with shake animation and error message (Session 18)
+  - [ ] **ENHANCEMENT**: Drop files on specific folder cards (not just background)
+  - [ ] **ENHANCEMENT**: Drop files on breadcrumb segments (targeted uploads)
+  - [ ] **ENHANCEMENT**: Full folder upload support (recursive directory reading with FileSystem Access API)
 - [ ] Auto-scroll near viewport edges
   - [ ] Use `@dnd-kit/core` scrolling modifiers
   - [ ] Configure scroll threshold (50px from edge)
   - [ ] Smooth scrolling animation
 
+**Files Created (3 total):**
+1. `src/modules/workspace/hooks/use-breadcrumb-droppable.ts` - Breadcrumb drop hook
+2. `src/modules/workspace/hooks/use-drag-to-upload.ts` - OS file upload hook (218 lines)
+3. `src/modules/workspace/components/ui/DragToUploadOverlay.tsx` - Upload overlay UI
+
 **Files Modified (5 total):**
 1. `src/modules/workspace/hooks/use-file-drag-drop.ts` - Multi-select logic
-2. `src/modules/workspace/components/sections/FolderBreadcrumb.tsx` - Droppable segments
-3. `src/modules/workspace/components/ui/FolderCard.tsx` - OS file drop listener
-4. `src/modules/workspace/components/views/UserWorkspace.tsx` - Drag-to-upload handler
-5. `src/components/dnd/DragOverlayContent.tsx` - Multi-item preview
+2. `src/modules/workspace/components/sections/FolderBreadcrumb.tsx` - Droppable segments + extracted BreadcrumbSegment component
+3. `src/modules/workspace/components/views/UserWorkspace.tsx` - Drag-to-upload integration, folder name computation
+4. `src/modules/workspace/components/views/layouts/DesktopLayout.tsx` - OS drag handlers (onDragEnter, onDragOver, onDragLeave, onDrop)
+5. `src/modules/workspace/components/views/layouts/MobileLayout.tsx` - OS drag handlers (onDragEnter, onDragOver, onDragLeave, onDrop)
+6. `src/modules/workspace/components/ui/index.ts` - Export DragToUploadOverlay
+7. `src/components/dnd/DragOverlayContent.tsx` - Multi-item preview
+
+**Implementation Notes:**
+- **Drag-to-upload** currently uploads to the **current folder** (folder you're viewing)
+- Files can be dragged from OS and dropped anywhere on workspace background
+- Future enhancement: Allow dropping on specific folder cards or breadcrumb segments for targeted uploads
+- Uses same upload infrastructure as modal (`uppyUpload`, `initiateUploadAction`, duplicate detection)
+- Follows 2025 best practices: preventDefault() on all drag events, dragCounter pattern to prevent flickering
 
 ---
 

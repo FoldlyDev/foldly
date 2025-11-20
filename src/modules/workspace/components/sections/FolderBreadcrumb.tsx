@@ -5,6 +5,8 @@ import { ChevronRight, Home, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/shadcn/button";
 import { Skeleton } from "@/components/ui/shadcn/skeleton";
 import { useFolderHierarchy, useResponsiveDetection } from "@/hooks";
+import { useBreadcrumbDroppable } from "../../hooks/use-breadcrumb-droppable";
+import { cn } from "@/lib/utils";
 
 /**
  * Folder breadcrumb navigation
@@ -62,15 +64,20 @@ export function FolderBreadcrumb({
   // Mobile: Show only "My Workspace ... Current Folder"
   if (isMobile) {
     const currentFolder = hierarchy[hierarchy.length - 1];
+    const { setNodeRef: setHomeRef, isOver: isHomeOver } = useBreadcrumbDroppable(null);
 
     return (
       <nav className="flex items-center gap-2" aria-label="Breadcrumb">
-        {/* Home button */}
+        {/* Home button - Drop target for root folder */}
         <Button
+          ref={setHomeRef}
           variant="ghost"
           size="sm"
           onClick={() => onNavigate(null)}
-          className="gap-2 text-sm font-medium hover:bg-accent"
+          className={cn(
+            "gap-2 text-sm font-medium hover:bg-accent transition-all",
+            isHomeOver && "ring-2 ring-primary/50 ring-offset-2"
+          )}
         >
           <Home className="size-4" />
           <span>My Workspace</span>
@@ -86,14 +93,20 @@ export function FolderBreadcrumb({
   }
 
   // Desktop: Show full breadcrumb trail
+  const { setNodeRef: setHomeRef, isOver: isHomeOver } = useBreadcrumbDroppable(null);
+
   return (
     <nav className="flex items-center gap-2" aria-label="Breadcrumb">
-      {/* Home button */}
+      {/* Home button - Drop target for root folder */}
       <Button
+        ref={setHomeRef}
         variant="ghost"
         size="sm"
         onClick={() => onNavigate(null)}
-        className="gap-2 text-sm font-medium hover:bg-accent"
+        className={cn(
+          "gap-2 text-sm font-medium hover:bg-accent transition-all",
+          isHomeOver && "ring-2 ring-primary/50 ring-offset-2"
+        )}
       >
         <Home className="size-4" />
         <span>My Workspace</span>
@@ -104,24 +117,53 @@ export function FolderBreadcrumb({
         const isLast = index === hierarchy.length - 1;
 
         return (
-          <div key={folder.id} className="flex items-center gap-2">
-            <ChevronRight className="size-4 text-muted-foreground" />
-
-            {isLast ? (
-              <span className="text-sm font-medium">{folder.name}</span>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onNavigate(folder.id)}
-                className="text-sm font-medium hover:bg-accent"
-              >
-                {folder.name}
-              </Button>
-            )}
-          </div>
+          <BreadcrumbSegment
+            key={folder.id}
+            folder={folder}
+            isLast={isLast}
+            onNavigate={onNavigate}
+          />
         );
       })}
     </nav>
+  );
+}
+
+/**
+ * Individual breadcrumb segment component
+ * Handles droppable logic for non-last segments
+ */
+interface BreadcrumbSegmentProps {
+  folder: { id: string; name: string };
+  isLast: boolean;
+  onNavigate: (folderId: string) => void;
+}
+
+function BreadcrumbSegment({ folder, isLast, onNavigate }: BreadcrumbSegmentProps) {
+  const { setNodeRef, isOver } = useBreadcrumbDroppable(isLast ? null : folder.id);
+
+  return (
+    <div className="flex items-center gap-2">
+      <ChevronRight className="size-4 text-muted-foreground" />
+
+      {isLast ? (
+        // Current folder - Not clickable, not droppable
+        <span className="text-sm font-medium">{folder.name}</span>
+      ) : (
+        // Parent folder - Clickable and droppable
+        <Button
+          ref={setNodeRef}
+          variant="ghost"
+          size="sm"
+          onClick={() => onNavigate(folder.id)}
+          className={cn(
+            "text-sm font-medium hover:bg-accent transition-all",
+            isOver && "ring-2 ring-primary/50 ring-offset-2"
+          )}
+        >
+          {folder.name}
+        </Button>
+      )}
+    </div>
   );
 }
